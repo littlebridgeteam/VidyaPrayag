@@ -1,6 +1,7 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -9,6 +10,32 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
     kotlin("plugin.serialization")
+}
+
+// ---------------------------------------------------------------------------
+// local.properties — devBaseUrl lets you point the dev flavor at your laptop
+// (http://192.168.1.9:8080) while on the same WiFi as your phone.
+// Falls back to render.com when the key is absent.
+// ---------------------------------------------------------------------------
+val localProps = Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) load(f.inputStream())
+}
+val renderFallbackUrl = "https://vidyaprayag-1.onrender.com"
+val devBaseUrl: String = localProps.getProperty("devBaseUrl")?.takeIf { it.isNotBlank() }
+    ?: renderFallbackUrl
+
+// Make the resolved dev URL visible at configuration time so you never have to
+// guess which backend the phone is hitting.  If it fell back to render while
+// you expected your laptop, this warning tells you `devBaseUrl` is missing.
+if (devBaseUrl == renderFallbackUrl) {
+    logger.warn(
+        "[VidyaPrayag] devBaseUrl NOT set in local.properties -> dev flavor will " +
+            "use $renderFallbackUrl. To point the phone at your laptop, add " +
+            "`devBaseUrl=http://<laptop-LAN-ip>:8080` to local.properties."
+    )
+} else {
+    logger.lifecycle("[VidyaPrayag] dev flavor baseUrl = $devBaseUrl")
 }
 
 kotlin {
@@ -45,6 +72,9 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
+            // Provides ContextCompat for runtime location-permission checks
+            // (real "use current location" in school onboarding, report §11.2).
+            implementation(libs.androidx.core.ktx)
             implementation(libs.koin.android)
             implementation(libs.koin.androidx.compose)
         }
@@ -61,6 +91,7 @@ kotlin {
             implementation("io.insert-koin:koin-compose-viewmodel:4.0.0")
             implementation(libs.coil.compose)
             implementation(libs.coil.network.ktor)
+            implementation(libs.okio)
             implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
             implementation(libs.androidx.navigation.compose)
             implementation(projects.shared)
@@ -86,6 +117,30 @@ android {
         versionCode = 1
         versionName = "1.0"
     }
+    
+    buildFeatures {
+        buildConfig = true
+    }
+    
+    flavorDimensions += "environment"
+    productFlavors {
+        create("dev") {
+            dimension = "environment"
+            buildConfigField("String", "AUTH_BASE_URL", "\"$devBaseUrl\"")
+            buildConfigField("String", "SCHOOL_BASE_URL", "\"$devBaseUrl\"")
+        }
+        create("staging") {
+            dimension = "environment"
+            buildConfigField("String", "AUTH_BASE_URL", "\"https://vidyaprayag-1.onrender.com\"")
+            buildConfigField("String", "SCHOOL_BASE_URL", "\"https://vidyaprayag-1.onrender.com\"")
+        }
+        create("prod") {
+            dimension = "environment"
+            buildConfigField("String", "AUTH_BASE_URL", "\"https://vidyaprayag-1.onrender.com\"")
+            buildConfigField("String", "SCHOOL_BASE_URL", "\"https://vidyaprayag-1.onrender.com\"")
+        }
+    }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
