@@ -4,7 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.littlebridge.vidyaprayag.core.network.NetworkResult
 import com.littlebridge.vidyaprayag.core.prefs.PreferenceRepository
+import com.littlebridge.vidyaprayag.feature.admin.domain.model.DashboardActivity
+import com.littlebridge.vidyaprayag.feature.admin.domain.model.DashboardAnalytics
+import com.littlebridge.vidyaprayag.feature.admin.domain.model.DashboardSummary
 import com.littlebridge.vidyaprayag.feature.admin.domain.model.OnboardingStep
+import com.littlebridge.vidyaprayag.feature.admin.domain.repository.AdminDashboardRepository
 import com.littlebridge.vidyaprayag.feature.auth.domain.model.OnboardingStepData
 import com.littlebridge.vidyaprayag.feature.auth.domain.model.UserDetailsData
 import com.littlebridge.vidyaprayag.feature.auth.domain.repository.AuthRepository
@@ -54,7 +58,8 @@ enum class DashboardOnboardingStatus {
  */
 class SchoolDashboardViewModel(
     private val authRepository: AuthRepository,
-    private val preferenceRepository: PreferenceRepository
+    private val preferenceRepository: PreferenceRepository,
+    private val dashboardRepository: AdminDashboardRepository
 ) : ViewModel() {
 
     private val _steps = MutableStateFlow<List<OnboardingStep>>(DEFAULT_STEPS)
@@ -74,6 +79,19 @@ class SchoolDashboardViewModel(
 
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+
+    // ── Redesigned dashboard data spine (GET /api/admin/dashboard/*) ──────────
+    // Null until the first successful fetch; the screen shows the onboarding hero
+    // (and the analytics/activity entry points) regardless, so a slow or failed
+    // dashboard fetch never blocks the core onboarding flow.
+    private val _summary = MutableStateFlow<DashboardSummary?>(null)
+    val summary: StateFlow<DashboardSummary?> = _summary.asStateFlow()
+
+    private val _analytics = MutableStateFlow<DashboardAnalytics?>(null)
+    val analytics: StateFlow<DashboardAnalytics?> = _analytics.asStateFlow()
+
+    private val _activity = MutableStateFlow<DashboardActivity?>(null)
+    val activity: StateFlow<DashboardActivity?> = _activity.asStateFlow()
 
     init {
         refresh()
@@ -108,6 +126,35 @@ class SchoolDashboardViewModel(
                 }
             }
             _isLoading.value = false
+
+            // Best-effort dashboard hydration. These are additive surfaces — a
+            // failure here must NOT clobber the onboarding hero or surface the
+            // top-level error, so we log and leave the flows null (the screen
+            // renders honest empty states for whatever is missing).
+            loadDashboard(token)
+        }
+    }
+
+    /**
+     * Fetch the three redesigned-dashboard payloads. Each is independent and
+     * fail-soft: a 404 (NO_SCHOOL before onboarding completes) or a transient
+     * error simply leaves that section empty rather than breaking the screen.
+     */
+    private suspend fun loadDashboard(token: String) {
+        when (val r = dashboardRepository.getSummary(token)) {
+            is NetworkResult.Success -> r.data.data?.let { _summary.value = it }
+            is NetworkResult.Error -> AppLogger.d("SchoolDashboardVM", "summary unavailable: ${r.message}")
+            is NetworkResult.ConnectionError -> AppLogger.d("SchoolDashboardVM", "summary connection error")
+        }
+        when (val r = dashboardRepository.getAnalytics(token)) {
+            is NetworkResult.Success -> r.data.data?.let { _analytics.value = it }
+            is NetworkResult.Error -> AppLogger.d("SchoolDashboardVM", "analytics unavailable: ${r.message}")
+            is NetworkResult.ConnectionError -> AppLogger.d("SchoolDashboardVM", "analytics connection error")
+        }
+        when (val r = dashboardRepository.getActivity(token)) {
+            is NetworkResult.Success -> r.data.data?.let { _activity.value = it }
+            is NetworkResult.Error -> AppLogger.d("SchoolDashboardVM", "activity unavailable: ${r.message}")
+            is NetworkResult.ConnectionError -> AppLogger.d("SchoolDashboardVM", "activity connection error")
         }
     }
 
