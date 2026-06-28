@@ -283,6 +283,13 @@ val commonModule = module {
             baseUrl = AppConfig.schoolBaseUrl
         )
     }
+    // PEWS (Predictive Early Warning System) — cross-role (admin / teacher / parent).
+    single {
+        com.littlebridge.enrollplus.feature.pews.data.remote.PewsApi(
+            client = get(),
+            baseUrl = AppConfig.schoolBaseUrl
+        )
+    }
 
     // Repositories
     single<SchoolRepository> { SchoolRepositoryImpl(get(), get()) }
@@ -377,6 +384,10 @@ val commonModule = module {
     single<com.littlebridge.enrollplus.feature.health.domain.repository.HealthRepository> {
         com.littlebridge.enrollplus.feature.health.data.repository.HealthRepositoryImpl(get())
     }
+    // PEWS repository
+    single<com.littlebridge.enrollplus.feature.pews.domain.repository.PewsRepository> {
+        com.littlebridge.enrollplus.feature.pews.data.repository.PewsRepositoryImpl(get())
+    }
 
     // Alumni Management (ALUMNI_MANAGEMENT_SPEC.md)
     single {
@@ -387,6 +398,17 @@ val commonModule = module {
     }
     single<com.littlebridge.enrollplus.feature.alumni.domain.repository.AlumniRepository> {
         com.littlebridge.enrollplus.feature.alumni.data.repository.AlumniRepositoryImpl(get())
+    }
+
+    // Transport Tracking (TRANSPORT_TRACKING_SPEC.md)
+    single {
+        com.littlebridge.enrollplus.feature.transport.data.remote.TransportApi(
+            client = get(),
+            baseUrl = AppConfig.schoolBaseUrl
+        )
+    }
+    single<com.littlebridge.enrollplus.feature.transport.domain.repository.TransportRepository> {
+        com.littlebridge.enrollplus.feature.transport.data.repository.TransportRepositoryImpl(get())
     }
 
     // UseCases
@@ -488,12 +510,18 @@ val viewModelModule = module {
     // AuthRepository, theme pref) — (TeacherRepository, PreferenceRepository, AuthRepository).
     factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherProfileActionsViewModel(get(), get(), get()) }
     factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherLeaveViewModel(get(), get()) }
+    // PEWS (Predictive Early Warning System) view models
+    factory { com.littlebridge.enrollplus.feature.pews.presentation.PewsCohortViewModel(get(), get()) }
+    factory { com.littlebridge.enrollplus.feature.pews.presentation.PewsStudentDetailViewModel(get(), get()) }
+    factory { com.littlebridge.enrollplus.feature.pews.presentation.TeacherPewsViewModel(get(), get()) }
     // Health Records (P1-12) — admin/nurse + teacher + parent view models
     factory { com.littlebridge.enrollplus.feature.health.presentation.AdminHealthViewModel(get(), get()) }
     factory { com.littlebridge.enrollplus.feature.health.presentation.TeacherHealthAlertsViewModel(get(), get()) }
     factory { com.littlebridge.enrollplus.feature.health.presentation.ParentHealthViewModel(get(), get()) }
     // Alumni Management (ALUMNI_MANAGEMENT_SPEC.md)
     factory { com.littlebridge.enrollplus.feature.alumni.presentation.AlumniViewModel(get(), get()) }
+    // Transport Tracking (TRANSPORT_TRACKING_SPEC.md)
+    factory { com.littlebridge.enrollplus.feature.transport.presentation.TransportViewModel(get(), get()) }
 }
 
 fun initKoin(
