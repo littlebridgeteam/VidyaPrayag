@@ -63,9 +63,12 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.andWhere
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
+import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.dao.id.EntityID
+import com.littlebridge.enrollplus.feature.calendar.EventType
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -250,6 +253,25 @@ data class UpdateRegistrationConfigRequest(
     val venue: String? = null,
 )
 
+@Serializable
+data class AdminEventDto(
+    val id: String,
+    val title: String = "",
+    val type: String = "",
+    @SerialName("start_date") val startDate: String = "",
+    val status: String = "PUBLISHED",
+    @SerialName("registration_enabled") val registrationEnabled: Boolean = false,
+    @SerialName("registration_deadline") val registrationDeadline: String? = null,
+    @SerialName("max_attendees") val maxAttendees: Int? = null,
+    val venue: String? = null,
+    @SerialName("has_slots") val hasSlots: Boolean = false,
+    @SerialName("slot_count") val slotCount: Int = 0,
+    @SerialName("total_registrations") val totalRegistrations: Int = 0,
+)
+
+@Serializable
+data class AdminEventListResponse(val events: List<AdminEventDto> = emptyList())
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Helpers
 // ═══════════════════════════════════════════════════════════════════════════
@@ -349,7 +371,7 @@ fun Route.eventRegistrationRouting() {
                 val events = dbQuery {
                     CalendarEventsTable.selectAll().where {
                         (CalendarEventsTable.schoolId inList schoolIds) and
-                            (CalendarEventsTable.registrationEnabled eq true) and
+                            ((CalendarEventsTable.registrationEnabled eq true) or (CalendarEventsTable.type eq EventType.PTM)) and
                             (CalendarEventsTable.status eq "PUBLISHED") and
                             (CalendarEventsTable.isActive eq true) and
                             (CalendarEventsTable.startDate greaterEq today)
@@ -395,7 +417,8 @@ fun Route.eventRegistrationRouting() {
                     call.fail("Invalid token", HttpStatusCode.Unauthorized, "UNAUTHORIZED"); return@get
                 }
                 val rows = dbQuery {
-                    (EventRegistrationsTable innerJoin CalendarEventsTable)
+                    EventRegistrationsTable
+                        .join(CalendarEventsTable, JoinType.INNER, EventRegistrationsTable.eventId, CalendarEventsTable.id)
                         .selectAll()
                         .where {
                             (EventRegistrationsTable.parentUserId eq uid) and
@@ -469,7 +492,8 @@ fun Route.eventRegistrationRouting() {
                 // Conflict detection: another registered event on the same date
                 val eventDate = event[CalendarEventsTable.startDate]
                 val conflicting = dbQuery {
-                    (EventRegistrationsTable innerJoin CalendarEventsTable)
+                    EventRegistrationsTable
+                        .join(CalendarEventsTable, JoinType.INNER, EventRegistrationsTable.eventId, CalendarEventsTable.id)
                         .selectAll()
                         .where {
                             (EventRegistrationsTable.parentUserId eq uid) and
@@ -524,7 +548,7 @@ fun Route.eventRegistrationRouting() {
                     }.firstOrNull()
                 } ?: run { call.fail("Event not found", HttpStatusCode.NotFound, "EVENT_NOT_FOUND"); return@post }
 
-                if (!event[CalendarEventsTable.registrationEnabled]) {
+                if (!event[CalendarEventsTable.registrationEnabled] && event[CalendarEventsTable.type] != EventType.PTM) {
                     call.fail("Registration is not enabled for this event", HttpStatusCode.BadRequest, "REGISTRATION_DISABLED"); return@post
                 }
                 if (event[CalendarEventsTable.status] == "CANCELLED") {
@@ -948,7 +972,7 @@ fun Route.eventRegistrationRouting() {
                     CalendarEventsTable.selectAll().where {
                         (CalendarEventsTable.schoolId eq schoolId) and
                             (CalendarEventsTable.type eq "PTM") and
-                            (CalendarEventsTable.registrationEnabled eq true) and
+                            ((CalendarEventsTable.registrationEnabled eq true) or (CalendarEventsTable.type eq "PTM")) and
                             (CalendarEventsTable.status eq "PUBLISHED") and
                             (CalendarEventsTable.isActive eq true) and
                             (CalendarEventsTable.startDate greaterEq today)
@@ -1032,7 +1056,8 @@ fun Route.eventRegistrationRouting() {
                 val slotDtos = slots.map { sRow ->
                     val slotId = sRow[EventSlotsTable.id].value
                     val bookings = dbQuery {
-                        (EventRegistrationsTable innerJoin AppUsersTable)
+                        EventRegistrationsTable
+                            .join(AppUsersTable, JoinType.INNER, EventRegistrationsTable.parentUserId, AppUsersTable.id)
                             .selectAll()
                             .where {
                                 (EventRegistrationsTable.slotId eq slotId) and
@@ -1169,6 +1194,62 @@ fun Route.eventRegistrationRouting() {
         // ───────────────────────────────────────────────────────────────────
         route("/api/v1/school/events") {
 
+            // ── LIST all events for admin management ──
+            get {
+                val ctx = call.requireSchoolContext() ?: return@get
+                val schoolId = ctx.schoolId
+                val today = LocalDate.now()
+
+                val events = dbQuery {
+                    CalendarEventsTable.selectAll().where {
+                        (CalendarEventsTable.schoolId eq schoolId) and
+                            (CalendarEventsTable.isActive eq true) and
+                            ((CalendarEventsTable.registrationEnabled eq true) or (CalendarEventsTable.type eq EventType.PTM)) and
+                            (CalendarEventsTable.startDate greaterEq today)
+                    }.orderBy(CalendarEventsTable.startDate, SortOrder.ASC).toList()
+                }
+
+                val eventIds = events.map { it[CalendarEventsTable.id].value }
+
+                val slotCounts: Map<UUID, Int> = if (eventIds.isNotEmpty()) {
+                    dbQuery {
+                        EventSlotsTable.selectAll().where {
+                            (EventSlotsTable.eventId inList eventIds) and (EventSlotsTable.isActive eq true)
+                        }.groupBy { it[EventSlotsTable.eventId] }
+                            .mapValues { it.value.size }
+                    }
+                } else emptyMap()
+
+                val regCounts: Map<UUID, Int> = if (eventIds.isNotEmpty()) {
+                    dbQuery {
+                        EventRegistrationsTable.selectAll().where {
+                            (EventRegistrationsTable.eventId inList eventIds) and
+                                (EventRegistrationsTable.status inList listOf("REGISTERED", "CHECKED_IN", "WAITLISTED"))
+                        }.groupBy { it[EventRegistrationsTable.eventId] }
+                            .mapValues { it.value.size }
+                    }
+                } else emptyMap()
+
+                val dtos = events.map { row ->
+                    val eid = row[CalendarEventsTable.id].value
+                    AdminEventDto(
+                        id = eid.toString(),
+                        title = row[CalendarEventsTable.title],
+                        type = row[CalendarEventsTable.type],
+                        startDate = row[CalendarEventsTable.startDate].toString(),
+                        status = row[CalendarEventsTable.status],
+                        registrationEnabled = row[CalendarEventsTable.registrationEnabled],
+                        registrationDeadline = row[CalendarEventsTable.registrationDeadline],
+                        maxAttendees = row[CalendarEventsTable.maxAttendees],
+                        venue = row[CalendarEventsTable.venue],
+                        hasSlots = (slotCounts[eid] ?: 0) > 0,
+                        slotCount = slotCounts[eid] ?: 0,
+                        totalRegistrations = regCounts[eid] ?: 0,
+                    )
+                }
+                call.ok(AdminEventListResponse(events = dtos), message = "Events loaded")
+            }
+
             // ── LIST all registrations (filterable) ──
             get("/registrations") {
                 val ctx = call.requireSchoolContext() ?: return@get
@@ -1177,7 +1258,9 @@ fun Route.eventRegistrationRouting() {
                 val eventIdFilter = call.request.queryParameters["eventId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
 
                 val rows = dbQuery {
-                    (EventRegistrationsTable innerJoin CalendarEventsTable innerJoin AppUsersTable)
+                    EventRegistrationsTable
+                        .join(CalendarEventsTable, JoinType.INNER, EventRegistrationsTable.eventId, CalendarEventsTable.id)
+                        .join(AppUsersTable, JoinType.INNER, EventRegistrationsTable.parentUserId, AppUsersTable.id)
                         .selectAll()
                         .where {
                             (EventRegistrationsTable.schoolId eq schoolId) and
@@ -1240,7 +1323,8 @@ fun Route.eventRegistrationRouting() {
                 } ?: run { call.fail("Event not found", HttpStatusCode.NotFound, "EVENT_NOT_FOUND"); return@get }
 
                 val rows = dbQuery {
-                    (EventRegistrationsTable innerJoin AppUsersTable)
+                    EventRegistrationsTable
+                        .join(AppUsersTable, JoinType.INNER, EventRegistrationsTable.parentUserId, AppUsersTable.id)
                         .selectAll()
                         .where {
                             (EventRegistrationsTable.eventId eq eventId) and
@@ -1604,7 +1688,8 @@ fun Route.eventRegistrationRouting() {
                 } ?: run { call.fail("Event not found", HttpStatusCode.NotFound, "EVENT_NOT_FOUND"); return@get }
 
                 val rows = dbQuery {
-                    (EventRegistrationsTable innerJoin AppUsersTable)
+                    EventRegistrationsTable
+                        .join(AppUsersTable, JoinType.INNER, EventRegistrationsTable.parentUserId, AppUsersTable.id)
                         .selectAll()
                         .where {
                             (EventRegistrationsTable.eventId eq eventId) and
