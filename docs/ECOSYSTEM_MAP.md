@@ -151,3 +151,26 @@
 | `/tutor` | Role-aware | Implemented |
 | `/library` | Role-aware | Implemented |
 | `/events` | Role-aware | Implemented |
+
+---
+
+## Feature Index (Appended)
+
+### 16. Backend Log Viewer
+- **Module**: `feature.logging` (server) + `website/.../components/admin/LogViewer.tsx` (web)
+- **Tables**: `server_logs`
+- **Events emitted**: `log.write` (implicit via `ServerLogWriter.write`)
+- **Key APIs**: `GET /api/v1/admin/dev/logs`, `GET /api/v1/admin/dev/logs/stream` (SSE), `GET /api/v1/admin/dev/logs/stats`
+- **Surfaces**: Admin web portal → Dev Tools → Logs tab (super_admin only)
+- **Cross-feature**: HTTP middleware logs all requests; AI gateway logs all AI calls; scheduled jobs log execution
+- **Hooks**: `server_logs.category` extensible; `details_json` for structured context; AI token usage for cost dashboard
+
+### 17. Universal Notification Deep-Linking
+- **Module**: Extends `feature.notifications` (server) + `NotificationsViewModel` (shared) + `NotificationsScreenV2` (compose) + `Topbar.tsx`/`ActivityFeed.tsx` (web)
+- **Tables**: No new table — extends `NotificationDto` with existing `deep_link`, `ref_type`, `ref_id` columns
+- **Events emitted**: No new events — enhances existing `notification.created` with deep link data in payload
+- **Key APIs**: No new endpoints — extends existing `GET /api/v1/notifications` response
+- **Surfaces**: All notification surfaces (parent bell, teacher bell, admin bell, activity feed, mobile notification screens)
+- **Cross-feature**: All features that call `Notify.toUsers` now pass `deepLink`; `parseDeepLink` handles all categories
+- **Deep links**: `/parent/announcements/{id}`, `/parent/fees/{id}`, `/parent/leave?requestId={id}`, `/messages?threadId={id}`, `/{role}/pews?childId={id}`, `/{role}/report-card?...`
+- **New screens**: `AnnouncementDetailScreen`, `FeeDetailScreen`, `LeaveDetailScreen` (all reuse existing design system)
