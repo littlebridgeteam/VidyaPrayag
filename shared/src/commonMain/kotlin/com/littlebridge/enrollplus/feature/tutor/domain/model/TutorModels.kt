@@ -1,6 +1,7 @@
 package com.littlebridge.enrollplus.feature.tutor.domain.model
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerialName
 
 // ── API Response Wrappers ────────────────────────────────────────────
 
@@ -57,17 +58,17 @@ data class DoubtResultDto(
 @Serializable
 data class TutorTurnDto(
     val mode: String,
-    val groundedRefs: List<GroundedRefDto> = emptyList(),
-    val studentFacing: StudentFacingDto,
+    @SerialName("grounded_refs") val groundedRefs: List<GroundedRefDto> = emptyList(),
+    @SerialName("student_facing") val studentFacing: StudentFacingDto? = null,
     val practice: List<PracticeQuestionDto>? = null,
-    val planDelta: PlanDeltaDto? = null,
-    val teacherFlag: TeacherFlagDto? = null,
+    @SerialName("plan_delta") val planDelta: PlanDeltaDto? = null,
+    @SerialName("teacher_flag") val teacherFlag: TeacherFlagDto? = null,
     val misconception: MisconceptionLogDto? = null,
 )
 
 @Serializable
 data class GroundedRefDto(
-    val topicId: String,
+    @SerialName("topic_id") val topicId: String,
     val source: String,
     val value: String,
 )
@@ -75,42 +76,42 @@ data class GroundedRefDto(
 @Serializable
 data class StudentFacingDto(
     val text: String,
-    val mathBlocks: List<String> = emptyList(),
-    val nextPrompt: String? = null,
+    @SerialName("math_blocks") val mathBlocks: List<String> = emptyList(),
+    @SerialName("next_prompt") val nextPrompt: String? = null,
 )
 
 @Serializable
 data class PracticeQuestionDto(
-    val questionId: String,
+    @SerialName("question_id") val questionId: String,
     val stem: String,
     val options: List<String>? = null,
-    val answerKey: String,
-    val topicId: String,
+    @SerialName("answer_key") val answerKey: String,
+    @SerialName("topic_id") val topicId: String,
     val difficulty: String,
 )
 
 @Serializable
 data class PlanDeltaDto(
-    val addReviews: List<AddReviewDto> = emptyList(),
-    val adjustDifficulty: String? = null,
+    @SerialName("add_reviews") val addReviews: List<AddReviewDto> = emptyList(),
+    @SerialName("adjust_difficulty") val adjustDifficulty: String? = null,
 )
 
 @Serializable
 data class AddReviewDto(
-    val topicId: String,
+    @SerialName("topic_id") val topicId: String,
     val priority: String,
 )
 
 @Serializable
 data class TeacherFlagDto(
-    val topicId: String,
+    @SerialName("topic_id") val topicId: String,
     val reason: String,
     val severity: String,
 )
 
 @Serializable
 data class MisconceptionLogDto(
-    val topicId: String,
+    @SerialName("topic_id") val topicId: String,
     val type: String,
     val evidence: String,
 )
