@@ -346,6 +346,7 @@ fun Application.module() {
         allowMethod(HttpMethod.Get)
         allowMethod(HttpMethod.Post)
         allowMethod(HttpMethod.Put)
+        allowMethod(HttpMethod.Patch)
         allowMethod(HttpMethod.Delete)
         allowMethod(HttpMethod.Options)
     }
