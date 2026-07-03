@@ -3,6 +3,7 @@ package com.littlebridge.enrollplus.ui.v2.screens.parent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -94,6 +96,7 @@ fun ParentAcademicsScreenV2(
         onOpenQuiz = { quizId -> academicsViewModel.loadQuizDetail(quizId) },
         onSubmitQuiz = { quizId, answers -> academicsViewModel.submitQuiz(quizId, answers) },
         onClearQuizResult = { academicsViewModel.clearQuizResult() },
+        onLoadLeaderboard = { quizId -> academicsViewModel.loadLeaderboard(quizId) },
         onOpenLeave = onOpenLeave,
         onOpenHealth = onOpenHealth,
         modifier = modifier,
@@ -114,6 +117,7 @@ private fun ParentAcademicsContent(
     onOpenQuiz: (String) -> Unit,
     onSubmitQuiz: (String, List<Pair<String, Int>>) -> Unit,
     onClearQuizResult: () -> Unit,
+    onLoadLeaderboard: (String) -> Unit,
     onOpenLeave: () -> Unit = {},
     onOpenHealth: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -132,7 +136,6 @@ private fun ParentAcademicsContent(
                 if (academics.syllabus == null && !academics.syllabusLoading) onLoadSyllabus()
                 if (academics.syllabusV2 == null && !academics.syllabusV2Loading) onLoadSyllabusV2()
             }
-            "Daily" -> if (academics.dailySummary == null && !academics.dailySummaryLoading) onLoadDailySummary()
             "Quizzes" -> if (academics.quizzes.isEmpty() && !academics.quizzesLoading) onLoadQuizzes()
         }
     }
@@ -212,7 +215,7 @@ private fun ParentAcademicsContent(
         // is deliberately NO second switcher here anymore.
 
         VTopTabs(
-            tabs = listOf("Overview", "Attendance", "Marks", "Syllabus", "Daily", "Quizzes", "Report"),
+            tabs = listOf("Overview", "Attendance", "Marks", "Syllabus", "Quizzes", "Report"),
             selected = tab,
             onSelect = { tab = it },
             // RA-PP-THEME: Parents Portal tabs are violet, not the legacy teal.
@@ -227,13 +230,13 @@ private fun ParentAcademicsContent(
                 "Attendance" -> AttendanceTab(academics, onLoadAttendance)
                 "Marks" -> MarksTab(academics, onLoadMarks)
                 "Syllabus" -> SyllabusTab(academics, onLoadSyllabus, onLoadSyllabusV2)
-                "Daily" -> DailySummaryTab(academics, onLoadDailySummary)
                 "Quizzes" -> QuizzesTab(
                     academics = academics,
                     onRetry = onLoadQuizzes,
                     onOpenQuiz = onOpenQuiz,
                     onSubmitQuiz = onSubmitQuiz,
                     onBackToList = onClearQuizResult,
+                    onLoadLeaderboard = onLoadLeaderboard,
                 )
                 "Report" -> {
                     val childId = academics.selectedChildId
@@ -453,8 +456,14 @@ private fun SyllabusTab(academics: ParentAcademicsState, onRetry: () -> Unit, on
             v2Data.subjects.forEachIndexed { idx, subj ->
                 val tone = palette[idx % palette.size]
                 val displayProgress = if (subj.isAiEstimated && subj.progress == 0) subj.estimatedPct else subj.progress
+                var expanded by remember { mutableStateOf(idx == 0) }
+                val ixToggle = remember { MutableInteractionSource() }
                 VCard {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        Modifier.fillMaxWidth().clickable(interactionSource = ixToggle, indication = null) { expanded = !expanded },
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
                         Box(
                             Modifier.size(36.dp).clip(RoundedCornerShape(11.dp)).background(tone.copy(alpha = 0.14f)),
                             contentAlignment = Alignment.Center,
@@ -475,6 +484,12 @@ private fun SyllabusTab(academics: ParentAcademicsState, onRetry: () -> Unit, on
                             Spacer(Modifier.width(4.dp))
                         }
                         Text("$displayProgress%", style = VTheme.type.data.colored(tone).copy(fontWeight = FontWeight.Bold))
+                        Icon(
+                            if (expanded) VIcons.ChevronDown else VIcons.ChevronRight,
+                            contentDescription = if (expanded) "Collapse" else "Expand",
+                            tint = c.ink2,
+                            modifier = Modifier.size(18.dp),
+                        )
                     }
                     Spacer(Modifier.height(10.dp))
                     VTintedProgressBar(value = displayProgress.toFloat(), fill = tone, height = 8.dp)
@@ -485,33 +500,34 @@ private fun SyllabusTab(academics: ParentAcademicsState, onRetry: () -> Unit, on
                             style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic),
                         )
                     }
-                    Spacer(Modifier.height(10.dp))
-                    // Show only top-level units (chapters + topics) to keep it compact
-                    subj.units.filter { it.depth <= 1 }.forEach { u ->
-                        Row(
-                            Modifier.fillMaxWidth().padding(vertical = 3.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                u.title,
-                                style = VTheme.type.caption.colored(if (u.isCovered) c.ink else c.ink2),
-                                modifier = Modifier.weight(1f).padding(start = if (u.depth == 1) 12.dp else 0.dp),
-                            )
-                            if (u.isCovered) {
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    if (u.isAiEstimated) {
-                                        Text("Est.", style = VTheme.type.caption.colored(c.accentDeep).copy(fontWeight = FontWeight.SemiBold, fontSize = 10.sp))
-                                    } else {
-                                        Icon(VIcons.Check, contentDescription = null, tint = c.successInk, modifier = Modifier.size(13.dp))
-                                        Text(
-                                            u.coveredOn ?: "Covered",
-                                            style = VTheme.type.caption.colored(c.successInk).copy(fontWeight = FontWeight.SemiBold),
-                                        )
+                    if (expanded) {
+                        Spacer(Modifier.height(10.dp))
+                        subj.units.filter { it.depth <= 1 }.forEach { u ->
+                            Row(
+                                Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    u.title,
+                                    style = VTheme.type.caption.colored(if (u.isCovered) c.ink else c.ink2),
+                                    modifier = Modifier.weight(1f).padding(start = if (u.depth == 1) 12.dp else 0.dp),
+                                )
+                                if (u.isCovered) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        if (u.isAiEstimated) {
+                                            Text("Est.", style = VTheme.type.caption.colored(c.accentDeep).copy(fontWeight = FontWeight.SemiBold, fontSize = 10.sp))
+                                        } else {
+                                            Icon(VIcons.Check, contentDescription = null, tint = c.successInk, modifier = Modifier.size(13.dp))
+                                            Text(
+                                                u.coveredOn ?: "Covered",
+                                                style = VTheme.type.caption.colored(c.successInk).copy(fontWeight = FontWeight.SemiBold),
+                                            )
+                                        }
                                     }
+                                } else {
+                                    Text("Pending", style = VTheme.type.caption.colored(c.warningInk).copy(fontWeight = FontWeight.SemiBold))
                                 }
-                            } else {
-                                Text("Pending", style = VTheme.type.caption.colored(c.warningInk).copy(fontWeight = FontWeight.SemiBold))
                             }
                         }
                     }
@@ -520,8 +536,14 @@ private fun SyllabusTab(academics: ParentAcademicsState, onRetry: () -> Unit, on
         } else if (legacyData != null) {
             legacyData.subjects.forEachIndexed { idx, subj ->
                 val tone = palette[idx % palette.size]
+                var expanded by remember { mutableStateOf(idx == 0) }
+                val ixToggle = remember { MutableInteractionSource() }
                 VCard {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        Modifier.fillMaxWidth().clickable(interactionSource = ixToggle, indication = null) { expanded = !expanded },
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
                         Box(
                             Modifier.size(36.dp).clip(RoundedCornerShape(11.dp)).background(tone.copy(alpha = 0.14f)),
                             contentAlignment = Alignment.Center,
@@ -533,27 +555,35 @@ private fun SyllabusTab(academics: ParentAcademicsState, onRetry: () -> Unit, on
                         }
                         Text(subj.subject, style = VTheme.type.bodyStrong.colored(c.ink), modifier = Modifier.weight(1f))
                         Text("${subj.progress}%", style = VTheme.type.data.colored(tone).copy(fontWeight = FontWeight.Bold))
+                        Icon(
+                            if (expanded) VIcons.ChevronDown else VIcons.ChevronRight,
+                            contentDescription = if (expanded) "Collapse" else "Expand",
+                            tint = c.ink2,
+                            modifier = Modifier.size(18.dp),
+                        )
                     }
                     Spacer(Modifier.height(10.dp))
                     VTintedProgressBar(value = subj.progress.toFloat(), fill = tone, height = 8.dp)
-                    Spacer(Modifier.height(10.dp))
-                    subj.units.forEach { u ->
-                        Row(
-                            Modifier.fillMaxWidth().padding(vertical = 3.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(u.title, style = VTheme.type.caption.colored(if (u.isCovered) c.ink else c.ink2), modifier = Modifier.weight(1f))
-                            if (u.isCovered) {
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Icon(VIcons.Check, contentDescription = null, tint = c.successInk, modifier = Modifier.size(13.dp))
-                                    Text(
-                                        u.coveredOn ?: "Covered",
-                                        style = VTheme.type.caption.colored(c.successInk).copy(fontWeight = FontWeight.SemiBold),
-                                    )
+                    if (expanded) {
+                        Spacer(Modifier.height(10.dp))
+                        subj.units.forEach { u ->
+                            Row(
+                                Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(u.title, style = VTheme.type.caption.colored(if (u.isCovered) c.ink else c.ink2), modifier = Modifier.weight(1f))
+                                if (u.isCovered) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Icon(VIcons.Check, contentDescription = null, tint = c.successInk, modifier = Modifier.size(13.dp))
+                                        Text(
+                                            u.coveredOn ?: "Covered",
+                                            style = VTheme.type.caption.colored(c.successInk).copy(fontWeight = FontWeight.SemiBold),
+                                        )
+                                    }
+                                } else {
+                                    Text("Pending", style = VTheme.type.caption.colored(c.warningInk).copy(fontWeight = FontWeight.SemiBold))
                                 }
-                            } else {
-                                Text("Pending", style = VTheme.type.caption.colored(c.warningInk).copy(fontWeight = FontWeight.SemiBold))
                             }
                         }
                     }
@@ -732,6 +762,7 @@ private fun QuizzesTab(
     onOpenQuiz: (String) -> Unit,
     onSubmitQuiz: (String, List<Pair<String, Int>>) -> Unit,
     onBackToList: () -> Unit,
+    onLoadLeaderboard: (String) -> Unit,
 ) {
     val c = VTheme.colors
     val quizzes = academics.quizzes
@@ -742,7 +773,7 @@ private fun QuizzesTab(
     }
 
     if (academics.quizResult != null) {
-        QuizResultCard(academics, onBackToList)
+        QuizResultCard(academics, onBackToList, onLoadLeaderboard)
         return
     }
 
@@ -793,64 +824,92 @@ private fun QuizDetailCard(academics: ParentAcademicsState, onSubmit: (String, L
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Icon(VIcons.GraduationCap, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(20.dp))
             Text(detail.title.ifBlank { "Quiz" }, style = VTheme.type.bodyStrong.colored(c.ink))
+            Spacer(Modifier.weight(1f))
+            Text(detail.subject, style = VTheme.type.caption.colored(c.ink2))
         }
         Spacer(Modifier.height(16.dp))
 
-        detail.questions.forEachIndexed { qIdx, q ->
-            Text("${qIdx + 1}. ${q.question}", style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 14.sp))
-            Spacer(Modifier.height(8.dp))
-            q.options.forEachIndexed { optIdx, opt ->
-                val selected = answers[q.id] == optIdx
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(if (selected) c.accent.copy(alpha = 0.1f) else c.background)
-                        .border(1.dp, if (selected) c.accentDeep else c.hairline, RoundedCornerShape(10.dp))
-                        .clickable { answers[q.id] = optIdx }
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Box(
-                        Modifier.size(20.dp).clip(CircleShape)
-                            .background(if (selected) c.accentDeep else c.cream)
-                            .border(1.dp, if (selected) c.accentDeep else c.hairline, CircleShape),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        if (selected) Icon(VIcons.Check, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(12.dp))
+        Column(
+            Modifier.fillMaxWidth().heightIn(max = 420.dp).verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            detail.questions.forEachIndexed { qIdx, q ->
+                Column {
+                    Text("${qIdx + 1}. ${q.question}", style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 14.sp))
+                    Spacer(Modifier.height(8.dp))
+                    q.options.forEachIndexed { optIdx, opt ->
+                        val selected = answers[q.id] == optIdx
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (selected) c.accent.copy(alpha = 0.1f) else c.background)
+                                .border(1.dp, if (selected) c.accentDeep else c.hairline, RoundedCornerShape(10.dp))
+                                .clickable { answers[q.id] = optIdx }
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Box(
+                                Modifier.size(20.dp).clip(CircleShape)
+                                    .background(if (selected) c.accentDeep else c.cream)
+                                    .border(1.dp, if (selected) c.accentDeep else c.hairline, CircleShape),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                if (selected) Icon(VIcons.Check, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(12.dp))
+                            }
+                            Text(opt, style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp))
+                        }
                     }
-                    Text(opt, style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp))
                 }
             }
-            Spacer(Modifier.height(16.dp))
         }
+
+        Spacer(Modifier.height(12.dp))
 
         if (academics.quizSubmitError != null) {
             Text(academics.quizSubmitError ?: "", style = VTheme.type.caption.colored(c.dangerInk).copy(fontSize = 12.sp))
             Spacer(Modifier.height(8.dp))
         }
 
-        VButton(
-            "Submit Quiz",
-            onClick = {
-                val answerList = answers.entries.map { it.key to it.value }
-                if (answerList.isNotEmpty()) {
-                    onSubmit(detail.id, answerList)
-                }
-            },
-            full = true,
-            tone = VButtonTone.Lavender,
-            loading = academics.isSubmittingQuiz,
-        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            VButton(
+                "Clear",
+                onClick = { answers.clear() },
+                modifier = Modifier.weight(1f),
+                variant = VButtonVariant.Ghost,
+                size = VButtonSize.Md,
+            )
+            VButton(
+                "Submit",
+                onClick = {
+                    val answerList = answers.entries.map { it.key to it.value }
+                    if (answerList.isNotEmpty()) {
+                        onSubmit(detail.id, answerList)
+                    }
+                },
+                modifier = Modifier.weight(1f),
+                tone = VButtonTone.Lavender,
+                size = VButtonSize.Md,
+                loading = academics.isSubmittingQuiz,
+            )
+        }
     }
 }
 
 @Composable
-private fun QuizResultCard(academics: ParentAcademicsState, onBack: () -> Unit) {
+private fun QuizResultCard(
+    academics: ParentAcademicsState,
+    onBack: () -> Unit,
+    onLoadLeaderboard: (String) -> Unit,
+) {
     val c = VTheme.colors
     val result = academics.quizResult?.data ?: return
+
+    LaunchedEffect(result.quizId) {
+        onLoadLeaderboard(result.quizId)
+    }
 
     VCard {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
@@ -881,6 +940,42 @@ private fun QuizResultCard(academics: ParentAcademicsState, onBack: () -> Unit) 
                         val expl = qr.explanation
                         if (!expl.isNullOrBlank()) {
                             Text(expl, style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 11.sp))
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // Leaderboard section
+            if (academics.leaderboardLoading) {
+                Text("Loading leaderboard...", style = VTheme.type.caption.colored(c.ink2))
+            } else if (academics.leaderboardError != null) {
+                Text(academics.leaderboardError ?: "", style = VTheme.type.caption.colored(c.ink3))
+            } else {
+                val lb = academics.leaderboard
+                if (lb != null && lb.entries.isNotEmpty()) {
+                    Text("Leaderboard", style = VTheme.type.bodyStrong.colored(c.ink))
+                    Spacer(Modifier.height(4.dp))
+                    Text("${lb.totalParticipants} participants", style = VTheme.type.caption.colored(c.ink2))
+                    Spacer(Modifier.height(10.dp))
+                    lb.entries.forEach { entry ->
+                        Row(
+                            Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (entry.isCurrentStudent) c.accent.copy(alpha = 0.08f) else Color.Transparent)
+                                .padding(horizontal = 8.dp, vertical = 6.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text("#${entry.rank}", style = VTheme.type.bodyStrong.colored(c.accentDeep).copy(fontSize = 13.sp, fontWeight = FontWeight.Bold))
+                            Text(
+                                entry.studentName + if (entry.isCurrentStudent) " (You)" else "",
+                                style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp),
+                                modifier = Modifier.weight(1f),
+                            )
+                            Text("${entry.score}/${entry.totalMarks}", style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
+                            Text("${entry.percentage}%", style = VTheme.type.body.colored(c.successInk).copy(fontSize = 13.sp, fontWeight = FontWeight.Bold))
                         }
                     }
                 }

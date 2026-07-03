@@ -315,6 +315,12 @@ object SyllabusAiService {
             - NCERT: https://www.ncert.nic.in/syllabus.php
             - CBSE: https://www.cbse.gov.in/curriculum.html
 
+            CRITICAL CONSTRAINTS:
+            - Every question MUST be strictly within the topics listed above.
+            - Do NOT include questions from topics outside this list.
+            - Do NOT include questions from other chapters or unrelated concepts.
+            - Each question should test understanding of one of the listed topics.
+
             Return ONLY a JSON array:
             [{"question_type":"MCQ","question_text":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correct_answer":"A","explanation":"..."}]
 

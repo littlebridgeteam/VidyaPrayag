@@ -142,4 +142,8 @@ class ParentRepositoryImpl(
     override suspend fun submitQuiz(token: String, request: QuizSubmitRequest): NetworkResult<QuizSubmitResponse> {
         return api.submitQuiz(token, request)
     }
+
+    override suspend fun getQuizLeaderboard(token: String, childId: String, quizId: String): NetworkResult<QuizLeaderboardResponse> {
+        return api.getQuizLeaderboard(token, childId, quizId)
+    }
 }

@@ -46,4 +46,5 @@ interface ParentRepository {
     suspend fun getQuizList(token: String, childId: String): NetworkResult<ParentQuizListResponse>
     suspend fun getQuizDetail(token: String, quizId: String): NetworkResult<ParentQuizDetailResponse>
     suspend fun submitQuiz(token: String, request: QuizSubmitRequest): NetworkResult<QuizSubmitResponse>
+    suspend fun getQuizLeaderboard(token: String, childId: String, quizId: String): NetworkResult<QuizLeaderboardResponse>
 }

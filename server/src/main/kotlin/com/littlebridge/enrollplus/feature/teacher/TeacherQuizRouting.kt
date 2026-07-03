@@ -24,6 +24,8 @@ import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.SyllabusQuizzesTable
 import com.littlebridge.enrollplus.db.SyllabusQuizQuestionsTable
 import com.littlebridge.enrollplus.db.SyllabusQuizAnswersTable
+import com.littlebridge.enrollplus.db.AnnouncementsTable
+import com.littlebridge.enrollplus.db.TeacherSubjectAssignmentsTable
 import com.littlebridge.enrollplus.feature.ai.SyllabusAiService
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.*
@@ -115,6 +117,15 @@ data class QuizListResp(
 data class QuizPublishResp(
     val success: Boolean = true,
     val data: QuizSer? = null,
+)
+
+@Serializable
+data class QuizQuestionUpdateReq(
+    val question: String,
+    val options: List<String> = emptyList(),
+    @SerialName("correct_answer") val correctAnswer: String = "",
+    val explanation: String? = null,
+    @SerialName("question_type") val questionType: String = "MCQ",
 )
 
 // ── Routing ────────────────────────────────────────────────────────────────
@@ -322,6 +333,34 @@ fun Route.teacherQuizRouting() {
                     }
                 }
 
+                // Send announcement to parents about the new quiz
+                val subjectName = dbQuery {
+                    TeacherSubjectAssignmentsTable.selectAll().where {
+                        TeacherSubjectAssignmentsTable.id eq quizRow[SyllabusQuizzesTable.assignmentId]
+                    }.firstOrNull()?.get(TeacherSubjectAssignmentsTable.subject) ?: ""
+                }
+                val className = asg.className
+                val quizTitle = quizRow[SyllabusQuizzesTable.title]
+                dbQuery {
+                    AnnouncementsTable.insert {
+                        it[AnnouncementsTable.id] = UUID.randomUUID()
+                        it[AnnouncementsTable.schoolId] = ctx.schoolId
+                        it[AnnouncementsTable.eventId] = "quiz_${quizId}_published_${now.epochSecond}"
+                        it[AnnouncementsTable.type] = "Special"
+                        it[AnnouncementsTable.title] = "New Quiz: ${quizTitle.ifBlank { "Quiz" }}"
+                        it[AnnouncementsTable.subTitle] = subjectName
+                        it[AnnouncementsTable.description] = "A new quiz has been published for $subjectName${if (className.isNotBlank()) " - Class $className" else ""}. Check the Academics > Quizzes tab to attempt it."
+                        it[AnnouncementsTable.date] = now.toString().take(10)
+                        it[AnnouncementsTable.audienceType] = "CLASS"
+                        it[AnnouncementsTable.audienceFilter] = """{"class_name":"$className","subject":"$subjectName"}"""
+                        it[AnnouncementsTable.authorRole] = "teacher"
+                        it[AnnouncementsTable.isCalendarOnly] = false
+                        it[AnnouncementsTable.createdBy] = ctx.userId
+                        it[AnnouncementsTable.createdAt] = now
+                        it[AnnouncementsTable.updatedAt] = now
+                    }
+                }
+
                 val questions = dbQuery {
                     SyllabusQuizQuestionsTable.selectAll().where {
                         SyllabusQuizQuestionsTable.quizId eq quizId
@@ -351,6 +390,164 @@ fun Route.teacherQuizRouting() {
                     },
                     status = "PUBLISHED",
                     questionTypes = quizRow[SyllabusQuizzesTable.questionTypes].split(",").filter { it.isNotBlank() },
+                    createdAt = quizRow[SyllabusQuizzesTable.createdAt]?.toString(),
+                ))
+            }
+
+            // PUT /{id}/question/{questionId} — update a single quiz question
+            put("/{id}/question/{questionId}") {
+                val ctx = call.requireTeacherContext() ?: return@put
+                val quizIdStr = call.parameters["id"]
+                val questionIdStr = call.parameters["questionId"]
+                if (quizIdStr.isNullOrBlank() || questionIdStr.isNullOrBlank()) {
+                    call.fail("Quiz ID and Question ID are required", HttpStatusCode.BadRequest, "MISSING_PARAM"); return@put
+                }
+                val quizId = UUID.fromString(quizIdStr)
+                val questionId = UUID.fromString(questionIdStr)
+
+                val req = runCatching { call.receive<QuizQuestionUpdateReq>() }.getOrNull()
+                if (req == null) {
+                    call.fail("Invalid request body", HttpStatusCode.BadRequest, "BAD_REQUEST"); return@put
+                }
+
+                val quizRow = dbQuery {
+                    SyllabusQuizzesTable.selectAll().where {
+                        (SyllabusQuizzesTable.id eq quizId) and
+                            (SyllabusQuizzesTable.schoolId eq ctx.schoolId)
+                    }.singleOrNull()
+                }
+                if (quizRow == null) {
+                    call.fail("Quiz not found", HttpStatusCode.NotFound, "QUIZ_NOT_FOUND"); return@put
+                }
+                if (quizRow[SyllabusQuizzesTable.status] != "DRAFT") {
+                    call.fail("Cannot edit a published quiz", HttpStatusCode.BadRequest, "QUIZ_NOT_DRAFT"); return@put
+                }
+
+                val optionsJson = quizJson.encodeToString(ListSerializer(serializer<String>()), req.options)
+                dbQuery {
+                    SyllabusQuizQuestionsTable.update({ SyllabusQuizQuestionsTable.id eq questionId }) {
+                        it[SyllabusQuizQuestionsTable.questionText] = req.question
+                        it[SyllabusQuizQuestionsTable.optionsJson] = optionsJson
+                        it[SyllabusQuizQuestionsTable.correctAnswer] = req.correctAnswer
+                        it[SyllabusQuizQuestionsTable.explanation] = req.explanation.orEmpty()
+                    }
+                }
+
+                call.ok(QuizQuestionSer(
+                    id = questionId.toString(),
+                    question = req.question,
+                    options = req.options,
+                    correctIndex = 0,
+                    explanation = req.explanation,
+                    questionType = req.questionType,
+                    correctAnswer = req.correctAnswer,
+                ))
+            }
+
+            // POST /{id}/regenerate — regenerate all questions for an existing DRAFT quiz
+            post("/{id}/regenerate") {
+                val ctx = call.requireTeacherContext() ?: return@post
+                val quizIdStr = call.parameters["id"]
+                if (quizIdStr.isNullOrBlank()) {
+                    call.fail("Quiz ID is required", HttpStatusCode.BadRequest, "MISSING_PARAM"); return@post
+                }
+                val quizId = UUID.fromString(quizIdStr)
+
+                val quizRow = dbQuery {
+                    SyllabusQuizzesTable.selectAll().where {
+                        (SyllabusQuizzesTable.id eq quizId) and
+                            (SyllabusQuizzesTable.schoolId eq ctx.schoolId)
+                    }.singleOrNull()
+                }
+                if (quizRow == null) {
+                    call.fail("Quiz not found", HttpStatusCode.NotFound, "QUIZ_NOT_FOUND"); return@post
+                }
+                if (quizRow[SyllabusQuizzesTable.status] != "DRAFT") {
+                    call.fail("Cannot regenerate a published quiz", HttpStatusCode.BadRequest, "QUIZ_NOT_DRAFT"); return@post
+                }
+
+                val asg = call.requireOwnedAssignment(ctx, quizRow[SyllabusQuizzesTable.assignmentId].toString()) ?: return@post
+                val unitIds = quizRow[SyllabusQuizzesTable.unitIds].split(",").filter { it.isNotBlank() }
+                val qTypes = quizRow[SyllabusQuizzesTable.questionTypes].split(",").filter { it.isNotBlank() }
+                val difficulty = quizRow[SyllabusQuizzesTable.difficulty]
+
+                val unitTitles = dbQuery {
+                    CurriculumUnitsTable.selectAll().where {
+                        CurriculumUnitsTable.id inList unitIds.map { org.jetbrains.exposed.dao.id.EntityID(UUID.fromString(it), CurriculumUnitsTable) }
+                    }.map { it[CurriculumUnitsTable.title] }
+                }
+
+                if (unitTitles.isEmpty()) {
+                    call.fail("Selected units not found", HttpStatusCode.NotFound, "UNITS_NOT_FOUND"); return@post
+                }
+
+                val difficultyOffset = when (difficulty.uppercase()) {
+                    "EASY" -> -5
+                    "HARD" -> 5
+                    else -> 0
+                }
+
+                val questionCount = dbQuery {
+                    SyllabusQuizQuestionsTable.selectAll().where {
+                        SyllabusQuizQuestionsTable.quizId eq quizId
+                    }.count().toInt()
+                }
+
+                val generatedQuestions = SyllabusAiService.generateQuiz(
+                    topicTitles = unitTitles,
+                    classLevel = asg.className,
+                    subject = asg.subject,
+                    questionTypes = qTypes,
+                    questionCount = questionCount,
+                    difficultyOffset = difficultyOffset,
+                    schoolId = ctx.schoolId,
+                )
+
+                if (generatedQuestions == null || generatedQuestions.isEmpty()) {
+                    call.fail("AI is currently unavailable. Please try again.", HttpStatusCode.ServiceUnavailable, "AI_UNAVAILABLE"); return@post
+                }
+
+                val now = Instant.now()
+                dbQuery {
+                    SyllabusQuizQuestionsTable.deleteWhere { SyllabusQuizQuestionsTable.quizId eq quizId }
+                    generatedQuestions.forEachIndexed { idx, q ->
+                        val qId = UUID.randomUUID()
+                        val optionsJson = quizJson.encodeToString(ListSerializer(serializer<String>()), q.options)
+                        SyllabusQuizQuestionsTable.insert {
+                            it[SyllabusQuizQuestionsTable.id] = qId
+                            it[SyllabusQuizQuestionsTable.quizId] = quizId
+                            it[SyllabusQuizQuestionsTable.questionType] = q.questionType
+                            it[SyllabusQuizQuestionsTable.questionText] = q.questionText
+                            it[SyllabusQuizQuestionsTable.optionsJson] = optionsJson
+                            it[SyllabusQuizQuestionsTable.correctAnswer] = q.correctAnswer
+                            it[SyllabusQuizQuestionsTable.explanation] = q.explanation
+                            it[SyllabusQuizQuestionsTable.matchPairsJson] = "[]"
+                            it[SyllabusQuizQuestionsTable.position] = idx
+                            it[SyllabusQuizQuestionsTable.createdAt] = now
+                        }
+                    }
+                }
+
+                val questions = generatedQuestions.mapIndexed { idx, q ->
+                    QuizQuestionSer(
+                        id = UUID.randomUUID().toString(),
+                        question = q.questionText,
+                        options = q.options,
+                        correctIndex = q.options.indexOfFirst { it.startsWith(q.correctAnswer) }.takeIf { it >= 0 } ?: 0,
+                        explanation = q.explanation,
+                        questionType = q.questionType,
+                        correctAnswer = q.correctAnswer,
+                    )
+                }
+
+                call.ok(QuizSer(
+                    id = quizId.toString(),
+                    assignmentId = asg.assignmentId.toString(),
+                    unitIds = unitIds,
+                    title = quizRow[SyllabusQuizzesTable.title],
+                    questions = questions,
+                    status = "DRAFT",
+                    questionTypes = qTypes,
                     createdAt = quizRow[SyllabusQuizzesTable.createdAt]?.toString(),
                 ))
             }

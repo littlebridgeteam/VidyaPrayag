@@ -242,4 +242,11 @@ class ParentApi(
             }
         }
     }
+
+    /** Quiz leaderboard: per-quiz ranking of all students who attempted it. */
+    suspend fun getQuizLeaderboard(token: String, childId: String, quizId: String): NetworkResult<QuizLeaderboardResponse> {
+        return safeApiCall {
+            client.get(getUrl("api/v1/parent/child/$childId/quiz/$quizId/leaderboard"))
+        }
+    }
 }

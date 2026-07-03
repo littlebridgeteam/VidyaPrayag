@@ -720,6 +720,27 @@ class TeacherApi(
         client.get(getUrl("api/v1/teacher/syllabus/quiz/$quizId/results"))
     }
 
+    /** Update a single quiz question (teacher edits before publishing). */
+    suspend fun updateQuizQuestion(
+        token: String,
+        quizId: String,
+        questionId: String,
+        request: QuizUpdateQuestionRequest,
+    ): NetworkResult<QuizUpdateQuestionResponse> = safeApiCall {
+        client.put(getUrl("api/v1/teacher/syllabus/quiz/$quizId/question/$questionId")) {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+    }
+
+    /** Regenerate all questions for an existing DRAFT quiz. */
+    suspend fun regenerateQuiz(
+        token: String,
+        quizId: String,
+    ): NetworkResult<QuizRegenerateResponse> = safeApiCall {
+        client.post(getUrl("api/v1/teacher/syllabus/quiz/$quizId/regenerate"))
+    }
+
     // ── NCERT Auto-fill + Approval + Pace ───────────────────────────────────
 
     /** Look up NCERT reference syllabus for this class+subject. */

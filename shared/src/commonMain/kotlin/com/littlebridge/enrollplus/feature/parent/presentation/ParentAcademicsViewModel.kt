@@ -11,6 +11,7 @@ import com.littlebridge.enrollplus.feature.parent.domain.model.ParentDailySummar
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentMarksData
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentQuizDetailData
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentQuizDto
+import com.littlebridge.enrollplus.feature.parent.domain.model.QuizLeaderboardData
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentSyllabusData
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentSyllabusV2Data
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentSyllabusV2Response
@@ -68,6 +69,9 @@ data class ParentAcademicsState(
     val quizResult: QuizSubmitResponse? = null,
     val isSubmittingQuiz: Boolean = false,
     val quizSubmitError: String? = null,
+    val leaderboard: QuizLeaderboardData? = null,
+    val leaderboardLoading: Boolean = false,
+    val leaderboardError: String? = null,
 ) {
     val selectedChild: DashboardChildSummary?
         get() = children.firstOrNull { it.id == selectedChildId } ?: children.firstOrNull()
@@ -287,5 +291,20 @@ class ParentAcademicsViewModel(
         }
     }
 
-    fun clearQuizResult() = _state.update { it.copy(quizResult = null, quizDetail = null) }
+    fun loadLeaderboard(quizId: String) {
+        val resolvedChildId = currentChildId() ?: return
+        viewModelScope.launch {
+            _state.update { it.copy(leaderboardLoading = true, leaderboardError = null, leaderboard = null) }
+            val token = token() ?: run {
+                _state.update { it.copy(leaderboardLoading = false, leaderboardError = "Not authenticated") }; return@launch
+            }
+            when (val r = repository.getQuizLeaderboard(token, resolvedChildId, quizId)) {
+                is NetworkResult.Success -> _state.update { it.copy(leaderboardLoading = false, leaderboard = r.data.data) }
+                is NetworkResult.Error -> _state.update { it.copy(leaderboardLoading = false, leaderboardError = r.message) }
+                is NetworkResult.ConnectionError -> _state.update { it.copy(leaderboardLoading = false, leaderboardError = "Connection error") }
+            }
+        }
+    }
+
+    fun clearQuizResult() = _state.update { it.copy(quizResult = null, quizDetail = null, leaderboard = null) }
 }

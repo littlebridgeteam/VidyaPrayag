@@ -930,6 +930,31 @@ data class QuizPublishResponse(
     val data: QuizDto? = null,
 )
 
+// ── Quiz question update ──
+
+@Serializable
+data class QuizUpdateQuestionRequest(
+    val question: String,
+    val options: List<String> = emptyList(),
+    @SerialName("correct_answer") val correctAnswer: String = "",
+    val explanation: String? = null,
+    @SerialName("question_type") val questionType: String = "MCQ",
+)
+
+@Serializable
+data class QuizUpdateQuestionResponse(
+    val success: Boolean = true,
+    val data: QuizQuestionDto? = null,
+)
+
+// ── Quiz regenerate ──
+
+@Serializable
+data class QuizRegenerateResponse(
+    val success: Boolean = true,
+    val data: QuizDto? = null,
+)
+
 // ── Quiz list (teacher view) ──
 
 @Serializable

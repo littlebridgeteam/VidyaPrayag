@@ -25,7 +25,7 @@ data class TutorTurn(
 
 @Serializable
 data class GroundedRef(
-    val topicId: String = "",
+    val topicId: String? = null,
     val source: String = "",                  // MARKS | SYLLABUS | NCERT | RAG
     val value: String = "",
 )
@@ -43,7 +43,7 @@ data class PracticeQuestion(
     val stem: String = "",
     val options: List<String>? = null,
     val answerKey: String = "",
-    val topicId: String = "",
+    val topicId: String? = null,
     val difficulty: String = "",              // easy | medium | hard
 )
 
@@ -55,20 +55,20 @@ data class PlanDelta(
 
 @Serializable
 data class AddReview(
-    val topicId: String = "",
+    val topicId: String? = null,
     val priority: String = "",                // high | medium | low
 )
 
 @Serializable
 data class TeacherFlag(
-    val topicId: String = "",
+    val topicId: String? = null,
     val reason: String = "",
     val severity: String = "",                // low | medium | high
 )
 
 @Serializable
 data class MisconceptionLog(
-    val topicId: String = "",
+    val topicId: String? = null,
     val type: String = "",
     val evidence: String = "",
 )

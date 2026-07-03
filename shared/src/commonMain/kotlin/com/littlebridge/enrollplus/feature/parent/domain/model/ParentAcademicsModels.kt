@@ -296,3 +296,31 @@ data class ParentMatchPairDto(
     val left: String = "",
     val right: String = "",
 )
+
+// ── Quiz leaderboard ────────────────────────────────────────────────────────
+
+@Serializable
+data class QuizLeaderboardEntryDto(
+    val rank: Int,
+    val studentName: String = "",
+    val score: Int,
+    @SerialName("total_marks") val totalMarks: Int,
+    val percentage: Int,
+    @SerialName("submitted_at") val submittedAt: String? = null,
+    @SerialName("is_current_student") val isCurrentStudent: Boolean = false,
+)
+
+@Serializable
+data class QuizLeaderboardData(
+    val quizId: String,
+    val quizTitle: String = "",
+    val subject: String = "",
+    val entries: List<QuizLeaderboardEntryDto> = emptyList(),
+    @SerialName("total_participants") val totalParticipants: Int = 0,
+)
+
+@Serializable
+data class QuizLeaderboardResponse(
+    val success: Boolean = true,
+    val data: QuizLeaderboardData = QuizLeaderboardData(quizId = ""),
+)

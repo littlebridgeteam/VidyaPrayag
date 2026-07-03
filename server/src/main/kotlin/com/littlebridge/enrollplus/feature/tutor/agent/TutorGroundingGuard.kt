@@ -42,10 +42,11 @@ object TutorGroundingGuard {
 
         // Verify practice questions: answerKey must be non-empty, topicId must be covered
         val verifiedPractice = turn.practice?.mapNotNull { q ->
-            val topicCovered = q.topicId == "subject_level" ||
-                bundle.syllabusPosition.coveredTopicIds.contains(q.topicId)
+            val tid = q.topicId
+            val topicCovered = tid == null || tid == "subject_level" ||
+                bundle.syllabusPosition.coveredTopicIds.contains(tid)
             if (!topicCovered) {
-                log.warn("TutorGroundingGuard: practice question references uncovered topic {} — dropped", q.topicId)
+                log.warn("TutorGroundingGuard: practice question references uncovered topic {} — dropped", tid)
                 null
             } else {
                 q

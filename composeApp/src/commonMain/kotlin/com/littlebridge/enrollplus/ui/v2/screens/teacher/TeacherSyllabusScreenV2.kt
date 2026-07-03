@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
 import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizDto
+import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizQuestionDto
 import com.littlebridge.enrollplus.feature.teacher.domain.model.SylAutoFillChapter
 import com.littlebridge.enrollplus.feature.teacher.domain.model.SylParsedUnit
 import com.littlebridge.enrollplus.feature.teacher.presentation.SyllabusUnit
@@ -112,6 +113,9 @@ fun TeacherSyllabusScreenV2(
 
         // ── Quiz generation sheet ──
         if (state.showQuizSheet) QuizSheet(viewModel)
+
+        // ── Quiz preview sheet (after AI generation, before publishing) ──
+        if (state.showQuizPreview) QuizPreviewSheet(viewModel)
     }
 }
 
@@ -181,6 +185,15 @@ private fun SyllabusBody(viewModel: TeacherSyllabusViewModel, scopeLabel: String
                     size = VButtonSize.Sm,
                     leading = { Icon(VIcons.ClipboardList, contentDescription = null, modifier = Modifier.size(14.dp)) },
                 )
+                VButton(
+                    "Quiz",
+                    onClick = { viewModel.openQuizSheetFromButton() },
+                    modifier = Modifier.weight(1f),
+                    variant = VButtonVariant.Secondary,
+                    tone = VButtonTone.Lavender,
+                    size = VButtonSize.Sm,
+                    leading = { Icon(VIcons.GraduationCap, contentDescription = null, modifier = Modifier.size(14.dp)) },
+                )
             }
         }
 
@@ -220,7 +233,6 @@ private fun SyllabusBody(viewModel: TeacherSyllabusViewModel, scopeLabel: String
                     onToggle = { viewModel.toggleUnit(u.id) },
                     onAddTopic = { viewModel.openAdd(u.id) },
                     onDelete = { viewModel.deleteUnit(u.id) },
-                    onGenerateQuiz = { viewModel.openQuizSheet(u.id) },
                 )
             }
         }
@@ -266,7 +278,6 @@ private fun SyllabusRow(
     onToggle: () -> Unit,
     onAddTopic: () -> Unit,
     onDelete: () -> Unit,
-    onGenerateQuiz: () -> Unit,
 ) {
     val c = VTheme.colors
     val indent = (u.depth.coerceIn(0, 3) * 16).dp
@@ -304,15 +315,6 @@ private fun SyllabusRow(
             if (u.isCovered && !u.coveredOn.isNullOrBlank()) {
                 Text("Covered ${prettyDateShort(u.coveredOn)}", style = VTheme.type.caption.colored(c.tealDeep).copy(fontSize = 10.5.sp))
             }
-        }
-        // Quiz generate button (always visible for topics, edit mode for chapters)
-        if (editing || !u.isChapter) {
-            val ixQuiz = remember { MutableInteractionSource() }
-            Box(
-                Modifier.size(28.dp).clip(CircleShape).background(c.accent.copy(alpha = 0.1f))
-                    .clickable(interactionSource = ixQuiz, indication = null) { onGenerateQuiz() },
-                contentAlignment = Alignment.Center,
-            ) { Icon(VIcons.Sparkles, contentDescription = "Generate quiz", tint = c.accentDeep, modifier = Modifier.size(14.dp)) }
         }
         // Add topic button (edit mode, chapters only)
         if (editing && u.isChapter) {
@@ -1088,6 +1090,253 @@ private fun AutoFillChapterRow(ch: SylAutoFillChapter) {
                     }
                 }
             }
+        }
+    }
+}
+
+// ── Quiz preview sheet (after AI generation, before publishing) ──────────────
+
+@Composable
+private fun QuizPreviewSheet(viewModel: TeacherSyllabusViewModel) {
+    val c = VTheme.colors
+    val state by viewModel.state.collectAsStateV2()
+    val quiz = state.generatedQuiz ?: return
+
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(c.ink.copy(alpha = 0.4f))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ) { viewModel.closeQuizPreview() },
+    ) {
+        TCard(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .heightIn(min = 200.dp, max = 700.dp),
+            padding = 20.dp,
+        ) {
+            Column(
+                Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                ) {},
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                // Header
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(VIcons.GraduationCap, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Quiz Preview", style = VTheme.type.h3.colored(c.navyDeep).copy(fontSize = 17.sp))
+                    Spacer(Modifier.weight(1f))
+                    Box(
+                        Modifier.size(28.dp).clip(CircleShape).background(c.cream)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                            ) { viewModel.closeQuizPreview() },
+                        contentAlignment = Alignment.Center,
+                    ) { Icon(VIcons.Close, contentDescription = "Close", tint = c.ink2, modifier = Modifier.size(16.dp)) }
+                }
+
+                Text(quiz.title, style = VTheme.type.bodyStrong.colored(c.ink2).copy(fontSize = 13.sp))
+                Text("${quiz.questions.size} questions · ${quiz.status}", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp))
+
+                // Questions list
+                quiz.questions.forEachIndexed { idx, q ->
+                    val isEditing = state.editingQuestionId == q.id
+                    if (isEditing) {
+                        EditableQuestionCard(
+                            question = q,
+                            isLoading = state.isPublishingQuiz,
+                            onSave = { question, options, correctAnswer, explanation, qType ->
+                                viewModel.updateGeneratedQuestion(quiz.id, q.id, question, options, correctAnswer, explanation, qType)
+                            },
+                            onCancel = { viewModel.cancelEditingQuestion() },
+                        )
+                    } else {
+                        QuestionPreviewCard(
+                            index = idx + 1,
+                            question = q,
+                            onEdit = { viewModel.startEditingQuestion(q.id) },
+                        )
+                    }
+                }
+
+                if (state.quizPreviewError != null) {
+                    Text(state.quizPreviewError ?: "", style = VTheme.type.caption.colored(c.dangerInk).copy(fontSize = 12.sp))
+                }
+
+                // Action buttons
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    VButton(
+                        "Regenerate All",
+                        onClick = { viewModel.regenerateQuizQuestions() },
+                        modifier = Modifier.weight(1f),
+                        variant = VButtonVariant.Secondary,
+                        tone = VButtonTone.Teal,
+                        size = VButtonSize.Md,
+                        loading = state.isRegenerating,
+                        leading = { Icon(VIcons.Sparkles, contentDescription = null, modifier = Modifier.size(14.dp)) },
+                    )
+                    VButton(
+                        "Publish Quiz",
+                        onClick = { viewModel.publishGeneratedQuiz() },
+                        modifier = Modifier.weight(1f),
+                        tone = VButtonTone.Lavender,
+                        size = VButtonSize.Md,
+                        loading = state.isPublishingQuiz,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun QuestionPreviewCard(
+    index: Int,
+    question: QuizQuestionDto,
+    onEdit: () -> Unit,
+) {
+    val c = VTheme.colors
+    val ixEdit = remember { MutableInteractionSource() }
+
+    Column(
+        Modifier.fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(c.cream)
+            .border(1.dp, c.hairline, RoundedCornerShape(12.dp))
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Q$index", style = VTheme.type.bodyStrong.colored(c.accentDeep).copy(fontSize = 13.sp, fontWeight = FontWeight.Bold))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(question.question, style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp))
+                if (question.options.isNotEmpty()) {
+                    question.options.forEachIndexed { i, opt ->
+                        val isCorrect = opt.startsWith(question.correctAnswer, ignoreCase = true) ||
+                            question.correctIndex == i
+                        Text(
+                            opt,
+                            style = VTheme.type.body.colored(if (isCorrect) c.tealDeep else c.ink2).copy(
+                                fontSize = 12.sp,
+                                fontWeight = if (isCorrect) FontWeight.Bold else FontWeight.Normal,
+                            ),
+                        )
+                    }
+                } else if (question.correctAnswer.isNotBlank()) {
+                    Text("Answer: ${question.correctAnswer}", style = VTheme.type.body.colored(c.tealDeep).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
+                }
+                if (!question.explanation.isNullOrBlank()) {
+                    Text("Explanation: ${question.explanation}", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp))
+                }
+                Text(question.questionType, style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp))
+            }
+            Box(
+                Modifier.size(26.dp).clip(CircleShape).background(c.accent.copy(alpha = 0.1f))
+                    .clickable(interactionSource = ixEdit, indication = null) { onEdit() },
+                contentAlignment = Alignment.Center,
+            ) { Icon(VIcons.Edit3, contentDescription = "Edit", tint = c.accentDeep, modifier = Modifier.size(13.dp)) }
+        }
+    }
+}
+
+@Composable
+private fun EditableQuestionCard(
+    question: QuizQuestionDto,
+    isLoading: Boolean,
+    onSave: (question: String, options: List<String>, correctAnswer: String, explanation: String?, questionType: String) -> Unit,
+    onCancel: () -> Unit,
+) {
+    val c = VTheme.colors
+    var questionText by remember { mutableStateOf(question.question) }
+    var optionsText by remember { mutableStateOf(question.options.joinToString("\n")) }
+    var correctAnswer by remember { mutableStateOf(question.correctAnswer) }
+    var explanation by remember { mutableStateOf(question.explanation ?: "") }
+    var questionType by remember { mutableStateOf(question.questionType) }
+
+    Column(
+        Modifier.fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(c.accent.copy(alpha = 0.06f))
+            .border(1.dp, c.accentDeep.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text("Editing Question", style = VTheme.type.bodyStrong.colored(c.accentDeep).copy(fontSize = 13.sp, fontWeight = FontWeight.Bold))
+
+        VInput(
+            value = questionText,
+            onValueChange = { questionText = it },
+            placeholder = "Question text",
+            singleLine = false,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 60.dp, max = 120.dp),
+        )
+
+        if (questionType == "MCQ") {
+            Text("Options (one per line):", style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 11.sp))
+            VInput(
+                value = optionsText,
+                onValueChange = { optionsText = it },
+                placeholder = "A) ...\nB) ...\nC) ...\nD) ...",
+                singleLine = false,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 80.dp, max = 140.dp),
+            )
+        }
+
+        VInput(
+            value = correctAnswer,
+            onValueChange = { correctAnswer = it },
+            placeholder = "Correct answer (e.g. A, B, true, false, or text)",
+        )
+
+        VInput(
+            value = explanation,
+            onValueChange = { explanation = it },
+            placeholder = "Explanation (optional)",
+            singleLine = false,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp, max = 80.dp),
+        )
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("MCQ", "FILL_BLANK", "TRUE_FALSE").forEach { type ->
+                val selected = questionType == type
+                val ixType = remember { MutableInteractionSource() }
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (selected) c.accent.copy(alpha = 0.14f) else c.cream)
+                        .border(1.dp, if (selected) c.accentDeep else c.hairline, RoundedCornerShape(8.dp))
+                        .clickable(interactionSource = ixType, indication = null) { questionType = type }
+                        .padding(vertical = 6.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        type.replace("_", " "),
+                        style = VTheme.type.body.colored(if (selected) c.accentDeep else c.ink2).copy(fontSize = 10.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal),
+                    )
+                }
+            }
+        }
+
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            VButton("Cancel", onClick = onCancel, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost, size = VButtonSize.Md)
+            VButton(
+                "Save",
+                onClick = {
+                    val opts = if (questionType == "MCQ") optionsText.split("\n").map { it.trim() }.filter { it.isNotEmpty() } else emptyList()
+                    onSave(questionText, opts, correctAnswer, explanation.ifBlank { null }, questionType)
+                },
+                modifier = Modifier.weight(1f),
+                tone = VButtonTone.Lavender,
+                size = VButtonSize.Md,
+                loading = isLoading,
+            )
         }
     }
 }

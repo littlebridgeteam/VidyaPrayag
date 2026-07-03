@@ -313,6 +313,34 @@ data class QuizSubmitResponse(
     val data: QuizResultDto,
 )
 
+// ── Leaderboard DTOs ────────────────────────────────────────────────────────
+
+@Serializable
+data class QuizLeaderboardEntryDto(
+    val rank: Int,
+    val studentName: String = "",
+    val score: Int,
+    @SerialName("total_marks") val totalMarks: Int,
+    val percentage: Int,
+    @SerialName("submitted_at") val submittedAt: String? = null,
+    @SerialName("is_current_student") val isCurrentStudent: Boolean = false,
+)
+
+@Serializable
+data class QuizLeaderboardData(
+    val quizId: String,
+    val quizTitle: String = "",
+    val subject: String = "",
+    val entries: List<QuizLeaderboardEntryDto> = emptyList(),
+    @SerialName("total_participants") val totalParticipants: Int = 0,
+)
+
+@Serializable
+data class QuizLeaderboardResponse(
+    val success: Boolean = true,
+    val data: QuizLeaderboardData,
+)
+
 // ── Resolved + authorized child (RA-56 ownership guard) ───────────────────────
 
 private data class ResolvedChild(
@@ -1042,6 +1070,19 @@ fun Route.parentAcademicsRouting() {
                     call.fail("Quiz not found or not published", HttpStatusCode.NotFound, "QUIZ_NOT_FOUND"); return@post
                 }
 
+                val studentId = child.studentCode ?: "unknown"
+
+                // One attempt per student
+                val alreadyAttempted = dbQuery {
+                    SyllabusQuizAnswersTable.selectAll().where {
+                        (SyllabusQuizAnswersTable.quizId eq quizId) and
+                            (SyllabusQuizAnswersTable.studentId eq studentId)
+                    }.firstOrNull()
+                } != null
+                if (alreadyAttempted) {
+                    call.fail("You have already attempted this quiz", HttpStatusCode.Conflict, "QUIZ_ALREADY_SUBMITTED"); return@post
+                }
+
                 val questions = dbQuery {
                     SyllabusQuizQuestionsTable.selectAll().where {
                         SyllabusQuizQuestionsTable.quizId eq quizId
@@ -1050,7 +1091,6 @@ fun Route.parentAcademicsRouting() {
 
                 val now = Instant.now()
                 var correctCount = 0
-                val studentId = child.studentCode ?: "unknown"
                 val questionResults = mutableListOf<QuizQuestionResultDto>()
 
                 req.answers.forEach { ans ->
@@ -1108,6 +1148,90 @@ fun Route.parentAcademicsRouting() {
                         questionResults = questionResults,
                     ),
                 )
+            }
+
+            // ── Quiz leaderboard — per-quiz ranking ─────────────────────────
+            get("/quiz/{id}/leaderboard") {
+                val child = call.requireOwnedChild() ?: return@get
+                val quizIdStr = call.parameters["id"]
+                if (quizIdStr.isNullOrBlank()) {
+                    call.fail("Quiz ID is required", HttpStatusCode.BadRequest, "MISSING_PARAM"); return@get
+                }
+                val quizId = UUID.fromString(quizIdStr)
+
+                val quizRow = dbQuery {
+                    SyllabusQuizzesTable.selectAll().where {
+                        SyllabusQuizzesTable.id eq quizId
+                    }.singleOrNull()
+                }
+
+                if (quizRow == null) {
+                    call.fail("Quiz not found", HttpStatusCode.NotFound, "QUIZ_NOT_FOUND"); return@get
+                }
+
+                val subjectName = dbQuery {
+                    TeacherSubjectAssignmentsTable.selectAll().where {
+                        TeacherSubjectAssignmentsTable.id eq quizRow[SyllabusQuizzesTable.assignmentId]
+                    }.firstOrNull()?.get(TeacherSubjectAssignmentsTable.subject) ?: ""
+                }
+
+                val totalQuestions = dbQuery {
+                    SyllabusQuizQuestionsTable.selectAll().where {
+                        SyllabusQuizQuestionsTable.quizId eq quizId
+                    }.count().toInt()
+                }
+
+                // Aggregate per student: correct count + first submission time
+                val answers = dbQuery {
+                    SyllabusQuizAnswersTable.selectAll().where {
+                        SyllabusQuizAnswersTable.quizId eq quizId
+                    }.orderBy(SyllabusQuizAnswersTable.createdAt, SortOrder.ASC).toList()
+                }
+
+                val studentScores = mutableMapOf<String, Pair<Int, String>>()
+                answers.forEach { aRow ->
+                    val sid = aRow[SyllabusQuizAnswersTable.studentId]
+                    val isCorrect = aRow[SyllabusQuizAnswersTable.isCorrect]
+                    val submittedAt = aRow[SyllabusQuizAnswersTable.createdAt].toString()
+                    val existing = studentScores[sid]
+                    if (existing == null) {
+                        studentScores[sid] = (if (isCorrect) 1 else 0) to submittedAt
+                    } else {
+                        studentScores[sid] = (existing.first + if (isCorrect) 1 else 0) to existing.second
+                    }
+                }
+
+                // Resolve student names from ChildrenTable
+                val studentNames = dbQuery {
+                    ChildrenTable.selectAll().where {
+                        ChildrenTable.studentCode inList studentScores.keys
+                    }.associate { it[ChildrenTable.studentCode] to (it[ChildrenTable.childName]) }
+                }
+
+                val currentStudentId = child.studentCode
+
+                val entries = studentScores.entries
+                    .map { (sid, scoreTime) ->
+                        QuizLeaderboardEntryDto(
+                            rank = 0,
+                            studentName = studentNames[sid] ?: "Student",
+                            score = scoreTime.first,
+                            totalMarks = totalQuestions,
+                            percentage = if (totalQuestions > 0) (scoreTime.first * 100) / totalQuestions else 0,
+                            submittedAt = scoreTime.second,
+                            isCurrentStudent = sid == currentStudentId,
+                        )
+                    }
+                    .sortedWith(compareByDescending<QuizLeaderboardEntryDto> { it.score }.thenBy { it.submittedAt })
+                    .mapIndexed { idx, e -> e.copy(rank = idx + 1) }
+
+                call.ok(QuizLeaderboardData(
+                    quizId = quizId.toString(),
+                    quizTitle = quizRow[SyllabusQuizzesTable.title],
+                    subject = subjectName,
+                    entries = entries,
+                    totalParticipants = entries.size,
+                ))
             }
         }
 
@@ -1218,6 +1342,17 @@ fun Route.parentAcademicsRouting() {
                     }
                 }
                 val studentId = childRow?.get(ChildrenTable.studentCode) ?: "unknown"
+
+                // One attempt per student
+                val alreadyAttempted = dbQuery {
+                    SyllabusQuizAnswersTable.selectAll().where {
+                        (SyllabusQuizAnswersTable.quizId eq quizId) and
+                            (SyllabusQuizAnswersTable.studentId eq studentId)
+                    }.firstOrNull()
+                } != null
+                if (alreadyAttempted) {
+                    call.fail("You have already attempted this quiz", HttpStatusCode.Conflict, "QUIZ_ALREADY_SUBMITTED"); return@post
+                }
 
                 req.answers.forEach { ans ->
                     val qId = UUID.fromString(ans.questionId)
