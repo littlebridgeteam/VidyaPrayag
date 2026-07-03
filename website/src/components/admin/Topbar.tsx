@@ -19,26 +19,52 @@ export function mapDeepLinkToAdminRoute(deepLink: string): string | null {
     case "announcements":
       return "/admin/announcements";
     case "calendar":
-      return "/admin/calendar/dashboard";
+      return "/admin/calendar";
     case "messages":
       return "/admin/messages";
     case "fees":
       return "/admin/fees";
     case "leave-requests":
     case "leave":
-      return "/admin/leave-requests";
+      return "/admin/leave";
     case "link-requests":
       return "/admin/link-requests";
     case "timetable":
-      return "/admin/timetable";
+      return "/admin/academics";
     case "transport":
       return "/admin/transport";
     case "scholarships":
       return "/admin/scholarships";
     case "pews":
-      return "/admin/pews";
+    case "early-warning":
+      return "/admin/early-warning";
     case "report-card":
       return "/admin/report-card";
+    case "tutor":
+      return "/admin/tutor";
+    case "library":
+      return "/admin/library";
+    case "events":
+      return "/admin/events";
+    case "ptm":
+      return "/admin/ptm";
+    case "scheduled-messages":
+      return "/admin/scheduled-messages";
+    case "classes":
+    case "classes-subjects":
+      return "/admin/classes";
+    case "health-records":
+    case "health":
+      return "/admin/health-records";
+    case "id-cards":
+      return "/admin/id-cards";
+    case "admissions":
+      return "/admin/admissions";
+    case "branding":
+      return "/admin/branding";
+    case "pace-alerts":
+    case "pace":
+      return "/admin/pace-alerts";
     default:
       return null;
   }

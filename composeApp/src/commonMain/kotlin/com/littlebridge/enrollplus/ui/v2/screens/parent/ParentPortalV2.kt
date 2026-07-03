@@ -93,7 +93,16 @@ fun ParentPortalV2(
         val target = localDeepLink ?: deepLinkTarget ?: return@LaunchedEffect
         when (target) {
             is DeepLinkTarget.ParentTab -> {
-                tab = target.tab
+                // Map deep link tab to a valid bottom-nav tab.
+                // Tabs that don't exist as bottom-nav items are redirected to
+                // the closest valid tab, with an overlay if applicable.
+                tab = when (target.tab) {
+                    "home", "academics", "fees", "conversations", "profile" -> target.tab
+                    "scholarships" -> { overlay = ParentOverlay.Scholarships; "home" }
+                    "link-child" -> { overlay = ParentOverlay.LinkChild; "profile" }
+                    else -> "home"
+                }
+                // Map overlay string to ParentOverlay enum.
                 when (target.overlay) {
                     "leave" -> overlay = ParentOverlay.Leave
                     "messages" -> overlay = ParentOverlay.Messages
@@ -102,11 +111,37 @@ fun ParentPortalV2(
                     "transport" -> overlay = ParentOverlay.Transport
                     "library" -> overlay = ParentOverlay.Library
                     "events" -> overlay = ParentOverlay.EventRegistration
+                    "announcements" -> overlay = ParentOverlay.Notifications
+                    "report-card", "tutor", "timetable" -> { tab = "academics"; overlay = ParentOverlay.None }
+                    "fees" -> { tab = "fees"; overlay = ParentOverlay.None }
+                    "scholarships" -> overlay = ParentOverlay.Scholarships
+                    "health" -> overlay = ParentOverlay.Health
+                    "pulse" -> overlay = ParentOverlay.Pulse
+                    "id-card", "digital-id" -> overlay = ParentOverlay.DigitalIdCard
                     else -> overlay = ParentOverlay.None
                 }
             }
             is DeepLinkTarget.Messages -> {
                 overlay = ParentOverlay.Messages
+            }
+            is DeepLinkTarget.Generic -> {
+                // Try to extract a meaningful overlay from the path.
+                val pathOnly = target.path.substringBefore("?").removePrefix("/")
+                when {
+                    pathOnly.startsWith("announcements") -> { tab = "home"; overlay = ParentOverlay.Notifications }
+                    pathOnly.startsWith("fees") -> { tab = "fees"; overlay = ParentOverlay.None }
+                    pathOnly.startsWith("scholarships") -> { tab = "home"; overlay = ParentOverlay.Scholarships }
+                    pathOnly.startsWith("transport") -> { tab = "home"; overlay = ParentOverlay.Transport }
+                    pathOnly.startsWith("library") -> { tab = "home"; overlay = ParentOverlay.Library }
+                    pathOnly.startsWith("events") -> { tab = "home"; overlay = ParentOverlay.EventRegistration }
+                    pathOnly.startsWith("leave") -> { tab = "home"; overlay = ParentOverlay.Leave }
+                    pathOnly.startsWith("messages") -> { overlay = ParentOverlay.Messages }
+                    pathOnly.startsWith("health") -> { tab = "home"; overlay = ParentOverlay.Health }
+                    pathOnly.startsWith("pulse") -> { tab = "home"; overlay = ParentOverlay.Pulse }
+                    pathOnly.startsWith("report-card") || pathOnly.startsWith("tutor") || pathOnly.startsWith("timetable") -> {
+                        tab = "academics"; overlay = ParentOverlay.None
+                    }
+                }
             }
             else -> Unit
         }

@@ -192,6 +192,17 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
                 "notifications" -> "notifications"
                 "calendar" -> "calendar"
                 "events" -> "events"
+                "transport" -> "transport"
+                "library" -> "library"
+                "scholarships" -> "scholarships"
+                "health" -> "health"
+                "pulse" -> "pulse"
+                "id-card", "digital-id" -> "id-card"
+                "report-card" -> "report-card"
+                "tutor" -> "tutor"
+                "timetable" -> "timetable"
+                "fees" -> "fees"
+                "announcements" -> "announcements"
                 else -> null
             }
             DeepLinkTarget.ParentTab(EntryRole.Parent, tab, overlay)

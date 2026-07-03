@@ -85,23 +85,36 @@ fun TeacherPortalV2(
         val target = localDeepLink ?: deepLinkTarget ?: return@LaunchedEffect
         when (target) {
             is DeepLinkTarget.TeacherScreen -> {
-                if (target.screen == "transport") {
-                    overlay = TeacherOverlay.TransportAttendance
-                } else if (target.screen == "report-card" || target.screen == "report-review") {
-                    target.params["className"]?.let { reportClassName = it }
-                    target.params["section"]?.let { reportSection = it }
-                    target.params["term"]?.let { reportTerm = it }
-                    overlay = TeacherOverlay.ReportReview
-                } else if (target.screen == "tutor") {
-                    overlay = TeacherOverlay.Heatmap
-                } else if (target.screen == "events") {
-                    overlay = TeacherOverlay.EventRegistration
-                } else {
-                    tab = target.screen
+                when (target.screen) {
+                    "transport" -> overlay = TeacherOverlay.TransportAttendance
+                    "report-card", "report-review" -> {
+                        target.params["className"]?.let { reportClassName = it }
+                        target.params["section"]?.let { reportSection = it }
+                        target.params["term"]?.let { reportTerm = it }
+                        overlay = TeacherOverlay.ReportReview
+                    }
+                    "tutor" -> overlay = TeacherOverlay.Heatmap
+                    "events" -> overlay = TeacherOverlay.EventRegistration
+                    "announcements" -> { tab = "home"; overlay = TeacherOverlay.None }
+                    "leave-requests", "leave" -> { tab = "home"; overlay = TeacherOverlay.None }
+                    "library" -> { tab = "home"; overlay = TeacherOverlay.None }
+                    "messages" -> overlay = TeacherOverlay.Messages
+                    // Valid bottom-nav tabs
+                    "home", "update", "classes", "timetable", "profile" -> tab = target.screen
+                    else -> tab = "home"
                 }
             }
             is DeepLinkTarget.Messages -> {
                 overlay = TeacherOverlay.Messages
+            }
+            is DeepLinkTarget.Generic -> {
+                val pathOnly = target.path.substringBefore("?").removePrefix("/")
+                when {
+                    pathOnly.startsWith("messages") -> overlay = TeacherOverlay.Messages
+                    pathOnly.startsWith("announcements") -> { tab = "home"; overlay = TeacherOverlay.None }
+                    pathOnly.startsWith("leave") -> { tab = "home"; overlay = TeacherOverlay.None }
+                    else -> tab = "home"
+                }
             }
             else -> Unit
         }

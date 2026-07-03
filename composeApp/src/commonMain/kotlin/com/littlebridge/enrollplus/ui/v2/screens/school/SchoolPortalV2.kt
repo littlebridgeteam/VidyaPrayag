@@ -123,20 +123,53 @@ fun SchoolPortalV2(
         val target = localDeepLink ?: deepLinkTarget ?: return@LaunchedEffect
         when (target) {
             is DeepLinkTarget.SchoolScreen -> {
-                if (target.screen == "transport") {
-                    overlay = SchoolOverlay.TransportManagement
-                } else if (target.screen == "report-card" || target.screen == "report-review") {
-                    overlay = SchoolOverlay.ReportPublish
-                } else if (target.screen == "library") {
-                    overlay = SchoolOverlay.Library
-                } else if (target.screen == "events") {
-                    overlay = SchoolOverlay.EventRegistration
-                } else {
-                    tab = target.screen
+                when (target.screen) {
+                    "transport" -> overlay = SchoolOverlay.TransportManagement
+                    "report-card", "report-review" -> overlay = SchoolOverlay.ReportPublish
+                    "library" -> overlay = SchoolOverlay.Library
+                    "events" -> overlay = SchoolOverlay.EventRegistration
+                    "scholarships" -> overlay = SchoolOverlay.ScholarshipManagement
+                    "branding" -> overlay = SchoolOverlay.BrandingKit
+                    "id-cards" -> overlay = SchoolOverlay.IdCards
+                    "classes", "classes-subjects" -> overlay = SchoolOverlay.ClassesSubjects
+                    "scheduled-messages" -> overlay = SchoolOverlay.ScheduledMessages
+                    "ptm" -> overlay = SchoolOverlay.SchedulePTM
+                    "link-requests" -> overlay = SchoolOverlay.LinkRequests
+                    "admissions" -> overlay = SchoolOverlay.AdmissionsCRM
+                    "health-records" -> overlay = SchoolOverlay.HealthRecords
+                    "leave-requests", "leave" -> overlay = SchoolOverlay.LeaveRequests
+                    "messages" -> { tab = "comms"; overlay = SchoolOverlay.Messages }
+                    "announcements" -> { tab = "comms"; overlay = SchoolOverlay.None }
+                    "calendar" -> overlay = SchoolOverlay.AcademicCalendarPlatform
+                    "fees" -> { tab = "records"; overlay = SchoolOverlay.None }
+                    "tutor" -> { tab = "home"; overlay = SchoolOverlay.None }
+                    "timetable" -> { tab = "home"; overlay = SchoolOverlay.None }
+                    "pace-alerts", "pace" -> { tab = "home"; overlay = SchoolOverlay.None }
+                    // Valid bottom-nav tabs
+                    "home", "people", "records", "comms", "settings" -> tab = target.screen
+                    else -> tab = "home"
                 }
             }
             is DeepLinkTarget.Messages -> {
                 tab = "comms"
+                overlay = SchoolOverlay.Messages
+            }
+            is DeepLinkTarget.Generic -> {
+                val pathOnly = target.path.substringBefore("?").removePrefix("/")
+                when {
+                    pathOnly.startsWith("messages") -> { tab = "comms"; overlay = SchoolOverlay.Messages }
+                    pathOnly.startsWith("announcements") -> { tab = "comms"; overlay = SchoolOverlay.None }
+                    pathOnly.startsWith("fees") -> { tab = "records"; overlay = SchoolOverlay.None }
+                    pathOnly.startsWith("transport") -> overlay = SchoolOverlay.TransportManagement
+                    pathOnly.startsWith("library") -> overlay = SchoolOverlay.Library
+                    pathOnly.startsWith("scholarships") -> overlay = SchoolOverlay.ScholarshipManagement
+                    pathOnly.startsWith("events") -> overlay = SchoolOverlay.EventRegistration
+                    pathOnly.startsWith("leave") -> overlay = SchoolOverlay.LeaveRequests
+                    pathOnly.startsWith("link-requests") -> overlay = SchoolOverlay.LinkRequests
+                    pathOnly.startsWith("admissions") -> overlay = SchoolOverlay.AdmissionsCRM
+                    pathOnly.startsWith("calendar") -> overlay = SchoolOverlay.AcademicCalendarPlatform
+                    else -> tab = "home"
+                }
             }
             else -> Unit
         }
