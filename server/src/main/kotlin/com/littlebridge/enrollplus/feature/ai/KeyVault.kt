@@ -31,6 +31,7 @@ import com.littlebridge.enrollplus.core.EnvConfig
 import com.littlebridge.enrollplus.db.AiProviderConfigTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.neq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
@@ -109,8 +110,8 @@ enum class AiProvider(
         code = "sambanova",
         defaultBaseUrl = "https://api.sambanova.ai/v1",
         defaultModelEnv = "AI_MODEL_SAMBANOVA",
-        // June 2026: free tier = 20 RPM, 20 RPD, 200K TPD — very low RPD.
-        defaultModel = "DeepSeek-V3.1",
+        // July 2026: switched to gpt-oss-120b (user request). SambaNova free tier = 20 RPM, 20 RPD.
+        defaultModel = "gpt-oss-120b",
         tier = "reason",
         noTraining = false,
         freeTierRpm = 20,
@@ -133,8 +134,9 @@ enum class AiProvider(
         code = "openrouter",
         defaultBaseUrl = "https://openrouter.ai/api/v1",
         defaultModelEnv = "AI_MODEL_OPENROUTER",
-        // June 2026: free tier = 20 RPM, 50 RPD (1,000 RPD with $10 credit).
-        defaultModel = "meta-llama/llama-3.3-70b-instruct:free",
+        // July 2026: llama-3.3-70b-instruct:free is constantly rate-limited upstream.
+        // Switched to google/gemini-2.0-flash-exp:free — more reliable free tier on OpenRouter.
+        defaultModel = "google/gemini-2.0-flash-exp:free",
         tier = "reason",
         noTraining = true,
         freeTierRpm = 20,
@@ -157,8 +159,9 @@ enum class AiProvider(
         code = "nvidia_reason",
         defaultBaseUrl = "https://integrate.api.nvidia.com/v1",
         defaultModelEnv = "AI_MODEL_NVIDIA_REASON",
-        // June 2026: NVIDIA NIM free tier ~40 RPM, 5K TPM, 1K RPD.
-        defaultModel = "meta/llama-3.3-70b-instruct",
+        // July 2026: switched from llama-3.3-70b (deprecated) to MiniMax M2.7.
+        // 230B MoE, strong reasoning + coding. NVIDIA NIM free tier ~40 RPM, 1K RPD.
+        defaultModel = "minimaxai/minimax-m2.7",
         tier = "reason",
         noTraining = true,
         freeTierRpm = 40,
@@ -169,8 +172,9 @@ enum class AiProvider(
         code = "nvidia_fast",
         defaultBaseUrl = "https://integrate.api.nvidia.com/v1",
         defaultModelEnv = "AI_MODEL_NVIDIA_FAST",
-        // June 2026: NVIDIA NIM 8B model ~100 RPM, 10K TPM.
-        defaultModel = "meta/llama-3.1-8b-instruct",
+        // July 2026: switched from llama-3.1-8b (deprecated) to DeepSeek V4 Flash.
+        // MoE flash model, fast inference. NVIDIA NIM free tier ~100 RPM, 1K RPD.
+        defaultModel = "deepseek-ai/deepseek-v4-flash",
         tier = "fast",
         noTraining = true,
         freeTierRpm = 100,
@@ -273,6 +277,17 @@ object KeyVault {
         baseUrl: String,
     ) = dbQuery {
         val now = Instant.now()
+
+        // Deactivate any existing rows for this provider that have a DIFFERENT
+        // model name — prevents stale model overrides from winning in modelFor().
+        AiProviderConfigTable.update({
+            (AiProviderConfigTable.provider eq provider.code) and
+                (AiProviderConfigTable.model neq model)
+        }) {
+            it[isActive] = false
+            it[updatedAt] = now
+        }
+
         val existing = AiProviderConfigTable.selectAll().where {
             (AiProviderConfigTable.provider eq provider.code) and
                 (AiProviderConfigTable.model eq model)
@@ -298,6 +313,7 @@ object KeyVault {
             }) {
                 it[apiKeyEncrypted] = encryptedKey
                 it[AiProviderConfigTable.baseUrl] = baseUrl
+                it[isActive] = true
                 it[noTraining] = provider.noTraining
                 it[updatedAt] = now
             }

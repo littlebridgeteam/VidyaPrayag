@@ -32,6 +32,7 @@ import com.littlebridge.enrollplus.feature.admin.presentation.StudentAnalyticsVi
 import com.littlebridge.enrollplus.feature.admin.presentation.TeacherPerformanceViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.ClassPerformanceViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.SyllabusCoverageViewModel
+import com.littlebridge.enrollplus.feature.admin.presentation.PaceAlertsViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.ResultsViewModel
 import com.littlebridge.enrollplus.util.AppConfig
 import com.littlebridge.enrollplus.util.AppLogger
@@ -583,6 +584,7 @@ val viewModelModule = module {
     factory { TeacherPerformanceViewModel(get(), get()) }
     factory { ClassPerformanceViewModel(get(), get()) }
     factory { SyllabusCoverageViewModel(get(), get()) }
+    factory { PaceAlertsViewModel(get(), get()) }
     factory { ResultsViewModel(get(), get()) }
     factory { com.littlebridge.enrollplus.feature.content.presentation.LandingViewModel(get()) }
     factory { com.littlebridge.enrollplus.feature.auth.presentation.AuthViewModel(get()) }

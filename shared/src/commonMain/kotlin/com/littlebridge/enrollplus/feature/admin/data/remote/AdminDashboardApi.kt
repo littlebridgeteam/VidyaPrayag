@@ -19,8 +19,15 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardActi
 import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardAnalytics
 import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardOverview
 import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardSummary
+import com.littlebridge.enrollplus.feature.teacher.domain.model.PaceSnapshotsResponse
+import com.littlebridge.enrollplus.feature.teacher.domain.model.PaceAlertsResponse
+import com.littlebridge.enrollplus.feature.teacher.domain.model.PaceAlertResolveResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
+import io.ktor.client.request.parameter
+import io.ktor.client.request.post
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
 
 class AdminDashboardApi(
     private val client: HttpClient,
@@ -61,5 +68,53 @@ class AdminDashboardApi(
         token: String
     ): NetworkResult<ApiResponse<AdminDashboardOverview>> = safeApiCall {
         client.get(getUrl("api/admin/dashboard/overview"))
+    }
+
+    // ── Agentic Syllabus — pace monitoring (admin) ───────────────────────────
+
+    /** All pace snapshots for the school (optionally filtered by class/section). */
+    suspend fun getPaceSnapshots(
+        token: String,
+        classId: String? = null,
+        section: String? = null,
+    ): NetworkResult<PaceSnapshotsResponse> = safeApiCall {
+        client.get(getUrl("api/v1/school/syllabus-pace/snapshots")) {
+            classId?.takeIf { it.isNotBlank() }?.let { parameter("classId", it) }
+            section?.takeIf { it.isNotBlank() }?.let { parameter("section", it) }
+        }
+    }
+
+    /** Active pace alerts (unresolved). */
+    suspend fun getPaceAlerts(
+        token: String,
+    ): NetworkResult<PaceAlertsResponse> = safeApiCall {
+        client.get(getUrl("api/v1/school/syllabus-pace/alerts"))
+    }
+
+    /** Resolve (dismiss) a pace alert. */
+    suspend fun resolvePaceAlert(
+        token: String,
+        alertId: String,
+    ): NetworkResult<PaceAlertResolveResponse> = safeApiCall {
+        client.post(getUrl("api/v1/school/syllabus-pace/alerts/$alertId/resolve"))
+    }
+
+    /** Coverage overview (per class/section). */
+    suspend fun getPaceCoverage(
+        token: String,
+        classId: String? = null,
+        section: String? = null,
+    ): NetworkResult<PaceSnapshotsResponse> = safeApiCall {
+        client.get(getUrl("api/v1/school/syllabus-pace/coverage")) {
+            classId?.takeIf { it.isNotBlank() }?.let { parameter("classId", it) }
+            section?.takeIf { it.isNotBlank() }?.let { parameter("section", it) }
+        }
+    }
+
+    /** Manually recalculate pace for all assignments in the school. */
+    suspend fun recalculatePace(
+        token: String,
+    ): NetworkResult<PaceSnapshotsResponse> = safeApiCall {
+        client.post(getUrl("api/v1/school/syllabus-pace/recalculate"))
     }
 }

@@ -297,11 +297,10 @@ private fun CalendarFace(attendance: ParentAttendanceData?, onCollapse: () -> Un
 
     val byDate = remember(records) { records.associate { it.date to it.status.lowercase() } }
 
-    // Anchor on the newest month with data, else the current real month — then navigate FREELY.
-    val (startYear, startMonth) = remember(records) {
-        val newest = records.mapNotNull { parseIsoDate(it.date)?.let { (y, m, _) -> y to m } }
-            .maxWithOrNull(compareBy({ it.first }, { it.second }))
-        newest ?: (parseIsoDate(todayIso())?.let { (y, m, _) -> y to m } ?: (2026 to 1))
+    // Anchor on the current real month — not the newest data month, so the calendar
+    // doesn't get stuck on last month when there's no attendance data for this month yet.
+    val (startYear, startMonth) = remember {
+        parseIsoDate(todayIso())?.let { (y, m, _) -> y to m } ?: (2026 to 1)
     }
     var monthOffset by remember(startYear, startMonth) { mutableStateOf(0) }
     val (year, month) = remember(startYear, startMonth, monthOffset) {

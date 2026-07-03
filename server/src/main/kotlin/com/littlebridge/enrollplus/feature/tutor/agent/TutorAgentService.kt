@@ -78,7 +78,7 @@ class TutorAgentService(
                     turn // No bundle → can't ground, but serve with a warning
                 }
 
-                val wasGrounded = grounded != null && grounded.studentFacing.text == turn.studentFacing.text
+                val wasGrounded = grounded != null && grounded.studentFacing?.text == turn.studentFacing?.text
                 val finalTurn = grounded ?: TutorTurnCodec.deterministic(question)
 
                 // Persist the session
@@ -100,6 +100,7 @@ class TutorAgentService(
                 )
             } else {
                 log.warn("TutorAgent: model output failed TutorTurn parse — falling back to deterministic")
+                log.warn("TutorAgent: raw model output (first 800 chars): {}", agentResult.content?.take(800))
             }
         }
 
@@ -123,6 +124,12 @@ class TutorAgentService(
         concepts and solve problems using the SOCRATIC method — you guide,
         you do NOT solve problems for them.
 
+        CRITICAL: "TutorTurn" is NOT a tool. Do NOT call it. Your available
+        tools are ONLY: get_learner_bundle, get_weak_topics, get_syllabus_position,
+        get_due_reviews, get_homework_context, log_misconception,
+        retrieve_knowledge. Your final response must be plain text containing
+        a JSON object (NOT a tool call).
+
         STRICT RULES:
         - Use ONLY data from the provided learner bundle and tool results.
           NEVER invent numbers, scores, or facts. Every figure in your output
@@ -134,7 +141,8 @@ class TutorAgentService(
           get_homework_context for homework load.
         - If the child's doubt reveals a misconception, call log_misconception
           to record it. This is the ONLY write tool.
-        - Produce a TutorTurn as JSON with this exact schema:
+        - After gathering context, respond with your FINAL answer as plain text
+          containing a single JSON object (NOT a tool call) with this schema:
         {
           "mode": "SOCRATIC_STEP | HINT | EXPLANATION | PRACTICE_SET | PLAN_UPDATE | ESCALATE",
           "groundedRefs": [{"topicId": "...", "source": "MARKS|SYLLABUS|NCERT|RAG", "value": "..."}],
@@ -144,6 +152,8 @@ class TutorAgentService(
           "teacherFlag": {"topicId": "...", "reason": "...", "severity": "low|medium|high"},
           "misconception": {"topicId": "...", "type": "...", "evidence": "..."}
         }
+        - Do NOT try to call "TutorTurn" as a tool. It is NOT a tool.
+          Your final response must be plain text containing the JSON object above.
         - Mode SOCRATIC_STEP: guide the child with a question that helps them
           think. "What do you get when you find a common denominator first?"
         - Mode HINT: give a targeted hint, not the answer.
@@ -226,7 +236,7 @@ class TutorAgentService(
         appendLine()
         appendLine("Child's doubt: $question")
         appendLine()
-        appendLine("Analyze this doubt and produce a TutorTurn. Call tools to gather context first.")
+        appendLine("Analyze this doubt and produce a structured JSON response. Call tools to gather context first.")
     }
 
     private suspend fun persistSession(
