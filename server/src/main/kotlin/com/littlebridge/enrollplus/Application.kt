@@ -377,6 +377,12 @@ fun Application.module() {
     install(StatusPages) { configureErrorHandling() }
 
     routing {
+        // Global CORS preflight handler — must be before any authenticate{} block
+        // so OPTIONS requests don't get 403'd by the JWT auth plugin.
+        options("{...}") {
+            call.respond(HttpStatusCode.NoContent)
+        }
+
         get("/") {
             call.respondText("Ktor: ${Greeting().greet()} — VidyaPrayag API v1 is live")
         }
