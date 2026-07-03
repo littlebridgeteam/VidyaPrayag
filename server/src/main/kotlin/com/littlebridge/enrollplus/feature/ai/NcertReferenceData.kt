@@ -265,6 +265,31 @@ object NcertReferenceData {
             NcertChapter("Improvement in Food Resources", listOf(NcertTopic("Crop Improvement"), NcertTopic("Animal Husbandry"))),
         )),
 
+        // Class 9 — separate science subjects (for schools that teach Biology/Physics/Chemistry independently)
+        NcertSyllabus("Class 9", "Biology", listOf(
+            NcertChapter("The Fundamental Unit of Life", listOf(NcertTopic("Cell Theory"), NcertTopic("Cell Organelles"), NcertTopic("Osmosis and Diffusion"))),
+            NcertChapter("Tissues", listOf(NcertTopic("Plant Tissues"), NcertTopic("Animal Tissues"))),
+            NcertChapter("Diversity in Living Organisms", listOf(NcertTopic("Classification"), NcertTopic("Five Kingdom Classification"))),
+            NcertChapter("Why Do We Fall Ill?", listOf(NcertTopic("Types of Diseases"), NcertTopic("Causes and Prevention"))),
+            NcertChapter("Natural Resources", listOf(NcertTopic("Air and Water"), NcertTopic("Biogeochemical Cycles"))),
+            NcertChapter("Improvement in Food Resources", listOf(NcertTopic("Crop Improvement"), NcertTopic("Animal Husbandry"))),
+        )),
+
+        NcertSyllabus("Class 9", "Physics", listOf(
+            NcertChapter("Motion", listOf(NcertTopic("Distance and Displacement"), NcertTopic("Velocity and Acceleration"), NcertTopic("Equations of Motion"))),
+            NcertChapter("Force and Laws of Motion", listOf(NcertTopic("Newton's Laws"), NcertTopic("Momentum and Inertia"))),
+            NcertChapter("Gravitation", listOf(NcertTopic("Universal Law of Gravitation"), NcertTopic("Free Fall"), NcertTopic("Buoyancy"))),
+            NcertChapter("Work and Energy", listOf(NcertTopic("Work Done"), NcertTopic("Kinetic and Potential Energy"), NcertTopic("Power"))),
+            NcertChapter("Sound", listOf(NcertTopic("Production and Propagation"), NcertTopic("Reflection of Sound"), NcertTopic("Range of Hearing"))),
+        )),
+
+        NcertSyllabus("Class 9", "Chemistry", listOf(
+            NcertChapter("Matter in Our Surroundings", listOf(NcertTopic("States of Matter"), NcertTopic("Interconversion of States"))),
+            NcertChapter("Is Matter Around Us Pure?", listOf(NcertTopic("Mixtures and Solutions"), NcertTopic("Separation Techniques"), NcertTopic("Elements and Compounds"))),
+            NcertChapter("Atoms and Molecules", listOf(NcertTopic("Laws of Chemical Combination"), NcertTopic("Mole Concept"))),
+            NcertChapter("Structure of the Atom", listOf(NcertTopic("Subatomic Particles"), NcertTopic("Bohr's Model"), NcertTopic("Electronic Configuration"))),
+        )),
+
         NcertSyllabus("Class 9", "Social Science", listOf(
             NcertChapter("The French Revolution (History)", listOf(NcertTopic("Causes of Revolution"), NcertTopic("Outbreak and Consequences"), NcertTopic("Abolition of Monarchy"))),
             NcertChapter("Socialism in Europe and the Russian Revolution (History)", listOf(NcertTopic("Rise of Socialism"), NcertTopic("October Revolution"))),

@@ -227,6 +227,8 @@ data class ParentSyllabusV2SubjectDto(
     val subject: String,
     @SerialName("assignment_id") val assignmentId: String = "",
     val progress: Int = 0,
+    @SerialName("is_ai_estimated") val isAiEstimated: Boolean = false,
+    @SerialName("estimated_pct") val estimatedPct: Int = 0,
     val units: List<ParentSyllabusV2UnitDto> = emptyList(),
 )
 
@@ -238,6 +240,7 @@ data class ParentSyllabusV2UnitDto(
     @SerialName("is_covered") val isCovered: Boolean = false,
     @SerialName("coverage_pct") val coveragePct: Int = 0,
     @SerialName("covered_on") val coveredOn: String? = null,
+    @SerialName("is_ai_estimated") val isAiEstimated: Boolean = false,
 )
 
 @Serializable

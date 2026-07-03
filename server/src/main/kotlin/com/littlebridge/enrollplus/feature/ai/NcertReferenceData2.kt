@@ -48,6 +48,32 @@ object NcertReferenceData2 {
             NcertChapter("Sustainable Management of Natural Resources", listOf(NcertTopic("Water Conservation"), NcertTopic("Forest and Wildlife Conservation"))),
         )),
 
+        // Class 10 — separate science subjects (for schools that teach Biology/Physics/Chemistry independently)
+        NcertSyllabus("Class 10", "Biology", listOf(
+            NcertChapter("Life Processes", listOf(NcertTopic("Nutrition"), NcertTopic("Respiration"), NcertTopic("Transportation"), NcertTopic("Excretion"))),
+            NcertChapter("Control and Coordination", listOf(NcertTopic("Nervous System"), NcertTopic("Hormones in Animals"), NcertTopic("Plant Hormones"))),
+            NcertChapter("How Do Organisms Reproduce?", listOf(NcertTopic("Sexual Reproduction in Plants"), NcertTopic("Reproduction in Humans"), NcertTopic("Reproductive Health"))),
+            NcertChapter("Heredity and Evolution", listOf(NcertTopic("Mendel's Experiments"), NcertTopic("Sex Determination"), NcertTopic("Evolution"))),
+            NcertChapter("Our Environment", listOf(NcertTopic("Ecosystem"), NcertTopic("Food Chains"), NcertTopic("Waste Management"))),
+            NcertChapter("Sustainable Management of Natural Resources", listOf(NcertTopic("Water Conservation"), NcertTopic("Forest and Wildlife Conservation"))),
+        )),
+
+        NcertSyllabus("Class 10", "Physics", listOf(
+            NcertChapter("Light: Reflection and Refraction", listOf(NcertTopic("Reflection by Spherical Mirrors"), NcertTopic("Refraction and Lens"))),
+            NcertChapter("Human Eye and Colourful World", listOf(NcertTopic("Human Eye"), NcertTopic("Defects of Vision"), NcertTopic("Dispersion and Scattering"))),
+            NcertChapter("Electricity", listOf(NcertTopic("Electric Current and Circuit"), NcertTopic("Ohm's Law"), NcertTopic("Electric Power"))),
+            NcertChapter("Magnetic Effects of Electric Current", listOf(NcertTopic("Magnetic Field"), NcertTopic("Electromagnetic Induction"), NcertTopic("Domestic Circuits"))),
+            NcertChapter("Sources of Energy", listOf(NcertTopic("Conventional Sources"), NcertTopic("Non-conventional Sources"))),
+        )),
+
+        NcertSyllabus("Class 10", "Chemistry", listOf(
+            NcertChapter("Chemical Reactions and Equations", listOf(NcertTopic("Types of Reactions"), NcertTopic("Oxidation and Reduction"), NcertTopic("Effects of Oxidation"))),
+            NcertChapter("Acids, Bases and Salts", listOf(NcertTopic("Chemical Properties"), NcertTopic("pH Scale"), NcertTopic("Salt Formation"))),
+            NcertChapter("Metals and Non-Metals", listOf(NcertTopic("Physical Properties"), NcertTopic("Chemical Properties"), NcertTopic("Extraction of Metals"))),
+            NcertChapter("Carbon and Its Compounds", listOf(NcertTopic("Bonding in Carbon"), NcertTopic("Hydrocarbons"), NcertTopic("Functional Groups"))),
+            NcertChapter("Periodic Classification of Elements", listOf(NcertTopic("Mendeleev's Periodic Table"), NcertTopic("Modern Periodic Table"))),
+        )),
+
         NcertSyllabus("Class 10", "Social Science", listOf(
             NcertChapter("The Rise of Nationalism in Europe (History)", listOf(NcertTopic("French Revolution and Nationalism"), NcertTopic("Unification of Germany and Italy"))),
             NcertChapter("Nationalism in India (History)", listOf(NcertTopic("Non-Cooperation Movement"), NcertTopic("Civil Disobedience Movement"))),

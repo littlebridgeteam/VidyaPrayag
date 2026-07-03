@@ -35,6 +35,7 @@ import com.littlebridge.enrollplus.db.SchoolDayConfigTable
 import com.littlebridge.enrollplus.db.SchoolDaySlotsTable
 import com.littlebridge.enrollplus.db.SYSTEM_SCHOOL_ID
 import com.littlebridge.enrollplus.db.SyllabusProgressTable
+import com.littlebridge.enrollplus.db.SyllabusPacePlanTable
 import com.littlebridge.enrollplus.db.SyllabusUnitsTable
 import com.littlebridge.enrollplus.db.TeacherPeriodsTable
 import com.littlebridge.enrollplus.db.TeacherSubjectAssignmentsTable
@@ -197,6 +198,7 @@ data class ParentSyllabusV2UnitDto(
     @SerialName("is_covered") val isCovered: Boolean,
     @SerialName("coverage_pct") val coveragePct: Int,
     @SerialName("covered_on") val coveredOn: String? = null,
+    @SerialName("is_ai_estimated") val isAiEstimated: Boolean = false,
 )
 
 @Serializable
@@ -204,6 +206,8 @@ data class ParentSyllabusV2SubjectDto(
     val subject: String,
     @SerialName("assignment_id") val assignmentId: String?,
     val progress: Int,
+    @SerialName("is_ai_estimated") val isAiEstimated: Boolean = false,
+    @SerialName("estimated_pct") val estimatedPct: Int = 0,
     val units: List<ParentSyllabusV2UnitDto> = emptyList(),
 )
 
@@ -662,20 +666,44 @@ fun Route.parentAcademicsRouting() {
                     val coveredCount = units.count { it[CurriculumUnitsTable.id].value in coveredUnitIds }
                     val progressPct = if (units.isNotEmpty()) (coveredCount * 100) / units.size else 0
 
+                    // AI estimation: if teacher hasn't updated progress, use pace plan expected coverage
+                    var isAiEstimated = false
+                    var estimatedPct = 0
+                    if (coveredCount == 0 && units.isNotEmpty()) {
+                        val pacePlan = dbQuery {
+                            SyllabusPacePlanTable.selectAll().where {
+                                SyllabusPacePlanTable.assignmentId eq assignmentId
+                            }.singleOrNull()
+                        }
+                        if (pacePlan != null) {
+                            estimatedPct = pacePlan[SyllabusPacePlanTable.expectedCoveragePct]
+                            isAiEstimated = estimatedPct > 0
+                        }
+                    }
+
                     ParentSyllabusV2SubjectDto(
                         subject = subjectName,
                         assignmentId = assignmentId.toString(),
                         progress = progressPct,
+                        isAiEstimated = isAiEstimated,
+                        estimatedPct = estimatedPct,
                         units = units.map { uRow ->
                             val unitId = uRow[CurriculumUnitsTable.id].value
                             val progRow = progressRows.find { it[SyllabusProgressTable.unitId] == unitId }
+                            val unitCovered = progRow?.get(SyllabusProgressTable.isCovered) ?: false
+                            // If AI-estimated, mark top-level units (depth 0/1) as estimated-covered
+                            // proportionally to the estimated percentage
+                            val aiEstimatedCovered = isAiEstimated && !unitCovered &&
+                                uRow[CurriculumUnitsTable.depth] <= 1 &&
+                                units.indexOf(uRow) < (units.size * estimatedPct / 100)
                             ParentSyllabusV2UnitDto(
                                 id = unitId.toString(),
                                 title = uRow[CurriculumUnitsTable.title],
                                 depth = uRow[CurriculumUnitsTable.depth],
-                                isCovered = progRow?.get(SyllabusProgressTable.isCovered) ?: false,
-                                coveragePct = progRow?.get(SyllabusProgressTable.coveragePercent) ?: 0,
+                                isCovered = unitCovered || aiEstimatedCovered,
+                                coveragePct = progRow?.get(SyllabusProgressTable.coveragePercent) ?: if (aiEstimatedCovered) estimatedPct else 0,
                                 coveredOn = progRow?.get(SyllabusProgressTable.coveredOn)?.toString(),
+                                isAiEstimated = aiEstimatedCovered,
                             )
                         },
                     )

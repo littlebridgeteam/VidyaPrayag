@@ -12,6 +12,8 @@ import com.littlebridge.enrollplus.feature.parent.domain.model.ParentMarksData
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentQuizDetailData
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentQuizDto
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentSyllabusData
+import com.littlebridge.enrollplus.feature.parent.domain.model.ParentSyllabusV2Data
+import com.littlebridge.enrollplus.feature.parent.domain.model.ParentSyllabusV2Response
 import com.littlebridge.enrollplus.feature.parent.domain.repository.ParentRepository
 import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizSubmitRequest
 import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizSubmitResponse
@@ -45,6 +47,11 @@ data class ParentAcademicsState(
     val syllabus: ParentSyllabusData? = null,
     val syllabusLoading: Boolean = false,
     val syllabusError: String? = null,
+
+    // ── Agentic: syllabus V2 (typed curriculum_units with AI estimation) ──
+    val syllabusV2: ParentSyllabusV2Data? = null,
+    val syllabusV2Loading: Boolean = false,
+    val syllabusV2Error: String? = null,
 
     // ── Agentic: daily summary ──
     val dailySummary: ParentDailySummaryData? = null,
@@ -193,6 +200,21 @@ class ParentAcademicsViewModel(
                 is NetworkResult.Success -> _state.update { it.copy(syllabusLoading = false, syllabus = r.data.data) }
                 is NetworkResult.Error -> _state.update { it.copy(syllabusLoading = false, syllabusError = r.message) }
                 is NetworkResult.ConnectionError -> _state.update { it.copy(syllabusLoading = false, syllabusError = "Connection error") }
+            }
+        }
+    }
+
+    fun loadSyllabusV2(childId: String? = null) {
+        val resolvedChildId = childId ?: currentChildId() ?: return
+        viewModelScope.launch {
+            _state.update { it.copy(syllabusV2Loading = true, syllabusV2Error = null) }
+            val token = token() ?: run {
+                _state.update { it.copy(syllabusV2Loading = false, syllabusV2Error = "Not authenticated") }; return@launch
+            }
+            when (val r = repository.getSyllabusV2(token, resolvedChildId)) {
+                is NetworkResult.Success -> _state.update { it.copy(syllabusV2Loading = false, syllabusV2 = r.data.data) }
+                is NetworkResult.Error -> _state.update { it.copy(syllabusV2Loading = false, syllabusV2Error = r.message) }
+                is NetworkResult.ConnectionError -> _state.update { it.copy(syllabusV2Loading = false, syllabusV2Error = "Connection error") }
             }
         }
     }

@@ -77,26 +77,51 @@ object NcertReferenceService {
     private suspend fun ensureSeeded() {
         if (seeded) return
         val count = dbQuery { NcertSyllabusReferenceTable.selectAll().count() }
-        if (count > 0) { seeded = true; return }
-        log.info("Seeding NCERT syllabus reference data...")
-        val now = Instant.now()
         val allData = NcertReferenceData.DATA + NcertReferenceData2.DATA + NcertReferenceData3.DATA + NcertReferenceData4.DATA
-        for (s in allData) {
-            val cj = json.encodeToString(
-                kotlinx.serialization.builtins.ListSerializer(NcertChapter.serializer()), s.chapters)
-            dbQuery {
-                NcertSyllabusReferenceTable.insert {
-                    it[NcertSyllabusReferenceTable.classLevel] = s.classLevel
-                    it[NcertSyllabusReferenceTable.subjectName] = s.subjectName
-                    it[NcertSyllabusReferenceTable.chaptersJson] = cj
-                    it[NcertSyllabusReferenceTable.dataSource] = "NCERT"
-                    it[NcertSyllabusReferenceTable.createdAt] = now
-                    it[NcertSyllabusReferenceTable.updatedAt] = now
+        if (count == 0L) {
+            log.info("Seeding NCERT syllabus reference data ({} entries)...", allData.size)
+            val now = Instant.now()
+            for (s in allData) {
+                val cj = json.encodeToString(
+                    kotlinx.serialization.builtins.ListSerializer(NcertChapter.serializer()), s.chapters)
+                dbQuery {
+                    NcertSyllabusReferenceTable.insert {
+                        it[NcertSyllabusReferenceTable.classLevel] = s.classLevel
+                        it[NcertSyllabusReferenceTable.subjectName] = s.subjectName
+                        it[NcertSyllabusReferenceTable.chaptersJson] = cj
+                        it[NcertSyllabusReferenceTable.dataSource] = "NCERT"
+                        it[NcertSyllabusReferenceTable.createdAt] = now
+                        it[NcertSyllabusReferenceTable.updatedAt] = now
+                    }
+                }
+            }
+        } else {
+            // Table already has rows — check for and insert any missing entries
+            val existing = dbQuery {
+                NcertSyllabusReferenceTable.selectAll()
+                    .map { it[NcertSyllabusReferenceTable.classLevel] to it[NcertSyllabusReferenceTable.subjectName] }
+            }.toSet()
+            val missing = allData.filter { (it.classLevel to it.subjectName) !in existing }
+            if (missing.isNotEmpty()) {
+                log.info("Adding {} missing NCERT reference entries...", missing.size)
+                val now = Instant.now()
+                for (s in missing) {
+                    val cj = json.encodeToString(
+                        kotlinx.serialization.builtins.ListSerializer(NcertChapter.serializer()), s.chapters)
+                    dbQuery {
+                        NcertSyllabusReferenceTable.insert {
+                            it[NcertSyllabusReferenceTable.classLevel] = s.classLevel
+                            it[NcertSyllabusReferenceTable.subjectName] = s.subjectName
+                            it[NcertSyllabusReferenceTable.chaptersJson] = cj
+                            it[NcertSyllabusReferenceTable.dataSource] = "NCERT"
+                            it[NcertSyllabusReferenceTable.createdAt] = now
+                            it[NcertSyllabusReferenceTable.updatedAt] = now
+                        }
+                    }
                 }
             }
         }
         seeded = true
-        log.info("Seeded {} NCERT reference entries", allData.size)
     }
 
     fun normalizeClassLevel(input: String): String {
