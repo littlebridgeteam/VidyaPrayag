@@ -249,4 +249,11 @@ class ParentApi(
             client.get(getUrl("api/v1/parent/child/$childId/quiz/$quizId/leaderboard"))
         }
     }
+
+    /** Fetch past quiz results for a submitted quiz. */
+    suspend fun getQuizResult(token: String, childId: String, quizId: String): NetworkResult<QuizSubmitResponse> {
+        return safeApiCall {
+            client.get(getUrl("api/v1/parent/child/$childId/quiz/$quizId/result"))
+        }
+    }
 }

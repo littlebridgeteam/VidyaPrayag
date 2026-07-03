@@ -96,6 +96,7 @@ fun ParentAcademicsScreenV2(
         onLoadDailySummary = { academicsViewModel.loadDailySummary() },
         onLoadQuizzes = { academicsViewModel.loadQuizzes() },
         onOpenQuiz = { quizId -> academicsViewModel.loadQuizDetail(quizId) },
+        onViewQuizResult = { quizId -> academicsViewModel.loadQuizResult(quizId) },
         onSubmitQuiz = { quizId, answers, textAnswers -> academicsViewModel.submitQuiz(quizId, answers, textAnswers) },
         onClearQuizResult = { academicsViewModel.clearQuizResult() },
         onLoadLeaderboard = { quizId -> academicsViewModel.loadLeaderboard(quizId) },
@@ -117,6 +118,7 @@ private fun ParentAcademicsContent(
     onLoadDailySummary: () -> Unit,
     onLoadQuizzes: () -> Unit,
     onOpenQuiz: (String) -> Unit,
+    onViewQuizResult: (String) -> Unit,
     onSubmitQuiz: (String, List<Pair<String, Int>>, Map<String, String>) -> Unit,
     onClearQuizResult: () -> Unit,
     onLoadLeaderboard: (String) -> Unit,
@@ -236,6 +238,7 @@ private fun ParentAcademicsContent(
                     academics = academics,
                     onRetry = onLoadQuizzes,
                     onOpenQuiz = onOpenQuiz,
+                    onViewQuizResult = onViewQuizResult,
                     onSubmitQuiz = onSubmitQuiz,
                     onBackToList = onClearQuizResult,
                     onLoadLeaderboard = onLoadLeaderboard,
@@ -762,6 +765,7 @@ private fun QuizzesTab(
     academics: ParentAcademicsState,
     onRetry: () -> Unit,
     onOpenQuiz: (String) -> Unit,
+    onViewQuizResult: (String) -> Unit,
     onSubmitQuiz: (String, List<Pair<String, Int>>, Map<String, String>) -> Unit,
     onBackToList: () -> Unit,
     onLoadLeaderboard: (String) -> Unit,
@@ -790,7 +794,10 @@ private fun QuizzesTab(
         quizzes.forEach { quiz ->
             VCard(
                 modifier = Modifier.clickable {
-                    if (quiz.status == "PUBLISHED") onOpenQuiz(quiz.id)
+                    when (quiz.status) {
+                        "PUBLISHED" -> onOpenQuiz(quiz.id)
+                        "SUBMITTED" -> onViewQuizResult(quiz.id)
+                    }
                 },
             ) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -811,7 +818,11 @@ private fun QuizzesTab(
                             contentAlignment = Alignment.Center,
                         ) { Icon(VIcons.ArrowRight, contentDescription = "Open", tint = c.accentDeep, modifier = Modifier.size(16.dp)) }
                     } else if (quiz.status == "SUBMITTED") {
-                        VBadge(text = "Done", tone = VBadgeTone.Neutral)
+                        VBadge(text = "View Result", tone = VBadgeTone.Accent)
+                        Box(
+                            Modifier.size(32.dp).clip(CircleShape).background(c.accent.copy(alpha = 0.1f)),
+                            contentAlignment = Alignment.Center,
+                        ) { Icon(VIcons.ArrowRight, contentDescription = "View", tint = c.accentDeep, modifier = Modifier.size(16.dp)) }
                     } else {
                         VBadge(text = "Pending", tone = VBadgeTone.Neutral)
                     }

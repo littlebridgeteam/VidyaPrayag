@@ -312,5 +312,20 @@ class ParentAcademicsViewModel(
         }
     }
 
+    fun loadQuizResult(quizId: String) {
+        val resolvedChildId = currentChildId() ?: return
+        viewModelScope.launch {
+            _state.update { it.copy(quizDetailLoading = true, quizDetailError = null, quizResult = null, leaderboard = null) }
+            val token = token() ?: run {
+                _state.update { it.copy(quizDetailLoading = false, quizDetailError = "Not authenticated") }; return@launch
+            }
+            when (val r = repository.getQuizResult(token, resolvedChildId, quizId)) {
+                is NetworkResult.Success -> _state.update { it.copy(quizDetailLoading = false, quizResult = r.data) }
+                is NetworkResult.Error -> _state.update { it.copy(quizDetailLoading = false, quizDetailError = r.message) }
+                is NetworkResult.ConnectionError -> _state.update { it.copy(quizDetailLoading = false, quizDetailError = "Connection error") }
+            }
+        }
+    }
+
     fun clearQuizResult() = _state.update { it.copy(quizResult = null, quizDetail = null, leaderboard = null) }
 }

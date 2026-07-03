@@ -1257,6 +1257,82 @@ fun Route.parentAcademicsRouting() {
                     totalParticipants = entries.size,
                 ))
             }
+
+            // ── Quiz result — view past results for a submitted quiz ─────────
+            get("/quiz/{id}/result") {
+                val child = call.requireOwnedChild() ?: return@get
+                val quizIdStr = call.parameters["id"]
+                if (quizIdStr.isNullOrBlank()) {
+                    call.fail("Quiz ID is required", HttpStatusCode.BadRequest, "MISSING_PARAM"); return@get
+                }
+                val quizId = UUID.fromString(quizIdStr)
+                val studentId = child.studentCode ?: "unknown"
+
+                val answers = dbQuery {
+                    SyllabusQuizAnswersTable.selectAll().where {
+                        (SyllabusQuizAnswersTable.quizId eq quizId) and
+                            (SyllabusQuizAnswersTable.studentId eq studentId)
+                    }.toList()
+                }
+                if (answers.isEmpty()) {
+                    call.fail("No submission found for this quiz", HttpStatusCode.NotFound, "NO_SUBMISSION"); return@get
+                }
+
+                val questions = dbQuery {
+                    SyllabusQuizQuestionsTable.selectAll().where {
+                        SyllabusQuizQuestionsTable.quizId eq quizId
+                    }.orderBy(SyllabusQuizQuestionsTable.position, SortOrder.ASC).toList()
+                }
+
+                val questionResults = mutableListOf<QuizQuestionResultDto>()
+                var correctCount = 0
+                answers.forEach { ansRow ->
+                    val qId = ansRow[SyllabusQuizAnswersTable.questionId]
+                    val qRow = questions.find { it[SyllabusQuizQuestionsTable.id].value == qId }
+                    if (qRow != null) {
+                        val opts = runCatching {
+                            Json.decodeFromString(
+                                ListSerializer(serializer<String>()),
+                                qRow[SyllabusQuizQuestionsTable.optionsJson]
+                            )
+                        }.getOrDefault(emptyList())
+                        val qType = qRow[SyllabusQuizQuestionsTable.questionType]
+                        val correctAnswer = qRow[SyllabusQuizQuestionsTable.correctAnswer]
+                        val selectedAnswer = ansRow[SyllabusQuizAnswersTable.answerText]
+                        val isCorrect = ansRow[SyllabusQuizAnswersTable.isCorrect]
+                        if (isCorrect) correctCount++
+                        val correctIdx = opts.indexOfFirst { it.startsWith(correctAnswer) }.takeIf { it >= 0 } ?: 0
+                        val selectedIdx = opts.indexOfFirst { it == selectedAnswer }.takeIf { it >= 0 } ?: -1
+
+                        questionResults.add(
+                            QuizQuestionResultDto(
+                                questionId = qId.toString(),
+                                question = qRow[SyllabusQuizQuestionsTable.questionText],
+                                selectedIndex = selectedIdx,
+                                correctIndex = correctIdx,
+                                correct = isCorrect,
+                                explanation = qRow[SyllabusQuizQuestionsTable.explanation],
+                                selectedAnswer = selectedAnswer,
+                                correctAnswer = correctAnswer,
+                                questionType = qType,
+                            )
+                        )
+                    }
+                }
+
+                val totalMarks = questions.size
+                val percentage = if (totalMarks > 0) (correctCount * 100) / totalMarks else 0
+
+                call.ok(QuizResultDto(
+                    id = UUID.randomUUID().toString(),
+                    quizId = quizId.toString(),
+                    score = correctCount,
+                    totalMarks = totalMarks,
+                    percentage = percentage,
+                    submittedAt = answers.firstOrNull()?.get(SyllabusQuizAnswersTable.createdAt)?.toString(),
+                    questionResults = questionResults,
+                ))
+            }
         }
 
         // ── Quiz endpoints at parent level (matching client API URLs) ──────
