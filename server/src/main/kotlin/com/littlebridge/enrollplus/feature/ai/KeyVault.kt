@@ -134,9 +134,9 @@ enum class AiProvider(
         code = "openrouter",
         defaultBaseUrl = "https://openrouter.ai/api/v1",
         defaultModelEnv = "AI_MODEL_OPENROUTER",
-        // July 2026: llama-3.3-70b-instruct:free is constantly rate-limited upstream.
-        // Switched to google/gemini-2.0-flash-exp:free — more reliable free tier on OpenRouter.
-        defaultModel = "google/gemini-2.0-flash-exp:free",
+        // July 2026: confirmed available via OpenRouter /api/v1/models endpoint.
+        // NVIDIA Nemotron 3 Ultra: 550B MoE (55B active), reasoning, 1M context, free.
+        defaultModel = "nvidia/nemotron-3-ultra-550b-a55b:free",
         tier = "reason",
         noTraining = true,
         freeTierRpm = 20,
@@ -365,6 +365,15 @@ object KeyVault {
             }.orderBy(AiProviderConfigTable.priority)
                 .firstOrNull()
                 ?.get(AiProviderConfigTable.model)
+        }
+        // Guard: if the DB has a deprecated model, fall back to the current default.
+        val deprecated = setOf(
+            "meta-llama/llama-3.3-70b-instruct:free",
+            "google/gemini-2.0-flash-exp:free",
+        )
+        if (dbModel != null && dbModel in deprecated) {
+            log.warn("DB model '{}' is deprecated for {}, falling back to default", dbModel, provider.code)
+            return env(provider.defaultModelEnv) ?: provider.defaultModel
         }
         return dbModel ?: env(provider.defaultModelEnv) ?: provider.defaultModel
     }
