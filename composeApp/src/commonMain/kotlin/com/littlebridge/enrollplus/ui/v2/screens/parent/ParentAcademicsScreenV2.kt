@@ -1,6 +1,7 @@
 package com.littlebridge.enrollplus.ui.v2.screens.parent
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -41,6 +43,10 @@ import com.littlebridge.enrollplus.feature.parent.presentation.TrackProgressView
 import com.littlebridge.enrollplus.ui.v2.components.VActionCard
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
+import com.littlebridge.enrollplus.ui.v2.components.VButton
+import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
+import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
+import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VComingSoon
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
@@ -81,6 +87,11 @@ fun ParentAcademicsScreenV2(
         onLoadAttendance = { academicsViewModel.loadAttendance() },
         onLoadMarks = { academicsViewModel.loadMarks() },
         onLoadSyllabus = { academicsViewModel.loadSyllabus() },
+        onLoadDailySummary = { academicsViewModel.loadDailySummary() },
+        onLoadQuizzes = { academicsViewModel.loadQuizzes() },
+        onOpenQuiz = { quizId -> academicsViewModel.loadQuizDetail(quizId) },
+        onSubmitQuiz = { quizId, answers -> academicsViewModel.submitQuiz(quizId, answers) },
+        onClearQuizResult = { academicsViewModel.clearQuizResult() },
         onOpenLeave = onOpenLeave,
         onOpenHealth = onOpenHealth,
         modifier = modifier,
@@ -95,6 +106,11 @@ private fun ParentAcademicsContent(
     onLoadAttendance: () -> Unit,
     onLoadMarks: () -> Unit,
     onLoadSyllabus: () -> Unit,
+    onLoadDailySummary: () -> Unit,
+    onLoadQuizzes: () -> Unit,
+    onOpenQuiz: (String) -> Unit,
+    onSubmitQuiz: (String, List<Pair<String, Int>>) -> Unit,
+    onClearQuizResult: () -> Unit,
     onOpenLeave: () -> Unit = {},
     onOpenHealth: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -110,6 +126,8 @@ private fun ParentAcademicsContent(
             "Attendance" -> if (academics.attendance == null && !academics.attendanceLoading) onLoadAttendance()
             "Marks" -> if (academics.marks == null && !academics.marksLoading) onLoadMarks()
             "Syllabus" -> if (academics.syllabus == null && !academics.syllabusLoading) onLoadSyllabus()
+            "Daily" -> if (academics.dailySummary == null && !academics.dailySummaryLoading) onLoadDailySummary()
+            "Quizzes" -> if (academics.quizzes.isEmpty() && !academics.quizzesLoading) onLoadQuizzes()
         }
     }
 
@@ -188,7 +206,7 @@ private fun ParentAcademicsContent(
         // is deliberately NO second switcher here anymore.
 
         VTopTabs(
-            tabs = listOf("Overview", "Attendance", "Marks", "Syllabus", "Report"),
+            tabs = listOf("Overview", "Attendance", "Marks", "Syllabus", "Daily", "Quizzes", "Report"),
             selected = tab,
             onSelect = { tab = it },
             // RA-PP-THEME: Parents Portal tabs are violet, not the legacy teal.
@@ -203,6 +221,14 @@ private fun ParentAcademicsContent(
                 "Attendance" -> AttendanceTab(academics, onLoadAttendance)
                 "Marks" -> MarksTab(academics, onLoadMarks)
                 "Syllabus" -> SyllabusTab(academics, onLoadSyllabus)
+                "Daily" -> DailySummaryTab(academics, onLoadDailySummary)
+                "Quizzes" -> QuizzesTab(
+                    academics = academics,
+                    onRetry = onLoadQuizzes,
+                    onOpenQuiz = onOpenQuiz,
+                    onSubmitQuiz = onSubmitQuiz,
+                    onBackToList = onClearQuizResult,
+                )
                 "Report" -> {
                     val childId = academics.selectedChildId
                     if (childId != null) {
@@ -554,6 +580,231 @@ private fun OverviewTab(state: TrackProgressState) {
                     VBadge(text = "${(state.overallProgress * 100f).toInt()}% complete", tone = VBadgeTone.Accent)
                 }
             }
+        }
+    }
+}
+
+// ── Agentic: Daily Summary tab ──────────────────────────────────────────────
+
+@Composable
+private fun DailySummaryTab(academics: ParentAcademicsState, onRetry: () -> Unit) {
+    val c = VTheme.colors
+    val data = academics.dailySummary
+    VStateHost(
+        loading = academics.dailySummaryLoading,
+        error = academics.dailySummaryError,
+        isEmpty = data != null && data.entries.isEmpty(),
+        emptyTitle = "No daily logs yet",
+        emptyBody = "Daily class summaries will appear here once teachers start logging.",
+        onRetry = onRetry,
+    ) {
+        if (data != null) {
+            if (!data.aiSummary.isNullOrBlank()) {
+                val summary = data.aiSummary!!
+                VCard {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Box(
+                            Modifier.size(36.dp).clip(CircleShape).background(c.accent.copy(alpha = 0.12f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(VIcons.Sparkles, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(18.dp))
+                        }
+                        Column(Modifier.weight(1f)) {
+                            Text("AI Summary", style = VTheme.type.bodyStrong.colored(c.ink))
+                            Text(summary, style = VTheme.type.caption.colored(c.ink2))
+                        }
+                    }
+                }
+            }
+            data.entries.forEach { entry ->
+                VCard {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(entry.subject, style = VTheme.type.bodyStrong.colored(c.ink))
+                            if (entry.summaryText.isNotBlank()) {
+                                Text(entry.summaryText, style = VTheme.type.caption.colored(c.ink2))
+                            }
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("${entry.coveragePct}%", style = VTheme.type.data.colored(c.accentDeep).copy(fontWeight = FontWeight.Bold))
+                            if (entry.isAiEstimated) {
+                                Text("AI estimated", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp))
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    VProgressBar(value = entry.coveragePct.toFloat(), tone = VBadgeTone.Accent, height = 6.dp)
+                }
+            }
+        }
+    }
+}
+
+// ── Agentic: Quizzes tab ────────────────────────────────────────────────────
+
+@Composable
+private fun QuizzesTab(
+    academics: ParentAcademicsState,
+    onRetry: () -> Unit,
+    onOpenQuiz: (String) -> Unit,
+    onSubmitQuiz: (String, List<Pair<String, Int>>) -> Unit,
+    onBackToList: () -> Unit,
+) {
+    val c = VTheme.colors
+    val quizzes = academics.quizzes
+
+    if (academics.quizDetail != null) {
+        QuizDetailCard(academics, onSubmitQuiz)
+        return
+    }
+
+    if (academics.quizResult != null) {
+        QuizResultCard(academics, onBackToList)
+        return
+    }
+
+    VStateHost(
+        loading = academics.quizzesLoading,
+        error = academics.quizzesError,
+        isEmpty = quizzes.isEmpty(),
+        emptyTitle = "No quizzes yet",
+        emptyBody = "Quizzes will appear here once teachers publish them.",
+        onRetry = onRetry,
+    ) {
+        quizzes.forEach { quiz ->
+            VCard {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(c.accent.copy(alpha = 0.12f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(VIcons.GraduationCap, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(20.dp))
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text(quiz.title.ifBlank { "Quiz" }, style = VTheme.type.bodyStrong.colored(c.ink))
+                        Text("${quiz.subject} · ${quiz.numQuestions} questions", style = VTheme.type.caption.colored(c.ink2))
+                    }
+                    if (quiz.status == "PUBLISHED") {
+                        VBadge(text = "Start", tone = VBadgeTone.Accent)
+                        Box(
+                            Modifier.size(32.dp).clip(CircleShape).background(c.accent.copy(alpha = 0.1f))
+                                .clickable { onOpenQuiz(quiz.id) },
+                            contentAlignment = Alignment.Center,
+                        ) { Icon(VIcons.ArrowRight, contentDescription = "Open", tint = c.accentDeep, modifier = Modifier.size(16.dp)) }
+                    } else {
+                        VBadge(text = "Pending", tone = VBadgeTone.Neutral)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun QuizDetailCard(academics: ParentAcademicsState, onSubmit: (String, List<Pair<String, Int>>) -> Unit) {
+    val c = VTheme.colors
+    val detail = academics.quizDetail ?: return
+    val answers = remember { mutableStateMapOf<String, Int>() }
+
+    VCard {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Icon(VIcons.GraduationCap, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(20.dp))
+            Text(detail.title.ifBlank { "Quiz" }, style = VTheme.type.bodyStrong.colored(c.ink))
+        }
+        Spacer(Modifier.height(16.dp))
+
+        detail.questions.forEachIndexed { qIdx, q ->
+            Text("${qIdx + 1}. ${q.question}", style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 14.sp))
+            Spacer(Modifier.height(8.dp))
+            q.options.forEachIndexed { optIdx, opt ->
+                val selected = answers[q.id] == optIdx
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(if (selected) c.accent.copy(alpha = 0.1f) else c.background)
+                        .border(1.dp, if (selected) c.accentDeep else c.hairline, RoundedCornerShape(10.dp))
+                        .clickable { answers[q.id] = optIdx }
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Box(
+                        Modifier.size(20.dp).clip(CircleShape)
+                            .background(if (selected) c.accentDeep else c.cream)
+                            .border(1.dp, if (selected) c.accentDeep else c.hairline, CircleShape),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (selected) Icon(VIcons.Check, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(12.dp))
+                    }
+                    Text(opt, style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp))
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+        }
+
+        if (academics.quizSubmitError != null) {
+            Text(academics.quizSubmitError ?: "", style = VTheme.type.caption.colored(c.dangerInk).copy(fontSize = 12.sp))
+            Spacer(Modifier.height(8.dp))
+        }
+
+        VButton(
+            "Submit Quiz",
+            onClick = {
+                val answerList = answers.entries.map { it.key to it.value }
+                if (answerList.isNotEmpty()) {
+                    onSubmit(detail.id, answerList)
+                }
+            },
+            full = true,
+            tone = VButtonTone.Lavender,
+            loading = academics.isSubmittingQuiz,
+        )
+    }
+}
+
+@Composable
+private fun QuizResultCard(academics: ParentAcademicsState, onBack: () -> Unit) {
+    val c = VTheme.colors
+    val result = academics.quizResult?.data ?: return
+
+    VCard {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+            Box(
+                Modifier.size(64.dp).clip(CircleShape).background(c.accent.copy(alpha = 0.14f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("${result.percentage}%", style = VTheme.type.dataLg.colored(c.accentDeep).copy(fontWeight = FontWeight.ExtraBold, fontSize = 20.sp))
+            }
+            Spacer(Modifier.height(12.dp))
+            Text("Score: ${result.score} / ${result.totalMarks}", style = VTheme.type.bodyStrong.colored(c.ink))
+            Spacer(Modifier.height(16.dp))
+
+            result.questionResults.forEachIndexed { idx, qr ->
+                Row(
+                    Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        if (qr.correct) VIcons.Check else VIcons.Close,
+                        contentDescription = null,
+                        tint = if (qr.correct) c.successInk else c.dangerInk,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Column(Modifier.weight(1f)) {
+                        Text("${idx + 1}. ${qr.question}", style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp))
+                        val expl = qr.explanation
+                        if (!expl.isNullOrBlank()) {
+                            Text(expl, style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 11.sp))
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+            VButton("Back to Quizzes", onClick = onBack, full = true, variant = VButtonVariant.Secondary, tone = VButtonTone.Lavender)
         }
     }
 }

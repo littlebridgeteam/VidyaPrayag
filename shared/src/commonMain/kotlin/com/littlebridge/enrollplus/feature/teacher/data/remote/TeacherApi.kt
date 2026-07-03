@@ -10,6 +10,8 @@ import com.littlebridge.enrollplus.feature.teacher.domain.model.*
 import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.http.*
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 /**
  * TeacherApi — Ktor client for the (new) `api/v1/teacher/…` routes.
@@ -597,6 +599,186 @@ class TeacherApi(
         client.post(getUrl("api/v1/teacher/timetable-requests")) {
             contentType(ContentType.Application.Json)
             setBody(request)
+        }
+    }
+
+    // ── Agentic Syllabus — parse, daily log, popup prefs, quiz (Phase 2+) ────
+
+    /** Parse syllabus from image URL or raw text → structured units preview. */
+    suspend fun parseSyllabus(
+        token: String,
+        request: SylParseRequest,
+    ): NetworkResult<SylParseResponse> = safeApiCall {
+        client.post(getUrl("api/v1/teacher/syllabus/parse")) {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+    }
+
+    /** Confirm parsed units → bulk insert + create pace plan. */
+    suspend fun confirmParsedSyllabus(
+        token: String,
+        request: SylParseConfirmRequest,
+    ): NetworkResult<SylParseConfirmResponse> = safeApiCall {
+        client.post(getUrl("api/v1/teacher/syllabus/parse/confirm")) {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+    }
+
+    /** Create/update daily class log (updates syllabus_progress + recalculates pace). */
+    suspend fun createDailyLog(
+        token: String,
+        request: SylDailyLogRequest,
+    ): NetworkResult<SylDailyLogResponse> = safeApiCall {
+        client.post(getUrl("api/v1/teacher/syllabus/daily-log")) {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+    }
+
+    /** List daily class logs for an assignment. */
+    suspend fun listDailyLogs(
+        token: String,
+        assignmentId: String,
+    ): NetworkResult<SylDailyLogListResponse> = safeApiCall {
+        client.get(getUrl("api/v1/teacher/syllabus/daily-log/list")) {
+            parameter("assignmentId", assignmentId)
+        }
+    }
+
+    /** Check if the daily-log popup should show for the teacher. */
+    suspend fun shouldShowDailyLogPopup(
+        token: String,
+    ): NetworkResult<SylShouldShowResponse> = safeApiCall {
+        client.get(getUrl("api/v1/teacher/syllabus/daily-log/should-show"))
+    }
+
+    /** Dismiss the daily-log popup for an assignment (today). */
+    suspend fun setPopupPrefs(
+        token: String,
+        request: SylPopupPrefsRequest,
+    ): NetworkResult<SylPopupPrefsResponse> = safeApiCall {
+        client.post(getUrl("api/v1/teacher/syllabus/popup-prefs")) {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+    }
+
+    /** Get popup prefs (which assignments have been dismissed today). */
+    suspend fun getPopupPrefs(
+        token: String,
+    ): NetworkResult<SylPopupPrefsResponse> = safeApiCall {
+        client.get(getUrl("api/v1/teacher/syllabus/popup-prefs"))
+    }
+
+    /** Delete a syllabus unit (cascades to children). */
+    suspend fun deleteSyllabusUnit(
+        token: String,
+        assignmentId: String,
+        unitId: String,
+    ): NetworkResult<SylDeleteUnitResponse> = safeApiCall {
+        client.delete(getUrl("api/v1/teacher/syllabus/units/$unitId")) {
+            parameter("assignmentId", assignmentId)
+        }
+    }
+
+    /** Generate a quiz from a syllabus unit (AI). */
+    suspend fun generateQuiz(
+        token: String,
+        request: QuizGenerateRequest,
+    ): NetworkResult<QuizGenerateResponse> = safeApiCall {
+        client.post(getUrl("api/v1/teacher/syllabus/quiz/generate")) {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+    }
+
+    /** Publish a quiz (makes it visible to parents/students). */
+    suspend fun publishQuiz(
+        token: String,
+        quizId: String,
+    ): NetworkResult<QuizPublishResponse> = safeApiCall {
+        client.post(getUrl("api/v1/teacher/syllabus/quiz/$quizId/publish"))
+    }
+
+    /** List quizzes for an assignment. */
+    suspend fun listQuizzes(
+        token: String,
+        assignmentId: String,
+    ): NetworkResult<QuizListResponse> = safeApiCall {
+        client.get(getUrl("api/v1/teacher/syllabus/quiz/list")) {
+            parameter("assignmentId", assignmentId)
+        }
+    }
+
+    /** Get quiz results for a quiz (teacher view — rankings + breakdown). */
+    suspend fun getQuizResults(
+        token: String,
+        quizId: String,
+    ): NetworkResult<QuizListResponse> = safeApiCall {
+        client.get(getUrl("api/v1/teacher/syllabus/quiz/$quizId/results"))
+    }
+
+    // ── NCERT Auto-fill + Approval + Pace ───────────────────────────────────
+
+    /** Look up NCERT reference syllabus for this class+subject. */
+    suspend fun autoFillSyllabus(
+        token: String,
+        request: SylAutoFillRequest,
+    ): NetworkResult<SylAutoFillResponse> = safeApiCall {
+        client.post(getUrl("api/v1/teacher/syllabus/auto-fill")) {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+    }
+
+    /** Confirm auto-fill chapters → create DRAFT units. */
+    suspend fun confirmAutoFillSyllabus(
+        token: String,
+        assignmentId: String,
+        chapters: List<SylAutoFillChapter>,
+    ): NetworkResult<SylParseConfirmResponse> = safeApiCall {
+        @Serializable
+        data class AutoFillConfirmBody(
+            @SerialName("assignment_id") val assignmentId: String,
+            val chapters: List<SylAutoFillChapter>,
+        )
+        client.post(getUrl("api/v1/teacher/syllabus/auto-fill/confirm")) {
+            contentType(ContentType.Application.Json)
+            setBody(AutoFillConfirmBody(assignmentId, chapters))
+        }
+    }
+
+    /** Approve DRAFT syllabus units → APPROVED (visible to parents). */
+    suspend fun approveSyllabus(
+        token: String,
+        request: SylApproveRequest,
+    ): NetworkResult<SylApproveResponse> = safeApiCall {
+        client.post(getUrl("api/v1/teacher/syllabus/approve")) {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+    }
+
+    /** Reject DRAFT syllabus units → REJECTED (soft delete). */
+    suspend fun rejectSyllabus(
+        token: String,
+        request: SylApproveRequest,
+    ): NetworkResult<SylApproveResponse> = safeApiCall {
+        client.post(getUrl("api/v1/teacher/syllabus/reject")) {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+    }
+
+    /** Get inline pace warning for an assignment. */
+    suspend fun getPaceWarning(
+        token: String,
+        assignmentId: String,
+    ): NetworkResult<ApiResponse<SylPaceWarning>> = safeApiCall {
+        client.get(getUrl("api/v1/teacher/syllabus/pace-warning")) {
+            parameter("assignmentId", assignmentId)
         }
     }
 }

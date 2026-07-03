@@ -1065,8 +1065,25 @@ object CurriculumUnitsTable : UUIDTable("curriculum_units", "id") {
     val position  = integer("position").default(0)
     val isActive  = bool("is_active").default(true)
     val depth     = integer("depth").default(0)
+    val approvalStatus = varchar("approval_status", 12).default("APPROVED") // DRAFT | APPROVED | REJECTED
     val createdAt = timestamp("created_at")
     val updatedAt = timestamp("updated_at")
+}
+
+/**
+ * Migration 111 — NCERT syllabus reference data for auto-fill.
+ * Keyed by (class_level, subject_name) → chapters_json.
+ */
+object NcertSyllabusReferenceTable : UUIDTable("ncert_syllabus_reference", "id") {
+    val classLevel   = varchar("class_level", 8)
+    val subjectName  = varchar("subject_name", 64)
+    val chaptersJson = text("chapters_json").default("[]")
+    val dataSource   = varchar("source", 32).default("NCERT")
+    val createdAt    = timestamp("created_at")
+    val updatedAt    = timestamp("updated_at")
+    init {
+        uniqueIndex("idx_ncert_ref_class_subject", classLevel, subjectName)
+    }
 }
 
 /**

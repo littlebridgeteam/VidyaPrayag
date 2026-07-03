@@ -138,6 +138,7 @@ import com.littlebridge.enrollplus.feature.teacher.teacherRouting
 import com.littlebridge.enrollplus.feature.teacher.teacherSelfLeaveRouting
 import com.littlebridge.enrollplus.feature.teacher.teacherStudentRouting
 import com.littlebridge.enrollplus.feature.teacher.teacherSyllabusRouting
+import com.littlebridge.enrollplus.feature.school.syllabusPaceRouting
 import com.littlebridge.enrollplus.feature.user.parentRouting
 import com.littlebridge.enrollplus.feature.user.parentMessagesRouting
 import com.littlebridge.enrollplus.feature.user.userDetailsRouting
@@ -229,6 +230,11 @@ fun main() {
     // Start the Library job scheduler (overdue notifications, due-date reminders,
     // reservation expiry, announcement expiry, monthly audit log retention).
     com.littlebridge.enrollplus.feature.library.LibraryJobScheduler.start(
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)
+    )
+
+    // Start the Auto Daily Summary job (end-of-day AI summary for missing teacher logs).
+    com.littlebridge.enrollplus.feature.ai.DailySummaryAutoJob.start(
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)
     )
 
@@ -508,5 +514,9 @@ fun Application.module() {
         //   /api/v1/school/day-config          — admin, school-scoped CRUD
         schoolDayConfigRouting()
         timetableImportRouting()
+
+        // Agentic Syllabus Management — admin pace monitoring
+        //   /api/v1/school/pace/{snapshots,alerts,alerts/{id}/resolve}
+        syllabusPaceRouting()
     }
 }

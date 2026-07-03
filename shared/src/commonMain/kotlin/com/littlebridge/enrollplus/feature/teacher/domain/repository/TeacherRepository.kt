@@ -110,4 +110,25 @@ interface TeacherRepository {
     // Timetable change requests (teacher → admin approval workflow)
     suspend fun getTimetableChangeRequests(token: String): NetworkResult<ChangeRequestListResponse>
     suspend fun submitTimetableChangeRequest(token: String, request: CreateChangeRequestRequest): NetworkResult<ApiResponse<TimetableChangeRequestDto>>
+
+    // ── Agentic Syllabus — parse, daily log, popup prefs, quiz, delete ────────
+    suspend fun parseSyllabus(token: String, request: SylParseRequest): NetworkResult<SylParseResponse>
+    suspend fun confirmParsedSyllabus(token: String, request: SylParseConfirmRequest): NetworkResult<SylParseConfirmResponse>
+    suspend fun createDailyLog(token: String, request: SylDailyLogRequest): NetworkResult<SylDailyLogResponse>
+    suspend fun listDailyLogs(token: String, assignmentId: String): NetworkResult<SylDailyLogListResponse>
+    suspend fun shouldShowDailyLogPopup(token: String): NetworkResult<SylShouldShowResponse>
+    suspend fun setPopupPrefs(token: String, request: SylPopupPrefsRequest): NetworkResult<SylPopupPrefsResponse>
+    suspend fun getPopupPrefs(token: String): NetworkResult<SylPopupPrefsResponse>
+    suspend fun deleteSyllabusUnit(token: String, assignmentId: String, unitId: String): NetworkResult<SylDeleteUnitResponse>
+    suspend fun generateQuiz(token: String, request: QuizGenerateRequest): NetworkResult<QuizGenerateResponse>
+    suspend fun publishQuiz(token: String, quizId: String): NetworkResult<QuizPublishResponse>
+    suspend fun listQuizzes(token: String, assignmentId: String): NetworkResult<QuizListResponse>
+    suspend fun getQuizResults(token: String, quizId: String): NetworkResult<QuizListResponse>
+
+    // ── NCERT Auto-fill + Approval + Pace ───────────────────────────────────
+    suspend fun autoFillSyllabus(token: String, request: SylAutoFillRequest): NetworkResult<SylAutoFillResponse>
+    suspend fun confirmAutoFillSyllabus(token: String, assignmentId: String, chapters: List<SylAutoFillChapter>): NetworkResult<SylParseConfirmResponse>
+    suspend fun approveSyllabus(token: String, request: SylApproveRequest): NetworkResult<SylApproveResponse>
+    suspend fun rejectSyllabus(token: String, request: SylApproveRequest): NetworkResult<SylApproveResponse>
+    suspend fun getPaceWarning(token: String, assignmentId: String): NetworkResult<ApiResponse<SylPaceWarning>>
 }

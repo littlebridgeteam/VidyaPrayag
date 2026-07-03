@@ -26,14 +26,19 @@ import com.littlebridge.enrollplus.db.AssessmentMarksTable
 import com.littlebridge.enrollplus.db.AssessmentsTable
 import com.littlebridge.enrollplus.db.AttendanceRecordsTable
 import com.littlebridge.enrollplus.db.ChildrenTable
+import com.littlebridge.enrollplus.db.CurriculumUnitsTable
+import com.littlebridge.enrollplus.db.DailyClassLogTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.HolidayListTable
 import com.littlebridge.enrollplus.db.StudentsTable
 import com.littlebridge.enrollplus.db.SchoolDayConfigTable
 import com.littlebridge.enrollplus.db.SchoolDaySlotsTable
 import com.littlebridge.enrollplus.db.SYSTEM_SCHOOL_ID
+import com.littlebridge.enrollplus.db.SyllabusProgressTable
 import com.littlebridge.enrollplus.db.SyllabusUnitsTable
 import com.littlebridge.enrollplus.db.TeacherPeriodsTable
+import com.littlebridge.enrollplus.db.TeacherSubjectAssignmentsTable
+import com.littlebridge.enrollplus.feature.ai.SyllabusAiService
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -160,6 +165,53 @@ data class ParentSyllabusData(
     @SerialName("child_name") val childName: String,
     @SerialName("class_name") val className: String,
     val subjects: List<ParentSyllabusSubjectDto> = emptyList(),
+)
+
+// ── Daily Summary DTOs (Agentic Syllabus) ────────────────────────────────────
+
+@Serializable
+data class ParentDailyLogEntryDto(
+    val date: String,
+    val subject: String,
+    @SerialName("summary_text") val summaryText: String,
+    @SerialName("coverage_pct") val coveragePct: Int,
+    @SerialName("is_ai_estimated") val isAiEstimated: Boolean,
+)
+
+@Serializable
+data class ParentDailySummaryData(
+    @SerialName("child_name") val childName: String,
+    @SerialName("class_name") val className: String,
+    val date: String,
+    val entries: List<ParentDailyLogEntryDto> = emptyList(),
+    @SerialName("ai_summary") val aiSummary: String? = null,
+)
+
+// ── Syllabus V2 DTOs (typed curriculum_units) ────────────────────────────────
+
+@Serializable
+data class ParentSyllabusV2UnitDto(
+    val id: String,
+    val title: String,
+    val depth: Int,
+    @SerialName("is_covered") val isCovered: Boolean,
+    @SerialName("coverage_pct") val coveragePct: Int,
+    @SerialName("covered_on") val coveredOn: String? = null,
+)
+
+@Serializable
+data class ParentSyllabusV2SubjectDto(
+    val subject: String,
+    @SerialName("assignment_id") val assignmentId: String?,
+    val progress: Int,
+    val units: List<ParentSyllabusV2UnitDto> = emptyList(),
+)
+
+@Serializable
+data class ParentSyllabusV2Data(
+    @SerialName("child_name") val childName: String,
+    @SerialName("class_name") val className: String,
+    val subjects: List<ParentSyllabusV2SubjectDto> = emptyList(),
 )
 
 // ── Resolved + authorized child (RA-56 ownership guard) ───────────────────────
@@ -487,6 +539,156 @@ fun Route.parentAcademicsRouting() {
                     )
                 }
                 call.ok(data, message = "Timetable loaded")
+            }
+
+            // ── Daily Summary — what was taught today/recently (Agentic Syllabus) ──
+            get("/daily-summary") {
+                val child = call.requireOwnedChild() ?: return@get
+                if (child.schoolId == null || child.grade == null) {
+                    call.ok(
+                        ParentDailySummaryData(
+                            childName = child.childName,
+                            className = child.grade ?: "",
+                            date = LocalDate.now().toString(),
+                        ),
+                        message = "No daily summary yet",
+                    )
+                    return@get
+                }
+
+                val dateStr = call.request.queryParameters["date"] ?: LocalDate.now().toString()
+                val targetDate = runCatching { LocalDate.parse(dateStr) }.getOrNull() ?: LocalDate.now()
+
+                val assignments = dbQuery {
+                    TeacherSubjectAssignmentsTable.selectAll().where {
+                        (TeacherSubjectAssignmentsTable.schoolId eq child.schoolId) and
+                            (TeacherSubjectAssignmentsTable.className eq child.grade) and
+                            (TeacherSubjectAssignmentsTable.isActive eq true)
+                    }.let { rows ->
+                        if (child.sectionResolved) {
+                            rows.filter { it[TeacherSubjectAssignmentsTable.section] == child.section }
+                        } else rows
+                    }
+                }
+
+                val assignmentIds = assignments.map { it[TeacherSubjectAssignmentsTable.id].value }
+                val subjectById = assignments.associateBy { it[TeacherSubjectAssignmentsTable.id].value }
+
+                val logs = if (assignmentIds.isNotEmpty()) dbQuery {
+                    DailyClassLogTable.selectAll().where {
+                        (DailyClassLogTable.assignmentId inList assignmentIds) and
+                            (DailyClassLogTable.date eq targetDate)
+                    }.orderBy(DailyClassLogTable.date, SortOrder.DESC).map { row ->
+                        val asgId = row[DailyClassLogTable.assignmentId]
+                        val subject = subjectById[asgId]?.get(TeacherSubjectAssignmentsTable.subject) ?: ""
+                        ParentDailyLogEntryDto(
+                            date = row[DailyClassLogTable.date].toString(),
+                            subject = subject,
+                            summaryText = row[DailyClassLogTable.summaryText],
+                            coveragePct = row[DailyClassLogTable.coveragePct],
+                            isAiEstimated = row[DailyClassLogTable.isAiEstimated],
+                        )
+                    }
+                } else emptyList()
+
+                val aiSummary = if (logs.isNotEmpty()) {
+                    val topicTitles = logs.flatMap { it.summaryText.split(", ").take(3) }
+                    SyllabusAiService.generateDailySummary(
+                        topicTitles = topicTitles,
+                        classLevel = child.grade ?: "",
+                        subject = "all",
+                        schoolId = child.schoolId,
+                    )
+                } else null
+
+                call.ok(
+                    ParentDailySummaryData(
+                        childName = child.childName,
+                        className = child.grade,
+                        date = targetDate.toString(),
+                        entries = logs,
+                        aiSummary = aiSummary,
+                    ),
+                    message = "Daily summary loaded",
+                )
+            }
+
+            // ── Syllabus V2 — typed curriculum_units with coverage (Agentic Syllabus) ──
+            get("/syllabus-v2") {
+                val child = call.requireOwnedChild() ?: return@get
+                if (child.schoolId == null || child.grade == null) {
+                    call.ok(
+                        ParentSyllabusV2Data(childName = child.childName, className = child.grade ?: ""),
+                        message = "No syllabus feed yet",
+                    )
+                    return@get
+                }
+
+                val assignments = dbQuery {
+                    TeacherSubjectAssignmentsTable.selectAll().where {
+                        (TeacherSubjectAssignmentsTable.schoolId eq child.schoolId) and
+                            (TeacherSubjectAssignmentsTable.className eq child.grade) and
+                            (TeacherSubjectAssignmentsTable.isActive eq true)
+                    }.let { rows ->
+                        if (child.sectionResolved) {
+                            rows.filter { it[TeacherSubjectAssignmentsTable.section] == child.section }
+                        } else rows
+                    }
+                }
+
+                val subjects = assignments.map { asgRow ->
+                    val assignmentId = asgRow[TeacherSubjectAssignmentsTable.id].value
+                    val subjectName = asgRow[TeacherSubjectAssignmentsTable.subject]
+                    val classId = asgRow[TeacherSubjectAssignmentsTable.classId]
+                    val subjectId = asgRow[TeacherSubjectAssignmentsTable.subjectId]
+
+                    val units = if (classId != null && subjectId != null) dbQuery {
+                        CurriculumUnitsTable.selectAll().where {
+                            (CurriculumUnitsTable.classId eq classId) and
+                                (CurriculumUnitsTable.subjectId eq subjectId) and
+                                (CurriculumUnitsTable.isActive eq true) and
+                                (CurriculumUnitsTable.approvalStatus eq "APPROVED")
+                        }.orderBy(CurriculumUnitsTable.position, SortOrder.ASC).toList()
+                    } else emptyList()
+
+                    val progressRows = if (units.isNotEmpty()) dbQuery {
+                        SyllabusProgressTable.selectAll().where {
+                            (SyllabusProgressTable.assignmentId eq assignmentId) and
+                                (SyllabusProgressTable.isCovered eq true)
+                        }.toList()
+                    } else emptyList()
+
+                    val coveredUnitIds = progressRows.map { it[SyllabusProgressTable.unitId] }.toSet()
+                    val coveredCount = units.count { it[CurriculumUnitsTable.id].value in coveredUnitIds }
+                    val progressPct = if (units.isNotEmpty()) (coveredCount * 100) / units.size else 0
+
+                    ParentSyllabusV2SubjectDto(
+                        subject = subjectName,
+                        assignmentId = assignmentId.toString(),
+                        progress = progressPct,
+                        units = units.map { uRow ->
+                            val unitId = uRow[CurriculumUnitsTable.id].value
+                            val progRow = progressRows.find { it[SyllabusProgressTable.unitId] == unitId }
+                            ParentSyllabusV2UnitDto(
+                                id = unitId.toString(),
+                                title = uRow[CurriculumUnitsTable.title],
+                                depth = uRow[CurriculumUnitsTable.depth],
+                                isCovered = progRow?.get(SyllabusProgressTable.isCovered) ?: false,
+                                coveragePct = progRow?.get(SyllabusProgressTable.coveragePercent) ?: 0,
+                                coveredOn = progRow?.get(SyllabusProgressTable.coveredOn)?.toString(),
+                            )
+                        },
+                    )
+                }
+
+                call.ok(
+                    ParentSyllabusV2Data(
+                        childName = child.childName,
+                        className = child.grade,
+                        subjects = subjects,
+                    ),
+                    message = "Syllabus loaded",
+                )
             }
         }
     }

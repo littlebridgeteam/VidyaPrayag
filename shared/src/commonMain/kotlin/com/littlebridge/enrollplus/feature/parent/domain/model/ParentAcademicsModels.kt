@@ -180,3 +180,108 @@ data class ParentLeaveCreateResponse(
     val data: ParentLeaveDto? = null,
     val message: String? = null,
 )
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Agentic Syllabus — parent daily summary, syllabus-v2, quiz (Phase 2+)
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Serializable
+data class ParentDailySummaryResponse(
+    val success: Boolean = true,
+    val data: ParentDailySummaryData = ParentDailySummaryData(),
+)
+
+@Serializable
+data class ParentDailySummaryData(
+    @SerialName("child_name") val childName: String = "",
+    @SerialName("class_name") val className: String = "",
+    val date: String = "",
+    val entries: List<ParentDailyLogEntryDto> = emptyList(),
+    @SerialName("ai_summary") val aiSummary: String? = null,
+)
+
+@Serializable
+data class ParentDailyLogEntryDto(
+    val date: String,
+    val subject: String,
+    @SerialName("summary_text") val summaryText: String = "",
+    @SerialName("coverage_pct") val coveragePct: Int = 0,
+    @SerialName("is_ai_estimated") val isAiEstimated: Boolean = false,
+)
+
+@Serializable
+data class ParentSyllabusV2Response(
+    val success: Boolean = true,
+    val data: ParentSyllabusV2Data = ParentSyllabusV2Data(),
+)
+
+@Serializable
+data class ParentSyllabusV2Data(
+    @SerialName("child_name") val childName: String = "",
+    @SerialName("class_name") val className: String = "",
+    val subjects: List<ParentSyllabusV2SubjectDto> = emptyList(),
+)
+
+@Serializable
+data class ParentSyllabusV2SubjectDto(
+    val subject: String,
+    @SerialName("assignment_id") val assignmentId: String = "",
+    val progress: Int = 0,
+    val units: List<ParentSyllabusV2UnitDto> = emptyList(),
+)
+
+@Serializable
+data class ParentSyllabusV2UnitDto(
+    val id: String,
+    val title: String,
+    val depth: Int = 0,
+    @SerialName("is_covered") val isCovered: Boolean = false,
+    @SerialName("coverage_pct") val coveragePct: Int = 0,
+    @SerialName("covered_on") val coveredOn: String? = null,
+)
+
+@Serializable
+data class ParentQuizListResponse(
+    val success: Boolean = true,
+    val data: ParentQuizListData = ParentQuizListData(),
+)
+
+@Serializable
+data class ParentQuizListData(
+    val quizzes: List<ParentQuizDto> = emptyList(),
+)
+
+@Serializable
+data class ParentQuizDto(
+    val id: String,
+    val title: String = "",
+    val subject: String = "",
+    @SerialName("unit_title") val unitTitle: String = "",
+    @SerialName("num_questions") val numQuestions: Int = 0,
+    @SerialName("total_marks") val totalMarks: Int = 0,
+    val status: String = "PENDING",
+    @SerialName("published_at") val publishedAt: String? = null,
+)
+
+@Serializable
+data class ParentQuizDetailResponse(
+    val success: Boolean = true,
+    val data: ParentQuizDetailData? = null,
+)
+
+@Serializable
+data class ParentQuizDetailData(
+    val id: String,
+    val title: String = "",
+    val subject: String = "",
+    val questions: List<ParentQuizQuestionDto> = emptyList(),
+    @SerialName("total_marks") val totalMarks: Int = 0,
+)
+
+@Serializable
+data class ParentQuizQuestionDto(
+    val id: String,
+    val question: String,
+    val options: List<String> = emptyList(),
+    @SerialName("marks") val marks: Int = 1,
+)

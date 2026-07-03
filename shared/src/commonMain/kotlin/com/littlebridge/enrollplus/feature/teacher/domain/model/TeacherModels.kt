@@ -613,12 +613,13 @@ data class SyllabusNodeDto(
     @SerialName("parent_id") val parentId: String? = null,
     val title: String,
     val position: Int = 0,
-    // 0 = chapter (top-level), 1 = topic. The hierarchy is at most 2 deep (Doc 08).
+    // 0 = chapter (top-level), 1 = topic, 2 = subtopic.
     val depth: Int = 0,
     @SerialName("is_chapter") val isChapter: Boolean = false,
     @SerialName("is_covered") val isCovered: Boolean = false,
     @SerialName("covered_on") val coveredOn: String? = null,
     val note: String? = null,
+    @SerialName("approval_status") val approvalStatus: String = "APPROVED", // DRAFT | APPROVED | REJECTED
 )
 
 /** Create a unit (chapter or topic). parentId null → chapter. Fixes B-SYL-1. */
@@ -652,6 +653,377 @@ data class ToggleSyllabusProgressRequest(
 data class SyllabusUnitMutationResponse(
     val success: Boolean = true,
     val data: SyllabusNodeDto? = null,
+)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Agentic Syllabus — parse, daily log, popup prefs, quiz, pace (Phase 2+)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Parse syllabus (AI image/text → structured units) ──
+
+@Serializable
+data class SylParseRequest(
+    @SerialName("assignment_id") val assignmentId: String,
+    @SerialName("source_type") val sourceType: String = "TEXT", // TEXT | IMAGE
+    @SerialName("source_url") val sourceUrl: String? = null,
+    @SerialName("raw_text") val rawText: String? = null,
+)
+
+@Serializable
+data class SylParseResponse(
+    val success: Boolean = true,
+    val data: SylParseData = SylParseData(),
+)
+
+@Serializable
+data class SylParseData(
+    val units: List<SylParsedUnit> = emptyList(),
+)
+
+@Serializable
+data class SylParsedUnit(
+    val title: String,
+    val depth: Int = 0,
+    @SerialName("parent_index") val parentIndex: Int? = null,
+)
+
+// ── Parse confirm (bulk insert parsed units) ──
+
+@Serializable
+data class SylParseConfirmRequest(
+    @SerialName("assignment_id") val assignmentId: String,
+    val units: List<SylParsedUnit> = emptyList(),
+)
+
+@Serializable
+data class SylParseConfirmResponse(
+    val success: Boolean = true,
+    val data: SylParseConfirmData = SylParseConfirmData(),
+)
+
+@Serializable
+data class SylParseConfirmData(
+    @SerialName("created_count") val createdCount: Int = 0,
+)
+
+// ── NCERT auto-fill (reference data → preview → approve) ──
+
+@Serializable
+data class SylAutoFillRequest(
+    @SerialName("assignment_id") val assignmentId: String,
+)
+
+@Serializable
+data class SylAutoFillResponse(
+    val success: Boolean = true,
+    val data: SylAutoFillData = SylAutoFillData(),
+)
+
+@Serializable
+data class SylAutoFillData(
+    val found: Boolean = false,
+    val source: String = "",
+    @SerialName("class_level") val classLevel: String = "",
+    val subject: String = "",
+    val chapters: List<SylAutoFillChapter> = emptyList(),
+)
+
+@Serializable
+data class SylAutoFillChapter(
+    val title: String,
+    val topics: List<SylAutoFillTopic> = emptyList(),
+)
+
+@Serializable
+data class SylAutoFillTopic(
+    val title: String,
+    val subtopics: List<SylAutoFillSubtopic> = emptyList(),
+)
+
+@Serializable
+data class SylAutoFillSubtopic(
+    val title: String,
+)
+
+// ── Approve syllabus units (DRAFT → APPROVED) ──
+
+@Serializable
+data class SylApproveRequest(
+    @SerialName("assignment_id") val assignmentId: String,
+    @SerialName("unit_ids") val unitIds: List<String> = emptyList(), // empty = approve all DRAFT units
+)
+
+@Serializable
+data class SylApproveResponse(
+    val success: Boolean = true,
+    val data: SylApproveData = SylApproveData(),
+)
+
+@Serializable
+data class SylApproveData(
+    @SerialName("approved_count") val approvedCount: Int = 0,
+)
+
+// ── Reject syllabus units (DRAFT → REJECTED, soft delete) ──
+
+@Serializable
+data class SylRejectRequest(
+    @SerialName("assignment_id") val assignmentId: String,
+    @SerialName("unit_ids") val unitIds: List<String> = emptyList(),
+)
+
+// ── Pace warning (inline on syllabus screen) ──
+
+@Serializable
+data class SylPaceWarning(
+    val level: String = "ON_TRACK", // ON_TRACK | BEHIND | CRITICAL | AHEAD
+    @SerialName("expected_pct") val expectedPct: Int = 0,
+    @SerialName("actual_pct") val actualPct: Int = 0,
+    @SerialName("deviation_pct") val deviationPct: Int = 0,
+    val message: String = "",
+)
+
+// ── Daily class log ──
+
+@Serializable
+data class SylDailyLogRequest(
+    @SerialName("assignment_id") val assignmentId: String,
+    val date: String, // YYYY-MM-DD
+    @SerialName("topic_ids") val topicIds: List<String> = emptyList(),
+    @SerialName("summary_text") val summaryText: String = "",
+    @SerialName("coverage_pct") val coveragePct: Int = 0,
+)
+
+@Serializable
+data class SylDailyLogResponse(
+    val success: Boolean = true,
+    val data: SylDailyLogDto? = null,
+)
+
+@Serializable
+data class SylDailyLogDto(
+    val id: String,
+    val date: String,
+    @SerialName("topic_ids") val topicIds: List<String> = emptyList(),
+    @SerialName("summary_text") val summaryText: String = "",
+    @SerialName("coverage_pct") val coveragePct: Int = 0,
+    val source: String = "TEACHER",
+    @SerialName("is_ai_estimated") val isAiEstimated: Boolean = false,
+)
+
+@Serializable
+data class SylDailyLogListResponse(
+    val success: Boolean = true,
+    val data: SylDailyLogListData = SylDailyLogListData(),
+)
+
+@Serializable
+data class SylDailyLogListData(
+    val logs: List<SylDailyLogDto> = emptyList(),
+)
+
+// ── Daily log popup "should show" ──
+
+@Serializable
+data class SylShouldShowResponse(
+    val success: Boolean = true,
+    val data: SylShouldShowData = SylShouldShowData(),
+)
+
+@Serializable
+data class SylShouldShowData(
+    @SerialName("should_show") val shouldShow: Boolean = false,
+    @SerialName("assignment_id") val assignmentId: String = "",
+    @SerialName("class_name") val className: String = "",
+    val subject: String = "",
+)
+
+// ── Popup prefs (dismiss daily log popup) ──
+
+@Serializable
+data class SylPopupPrefsRequest(
+    @SerialName("assignment_id") val assignmentId: String,
+    @SerialName("dismissed_on") val dismissedOn: String, // YYYY-MM-DD
+)
+
+@Serializable
+data class SylPopupPrefsResponse(
+    val success: Boolean = true,
+    val data: SylPopupPrefsData = SylPopupPrefsData(),
+)
+
+@Serializable
+data class SylPopupPrefsData(
+    @SerialName("dismissed_assignments") val dismissedAssignments: List<String> = emptyList(),
+)
+
+// ── Delete unit ──
+
+@Serializable
+data class SylDeleteUnitResponse(
+    val success: Boolean = true,
+    val message: String? = null,
+)
+
+// ── Quiz generation ──
+
+@Serializable
+data class QuizGenerateRequest(
+    @SerialName("assignment_id") val assignmentId: String,
+    @SerialName("unit_id") val unitId: String,
+    @SerialName("num_questions") val numQuestions: Int = 5,
+    val difficulty: String = "MEDIUM", // EASY | MEDIUM | HARD
+)
+
+@Serializable
+data class QuizGenerateResponse(
+    val success: Boolean = true,
+    val data: QuizDto? = null,
+)
+
+@Serializable
+data class QuizDto(
+    val id: String,
+    @SerialName("assignment_id") val assignmentId: String,
+    @SerialName("unit_id") val unitId: String,
+    val title: String = "",
+    val questions: List<QuizQuestionDto> = emptyList(),
+    val status: String = "DRAFT", // DRAFT | PUBLISHED
+    @SerialName("created_at") val createdAt: String? = null,
+)
+
+@Serializable
+data class QuizQuestionDto(
+    val id: String,
+    val question: String,
+    val options: List<String> = emptyList(),
+    @SerialName("correct_index") val correctIndex: Int = 0,
+    val explanation: String? = null,
+    @SerialName("marks") val marks: Int = 1,
+)
+
+// ── Quiz publish ──
+
+@Serializable
+data class QuizPublishResponse(
+    val success: Boolean = true,
+    val data: QuizDto? = null,
+)
+
+// ── Quiz list (teacher view) ──
+
+@Serializable
+data class QuizListResponse(
+    val success: Boolean = true,
+    val data: QuizListData = QuizListData(),
+)
+
+@Serializable
+data class QuizListData(
+    val quizzes: List<QuizDto> = emptyList(),
+)
+
+// ── Quiz submission (parent/student side) ──
+
+@Serializable
+data class QuizSubmitRequest(
+    @SerialName("quiz_id") val quizId: String,
+    val answers: List<QuizAnswerDto> = emptyList(),
+)
+
+@Serializable
+data class QuizAnswerDto(
+    @SerialName("question_id") val questionId: String,
+    @SerialName("selected_index") val selectedIndex: Int,
+)
+
+@Serializable
+data class QuizSubmitResponse(
+    val success: Boolean = true,
+    val data: QuizResultDto? = null,
+)
+
+@Serializable
+data class QuizResultDto(
+    val id: String,
+    @SerialName("quiz_id") val quizId: String,
+    val score: Int,
+    @SerialName("total_marks") val totalMarks: Int,
+    val percentage: Int,
+    @SerialName("submitted_at") val submittedAt: String? = null,
+    @SerialName("question_results") val questionResults: List<QuizQuestionResultDto> = emptyList(),
+)
+
+@Serializable
+data class QuizQuestionResultDto(
+    @SerialName("question_id") val questionId: String,
+    val question: String,
+    @SerialName("selected_index") val selectedIndex: Int,
+    @SerialName("correct_index") val correctIndex: Int,
+    val correct: Boolean,
+    val explanation: String? = null,
+)
+
+// ── Pace snapshots + alerts (admin view) ──
+
+@Serializable
+data class PaceSnapshotsResponse(
+    val success: Boolean = true,
+    val data: PaceSnapshotsData = PaceSnapshotsData(),
+)
+
+@Serializable
+data class PaceSnapshotsData(
+    val snapshots: List<PaceSnapshotDto> = emptyList(),
+)
+
+@Serializable
+data class PaceSnapshotDto(
+    val id: String,
+    @SerialName("assignment_id") val assignmentId: String,
+    @SerialName("class_name") val className: String = "",
+    val section: String = "",
+    val subject: String = "",
+    @SerialName("teacher_name") val teacherName: String = "",
+    @SerialName("total_topics") val totalTopics: Int = 0,
+    @SerialName("covered_topics") val coveredTopics: Int = 0,
+    @SerialName("expected_pct") val expectedPct: Int = 0,
+    @SerialName("actual_pct") val actualPct: Int = 0,
+    @SerialName("deviation_pct") val deviationPct: Int = 0,
+    val status: String = "ON_TRACK", // ON_TRACK | BEHIND | CRITICAL | AHEAD
+    @SerialName("calculated_at") val calculatedAt: String? = null,
+)
+
+@Serializable
+data class PaceAlertsResponse(
+    val success: Boolean = true,
+    val data: PaceAlertsData = PaceAlertsData(),
+)
+
+@Serializable
+data class PaceAlertsData(
+    val alerts: List<PaceAlertDto> = emptyList(),
+)
+
+@Serializable
+data class PaceAlertDto(
+    val id: String,
+    @SerialName("assignment_id") val assignmentId: String,
+    @SerialName("class_name") val className: String = "",
+    val section: String = "",
+    val subject: String = "",
+    @SerialName("teacher_name") val teacherName: String = "",
+    val level: String = "BEHIND", // BEHIND | CRITICAL | AHEAD
+    val message: String = "",
+    @SerialName("ai_reconfirmed") val aiReconfirmed: Boolean = false,
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("resolved_at") val resolvedAt: String? = null,
+)
+
+@Serializable
+data class PaceAlertResolveResponse(
+    val success: Boolean = true,
+    val message: String? = null,
 )
 
 // ─────────────────────────────────────────────────────────────────────────────

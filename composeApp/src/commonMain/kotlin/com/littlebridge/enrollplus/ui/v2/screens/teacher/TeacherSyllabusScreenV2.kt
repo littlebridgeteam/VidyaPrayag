@@ -1,5 +1,10 @@
 package com.littlebridge.enrollplus.ui.v2.screens.teacher
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -13,6 +18,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -32,8 +38,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizDto
+import com.littlebridge.enrollplus.feature.teacher.domain.model.SylAutoFillChapter
+import com.littlebridge.enrollplus.feature.teacher.domain.model.SylParsedUnit
 import com.littlebridge.enrollplus.feature.teacher.presentation.SyllabusUnit
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherSyllabusViewModel
+import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherSyllabusState
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
@@ -48,8 +58,11 @@ import org.koin.compose.viewmodel.koinViewModel
 /**
  * TeacherSyllabusScreenV2 — the scoped syllabus tracker (Doc 08 §2). Reached PRE-SCOPED with a
  * pre-authorized [assignmentId]. The core gesture is a SINGLE TAP on a unit row → optimistic
- * coverage toggle (no form, no save). Hierarchy (chapter ▸ topic) comes pre-flattened from the
- * server. An "Edit" toggle reveals the deliberate add/rename affordances behind it.
+ * coverage toggle (no form, no save). Hierarchy (chapter ▸ topic ▸ subtopic) comes pre-flattened
+ * from the server. An "Edit" toggle reveals the deliberate add/rename/delete affordances.
+ *
+ * Agentic features: AI syllabus parse (paste text → preview → confirm), daily class log popup,
+ * quiz generation per unit, quiz list with publish.
  */
 @Composable
 fun TeacherSyllabusScreenV2(
@@ -62,7 +75,11 @@ fun TeacherSyllabusScreenV2(
     val state by viewModel.state.collectAsStateV2()
 
     LaunchedEffect(assignmentId) {
-        if (assignmentId.isNotBlank() && state.assignmentId != assignmentId) viewModel.load(assignmentId)
+        if (assignmentId.isNotBlank() && state.assignmentId != assignmentId) {
+            viewModel.load(assignmentId)
+            viewModel.loadQuizzes()
+            viewModel.loadPaceWarning()
+        }
     }
 
     Box(modifier.fillMaxSize().background(c.background)) {
@@ -77,6 +94,18 @@ fun TeacherSyllabusScreenV2(
             }
             else -> SyllabusBody(viewModel, scopeLabel)
         }
+
+        // ── Parse syllabus bottom sheet ──
+        if (state.showParsePreview) ParseSyllabusSheet(viewModel)
+
+        // ── Auto-fill preview sheet ──
+        if (state.showAutoFillPreview) AutoFillPreviewSheet(viewModel)
+
+        // ── Daily log popup ──
+        if (state.showDailyLogPopup) DailyLogPopup(viewModel)
+
+        // ── Quiz generation sheet ──
+        if (state.showQuizSheet) QuizSheet(viewModel)
     }
 }
 
@@ -91,6 +120,7 @@ private fun SyllabusBody(viewModel: TeacherSyllabusViewModel, scopeLabel: String
         contentPadding = PaddingValues(top = 14.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
+        // ── Header card with progress ring + edit toggle ──
         item {
             TCard(padding = 16.dp) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -112,6 +142,43 @@ private fun SyllabusBody(viewModel: TeacherSyllabusViewModel, scopeLabel: String
             }
         }
 
+        // ── Pace warning banner (if off-track) ──
+        val pw = state.paceWarning
+        if (pw != null && pw.level != "ON_TRACK") {
+            item { PaceWarningBanner(pw) }
+        }
+
+        // ── Draft approval bar (if draft units exist) ──
+        if (state.hasDraftUnits || state.draftUnits.isNotEmpty()) {
+            item { DraftApprovalBar(viewModel) }
+        }
+
+        // ── Agentic action buttons (always visible) ──
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                VButton(
+                    "Auto-fill",
+                    onClick = { viewModel.autoFill() },
+                    modifier = Modifier.weight(1f),
+                    variant = VButtonVariant.Secondary,
+                    tone = VButtonTone.Lavender,
+                    size = VButtonSize.Sm,
+                    loading = state.isAutoFilling,
+                    leading = { Icon(VIcons.Sparkles, contentDescription = null, modifier = Modifier.size(14.dp)) },
+                )
+                VButton(
+                    "Daily Log",
+                    onClick = { viewModel.openDailyLogPopup() },
+                    modifier = Modifier.weight(1f),
+                    variant = VButtonVariant.Secondary,
+                    tone = VButtonTone.Teal,
+                    size = VButtonSize.Sm,
+                    leading = { Icon(VIcons.ClipboardList, contentDescription = null, modifier = Modifier.size(14.dp)) },
+                )
+            }
+        }
+
+        // ── Edit mode: add chapter button ──
         if (state.isEditing) {
             item {
                 if (state.addingUnderParentId == null) {
@@ -122,18 +189,45 @@ private fun SyllabusBody(viewModel: TeacherSyllabusViewModel, scopeLabel: String
             }
         }
 
-        if (state.units.isEmpty()) {
+        // ── Empty state with 3 clear options ──
+        if (state.units.isEmpty() && state.autoFillError == null) {
+            item { EmptyStateOptions(viewModel) }
+        } else if (state.units.isEmpty() && state.autoFillError != null) {
             item {
                 TCard { Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                    TIconDisc(VIcons.BookOpen, tint = c.tealDeep, bg = c.teal.copy(alpha = 0.14f), size = 48.dp, glyph = 24.dp)
+                    TIconDisc(VIcons.AlertCircle, tint = c.dangerInk, bg = c.danger.copy(alpha = 0.14f), size = 48.dp, glyph = 24.dp)
                     Spacer(Modifier.height(10.dp))
-                    Text("No units yet", style = VTheme.type.h3.colored(c.ink))
-                    Text("Tap Edit to add chapters & topics.", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp))
+                    Text("No NCERT reference found", style = VTheme.type.h3.colored(c.ink))
+                    Text(state.autoFillError ?: "", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp))
+                    Spacer(Modifier.height(12.dp))
+                    EmptyStateOptions(viewModel)
                 } }
             }
         } else {
+            // ── Syllabus unit rows (3-level hierarchy) ──
             items(state.units, key = { it.id }) { u ->
-                SyllabusRow(u, isUpdating = state.updatingUnitId == u.id, editing = state.isEditing, onToggle = { viewModel.toggleUnit(u.id) }, onAddTopic = { viewModel.openAdd(u.id) })
+                SyllabusRow(
+                    u,
+                    isUpdating = state.updatingUnitId == u.id,
+                    editing = state.isEditing,
+                    isDraft = u.approvalStatus == "DRAFT",
+                    onToggle = { viewModel.toggleUnit(u.id) },
+                    onAddTopic = { viewModel.openAdd(u.id) },
+                    onDelete = { viewModel.deleteUnit(u.id) },
+                    onGenerateQuiz = { viewModel.openQuizSheet(u.id) },
+                )
+            }
+        }
+
+        // ── Quiz list section ──
+        if (state.quizzes.isNotEmpty()) {
+            item {
+                Spacer(Modifier.height(6.dp))
+                TEyebrow("QUIZZES", dot = c.accent)
+                Spacer(Modifier.height(8.dp))
+            }
+            items(state.quizzes, key = { it.id }) { q ->
+                QuizRow(q, onPublish = { viewModel.publishQuiz(q.id) })
             }
         }
     }
@@ -158,7 +252,16 @@ private fun AddUnitComposer(viewModel: TeacherSyllabusViewModel) {
 }
 
 @Composable
-private fun SyllabusRow(u: SyllabusUnit, isUpdating: Boolean, editing: Boolean, onToggle: () -> Unit, onAddTopic: () -> Unit) {
+private fun SyllabusRow(
+    u: SyllabusUnit,
+    isUpdating: Boolean,
+    editing: Boolean,
+    isDraft: Boolean = false,
+    onToggle: () -> Unit,
+    onAddTopic: () -> Unit,
+    onDelete: () -> Unit,
+    onGenerateQuiz: () -> Unit,
+) {
     val c = VTheme.colors
     val indent = (u.depth.coerceIn(0, 3) * 16).dp
     val ix = remember { MutableInteractionSource() }
@@ -183,20 +286,602 @@ private fun SyllabusRow(u: SyllabusUnit, isUpdating: Boolean, editing: Boolean, 
             else if (u.isCovered) Icon(VIcons.Check, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(14.dp))
         }
         Column(Modifier.weight(1f)) {
-            Text(
-                u.title,
-                style = (if (u.isChapter) VTheme.type.bodyStrong else VTheme.type.body).colored(c.ink).copy(fontSize = if (u.isChapter) 14.5.sp else 13.5.sp, fontWeight = if (u.isChapter) FontWeight.ExtraBold else FontWeight.Medium),
-            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    u.title,
+                    style = (if (u.isChapter) VTheme.type.bodyStrong else VTheme.type.body).colored(c.ink).copy(fontSize = if (u.isChapter) 14.5.sp else 13.5.sp, fontWeight = if (u.isChapter) FontWeight.ExtraBold else FontWeight.Medium),
+                )
+                if (isDraft) {
+                    TPill("DRAFT", bg = c.accent.copy(alpha = 0.14f), fg = c.accentDeep)
+                }
+            }
             if (u.isCovered && !u.coveredOn.isNullOrBlank()) {
                 Text("Covered ${prettyDateShort(u.coveredOn)}", style = VTheme.type.caption.colored(c.tealDeep).copy(fontSize = 10.5.sp))
             }
         }
+        // Quiz generate button (always visible for topics, edit mode for chapters)
+        if (editing || !u.isChapter) {
+            val ixQuiz = remember { MutableInteractionSource() }
+            Box(
+                Modifier.size(28.dp).clip(CircleShape).background(c.accent.copy(alpha = 0.1f))
+                    .clickable(interactionSource = ixQuiz, indication = null) { onGenerateQuiz() },
+                contentAlignment = Alignment.Center,
+            ) { Icon(VIcons.Sparkles, contentDescription = "Generate quiz", tint = c.accentDeep, modifier = Modifier.size(14.dp)) }
+        }
+        // Add topic button (edit mode, chapters only)
         if (editing && u.isChapter) {
             Box(
                 Modifier.size(28.dp).clip(CircleShape).background(c.cream)
                     .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onAddTopic() },
                 contentAlignment = Alignment.Center,
             ) { Icon(VIcons.Plus, contentDescription = "Add topic", tint = c.ink2, modifier = Modifier.size(14.dp)) }
+        }
+        // Delete button (edit mode)
+        if (editing) {
+            val ixDel = remember { MutableInteractionSource() }
+            Box(
+                Modifier.size(28.dp).clip(CircleShape).background(c.danger.copy(alpha = 0.1f))
+                    .clickable(interactionSource = ixDel, indication = null) { onDelete() },
+                contentAlignment = Alignment.Center,
+            ) { Icon(VIcons.Minus, contentDescription = "Delete", tint = c.dangerInk, modifier = Modifier.size(14.dp)) }
+        }
+    }
+}
+
+// ── Parse Syllabus bottom sheet ──────────────────────────────────────────────
+
+@Composable
+private fun ParseSyllabusSheet(viewModel: TeacherSyllabusViewModel) {
+    val c = VTheme.colors
+    val state by viewModel.state.collectAsStateV2()
+
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(c.ink.copy(alpha = 0.4f))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ) { viewModel.closeParseSheet() },
+    ) {
+        TCard(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .heightIn(min = 200.dp, max = 520.dp)
+                .padding(bottom = 0.dp),
+            padding = 20.dp,
+        ) {
+            Column(
+                Modifier.fillMaxWidth().clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                ) {},
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(VIcons.Sparkles, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Parse Syllabus", style = VTheme.type.h3.colored(c.navyDeep).copy(fontSize = 17.sp))
+                    Spacer(Modifier.weight(1f))
+                    Box(
+                        Modifier.size(28.dp).clip(CircleShape).background(c.cream)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                            ) { viewModel.closeParseSheet() },
+                        contentAlignment = Alignment.Center,
+                    ) { Icon(VIcons.Close, contentDescription = "Close", tint = c.ink2, modifier = Modifier.size(16.dp)) }
+                }
+
+                if (state.parsedUnits.isEmpty()) {
+                    Text("Paste your syllabus text below. AI will extract chapters and topics.", style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.sp))
+                    VInput(
+                        value = state.parseRawText,
+                        onValueChange = viewModel::setParseRawText,
+                        placeholder = "e.g. Chapter 1: Number Systems\n1.1 Real Numbers\n1.2 Irrational Numbers...",
+                        singleLine = false,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 120.dp, max = 200.dp),
+                    )
+                    if (state.parseError != null) {
+                        Text(state.parseError ?: "", style = VTheme.type.caption.colored(c.dangerInk).copy(fontSize = 12.sp))
+                    }
+                    VButton(
+                        "Parse with AI",
+                        onClick = { viewModel.parseSyllabus() },
+                        full = true,
+                        tone = VButtonTone.Lavender,
+                        loading = state.isParsing,
+                        leading = { Icon(VIcons.Sparkles, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                    )
+                } else {
+                    Text("Preview (${state.parsedUnits.size} units found)", style = VTheme.type.bodyStrong.colored(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold, fontSize = 14.sp))
+                    LazyColumn(
+                        Modifier.fillMaxWidth().heightIn(max = 240.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        items(state.parsedUnits) { pu ->
+                            val indent = (pu.depth * 16).dp
+                            Row(Modifier.fillMaxWidth().padding(start = indent), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(if (pu.depth == 0) "•" else "–", style = VTheme.type.body.colored(c.ink3).copy(fontSize = 13.sp))
+                                Text(pu.title, style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp, fontWeight = if (pu.depth == 0) FontWeight.Bold else FontWeight.Normal))
+                            }
+                        }
+                    }
+                    if (state.parseError != null) {
+                        Text(state.parseError ?: "", style = VTheme.type.caption.colored(c.dangerInk).copy(fontSize = 12.sp))
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        VButton("Cancel", onClick = { viewModel.closeParseSheet() }, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost, size = VButtonSize.Md)
+                        VButton("Confirm & Create", onClick = { viewModel.confirmParsedSyllabus() }, modifier = Modifier.weight(1f), tone = VButtonTone.Lavender, size = VButtonSize.Md, loading = state.isParsing)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ── Daily Log popup ──────────────────────────────────────────────────────────
+
+@Composable
+private fun DailyLogPopup(viewModel: TeacherSyllabusViewModel) {
+    val c = VTheme.colors
+    val state by viewModel.state.collectAsStateV2()
+
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(c.ink.copy(alpha = 0.4f))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ) { viewModel.dismissDailyLogPopup() },
+    ) {
+        TCard(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .heightIn(min = 200.dp, max = 520.dp),
+            padding = 20.dp,
+        ) {
+            Column(
+                Modifier.fillMaxWidth().clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                ) {},
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(VIcons.ClipboardList, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Column {
+                        Text("Daily Class Log", style = VTheme.type.h3.colored(c.navyDeep).copy(fontSize = 17.sp))
+                        Text("${state.dailyLogClassName} · ${state.dailyLogSubject}", style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp))
+                    }
+                    Spacer(Modifier.weight(1f))
+                    Box(
+                        Modifier.size(28.dp).clip(CircleShape).background(c.cream)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                            ) { viewModel.closeDailyLogPopup() },
+                        contentAlignment = Alignment.Center,
+                    ) { Icon(VIcons.Close, contentDescription = "Close", tint = c.ink2, modifier = Modifier.size(16.dp)) }
+                }
+
+                // Topic selection
+                if (state.topics.isNotEmpty()) {
+                    Text("Topics covered today", style = VTheme.type.bodyStrong.colored(c.ink2).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
+                    LazyColumn(
+                        Modifier.fillMaxWidth().heightIn(max = 160.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        items(state.topics) { topic ->
+                            val selected = topic.id in state.dailyLogSelectedTopicIds
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(if (selected) c.teal.copy(alpha = 0.1f) else c.cream)
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null,
+                                    ) { viewModel.toggleDailyLogTopic(topic.id) }
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Box(
+                                    Modifier.size(20.dp).clip(CircleShape)
+                                        .background(if (selected) c.tealDeep else c.cream)
+                                        .border(1.dp, if (selected) c.tealDeep else c.hairline, CircleShape),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    if (selected) Icon(VIcons.Check, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(12.dp))
+                                }
+                                Text(topic.title, style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp))
+                            }
+                        }
+                    }
+                }
+
+                // Coverage slider (simple +/- controls)
+                Text("Coverage: ${state.dailyLogCoveragePct}%", style = VTheme.type.bodyStrong.colored(c.ink2).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    val ixMinus = remember { MutableInteractionSource() }
+                    val ixPlus = remember { MutableInteractionSource() }
+                    Box(
+                        Modifier.size(32.dp).clip(CircleShape).background(c.cream)
+                            .clickable(interactionSource = ixMinus, indication = null) { viewModel.setDailyLogCoveragePct(state.dailyLogCoveragePct - 10) },
+                        contentAlignment = Alignment.Center,
+                    ) { Icon(VIcons.Minus, contentDescription = null, tint = c.ink2, modifier = Modifier.size(16.dp)) }
+                    Text("${state.dailyLogCoveragePct}%", style = VTheme.type.bodyStrong.colored(c.navyDeep).copy(fontSize = 16.sp, fontWeight = FontWeight.ExtraBold))
+                    Box(
+                        Modifier.size(32.dp).clip(CircleShape).background(c.cream)
+                            .clickable(interactionSource = ixPlus, indication = null) { viewModel.setDailyLogCoveragePct(state.dailyLogCoveragePct + 10) },
+                        contentAlignment = Alignment.Center,
+                    ) { Icon(VIcons.Plus, contentDescription = null, tint = c.ink2, modifier = Modifier.size(16.dp)) }
+                }
+
+                // Summary text
+                VInput(
+                    value = state.dailyLogSummary,
+                    onValueChange = viewModel::setDailyLogSummary,
+                    placeholder = "What was taught today? (optional)",
+                    singleLine = false,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 60.dp, max = 100.dp),
+                )
+
+                if (state.dailyLogError != null) {
+                    Text(state.dailyLogError ?: "", style = VTheme.type.caption.colored(c.dangerInk).copy(fontSize = 12.sp))
+                }
+
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    VButton("Skip", onClick = { viewModel.dismissDailyLogPopup() }, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost, size = VButtonSize.Md)
+                    VButton("Save Log", onClick = { viewModel.saveDailyLog() }, modifier = Modifier.weight(1f), tone = VButtonTone.Teal, size = VButtonSize.Md, loading = state.isSavingDailyLog)
+                }
+            }
+        }
+    }
+}
+
+// ── Quiz generation sheet ────────────────────────────────────────────────────
+
+@Composable
+private fun QuizSheet(viewModel: TeacherSyllabusViewModel) {
+    val c = VTheme.colors
+    val state by viewModel.state.collectAsStateV2()
+
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(c.ink.copy(alpha = 0.4f))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ) { viewModel.closeQuizSheet() },
+    ) {
+        TCard(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .heightIn(min = 200.dp, max = 400.dp),
+            padding = 20.dp,
+        ) {
+            Column(
+                Modifier.fillMaxWidth().clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                ) {},
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(VIcons.Sparkles, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Generate Quiz", style = VTheme.type.h3.colored(c.navyDeep).copy(fontSize = 17.sp))
+                    Spacer(Modifier.weight(1f))
+                    Box(
+                        Modifier.size(28.dp).clip(CircleShape).background(c.cream)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                            ) { viewModel.closeQuizSheet() },
+                        contentAlignment = Alignment.Center,
+                    ) { Icon(VIcons.Close, contentDescription = "Close", tint = c.ink2, modifier = Modifier.size(16.dp)) }
+                }
+
+                Text("Number of questions: ${state.quizNumQuestions}", style = VTheme.type.bodyStrong.colored(c.ink2).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    val ixMinus = remember { MutableInteractionSource() }
+                    val ixPlus = remember { MutableInteractionSource() }
+                    Box(
+                        Modifier.size(32.dp).clip(CircleShape).background(c.cream)
+                            .clickable(interactionSource = ixMinus, indication = null) { viewModel.setQuizNumQuestions(state.quizNumQuestions - 1) },
+                        contentAlignment = Alignment.Center,
+                    ) { Icon(VIcons.Minus, contentDescription = null, tint = c.ink2, modifier = Modifier.size(16.dp)) }
+                    Text("${state.quizNumQuestions}", style = VTheme.type.bodyStrong.colored(c.navyDeep).copy(fontSize = 16.sp, fontWeight = FontWeight.ExtraBold))
+                    Box(
+                        Modifier.size(32.dp).clip(CircleShape).background(c.cream)
+                            .clickable(interactionSource = ixPlus, indication = null) { viewModel.setQuizNumQuestions(state.quizNumQuestions + 1) },
+                        contentAlignment = Alignment.Center,
+                    ) { Icon(VIcons.Plus, contentDescription = null, tint = c.ink2, modifier = Modifier.size(16.dp)) }
+                }
+
+                Text("Difficulty", style = VTheme.type.bodyStrong.colored(c.ink2).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("EASY", "MEDIUM", "HARD").forEach { diff ->
+                        val selected = state.quizDifficulty == diff
+                        val ixDiff = remember { MutableInteractionSource() }
+                        Box(
+                            Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (selected) c.accent.copy(alpha = 0.14f) else c.cream)
+                                .border(1.dp, if (selected) c.accentDeep else c.hairline, RoundedCornerShape(10.dp))
+                                .clickable(interactionSource = ixDiff, indication = null) { viewModel.setQuizDifficulty(diff) }
+                                .padding(vertical = 10.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                diff.lowercase().replaceFirstChar { it.uppercase() },
+                                style = VTheme.type.body.colored(if (selected) c.accentDeep else c.ink2).copy(fontSize = 13.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal),
+                            )
+                        }
+                    }
+                }
+
+                if (state.quizError != null) {
+                    Text(state.quizError ?: "", style = VTheme.type.caption.colored(c.dangerInk).copy(fontSize = 12.sp))
+                }
+
+                VButton(
+                    "Generate Quiz",
+                    onClick = { viewModel.generateQuiz() },
+                    full = true,
+                    tone = VButtonTone.Lavender,
+                    loading = state.isGeneratingQuiz,
+                    leading = { Icon(VIcons.Sparkles, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                )
+            }
+        }
+    }
+}
+
+// ── Quiz row (in the quiz list section) ──────────────────────────────────────
+
+@Composable
+private fun QuizRow(q: QuizDto, onPublish: () -> Unit) {
+    val c = VTheme.colors
+    TCard(padding = 14.dp) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            TIconDisc(VIcons.GraduationCap, tint = c.accentDeep, bg = c.accent.copy(alpha = 0.14f), size = 36.dp, glyph = 18.dp)
+            Column(Modifier.weight(1f)) {
+                Text(q.title.ifBlank { "Quiz" }, style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 14.sp, fontWeight = FontWeight.Bold))
+                Text("${q.questions.size} questions · ${q.status}", style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 11.sp))
+            }
+            if (q.status == "DRAFT") {
+                VButton("Publish", onClick = onPublish, size = VButtonSize.Sm, tone = VButtonTone.Lavender, variant = VButtonVariant.Secondary)
+            } else {
+                TPill("Published", bg = c.teal.copy(alpha = 0.14f), fg = c.tealDeep)
+            }
+        }
+    }
+}
+
+// ── Empty state with 3 clear options ─────────────────────────────────────────
+
+@Composable
+private fun EmptyStateOptions(viewModel: TeacherSyllabusViewModel) {
+    val c = VTheme.colors
+    val state by viewModel.state.collectAsStateV2()
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+        Text("No units yet", style = VTheme.type.h3.colored(c.ink).copy(fontSize = 16.sp))
+        Text("Choose how to build your syllabus:", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp))
+        Spacer(Modifier.height(4.dp))
+        // Option 1: Auto-fill from NCERT
+        TCard(padding = 16.dp, onClick = { viewModel.autoFill() }) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                TIconDisc(VIcons.Sparkles, tint = c.accentDeep, bg = c.accent.copy(alpha = 0.14f), size = 40.dp, glyph = 20.dp)
+                Column(Modifier.weight(1f)) {
+                    Text("Auto-fill from NCERT", style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 14.sp, fontWeight = FontWeight.ExtraBold))
+                    Text("Fetch the standard CBSE/NCERT syllabus for this class & subject", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp))
+                }
+            }
+        }
+        // Option 2: Paste text for AI parse
+        TCard(padding = 16.dp, onClick = { viewModel.openParseSheet() }) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                TIconDisc(VIcons.ClipboardList, tint = c.tealDeep, bg = c.teal.copy(alpha = 0.14f), size = 40.dp, glyph = 20.dp)
+                Column(Modifier.weight(1f)) {
+                    Text("Paste syllabus text", style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 14.sp, fontWeight = FontWeight.ExtraBold))
+                    Text("AI will extract chapters and topics from pasted text", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp))
+                }
+            }
+        }
+        // Option 3: Add manually
+        TCard(padding = 16.dp, onClick = { viewModel.toggleEditing(); viewModel.openAdd(null) }) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                TIconDisc(VIcons.Plus, tint = c.ink2, bg = c.cream, size = 40.dp, glyph = 20.dp)
+                Column(Modifier.weight(1f)) {
+                    Text("Add manually", style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 14.sp, fontWeight = FontWeight.ExtraBold))
+                    Text("Create chapters and topics one by one", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp))
+                }
+            }
+        }
+        if (state.isAutoFilling) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
+                TeacherSpinner(16.dp)
+                Text("Fetching NCERT reference…", style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp))
+            }
+        }
+    }
+}
+
+// ── Pace warning banner ──────────────────────────────────────────────────────
+
+@Composable
+private fun PaceWarningBanner(warning: com.littlebridge.enrollplus.feature.teacher.domain.model.SylPaceWarning) {
+    val c = VTheme.colors
+    val isBehind = warning.level == "BEHIND" || warning.level == "CRITICAL"
+    val bg = if (isBehind) c.danger.copy(alpha = 0.08f) else c.accent.copy(alpha = 0.08f)
+    val fg = if (isBehind) c.dangerInk else c.accentDeep
+    val icon = if (isBehind) VIcons.AlertCircle else VIcons.Sparkles
+    val label = when (warning.level) {
+        "CRITICAL" -> "Critically behind"
+        "BEHIND" -> "Behind schedule"
+        "AHEAD" -> "Ahead of schedule"
+        else -> "Pace update"
+    }
+    TCard(padding = 14.dp) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Box(Modifier.size(32.dp).clip(CircleShape).background(bg), contentAlignment = Alignment.Center) {
+                Icon(icon, contentDescription = null, tint = fg, modifier = Modifier.size(16.dp))
+            }
+            Column(Modifier.weight(1f)) {
+                Text(label, style = VTheme.type.bodyStrong.colored(fg).copy(fontSize = 13.sp, fontWeight = FontWeight.ExtraBold))
+                Text(
+                    "Expected ${warning.expectedPct}% · Actual ${warning.actualPct}% · Δ ${warning.deviationPct}%",
+                    style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 11.sp),
+                )
+                if (warning.message.isNotBlank()) {
+                    Text(warning.message, style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp))
+                }
+            }
+        }
+    }
+}
+
+// ── Draft approval bar ───────────────────────────────────────────────────────
+
+@Composable
+private fun DraftApprovalBar(viewModel: TeacherSyllabusViewModel) {
+    val c = VTheme.colors
+    val state by viewModel.state.collectAsStateV2()
+    val draftCount = state.draftUnits.size
+    TCard(padding = 14.dp) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(Modifier.size(28.dp).clip(CircleShape).background(c.accent.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
+                    Icon(VIcons.ShieldCheck, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(14.dp))
+                }
+                Text("$draftCount draft unit${if (draftCount != 1) "s" else ""} pending approval", style = VTheme.type.bodyStrong.colored(c.accentDeep).copy(fontSize = 13.sp, fontWeight = FontWeight.ExtraBold))
+            }
+            Text("Draft units are not visible to parents until approved.", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                VButton("Reject All", onClick = { viewModel.rejectAllDrafts() }, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost, size = VButtonSize.Sm, loading = state.isApproving)
+                VButton("Approve All", onClick = { viewModel.approveAllDrafts() }, modifier = Modifier.weight(1f), tone = VButtonTone.Lavender, size = VButtonSize.Sm, loading = state.isApproving)
+            }
+            if (state.approveError != null) {
+                Text(state.approveError ?: "", style = VTheme.type.caption.colored(c.dangerInk).copy(fontSize = 11.sp))
+            }
+        }
+    }
+}
+
+// ── Auto-fill preview sheet ──────────────────────────────────────────────────
+
+@Composable
+private fun AutoFillPreviewSheet(viewModel: TeacherSyllabusViewModel) {
+    val c = VTheme.colors
+    val state by viewModel.state.collectAsStateV2()
+
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(c.ink.copy(alpha = 0.4f))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ) { viewModel.dismissAutoFillPreview() },
+    ) {
+        TCard(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .heightIn(min = 200.dp, max = 560.dp)
+                .padding(bottom = 0.dp),
+            padding = 20.dp,
+        ) {
+            Column(
+                Modifier.fillMaxWidth().clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                ) {},
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(VIcons.Sparkles, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Column {
+                        Text("NCERT Auto-fill", style = VTheme.type.h3.colored(c.navyDeep).copy(fontSize = 17.sp))
+                        if (state.autoFillSource.isNotBlank()) {
+                            Text(state.autoFillSource, style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp))
+                        }
+                    }
+                    Spacer(Modifier.weight(1f))
+                    Box(
+                        Modifier.size(28.dp).clip(CircleShape).background(c.cream)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                            ) { viewModel.dismissAutoFillPreview() },
+                        contentAlignment = Alignment.Center,
+                    ) { Icon(VIcons.Close, contentDescription = "Close", tint = c.ink2, modifier = Modifier.size(16.dp)) }
+                }
+
+                val totalChapters = state.autoFillChapters.size
+                val totalTopics = state.autoFillChapters.sumOf { ch -> ch.topics.size }
+                val totalSubtopics = state.autoFillChapters.sumOf { ch -> ch.topics.sumOf { t -> t.subtopics.size } }
+                val totalUnits = totalChapters + totalTopics + totalSubtopics
+                val subtopicText = if (totalSubtopics > 0) ", $totalSubtopics subtopics" else ""
+                Text(
+                    "Preview: $totalChapters chapters, $totalTopics topics$subtopicText — $totalUnits units will be created as DRAFT for your review.",
+                    style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.sp),
+                )
+
+                LazyColumn(
+                    Modifier.fillMaxWidth().heightIn(max = 280.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    items(state.autoFillChapters) { ch ->
+                        AutoFillChapterRow(ch)
+                    }
+                }
+
+                if (state.autoFillError != null) {
+                    Text(state.autoFillError ?: "", style = VTheme.type.caption.colored(c.dangerInk).copy(fontSize = 12.sp))
+                }
+
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    VButton("Cancel", onClick = { viewModel.dismissAutoFillPreview() }, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost, size = VButtonSize.Md)
+                    VButton("Create as Draft", onClick = { viewModel.confirmAutoFill() }, modifier = Modifier.weight(1f), tone = VButtonTone.Lavender, size = VButtonSize.Md, loading = state.isAutoFilling)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AutoFillChapterRow(ch: SylAutoFillChapter) {
+    val c = VTheme.colors
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(c.cream).padding(12.dp)) {
+        Text(ch.title, style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 14.sp, fontWeight = FontWeight.ExtraBold))
+        if (ch.topics.isNotEmpty()) {
+            Spacer(Modifier.height(6.dp))
+            ch.topics.forEach { t ->
+                Row(Modifier.fillMaxWidth().padding(start = 12.dp, top = 2.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("–", style = VTheme.type.body.colored(c.ink3).copy(fontSize = 12.sp))
+                    Text(t.title, style = VTheme.type.body.colored(c.ink2).copy(fontSize = 12.sp))
+                }
+                if (t.subtopics.isNotEmpty()) {
+                    t.subtopics.forEach { st ->
+                        Row(Modifier.fillMaxWidth().padding(start = 28.dp, top = 1.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("·", style = VTheme.type.body.colored(c.ink3).copy(fontSize = 11.sp))
+                            Text(st.title, style = VTheme.type.body.colored(c.ink3).copy(fontSize = 11.sp))
+                        }
+                    }
+                }
+            }
         }
     }
 }
