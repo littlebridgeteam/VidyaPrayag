@@ -12,6 +12,7 @@ import {
   IconShield,
   IconBook,
   IconReport,
+  IconLogs,
 } from "@/components/admin/icons";
 
 export interface NavItem {
@@ -37,4 +38,5 @@ export const ADMIN_NAV: NavItem[] = [
   { href: "/admin/settings", label: "Settings", icon: IconSettings },
   { href: "/admin/academics", label: "Academics", icon: IconBook },
   { href: "/admin/dev-tools", label: "Dev Tools", icon: IconBolt, superAdminOnly: true },
+  { href: "/admin/logs", label: "Server Logs", icon: IconLogs, superAdminOnly: true },
 ];

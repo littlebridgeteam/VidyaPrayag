@@ -7,7 +7,6 @@ import { Card, CardHeader, Badge, FadeIn, EmptyState } from "@/components/admin/
 import { AdminButton } from "@/components/admin/Toolbar";
 import { IconBolt, IconCheck, IconPulse, IconMessage, IconWarning } from "@/components/admin/icons";
 import { AiTokenMonitor } from "@/components/admin/devtools/AiTokenMonitor";
-import { LogViewer } from "@/components/admin/LogViewer";
 import type {
   OtpProvidersResponse,
   TriggerPulseResponse,
@@ -65,10 +64,6 @@ export default function DevToolsPage() {
 
       <FadeIn delay={0.2}>
         <PewsTriggerCard />
-      </FadeIn>
-
-      <FadeIn delay={0.25}>
-        <LogViewer />
       </FadeIn>
     </div>
   );
