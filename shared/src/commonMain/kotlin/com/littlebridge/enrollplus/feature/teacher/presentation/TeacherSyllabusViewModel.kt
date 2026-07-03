@@ -8,6 +8,7 @@ import com.littlebridge.enrollplus.feature.teacher.domain.model.CreateSyllabusUn
 import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizDto
 import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizGenerateRequest
 import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizUpdateQuestionRequest
+import com.littlebridge.enrollplus.feature.teacher.domain.model.TeacherQuizLeaderboardData
 import com.littlebridge.enrollplus.feature.teacher.domain.model.SylAutoFillChapter
 import com.littlebridge.enrollplus.feature.teacher.domain.model.SylAutoFillRequest
 import com.littlebridge.enrollplus.feature.teacher.domain.model.SylAutoFillResponse
@@ -108,6 +109,12 @@ data class TeacherSyllabusState(
     val isRegenerating: Boolean = false,
     val isPublishingQuiz: Boolean = false,
     val quizPreviewError: String? = null,
+    // ── Quiz leaderboard ──
+    val showLeaderboard: Boolean = false,
+    val leaderboardQuizId: String = "",
+    val leaderboard: TeacherQuizLeaderboardData? = null,
+    val leaderboardLoading: Boolean = false,
+    val leaderboardError: String? = null,
     // ── Agentic: NCERT auto-fill ──
     val isAutoFilling: Boolean = false,
     val autoFillChapters: List<SylAutoFillChapter> = emptyList(),
@@ -699,6 +706,24 @@ class TeacherSyllabusViewModel(
             }
         }
     }
+
+    fun loadLeaderboard(quizId: String) {
+        _state.update { it.copy(showLeaderboard = true, leaderboardQuizId = quizId, leaderboard = null, leaderboardLoading = true, leaderboardError = null) }
+        viewModelScope.launch {
+            val token = preferenceRepository.getUserToken().first()
+            if (token == null) {
+                _state.update { it.copy(leaderboardLoading = false, leaderboardError = "Not authenticated") }
+                return@launch
+            }
+            when (val result = repository.getQuizLeaderboard(token, quizId)) {
+                is NetworkResult.Success -> _state.update { it.copy(leaderboardLoading = false, leaderboard = result.data.data) }
+                is NetworkResult.Error -> _state.update { it.copy(leaderboardLoading = false, leaderboardError = result.message) }
+                is NetworkResult.ConnectionError -> _state.update { it.copy(leaderboardLoading = false, leaderboardError = "Connection error") }
+            }
+        }
+    }
+
+    fun closeLeaderboard() = _state.update { it.copy(showLeaderboard = false, leaderboard = null, leaderboardError = null, leaderboardQuizId = "") }
 
     // ── NCERT Auto-fill ──────────────────────────────────────────────────
 

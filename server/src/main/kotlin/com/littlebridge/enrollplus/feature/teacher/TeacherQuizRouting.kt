@@ -26,6 +26,9 @@ import com.littlebridge.enrollplus.db.SyllabusQuizQuestionsTable
 import com.littlebridge.enrollplus.db.SyllabusQuizAnswersTable
 import com.littlebridge.enrollplus.db.AnnouncementsTable
 import com.littlebridge.enrollplus.db.TeacherSubjectAssignmentsTable
+import com.littlebridge.enrollplus.db.ChildrenTable
+import com.littlebridge.enrollplus.db.StudentsTable
+import com.littlebridge.enrollplus.db.EnrollmentsTable
 import com.littlebridge.enrollplus.feature.ai.SyllabusAiService
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.*
@@ -117,6 +120,33 @@ data class QuizListResp(
 data class QuizPublishResp(
     val success: Boolean = true,
     val data: QuizSer? = null,
+)
+
+@Serializable
+data class TeacherQuizLeaderboardEntrySer(
+    val rank: Int,
+    val studentName: String = "",
+    val studentCode: String = "",
+    val score: Int,
+    @SerialName("total_marks") val totalMarks: Int,
+    val percentage: Int,
+    @SerialName("submitted_at") val submittedAt: String? = null,
+)
+
+@Serializable
+data class TeacherQuizLeaderboardDataSer(
+    val quizId: String,
+    val quizTitle: String = "",
+    val subject: String = "",
+    val entries: List<TeacherQuizLeaderboardEntrySer> = emptyList(),
+    @SerialName("total_participants") val totalParticipants: Int = 0,
+    @SerialName("total_students") val totalStudents: Int = 0,
+)
+
+@Serializable
+data class TeacherQuizLeaderboardResp(
+    val success: Boolean = true,
+    val data: TeacherQuizLeaderboardDataSer = TeacherQuizLeaderboardDataSer(quizId = ""),
 )
 
 @Serializable
@@ -615,6 +645,106 @@ fun Route.teacherQuizRouting() {
                         createdAt = quizRow[SyllabusQuizzesTable.createdAt]?.toString(),
                     )
                 )))
+            }
+
+            // GET /{id}/leaderboard — per-student quiz leaderboard
+            get("/{id}/leaderboard") {
+                val ctx = call.requireTeacherContext() ?: return@get
+                val quizIdStr = call.parameters["id"]
+                if (quizIdStr.isNullOrBlank()) {
+                    call.fail("Quiz ID is required", HttpStatusCode.BadRequest, "MISSING_PARAM"); return@get
+                }
+                val quizId = UUID.fromString(quizIdStr)
+
+                val quizRow = dbQuery {
+                    SyllabusQuizzesTable.selectAll().where {
+                        (SyllabusQuizzesTable.id eq quizId) and
+                            (SyllabusQuizzesTable.schoolId eq ctx.schoolId)
+                    }.singleOrNull()
+                }
+                if (quizRow == null) {
+                    call.fail("Quiz not found", HttpStatusCode.NotFound, "QUIZ_NOT_FOUND"); return@get
+                }
+
+                val subjectName = dbQuery {
+                    TeacherSubjectAssignmentsTable.selectAll().where {
+                        TeacherSubjectAssignmentsTable.id eq quizRow[SyllabusQuizzesTable.assignmentId]
+                    }.firstOrNull()?.get(TeacherSubjectAssignmentsTable.subject) ?: ""
+                }
+
+                val totalQuestions = dbQuery {
+                    SyllabusQuizQuestionsTable.selectAll().where {
+                        SyllabusQuizQuestionsTable.quizId eq quizId
+                    }.count().toInt()
+                }
+
+                val answers = dbQuery {
+                    SyllabusQuizAnswersTable.selectAll().where {
+                        SyllabusQuizAnswersTable.quizId eq quizId
+                    }.orderBy(SyllabusQuizAnswersTable.createdAt, SortOrder.ASC).toList()
+                }
+
+                val studentScores = mutableMapOf<String, Pair<Int, String>>()
+                answers.forEach { aRow ->
+                    val sid = aRow[SyllabusQuizAnswersTable.studentId]
+                    val isCorrect = aRow[SyllabusQuizAnswersTable.isCorrect]
+                    val submittedAt = aRow[SyllabusQuizAnswersTable.createdAt].toString()
+                    val existing = studentScores[sid]
+                    if (existing == null) {
+                        studentScores[sid] = (if (isCorrect) 1 else 0) to submittedAt
+                    } else {
+                        studentScores[sid] = (existing.first + if (isCorrect) 1 else 0) to existing.second
+                    }
+                }
+
+                // Resolve student names from both ChildrenTable and StudentsTable
+                val childNames = dbQuery {
+                    ChildrenTable.selectAll().where {
+                        ChildrenTable.studentCode inList studentScores.keys
+                    }.associate { it[ChildrenTable.studentCode] to (it[ChildrenTable.childName]) }
+                }
+                val studentNames = dbQuery {
+                    StudentsTable.selectAll().where {
+                        StudentsTable.studentCode inList studentScores.keys
+                    }.associate { it[StudentsTable.studentCode] to (it[StudentsTable.fullName]) }
+                }
+
+                // Count total enrolled students for this class
+                val asg = call.requireOwnedAssignment(ctx, quizRow[SyllabusQuizzesTable.assignmentId].toString()) ?: return@get
+                val scopeClassId = asg.classId
+                val totalStudents = if (scopeClassId != null) {
+                    dbQuery {
+                        EnrollmentsTable.selectAll().where {
+                            (EnrollmentsTable.schoolId eq ctx.schoolId) and
+                                (EnrollmentsTable.classId eq scopeClassId) and
+                                (EnrollmentsTable.status eq "active")
+                        }.count().toInt()
+                    }
+                } else 0
+
+                val entries = studentScores.entries
+                    .map { (sid, scoreTime) ->
+                        TeacherQuizLeaderboardEntrySer(
+                            rank = 0,
+                            studentName = studentNames[sid] ?: childNames[sid] ?: "Student",
+                            studentCode = sid,
+                            score = scoreTime.first,
+                            totalMarks = totalQuestions,
+                            percentage = if (totalQuestions > 0) (scoreTime.first * 100) / totalQuestions else 0,
+                            submittedAt = scoreTime.second,
+                        )
+                    }
+                    .sortedWith(compareByDescending<TeacherQuizLeaderboardEntrySer> { it.score }.thenBy { it.submittedAt })
+                    .mapIndexed { idx, e -> e.copy(rank = idx + 1) }
+
+                call.ok(TeacherQuizLeaderboardDataSer(
+                    quizId = quizId.toString(),
+                    quizTitle = quizRow[SyllabusQuizzesTable.title],
+                    subject = subjectName,
+                    entries = entries,
+                    totalParticipants = entries.size,
+                    totalStudents = totalStudents,
+                ))
             }
         }
     }

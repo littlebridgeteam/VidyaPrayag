@@ -237,6 +237,9 @@ class TeacherRepositoryImpl(
     override suspend fun getQuizResults(token: String, quizId: String): NetworkResult<QuizListResponse> =
         api.getQuizResults(token, quizId)
 
+    override suspend fun getQuizLeaderboard(token: String, quizId: String): NetworkResult<TeacherQuizLeaderboardResponse> =
+        api.getQuizLeaderboard(token, quizId)
+
     override suspend fun updateQuizQuestion(token: String, quizId: String, questionId: String, request: QuizUpdateQuestionRequest): NetworkResult<QuizUpdateQuestionResponse> =
         api.updateQuizQuestion(token, quizId, questionId, request)
 

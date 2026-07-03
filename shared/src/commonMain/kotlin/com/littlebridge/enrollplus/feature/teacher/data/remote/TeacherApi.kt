@@ -720,6 +720,14 @@ class TeacherApi(
         client.get(getUrl("api/v1/teacher/syllabus/quiz/$quizId/results"))
     }
 
+    /** Get quiz leaderboard (per-student ranking). */
+    suspend fun getQuizLeaderboard(
+        token: String,
+        quizId: String,
+    ): NetworkResult<TeacherQuizLeaderboardResponse> = safeApiCall {
+        client.get(getUrl("api/v1/teacher/syllabus/quiz/$quizId/leaderboard"))
+    }
+
     /** Update a single quiz question (teacher edits before publishing). */
     suspend fun updateQuizQuestion(
         token: String,

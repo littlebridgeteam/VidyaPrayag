@@ -124,6 +124,7 @@ interface TeacherRepository {
     suspend fun publishQuiz(token: String, quizId: String): NetworkResult<QuizPublishResponse>
     suspend fun listQuizzes(token: String, assignmentId: String): NetworkResult<QuizListResponse>
     suspend fun getQuizResults(token: String, quizId: String): NetworkResult<QuizListResponse>
+    suspend fun getQuizLeaderboard(token: String, quizId: String): NetworkResult<TeacherQuizLeaderboardResponse>
     suspend fun updateQuizQuestion(token: String, quizId: String, questionId: String, request: QuizUpdateQuestionRequest): NetworkResult<QuizUpdateQuestionResponse>
     suspend fun regenerateQuiz(token: String, quizId: String): NetworkResult<QuizRegenerateResponse>
 

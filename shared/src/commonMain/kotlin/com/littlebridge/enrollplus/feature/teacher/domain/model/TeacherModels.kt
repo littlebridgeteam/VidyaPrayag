@@ -1009,6 +1009,35 @@ data class QuizQuestionResultDto(
     val explanation: String? = null,
 )
 
+// ── Teacher quiz leaderboard ──
+
+@Serializable
+data class TeacherQuizLeaderboardEntryDto(
+    val rank: Int,
+    val studentName: String = "",
+    val studentCode: String = "",
+    val score: Int,
+    @SerialName("total_marks") val totalMarks: Int,
+    val percentage: Int,
+    @SerialName("submitted_at") val submittedAt: String? = null,
+)
+
+@Serializable
+data class TeacherQuizLeaderboardData(
+    val quizId: String,
+    val quizTitle: String = "",
+    val subject: String = "",
+    val entries: List<TeacherQuizLeaderboardEntryDto> = emptyList(),
+    @SerialName("total_participants") val totalParticipants: Int = 0,
+    @SerialName("total_students") val totalStudents: Int = 0,
+)
+
+@Serializable
+data class TeacherQuizLeaderboardResponse(
+    val success: Boolean = true,
+    val data: TeacherQuizLeaderboardData = TeacherQuizLeaderboardData(quizId = ""),
+)
+
 // ── Pace snapshots + alerts (admin view) ──
 
 @Serializable

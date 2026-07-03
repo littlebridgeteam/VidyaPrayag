@@ -116,6 +116,9 @@ fun TeacherSyllabusScreenV2(
 
         // ── Quiz preview sheet (after AI generation, before publishing) ──
         if (state.showQuizPreview) QuizPreviewSheet(viewModel)
+
+        // ── Quiz leaderboard sheet ──
+        if (state.showLeaderboard) QuizLeaderboardSheet(viewModel)
     }
 }
 
@@ -245,7 +248,7 @@ private fun SyllabusBody(viewModel: TeacherSyllabusViewModel, scopeLabel: String
                 Spacer(Modifier.height(8.dp))
             }
             items(state.quizzes, key = { it.id }) { q ->
-                QuizRow(q, onPublish = { viewModel.publishQuiz(q.id) })
+                QuizRow(q, onPublish = { viewModel.publishQuiz(q.id) }, onLeaderboard = { viewModel.loadLeaderboard(q.id) })
             }
         }
     }
@@ -836,7 +839,7 @@ private fun QuizSheet(viewModel: TeacherSyllabusViewModel) {
 // ── Quiz row (in the quiz list section) ──────────────────────────────────────
 
 @Composable
-private fun QuizRow(q: QuizDto, onPublish: () -> Unit) {
+private fun QuizRow(q: QuizDto, onPublish: () -> Unit, onLeaderboard: () -> Unit = {}) {
     val c = VTheme.colors
     TCard(padding = 14.dp) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -849,6 +852,7 @@ private fun QuizRow(q: QuizDto, onPublish: () -> Unit) {
                 VButton("Publish", onClick = onPublish, size = VButtonSize.Sm, tone = VButtonTone.Lavender, variant = VButtonVariant.Secondary)
             } else {
                 TPill("Published", bg = c.teal.copy(alpha = 0.14f), fg = c.tealDeep)
+                VButton("Results", onClick = onLeaderboard, size = VButtonSize.Sm, tone = VButtonTone.Sky, variant = VButtonVariant.Secondary)
             }
         }
     }
@@ -1337,6 +1341,132 @@ private fun EditableQuestionCard(
                 size = VButtonSize.Md,
                 loading = isLoading,
             )
+        }
+    }
+}
+
+// ── Quiz leaderboard sheet ───────────────────────────────────────────────────
+
+@Composable
+private fun QuizLeaderboardSheet(viewModel: TeacherSyllabusViewModel) {
+    val c = VTheme.colors
+    val state by viewModel.state.collectAsStateV2()
+
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(c.ink.copy(alpha = 0.4f))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ) { viewModel.closeLeaderboard() },
+    ) {
+        TCard(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .heightIn(min = 200.dp, max = 650.dp),
+            padding = 20.dp,
+        ) {
+            Column(
+                Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                ) {},
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                // Header
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(VIcons.GraduationCap, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Quiz Leaderboard", style = VTheme.type.h3.colored(c.navyDeep).copy(fontSize = 17.sp))
+                    Spacer(Modifier.weight(1f))
+                    Box(
+                        Modifier.size(28.dp).clip(CircleShape).background(c.cream)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                            ) { viewModel.closeLeaderboard() },
+                        contentAlignment = Alignment.Center,
+                    ) { Icon(VIcons.Close, contentDescription = "Close", tint = c.ink2, modifier = Modifier.size(16.dp)) }
+                }
+
+                val lb = state.leaderboard
+                if (state.leaderboardLoading) {
+                    Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                        Text("Loading leaderboard...", style = VTheme.type.body.colored(c.ink2))
+                    }
+                } else if (state.leaderboardError != null) {
+                    Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                        Text(state.leaderboardError ?: "", style = VTheme.type.body.colored(c.dangerInk))
+                    }
+                } else if (lb != null) {
+                    // Quiz info
+                    Text(lb.quizTitle.ifBlank { "Quiz" }, style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 15.sp))
+                    if (lb.subject.isNotBlank()) {
+                        Text(lb.subject, style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp))
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Text("${lb.totalParticipants} attempted", style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp))
+                        Text("${lb.totalStudents} enrolled", style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp))
+                    }
+
+                    if (lb.entries.isEmpty()) {
+                        Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                            Text("No attempts yet", style = VTheme.type.body.colored(c.ink2))
+                        }
+                    } else {
+                        // Column headers
+                        Row(
+                            Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text("#", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp, fontWeight = FontWeight.Bold), modifier = Modifier.width(28.dp))
+                            Text("Student", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp, fontWeight = FontWeight.Bold), modifier = Modifier.weight(1f))
+                            Text("Score", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp, fontWeight = FontWeight.Bold))
+                            Text("%", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp, fontWeight = FontWeight.Bold))
+                        }
+
+                        lb.entries.forEach { entry ->
+                            Row(
+                                Modifier.fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(c.cream.copy(alpha = 0.5f))
+                                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    "${entry.rank}",
+                                    style = VTheme.type.bodyStrong.colored(
+                                        if (entry.rank <= 3) c.accentDeep else c.ink
+                                    ).copy(fontSize = 13.sp, fontWeight = FontWeight.Bold),
+                                    modifier = Modifier.width(28.dp),
+                                )
+                                Text(
+                                    entry.studentName.ifBlank { "Student" },
+                                    style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp),
+                                    modifier = Modifier.weight(1f),
+                                )
+                                Text(
+                                    "${entry.score}/${entry.totalMarks}",
+                                    style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
+                                )
+                                Text(
+                                    "${entry.percentage}%",
+                                    style = VTheme.type.body.colored(
+                                        if (entry.percentage >= 50) c.tealDeep else c.dangerInk
+                                    ).copy(fontSize = 13.sp, fontWeight = FontWeight.Bold),
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+                VButton("Close", onClick = { viewModel.closeLeaderboard() }, full = true, variant = VButtonVariant.Secondary, tone = VButtonTone.Navy, size = VButtonSize.Md)
+            }
         }
     }
 }

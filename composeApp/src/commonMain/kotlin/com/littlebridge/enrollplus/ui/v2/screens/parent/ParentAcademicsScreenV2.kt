@@ -959,23 +959,28 @@ private fun QuizResultCard(
                     Spacer(Modifier.height(4.dp))
                     Text("${lb.totalParticipants} participants", style = VTheme.type.caption.colored(c.ink2))
                     Spacer(Modifier.height(10.dp))
-                    lb.entries.forEach { entry ->
-                        Row(
-                            Modifier.fillMaxWidth().padding(vertical = 4.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(if (entry.isCurrentStudent) c.accent.copy(alpha = 0.08f) else Color.Transparent)
-                                .padding(horizontal = 8.dp, vertical = 6.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text("#${entry.rank}", style = VTheme.type.bodyStrong.colored(c.accentDeep).copy(fontSize = 13.sp, fontWeight = FontWeight.Bold))
-                            Text(
-                                entry.studentName + if (entry.isCurrentStudent) " (You)" else "",
-                                style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp),
-                                modifier = Modifier.weight(1f),
-                            )
-                            Text("${entry.score}/${entry.totalMarks}", style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
-                            Text("${entry.percentage}%", style = VTheme.type.body.colored(c.successInk).copy(fontSize = 13.sp, fontWeight = FontWeight.Bold))
+                    Column(
+                        Modifier.fillMaxWidth().heightIn(max = 300.dp).verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        lb.entries.forEach { entry ->
+                            Row(
+                                Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (entry.isCurrentStudent) c.accent.copy(alpha = 0.08f) else Color.Transparent)
+                                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text("#${entry.rank}", style = VTheme.type.bodyStrong.colored(c.accentDeep).copy(fontSize = 13.sp, fontWeight = FontWeight.Bold))
+                                Text(
+                                    entry.studentName + if (entry.isCurrentStudent) " (You)" else "",
+                                    style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp),
+                                    modifier = Modifier.weight(1f),
+                                )
+                                Text("${entry.score}/${entry.totalMarks}", style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
+                                Text("${entry.percentage}%", style = VTheme.type.body.colored(c.successInk).copy(fontSize = 13.sp, fontWeight = FontWeight.Bold))
+                            }
                         }
                     }
                 }
