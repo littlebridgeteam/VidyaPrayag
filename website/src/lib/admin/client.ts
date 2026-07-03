@@ -322,6 +322,10 @@ export const adminApi = {
   },
   serverLogStats: () =>
     authRequest<ServerLogStatsDto>("/api/v1/admin/dev/logs/stats"),
+  serverLogHttpToggleGet: () =>
+    authRequest<{ enabled: boolean }>("/api/v1/admin/dev/logs/http-logging-toggle"),
+  serverLogHttpToggleSet: (enabled: boolean) =>
+    authRequest<{ enabled: boolean }>(`/api/v1/admin/dev/logs/http-logging-toggle?enabled=${enabled}`, { method: "POST" }),
 
   // alumni management
   alumniList: (params?: { year?: number; profession?: string; city?: string; q?: string; page?: number; limit?: number }) => {

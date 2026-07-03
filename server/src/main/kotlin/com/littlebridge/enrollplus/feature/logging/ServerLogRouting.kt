@@ -273,6 +273,23 @@ fun Route.serverLogRouting() {
 
                 call.ok(stats, message = "Stats fetched")
             }
+
+            // -------- toggle HTTP request logging --------
+            get("/http-logging-toggle") {
+                if (call.requireSuperAdminLog() == null) return@get
+                call.ok(mapOf("enabled" to ServerLogWriter.isHttpLoggingEnabled()), message = "HTTP logging status")
+            }
+
+            post("/http-logging-toggle") {
+                if (call.requireSuperAdminLog() == null) return@post
+                val enabled = call.request.queryParameters["enabled"]?.toBooleanStrictOrNull()
+                if (enabled == null) {
+                    call.respond(HttpStatusCode.BadRequest, mapOf("message" to "Missing or invalid 'enabled' query param"))
+                    return@post
+                }
+                ServerLogWriter.setHttpLoggingEnabled(enabled)
+                call.ok(mapOf("enabled" to enabled), message = if (enabled) "HTTP logging enabled" else "HTTP logging disabled")
+            }
         }
     }
 }

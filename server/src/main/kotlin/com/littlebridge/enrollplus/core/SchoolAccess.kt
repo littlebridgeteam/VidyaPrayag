@@ -34,7 +34,7 @@ import org.jetbrains.exposed.sql.selectAll
 import java.util.UUID
 
 /** Roles permitted to access the school admin surface (reads + shared writes). */
-val SCHOOL_ROLES = setOf("school_admin", "school_staff", "admin")
+val SCHOOL_ROLES = setOf("school_admin", "school_staff", "admin", "super_admin")
 
 /**
  * RA-39: roles permitted to perform PRIVILEGED school writes — provisioning or
@@ -43,7 +43,7 @@ val SCHOOL_ROLES = setOf("school_admin", "school_staff", "admin")
  * staff can operate the day-to-day surface (`SCHOOL_ROLES`) but must not be able
  * to manage accounts/credentials or broadcast on the school's behalf.
  */
-val SCHOOL_ADMIN_ROLES = setOf("school_admin", "admin")
+val SCHOOL_ADMIN_ROLES = setOf("school_admin", "admin", "super_admin")
 
 /** Resolved, trusted context for a school-side request. */
 data class SchoolContext(

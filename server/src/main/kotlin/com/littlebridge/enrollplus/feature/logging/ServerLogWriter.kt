@@ -27,6 +27,7 @@ import org.jetbrains.exposed.sql.selectAll
 import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 object ServerLogWriter {
@@ -43,6 +44,13 @@ object ServerLogWriter {
     private var windowStartMs = System.currentTimeMillis()
     private val rateSemaphore = Semaphore(1)
 
+    /** Runtime toggle: when false, "http" category logs are skipped entirely
+     *  (both SLF4J and DB). Toggled via the super-admin Log Viewer UI. */
+    private val httpLoggingEnabled = AtomicBoolean(true)
+
+    fun isHttpLoggingEnabled(): Boolean = httpLoggingEnabled.get()
+    fun setHttpLoggingEnabled(enabled: Boolean) { httpLoggingEnabled.set(enabled) }
+
     suspend fun write(
         level: String,
         category: String,
@@ -54,6 +62,9 @@ object ServerLogWriter {
         durationMs: Long? = null,
         details: Map<String, Any?> = emptyMap(),
     ) {
+        // Runtime toggle: skip "http" category entirely when disabled
+        if (category == "http" && !httpLoggingEnabled.get()) return
+
         // Rate limiting: max 1000 rows/minute
         val now = System.currentTimeMillis()
         rateSemaphore.withPermit {

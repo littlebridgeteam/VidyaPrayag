@@ -37,6 +37,9 @@ export function mapDeepLinkToAdminRoute(deepLink: string): string | null {
       return "/admin/scholarships";
     case "pews":
     case "early-warning":
+      if (segments[1] === "student" && segments[2]) {
+        return `/admin/early-warning?student=${encodeURIComponent(segments[2])}`;
+      }
       return "/admin/early-warning";
     case "report-card":
       return "/admin/report-card";
