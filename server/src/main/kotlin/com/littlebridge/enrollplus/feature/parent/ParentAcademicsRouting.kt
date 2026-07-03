@@ -277,7 +277,8 @@ data class ParentQuizDetailData(
 @Serializable
 data class QuizAnswerDto(
     @SerialName("question_id") val questionId: String,
-    @SerialName("selected_index") val selectedIndex: Int,
+    @SerialName("selected_index") val selectedIndex: Int = -1,
+    @SerialName("answer_text") val answerText: String? = null,
 )
 
 @Serializable
@@ -1012,12 +1013,14 @@ fun Route.parentAcademicsRouting() {
                 }
 
                 val questionDtos = questions.map { qr ->
-                    val opts = runCatching {
+                    val rawOpts = runCatching {
                         Json.decodeFromString(
                             ListSerializer(serializer<String>()),
                             qr[SyllabusQuizQuestionsTable.optionsJson]
                         )
                     }.getOrDefault(emptyList())
+                    val qType = qr[SyllabusQuizQuestionsTable.questionType]
+                    val opts = if (qType == "TRUE_FALSE" && rawOpts.isEmpty()) listOf("True", "False") else rawOpts
 
                     val matchPairs = runCatching {
                         Json.decodeFromString(
@@ -1103,11 +1106,26 @@ fun Route.parentAcademicsRouting() {
                                 qRow[SyllabusQuizQuestionsTable.optionsJson]
                             )
                         }.getOrDefault(emptyList())
-                        val selectedAnswer = opts.getOrNull(ans.selectedIndex) ?: ""
-                        val isCorrect = qRow[SyllabusQuizQuestionsTable.correctAnswer].equals(selectedAnswer, ignoreCase = true) ||
-                            qRow[SyllabusQuizQuestionsTable.correctAnswer].equals(ans.selectedIndex.toString(), ignoreCase = true)
+                        val qType = qRow[SyllabusQuizQuestionsTable.questionType]
+                        val correctAnswer = qRow[SyllabusQuizQuestionsTable.correctAnswer]
+
+                        val (selectedAnswer, isCorrect) = when (qType) {
+                            "FILL_BLANK" -> {
+                                val text = (ans.answerText ?: "").trim()
+                                text to text.equals(correctAnswer, ignoreCase = true)
+                            }
+                            "TRUE_FALSE" -> {
+                                val text = ans.answerText ?: opts.getOrNull(ans.selectedIndex) ?: ""
+                                text to text.equals(correctAnswer, ignoreCase = true)
+                            }
+                            else -> {
+                                val selAns = opts.getOrNull(ans.selectedIndex) ?: ""
+                                selAns to (correctAnswer.equals(selAns, ignoreCase = true) ||
+                                    correctAnswer.equals(ans.selectedIndex.toString(), ignoreCase = true))
+                            }
+                        }
                         if (isCorrect) correctCount++
-                        val correctIdx = opts.indexOfFirst { it.startsWith(qRow[SyllabusQuizQuestionsTable.correctAnswer]) }.takeIf { it >= 0 } ?: 0
+                        val correctIdx = opts.indexOfFirst { it.startsWith(correctAnswer) }.takeIf { it >= 0 } ?: 0
 
                         questionResults.add(
                             QuizQuestionResultDto(
@@ -1268,12 +1286,14 @@ fun Route.parentAcademicsRouting() {
                 }
 
                 val questionDtos = questions.map { qr ->
-                    val opts = runCatching {
+                    val rawOpts = runCatching {
                         Json.decodeFromString(
                             ListSerializer(serializer<String>()),
                             qr[SyllabusQuizQuestionsTable.optionsJson]
                         )
                     }.getOrDefault(emptyList())
+                    val qType = qr[SyllabusQuizQuestionsTable.questionType]
+                    val opts = if (qType == "TRUE_FALSE" && rawOpts.isEmpty()) listOf("True", "False") else rawOpts
 
                     val matchPairs = runCatching {
                         Json.decodeFromString(
@@ -1364,11 +1384,26 @@ fun Route.parentAcademicsRouting() {
                                 qRow[SyllabusQuizQuestionsTable.optionsJson]
                             )
                         }.getOrDefault(emptyList())
-                        val selectedAnswer = opts.getOrNull(ans.selectedIndex) ?: ""
-                        val isCorrect = qRow[SyllabusQuizQuestionsTable.correctAnswer].equals(selectedAnswer, ignoreCase = true) ||
-                            qRow[SyllabusQuizQuestionsTable.correctAnswer].equals(ans.selectedIndex.toString(), ignoreCase = true)
+                        val qType = qRow[SyllabusQuizQuestionsTable.questionType]
+                        val correctAnswer = qRow[SyllabusQuizQuestionsTable.correctAnswer]
+
+                        val (selectedAnswer, isCorrect) = when (qType) {
+                            "FILL_BLANK" -> {
+                                val text = (ans.answerText ?: "").trim()
+                                text to text.equals(correctAnswer, ignoreCase = true)
+                            }
+                            "TRUE_FALSE" -> {
+                                val text = ans.answerText ?: opts.getOrNull(ans.selectedIndex) ?: ""
+                                text to text.equals(correctAnswer, ignoreCase = true)
+                            }
+                            else -> {
+                                val selAns = opts.getOrNull(ans.selectedIndex) ?: ""
+                                selAns to (correctAnswer.equals(selAns, ignoreCase = true) ||
+                                    correctAnswer.equals(ans.selectedIndex.toString(), ignoreCase = true))
+                            }
+                        }
                         if (isCorrect) correctCount++
-                        val correctIdx = opts.indexOfFirst { it.startsWith(qRow[SyllabusQuizQuestionsTable.correctAnswer]) }.takeIf { it >= 0 } ?: 0
+                        val correctIdx = opts.indexOfFirst { it.startsWith(correctAnswer) }.takeIf { it >= 0 } ?: 0
 
                         questionResults.add(
                             QuizQuestionResultDto(

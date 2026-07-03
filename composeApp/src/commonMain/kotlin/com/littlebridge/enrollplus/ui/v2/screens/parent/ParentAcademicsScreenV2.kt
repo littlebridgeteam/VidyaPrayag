@@ -21,6 +21,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -94,7 +96,7 @@ fun ParentAcademicsScreenV2(
         onLoadDailySummary = { academicsViewModel.loadDailySummary() },
         onLoadQuizzes = { academicsViewModel.loadQuizzes() },
         onOpenQuiz = { quizId -> academicsViewModel.loadQuizDetail(quizId) },
-        onSubmitQuiz = { quizId, answers -> academicsViewModel.submitQuiz(quizId, answers) },
+        onSubmitQuiz = { quizId, answers, textAnswers -> academicsViewModel.submitQuiz(quizId, answers, textAnswers) },
         onClearQuizResult = { academicsViewModel.clearQuizResult() },
         onLoadLeaderboard = { quizId -> academicsViewModel.loadLeaderboard(quizId) },
         onOpenLeave = onOpenLeave,
@@ -115,7 +117,7 @@ private fun ParentAcademicsContent(
     onLoadDailySummary: () -> Unit,
     onLoadQuizzes: () -> Unit,
     onOpenQuiz: (String) -> Unit,
-    onSubmitQuiz: (String, List<Pair<String, Int>>) -> Unit,
+    onSubmitQuiz: (String, List<Pair<String, Int>>, Map<String, String>) -> Unit,
     onClearQuizResult: () -> Unit,
     onLoadLeaderboard: (String) -> Unit,
     onOpenLeave: () -> Unit = {},
@@ -760,7 +762,7 @@ private fun QuizzesTab(
     academics: ParentAcademicsState,
     onRetry: () -> Unit,
     onOpenQuiz: (String) -> Unit,
-    onSubmitQuiz: (String, List<Pair<String, Int>>) -> Unit,
+    onSubmitQuiz: (String, List<Pair<String, Int>>, Map<String, String>) -> Unit,
     onBackToList: () -> Unit,
     onLoadLeaderboard: (String) -> Unit,
 ) {
@@ -768,7 +770,7 @@ private fun QuizzesTab(
     val quizzes = academics.quizzes
 
     if (academics.quizDetail != null) {
-        QuizDetailCard(academics, onSubmitQuiz)
+        QuizDetailCard(academics, onSubmitQuiz, onBackToList)
         return
     }
 
@@ -820,16 +822,26 @@ private fun QuizzesTab(
 }
 
 @Composable
-private fun QuizDetailCard(academics: ParentAcademicsState, onSubmit: (String, List<Pair<String, Int>>) -> Unit) {
+private fun QuizDetailCard(
+    academics: ParentAcademicsState,
+    onSubmit: (String, List<Pair<String, Int>>, Map<String, String>) -> Unit,
+    onBack: () -> Unit,
+) {
     val c = VTheme.colors
     val detail = academics.quizDetail ?: return
     val answers = remember { mutableStateMapOf<String, Int>() }
+    val textAnswers = remember { mutableStateMapOf<String, String>() }
 
     VCard {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            val backIx = remember { MutableInteractionSource() }
+            Box(
+                Modifier.size(32.dp).clip(CircleShape).background(c.cream)
+                    .clickable(interactionSource = backIx, indication = null) { onBack() },
+                contentAlignment = Alignment.Center,
+            ) { Icon(VIcons.ArrowLeft, contentDescription = "Back", tint = c.ink2, modifier = Modifier.size(18.dp)) }
             Icon(VIcons.GraduationCap, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(20.dp))
-            Text(detail.title.ifBlank { "Quiz" }, style = VTheme.type.bodyStrong.colored(c.ink))
-            Spacer(Modifier.weight(1f))
+            Text(detail.title.ifBlank { "Quiz" }, style = VTheme.type.bodyStrong.colored(c.ink), modifier = Modifier.weight(1f))
             Text(detail.subject, style = VTheme.type.caption.colored(c.ink2))
         }
         Spacer(Modifier.height(16.dp))
@@ -840,31 +852,90 @@ private fun QuizDetailCard(academics: ParentAcademicsState, onSubmit: (String, L
         ) {
             detail.questions.forEachIndexed { qIdx, q ->
                 Column {
-                    Text("${qIdx + 1}. ${q.question}", style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 14.sp))
+                    val qTypeLabel = when (q.questionType) {
+                        "TRUE_FALSE" -> " (True/False)"
+                        "FILL_BLANK" -> " (Fill in the blank)"
+                        "MATCH" -> " (Match)"
+                        else -> ""
+                    }
+                    Text("${qIdx + 1}. ${q.question}$qTypeLabel", style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 14.sp))
                     Spacer(Modifier.height(8.dp))
-                    q.options.forEachIndexed { optIdx, opt ->
-                        val selected = answers[q.id] == optIdx
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(if (selected) c.accent.copy(alpha = 0.1f) else c.background)
-                                .border(1.dp, if (selected) c.accentDeep else c.hairline, RoundedCornerShape(10.dp))
-                                .clickable { answers[q.id] = optIdx }
-                                .padding(horizontal = 12.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Box(
-                                Modifier.size(20.dp).clip(CircleShape)
-                                    .background(if (selected) c.accentDeep else c.cream)
-                                    .border(1.dp, if (selected) c.accentDeep else c.hairline, CircleShape),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                if (selected) Icon(VIcons.Check, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(12.dp))
+
+                    when (q.questionType) {
+                        "FILL_BLANK" -> {
+                            OutlinedTextField(
+                                value = textAnswers[q.id] ?: "",
+                                onValueChange = { textAnswers[q.id] = it },
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = { Text("Type your answer...", style = VTheme.type.body.colored(c.ink3).copy(fontSize = 13.sp)) },
+                                singleLine = true,
+                                shape = RoundedCornerShape(10.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = c.accentDeep,
+                                    unfocusedBorderColor = c.hairline,
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = c.background,
+                                ),
+                            )
+                        }
+                        "TRUE_FALSE" -> {
+                            val tfOptions = if (q.options.isNotEmpty()) q.options else listOf("True", "False")
+                            tfOptions.forEachIndexed { optIdx, opt ->
+                                val selected = answers[q.id] == optIdx
+                                Row(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(if (selected) c.accent.copy(alpha = 0.1f) else c.background)
+                                        .border(1.dp, if (selected) c.accentDeep else c.hairline, RoundedCornerShape(10.dp))
+                                        .clickable {
+                                            answers[q.id] = optIdx
+                                            textAnswers[q.id] = opt
+                                        }
+                                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    Box(
+                                        Modifier.size(20.dp).clip(CircleShape)
+                                            .background(if (selected) c.accentDeep else c.cream)
+                                            .border(1.dp, if (selected) c.accentDeep else c.hairline, CircleShape),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        if (selected) Icon(VIcons.Check, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(12.dp))
+                                    }
+                                    Text(opt, style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp))
+                                }
                             }
-                            Text(opt, style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp))
+                        }
+                        else -> {
+                            // MCQ and MATCH — render options as selectable rows
+                            q.options.forEachIndexed { optIdx, opt ->
+                                val selected = answers[q.id] == optIdx
+                                Row(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(if (selected) c.accent.copy(alpha = 0.1f) else c.background)
+                                        .border(1.dp, if (selected) c.accentDeep else c.hairline, RoundedCornerShape(10.dp))
+                                        .clickable { answers[q.id] = optIdx }
+                                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    Box(
+                                        Modifier.size(20.dp).clip(CircleShape)
+                                            .background(if (selected) c.accentDeep else c.cream)
+                                            .border(1.dp, if (selected) c.accentDeep else c.hairline, CircleShape),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        if (selected) Icon(VIcons.Check, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(12.dp))
+                                    }
+                                    Text(opt, style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp))
+                                }
+                            }
                         }
                     }
                 }
@@ -880,8 +951,18 @@ private fun QuizDetailCard(academics: ParentAcademicsState, onSubmit: (String, L
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             VButton(
+                "Back",
+                onClick = onBack,
+                modifier = Modifier.weight(1f),
+                variant = VButtonVariant.Ghost,
+                size = VButtonSize.Md,
+            )
+            VButton(
                 "Clear",
-                onClick = { answers.clear() },
+                onClick = {
+                    answers.clear()
+                    textAnswers.clear()
+                },
                 modifier = Modifier.weight(1f),
                 variant = VButtonVariant.Ghost,
                 size = VButtonSize.Md,
@@ -890,8 +971,9 @@ private fun QuizDetailCard(academics: ParentAcademicsState, onSubmit: (String, L
                 "Submit",
                 onClick = {
                     val answerList = answers.entries.map { it.key to it.value }
-                    if (answerList.isNotEmpty()) {
-                        onSubmit(detail.id, answerList)
+                    val textMap = textAnswers.toMap()
+                    if (answerList.isNotEmpty() || textMap.isNotEmpty()) {
+                        onSubmit(detail.id, answerList, textMap)
                     }
                 },
                 modifier = Modifier.weight(1f),

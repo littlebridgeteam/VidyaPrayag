@@ -273,7 +273,7 @@ class ParentAcademicsViewModel(
         }
     }
 
-    fun submitQuiz(quizId: String, answers: List<Pair<String, Int>>) {
+    fun submitQuiz(quizId: String, answers: List<Pair<String, Int>>, textAnswers: Map<String, String> = emptyMap()) {
         viewModelScope.launch {
             _state.update { it.copy(isSubmittingQuiz = true, quizSubmitError = null) }
             val token = token() ?: run {
@@ -281,7 +281,13 @@ class ParentAcademicsViewModel(
             }
             val request = QuizSubmitRequest(
                 quizId = quizId,
-                answers = answers.map { (qid, idx) -> com.littlebridge.enrollplus.feature.teacher.domain.model.QuizAnswerDto(questionId = qid, selectedIndex = idx) },
+                answers = answers.map { (qid, idx) ->
+                    com.littlebridge.enrollplus.feature.teacher.domain.model.QuizAnswerDto(
+                        questionId = qid,
+                        selectedIndex = idx,
+                        answerText = textAnswers[qid],
+                    )
+                },
             )
             when (val r = repository.submitQuiz(token, request)) {
                 is NetworkResult.Success -> _state.update { it.copy(isSubmittingQuiz = false, quizResult = r.data) }

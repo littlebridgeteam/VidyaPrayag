@@ -979,7 +979,8 @@ data class QuizSubmitRequest(
 @Serializable
 data class QuizAnswerDto(
     @SerialName("question_id") val questionId: String,
-    @SerialName("selected_index") val selectedIndex: Int,
+    @SerialName("selected_index") val selectedIndex: Int = -1,
+    @SerialName("answer_text") val answerText: String? = null,
 )
 
 @Serializable
