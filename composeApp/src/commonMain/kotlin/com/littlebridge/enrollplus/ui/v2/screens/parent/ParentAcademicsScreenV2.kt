@@ -1010,22 +1010,37 @@ private fun QuizResultCard(
             Text("Score: ${result.score} / ${result.totalMarks}", style = VTheme.type.bodyStrong.colored(c.ink))
             Spacer(Modifier.height(16.dp))
 
-            result.questionResults.forEachIndexed { idx, qr ->
-                Row(
-                    Modifier.fillMaxWidth().padding(vertical = 6.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        if (qr.correct) VIcons.Check else VIcons.Close,
-                        contentDescription = null,
-                        tint = if (qr.correct) c.successInk else c.dangerInk,
-                        modifier = Modifier.size(16.dp),
-                    )
-                    Column(Modifier.weight(1f)) {
-                        Text("${idx + 1}. ${qr.question}", style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp))
+            Column(
+                Modifier.fillMaxWidth().heightIn(max = 350.dp).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                result.questionResults.forEachIndexed { idx, qr ->
+                    Column(
+                        Modifier.fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (qr.correct) c.successInk.copy(alpha = 0.06f) else c.dangerInk.copy(alpha = 0.06f))
+                            .border(1.dp, if (qr.correct) c.successInk.copy(alpha = 0.2f) else c.dangerInk.copy(alpha = 0.2f), RoundedCornerShape(10.dp))
+                            .padding(10.dp),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Icon(
+                                if (qr.correct) VIcons.Check else VIcons.Close,
+                                contentDescription = null,
+                                tint = if (qr.correct) c.successInk else c.dangerInk,
+                                modifier = Modifier.size(16.dp),
+                            )
+                            Text("${idx + 1}. ${qr.question}", style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
+                        }
+                        Spacer(Modifier.height(6.dp))
+                        if (qr.selectedAnswer.isNotBlank()) {
+                            Text("Your answer: ${qr.selectedAnswer}", style = VTheme.type.caption.colored(if (qr.correct) c.successInk else c.dangerInk).copy(fontSize = 12.sp))
+                        }
+                        if (!qr.correct && qr.correctAnswer.isNotBlank()) {
+                            Text("Correct answer: ${qr.correctAnswer}", style = VTheme.type.caption.colored(c.successInk).copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold))
+                        }
                         val expl = qr.explanation
                         if (!expl.isNullOrBlank()) {
+                            Spacer(Modifier.height(2.dp))
                             Text(expl, style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 11.sp))
                         }
                     }

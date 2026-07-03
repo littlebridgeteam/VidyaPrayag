@@ -741,6 +741,18 @@ class TeacherApi(
         }
     }
 
+    /** Add a new question to a DRAFT quiz. */
+    suspend fun addQuizQuestion(
+        token: String,
+        quizId: String,
+        request: QuizUpdateQuestionRequest,
+    ): NetworkResult<QuizUpdateQuestionResponse> = safeApiCall {
+        client.post(getUrl("api/v1/teacher/syllabus/quiz/$quizId/question")) {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+    }
+
     /** Regenerate all questions for an existing DRAFT quiz. */
     suspend fun regenerateQuiz(
         token: String,

@@ -424,6 +424,66 @@ fun Route.teacherQuizRouting() {
                 ))
             }
 
+            // POST /{id}/question — add a new question to a DRAFT quiz
+            post("/{id}/question") {
+                val ctx = call.requireTeacherContext() ?: return@post
+                val quizIdStr = call.parameters["id"]
+                if (quizIdStr.isNullOrBlank()) {
+                    call.fail("Quiz ID is required", HttpStatusCode.BadRequest, "MISSING_PARAM"); return@post
+                }
+                val quizId = UUID.fromString(quizIdStr)
+
+                val req = runCatching { call.receive<QuizQuestionUpdateReq>() }.getOrNull()
+                if (req == null) {
+                    call.fail("Invalid request body", HttpStatusCode.BadRequest, "BAD_REQUEST"); return@post
+                }
+
+                val quizRow = dbQuery {
+                    SyllabusQuizzesTable.selectAll().where {
+                        (SyllabusQuizzesTable.id eq quizId) and
+                            (SyllabusQuizzesTable.schoolId eq ctx.schoolId)
+                    }.singleOrNull()
+                }
+                if (quizRow == null) {
+                    call.fail("Quiz not found", HttpStatusCode.NotFound, "QUIZ_NOT_FOUND"); return@post
+                }
+                if (quizRow[SyllabusQuizzesTable.status] != "DRAFT") {
+                    call.fail("Cannot add questions to a published quiz", HttpStatusCode.BadRequest, "QUIZ_NOT_DRAFT"); return@post
+                }
+
+                val qId = UUID.randomUUID()
+                val optionsJson = quizJson.encodeToString(ListSerializer(serializer<String>()), req.options)
+                val maxPos = dbQuery {
+                    SyllabusQuizQuestionsTable.selectAll().where {
+                        SyllabusQuizQuestionsTable.quizId eq quizId
+                    }.orderBy(SyllabusQuizQuestionsTable.position, SortOrder.DESC).firstOrNull()
+                        ?.get(SyllabusQuizQuestionsTable.position) ?: 0
+                }
+                dbQuery {
+                    SyllabusQuizQuestionsTable.insert {
+                        it[SyllabusQuizQuestionsTable.id] = qId
+                        it[SyllabusQuizQuestionsTable.quizId] = quizId
+                        it[SyllabusQuizQuestionsTable.questionType] = req.questionType
+                        it[SyllabusQuizQuestionsTable.questionText] = req.question
+                        it[SyllabusQuizQuestionsTable.optionsJson] = optionsJson
+                        it[SyllabusQuizQuestionsTable.correctAnswer] = req.correctAnswer
+                        it[SyllabusQuizQuestionsTable.explanation] = req.explanation.orEmpty()
+                        it[SyllabusQuizQuestionsTable.position] = maxPos + 1
+                        it[SyllabusQuizQuestionsTable.matchPairsJson] = "[]"
+                    }
+                }
+
+                call.ok(QuizQuestionSer(
+                    id = qId.toString(),
+                    question = req.question,
+                    options = req.options,
+                    correctIndex = 0,
+                    explanation = req.explanation,
+                    questionType = req.questionType,
+                    correctAnswer = req.correctAnswer,
+                ))
+            }
+
             // PUT /{id}/question/{questionId} — update a single quiz question
             put("/{id}/question/{questionId}") {
                 val ctx = call.requireTeacherContext() ?: return@put

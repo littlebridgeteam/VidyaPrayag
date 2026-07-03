@@ -243,6 +243,9 @@ class TeacherRepositoryImpl(
     override suspend fun updateQuizQuestion(token: String, quizId: String, questionId: String, request: QuizUpdateQuestionRequest): NetworkResult<QuizUpdateQuestionResponse> =
         api.updateQuizQuestion(token, quizId, questionId, request)
 
+    override suspend fun addQuizQuestion(token: String, quizId: String, request: QuizUpdateQuestionRequest): NetworkResult<QuizUpdateQuestionResponse> =
+        api.addQuizQuestion(token, quizId, request)
+
     override suspend fun regenerateQuiz(token: String, quizId: String): NetworkResult<QuizRegenerateResponse> =
         api.regenerateQuiz(token, quizId)
 

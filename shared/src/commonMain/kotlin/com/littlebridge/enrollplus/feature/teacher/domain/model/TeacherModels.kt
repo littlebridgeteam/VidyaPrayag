@@ -1008,6 +1008,9 @@ data class QuizQuestionResultDto(
     @SerialName("correct_index") val correctIndex: Int,
     val correct: Boolean,
     val explanation: String? = null,
+    @SerialName("selected_answer") val selectedAnswer: String = "",
+    @SerialName("correct_answer") val correctAnswer: String = "",
+    @SerialName("question_type") val questionType: String = "MCQ",
 )
 
 // ── Teacher quiz leaderboard ──

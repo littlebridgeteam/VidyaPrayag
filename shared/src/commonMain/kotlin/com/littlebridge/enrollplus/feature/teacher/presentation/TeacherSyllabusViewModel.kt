@@ -109,6 +109,8 @@ data class TeacherSyllabusState(
     val isRegenerating: Boolean = false,
     val isPublishingQuiz: Boolean = false,
     val quizPreviewError: String? = null,
+    // ── Quiz add question ──
+    val showAddQuestion: Boolean = false,
     // ── Quiz leaderboard ──
     val showLeaderboard: Boolean = false,
     val leaderboardQuizId: String = "",
@@ -584,6 +586,9 @@ class TeacherSyllabusViewModel(
 
     fun cancelEditingQuestion() = _state.update { it.copy(editingQuestionId = null) }
 
+    fun openAddQuestion() = _state.update { it.copy(showAddQuestion = true, quizPreviewError = null) }
+    fun cancelAddQuestion() = _state.update { it.copy(showAddQuestion = false) }
+
     fun updateGeneratedQuestion(quizId: String, questionId: String, question: String, options: List<String>, correctAnswer: String, explanation: String?, questionType: String) {
         viewModelScope.launch {
             _state.update { it.copy(isPublishingQuiz = true, quizPreviewError = null) }
@@ -622,6 +627,44 @@ class TeacherSyllabusViewModel(
                         }
                     } else {
                         _state.update { it.copy(isPublishingQuiz = false, editingQuestionId = null) }
+                    }
+                }
+                is NetworkResult.Error -> _state.update { it.copy(isPublishingQuiz = false, quizPreviewError = result.message) }
+                is NetworkResult.ConnectionError -> _state.update { it.copy(isPublishingQuiz = false, quizPreviewError = "Connection error") }
+            }
+        }
+    }
+
+    fun addQuestion(quizId: String, question: String, options: List<String>, correctAnswer: String, explanation: String?, questionType: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(isPublishingQuiz = true, quizPreviewError = null) }
+            val token = preferenceRepository.getUserToken().first()
+            if (token == null) {
+                _state.update { it.copy(isPublishingQuiz = false, quizPreviewError = "Not authenticated") }
+                return@launch
+            }
+            val request = QuizUpdateQuestionRequest(
+                question = question,
+                options = options,
+                correctAnswer = correctAnswer,
+                explanation = explanation,
+                questionType = questionType,
+            )
+            when (val result = repository.addQuizQuestion(token, quizId, request)) {
+                is NetworkResult.Success -> {
+                    val s = _state.value
+                    val quiz = s.generatedQuiz
+                    val newQ = result.data.data
+                    if (quiz != null && newQ != null) {
+                        _state.update {
+                            it.copy(
+                                isPublishingQuiz = false,
+                                showAddQuestion = false,
+                                generatedQuiz = quiz.copy(questions = quiz.questions + newQ),
+                            )
+                        }
+                    } else {
+                        _state.update { it.copy(isPublishingQuiz = false, showAddQuestion = false) }
                     }
                 }
                 is NetworkResult.Error -> _state.update { it.copy(isPublishingQuiz = false, quizPreviewError = result.message) }

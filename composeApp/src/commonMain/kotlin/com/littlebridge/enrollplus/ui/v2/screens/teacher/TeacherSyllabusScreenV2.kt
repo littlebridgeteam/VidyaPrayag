@@ -1169,6 +1169,27 @@ private fun QuizPreviewSheet(viewModel: TeacherSyllabusViewModel) {
                     }
                 }
 
+                // Add Question button + form
+                if (state.showAddQuestion) {
+                    AddQuestionCard(
+                        isLoading = state.isPublishingQuiz,
+                        onSave = { question, options, correctAnswer, explanation, qType ->
+                            viewModel.addQuestion(quiz.id, question, options, correctAnswer, explanation, qType)
+                        },
+                        onCancel = { viewModel.cancelAddQuestion() },
+                    )
+                } else {
+                    VButton(
+                        "+ Add Question",
+                        onClick = { viewModel.openAddQuestion() },
+                        variant = VButtonVariant.Ghost,
+                        tone = VButtonTone.Teal,
+                        size = VButtonSize.Md,
+                        full = true,
+                        leading = { Icon(VIcons.Plus, contentDescription = null, modifier = Modifier.size(14.dp)) },
+                    )
+                }
+
                 if (state.quizPreviewError != null) {
                     Text(state.quizPreviewError ?: "", style = VTheme.type.caption.colored(c.dangerInk).copy(fontSize = 12.sp))
                 }
@@ -1249,6 +1270,131 @@ private fun QuestionPreviewCard(
     }
 }
 
+// ── Add question card (manual question creation) ─────────────────────────────
+
+@Composable
+private fun AddQuestionCard(
+    isLoading: Boolean,
+    onSave: (question: String, options: List<String>, correctAnswer: String, explanation: String?, questionType: String) -> Unit,
+    onCancel: () -> Unit,
+) {
+    val c = VTheme.colors
+    var questionText by remember { mutableStateOf("") }
+    var optionsText by remember { mutableStateOf("") }
+    var correctAnswer by remember { mutableStateOf("") }
+    var explanation by remember { mutableStateOf("") }
+    var questionType by remember { mutableStateOf("MCQ") }
+
+    Column(
+        Modifier.fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(c.accent.copy(alpha = 0.06f))
+            .border(1.dp, c.accentDeep.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text("Add New Question", style = VTheme.type.bodyStrong.colored(c.accentDeep).copy(fontSize = 13.sp, fontWeight = FontWeight.Bold))
+
+        // Question type selector
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("MCQ" to "MCQ", "FILL_BLANK" to "Fill-ups", "TRUE_FALSE" to "True/False").forEach { (type, label) ->
+                val selected = questionType == type
+                val ixType = remember { MutableInteractionSource() }
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (selected) c.accent.copy(alpha = 0.14f) else c.cream)
+                        .border(1.dp, if (selected) c.accentDeep else c.hairline, RoundedCornerShape(8.dp))
+                        .clickable(interactionSource = ixType, indication = null) {
+                            questionType = type
+                            if (type == "TRUE_FALSE") {
+                                correctAnswer = "true"
+                                optionsText = ""
+                            } else if (type == "FILL_BLANK") {
+                                optionsText = ""
+                            }
+                        }
+                        .padding(vertical = 6.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(label, style = VTheme.type.caption.colored(if (selected) c.accentDeep else c.ink2).copy(fontSize = 11.sp))
+                }
+            }
+        }
+
+        VInput(
+            value = questionText,
+            onValueChange = { questionText = it },
+            placeholder = "Question text",
+            singleLine = false,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 60.dp, max = 120.dp),
+        )
+
+        if (questionType == "MCQ") {
+            Text("Options (one per line):", style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 11.sp))
+            VInput(
+                value = optionsText,
+                onValueChange = { optionsText = it },
+                placeholder = "A) ...\nB) ...\nC) ...\nD) ...",
+                singleLine = false,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 80.dp, max = 140.dp),
+            )
+        }
+
+        if (questionType == "TRUE_FALSE") {
+            Text("Correct answer:", style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 11.sp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("true" to "True", "false" to "False").forEach { (value, label) ->
+                    val selected = correctAnswer.equals(value, ignoreCase = true)
+                    val ixTF = remember { MutableInteractionSource() }
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (selected) c.accent.copy(alpha = 0.14f) else c.cream)
+                            .border(1.dp, if (selected) c.accentDeep else c.hairline, RoundedCornerShape(8.dp))
+                            .clickable(interactionSource = ixTF, indication = null) { correctAnswer = value }
+                            .padding(vertical = 8.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(label, style = VTheme.type.body.colored(if (selected) c.accentDeep else c.ink2).copy(fontSize = 13.sp))
+                    }
+                }
+            }
+        } else {
+            VInput(
+                value = correctAnswer,
+                onValueChange = { correctAnswer = it },
+                placeholder = if (questionType == "FILL_BLANK") "Correct answer text" else "Correct answer (e.g. A, B)",
+            )
+        }
+
+        VInput(
+            value = explanation,
+            onValueChange = { explanation = it },
+            placeholder = "Explanation (optional)",
+            singleLine = false,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp, max = 80.dp),
+        )
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            VButton("Cancel", onClick = onCancel, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost, size = VButtonSize.Md)
+            VButton(
+                "Add",
+                onClick = {
+                    val opts = if (questionType == "MCQ") optionsText.split("\n").map { it.trim() }.filter { it.isNotEmpty() } else emptyList()
+                    onSave(questionText, opts, correctAnswer, explanation.ifBlank { null }, questionType)
+                },
+                modifier = Modifier.weight(1f),
+                tone = VButtonTone.Lavender,
+                size = VButtonSize.Md,
+                loading = isLoading,
+            )
+        }
+    }
+}
+
 @Composable
 private fun EditableQuestionCard(
     question: QuizQuestionDto,
@@ -1292,11 +1438,33 @@ private fun EditableQuestionCard(
             )
         }
 
-        VInput(
-            value = correctAnswer,
-            onValueChange = { correctAnswer = it },
-            placeholder = "Correct answer (e.g. A, B, true, false, or text)",
-        )
+        if (questionType == "TRUE_FALSE") {
+            Text("Correct answer:", style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 11.sp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("true" to "True", "false" to "False").forEach { (value, label) ->
+                    val selected = correctAnswer.equals(value, ignoreCase = true)
+                    val ixTF = remember { MutableInteractionSource() }
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (selected) c.accent.copy(alpha = 0.14f) else c.cream)
+                            .border(1.dp, if (selected) c.accentDeep else c.hairline, RoundedCornerShape(8.dp))
+                            .clickable(interactionSource = ixTF, indication = null) { correctAnswer = value }
+                            .padding(vertical = 8.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(label, style = VTheme.type.body.colored(if (selected) c.accentDeep else c.ink2).copy(fontSize = 13.sp))
+                    }
+                }
+            }
+        } else {
+            VInput(
+                value = correctAnswer,
+                onValueChange = { correctAnswer = it },
+                placeholder = if (questionType == "FILL_BLANK") "Correct answer text" else "Correct answer (e.g. A, B)",
+            )
+        }
 
         VInput(
             value = explanation,

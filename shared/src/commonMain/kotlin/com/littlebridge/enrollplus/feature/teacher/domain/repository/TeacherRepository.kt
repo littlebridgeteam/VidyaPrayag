@@ -126,6 +126,7 @@ interface TeacherRepository {
     suspend fun getQuizResults(token: String, quizId: String): NetworkResult<QuizListResponse>
     suspend fun getQuizLeaderboard(token: String, quizId: String): NetworkResult<TeacherQuizLeaderboardResponse>
     suspend fun updateQuizQuestion(token: String, quizId: String, questionId: String, request: QuizUpdateQuestionRequest): NetworkResult<QuizUpdateQuestionResponse>
+    suspend fun addQuizQuestion(token: String, quizId: String, request: QuizUpdateQuestionRequest): NetworkResult<QuizUpdateQuestionResponse>
     suspend fun regenerateQuiz(token: String, quizId: String): NetworkResult<QuizRegenerateResponse>
 
     // ── NCERT Auto-fill + Approval + Pace ───────────────────────────────────

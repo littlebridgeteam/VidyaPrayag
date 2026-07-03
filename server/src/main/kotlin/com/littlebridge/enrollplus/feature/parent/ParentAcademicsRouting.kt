@@ -295,6 +295,9 @@ data class QuizQuestionResultDto(
     @SerialName("correct_index") val correctIndex: Int,
     val correct: Boolean,
     val explanation: String? = null,
+    @SerialName("selected_answer") val selectedAnswer: String = "",
+    @SerialName("correct_answer") val correctAnswer: String = "",
+    @SerialName("question_type") val questionType: String = "MCQ",
 )
 
 @Serializable
@@ -1135,6 +1138,9 @@ fun Route.parentAcademicsRouting() {
                                 correctIndex = correctIdx,
                                 correct = isCorrect,
                                 explanation = qRow[SyllabusQuizQuestionsTable.explanation],
+                                selectedAnswer = selectedAnswer,
+                                correctAnswer = correctAnswer,
+                                questionType = qType,
                             )
                         )
 
@@ -1413,6 +1419,9 @@ fun Route.parentAcademicsRouting() {
                                 correctIndex = correctIdx,
                                 correct = isCorrect,
                                 explanation = qRow[SyllabusQuizQuestionsTable.explanation],
+                                selectedAnswer = selectedAnswer,
+                                correctAnswer = correctAnswer,
+                                questionType = qType,
                             )
                         )
 
