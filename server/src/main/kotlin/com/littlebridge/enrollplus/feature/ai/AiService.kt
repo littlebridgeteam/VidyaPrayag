@@ -92,8 +92,8 @@ object AiService {
     private fun laneProviders(lane: AiLane): List<AiProvider> = when (lane) {
         AiLane.FAST_CHAT -> listOf(AiProvider.GROQ_FAST, AiProvider.NVIDIA_FAST, AiProvider.CEREBRAS, AiProvider.GROQ, AiProvider.OPENROUTER)
         AiLane.CLASSIFY  -> listOf(AiProvider.GROQ_FAST, AiProvider.NVIDIA_FAST, AiProvider.GROQ, AiProvider.CEREBRAS, AiProvider.OPENROUTER)
-        AiLane.REASON    -> listOf(AiProvider.GROQ, AiProvider.NVIDIA_REASON, AiProvider.GEMINI, AiProvider.SAMBANOVA, AiProvider.CEREBRAS,
-                                   AiProvider.OPENROUTER, AiProvider.MISTRAL)
+        AiLane.REASON    -> listOf(AiProvider.GROQ, AiProvider.GEMINI, AiProvider.SAMBANOVA, AiProvider.CEREBRAS,
+                                   AiProvider.NVIDIA_REASON, AiProvider.OPENROUTER, AiProvider.MISTRAL)
         AiLane.BATCH     -> listOf(AiProvider.GROQ, AiProvider.NVIDIA_REASON, AiProvider.GEMINI, AiProvider.MISTRAL, AiProvider.OPENROUTER)
     }
 

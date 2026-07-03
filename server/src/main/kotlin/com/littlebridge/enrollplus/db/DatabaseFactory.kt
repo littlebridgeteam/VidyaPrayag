@@ -318,6 +318,8 @@ object DatabaseFactory {
         SyllabusQuizzesTable,
         SyllabusQuizQuestionsTable,
         SyllabusQuizAnswersTable,
+        // NCERT syllabus reference (migration_111) — auto-fill data for syllabus.
+        NcertSyllabusReferenceTable,
     )
 
     /** True when DATABASE_URL is set → we're talking to Postgres / Supabase. */

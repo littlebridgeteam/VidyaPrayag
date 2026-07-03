@@ -78,7 +78,7 @@ class TutorAgentService(
                     turn // No bundle → can't ground, but serve with a warning
                 }
 
-                val wasGrounded = grounded != null && grounded.studentFacing.text == turn.studentFacing.text
+                val wasGrounded = grounded != null && grounded.studentFacing?.text == turn.studentFacing?.text
                 val finalTurn = grounded ?: TutorTurnCodec.deterministic(question)
 
                 // Persist the session
@@ -100,6 +100,7 @@ class TutorAgentService(
                 )
             } else {
                 log.warn("TutorAgent: model output failed TutorTurn parse — falling back to deterministic")
+                log.warn("TutorAgent: raw model output (first 800 chars): {}", agentResult.content?.take(800))
             }
         }
 

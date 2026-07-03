@@ -33,7 +33,8 @@ object TutorGroundingGuard {
         val allGrounded = groundingSet + refValues
 
         // Check studentFacing text for numbers not in the grounding set
-        val verifiedText = stripUngroundedNumbers(turn.studentFacing.text, allGrounded)
+        val sf = turn.studentFacing ?: return null
+        val verifiedText = stripUngroundedNumbers(sf.text, allGrounded)
         if (verifiedText == null) {
             log.warn("TutorGroundingGuard: studentFacing text fully ungrounded — rejecting turn")
             return null
@@ -52,7 +53,7 @@ object TutorGroundingGuard {
         }?.takeIf { it.isNotEmpty() }
 
         return turn.copy(
-            studentFacing = turn.studentFacing.copy(text = verifiedText),
+            studentFacing = sf.copy(text = verifiedText),
             practice = verifiedPractice,
         )
     }

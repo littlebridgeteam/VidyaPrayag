@@ -1,6 +1,7 @@
 // FILE: server/src/main/kotlin/com/littlebridge/enrollplus/feature/tutor/agent/TutorTurn.kt
 package com.littlebridge.enrollplus.feature.tutor.agent
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -15,17 +16,17 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class TutorTurn(
     val mode: String,                    // SOCRATIC_STEP | HINT | EXPLANATION | PRACTICE_SET | PLAN_UPDATE | ESCALATE
-    val groundedRefs: List<GroundedRef> = emptyList(),
-    val studentFacing: StudentFacing,
+    @SerialName("grounded_refs") val groundedRefs: List<GroundedRef> = emptyList(),
+    @SerialName("student_facing") val studentFacing: StudentFacing? = null,
     val practice: List<PracticeQuestion>? = null,
-    val planDelta: PlanDelta? = null,
-    val teacherFlag: TeacherFlag? = null,
+    @SerialName("plan_delta") val planDelta: PlanDelta? = null,
+    @SerialName("teacher_flag") val teacherFlag: TeacherFlag? = null,
     val misconception: MisconceptionLog? = null,
 )
 
 @Serializable
 data class GroundedRef(
-    val topicId: String,
+    @SerialName("topic_id") val topicId: String,
     val source: String,                  // MARKS | SYLLABUS | NCERT | RAG
     val value: String,
 )
@@ -33,42 +34,42 @@ data class GroundedRef(
 @Serializable
 data class StudentFacing(
     val text: String,
-    val mathBlocks: List<String> = emptyList(),  // LaTeX strings
-    val nextPrompt: String? = null,
+    @SerialName("math_blocks") val mathBlocks: List<String> = emptyList(),  // LaTeX strings
+    @SerialName("next_prompt") val nextPrompt: String? = null,
 )
 
 @Serializable
 data class PracticeQuestion(
-    val questionId: String,
+    @SerialName("question_id") val questionId: String,
     val stem: String,
     val options: List<String>? = null,
-    val answerKey: String,
-    val topicId: String,
+    @SerialName("answer_key") val answerKey: String,
+    @SerialName("topic_id") val topicId: String,
     val difficulty: String,              // easy | medium | hard
 )
 
 @Serializable
 data class PlanDelta(
-    val addReviews: List<AddReview> = emptyList(),
-    val adjustDifficulty: String? = null,
+    @SerialName("add_reviews") val addReviews: List<AddReview> = emptyList(),
+    @SerialName("adjust_difficulty") val adjustDifficulty: String? = null,
 )
 
 @Serializable
 data class AddReview(
-    val topicId: String,
+    @SerialName("topic_id") val topicId: String,
     val priority: String,                // high | medium | low
 )
 
 @Serializable
 data class TeacherFlag(
-    val topicId: String,
+    @SerialName("topic_id") val topicId: String,
     val reason: String,
     val severity: String,                // low | medium | high
 )
 
 @Serializable
 data class MisconceptionLog(
-    val topicId: String,
+    @SerialName("topic_id") val topicId: String,
     val type: String,
     val evidence: String,
 )
@@ -99,6 +100,9 @@ object TutorTurnCodec {
             }
         }
         json.decodeFromString(TutorTurn.serializer(), cleaned)
+            // If the model omitted studentFacing, provide a minimal default
+            // so downstream code doesn't NPE.
+            ?.let { if (it.studentFacing == null) it.copy(studentFacing = StudentFacing(text = "I'm here to help. What would you like to work on?")) else it }
     } catch (e: Exception) {
         null
     }
