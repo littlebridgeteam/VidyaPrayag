@@ -970,7 +970,7 @@ fun Route.parentAcademicsRouting() {
                                 subject = subjectMap[asgId] ?: "",
                                 numQuestions = questionCount.toInt(),
                                 totalMarks = questionCount.toInt(),
-                                status = if (alreadySubmitted) "SUBMITTED" else "PENDING",
+                                status = if (alreadySubmitted) "SUBMITTED" else "PUBLISHED",
                                 publishedAt = qRow[SyllabusQuizzesTable.publishedAt]?.toString(),
                             )
                         }

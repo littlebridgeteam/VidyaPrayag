@@ -786,7 +786,11 @@ private fun QuizzesTab(
         onRetry = onRetry,
     ) {
         quizzes.forEach { quiz ->
-            VCard {
+            VCard(
+                modifier = Modifier.clickable {
+                    if (quiz.status == "PUBLISHED") onOpenQuiz(quiz.id)
+                },
+            ) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(c.accent.copy(alpha = 0.12f)),
@@ -801,10 +805,11 @@ private fun QuizzesTab(
                     if (quiz.status == "PUBLISHED") {
                         VBadge(text = "Start", tone = VBadgeTone.Accent)
                         Box(
-                            Modifier.size(32.dp).clip(CircleShape).background(c.accent.copy(alpha = 0.1f))
-                                .clickable { onOpenQuiz(quiz.id) },
+                            Modifier.size(32.dp).clip(CircleShape).background(c.accent.copy(alpha = 0.1f)),
                             contentAlignment = Alignment.Center,
                         ) { Icon(VIcons.ArrowRight, contentDescription = "Open", tint = c.accentDeep, modifier = Modifier.size(16.dp)) }
+                    } else if (quiz.status == "SUBMITTED") {
+                        VBadge(text = "Done", tone = VBadgeTone.Neutral)
                     } else {
                         VBadge(text = "Pending", tone = VBadgeTone.Neutral)
                     }
