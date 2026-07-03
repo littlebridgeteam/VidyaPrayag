@@ -25,6 +25,7 @@ class PreferenceManager(
     private val FCM_TOKEN_KEY = stringPreferencesKey("fcm_token")
     private val NOTIFICATIONS_DECLINED_KEY = booleanPreferencesKey("notifications_declined")
     private val FONT_SCALE_KEY = floatPreferencesKey("font_scale")
+    private val CACHED_BRANDING_KEY = stringPreferencesKey("cached_branding")
 
     override fun getThemeName(): Flow<String> {
         return dataStore.data.map { preferences ->
@@ -205,6 +206,22 @@ class PreferenceManager(
     override suspend fun setFontScale(scale: Float) {
         dataStore.edit { preferences ->
             preferences[FONT_SCALE_KEY] = scale.coerceIn(0.85f, 2f)
+        }
+    }
+
+    override fun getCachedBranding(): Flow<String?> {
+        return dataStore.data.map { preferences ->
+            preferences[CACHED_BRANDING_KEY]
+        }
+    }
+
+    override suspend fun setCachedBranding(brandingJson: String?) {
+        dataStore.edit { preferences ->
+            if (brandingJson == null) {
+                preferences.remove(CACHED_BRANDING_KEY)
+            } else {
+                preferences[CACHED_BRANDING_KEY] = brandingJson
+            }
         }
     }
 

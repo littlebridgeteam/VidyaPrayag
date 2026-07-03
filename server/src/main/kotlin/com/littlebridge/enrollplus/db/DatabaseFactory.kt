@@ -304,6 +304,11 @@ object DatabaseFactory {
         // Timetable Change Requests (migration_108_timetable_management.sql)
         // Teacher-initiated timetable change requests with admin review workflow.
         TimetableChangeRequestsTable,
+        // Multi-Branch / School Chain Support (MULTI_BRANCH_SPEC.md)
+        // Applied by docs/db/migration_051_multi_branch.sql (must run before
+        // deploy; AUTO_CREATE_TABLES is OFF in prod).
+        SchoolOrganizationsTable,
+        StudentTransfersTable,
         // Agentic Syllabus Management (migration_110) — AI syllabus lifecycle:
         // sources, daily log, pace plan, popup prefs, pace alerts.
         SyllabusSourcesTable,

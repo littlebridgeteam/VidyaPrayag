@@ -75,6 +75,10 @@ object AppUsersTable : UUIDTable("app_users", "id") {
     // "system" | "light" | "dark" | "custom:<themeId>"). Synced from the client
     // via PUT /api/v1/user/theme-pref and read back in GET /api/v1/user/details.
     val themePref         = varchar("theme_pref", 64).nullable()
+    // Multi-Branch (MULTI_BRANCH_SPEC.md): org-level admin claims.
+    // Nullable for backward compatibility — standalone school admins remain unlinked.
+    val organizationId  = uuid("organization_id").nullable()
+    val orgAdminRole    = varchar("org_admin_role", 16).nullable() // org_admin | null
     val isActive         = bool("is_active").default(true)
     val lastLoginAt      = timestamp("last_login_at").nullable()
     val createdAt        = timestamp("created_at")
@@ -208,6 +212,11 @@ object SchoolsTable : UUIDTable("schools", "id") {
     // Nullable because legacy rows / address-only onboarding may not have them.
     val latitude       = double("latitude").nullable()
     val longitude      = double("longitude").nullable()
+    // Multi-Branch (MULTI_BRANCH_SPEC.md): links this school to a parent
+    // organization (school chain). Nullable for backward compatibility —
+    // standalone schools remain unlinked.
+    val organizationId = uuid("organization_id").nullable()
+    val branchName     = text("branch_name").nullable()
     val isActive       = bool("is_active").default(true)
     val onboardedAt    = timestamp("onboarded_at").nullable()
     // Explicit onboarding lifecycle mirror of onboarded_at: 'pending' until the
@@ -3008,6 +3017,9 @@ object TutorKnowledgeChunksTable : UUIDTable("tutor_knowledge_chunks", "id") {
 // =====================================================================
 object SchoolBrandingTable : UUIDTable("school_branding", "id") {
     val schoolId           = uuid("school_id").uniqueIndex()
+    // Multi-campus branding: when set, this branch inherits org-level branding
+    // unless isCustomized=true (branch-level override takes precedence).
+    val organizationId     = uuid("organization_id").nullable()
     val logoUrl            = text("logo_url").nullable()
     val logoDarkUrl        = text("logo_dark_url").nullable()
     val faviconUrl         = text("favicon_url").nullable()
@@ -3024,6 +3036,7 @@ object SchoolBrandingTable : UUIDTable("school_branding", "id") {
 
     init {
         index("idx_school_branding_subdomain", false, customSubdomain)
+        index("idx_school_branding_org", false, organizationId)
     }
 }
 
@@ -3452,6 +3465,43 @@ object TimetableChangeRequestsTable : UUIDTable("timetable_change_requests", "id
 }
 
 // =====================================================================
+// school_organizations  (MULTI_BRANCH_SPEC.md §6.2)
+//   Parent entity for school chains/franchises. Each branch is a `schools`
+//   row linked via `schools.organization_id`. Org-level admins manage all
+//   branches under one organization.
+// =====================================================================
+object SchoolOrganizationsTable : UUIDTable("school_organizations", "id") {
+    val name        = text("name")
+    val description = text("description").nullable()
+    val logoUrl     = text("logo_url").nullable()
+    val isActive    = bool("is_active").default(true)
+    val createdAt   = timestamp("created_at")
+    val updatedAt   = timestamp("updated_at")
+}
+
+// =====================================================================
+// student_transfers  (MULTI_BRANCH_SPEC.md §6.2)
+//   Cross-branch student transfer tracking. Status flows:
+//   pending → approved → completed (or rejected).
+//   On completion, student + related records are migrated to the new school.
+// =====================================================================
+object StudentTransfersTable : UUIDTable("student_transfers", "id") {
+    val studentId     = uuid("student_id")
+    val fromSchoolId  = uuid("from_school_id")
+    val toSchoolId    = uuid("to_school_id")
+    val transferDate  = date("transfer_date")
+    val reason        = text("reason").nullable()
+    val status        = varchar("status", 16).default("pending")
+    val approvedBy    = uuid("approved_by").nullable()
+    val createdAt     = timestamp("created_at")
+
+    init {
+        index("idx_student_transfers_student", false, studentId)
+        index("idx_student_transfers_status", false, status, transferDate)
+    }
+}
+
+// =====================================================================
 // syllabus_sources  (Agentic Syllabus Management — migration_110)
 //   Raw syllabus upload (image URL or text) + AI-parsed structured JSON.
 //   Linked to a teacher_subject_assignment for scope.
@@ -3624,5 +3674,4 @@ object SyllabusQuizAnswersTable : UUIDTable("syllabus_quiz_answers", "id") {
     val isCorrect          = bool("is_correct").default(false)
     val createdAt          = timestamp("created_at")
 }
-
 val SYSTEM_SCHOOL_ID: UUID = UUID(0, 0)

@@ -1,5 +1,18 @@
 package com.littlebridge.enrollplus.feature.library
 
+import com.littlebridge.enrollplus.db.LibraryBooksTable
+import com.littlebridge.enrollplus.db.LibraryBookCopiesTable
+import com.littlebridge.enrollplus.db.LibraryIssuesTable
+import com.littlebridge.enrollplus.db.LibraryReservationsTable
+import com.littlebridge.enrollplus.db.LibraryCategoriesTable
+import com.littlebridge.enrollplus.db.LibrarySettingsTable
+import com.littlebridge.enrollplus.db.LibraryAuditLogTable
+import com.littlebridge.enrollplus.db.LibraryAnnouncementsTable
+import com.littlebridge.enrollplus.db.LibraryWishlistTable
+import com.littlebridge.enrollplus.db.LibraryReadingGoalsTable
+import com.littlebridge.enrollplus.db.LibraryAcquisitionRequestsTable
+import com.littlebridge.enrollplus.db.LibraryReadingBadgesTable
+import com.littlebridge.enrollplus.db.LibraryBookDiscussionsTable
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction

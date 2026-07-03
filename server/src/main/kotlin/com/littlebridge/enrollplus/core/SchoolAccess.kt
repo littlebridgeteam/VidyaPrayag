@@ -27,9 +27,11 @@ package com.littlebridge.enrollplus.core
 
 import com.littlebridge.enrollplus.db.AppUsersTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
+import com.littlebridge.enrollplus.db.SchoolsTable
 import io.ktor.http.*
 import io.ktor.server.application.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.selectAll
 import java.util.UUID
 
@@ -139,6 +141,69 @@ suspend fun ApplicationCall.requireSchoolAdmin(): SchoolContext? {
 
 /** Roles permitted to operate the PLATFORM surface (cross-tenant config). */
 val PLATFORM_ADMIN_ROLES = setOf("super_admin", "admin")
+
+/**
+ * Multi-Branch (MULTI_BRANCH_SPEC.md): resolved, trusted context for an
+ * org-level admin request. An org admin can see all branches in their org.
+ */
+data class OrgContext(
+    val userId: UUID,
+    val organizationId: UUID,
+    val orgAdminRole: String,
+    val schoolId: UUID?,
+)
+
+/**
+ * Multi-Branch: the canonical guard for org admin endpoints. Reads
+ * organization_id + org_admin_role from app_users (NOT the JWT claim, so a
+ * forged/stale claim cannot widen access). Responds with the appropriate
+ * error envelope and returns null when the caller is not an org admin:
+ *   401 – no/invalid token
+ *   403 – authenticated but not an org admin
+ */
+suspend fun ApplicationCall.requireOrgAdminContext(): OrgContext? {
+    val uid = principalUserUuid() ?: run {
+        fail("Invalid token", HttpStatusCode.Unauthorized, "UNAUTHORIZED")
+        return null
+    }
+    val userRow = dbQuery {
+        AppUsersTable.selectAll().where { AppUsersTable.id eq uid }.singleOrNull()
+    } ?: run {
+        fail("User not found", HttpStatusCode.NotFound, "USER_NOT_FOUND")
+        return null
+    }
+    if (!userRow[AppUsersTable.isActive]) {
+        fail("This account has been deactivated. Contact your administrator.", HttpStatusCode.Forbidden, "ACCOUNT_DEACTIVATED")
+        return null
+    }
+    val orgId = userRow[AppUsersTable.organizationId]
+    val orgRole = userRow[AppUsersTable.orgAdminRole]
+    if (orgId == null || orgRole == null) {
+        fail("You need org admin access for this view.", HttpStatusCode.Forbidden, "NOT_ORG_ADMIN")
+        return null
+    }
+    val schoolId = userRow[AppUsersTable.schoolId]
+    return OrgContext(uid, orgId, orgRole, schoolId)
+}
+
+/**
+ * Multi-Branch: resolves the organization_id for a given school. Returns null
+ * if the school is not linked to any organization (standalone school).
+ */
+suspend fun resolveOrganizationForSchool(schoolId: UUID): UUID? = dbQuery {
+    SchoolsTable.selectAll().where { SchoolsTable.id eq schoolId }
+        .singleOrNull()?.get(SchoolsTable.organizationId)
+}
+
+/**
+ * Multi-Branch: resolves all school IDs belonging to an organization.
+ * Used by org admin scoping to filter queries across all branches.
+ */
+suspend fun resolveBranchSchoolIds(orgId: UUID): List<UUID> = dbQuery {
+    SchoolsTable.selectAll()
+        .where { (SchoolsTable.organizationId eq orgId) and (SchoolsTable.isActive eq true) }
+        .map { it[SchoolsTable.id].value }
+}
 
 /**
  * Guard for PLATFORM-level operations that are NOT school-scoped — e.g. managing
