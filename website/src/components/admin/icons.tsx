@@ -158,3 +158,6 @@ export const IconPtm = (p: P) => (
 export const IconPace = (p: P) => (
   <svg {...base(p)}><path d="M3 12h4l2-6 4 14 2-8h6" /><path d="M19 9l2 3-2 3" /></svg>
 );
+export const IconKey = (p: P) => (
+  <svg {...base(p)}><circle cx="8" cy="15" r="4" /><path d="M10.8 12.2 21 2" /><path d="m16 7 3 3" /><path d="m18 5 3 3" /></svg>
+);

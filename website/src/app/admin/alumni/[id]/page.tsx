@@ -1,16 +1,52 @@
 "use client";
 
-import { use } from "react";
-import useSWR from "swr";
+import { use, useState } from "react";
+import useSWR, { mutate } from "swr";
 import Link from "next/link";
 import { adminApi } from "@/lib/admin/client";
+import { ApiError } from "@/lib/api";
 import { Card, EmptyState, FadeIn, Badge } from "@/components/admin/Primitives";
+import { AdminButton, Modal } from "@/components/admin/Toolbar";
 import { IconAlumni } from "@/components/admin/icons";
 import type { AlumniDto } from "@/lib/admin/types";
 
 export default function AlumniDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { data: alumni, error, isLoading } = useSWR<AlumniDto>(`alumni-${id}`, () => adminApi.alumniGet(id));
+  const [editOpen, setEditOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function toggleFeatured() {
+    setBusy(true); setErr(null);
+    try {
+      await adminApi.alumniToggleFeatured(id);
+      await mutate(`alumni-${id}`);
+    } catch (e) {
+      setErr(e instanceof ApiError ? e.message : "Failed to toggle featured.");
+    } finally { setBusy(false); }
+  }
+
+  async function deactivate() {
+    if (!confirm("Deactivate this alumni record? They will be hidden from the directory.")) return;
+    setBusy(true); setErr(null);
+    try {
+      await adminApi.alumniDeactivate(id);
+      await mutate(`alumni-${id}`);
+    } catch (e) {
+      setErr(e instanceof ApiError ? e.message : "Failed to deactivate.");
+    } finally { setBusy(false); }
+  }
+
+  async function verify(action: "approve" | "decline") {
+    setBusy(true); setErr(null);
+    try {
+      await adminApi.alumniVerify(id, action);
+      await mutate(`alumni-${id}`);
+    } catch (e) {
+      setErr(e instanceof ApiError ? e.message : "Failed to verify.");
+    } finally { setBusy(false); }
+  }
 
   return (
     <div className="space-y-5">
@@ -28,10 +64,28 @@ export default function AlumniDetailPage({ params }: { params: Promise<{ id: str
           <div className="flex items-center gap-3">
             <IconAlumni className="text-navy-deep" />
             <h1 className="text-2xl font-bold text-navy-deep">{alumni.name}</h1>
-            <Badge tone={alumni.verificationStatus === "verified" ? "success" : alumni.verificationStatus === "pending" ? "warning" : "danger"}>
+            <Badge tone={alumni.verificationStatus === "verified" || alumni.verificationStatus === "approved" ? "success" : alumni.verificationStatus === "pending" ? "warning" : "danger"}>
               {alumni.verificationStatus}
             </Badge>
             {alumni.isFeatured && <Badge tone="accent">★ Featured</Badge>}
+          </div>
+
+          {err && <p className="text-[13px] font-medium text-danger">{err}</p>}
+
+          <div className="flex flex-wrap gap-2">
+            <AdminButton variant="ghost" onClick={() => setEditOpen(true)} disabled={busy}>Edit</AdminButton>
+            <AdminButton variant="ghost" onClick={toggleFeatured} disabled={busy}>
+              {alumni.isFeatured ? "Unfeature" : "★ Feature"}
+            </AdminButton>
+            {alumni.verificationStatus === "pending" && (
+              <>
+                <AdminButton onClick={() => verify("approve")} disabled={busy}>Approve</AdminButton>
+                <AdminButton variant="ghost" onClick={() => verify("decline")} disabled={busy}>Decline</AdminButton>
+              </>
+            )}
+            {alumni.isActive && (
+              <AdminButton variant="ghost" onClick={deactivate} disabled={busy}>Deactivate</AdminButton>
+            )}
           </div>
 
           <div className="mt-5 grid gap-5 lg:grid-cols-2">
@@ -141,16 +195,155 @@ export default function AlumniDetailPage({ params }: { params: Promise<{ id: str
           </div>
         </FadeIn>
       )}
+
+      {alumni && (
+        <EditAlumniModal
+          open={editOpen}
+          onClose={() => setEditOpen(false)}
+          alumni={alumni}
+          onDone={() => mutate(`alumni-${id}`)}
+        />
+      )}
     </div>
   );
 }
 
+function EditAlumniModal({
+  open,
+  onClose,
+  alumni,
+  onDone,
+}: {
+  open: boolean;
+  onClose: () => void;
+  alumni: AlumniDto;
+  onDone: () => Promise<void>;
+}) {
+  const [name, setName] = useState(alumni.name);
+  const [currentProfession, setProfession] = useState(alumni.currentProfession ?? "");
+  const [company, setCompany] = useState(alumni.company ?? "");
+  const [city, setCity] = useState(alumni.city ?? "");
+  const [email, setEmail] = useState(alumni.email ?? "");
+  const [phone, setPhone] = useState(alumni.phone ?? "");
+  const [linkedinUrl, setLinkedin] = useState(alumni.linkedinUrl ?? "");
+  const [skills, setSkills] = useState(alumni.skills ?? "");
+  const [achievements, setAchievements] = useState(alumni.achievements ?? "");
+  const [isMentor, setIsMentor] = useState(alumni.isMentor);
+  const [mentorExpertise, setMentorExpertise] = useState(alumni.mentorExpertise ?? "");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function submit() {
+    setErr(null);
+    if (!name.trim()) { setErr("Name is required."); return; }
+    setBusy(true);
+    try {
+      await adminApi.alumniUpdate(alumni.id, {
+        name: name.trim(),
+        currentProfession: currentProfession.trim() || null,
+        company: company.trim() || null,
+        city: city.trim() || null,
+        email: email.trim() || null,
+        phone: phone.trim() || null,
+        linkedinUrl: linkedinUrl.trim() || null,
+        skills: skills.trim() || null,
+        achievements: achievements.trim() || null,
+        isMentor,
+        mentorExpertise: mentorExpertise.trim() || null,
+      });
+      await onDone();
+      onClose();
+    } catch (e) {
+      setErr(e instanceof ApiError ? e.message : "Failed to save changes.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Edit alumni"
+      description="Update profile information for this alumni."
+      size="lg"
+      footer={
+        <>
+          <AdminButton variant="ghost" onClick={onClose}>Cancel</AdminButton>
+          <AdminButton onClick={submit} disabled={busy}>
+            {busy ? "Saving…" : "Save changes"}
+          </AdminButton>
+        </>
+      }
+    >
+      <div className="grid gap-3.5">
+        <EditField label="Full name" value={name} onChange={setName} />
+        <div className="grid grid-cols-2 gap-3.5">
+          <EditField label="Profession" value={currentProfession} onChange={setProfession} />
+          <EditField label="Company" value={company} onChange={setCompany} />
+        </div>
+        <div className="grid grid-cols-2 gap-3.5">
+          <EditField label="City" value={city} onChange={setCity} />
+          <EditField label="Email" value={email} onChange={setEmail} type="email" />
+        </div>
+        <div className="grid grid-cols-2 gap-3.5">
+          <EditField label="Phone" value={phone} onChange={setPhone} />
+          <EditField label="LinkedIn URL" value={linkedinUrl} onChange={setLinkedin} />
+        </div>
+        <EditField label="Skills" value={skills} onChange={setSkills} />
+        <EditField label="Achievements" value={achievements} onChange={setAchievements} />
+        <label className="flex items-center gap-2.5 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={isMentor}
+            onChange={(e) => setIsMentor(e.target.checked)}
+            className="h-4 w-4 rounded accent-[#6C5CE0]"
+          />
+          <span className="text-[13px] font-semibold text-navy-deep">Available as mentor</span>
+        </label>
+        {isMentor && (
+          <EditField label="Mentor expertise" value={mentorExpertise} onChange={setMentorExpertise} />
+        )}
+        {err && <p className="text-[13px] font-medium text-danger">{err}</p>}
+      </div>
+    </Modal>
+  );
+}
+
+function EditField({
+  label,
+  value,
+  onChange,
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  type?: string;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-ink-3">{label}</span>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-xl border border-navy/12 bg-white/80 px-3.5 py-2.5 text-[14px] text-ink outline-none transition-colors focus:border-accent focus:bg-white"
+      />
+    </label>
+  );
+}
+
 function AlumniDonations({ alumniId }: { alumniId: string }) {
-  const { data: donations, isLoading } = useSWR(`alumni-donations-${alumniId}`, () => adminApi.alumniDonations(undefined, alumniId));
+  const { data: donations, isLoading, mutate } = useSWR(`alumni-donations-${alumniId}`, () => adminApi.alumniDonations(undefined, alumniId));
+  const [addOpen, setAddOpen] = useState(false);
 
   return (
     <Card>
-      <h2 className="mb-4 text-lg font-bold text-navy-deep">Donations</h2>
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-lg font-bold text-navy-deep">Donations</h2>
+        <AdminButton variant="ghost" onClick={() => setAddOpen(true)}>+ Log donation</AdminButton>
+      </div>
       {isLoading && <div className="p-4 text-center text-ink-2">Loading…</div>}
       {donations && donations.length === 0 && <EmptyState title="No donations" hint="This alumni hasn't made any donations yet." />}
       {donations && donations.length > 0 && (
@@ -169,6 +362,93 @@ function AlumniDonations({ alumniId }: { alumniId: string }) {
           ))}
         </div>
       )}
+      <AddDonationModal open={addOpen} onClose={() => setAddOpen(false)} alumniId={alumniId} onDone={async () => { await mutate(); }} />
     </Card>
+  );
+}
+
+function AddDonationModal({
+  open,
+  onClose,
+  alumniId,
+  onDone,
+}: {
+  open: boolean;
+  onClose: () => void;
+  alumniId: string;
+  onDone: () => Promise<void>;
+}) {
+  const [amount, setAmount] = useState("");
+  const [donationDate, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [purpose, setPurpose] = useState("");
+  const [paymentMode, setPaymentMode] = useState("cash");
+  const [is80gEligible, set80g] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function submit() {
+    setErr(null);
+    const amt = Number(amount);
+    if (!amt || amt <= 0) { setErr("A valid amount is required."); return; }
+    setBusy(true);
+    try {
+      await adminApi.alumniDonationCreate({
+        alumniId,
+        amount: amt,
+        donationDate,
+        purpose: purpose.trim() || null,
+        paymentMode,
+        is80gEligible,
+      });
+      await onDone();
+      setAmount(""); setPurpose(""); set80g(false);
+      onClose();
+    } catch (e) {
+      setErr(e instanceof ApiError ? e.message : "Failed to log donation.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Log a donation"
+      description="Record a donation from this alumni."
+      footer={
+        <>
+          <AdminButton variant="ghost" onClick={onClose}>Cancel</AdminButton>
+          <AdminButton onClick={submit} disabled={busy}>
+            {busy ? "Saving…" : "Log donation"}
+          </AdminButton>
+        </>
+      }
+    >
+      <div className="grid gap-3.5">
+        <EditField label="Amount (₹)" value={amount} onChange={setAmount} type="number" />
+        <EditField label="Date" value={donationDate} onChange={setDate} type="date" />
+        <EditField label="Purpose (optional)" value={purpose} onChange={setPurpose} />
+        <label className="block">
+          <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-ink-3">Payment mode</span>
+          <select
+            value={paymentMode}
+            onChange={(e) => setPaymentMode(e.target.value)}
+            className="w-full rounded-xl border border-navy/12 bg-white/80 px-3.5 py-2.5 text-[14px] text-ink outline-none focus:border-accent"
+          >
+            <option value="cash">Cash</option>
+            <option value="upi">UPI</option>
+            <option value="bank_transfer">Bank Transfer</option>
+            <option value="cheque">Cheque</option>
+            <option value="card">Card</option>
+          </select>
+        </label>
+        <label className="flex items-center gap-2.5 cursor-pointer">
+          <input type="checkbox" checked={is80gEligible} onChange={(e) => set80g(e.target.checked)} className="h-4 w-4 rounded accent-[#6C5CE0]" />
+          <span className="text-[13px] font-semibold text-navy-deep">80G eligible</span>
+        </label>
+        {err && <p className="text-[13px] font-medium text-danger">{err}</p>}
+      </div>
+    </Modal>
   );
 }
