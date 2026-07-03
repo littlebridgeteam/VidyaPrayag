@@ -350,7 +350,17 @@ fun Application.module() {
         allowMethod(HttpMethod.Options)
     }
 
-    install(CallLogging)
+    install(CallLogging) {
+        filter { call ->
+            val method = call.request.httpMethod
+            val uri = call.request.uri
+            // Skip CORS preflight (OPTIONS) and repetitive polling endpoints
+            // from console logging — they still go to the DB via ServerLogWriter.
+            method != HttpMethod.Options &&
+                !uri.startsWith("/api/v1/admin/dev/logs") &&
+                !uri.startsWith("/api/v1/notifications")
+        }
+    }
 
     install(AutoHeadResponse)
 
@@ -379,7 +389,8 @@ fun Application.module() {
     routing {
         // Global CORS preflight handler — must be before any authenticate{} block
         // so OPTIONS requests don't get 403'd by the JWT auth plugin.
-        options("{...}") {
+        // {path...} is a Ktor tailcard that matches any number of path segments.
+        options("{path...}") {
             call.respond(HttpStatusCode.NoContent)
         }
 

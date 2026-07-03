@@ -81,15 +81,22 @@ object ServerLogWriter {
         }
 
         // Dual-write: SLF4J + DB
-        val slf4jLevel = when (level.uppercase()) {
-            "ERROR" -> org.slf4j.event.Level.ERROR
-            "WARN" -> org.slf4j.event.Level.WARN
-            "INFO" -> org.slf4j.event.Level.INFO
-            "DEBUG" -> org.slf4j.event.Level.DEBUG
-            "TRACE" -> org.slf4j.event.Level.TRACE
-            else -> org.slf4j.event.Level.INFO
+        // Suppress repetitive "http" category logs from SLF4J console — they
+        // still go to the DB for the Log Viewer, but don't spam the console.
+        // Non-http categories (auth, ai, job, notification, pews, etc.) always
+        // log to both SLF4J and DB. Errors/Warns always log regardless.
+        val suppressSlf4j = category == "http" && level.uppercase() == "INFO"
+        if (!suppressSlf4j) {
+            val slf4jLevel = when (level.uppercase()) {
+                "ERROR" -> org.slf4j.event.Level.ERROR
+                "WARN" -> org.slf4j.event.Level.WARN
+                "INFO" -> org.slf4j.event.Level.INFO
+                "DEBUG" -> org.slf4j.event.Level.DEBUG
+                "TRACE" -> org.slf4j.event.Level.TRACE
+                else -> org.slf4j.event.Level.INFO
+            }
+            logger.atLevel(slf4jLevel).setMessage("[{}] {}").addArgument(category).addArgument(truncatedMessage).log()
         }
-        logger.atLevel(slf4jLevel).setMessage("[{}] {}").addArgument(category).addArgument(truncatedMessage).log()
 
         // Fire-and-forget DB write
         scope.launch {
