@@ -18,4 +18,7 @@ class BrandingRepositoryImpl(
     override suspend fun removeSubdomain(token: String) = api.removeSubdomain(token)
     override suspend fun getPublicBranding(schoolId: String) = api.getPublicBranding(schoolId)
     override suspend fun resolveSubdomain(subdomain: String) = api.resolveSubdomain(subdomain)
+    override suspend fun uploadAsset(token: String, field: String, bytes: ByteArray, fileName: String, mimeType: String) =
+        api.uploadAsset(token, field, bytes, fileName, mimeType)
+    override suspend fun deleteAsset(token: String, field: String) = api.deleteAsset(token, field)
 }

@@ -71,6 +71,9 @@ class ParentMessageViewModel(
     private val _state = MutableStateFlow(ParentMessageState())
     val state: StateFlow<ParentMessageState> = _state.asStateFlow()
 
+    private val _unreadCount = MutableStateFlow(0)
+    val unreadCount: StateFlow<Int> = _unreadCount.asStateFlow()
+
     private var pollJob: Job? = null
 
     private suspend fun token(): String? = preferenceRepository.getUserToken().first()
@@ -181,7 +184,7 @@ class ParentMessageViewModel(
         if (body.isBlank()) return
 
         // P1-3: Optimistic send — insert a temp message immediately for instant UI feedback.
-        val tempId = "optimistic-${System.currentTimeMillis()}"
+        val tempId = "optimistic-${kotlin.random.Random.nextLong()}"
         val optimisticMsg = ParentMessageDto(
             id = tempId,
             body = body.trim(),
@@ -212,7 +215,7 @@ class ParentMessageViewModel(
             val req = ParentSendMessageRequest(
                 threadId = threadId,
                 body = body.trim(),
-                clientMsgId = java.util.UUID.randomUUID().toString(),
+                clientMsgId = kotlin.random.Random.nextLong().toString(),
             )
             when (val r = repository.sendMessage(token, req)) {
                 is NetworkResult.Success -> {
@@ -243,6 +246,51 @@ class ParentMessageViewModel(
     /** Clears the inline reply error banner. */
     fun clearReplyError() {
         _state.update { it.copy(replyError = null) }
+    }
+
+    /**
+     * Read Receipts Phase 1: mark a thread as read on the server.
+     * Optimistically updates the local thread list, then fires the server call.
+     */
+    fun markAsRead(threadId: String) {
+        val target = _state.value.threads.firstOrNull { it.id == threadId } ?: return
+        if (target.isRead && target.unreadCount == 0) return
+
+        _state.update {
+            it.copy(threads = it.threads.map { thread ->
+                if (thread.id == threadId) thread.copy(isRead = true, unreadCount = 0) else thread
+            })
+        }
+
+        viewModelScope.launch {
+            val token = token() ?: return@launch
+            when (val r = repository.markThreadRead(token, threadId)) {
+                is NetworkResult.Success -> {
+                    // Re-fetch conversation to update status ticks on own messages
+                    if (_state.value.openThreadId == threadId) {
+                        reloadConversation()
+                    }
+                    refreshUnreadCount(token)
+                }
+                is NetworkResult.Error -> {
+                    // Revert optimistic update on failure
+                    loadThreads()
+                }
+                is NetworkResult.ConnectionError -> {
+                    loadThreads()
+                }
+            }
+        }
+    }
+
+    /** Read Receipts Phase 2: fetch total unread count from the server. */
+    private fun refreshUnreadCount(token: String) {
+        viewModelScope.launch {
+            when (val r = repository.getUnreadCount(token)) {
+                is NetworkResult.Success -> _unreadCount.value = r.data
+                else -> {}
+            }
+        }
     }
 
     /**
@@ -323,7 +371,7 @@ class ParentMessageViewModel(
             val req = ParentSendMessageRequest(
                 recipientUserId = recipientUserId,
                 body = body.trim(),
-                clientMsgId = java.util.UUID.randomUUID().toString(),
+                clientMsgId = kotlin.random.Random.nextLong().toString(),
             )
             when (val r = repository.sendMessage(token, req)) {
                 is NetworkResult.Success -> {

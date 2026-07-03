@@ -184,6 +184,10 @@ object DatabaseFactory {
         // Academic Calendar platform (VP-CAL — centralized planning & scheduling)
         CalendarEventsTable,
         AcademicYearsTable,
+        // Event Registration System (EVENT_REGISTRATION_PLAN.md §3) — slots + registrations.
+        // event_slots has soft FK to calendar_events; event_registrations has soft FK to event_slots.
+        EventSlotsTable,
+        EventRegistrationsTable,
         // Teacher Portal Rebuild — Doc 11 T-001: typed class membership (enrollments).
         // Applied by docs/db/migration_008_enrollments.sql (must run before deploy;
         // AUTO_CREATE_TABLES is OFF in prod and validateSchema() gates boot on it).
@@ -231,15 +235,108 @@ object DatabaseFactory {
         TransportAssignmentsTable,        // FK to routes + stops + vehicles
         TransportTrackingTable,           // FK to vehicles
         TransportAttendanceTable,
+        // AI Gateway (AI_FEATURES_PLAN.md §4 / AI_INFRASTRUCTURE_SPEC.md §6)
+        // Applied by docs/db/migration_060_ai_gateway.sql (must run before deploy;
+        // AUTO_CREATE_TABLES is OFF in prod and validateSchema() gates boot on it).
+        AiProviderConfigTable,
+        AiPromptTemplatesTable,
+        AiUsageLogTable,
+        AiResponseCacheTable,
+        AiJobsTable,
+        AiProviderHealthTable,
+        // PEWS — Predictive Early Warning System (AI_FEATURES_PLAN.md Part A)
+        // Applied by docs/db/migration_061_pews.sql (must run before deploy).
+        PewsRiskSnapshotsTable,
+        PewsInterventionsTable,
+        PewsConfigTable,
+        PewsNudgeSeenTable,
+        PewsFeatureFlagsTable,
+        PewsCaseFilesTable,
+        PewsEffectivenessPriorsTable,
+        // AI Report Card 2.0 (AI_REPORT_CARD_2.0_AGENTIC_REDESIGN.md)
+        // Applied by docs/db/migration_062_report_card.sql (must run before deploy;
+        // AUTO_CREATE_TABLES is OFF in prod and validateSchema() gates boot on it).
+        ReportCardDraftsTable,
+        ReportFocusEffectivenessTable,
+        HolisticAssessmentsTable,
+        CoScholasticRecordsTable,
+        ReportCardTemplatesTable,
+        // AI Tutor 2.0 (AI_TUTOR_2.0_AGENTIC_REDESIGN.md §12)
+        // Applied by docs/db/migration_064_tutor_2.sql + migration_065_tutor_rag.sql
+        // (must run before deploy; AUTO_CREATE_TABLES is OFF in prod).
+        TutorSessionsTable,
+        TutorReviewStateTable,
+        TutorMasteryTable,
+        TutorMisconceptionsTable,
+        TutorKnowledgeChunksTable,
         // School Branding Kit (SCHOOL_BRANDING_KIT_SPEC.md — per-school branding)
         // Applied by docs/db/migration_101_school_branding.sql (must run before
         // deploy; AUTO_CREATE_TABLES is OFF in prod).
         SchoolBrandingTable,
+        // ID Card Generation (ID_CARD_GENERATION_SPEC.md — templates + generated cards)
+        // Applied by docs/db/migration_102_id_card.sql (must run before deploy;
+        // AUTO_CREATE_TABLES is OFF in prod).
+        IdCardTemplatesTable,
+        IdCardsTable,                    // FK to templates
+        // Library Management (LIBRARY_MANAGEMENT_SPEC.md)
+        // Applied by docs/db/migration_104_library.sql (must run before deploy;
+        // AUTO_CREATE_TABLES is OFF in prod). Order matters for FKs: books → copies → issues,
+        // books → reservations, books → wishlist, books → discussions.
+        LibraryBooksTable,
+        LibraryBookCopiesTable,          // FK to books
+        LibraryIssuesTable,              // FK to books + copies
+        LibraryReservationsTable,        // FK to books
+        LibraryCategoriesTable,
+        LibrarySettingsTable,
+        LibraryAuditLogTable,
+        LibraryAnnouncementsTable,
+        LibraryWishlistTable,            // FK to books
+        LibraryReadingGoalsTable,
+        LibraryAcquisitionRequestsTable,
+        LibraryReadingBadgesTable,
+        LibraryBookDiscussionsTable,     // FK to books
+        // Scheduled Messages (MESSAGE_SCHEDULING_PLAN.md §4)
+        // Applied by docs/db/migration-104-scheduled-messages.sql (must run before
+        // deploy; AUTO_CREATE_TABLES is OFF in prod).
+        ScheduledMessagesTable,
+        SchoolDayConfigTable,
+        SchoolDaySlotsTable,
+        // Timetable Change Requests (migration_108_timetable_management.sql)
+        // Teacher-initiated timetable change requests with admin review workflow.
+        TimetableChangeRequestsTable,
+        // Multi-Branch / School Chain Support (MULTI_BRANCH_SPEC.md)
+        // Applied by docs/db/migration_051_multi_branch.sql (must run before
+        // deploy; AUTO_CREATE_TABLES is OFF in prod).
+        SchoolOrganizationsTable,
+        StudentTransfersTable,
+        // Agentic Syllabus Management (migration_110) — AI syllabus lifecycle:
+        // sources, daily log, pace plan, popup prefs, pace alerts.
+        SyllabusSourcesTable,
+        DailyClassLogTable,
+        SyllabusPacePlanTable,
+        SyllabusPopupPrefsTable,
+        SyllabusPaceAlertsTable,
+        // Agentic Quiz System (migration_111) — quiz questions + answers.
+        QuizQuestionsTable,
+        QuizAnswersTable,
+        // Syllabus Quiz System (migration_112) — syllabus-linked quizzes + questions + answers.
+        SyllabusQuizzesTable,
+        SyllabusQuizQuestionsTable,
+        SyllabusQuizAnswersTable,
+        // NCERT syllabus reference (migration_111) — auto-fill data for syllabus.
+        NcertSyllabusReferenceTable,
     )
 
     /** True when DATABASE_URL is set → we're talking to Postgres / Supabase. */
     var isPostgres: Boolean = false
         private set
+
+    // ── Read replica support (spec §17 Connection Pool) ─────────────────────
+    // When READ_REPLICA_URL is configured, read-heavy queries (search, analytics,
+    // audit log, export) route to the replica via readQuery { }.
+    private var readReplicaDb: Database? = null
+
+    val hasReadReplica: Boolean get() = readReplicaDb != null
 
     fun init() {
         val dotenv = dotenv {
@@ -267,6 +364,19 @@ object DatabaseFactory {
         }
 
         Database.connect(dataSource)
+
+        // ── Read replica (optional, spec §17) ───────────────────────────────
+        val replicaUrl = resolve(dotenv, "READ_REPLICA_URL")
+        if (replicaUrl != null && isPostgres) {
+            val replicaDs = createPostgresDataSource(
+                replicaUrl,
+                user = resolve(dotenv, "READ_REPLICA_USER") ?: resolve(dotenv, "DATABASE_USER"),
+                password = resolve(dotenv, "READ_REPLICA_PASSWORD") ?: resolve(dotenv, "DATABASE_PASSWORD"),
+                poolSize = resolve(dotenv, "READ_REPLICA_POOL_SIZE")?.toIntOrNull() ?: 3
+            )
+            readReplicaDb = Database.connect(replicaDs)
+            println("DB_INIT: Read replica configured — read-heavy queries will route to replica.")
+        }
 
         val autoCreateRaw = resolve(dotenv, "AUTO_CREATE_TABLES")
         val autoCreate = autoCreateRaw.equals("true", ignoreCase = true)
@@ -438,13 +548,14 @@ object DatabaseFactory {
             maximumPoolSize = poolSize
             minimumIdle = 1
             isAutoCommit = false
-            transactionIsolation = "TRANSACTION_REPEATABLE_READ"
-            // Sensible defaults for Supabase (pooled, IPv4 PgBouncer port 6543).
+            // Don't set transactionIsolation — Supabase PgBouncer doesn't support
+            // session-level isolation; PostgreSQL defaults to READ_COMMITTED which is fine.
             addDataSourceProperty("ApplicationName", "vidyaprayag-ktor")
             addDataSourceProperty("reWriteBatchedInserts", "true")
             connectionTimeout = 30_000
             validationTimeout = 5_000
             maxLifetime = 30 * 60 * 1000L
+            connectionTestQuery = "SELECT 1"
             validate()
         }
         return HikariDataSource(config)
@@ -463,4 +574,14 @@ object DatabaseFactory {
 
     suspend fun <T> dbQuery(block: suspend () -> T): T =
         newSuspendedTransaction(Dispatchers.IO) { block() }
+
+    /**
+     * Read-replica routing (spec §17): search and analytics queries route to
+     * the read replica if configured (READ_REPLICA_URL). Falls back to the
+     * primary connection when no replica is available.
+     */
+    suspend fun <T> readQuery(block: suspend () -> T): T =
+        newSuspendedTransaction(Dispatchers.IO, db = readReplicaDb) {
+            block()
+        }
 }

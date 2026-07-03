@@ -112,3 +112,89 @@ export const useLeaveRequests = (type?: string, status?: string) =>
 
 export const useSchoolProfile = () =>
   useSWR("school/profile", adminApi.schoolProfile, SLOW);
+
+// ── PEWS hooks ────────────────────────────────────────────────────────────────
+// The cohort + interventions + effectiveness move on the order of minutes (a
+// recompute runs hourly / on demand, a teacher closes an intervention), so
+// NEAR-LIVE (60s) is the right cadence. Config is SLOW (changes rarely).
+import type { PewsRiskLevel, PewsInterventionStatus } from "./types";
+
+export const usePewsCohort = (minLevel?: PewsRiskLevel) =>
+  useSWR(["pews/cohort", minLevel ?? ""], () => adminApi.pewsCohort(minLevel), NEAR_LIVE);
+
+export const usePewsStudent = (studentCode: string | null) =>
+  useSWR(studentCode ? ["pews/student", studentCode] : null, () => adminApi.pewsStudent(studentCode as string), NEAR_LIVE);
+
+export const usePewsInterventions = (status?: PewsInterventionStatus) =>
+  useSWR(["pews/interventions", status ?? ""], () => adminApi.pewsInterventions(status), NEAR_LIVE);
+
+export const usePewsEffectiveness = () =>
+  useSWR("pews/effectiveness", adminApi.pewsEffectiveness, NEAR_LIVE);
+
+export const usePewsTrend = (days?: number) =>
+  useSWR(["pews/trend", days ?? ""], () => adminApi.pewsTrend(days), NEAR_LIVE);
+
+export const usePewsConfig = () => useSWR("pews/config", adminApi.pewsConfig, SLOW);
+
+// ── AI Report Card 2.0 hooks ──────────────────────────────────────────────────
+// Oversight and effectiveness move on the order of minutes (a teacher approves
+// a draft, an admin publishes a class), so NEAR-LIVE (60s) is the right cadence.
+// Term config is SLOW (changes rarely).
+
+export const useReportCardOversight = (term: string | null, academicYearId?: string) =>
+  useSWR(term ? ["report-card/oversight", term, academicYearId ?? ""] : null,
+    () => adminApi.reportCardOversight(term as string, academicYearId), NEAR_LIVE);
+
+export const useReportCardEffectiveness = () =>
+  useSWR("report-card/effectiveness", adminApi.reportCardEffectiveness, NEAR_LIVE);
+
+export const useReportCardTermConfig = () =>
+  useSWR("report-card/term-config", adminApi.reportCardTermConfig, SLOW);
+
+// ── AI Tutor 2.0 hooks ────────────────────────────────────────────────────────
+// Teacher scope (assigned classes/subjects) is SLOW. Heatmap data is NEAR-LIVE
+// (mastery updates as kids practice, but not second-by-second).
+
+export const useTutorTeacherScope = () =>
+  useSWR("tutor/scope", adminApi.tutorTeacherScope, SLOW);
+
+export const useTutorHeatmap = (classId: string | null, subjectId: string | null) =>
+  useSWR(classId && subjectId ? ["tutor/heatmap", classId, subjectId] : null,
+    () => adminApi.tutorHeatmap(classId as string, subjectId as string), NEAR_LIVE);
+
+// ── AI Token Monitor hooks (Dev Tools — super admin) ──────────────────────────
+// Rate-limiter and health data are LIVE (10s poll) so the admin sees
+// near-real-time RPM/RPD/TPM usage. Recent usage log is also LIVE for
+// the scrolling log feed.
+
+const AI_LIVE: SWRConfiguration = {
+  refreshInterval: 10_000,
+  revalidateOnFocus: true,
+  keepPreviousData: true,
+};
+
+export const useAiRateLimits = () =>
+  useSWR("ai/rate-limits", adminApi.aiRateLimits, AI_LIVE);
+
+export const useAiHealth = () =>
+  useSWR("ai/health", adminApi.aiHealth, AI_LIVE);
+
+export const useAiRecentUsage = (limit: number = 50, windowMin: number = 60) =>
+  useSWR(["ai/recent-usage", limit, windowMin],
+    () => adminApi.aiRecentUsage(limit, windowMin), AI_LIVE);
+
+// ── School Day Configuration hooks ───────────────────────────────────────────
+// Bell-schedule configs change rarely (term-level), so SLOW (300s) is the right cadence.
+
+export const useSchoolDayConfigs = () =>
+  useSWR("school-day-configs", adminApi.schoolDayConfigs, SLOW);
+
+// ── Academics: Classes, Subjects, Timetable hooks ─────────────────────────────
+// Classes and subjects change rarely (term-level), so SLOW (300s) is the right cadence.
+
+export const useSchoolClasses = () =>
+  useSWR("school-classes", adminApi.schoolClasses, SLOW);
+
+export const useSchoolSubjects = (classId: string | null) =>
+  useSWR(classId ? ["school-subjects", classId] : null,
+    () => adminApi.schoolSubjects(classId as string), SLOW);

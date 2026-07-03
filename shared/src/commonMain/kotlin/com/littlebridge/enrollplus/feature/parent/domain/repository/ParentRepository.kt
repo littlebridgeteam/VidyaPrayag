@@ -2,6 +2,8 @@ package com.littlebridge.enrollplus.feature.parent.domain.repository
 
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.feature.parent.domain.model.*
+import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizSubmitRequest
+import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizSubmitResponse
 
 interface ParentRepository {
     suspend fun getDashboard(token: String): NetworkResult<ParentDashboardResponse>
@@ -27,10 +29,23 @@ interface ParentRepository {
     // RA-51: parent ↔ teacher/admin messaging.
     suspend fun getMessageThreads(token: String): NetworkResult<ParentMessageThreadsResponse>
     suspend fun getThreadMessages(token: String, threadId: String): NetworkResult<ParentThreadMessagesResponse>
+    /** Read Receipts Phase 1: POST /api/v1/parent/messages/threads/{id}/read */
+    suspend fun markThreadRead(token: String, threadId: String): NetworkResult<Unit>
+    /** Read Receipts Phase 2: GET /api/v1/parent/messages/unread-count */
+    suspend fun getUnreadCount(token: String): NetworkResult<Int>
     suspend fun sendMessage(token: String, request: ParentSendMessageRequest): NetworkResult<ParentSendMessageResponse>
     // RA-S07: compose-new — who the parent can start a conversation with.
     suspend fun getMessageRecipients(token: String): NetworkResult<ParentRecipientsResponse>
     // Parent Pulse (PARENT_PULSE_SPEC.md — weekly AI digest).
     suspend fun getLatestPulse(token: String, childId: String): NetworkResult<PulseResponse>
     suspend fun getPulseHistory(token: String, childId: String, weeks: Int = 12): NetworkResult<PulseHistoryResponse>
+
+    // ── Agentic Syllabus — daily summary, syllabus-v2, quiz ───────────────────
+    suspend fun getDailySummary(token: String, childId: String, date: String? = null): NetworkResult<ParentDailySummaryResponse>
+    suspend fun getSyllabusV2(token: String, childId: String): NetworkResult<ParentSyllabusV2Response>
+    suspend fun getQuizList(token: String, childId: String): NetworkResult<ParentQuizListResponse>
+    suspend fun getQuizDetail(token: String, quizId: String): NetworkResult<ParentQuizDetailResponse>
+    suspend fun submitQuiz(token: String, request: QuizSubmitRequest): NetworkResult<QuizSubmitResponse>
+    suspend fun getQuizLeaderboard(token: String, childId: String, quizId: String): NetworkResult<QuizLeaderboardResponse>
+    suspend fun getQuizResult(token: String, childId: String, quizId: String): NetworkResult<QuizSubmitResponse>
 }

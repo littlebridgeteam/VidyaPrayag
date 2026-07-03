@@ -114,6 +114,10 @@ fun SchoolHomeScreenV2(
     onOpenAnalytics: () -> Unit = {},
     onOpenPews: () -> Unit = {},
     onOpenTransport: () -> Unit = {},
+    onOpenReportPublish: () -> Unit = {},
+    onOpenReportEffectiveness: () -> Unit = {},
+    onOpenEvents: () -> Unit = {},
+    onCreateEvent: () -> Unit = {},
     onExit: () -> Unit = {},
     viewModel: SchoolDashboardViewModel = koinViewModel(),
     notificationsViewModel: NotificationsViewModel = koinViewModel(),
@@ -167,6 +171,10 @@ fun SchoolHomeScreenV2(
         onOpenAnalytics = onOpenAnalytics,
         onOpenPews = onOpenPews,
         onOpenTransport = onOpenTransport,
+        onOpenReportPublish = onOpenReportPublish,
+        onOpenReportEffectiveness = onOpenReportEffectiveness,
+        onOpenEvents = onOpenEvents,
+        onCreateEvent = onCreateEvent,
         onExit = onExit,
     )
     VConfirmDialog(
@@ -199,6 +207,10 @@ private fun SchoolDashboardContent(
     onOpenAnalytics: () -> Unit,
     onOpenPews: () -> Unit,
     onOpenTransport: () -> Unit,
+    onOpenReportPublish: () -> Unit,
+    onOpenReportEffectiveness: () -> Unit,
+    onOpenEvents: () -> Unit,
+    onCreateEvent: () -> Unit,
     onExit: () -> Unit,
 ) {
     // Pull-to-refresh: swipe down anywhere on the dashboard to re-sync the
@@ -243,7 +255,7 @@ private fun SchoolDashboardContent(
                 // Quick actions row
                 QuickActionsRow(
                     onAnnouncement = onOpenNotifications,
-                    onEvent = onOpenCalendar,
+                    onEvent = onCreateEvent,
                     onNotice = onOpenNotifications,
                     onReports = onOpenAnalytics,
                     onTransport = onOpenTransport,
@@ -255,6 +267,9 @@ private fun SchoolDashboardContent(
                     CalendarQuickInsights(dashboard = cal, onOpenCalendar = onOpenCalendar)
                     CalendarUpcomingCarousel(dashboard = cal, onOpenCalendar = onOpenCalendar)
                 }
+
+                // 1c. Event Registration management entry point
+                AdminEventEntryButton(onOpenEvents = onOpenEvents)
 
                 // 2. Smart insights carousel
                 val insights = overview?.insights.orEmpty()
@@ -345,6 +360,8 @@ private fun SchoolDashboardContent(
                 // 14. Entry cards
                 AnalyticsEntryCard(onClick = onOpenAnalytics)
                 PewsEntryCard(onClick = onOpenPews)
+                ReportCardPublishEntryCard(onClick = onOpenReportPublish)
+                ReportCardEffectivenessEntryCard(onClick = onOpenReportEffectiveness)
             }
         }
         }
@@ -458,7 +475,7 @@ private fun QuickActionsRow(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         QuickActionChip("Announcement", VIcons.Megaphone, onAnnouncement)
-        QuickActionChip("Add Event", VIcons.Calendar, onEvent)
+        QuickActionChip("Create Event", VIcons.Calendar, onEvent)
         QuickActionChip("Send Notice", VIcons.Send, onNotice)
         QuickActionChip("Reports", VIcons.TrendingUp, onReports)
         QuickActionChip("Transport", VIcons.MapPin, onTransport)
@@ -1642,6 +1659,30 @@ private fun PewsEntryCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 @Composable
+private fun ReportCardPublishEntryCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    FeatureCard(
+        title = "Report Card Publishing",
+        description = "Review oversight & publish approved AI report card drafts",
+        icon = VIcons.FileText,
+        button = "Open Publishing",
+        onClick = onClick,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun ReportCardEffectivenessEntryCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    FeatureCard(
+        title = "Report Card Effectiveness",
+        description = "Run the learning flywheel & view effectiveness priors",
+        icon = VIcons.TrendingUp,
+        button = "Open Effectiveness",
+        onClick = onClick,
+        modifier = modifier,
+    )
+}
+
+@Composable
 private fun FeatureCard(
     title: String,
     description: String,
@@ -1664,6 +1705,43 @@ private fun FeatureCard(
                 Text(description, style = VTheme.type.caption.colored(c.ink2))
                 Text("$button  →", style = VTheme.type.bodyStrong.colored(c.tealDeep))
             }
+        }
+    }
+}
+
+@Composable
+private fun AdminEventEntryButton(onOpenEvents: () -> Unit) {
+    val c = VTheme.colors
+    VCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(22.dp))
+            .clickable { onOpenEvents() },
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(c.teal.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(VIcons.Calendar, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(22.dp))
+                }
+                Column {
+                    Text("Event Registration", style = VTheme.type.h4.colored(c.ink))
+                    Text("Manage PTM slots, event capacity & registrations", style = VTheme.type.caption.colored(c.ink2))
+                }
+            }
+            Text("Manage →", style = VTheme.type.bodyStrong.colored(c.tealDeep))
         }
     }
 }

@@ -27,9 +27,11 @@ package com.littlebridge.enrollplus.core
 
 import com.littlebridge.enrollplus.db.AppUsersTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
+import com.littlebridge.enrollplus.db.SchoolsTable
 import io.ktor.http.*
 import io.ktor.server.application.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.selectAll
 import java.util.UUID
 
@@ -135,4 +137,147 @@ suspend fun ApplicationCall.requireSchoolAdmin(): SchoolContext? {
         return null
     }
     return ctx
+}
+
+/** Roles permitted to operate the PLATFORM surface (cross-tenant config). */
+val PLATFORM_ADMIN_ROLES = setOf("super_admin", "admin")
+
+/**
+ * Multi-Branch (MULTI_BRANCH_SPEC.md): resolved, trusted context for an
+ * org-level admin request. An org admin can see all branches in their org.
+ */
+data class OrgContext(
+    val userId: UUID,
+    val organizationId: UUID,
+    val orgAdminRole: String,
+    val schoolId: UUID?,
+)
+
+/**
+ * Multi-Branch: the canonical guard for org admin endpoints. Reads
+ * organization_id + org_admin_role from app_users (NOT the JWT claim, so a
+ * forged/stale claim cannot widen access). Responds with the appropriate
+ * error envelope and returns null when the caller is not an org admin:
+ *   401 – no/invalid token
+ *   403 – authenticated but not an org admin
+ */
+suspend fun ApplicationCall.requireOrgAdminContext(): OrgContext? {
+    val uid = principalUserUuid() ?: run {
+        fail("Invalid token", HttpStatusCode.Unauthorized, "UNAUTHORIZED")
+        return null
+    }
+    val userRow = dbQuery {
+        AppUsersTable.selectAll().where { AppUsersTable.id eq uid }.singleOrNull()
+    } ?: run {
+        fail("User not found", HttpStatusCode.NotFound, "USER_NOT_FOUND")
+        return null
+    }
+    if (!userRow[AppUsersTable.isActive]) {
+        fail("This account has been deactivated. Contact your administrator.", HttpStatusCode.Forbidden, "ACCOUNT_DEACTIVATED")
+        return null
+    }
+    val orgId = userRow[AppUsersTable.organizationId]
+    val orgRole = userRow[AppUsersTable.orgAdminRole]
+    if (orgId == null || orgRole == null) {
+        fail("You need org admin access for this view.", HttpStatusCode.Forbidden, "NOT_ORG_ADMIN")
+        return null
+    }
+    val schoolId = userRow[AppUsersTable.schoolId]
+    return OrgContext(uid, orgId, orgRole, schoolId)
+}
+
+/**
+ * Multi-Branch: resolves the organization_id for a given school. Returns null
+ * if the school is not linked to any organization (standalone school).
+ */
+suspend fun resolveOrganizationForSchool(schoolId: UUID): UUID? = dbQuery {
+    SchoolsTable.selectAll().where { SchoolsTable.id eq schoolId }
+        .singleOrNull()?.get(SchoolsTable.organizationId)
+}
+
+/**
+ * Multi-Branch: resolves all school IDs belonging to an organization.
+ * Used by org admin scoping to filter queries across all branches.
+ */
+suspend fun resolveBranchSchoolIds(orgId: UUID): List<UUID> = dbQuery {
+    SchoolsTable.selectAll()
+        .where { (SchoolsTable.organizationId eq orgId) and (SchoolsTable.isActive eq true) }
+        .map { it[SchoolsTable.id].value }
+}
+
+/**
+ * Guard for PLATFORM-level operations that are NOT school-scoped — e.g. managing
+ * the AI provider registry / rotating provider keys. Distinct from
+ * [requireSchoolAdmin] (which is per-tenant): a school_admin must NOT be able to
+ * read/rotate the platform's shared AI provider keys, so this requires a
+ * platform role (`super_admin` / `admin`). Role is read from the DB (not the JWT
+ * claim) so a forged/stale claim cannot widen access.
+ *
+ *   401 – no/invalid token
+ *   403 – authenticated but not a platform admin
+ *
+ * Returns the caller's user id on success.
+ */
+suspend fun ApplicationCall.requirePlatformAdmin(): UUID? {
+    val uid = principalUserUuid() ?: run {
+        fail("Invalid token", HttpStatusCode.Unauthorized, "UNAUTHORIZED")
+        return null
+    }
+    val row = dbQuery {
+        AppUsersTable.selectAll().where { AppUsersTable.id eq uid }.singleOrNull()
+    } ?: run {
+        fail("User not found", HttpStatusCode.NotFound, "USER_NOT_FOUND")
+        return null
+    }
+    if (!row[AppUsersTable.isActive]) {
+        fail("This account has been deactivated. Contact your administrator.", HttpStatusCode.Forbidden, "ACCOUNT_DEACTIVATED")
+        return null
+    }
+    val role = row[AppUsersTable.role]
+    if (role !in PLATFORM_ADMIN_ROLES) {
+        fail("This action requires a platform administrator.", HttpStatusCode.Forbidden, "PLATFORM_ADMIN_REQUIRED")
+        return null
+    }
+    return uid
+}
+
+/** Roles permitted on the combined school + teacher surface. */
+private val SCHOOL_OR_TEACHER_ROLES = SCHOOL_ROLES + "teacher"
+
+/**
+ * Guard for endpoints that serve BOTH school roles AND teachers — e.g. the
+ * Message Scheduling surface where school_admins schedule announcements /
+ * admin broadcasts and teachers schedule class broadcasts on the same path.
+ *
+ * Same DB-read / is_active / onboarding checks as [requireSchoolContext] but
+ * accepts the union of [SCHOOL_ROLES] and "teacher".
+ *
+ *   401 – no/invalid token
+ *   403 – authenticated but not a school or teacher role
+ *   404 – role but no school yet
+ */
+suspend fun ApplicationCall.requireSchoolOrTeacherContext(): SchoolContext? {
+    val uid = principalUserUuid() ?: run {
+        fail("Invalid token", HttpStatusCode.Unauthorized, "UNAUTHORIZED")
+        return null
+    }
+    val userRow = dbQuery {
+        AppUsersTable.selectAll().where { AppUsersTable.id eq uid }.singleOrNull()
+    }
+    if (userRow != null && !userRow[AppUsersTable.isActive]) {
+        fail("This account has been deactivated. Contact your administrator.", HttpStatusCode.Forbidden, "ACCOUNT_DEACTIVATED")
+        return null
+    }
+    val schoolId = userRow?.get(AppUsersTable.schoolId)
+    val role = userRow?.get(AppUsersTable.role)
+    val effectiveRole = role ?: "parent"
+    if (effectiveRole !in SCHOOL_OR_TEACHER_ROLES) {
+        fail("You do not have access to this resource", HttpStatusCode.Forbidden, "FORBIDDEN")
+        return null
+    }
+    if (schoolId == null) {
+        fail("Complete school onboarding first", HttpStatusCode.NotFound, "NO_SCHOOL")
+        return null
+    }
+    return SchoolContext(uid, schoolId, effectiveRole)
 }

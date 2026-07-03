@@ -77,6 +77,7 @@ fun NavGraphV2(
     val themeMode by preferenceRepository.getThemeMode().collectAsState(initial = "system")
     val customThemeId by preferenceRepository.getCustomThemeId().collectAsState(initial = null)
     val schoolBranding by brandingThemeManager.branding.collectAsState()
+    val fontScale by preferenceRepository.getFontScale().collectAsState(initial = 1f)
 
     val baseDef = resolveThemeDef(themeMode, customThemeId, entryRole, isAuthenticated)
     val resolvedDef = remember(baseDef, schoolBranding) {
@@ -105,7 +106,7 @@ fun NavGraphV2(
         transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(200)) },
         label = "theme-switch",
     ) { def ->
-        VTheme(themeDef = def) {
+        VTheme(themeDef = def, fontScale = fontScale) {
             // Phase 7: adapt system bars (status bar / nav bar) to match the
             // active theme — light icons on dark themes, dark icons on light.
             VStatusBarAdapter(def.colors.isNight)
@@ -146,6 +147,7 @@ private fun resolveThemeDef(
     return when (mode) {
         "light" -> VThemeRegistry.resolve("light")
         "dark" -> VThemeRegistry.resolve("dark")
+        "high_contrast" -> VThemeRegistry.resolve("high_contrast")
         "custom" -> VThemeRegistry.resolveInclusive(customId ?: "warm")
         else -> {
             // "system" — follow OS, but use role-based default on first launch
@@ -164,14 +166,19 @@ sealed class DeepLinkTarget {
     abstract val role: EntryRole
 
     data class ParentTab(override val role: EntryRole, val tab: String, val overlay: String? = null) : DeepLinkTarget()
-    data class TeacherScreen(override val role: EntryRole, val screen: String) : DeepLinkTarget()
-    data class SchoolScreen(override val role: EntryRole, val screen: String) : DeepLinkTarget()
+    data class TeacherScreen(override val role: EntryRole, val screen: String, val params: Map<String, String> = emptyMap()) : DeepLinkTarget()
+    data class SchoolScreen(override val role: EntryRole, val screen: String, val params: Map<String, String> = emptyMap()) : DeepLinkTarget()
     data class AlumniScreen(override val role: EntryRole, val screen: String, val alumniId: String? = null) : DeepLinkTarget()
     data class Generic(override val role: EntryRole, val path: String) : DeepLinkTarget()
 }
 
 fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
-    val normalized = path.trim().removePrefix("/")
+    // Strip query string before segment splitting — deep links from
+    // notifications carry className/section/term params (e.g.
+    // "/teacher/report-review?className=8&section=A&term=Term 1").
+    val pathOnly = path.substringBefore("?")
+    val queryStr = path.substringAfter("?", "")
+    val normalized = pathOnly.trim().removePrefix("/")
     val segments = normalized.split("/").filter { it.isNotBlank() }
     if (segments.isEmpty()) return DeepLinkTarget.Generic(currentRole, path)
 
@@ -183,12 +190,22 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
                 "messages" -> "messages"
                 "notifications" -> "notifications"
                 "calendar" -> "calendar"
+                "events" -> "events"
                 else -> null
             }
             DeepLinkTarget.ParentTab(EntryRole.Parent, tab, overlay)
         }
-        "teacher" -> DeepLinkTarget.TeacherScreen(EntryRole.Teacher, segments.getOrNull(1) ?: "home")
-        "school", "admin" -> DeepLinkTarget.SchoolScreen(EntryRole.SchoolAdmin, segments.getOrNull(1) ?: "home")
+        "teacher" -> {
+            val screen = segments.getOrNull(1) ?: "home"
+            // Parse query params for report-review deep links (className, section, term)
+            val params = parseQueryParams(queryStr)
+            DeepLinkTarget.TeacherScreen(EntryRole.Teacher, screen, params)
+        }
+        "school", "admin" -> {
+            val screen = segments.getOrNull(1) ?: "home"
+            val params = parseQueryParams(queryStr)
+            DeepLinkTarget.SchoolScreen(EntryRole.SchoolAdmin, screen, params)
+        }
         "alumni" -> {
             val screen = segments.getOrNull(1) ?: "directory"
             val alumniId = segments.getOrNull(2)
@@ -206,8 +223,63 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
                     DeepLinkTarget.ParentTab(EntryRole.Parent, "home", "transport")
             }
         }
+        "report-card" -> {
+            when (currentRole) {
+                EntryRole.SchoolAdmin, EntryRole.SuperAdmin ->
+                    DeepLinkTarget.SchoolScreen(currentRole, "report-card")
+                EntryRole.Teacher ->
+                    DeepLinkTarget.TeacherScreen(currentRole, "report-card")
+                else ->
+                    DeepLinkTarget.ParentTab(EntryRole.Parent, "academics", "report-card")
+            }
+        }
+        "tutor" -> {
+            when (currentRole) {
+                EntryRole.Teacher ->
+                    DeepLinkTarget.TeacherScreen(currentRole, "tutor")
+                EntryRole.SchoolAdmin, EntryRole.SuperAdmin ->
+                    DeepLinkTarget.SchoolScreen(currentRole, "tutor")
+                else ->
+                    DeepLinkTarget.ParentTab(EntryRole.Parent, "academics", "tutor")
+            }
+        }
+        "library" -> {
+            when (currentRole) {
+                EntryRole.SchoolAdmin, EntryRole.SuperAdmin ->
+                    DeepLinkTarget.SchoolScreen(currentRole, "library")
+                EntryRole.Teacher ->
+                    DeepLinkTarget.TeacherScreen(currentRole, "library")
+                else ->
+                    DeepLinkTarget.ParentTab(EntryRole.Parent, "home", "library")
+            }
+        }
+        "events" -> {
+            when (currentRole) {
+                EntryRole.Parent ->
+                    DeepLinkTarget.ParentTab(EntryRole.Parent, "home", "events")
+                EntryRole.Teacher ->
+                    DeepLinkTarget.TeacherScreen(currentRole, "events")
+                EntryRole.SchoolAdmin, EntryRole.SuperAdmin ->
+                    DeepLinkTarget.SchoolScreen(currentRole, "events")
+                else ->
+                    DeepLinkTarget.Generic(currentRole, path)
+            }
+        }
         else -> DeepLinkTarget.Generic(currentRole, path)
     }
+}
+
+/** Parse a URL query string into a Map. Handles URL-encoded values. */
+private fun parseQueryParams(queryStr: String): Map<String, String> {
+    if (queryStr.isBlank()) return emptyMap()
+    return queryStr.split("&").mapNotNull { pair ->
+        val idx = pair.indexOf("=")
+        if (idx > 0) {
+            val key = pair.substring(0, idx)
+            val value = pair.substring(idx + 1).replace("+", " ")
+            key to value
+        } else null
+    }.toMap()
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

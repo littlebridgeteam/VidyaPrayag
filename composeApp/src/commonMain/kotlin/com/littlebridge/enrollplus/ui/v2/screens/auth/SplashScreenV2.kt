@@ -19,10 +19,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -32,17 +34,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
+import com.littlebridge.enrollplus.feature.branding.presentation.BrandingThemeManager
 import com.littlebridge.enrollplus.ui.v2.components.VBrandLogo
+import com.littlebridge.enrollplus.ui.v2.theme.BrandingColorMapper
 import com.littlebridge.enrollplus.ui.v2.theme.VMotion
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.VThemeRegistry
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 
 /**
  * SplashScreenV2 — the app's first frame (PHASE 2).
@@ -60,6 +67,16 @@ import kotlinx.coroutines.launch
 @Composable
 fun SplashScreenV2(modifier: Modifier = Modifier) = VTheme(themeDef = VThemeRegistry.resolve("light")) {
     val c = VTheme.colors
+
+    // Branding: observe cached school branding for branded splash experience
+    val brandingManager = koinInject<BrandingThemeManager>()
+    val branding by brandingManager.branding.collectAsState()
+    val heroColor = remember(branding?.primaryColor) {
+        branding?.primaryColor?.let { BrandingColorMapper.parseHex(it) } ?: c.teal
+    }
+    val logoUrl = branding?.logoUrl
+    val splashUrl = branding?.splashScreenUrl
+    val schoolName = branding?.schoolName
 
     // Entrance reveal — logo spring fires at once, wordmark/tagline follow shortly after.
     val logoScale = remember { Animatable(0.82f) }
@@ -107,7 +124,7 @@ fun SplashScreenV2(modifier: Modifier = Modifier) = VTheme(themeDef = VThemeRegi
     Box(
         modifier
             .fillMaxSize()
-            .background(c.teal)
+            .background(heroColor)
             .drawBehind {
                 drawCircle(
                     brush = Brush.radialGradient(
@@ -135,29 +152,47 @@ fun SplashScreenV2(modifier: Modifier = Modifier) = VTheme(themeDef = VThemeRegi
         )
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            VBrandLogo(
-                size = 152.dp,
-                modifier = Modifier
-                    .graphicsLayer {
-                        scaleX = logoScale.value
-                        scaleY = logoScale.value
-                        translationY = logoY.value * density
-                        alpha = logoAlpha.value
-                    }
-                    .drawBehind {
-                        // Soft halo ring just outside the cube (peaks at 0.10 alpha).
-                        drawRoundRect(
-                            color = Color.White.copy(alpha = (haloAlpha / 0.6f).coerceIn(0f, 1f) * 0.10f),
-                            topLeft = Offset(-12.dp.toPx(), -12.dp.toPx()),
-                            size = Size(size.width + 24.dp.toPx(), size.height + 24.dp.toPx()),
-                            cornerRadius = CornerRadius(40.dp.toPx(), 40.dp.toPx()),
-                            style = Stroke(width = 12.dp.toPx()),
-                        )
-                    },
-            )
+            if (logoUrl != null) {
+                // School logo from branding kit
+                AsyncImage(
+                    model = logoUrl,
+                    contentDescription = "School logo",
+                    modifier = Modifier
+                        .size(152.dp)
+                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(28.dp))
+                        .graphicsLayer {
+                            scaleX = logoScale.value
+                            scaleY = logoScale.value
+                            translationY = logoY.value * density
+                            alpha = logoAlpha.value
+                        },
+                    contentScale = ContentScale.Fit,
+                )
+            } else {
+                VBrandLogo(
+                    size = 152.dp,
+                    modifier = Modifier
+                        .graphicsLayer {
+                            scaleX = logoScale.value
+                            scaleY = logoScale.value
+                            translationY = logoY.value * density
+                            alpha = logoAlpha.value
+                        }
+                        .drawBehind {
+                            // Soft halo ring just outside the cube (peaks at 0.10 alpha).
+                            drawRoundRect(
+                                color = Color.White.copy(alpha = (haloAlpha / 0.6f).coerceIn(0f, 1f) * 0.10f),
+                                topLeft = Offset(-12.dp.toPx(), -12.dp.toPx()),
+                                size = Size(size.width + 24.dp.toPx(), size.height + 24.dp.toPx()),
+                                cornerRadius = CornerRadius(40.dp.toPx(), 40.dp.toPx()),
+                                style = Stroke(width = 12.dp.toPx()),
+                            )
+                        },
+                )
+            }
             Spacer(Modifier.height(28.dp))
             Text(
-                "VidyaSetu",
+                schoolName ?: "VidyaSetu",
                 style = VTheme.type.h1.colored(Color.White)
                     .copy(fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.02).em),
                 textAlign = TextAlign.Center,

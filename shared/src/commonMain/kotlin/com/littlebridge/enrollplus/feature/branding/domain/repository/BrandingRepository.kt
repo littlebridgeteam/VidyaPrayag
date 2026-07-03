@@ -13,4 +13,6 @@ interface BrandingRepository {
     suspend fun removeSubdomain(token: String): NetworkResult<ApiResponse<RemoveSubdomainResponse>>
     suspend fun getPublicBranding(schoolId: String): NetworkResult<ApiResponse<SchoolBranding>>
     suspend fun resolveSubdomain(subdomain: String): NetworkResult<ApiResponse<SubdomainResolution>>
+    suspend fun uploadAsset(token: String, field: String, bytes: ByteArray, fileName: String, mimeType: String): NetworkResult<ApiResponse<SchoolBranding>>
+    suspend fun deleteAsset(token: String, field: String): NetworkResult<ApiResponse<SchoolBranding>>
 }

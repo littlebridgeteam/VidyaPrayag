@@ -7,6 +7,7 @@ import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.feature.admin.domain.model.CalendarEventDto
 import com.littlebridge.enrollplus.feature.admin.domain.repository.CalendarRepository
 import com.littlebridge.enrollplus.util.AppLogger
+import com.littlebridge.enrollplus.util.todayIso
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -68,7 +69,7 @@ class AcademicCalendarViewModel(
                 is NetworkResult.Success -> {
                     val data = result.data.data
                     val summary = data?.summary
-                    val anchor = date ?: data?.calendarEvents?.firstOrNull()?.date
+                    val anchor = date ?: todayIso()
                     val resolvedAnchor = anchor ?: _state.value.currentDate
                     _state.value = _state.value.copy(
                         calendarEvents = data?.calendarEvents ?: emptyList(),

@@ -127,6 +127,7 @@ kotlin {
             implementation(libs.okio)
             implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
             implementation(libs.androidx.navigation.compose)
+            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
             implementation(projects.shared)
         }
         commonTest.dependencies {
@@ -192,6 +193,12 @@ android {
 
 dependencies {
     debugImplementation(libs.compose.uiTooling)
+    "androidTestImplementation"("org.jetbrains.compose.ui:ui-test-junit4:${libs.versions.composeMultiplatform.get()}")
+    "androidTestImplementation"(libs.compose.uiTooling)
+    "androidTestImplementation"(libs.androidx.activity.compose)
+    "androidTestImplementation"("androidx.test.ext:junit:1.2.1")
+    "androidTestImplementation"("androidx.test:runner:1.6.2")
+    "androidTestImplementation"("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
 }
 
 // ---------------------------------------------------------------------------

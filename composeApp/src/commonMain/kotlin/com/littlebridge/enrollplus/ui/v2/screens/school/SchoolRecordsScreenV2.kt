@@ -24,7 +24,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.admin.domain.model.AttendanceSummaryDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.FeeLedgerDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.MarksSummaryDto
@@ -32,8 +34,13 @@ import com.littlebridge.enrollplus.feature.admin.presentation.SchoolRecordsState
 import com.littlebridge.enrollplus.feature.admin.presentation.SchoolRecordsViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.SyllabusCoverageState
 import com.littlebridge.enrollplus.feature.admin.presentation.SyllabusCoverageViewModel
+import com.littlebridge.enrollplus.feature.admin.presentation.PaceAlertsViewModel
+import com.littlebridge.enrollplus.feature.admin.presentation.PaceAlertsState
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
+import com.littlebridge.enrollplus.ui.v2.components.VButton
+import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
+import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VComingSoon
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
@@ -66,13 +73,19 @@ fun SchoolRecordsScreenV2(
     modifier: Modifier = Modifier,
     viewModel: SyllabusCoverageViewModel = koinViewModel(),
     recordsViewModel: SchoolRecordsViewModel = koinViewModel(),
+    paceViewModel: PaceAlertsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
     val recordsState by recordsViewModel.state.collectAsStateV2()
+    val paceState by paceViewModel.state.collectAsStateV2()
     SchoolRecordsContent(
         state = state,
         records = recordsState,
+        pace = paceState,
         onRetry = viewModel::load,
+        onRetryPace = paceViewModel::load,
+        onResolveAlert = paceViewModel::resolveAlert,
+        onRecalculatePace = paceViewModel::recalculate,
         onTabSelected = { tab ->
             when (tab) {
                 "Attendance" -> recordsViewModel.ensureAttendance()
@@ -91,7 +104,11 @@ fun SchoolRecordsScreenV2(
 private fun SchoolRecordsContent(
     state: SyllabusCoverageState,
     records: SchoolRecordsState,
+    pace: PaceAlertsState,
     onRetry: () -> Unit,
+    onRetryPace: () -> Unit,
+    onResolveAlert: (String) -> Unit,
+    onRecalculatePace: () -> Unit,
     onTabSelected: (String) -> Unit,
     onRetryAttendance: () -> Unit,
     onRetryMarks: () -> Unit,
@@ -117,13 +134,14 @@ private fun SchoolRecordsContent(
     ) {
         Text("Records", style = VTheme.type.h1.colored(c.ink))
         VTopTabs(
-            tabs = listOf("Coverage", "Attendance", "Marks", "Fee", "Documents"),
+            tabs = listOf("Coverage", "Pace", "Attendance", "Marks", "Fee", "Documents"),
             selected = tab,
             onSelect = { tab = it },
         )
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             when (tab) {
                 "Coverage" -> CoverageTab(state = state, onRetry = onRetry)
+                "Pace" -> PaceTab(state = pace, onRetry = onRetryPace, onResolve = onResolveAlert, onRecalculate = onRecalculatePace)
                 "Attendance" -> AttendanceTab(ui = records.attendance, onRetry = onRetryAttendance)
                 "Marks" -> MarksTab(ui = records.marks, onRetry = onRetryMarks)
                 "Fee" -> FeeTab(ui = records.fees, onRetry = onRetryFees)
@@ -470,4 +488,139 @@ private fun formatMoney(value: Double): String {
         sb.append(s[i])
     }
     return sb.toString()
+}
+
+// ── Pace tab (admin pace monitoring) ─────────────────────────────────────────
+
+@Composable
+private fun PaceTab(
+    state: PaceAlertsState,
+    onRetry: () -> Unit,
+    onResolve: (String) -> Unit,
+    onRecalculate: () -> Unit,
+) {
+    val c = VTheme.colors
+    VStateHost(
+        loading = state.isLoading,
+        error = state.errorMessage,
+        isEmpty = state.snapshots.isEmpty() && state.alerts.isEmpty(),
+        emptyTitle = "No pace data yet",
+        emptyBody = "Pace snapshots will appear here once syllabus tracking begins.",
+        emptyIcon = VIcons.BookOpen,
+        onRetry = onRetry,
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            // ── Recalculate button ──
+            VButton(
+                "Recalculate Pace",
+                onClick = onRecalculate,
+                variant = VButtonVariant.Secondary,
+                tone = VButtonTone.Lavender,
+                loading = state.isRecalculating,
+                leading = { Icon(VIcons.Sparkles, contentDescription = null, modifier = Modifier.size(16.dp)) },
+            )
+
+            // ── Active alerts ──
+            if (state.alerts.isNotEmpty()) {
+                Column {
+                    Text("Active alerts", style = VTheme.type.h3.colored(c.ink), modifier = Modifier.padding(bottom = 8.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        state.alerts.forEach { alert ->
+                            VCard {
+                                Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    Icon(
+                                    VIcons.AlertCircle,
+                                    contentDescription = null,
+                                    tint = when (alert.level) {
+                                        "CRITICAL" -> c.dangerInk
+                                        "BEHIND" -> c.warningInk
+                                        else -> c.accentDeep
+                                    },
+                                    modifier = Modifier.size(18.dp).padding(top = 2.dp),
+                                )
+                                Column(Modifier.weight(1f)) {
+                                    Text("${alert.subject} • ${alert.className}-${alert.section}", style = VTheme.type.bodyStrong.colored(c.ink))
+                                    if (alert.teacherName.isNotBlank()) {
+                                        Text(alert.teacherName, style = VTheme.type.caption.colored(c.ink2))
+                                    }
+                                    if (alert.message.isNotBlank()) {
+                                        Text(alert.message, style = VTheme.type.caption.colored(c.ink2))
+                                    }
+                                    if (alert.aiReconfirmed) {
+                                        Text("AI reconfirmed", style = VTheme.type.label.colored(c.accentDeep).copy(fontSize = 10.sp))
+                                    }
+                                }
+                                Column(horizontalAlignment = Alignment.End) {
+                                    VBadge(
+                                        text = alert.level,
+                                        tone = when (alert.level) {
+                                            "CRITICAL" -> VBadgeTone.Danger
+                                            "BEHIND" -> VBadgeTone.Warning
+                                            else -> VBadgeTone.Accent
+                                        },
+                                    )
+                                    Spacer(Modifier.height(8.dp))
+                                    VButton(
+                                        "Resolve",
+                                        onClick = { onResolve(alert.id) },
+                                        size = com.littlebridge.enrollplus.ui.v2.components.VButtonSize.Sm,
+                                        variant = VButtonVariant.Secondary,
+                                        tone = VButtonTone.Lavender,
+                                        loading = state.resolvingAlertId == alert.id,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+            // ── Pace snapshots ──
+            if (state.snapshots.isNotEmpty()) {
+                Column {
+                    Text("Pace snapshots", style = VTheme.type.h3.colored(c.ink), modifier = Modifier.padding(bottom = 8.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        state.snapshots.forEach { snap ->
+                            VCard {
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    Column(Modifier.weight(1f)) {
+                                        Text("${snap.subject} • ${snap.className}-${snap.section}", style = VTheme.type.bodyStrong.colored(c.ink))
+                                        if (snap.teacherName.isNotBlank()) {
+                                            Text(snap.teacherName, style = VTheme.type.caption.colored(c.ink2))
+                                        }
+                                        Text("${snap.coveredTopics}/${snap.totalTopics} topics covered", style = VTheme.type.caption.colored(c.ink3))
+                                    }
+                                    Column(horizontalAlignment = Alignment.End) {
+                                        Text("${snap.actualPct}%", style = VTheme.type.data.colored(c.ink).copy(fontWeight = FontWeight.Bold))
+                                        Text("Expected: ${snap.expectedPct}%", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp))
+                                    }
+                                }
+                                Spacer(Modifier.height(8.dp))
+                                VProgressBar(
+                                    value = snap.actualPct.toFloat(),
+                                    tone = when (snap.status) {
+                                        "CRITICAL" -> VBadgeTone.Danger
+                                        "BEHIND" -> VBadgeTone.Warning
+                                        "AHEAD" -> VBadgeTone.Success
+                                        else -> VBadgeTone.Arctic
+                                    },
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                VBadge(
+                                    text = snap.status.replace('_', ' '),
+                                    tone = when (snap.status) {
+                                        "CRITICAL" -> VBadgeTone.Danger
+                                        "BEHIND" -> VBadgeTone.Warning
+                                        "AHEAD" -> VBadgeTone.Success
+                                        else -> VBadgeTone.Arctic
+                                    },
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

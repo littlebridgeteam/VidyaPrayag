@@ -2,6 +2,9 @@ package com.littlebridge.enrollplus.feature.teacher.domain.repository
 
 import com.littlebridge.enrollplus.core.model.ApiResponse
 import com.littlebridge.enrollplus.core.network.NetworkResult
+import com.littlebridge.enrollplus.feature.admin.domain.model.ChangeRequestListResponse
+import com.littlebridge.enrollplus.feature.admin.domain.model.CreateChangeRequestRequest
+import com.littlebridge.enrollplus.feature.admin.domain.model.TimetableChangeRequestDto
 import com.littlebridge.enrollplus.feature.teacher.domain.model.*
 
 interface TeacherRepository {
@@ -77,6 +80,13 @@ interface TeacherRepository {
     // RA-51: message all parents of an owned class.
     suspend fun broadcastToClass(token: String, request: TeacherClassBroadcastRequest): NetworkResult<TeacherClassBroadcastResponse>
 
+    // Read Receipts: teacher 1:1 messaging.
+    suspend fun getMessageThreads(token: String): NetworkResult<TeacherMessageThreadsResponse>
+    suspend fun getThreadMessages(token: String, threadId: String): NetworkResult<TeacherThreadMessagesResponse>
+    suspend fun markThreadRead(token: String, threadId: String): NetworkResult<Unit>
+    suspend fun getUnreadCount(token: String): NetworkResult<Int>
+    suspend fun sendMessage(token: String, request: TeacherSendMessageRequest): NetworkResult<TeacherSendMessageResponse>
+
     // Lesson Planning (LESSON_PLANNING_SPEC.md — P1-20)
     suspend fun listLessonPlans(
         token: String, assignmentId: String, status: String? = null,
@@ -96,4 +106,33 @@ interface TeacherRepository {
     suspend fun saveLessonTemplate(token: String, request: SaveLessonTemplateRequest): NetworkResult<LessonTemplateDto>
     suspend fun deleteLessonTemplate(token: String, templateId: String): NetworkResult<ApiResponse<Unit>>
     suspend fun instantiateLessonFromTemplate(token: String, templateId: String, request: InstantiateFromTemplateRequest): NetworkResult<LessonPlanSingleResponse>
+
+    // Timetable change requests (teacher → admin approval workflow)
+    suspend fun getTimetableChangeRequests(token: String): NetworkResult<ChangeRequestListResponse>
+    suspend fun submitTimetableChangeRequest(token: String, request: CreateChangeRequestRequest): NetworkResult<ApiResponse<TimetableChangeRequestDto>>
+
+    // ── Agentic Syllabus — parse, daily log, popup prefs, quiz, delete ────────
+    suspend fun parseSyllabus(token: String, request: SylParseRequest): NetworkResult<SylParseResponse>
+    suspend fun confirmParsedSyllabus(token: String, request: SylParseConfirmRequest): NetworkResult<SylParseConfirmResponse>
+    suspend fun createDailyLog(token: String, request: SylDailyLogRequest): NetworkResult<SylDailyLogResponse>
+    suspend fun listDailyLogs(token: String, assignmentId: String): NetworkResult<SylDailyLogListResponse>
+    suspend fun shouldShowDailyLogPopup(token: String): NetworkResult<SylShouldShowResponse>
+    suspend fun setPopupPrefs(token: String, request: SylPopupPrefsRequest): NetworkResult<SylPopupPrefsResponse>
+    suspend fun getPopupPrefs(token: String): NetworkResult<SylPopupPrefsResponse>
+    suspend fun deleteSyllabusUnit(token: String, assignmentId: String, unitId: String): NetworkResult<SylDeleteUnitResponse>
+    suspend fun generateQuiz(token: String, request: QuizGenerateRequest): NetworkResult<QuizGenerateResponse>
+    suspend fun publishQuiz(token: String, quizId: String): NetworkResult<QuizPublishResponse>
+    suspend fun listQuizzes(token: String, assignmentId: String): NetworkResult<QuizListResponse>
+    suspend fun getQuizResults(token: String, quizId: String): NetworkResult<QuizListResponse>
+    suspend fun getQuizLeaderboard(token: String, quizId: String): NetworkResult<TeacherQuizLeaderboardResponse>
+    suspend fun updateQuizQuestion(token: String, quizId: String, questionId: String, request: QuizUpdateQuestionRequest): NetworkResult<QuizUpdateQuestionResponse>
+    suspend fun addQuizQuestion(token: String, quizId: String, request: QuizUpdateQuestionRequest): NetworkResult<QuizUpdateQuestionResponse>
+    suspend fun regenerateQuiz(token: String, quizId: String): NetworkResult<QuizRegenerateResponse>
+
+    // ── NCERT Auto-fill + Approval + Pace ───────────────────────────────────
+    suspend fun autoFillSyllabus(token: String, request: SylAutoFillRequest): NetworkResult<SylAutoFillResponse>
+    suspend fun confirmAutoFillSyllabus(token: String, assignmentId: String, chapters: List<SylAutoFillChapter>): NetworkResult<SylParseConfirmResponse>
+    suspend fun approveSyllabus(token: String, request: SylApproveRequest): NetworkResult<SylApproveResponse>
+    suspend fun rejectSyllabus(token: String, request: SylApproveRequest): NetworkResult<SylApproveResponse>
+    suspend fun getPaceWarning(token: String, assignmentId: String): NetworkResult<ApiResponse<SylPaceWarning>>
 }
