@@ -106,7 +106,10 @@ data class ParentNotificationDto(
     val title: String,
     val body: String,
     val time: String,
-    val unread: Boolean = true
+    val unread: Boolean = true,
+    @SerialName("deep_link") val deepLink: String? = null,
+    @SerialName("ref_type") val refType: String? = null,
+    @SerialName("ref_id") val refId: String? = null,
 )
 
 @Serializable
@@ -233,6 +236,9 @@ fun Route.parentRouting() {
                                     body = row[AnnouncementsTable.description],
                                     time = row[AnnouncementsTable.date],
                                     unread = true,
+                                    deepLink = "/parent/announcements/" + row[AnnouncementsTable.id].value.toString(),
+                                    refType = "announcement",
+                                    refId = row[AnnouncementsTable.id].value.toString(),
                                 )
                             }
                     }
@@ -264,6 +270,9 @@ fun Route.parentRouting() {
                                 },
                                 time = due ?: "",
                                 unread = true,
+                                deepLink = "/parent/fees/" + row[FeeRecordsTable.id].value.toString(),
+                                refType = "fee_record",
+                                refId = row[FeeRecordsTable.id].value.toString(),
                             )
                         }
 

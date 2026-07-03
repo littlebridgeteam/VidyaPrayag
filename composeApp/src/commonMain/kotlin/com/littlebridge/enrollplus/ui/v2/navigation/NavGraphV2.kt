@@ -169,6 +169,7 @@ sealed class DeepLinkTarget {
     data class TeacherScreen(override val role: EntryRole, val screen: String, val params: Map<String, String> = emptyMap()) : DeepLinkTarget()
     data class SchoolScreen(override val role: EntryRole, val screen: String, val params: Map<String, String> = emptyMap()) : DeepLinkTarget()
     data class AlumniScreen(override val role: EntryRole, val screen: String, val alumniId: String? = null) : DeepLinkTarget()
+    data class Messages(override val role: EntryRole) : DeepLinkTarget()
     data class Generic(override val role: EntryRole, val path: String) : DeepLinkTarget()
 }
 
@@ -211,8 +212,68 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
             val alumniId = segments.getOrNull(2)
             DeepLinkTarget.AlumniScreen(EntryRole.SchoolAdmin, screen, alumniId)
         }
-        "announcements" -> DeepLinkTarget.Generic(currentRole, path)
+        "announcements" -> {
+            val annId = segments.getOrNull(1)
+            when (currentRole) {
+                EntryRole.Parent -> DeepLinkTarget.ParentTab(EntryRole.Parent, "home", "announcements")
+                EntryRole.Teacher -> DeepLinkTarget.TeacherScreen(EntryRole.Teacher, "announcements", if (annId != null) mapOf("id" to annId) else emptyMap())
+                EntryRole.SchoolAdmin, EntryRole.SuperAdmin ->
+                    DeepLinkTarget.SchoolScreen(currentRole, "announcements", if (annId != null) mapOf("id" to annId) else emptyMap())
+                else -> DeepLinkTarget.Generic(currentRole, path)
+            }
+        }
         "calendar" -> DeepLinkTarget.Generic(currentRole, path)
+        "messages" -> {
+            when (currentRole) {
+                EntryRole.Parent -> DeepLinkTarget.Messages(EntryRole.Parent)
+                EntryRole.Teacher -> DeepLinkTarget.Messages(EntryRole.Teacher)
+                EntryRole.SchoolAdmin, EntryRole.SuperAdmin -> DeepLinkTarget.Messages(currentRole)
+                else -> DeepLinkTarget.Generic(currentRole, path)
+            }
+        }
+        "fees" -> {
+            val feeId = segments.getOrNull(1)
+            when (currentRole) {
+                EntryRole.Parent -> DeepLinkTarget.ParentTab(EntryRole.Parent, "fees", feeId)
+                EntryRole.SchoolAdmin, EntryRole.SuperAdmin ->
+                    DeepLinkTarget.SchoolScreen(currentRole, "fees", if (feeId != null) mapOf("id" to feeId) else emptyMap())
+                else -> DeepLinkTarget.Generic(currentRole, path)
+            }
+        }
+        "leave" -> {
+            when (currentRole) {
+                EntryRole.Parent -> DeepLinkTarget.ParentTab(EntryRole.Parent, "home", "leave")
+                EntryRole.Teacher -> DeepLinkTarget.TeacherScreen(EntryRole.Teacher, "leave-requests")
+                EntryRole.SchoolAdmin, EntryRole.SuperAdmin ->
+                    DeepLinkTarget.SchoolScreen(currentRole, "leave-requests")
+                else -> DeepLinkTarget.Generic(currentRole, path)
+            }
+        }
+        "scholarships" -> {
+            when (currentRole) {
+                EntryRole.Parent -> DeepLinkTarget.ParentTab(EntryRole.Parent, "scholarships")
+                EntryRole.SchoolAdmin, EntryRole.SuperAdmin ->
+                    DeepLinkTarget.SchoolScreen(currentRole, "scholarships")
+                else -> DeepLinkTarget.Generic(currentRole, path)
+            }
+        }
+        "link-requests" -> {
+            when (currentRole) {
+                EntryRole.SchoolAdmin, EntryRole.SuperAdmin ->
+                    DeepLinkTarget.SchoolScreen(currentRole, "link-requests")
+                EntryRole.Parent -> DeepLinkTarget.ParentTab(EntryRole.Parent, "link-child")
+                else -> DeepLinkTarget.Generic(currentRole, path)
+            }
+        }
+        "timetable" -> {
+            when (currentRole) {
+                EntryRole.Teacher -> DeepLinkTarget.TeacherScreen(EntryRole.Teacher, "timetable")
+                EntryRole.SchoolAdmin, EntryRole.SuperAdmin ->
+                    DeepLinkTarget.SchoolScreen(currentRole, "timetable")
+                EntryRole.Parent -> DeepLinkTarget.ParentTab(EntryRole.Parent, "academics", "timetable")
+                else -> DeepLinkTarget.Generic(currentRole, path)
+            }
+        }
         "transport" -> {
             when (currentRole) {
                 EntryRole.SchoolAdmin, EntryRole.SuperAdmin ->

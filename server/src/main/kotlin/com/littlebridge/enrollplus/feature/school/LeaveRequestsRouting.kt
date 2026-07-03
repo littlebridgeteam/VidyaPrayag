@@ -304,7 +304,7 @@ fun Route.leaveRequestsRouting() {
                         status = normalized,
                         requesterName = decided.requesterName,
                         recipients = listOfNotNull(decided.parentId, decided.teacherId),
-                        parentDeepLink = "parent/leave",
+                        parentDeepLink = "/parent/leave",
                     )
                     call.okMessage("Leave request status updated")
                 }

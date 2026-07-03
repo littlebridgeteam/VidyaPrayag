@@ -193,7 +193,7 @@ fun Route.parentLeaveRouting() {
                         body = "$childName has a pending leave request for your review.",
                         schoolId = schoolId,
                         actorId = uid,
-                        deepLink = "teacher/leave-requests",
+                        deepLink = "/teacher/leave-requests",
                         refType = "leave_request",
                         refId = newId.toString(),
                     )

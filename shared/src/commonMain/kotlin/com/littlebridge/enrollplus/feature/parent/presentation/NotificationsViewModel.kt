@@ -20,6 +20,9 @@ data class NotificationItem(
     val body: String,
     val time: String,
     val unread: Boolean,
+    val deepLink: String? = null,
+    val refType: String? = null,
+    val refId: String? = null,
 )
 
 data class NotificationsState(
@@ -67,6 +70,9 @@ class NotificationsViewModel(
                                     body = n.body,
                                     time = n.time,
                                     unread = n.unread,
+                                    deepLink = n.deepLink,
+                                    refType = n.refType,
+                                    refId = n.refId,
                                 )
                             },
                             unreadCount = data.unreadCount,

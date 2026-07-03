@@ -235,7 +235,7 @@ object MessageDispatchScheduler {
                 body = subTitle ?: description.take(140),
                 schoolId = schoolId,
                 actorId = createdBy,
-                deepLink = "announcements/$eventId",
+                deepLink = "/announcements/$eventId",
                 refType = "announcement",
                 refId = eventId,
             )
@@ -316,7 +316,7 @@ object MessageDispatchScheduler {
                 body = body.take(120),
                 schoolId = schoolId,
                 actorId = teacherId,
-                deepLink = "parent/messages",
+                deepLink = "/parent/messages",
                 refType = "scheduled_message",
                 refId = "teacher_broadcast",
             )
@@ -368,7 +368,7 @@ object MessageDispatchScheduler {
                 body = body.take(140),
                 schoolId = schoolId,
                 actorId = adminId,
-                deepLink = "announcements",
+                deepLink = "/announcements",
                 refType = "scheduled_message",
                 refId = "admin_broadcast",
             )

@@ -22,6 +22,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VNavItem
 import com.littlebridge.enrollplus.ui.v2.components.VScreenScaffold
 import com.littlebridge.enrollplus.ui.v2.navigation.DeepLinkTarget
+import com.littlebridge.enrollplus.ui.v2.navigation.EntryRole
+import com.littlebridge.enrollplus.ui.v2.navigation.parseDeepLink
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.screens.discovery.AcademicCalendarScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.notifications.NotificationsScreenV2
@@ -101,6 +103,7 @@ fun SchoolPortalV2(
     // Theme is now applied globally at the NavGraphV2 level from user preference.
     var tab by remember { mutableStateOf("home") }
     var overlay by remember { mutableStateOf(SchoolOverlay.None) }
+    var localDeepLink by remember { mutableStateOf<DeepLinkTarget?>(null) }
     // Track which screen launched the create-event wizard so onCreated returns there.
     var createEventOrigin by remember { mutableStateOf(SchoolOverlay.AcademicCalendarPlatform) }
 
@@ -116,23 +119,28 @@ fun SchoolPortalV2(
     }
 
     // Apply deep-link routing: set tab from the typed target.
-    LaunchedEffect(deepLinkTarget) {
-        when (deepLinkTarget) {
+    LaunchedEffect(deepLinkTarget, localDeepLink) {
+        val target = localDeepLink ?: deepLinkTarget ?: return@LaunchedEffect
+        when (target) {
             is DeepLinkTarget.SchoolScreen -> {
-                if (deepLinkTarget.screen == "transport") {
+                if (target.screen == "transport") {
                     overlay = SchoolOverlay.TransportManagement
-                } else if (deepLinkTarget.screen == "report-card" || deepLinkTarget.screen == "report-review") {
+                } else if (target.screen == "report-card" || target.screen == "report-review") {
                     overlay = SchoolOverlay.ReportPublish
-                } else if (deepLinkTarget.screen == "library") {
+                } else if (target.screen == "library") {
                     overlay = SchoolOverlay.Library
-                } else if (deepLinkTarget.screen == "events") {
+                } else if (target.screen == "events") {
                     overlay = SchoolOverlay.EventRegistration
                 } else {
-                    tab = deepLinkTarget.screen
+                    tab = target.screen
                 }
+            }
+            is DeepLinkTarget.Messages -> {
+                tab = "comms"
             }
             else -> Unit
         }
+        localDeepLink = null
     }
     // RA-45 — id carried into the student/teacher profile overlays.
     var selectedStudentId by remember { mutableStateOf<String?>(null) }
@@ -179,7 +187,14 @@ fun SchoolPortalV2(
 
         when (overlay) {
             SchoolOverlay.Notifications -> {
-                NotificationsScreenV2(onBack = { overlay = SchoolOverlay.None }, modifier = modifier)
+                NotificationsScreenV2(
+                onBack = { overlay = SchoolOverlay.None },
+                onDeepLink = { deepLinkString ->
+                    localDeepLink = parseDeepLink(deepLinkString, EntryRole.SchoolAdmin)
+                    overlay = SchoolOverlay.None
+                },
+                modifier = modifier,
+            )
                 return
             }
             SchoolOverlay.Calendar -> {

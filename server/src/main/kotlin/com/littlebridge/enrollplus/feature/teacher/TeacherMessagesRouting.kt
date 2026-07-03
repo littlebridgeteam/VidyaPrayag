@@ -546,7 +546,7 @@ fun Route.teacherMessagesRouting() {
                     body = req.body.take(120),
                     schoolId = ctx.schoolId,
                     actorId = ctx.userId,
-                    deepLink = "parent/messages",
+                    deepLink = "/parent/messages",
                     refType = "message",
                 )
                 call.created(TeacherClassBroadcastResponse(parents.size), message = "Message sent to ${parents.size} parents")

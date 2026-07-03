@@ -2,10 +2,47 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useNotifications } from "@/lib/admin/hooks";
 import { adminApi } from "@/lib/admin/client";
 import { useSidebar } from "./SidebarContext";
 import { IconBell, IconExternal, IconMenu, IconPanelLeft } from "./icons";
+
+export function mapDeepLinkToAdminRoute(deepLink: string): string | null {
+  const path = deepLink.replace(/^\//, "").split("?")[0];
+  const segments = path.split("/").filter(Boolean);
+  const first = segments[0] ?? "";
+  switch (first) {
+    case "school":
+    case "admin":
+      return `/admin/${segments.slice(1).join("/") || "dashboard"}`;
+    case "announcements":
+      return "/admin/announcements";
+    case "calendar":
+      return "/admin/calendar/dashboard";
+    case "messages":
+      return "/admin/messages";
+    case "fees":
+      return "/admin/fees";
+    case "leave-requests":
+    case "leave":
+      return "/admin/leave-requests";
+    case "link-requests":
+      return "/admin/link-requests";
+    case "timetable":
+      return "/admin/timetable";
+    case "transport":
+      return "/admin/transport";
+    case "scholarships":
+      return "/admin/scholarships";
+    case "pews":
+      return "/admin/pews";
+    case "report-card":
+      return "/admin/report-card";
+    default:
+      return null;
+  }
+}
 
 /**
  * Admin top bar — mobile menu toggle, a desktop sidebar-collapse toggle, the
@@ -18,6 +55,7 @@ import { IconBell, IconExternal, IconMenu, IconPanelLeft } from "./icons";
 export function Topbar({ title }: { title: string }) {
   const { data, mutate } = useNotifications();
   const { setMobileOpen, toggleCollapsed } = useSidebar();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -115,24 +153,37 @@ export function Topbar({ title }: { title: string }) {
                   You&apos;re all caught up.
                 </p>
               ) : (
-                items.slice(0, 12).map((n) => (
-                  <div
-                    key={n.id}
-                    className={`flex gap-3 px-4 py-3 ${n.unread ? "bg-accent/4" : ""}`}
-                  >
-                    <span
-                      className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
-                        n.unread ? "bg-accent" : "bg-transparent"
-                      }`}
-                      aria-hidden="true"
-                    />
-                    <div className="min-w-0">
-                      <p className="truncate text-[13px] font-semibold text-navy-deep">{n.title}</p>
-                      <p className="line-clamp-2 text-[12px] text-ink-3">{n.body}</p>
-                      <p className="mt-0.5 text-[11px] text-ink-placeholder">{n.time}</p>
+                items.slice(0, 12).map((n) => {
+                  const route = n.deep_link ? mapDeepLinkToAdminRoute(n.deep_link) : null;
+                  const handleClick = () => {
+                    if (route) {
+                      setOpen(false);
+                      router.push(route);
+                      if (n.unread) {
+                        adminApi.markNotificationRead(n.id).catch(() => {});
+                      }
+                    }
+                  };
+                  return (
+                    <div
+                      key={n.id}
+                      onClick={handleClick}
+                      className={`flex gap-3 px-4 py-3 ${n.unread ? "bg-accent/4" : ""} ${route ? "cursor-pointer hover:bg-accent/8" : ""}`}
+                    >
+                      <span
+                        className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
+                          n.unread ? "bg-accent" : "bg-transparent"
+                        }`}
+                        aria-hidden="true"
+                      />
+                      <div className="min-w-0">
+                        <p className="truncate text-[13px] font-semibold text-navy-deep">{n.title}</p>
+                        <p className="line-clamp-2 text-[12px] text-ink-3">{n.body}</p>
+                        <p className="mt-0.5 text-[11px] text-ink-placeholder">{n.time}</p>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>

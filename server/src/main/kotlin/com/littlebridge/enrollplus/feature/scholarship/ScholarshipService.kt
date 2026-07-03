@@ -373,7 +373,7 @@ class ScholarshipService(
                 title = "Scholarship Approved!",
                 body = "Scholarship '$scholarshipTitle' has been approved. ${req.remarks}",
                 userIds = listOf(parentId.toString()),
-                deepLink = "vidyaprayag://parent/scholarships",
+                deepLink = "/parent/scholarships",
                 data = mapOf("type" to "scholarship_approved", "applicationId" to applicationId.toString()),
             )
         )
@@ -417,7 +417,7 @@ class ScholarshipService(
                 title = "Scholarship Update",
                 body = "Scholarship '$scholarshipTitle' application was not approved. ${req.remarks}",
                 userIds = listOf(parentId.toString()),
-                deepLink = "vidyaprayag://parent/scholarships",
+                deepLink = "/parent/scholarships",
                 data = mapOf("type" to "scholarship_rejected", "applicationId" to applicationId.toString()),
             )
         )
@@ -460,7 +460,7 @@ class ScholarshipService(
                 title = "Scholarship Disbursed!",
                 body = "Scholarship '$scholarshipTitle' disbursed. Amount: ${req.amount}. Reference: ${req.reference}",
                 userIds = listOf(parentId.toString()),
-                deepLink = "vidyaprayag://parent/scholarships",
+                deepLink = "/parent/scholarships",
                 data = mapOf("type" to "scholarship_disbursed", "applicationId" to applicationId.toString()),
             )
         )
@@ -536,7 +536,7 @@ class ScholarshipService(
                     title = "Scholarship Renewal Approved!",
                     body = "Renewal for '$scholarshipTitle' has been approved for the new academic year.",
                     userIds = listOf(parentId.toString()),
-                    deepLink = "vidyaprayag://parent/scholarships",
+                    deepLink = "/parent/scholarships",
                     data = mapOf("type" to "scholarship_renewal_approved", "renewalId" to renewalId.toString()),
                 )
             )
@@ -584,7 +584,7 @@ class ScholarshipService(
                     title = "Scholarship Renewal Update",
                     body = "Renewal for '$scholarshipTitle' was not approved. ${req.remarks}",
                     userIds = listOf(parentId.toString()),
-                    deepLink = "vidyaprayag://parent/scholarships",
+                    deepLink = "/parent/scholarships",
                     data = mapOf("type" to "scholarship_renewal_rejected", "renewalId" to renewalId.toString()),
                 )
             )

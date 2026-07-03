@@ -21,6 +21,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VNavItem
 import com.littlebridge.enrollplus.ui.v2.components.VScreenScaffold
 import com.littlebridge.enrollplus.ui.v2.navigation.DeepLinkTarget
+import com.littlebridge.enrollplus.ui.v2.navigation.EntryRole
+import com.littlebridge.enrollplus.ui.v2.navigation.parseDeepLink
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.screens.notifications.NotificationsScreenV2
 import org.koin.compose.koinInject
@@ -69,6 +71,7 @@ fun TeacherPortalV2(
 ) {
     var tab by remember { mutableStateOf("home") }
     var overlay by remember { mutableStateOf(TeacherOverlay.None) }
+    var localDeepLink by remember { mutableStateOf<DeepLinkTarget?>(null) }
 
     // AI Report Card — review queue parameters (declared before LaunchedEffect
     // so the deep-link handler can write to them).
@@ -78,27 +81,31 @@ fun TeacherPortalV2(
     var reportDraftId by remember { mutableStateOf("") }
 
     // Apply deep-link routing: set tab from the typed target.
-    LaunchedEffect(deepLinkTarget) {
-        when (deepLinkTarget) {
+    LaunchedEffect(deepLinkTarget, localDeepLink) {
+        val target = localDeepLink ?: deepLinkTarget ?: return@LaunchedEffect
+        when (target) {
             is DeepLinkTarget.TeacherScreen -> {
-                if (deepLinkTarget.screen == "transport") {
+                if (target.screen == "transport") {
                     overlay = TeacherOverlay.TransportAttendance
-                } else if (deepLinkTarget.screen == "report-card" || deepLinkTarget.screen == "report-review") {
-                    // Consume query params from notification deep link
-                    deepLinkTarget.params["className"]?.let { reportClassName = it }
-                    deepLinkTarget.params["section"]?.let { reportSection = it }
-                    deepLinkTarget.params["term"]?.let { reportTerm = it }
+                } else if (target.screen == "report-card" || target.screen == "report-review") {
+                    target.params["className"]?.let { reportClassName = it }
+                    target.params["section"]?.let { reportSection = it }
+                    target.params["term"]?.let { reportTerm = it }
                     overlay = TeacherOverlay.ReportReview
-                } else if (deepLinkTarget.screen == "tutor") {
+                } else if (target.screen == "tutor") {
                     overlay = TeacherOverlay.Heatmap
-                } else if (deepLinkTarget.screen == "events") {
+                } else if (target.screen == "events") {
                     overlay = TeacherOverlay.EventRegistration
                 } else {
-                    tab = deepLinkTarget.screen
+                    tab = target.screen
                 }
+            }
+            is DeepLinkTarget.Messages -> {
+                overlay = TeacherOverlay.Messages
             }
             else -> Unit
         }
+        localDeepLink = null
     }
 
     // The UPDATE tab can be entered pre-scoped from a HOME CTA. These hold the
@@ -124,7 +131,14 @@ fun TeacherPortalV2(
     // ── Overlays sit above all tab content ──────────────────────────────────
     when (overlay) {
         TeacherOverlay.Notifications -> {
-            NotificationsScreenV2(onBack = { overlay = TeacherOverlay.None }, modifier = modifier)
+            NotificationsScreenV2(
+                onBack = { overlay = TeacherOverlay.None },
+                onDeepLink = { deepLinkString ->
+                    localDeepLink = parseDeepLink(deepLinkString, EntryRole.Teacher)
+                    overlay = TeacherOverlay.None
+                },
+                modifier = modifier,
+            )
             return
         }
         TeacherOverlay.HealthAlerts -> {

@@ -43,6 +43,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VNavItem
 import com.littlebridge.enrollplus.ui.v2.components.VScreenScaffold
 import com.littlebridge.enrollplus.ui.v2.components.VStatusDot
 import com.littlebridge.enrollplus.ui.v2.navigation.DeepLinkTarget
+import com.littlebridge.enrollplus.ui.v2.navigation.EntryRole
+import com.littlebridge.enrollplus.ui.v2.navigation.parseDeepLink
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.screens.auth.ParentLinkChildScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.discovery.AcademicCalendarScreenV2
@@ -84,13 +86,15 @@ fun ParentPortalV2(
 ) {
     var tab by remember { mutableStateOf("home") }
     var overlay by remember { mutableStateOf(ParentOverlay.None) }
+    var localDeepLink by remember { mutableStateOf<DeepLinkTarget?>(null) }
 
     // Apply deep-link routing: set tab + overlay from the typed target.
-    LaunchedEffect(deepLinkTarget) {
-        when (deepLinkTarget) {
+    LaunchedEffect(deepLinkTarget, localDeepLink) {
+        val target = localDeepLink ?: deepLinkTarget ?: return@LaunchedEffect
+        when (target) {
             is DeepLinkTarget.ParentTab -> {
-                tab = deepLinkTarget.tab
-                when (deepLinkTarget.overlay) {
+                tab = target.tab
+                when (target.overlay) {
                     "leave" -> overlay = ParentOverlay.Leave
                     "messages" -> overlay = ParentOverlay.Messages
                     "notifications" -> overlay = ParentOverlay.Notifications
@@ -101,8 +105,12 @@ fun ParentPortalV2(
                     else -> overlay = ParentOverlay.None
                 }
             }
+            is DeepLinkTarget.Messages -> {
+                overlay = ParentOverlay.Messages
+            }
             else -> Unit
         }
+        localDeepLink = null
     }
     val dashboard by dashboardViewModel.state.collectAsStateV2()
     val progress by headerViewModel.state.collectAsStateV2()
@@ -134,7 +142,14 @@ fun ParentPortalV2(
 
     when (overlay) {
         ParentOverlay.Notifications -> {
-            NotificationsScreenV2(onBack = { overlay = ParentOverlay.None }, modifier = modifier)
+            NotificationsScreenV2(
+                onBack = { overlay = ParentOverlay.None },
+                onDeepLink = { deepLinkString ->
+                    localDeepLink = parseDeepLink(deepLinkString, EntryRole.Parent)
+                    overlay = ParentOverlay.None
+                },
+                modifier = modifier,
+            )
             return
         }
         ParentOverlay.Calendar -> {

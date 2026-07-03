@@ -67,6 +67,7 @@ import com.littlebridge.enrollplus.feature.auth.otpAdminRouting
 import com.littlebridge.enrollplus.feature.config.appStatusRouting
 import com.littlebridge.enrollplus.feature.config.versionRouting
 import com.littlebridge.enrollplus.feature.devtools.devToolsRouting
+import com.littlebridge.enrollplus.feature.logging.serverLogRouting
 import com.littlebridge.enrollplus.feature.content.landingRouting
 import com.littlebridge.enrollplus.feature.content.supportRouting
 import com.littlebridge.enrollplus.feature.gateway.api.gatewayRouting
@@ -145,6 +146,7 @@ import com.littlebridge.enrollplus.feature.user.parentMessagesRouting
 import com.littlebridge.enrollplus.feature.user.userDetailsRouting
 import com.littlebridge.enrollplus.feature.user.userProfileRouting
 import com.littlebridge.enrollplus.core.ApiError
+import com.littlebridge.enrollplus.feature.logging.ServerLogWriter
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
@@ -273,6 +275,42 @@ fun Application.module() {
         }
     }
 
+    // HTTP request/response logging → ServerLogWriter (structured DB log for
+    // the super-admin Log Viewer). Non-blocking, fire-and-forget.
+    intercept(ApplicationCallPipeline.Monitoring) {
+        val startTime = System.currentTimeMillis()
+        val method = call.request.httpMethod.value
+        val uri = call.request.uri
+        val actorId = call.principal<io.ktor.server.auth.jwt.JWTPrincipal>()?.payload?.subject
+
+        proceed()
+
+        val durationMs = System.currentTimeMillis() - startTime
+        val status = call.response.status()?.value ?: 0
+        val level = when {
+            status >= 500 -> "ERROR"
+            status >= 400 -> "WARN"
+            else -> "INFO"
+        }
+        runCatching {
+            ServerLogWriter.write(
+                level = level,
+                category = "http",
+                message = "$method $uri → $status (${durationMs}ms)",
+                actorId = actorId?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() },
+                endpoint = "$method $uri",
+                statusCode = status,
+                durationMs = durationMs,
+                details = mapOf(
+                    "method" to method,
+                    "uri" to uri,
+                    "status" to status,
+                    "duration_ms" to durationMs,
+                ),
+            )
+        }
+    }
+
     install(CORS) {
         // RA-37: open CORS (anyHost) is fine in dev but in production lets any
         // origin script authenticated cross-origin calls with a captured bearer
@@ -315,6 +353,8 @@ fun Application.module() {
     install(CallLogging)
 
     install(AutoHeadResponse)
+
+    install(io.ktor.server.sse.SSE)
 
     install(ContentNegotiation) {
         json(Json {
@@ -446,6 +486,12 @@ fun Application.module() {
         // Super-admin developer tools (OTP provider switch, pulse trigger, ad-hoc
         // notification send). Guarded by requireSuperAdmin() inside the route.
         devToolsRouting()
+
+        // Super-admin server log viewer (Notification Deep-Linking & Backend Log Viewer Plan §3.2)
+        //   GET  /api/v1/admin/dev/logs          — paginated log query
+        //   GET  /api/v1/admin/dev/logs/stream   — SSE real-time stream
+        //   GET  /api/v1/admin/dev/logs/stats    — aggregate stats
+        serverLogRouting()
 
         // Student Health Records (HEALTH_RECORDS_SPEC.md — P1-12)
         //   /api/v1/school/health/{profiles,immunizations,incidents}  — admin/nurse

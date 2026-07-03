@@ -81,6 +81,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun NotificationsScreenV2(
     onBack: () -> Unit,
+    onDeepLink: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: NotificationsViewModel = koinViewModel(),
 ) {
@@ -92,6 +93,7 @@ fun NotificationsScreenV2(
         onBack = onBack,
         onMarkAll = viewModel::markAllRead,
         onMarkRead = viewModel::markRead,
+        onDeepLink = onDeepLink,
         onRetry = viewModel::load,
         modifier = modifier.statusBarsPadding()
             .imePadding()
@@ -108,6 +110,7 @@ private fun NotificationsContent(
     onBack: () -> Unit,
     onMarkAll: () -> Unit,
     onMarkRead: (String) -> Unit,
+    onDeepLink: (String) -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -124,6 +127,7 @@ private fun NotificationsContent(
             body = it.body,
             time = it.time,
             unread = it.unread,
+            deepLink = it.deepLink,
         )
     }
     val unread = items.count { it.unread }
@@ -277,7 +281,13 @@ private fun NotificationsContent(
                             visible = shown,
                             enter = VMotion.fadeUp(delayMs = 0, fromY = 8),
                         ) {
-                            NotificationRow(n, onClick = { onMarkRead(n.id) })
+                            NotificationRow(
+                                n,
+                                onClick = {
+                                    onMarkRead(n.id)
+                                    n.deepLink?.let { onDeepLink(it) }
+                                },
+                            )
                         }
                     }
                 }
@@ -403,6 +413,7 @@ data class VNotification(
     val body: String,
     val time: String,
     val unread: Boolean,
+    val deepLink: String? = null,
 )
 
 // §9 one-off literals (lifted verbatim from Notifications.tsx; not part of the global palette):

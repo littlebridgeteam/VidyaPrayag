@@ -25,6 +25,9 @@ export interface NotificationDto {
   body: string;
   time: string;
   unread: boolean;
+  deep_link?: string;
+  ref_type?: string;
+  ref_id?: string;
 }
 export interface NotificationsDataDto {
   notifications: NotificationDto[];
@@ -296,6 +299,7 @@ export interface ActivityItem {
   action: string;
   target: string;
   iso_time: string;
+  deep_link?: string;
 }
 export interface DashboardIntelligenceDto {
   meta: IntelligenceMeta;
@@ -409,6 +413,41 @@ export interface DevSendNotificationResponse {
 export interface TriggerPewsResponse {
   schools_processed: number;
   at_risk_count: number;
+}
+
+// ── Server Logs (GET /api/v1/admin/dev/logs, /stats) ─────────────────────────
+export interface ServerLogDto {
+  id: string;
+  timestamp: string;
+  level: string;
+  category: string;
+  message: string;
+  actor_id?: string;
+  endpoint?: string;
+  status_code?: number;
+  duration_ms?: number;
+  details?: Record<string, unknown>;
+}
+export interface ServerLogsPageDto {
+  logs: ServerLogDto[];
+  total: number;
+  offset: number;
+  limit: number;
+}
+export interface AiTokenUsageSummary {
+  total_requests: number;
+  total_input_tokens: number;
+  total_output_tokens: number;
+  total_errors: number;
+  avg_latency_ms: number;
+  by_model: Record<string, number>;
+}
+export interface ServerLogStatsDto {
+  by_level: Record<string, number>;
+  by_category: Record<string, number>;
+  total_last_24h: number;
+  top_errors: ServerLogDto[];
+  ai_token_usage: AiTokenUsageSummary;
 }
 
 // ── Alumni Management (ALUMNI_MANAGEMENT_SPEC.md) ───────────────────────────

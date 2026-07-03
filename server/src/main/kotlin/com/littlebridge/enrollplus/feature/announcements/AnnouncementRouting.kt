@@ -262,7 +262,7 @@ fun Route.announcementRouting() {
                         body = req.subTitle ?: req.description.take(140),
                         schoolId = schoolId,
                         actorId = uid,
-                        deepLink = "announcements/$eventId",
+                        deepLink = "/announcements/$eventId",
                         refType = "announcement",
                         refId = eventId,
                     )
