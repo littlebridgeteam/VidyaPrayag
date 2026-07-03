@@ -58,7 +58,7 @@ data class DoubtResultDto(
 data class TutorTurnDto(
     val mode: String,
     val groundedRefs: List<GroundedRefDto> = emptyList(),
-    val studentFacing: StudentFacingDto,
+    val studentFacing: StudentFacingDto? = null,
     val practice: List<PracticeQuestionDto>? = null,
     val planDelta: PlanDeltaDto? = null,
     val teacherFlag: TeacherFlagDto? = null,
@@ -67,26 +67,26 @@ data class TutorTurnDto(
 
 @Serializable
 data class GroundedRefDto(
-    val topicId: String,
-    val source: String,
-    val value: String,
+    val topicId: String = "",
+    val source: String = "",
+    val value: String = "",
 )
 
 @Serializable
 data class StudentFacingDto(
-    val text: String,
+    val text: String = "",
     val mathBlocks: List<String> = emptyList(),
     val nextPrompt: String? = null,
 )
 
 @Serializable
 data class PracticeQuestionDto(
-    val questionId: String,
-    val stem: String,
+    val questionId: String = "",
+    val stem: String = "",
     val options: List<String>? = null,
-    val answerKey: String,
-    val topicId: String,
-    val difficulty: String,
+    val answerKey: String = "",
+    val topicId: String = "",
+    val difficulty: String = "",
 )
 
 @Serializable
@@ -97,22 +97,22 @@ data class PlanDeltaDto(
 
 @Serializable
 data class AddReviewDto(
-    val topicId: String,
-    val priority: String,
+    val topicId: String = "",
+    val priority: String = "",
 )
 
 @Serializable
 data class TeacherFlagDto(
-    val topicId: String,
-    val reason: String,
-    val severity: String,
+    val topicId: String = "",
+    val reason: String = "",
+    val severity: String = "",
 )
 
 @Serializable
 data class MisconceptionLogDto(
-    val topicId: String,
-    val type: String,
-    val evidence: String,
+    val topicId: String = "",
+    val type: String = "",
+    val evidence: String = "",
 )
 
 // ── Learner Bundle (Tier 0 Sense) ────────────────────────────────────

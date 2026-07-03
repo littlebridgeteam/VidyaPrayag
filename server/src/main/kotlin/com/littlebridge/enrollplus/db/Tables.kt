@@ -1064,8 +1064,26 @@ object CurriculumUnitsTable : UUIDTable("curriculum_units", "id") {
     val title     = text("title")
     val position  = integer("position").default(0)
     val isActive  = bool("is_active").default(true)
+    val depth     = integer("depth").default(0)
+    val approvalStatus = varchar("approval_status", 12).default("APPROVED") // DRAFT | APPROVED | REJECTED
     val createdAt = timestamp("created_at")
     val updatedAt = timestamp("updated_at")
+}
+
+/**
+ * Migration 111 — NCERT syllabus reference data for auto-fill.
+ * Keyed by (class_level, subject_name) → chapters_json.
+ */
+object NcertSyllabusReferenceTable : UUIDTable("ncert_syllabus_reference", "id") {
+    val classLevel   = varchar("class_level", 8)
+    val subjectName  = varchar("subject_name", 64)
+    val chaptersJson = text("chapters_json").default("[]")
+    val dataSource   = varchar("source", 32).default("NCERT")
+    val createdAt    = timestamp("created_at")
+    val updatedAt    = timestamp("updated_at")
+    init {
+        uniqueIndex("idx_ncert_ref_class_subject", classLevel, subjectName)
+    }
 }
 
 /**
@@ -1084,6 +1102,7 @@ object SyllabusProgressTable : UUIDTable("syllabus_progress", "id") {
     val coveredOn    = date("covered_on").nullable()     // TYPED (D-SYL-2)
     val coveredBy    = uuid("covered_by").nullable()     // FK app_users.id (teacher who toggled)
     val note         = text("note").nullable()
+    val coveragePercent = integer("coverage_percent").default(0)
     val createdAt    = timestamp("created_at")
     val updatedAt    = timestamp("updated_at")
     init {
@@ -1124,6 +1143,8 @@ object HomeworkTable : UUIDTable("homework", "id") {
     val dueDate     = date("due_date")                  // T-004: typed `date` (was varchar12)
     val dueTime     = time("due_time").nullable()       // T-404: optional cutoff time (D-HW-2)
     val allowLate   = bool("allow_late").default(false) // T-404: teacher policy (D-HW-4)
+    val isQuiz      = bool("is_quiz").default(false)
+    val quizMetaJson = text("quiz_meta_json").default("{}")
     val isActive    = bool("is_active").default(true)
     val createdAt   = timestamp("created_at")
     val updatedAt   = timestamp("updated_at")
@@ -1166,6 +1187,8 @@ object HomeworkSubmissionsTable : UUIDTable("homework_submissions", "id") {
     val grade       = text("grade").nullable()          // T-404: optional grade/feedback
     val reviewedBy  = uuid("reviewed_by").nullable()    // T-404: FK app_users.id
     val reviewedAt  = timestamp("reviewed_at").nullable()
+    val score       = integer("score").nullable()
+    val rank        = integer("rank").nullable()
     init {
         uniqueIndex("ux_homework_submissions_unique", homeworkId, studentId)
     }
@@ -2934,7 +2957,7 @@ object TutorMisconceptionsTable : UUIDTable("tutor_misconceptions", "id") {
     val schoolId           = uuid("school_id")
     val classId            = uuid("class_id")
     val subjectId          = uuid("subject_id")
-    val topicId            = uuid("topic_id")
+    val topicId            = uuid("topic_id").nullable()
     val childId            = uuid("child_id")
     val misconceptionType = varchar("misconception_type", 128)
     val evidence           = text("evidence").default("")
@@ -3426,6 +3449,180 @@ object TimetableChangeRequestsTable : UUIDTable("timetable_change_requests", "id
     val className     = text("class_name").default("")   // denormalised for display
     val section       = varchar("section", 8).default("A")
     val subject       = text("subject").default("")
+}
+
+// =====================================================================
+// syllabus_sources  (Agentic Syllabus Management — migration_110)
+//   Raw syllabus upload (image URL or text) + AI-parsed structured JSON.
+//   Linked to a teacher_subject_assignment for scope.
+// =====================================================================
+object SyllabusSourcesTable : UUIDTable("syllabus_sources", "id") {
+    val schoolId     = uuid("school_id")
+    val assignmentId = uuid("assignment_id")
+    val sourceType   = varchar("source_type", 8)      // IMAGE | TEXT
+    val sourceUrl    = text("source_url").nullable()
+    val rawText      = text("raw_text").nullable()
+    val parsedJson   = text("parsed_json").default("{}")
+    val aiProvider   = varchar("ai_provider", 32).nullable()
+    val createdAt    = timestamp("created_at")
+    val updatedAt    = timestamp("updated_at")
+}
+
+// =====================================================================
+// daily_class_log  (Agentic Syllabus Management — migration_110)
+//   Structured record of what was taught in each class period.
+//   source = TEACHER (from popup) or AI (estimated).
+//   UNIQUE(assignment_id, date) — one log per day per assignment.
+// =====================================================================
+object DailyClassLogTable : UUIDTable("daily_class_log", "id") {
+    val schoolId       = uuid("school_id")
+    val assignmentId   = uuid("assignment_id")
+    val date           = date("date")
+    val topicIds       = text("topic_ids").default("[]")
+    val summaryText    = text("summary_text").default("")
+    val coveragePct    = integer("coverage_pct").default(0)
+    val logSource      = varchar("source", 8)          // TEACHER | AI
+    val isAiEstimated  = bool("is_ai_estimated").default(false)
+    val createdAt      = timestamp("created_at")
+    val updatedAt      = timestamp("updated_at")
+    init {
+        uniqueIndex("idx_dcl_assignment_date", assignmentId, date)
+    }
+}
+
+// =====================================================================
+// syllabus_pace_plan  (Agentic Syllabus Management — migration_110)
+//   AI-estimated pace plan per assignment. Calculated from total topics
+//   + total classes (from academic year + teacher_periods).
+//   UNIQUE(assignment_id) — one plan per assignment.
+// =====================================================================
+object SyllabusPacePlanTable : UUIDTable("syllabus_pace_plan", "id") {
+    val schoolId              = uuid("school_id")
+    val assignmentId          = uuid("assignment_id")
+    val academicYearId        = uuid("academic_year_id").nullable()
+    val totalTopics           = integer("total_topics").default(0)
+    val totalClassesExpected  = integer("total_classes_expected").default(0)
+    val classesElapsed        = integer("classes_elapsed").default(0)
+    val expectedCoveragePct   = integer("expected_coverage_pct").default(0)
+    val actualCoveragePct     = integer("actual_coverage_pct").default(0)
+    val aiEstimateJson        = text("ai_estimate_json").default("{}")
+    val needsRecalc           = bool("needs_recalc").default(false)
+    val lastRecalcAt          = timestamp("last_recalc_at").nullable()
+    val createdAt             = timestamp("created_at")
+    val updatedAt             = timestamp("updated_at")
+    init {
+        uniqueIndex("idx_spp_assignment", assignmentId)
+    }
+}
+
+// =====================================================================
+// syllabus_popup_prefs  (Agentic Syllabus Management — migration_110)
+//   Teacher's suppression preferences for the daily check-in popup.
+//   UNIQUE(teacher_id, assignment_id) — one pref row per teacher+assignment.
+// =====================================================================
+object SyllabusPopupPrefsTable : UUIDTable("syllabus_popup_prefs", "id") {
+    val teacherId      = uuid("teacher_id")
+    val assignmentId   = uuid("assignment_id").nullable()
+    val suppressMode   = varchar("suppress_mode", 12).default("off")  // off | week | permanent
+    val suppressedUntil = date("suppressed_until").nullable()
+    val createdAt      = timestamp("created_at")
+    val updatedAt      = timestamp("updated_at")
+    init {
+        uniqueIndex("idx_spp_teacher_assignment", teacherId, assignmentId)
+    }
+}
+
+// =====================================================================
+// syllabus_pace_alerts  (Agentic Syllabus Management — migration_110)
+//   Pace deviation alerts with AI reconfirmation. Created only after
+//   AI second-pass validates. resolved_at = null means active.
+// =====================================================================
+object SyllabusPaceAlertsTable : UUIDTable("syllabus_pace_alerts", "id") {
+    val schoolId         = uuid("school_id")
+    val assignmentId     = uuid("assignment_id")
+    val alertLevel       = varchar("alert_level", 12)   // BEHIND | CRITICAL | AHEAD
+    val expectedPct      = integer("expected_pct")
+    val actualPct        = integer("actual_pct")
+    val aiConfirmed      = bool("ai_confirmed").default(false)
+    val aiReconfirmJson  = text("ai_reconfirm_json").default("{}")
+    val notifiedRoles    = text("notified_roles").default("[]")
+    val createdAt        = timestamp("created_at")
+    val resolvedAt       = timestamp("resolved_at").nullable()
+}
+
+// =====================================================================
+// quiz_questions  (Agentic Quiz System — migration_111)
+//   Structured question bank for AI-generated quizzes. Linked to homework.
+// =====================================================================
+object QuizQuestionsTable : UUIDTable("quiz_questions", "id") {
+    val homeworkId       = uuid("homework_id")
+    val questionType     = varchar("question_type", 12)  // MCQ | FILL_BLANK | TRUE_FALSE
+    val questionText     = text("question_text")
+    val optionsJson      = text("options_json").default("[]")
+    val correctAnswer    = text("correct_answer")
+    val explanation      = text("explanation").default("")
+    val difficultyOffset = integer("difficulty_offset").default(0)
+    val position         = integer("position").default(0)
+    val createdAt        = timestamp("created_at")
+}
+
+// =====================================================================
+// quiz_answers  (Agentic Quiz System — migration_111)
+//   Per-question student answers linked to homework submissions.
+// =====================================================================
+object QuizAnswersTable : UUIDTable("quiz_answers", "id") {
+    val submissionId = uuid("submission_id")
+    val questionId   = uuid("question_id")
+    val answerText   = text("answer_text")
+    val isCorrect    = bool("is_correct").default(false)
+    val createdAt    = timestamp("created_at")
+}
+
+// =====================================================================
+// syllabus_quizzes  (Agentic Quiz System — migration_112)
+//   AI-generated quizzes linked to syllabus assignments. Supports
+//   MCQ, FILL_BLANK, TRUE_FALSE, and MATCH question types.
+//   Multiple units can be selected per quiz.
+// =====================================================================
+object SyllabusQuizzesTable : UUIDTable("syllabus_quizzes", "id") {
+    val schoolId           = uuid("school_id")
+    val assignmentId       = uuid("assignment_id")
+    val unitIds            = text("unit_ids").default("")    // comma-separated UUIDs
+    val title              = varchar("title", 200).default("")
+    val questionTypes      = text("question_types").default("MCQ")  // comma-separated
+    val status             = varchar("status", 12).default("DRAFT")  // DRAFT | PUBLISHED
+    val difficulty         = varchar("difficulty", 10).default("MEDIUM")
+    val createdAt          = timestamp("created_at")
+    val publishedAt        = timestamp("published_at").nullable()
+}
+
+// =====================================================================
+// syllabus_quiz_questions  (Agentic Quiz System — migration_112)
+//   Individual questions for syllabus quizzes.
+// =====================================================================
+object SyllabusQuizQuestionsTable : UUIDTable("syllabus_quiz_questions", "id") {
+    val quizId             = uuid("quiz_id")
+    val questionType       = varchar("question_type", 12)  // MCQ | FILL_BLANK | TRUE_FALSE | MATCH
+    val questionText       = text("question_text")
+    val optionsJson        = text("options_json").default("[]")
+    val correctAnswer      = text("correct_answer").default("")
+    val explanation        = text("explanation").default("")
+    val matchPairsJson     = text("match_pairs_json").default("[]")
+    val position           = integer("position").default(0)
+    val createdAt          = timestamp("created_at")
+}
+
+// =====================================================================
+// syllabus_quiz_answers  (Agentic Quiz System — migration_112)
+//   Per-question student answers for syllabus quizzes.
+// =====================================================================
+object SyllabusQuizAnswersTable : UUIDTable("syllabus_quiz_answers", "id") {
+    val quizId             = uuid("quiz_id")
+    val studentId          = varchar("student_id", 50)
+    val questionId         = uuid("question_id")
+    val answerText         = text("answer_text")
+    val isCorrect          = bool("is_correct").default(false)
+    val createdAt          = timestamp("created_at")
 }
 
 val SYSTEM_SCHOOL_ID: UUID = UUID(0, 0)

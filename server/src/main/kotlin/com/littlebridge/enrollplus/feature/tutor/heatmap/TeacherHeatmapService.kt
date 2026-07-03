@@ -37,7 +37,7 @@ class TeacherHeatmapService(
     private val log = LoggerFactory.getLogger("TeacherHeatmapService")
 
     data class HeatmapCell(
-        val topicId: UUID,
+        val topicId: UUID?,
         val misconceptionType: String,
         val affectedChildren: Int,
         val evidence: List<String>,

@@ -53,9 +53,9 @@ object RateLimiter {
     private val reservePct: Int
         get() = EnvConfig.get("AI_RATE_RESERVE_PCT")?.toIntOrNull()?.coerceIn(0, 50) ?: 10
 
-    private fun effectiveRpm(raw: Int): Int = (raw * (100 - reservePct) / 100).coerceAtLeast(1)
-    private fun effectiveRpd(raw: Int): Int = (raw * (100 - reservePct) / 100).coerceAtLeast(1)
-    private fun effectiveTpm(raw: Int): Int = (raw * (100 - reservePct) / 100).coerceAtLeast(1)
+    private fun effectiveRpm(raw: Int): Int = if (raw <= 0) 0 else (raw * (100 - reservePct) / 100).coerceAtLeast(1)
+    private fun effectiveRpd(raw: Int): Int = if (raw <= 0) 0 else (raw * (100 - reservePct) / 100).coerceAtLeast(1)
+    private fun effectiveTpm(raw: Int): Int = if (raw <= 0) 0 else (raw * (100 - reservePct) / 100).coerceAtLeast(1)
 
     /** Per-provider raw free-tier limits (from AiProvider enum / env overrides). */
     private fun rawRpm(provider: AiProvider): Int =
@@ -140,7 +140,7 @@ object RateLimiter {
 
             val rpdLimit = effectiveRpd(rawRpd(aiProvider))
             val rpdCurrent = state.rpdCounter.get()
-            if (rpdCurrent >= rpdLimit) {
+            if (rpdLimit > 0 && rpdCurrent >= rpdLimit) {
                 log.debug("RateLimiter: {} exhausted RPD ({}/{})", k, rpdCurrent, rpdLimit)
                 return CheckResult(
                     allowed = false,
@@ -160,9 +160,9 @@ object RateLimiter {
             state.rpmWindow.removeAll { it < windowStart }
             state.tpmWindow.removeAll { it.timestamp < windowStart }
 
-            // RPM check
+            // RPM check (0 = unlimited)
             val rpmLimit = effectiveRpm(rawRpm(aiProvider))
-            if (state.rpmWindow.size >= rpmLimit) {
+            if (rpmLimit > 0 && state.rpmWindow.size >= rpmLimit) {
                 val oldestInWindow = state.rpmWindow.minOrNull() ?: now
                 val retryMs = (oldestInWindow + 60_000L) - now
                 log.debug("RateLimiter: {} throttled RPM ({}/{}, retry in {}ms)",
@@ -175,10 +175,10 @@ object RateLimiter {
                 )
             }
 
-            // TPM check
+            // TPM check (0 = unlimited)
             val tpmLimit = effectiveTpm(rawTpm(aiProvider))
             val tpmCurrent = state.tpmWindow.sumOf { it.tokens }
-            if (tpmCurrent + estTokens > tpmLimit) {
+            if (tpmLimit > 0 && tpmCurrent + estTokens > tpmLimit) {
                 val oldestToken = state.tpmWindow.minOfOrNull { it.timestamp } ?: now
                 val retryMs = (oldestToken + 60_000L) - now
                 log.debug("RateLimiter: {} throttled TPM ({}/{} + {} est, retry in {}ms)",

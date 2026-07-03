@@ -4,6 +4,8 @@ import com.littlebridge.enrollplus.core.model.ApiResponse
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.core.network.safeApiCall
 import com.littlebridge.enrollplus.feature.parent.domain.model.*
+import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizSubmitRequest
+import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizSubmitResponse
 import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.http.ContentType
@@ -196,6 +198,62 @@ class ParentApi(
             client.get(getUrl("api/v1/parent/pulse/history/$childId")) {
                 url { parameters.append("weeks", weeks.toString()) }
             }
+        }
+    }
+
+    // ── Agentic Syllabus — daily summary, syllabus-v2, quiz (Phase 2+) ────────
+
+    /** Daily summary: what was taught today across all subjects. */
+    suspend fun getDailySummary(token: String, childId: String, date: String? = null): NetworkResult<ParentDailySummaryResponse> {
+        return safeApiCall {
+            client.get(getUrl("api/v1/parent/child/$childId/daily-summary")) {
+                date?.takeIf { it.isNotBlank() }?.let { parameter("date", it) }
+            }
+        }
+    }
+
+    /** Syllabus v2: typed curriculum units with coverage per subject. */
+    suspend fun getSyllabusV2(token: String, childId: String): NetworkResult<ParentSyllabusV2Response> {
+        return safeApiCall {
+            client.get(getUrl("api/v1/parent/child/$childId/syllabus-v2"))
+        }
+    }
+
+    /** Quiz list: pending quizzes for the child. */
+    suspend fun getQuizList(token: String, childId: String): NetworkResult<ParentQuizListResponse> {
+        return safeApiCall {
+            client.get(getUrl("api/v1/parent/child/$childId/quizzes"))
+        }
+    }
+
+    /** Quiz detail: questions for a quiz (correct answers NOT included). */
+    suspend fun getQuizDetail(token: String, quizId: String): NetworkResult<ParentQuizDetailResponse> {
+        return safeApiCall {
+            client.get(getUrl("api/v1/parent/quiz/$quizId"))
+        }
+    }
+
+    /** Submit quiz answers → get result with correct answers + explanations. */
+    suspend fun submitQuiz(token: String, request: QuizSubmitRequest): NetworkResult<QuizSubmitResponse> {
+        return safeApiCall {
+            client.post(getUrl("api/v1/parent/quiz/submit")) {
+                contentType(ContentType.Application.Json)
+                setBody(request)
+            }
+        }
+    }
+
+    /** Quiz leaderboard: per-quiz ranking of all students who attempted it. */
+    suspend fun getQuizLeaderboard(token: String, childId: String, quizId: String): NetworkResult<QuizLeaderboardResponse> {
+        return safeApiCall {
+            client.get(getUrl("api/v1/parent/child/$childId/quiz/$quizId/leaderboard"))
+        }
+    }
+
+    /** Fetch past quiz results for a submitted quiz. */
+    suspend fun getQuizResult(token: String, childId: String, quizId: String): NetworkResult<QuizSubmitResponse> {
+        return safeApiCall {
+            client.get(getUrl("api/v1/parent/child/$childId/quiz/$quizId/result"))
         }
     }
 }
