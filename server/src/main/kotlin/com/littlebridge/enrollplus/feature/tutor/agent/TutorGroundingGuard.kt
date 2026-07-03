@@ -33,7 +33,8 @@ object TutorGroundingGuard {
         val allGrounded = groundingSet + refValues
 
         // Check studentFacing text for numbers not in the grounding set
-        val verifiedText = stripUngroundedNumbers(turn.studentFacing.text, allGrounded)
+        val sf = turn.studentFacing ?: return null
+        val verifiedText = stripUngroundedNumbers(sf.text, allGrounded)
         if (verifiedText == null) {
             log.warn("TutorGroundingGuard: studentFacing text fully ungrounded — rejecting turn")
             return null
@@ -41,10 +42,11 @@ object TutorGroundingGuard {
 
         // Verify practice questions: answerKey must be non-empty, topicId must be covered
         val verifiedPractice = turn.practice?.mapNotNull { q ->
-            val topicCovered = q.topicId == "subject_level" ||
-                bundle.syllabusPosition.coveredTopicIds.contains(q.topicId)
+            val tid = q.topicId
+            val topicCovered = tid == null || tid == "subject_level" ||
+                bundle.syllabusPosition.coveredTopicIds.contains(tid)
             if (!topicCovered) {
-                log.warn("TutorGroundingGuard: practice question references uncovered topic {} — dropped", q.topicId)
+                log.warn("TutorGroundingGuard: practice question references uncovered topic {} — dropped", tid)
                 null
             } else {
                 q
@@ -52,7 +54,7 @@ object TutorGroundingGuard {
         }?.takeIf { it.isNotEmpty() }
 
         return turn.copy(
-            studentFacing = turn.studentFacing.copy(text = verifiedText),
+            studentFacing = sf.copy(text = verifiedText),
             practice = verifiedPractice,
         )
     }

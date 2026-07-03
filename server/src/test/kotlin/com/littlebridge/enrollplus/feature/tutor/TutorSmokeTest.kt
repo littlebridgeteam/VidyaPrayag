@@ -219,6 +219,19 @@ class TutorSmokeTest {
     }
 
     @Test
+    fun `TutorTurn parse handles null topicId in teacherFlag`() {
+        val raw = """
+            {"mode":"ESCALATE","groundedRefs":[],"studentFacing":{"text":"I'm sorry, but we haven't covered that yet.","mathBlocks":[],"nextPrompt":"Would you like me to flag this for your teacher?"},"practice":[],"planDelta":{},"teacherFlag":{"topicId":null,"reason":"off_syllabus","severity":"low"},"misconception":null}
+        """.trimIndent()
+        val turn = TutorTurnCodec.parse(raw)
+        assertNotNull(turn)
+        assertEquals("ESCALATE", turn.mode)
+        assertNotNull(turn.teacherFlag)
+        assertNull(turn.teacherFlag!!.topicId)
+        assertEquals("off_syllabus", turn.teacherFlag!!.reason)
+    }
+
+    @Test
     fun `deterministic fallback produces valid Socratic step`() {
         val turn = TutorTurnCodec.deterministic("What is 2+2?")
         assertEquals("SOCRATIC_STEP", turn.mode)

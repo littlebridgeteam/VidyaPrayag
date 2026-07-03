@@ -69,6 +69,12 @@ private enum class SchoolOverlay {
     ReportEffectiveness,
     ScholarshipManagement,
     BrandingKit,
+    IdCards,
+    Library,
+    ScheduledMessages,
+    EventRegistration,
+    ClassesSubjects,
+    ClassDetail,
 }
 
 /**
@@ -95,6 +101,8 @@ fun SchoolPortalV2(
     // Theme is now applied globally at the NavGraphV2 level from user preference.
     var tab by remember { mutableStateOf("home") }
     var overlay by remember { mutableStateOf(SchoolOverlay.None) }
+    // Track which screen launched the create-event wizard so onCreated returns there.
+    var createEventOrigin by remember { mutableStateOf(SchoolOverlay.AcademicCalendarPlatform) }
 
     val scope = rememberCoroutineScope()
     val alumniRepo = koinInject<AlumniRepository>()
@@ -115,6 +123,10 @@ fun SchoolPortalV2(
                     overlay = SchoolOverlay.TransportManagement
                 } else if (deepLinkTarget.screen == "report-card" || deepLinkTarget.screen == "report-review") {
                     overlay = SchoolOverlay.ReportPublish
+                } else if (deepLinkTarget.screen == "library") {
+                    overlay = SchoolOverlay.Library
+                } else if (deepLinkTarget.screen == "events") {
+                    overlay = SchoolOverlay.EventRegistration
                 } else {
                     tab = deepLinkTarget.screen
                 }
@@ -135,6 +147,11 @@ fun SchoolPortalV2(
     // Alumni Management — selected alumni/campaign IDs for detail overlays.
     var selectedAlumniId by remember { mutableStateOf<String?>(null) }
     var selectedCampaignId by remember { mutableStateOf<String?>(null) }
+    // Class Detail — selected class info for the drill-down overlay.
+    var selectedClassId by remember { mutableStateOf<String?>(null) }
+    var selectedClassName by remember { mutableStateOf<String?>(null) }
+    // Track which overlay launched a student/teacher profile so back returns there.
+    var profileReturnOverlay by remember { mutableStateOf(SchoolOverlay.None) }
         // RA-S12 — the Comms badge counts message threads with unread messages
         // (GET /school/messages/threads), not a hardcoded literal.
         val messagesState by messagesViewModel.state.collectAsStateV2()
@@ -145,7 +162,19 @@ fun SchoolPortalV2(
         // the full-screen Notifications/Calendar overlay back to the admin tabs
         // instead of leaving the portal. Mirrors the React `onBack` wiring.
         BackHandler(enabled = overlay != SchoolOverlay.None) {
-            overlay = SchoolOverlay.None
+            when (overlay) {
+                SchoolOverlay.StudentProfile, SchoolOverlay.TeacherProfile -> {
+                    val returnTo = profileReturnOverlay
+                    profileReturnOverlay = SchoolOverlay.None
+                    overlay = returnTo
+                }
+                SchoolOverlay.ClassDetail -> {
+                    overlay = SchoolOverlay.ClassesSubjects
+                }
+                else -> {
+                    overlay = SchoolOverlay.None
+                }
+            }
         }
 
         when (overlay) {
@@ -162,17 +191,20 @@ fun SchoolPortalV2(
                 // VP-CAL — the premium centralized planning & scheduling platform.
                 AcademicCalendarPlatformScreenV2(
                     onBack = { overlay = SchoolOverlay.None },
-                    onCreateEvent = { overlay = SchoolOverlay.CreateEvent },
+                    onCreateEvent = {
+                        createEventOrigin = SchoolOverlay.AcademicCalendarPlatform
+                        overlay = SchoolOverlay.CreateEvent
+                    },
                     onOpenEvent = { /* event detail handled in-screen via overflow actions */ },
                     modifier = modifier,
                 )
                 return
             }
             SchoolOverlay.CreateEvent -> {
-                // 7-step create-event wizard; pops back to the platform on success.
-                CreateEventScreenV2(
-                    onBack = { overlay = SchoolOverlay.AcademicCalendarPlatform },
-                    onCreated = { overlay = SchoolOverlay.AcademicCalendarPlatform },
+                // Unified 3-step create-event/announcement screen.
+                UnifiedCreateEventScreenV2(
+                    onBack = { overlay = createEventOrigin },
+                    onCreated = { overlay = createEventOrigin },
                     modifier = modifier,
                 )
                 return
@@ -242,10 +274,11 @@ fun SchoolPortalV2(
                 // the People tab. `onRemoved` also pops back so the roster refreshes.
                 val id = selectedStudentId
                 if (id == null) { overlay = SchoolOverlay.None; return }
+                val returnTo = profileReturnOverlay
                 StudentProfileScreenV2(
                     studentId = id,
-                    onBack = { overlay = SchoolOverlay.None },
-                    onRemoved = { overlay = SchoolOverlay.None
+                    onBack = { overlay = returnTo; profileReturnOverlay = SchoolOverlay.None },
+                    onRemoved = { overlay = returnTo; profileReturnOverlay = SchoolOverlay.None
                         studentRefreshKey++
                                 },
                     onOpenHealth = { sid, sname ->
@@ -284,10 +317,11 @@ fun SchoolPortalV2(
                 // RA-45 — single teacher detail (assignments/coverage).
                 val id = selectedTeacherId
                 if (id == null) { overlay = SchoolOverlay.None; return }
+                val returnTo = profileReturnOverlay
                 TeacherProfileScreenV2(
                     teacherId = id,
-                    onBack = { overlay = SchoolOverlay.None },
-                    onRemoved = { overlay = SchoolOverlay.None
+                    onBack = { overlay = returnTo; profileReturnOverlay = SchoolOverlay.None },
+                    onRemoved = { overlay = returnTo; profileReturnOverlay = SchoolOverlay.None
                         peopleRefreshKey++ },
                     // RA-TAM — Quick Action → reusable assignment module.
                     onOpenAssignments = { overlay = SchoolOverlay.TeacherAssignments },
@@ -393,6 +427,70 @@ fun SchoolPortalV2(
                 )
                 return
             }
+            SchoolOverlay.IdCards -> {
+                IdCardScreen(
+                    onBack = { overlay = SchoolOverlay.None },
+                    modifier = modifier,
+                )
+                return
+            }
+            SchoolOverlay.Library -> {
+                SchoolLibraryScreen(
+                    onBack = { overlay = SchoolOverlay.None },
+                    modifier = modifier,
+                )
+                return
+            }
+            SchoolOverlay.ScheduledMessages -> {
+                ScheduledMessagesScreenV2(
+                    onBack = { overlay = SchoolOverlay.None },
+                    modifier = modifier,
+                )
+                return
+            }
+            SchoolOverlay.EventRegistration -> {
+                AdminEventRegistrationScreenV2(
+                    onBack = { overlay = SchoolOverlay.None },
+                    modifier = modifier,
+                )
+                return
+            }
+            SchoolOverlay.ClassesSubjects -> {
+                ClassesSubjectsScreenV2(
+                    onBack = { overlay = SchoolOverlay.None },
+                    onOpenClassDetail = { cls ->
+                        selectedClassId = cls.id
+                        selectedClassName = cls.name
+                        overlay = SchoolOverlay.ClassDetail
+                    },
+                    modifier = modifier,
+                )
+                return
+            }
+            SchoolOverlay.ClassDetail -> {
+                val id = selectedClassId
+                val name = selectedClassName
+                if (id == null || name == null) { overlay = SchoolOverlay.None; return }
+                ClassDetailScreenV2(
+                    classId = id,
+                    className = name,
+                    onBack = {
+                        overlay = SchoolOverlay.ClassesSubjects
+                    },
+                    onOpenStudent = { sid ->
+                        selectedStudentId = sid
+                        profileReturnOverlay = SchoolOverlay.ClassDetail
+                        overlay = SchoolOverlay.StudentProfile
+                    },
+                    onOpenTeacher = { tid ->
+                        selectedTeacherId = tid
+                        profileReturnOverlay = SchoolOverlay.ClassDetail
+                        overlay = SchoolOverlay.TeacherProfile
+                    },
+                    modifier = modifier,
+                )
+                return
+            }
             SchoolOverlay.None -> Unit
         }
 
@@ -424,6 +522,12 @@ fun SchoolPortalV2(
                         onOpenTransport = { overlay = SchoolOverlay.TransportManagement },
                         onOpenReportPublish = { overlay = SchoolOverlay.ReportPublish },
                         onOpenReportEffectiveness = { overlay = SchoolOverlay.ReportEffectiveness },
+                        onOpenEvents = { overlay = SchoolOverlay.EventRegistration },
+                        // Unified create-event entry from Home quick action.
+                        onCreateEvent = {
+                            createEventOrigin = SchoolOverlay.None
+                            overlay = SchoolOverlay.CreateEvent
+                        },
                         // §7 finding K — tapping the avatar opens the Settings tab (where logout
                         // lives), instead of logging the admin out outright.
                         onExit = { tab = "settings" },
@@ -453,6 +557,12 @@ fun SchoolPortalV2(
                         // screens as overlays instead of Coming-Soon cards.
                         onOpenMessages = { overlay = SchoolOverlay.Messages },
                         onOpenPtm = { overlay = SchoolOverlay.SchedulePTM },
+                        onOpenScheduledMessages = { overlay = SchoolOverlay.ScheduledMessages },
+                        // Unified create-event entry from Announcements tab.
+                        onCreateEvent = {
+                            createEventOrigin = SchoolOverlay.None
+                            overlay = SchoolOverlay.CreateEvent
+                        },
                     )
                     "settings" -> SchoolSettingsScreenV2(
                         onLogout = onLogout,
@@ -469,6 +579,12 @@ fun SchoolPortalV2(
                         onOpenScholarships = { overlay = SchoolOverlay.ScholarshipManagement },
                         // School Branding Kit — colors, logo, subdomain.
                         onOpenBranding = { overlay = SchoolOverlay.BrandingKit },
+                        // ID Card Generation — templates, card generation, PDF export.
+                        onOpenIdCards = { overlay = SchoolOverlay.IdCards },
+                        // Library Management — catalog, issues, returns, fines.
+                        onOpenLibrary = { overlay = SchoolOverlay.Library },
+                        // Classes & Subjects — consolidated management (classes, subjects, bell schedule, timetable).
+                        onOpenClassesSubjects = { overlay = SchoolOverlay.ClassesSubjects },
                     )
                 }
             }

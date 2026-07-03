@@ -87,14 +87,14 @@ object AiService {
      *
      * PII filtering (GuardrailService) is applied on top of this at call time,
      * so for a PII prompt the REASON lane collapses to the no-training subset
-     * (Groq → Cerebras → OpenRouter).
+     * (Groq → NVIDIA → Cerebras → OpenRouter).
      */
     private fun laneProviders(lane: AiLane): List<AiProvider> = when (lane) {
-        AiLane.FAST_CHAT -> listOf(AiProvider.GROQ_FAST, AiProvider.CEREBRAS, AiProvider.GROQ, AiProvider.OPENROUTER)
-        AiLane.CLASSIFY  -> listOf(AiProvider.GROQ_FAST, AiProvider.GROQ, AiProvider.CEREBRAS, AiProvider.OPENROUTER)
+        AiLane.FAST_CHAT -> listOf(AiProvider.GROQ_FAST, AiProvider.NVIDIA_FAST, AiProvider.CEREBRAS, AiProvider.GROQ, AiProvider.OPENROUTER)
+        AiLane.CLASSIFY  -> listOf(AiProvider.GROQ_FAST, AiProvider.NVIDIA_FAST, AiProvider.GROQ, AiProvider.CEREBRAS, AiProvider.OPENROUTER)
         AiLane.REASON    -> listOf(AiProvider.GROQ, AiProvider.GEMINI, AiProvider.SAMBANOVA, AiProvider.CEREBRAS,
-                                   AiProvider.OPENROUTER, AiProvider.MISTRAL)
-        AiLane.BATCH     -> listOf(AiProvider.GROQ, AiProvider.GEMINI, AiProvider.MISTRAL, AiProvider.OPENROUTER)
+                                   AiProvider.NVIDIA_REASON, AiProvider.OPENROUTER, AiProvider.MISTRAL)
+        AiLane.BATCH     -> listOf(AiProvider.GROQ, AiProvider.NVIDIA_REASON, AiProvider.GEMINI, AiProvider.MISTRAL, AiProvider.OPENROUTER)
     }
 
     /**
@@ -188,6 +188,15 @@ object AiService {
         // 5) try candidates in order
         var failedOver = false
         var lastError: String? = null
+
+        // BATCH lane deprioritization: if this is a BATCH call, yield to let
+        // any pending real-time (FAST_CHAT/CLASSIFY/REASON) requests go first.
+        // This prevents a 40-student report card batch from starving a student's
+        // tutor chat that needs < 3s response time.
+        if (lane == AiLane.BATCH) {
+            kotlinx.coroutines.delay(50L)
+        }
+
         for ((idx, provider) in candidates.withIndex()) {
             val model = KeyVault.modelFor(provider)
 
@@ -200,6 +209,18 @@ object AiService {
             if (apiKey == null) {
                 log.debug("Skipping {}: no key configured", provider.code)
                 failedOver = true
+                continue
+            }
+
+            // Proactive rate-limit check: skip this provider if we're near its
+            // free-tier RPM/RPD/TPM limits (at 90% capacity, 10% reserve).
+            // This prevents burning requests that are doomed to get 429.
+            val estTokens = maxTokens + messages.sumOf { (it.content?.length ?: 0) / 4 }
+            val rlCheck = RateLimiter.check(provider.code, model, estTokens, provider)
+            if (!rlCheck.allowed) {
+                log.debug("Skipping {} ({}): rate-limited ({})", provider.code, model, rlCheck.reason)
+                failedOver = true
+                lastError = "rate_limited: ${rlCheck.reason}"
                 continue
             }
 
@@ -222,6 +243,8 @@ object AiService {
             // Tool-call response: return as success with toolCalls in the result
             if (result.ok && !result.toolCalls.isNullOrEmpty()) {
                 CircuitBreaker.recordSuccess(provider.code, model, latency)
+                RateLimiter.record(provider.code, model,
+                    result.inputTokens + result.outputTokens, provider)
                 val routing = if (idx == 0 && !failedOver) "direct" else "failed_over"
                 logUsage(feature, schoolId, userId, lane, provider.code, result.modelUsed ?: model,
                     result.inputTokens, result.outputTokens, 0.0, latency, "success", routing, null)
@@ -243,6 +266,8 @@ object AiService {
                     continue
                 }
                 CircuitBreaker.recordSuccess(provider.code, model, latency)
+                RateLimiter.record(provider.code, model,
+                    result.inputTokens + result.outputTokens, provider)
                 val routing = if (idx == 0 && !failedOver) "direct" else "failed_over"
                 if (cache) {
                     writeCache(cacheKey, schoolId, feature, validated, result, provider.code,
@@ -257,7 +282,17 @@ object AiService {
                 )
             } else {
                 val rl = result.errorKind == LlmErrorKind.RATE_LIMITED
-                CircuitBreaker.recordFailure(provider.code, model, rateLimited = rl)
+                val isBadRequest = result.errorKind == LlmErrorKind.BAD_REQUEST
+                // Record the attempt against the rate limiter even on failure,
+                // so a 429 from the provider updates our counters.
+                if (rl) {
+                    RateLimiter.record(provider.code, model, estTokens, provider)
+                }
+                // BAD_REQUEST (400) is our fault (bad schema/prompt), not the
+                // provider's — don't penalize the circuit breaker for it.
+                if (!isBadRequest) {
+                    CircuitBreaker.recordFailure(provider.code, model, rateLimited = rl)
+                }
                 lastError = result.errorMessage ?: result.errorKind?.name
                 failedOver = true
                 log.debug("Provider {} failed ({}); trying next", provider.code, result.errorKind)
@@ -587,5 +622,153 @@ object AiService {
         } else {
             AgentResult.unavailable("agent step cap reached and final response failed")
         }
+    }
+
+    /**
+     * Vision completion: sends a system prompt + user text + image to a
+     * vision-capable provider (Gemini Flash supports vision via the
+     * OpenAI-compatible endpoint). Goes through circuit breaker + rate limiter
+     * + usage logging, same as [complete].
+     *
+     * @param imageBase64 raw base64-encoded image (no data: prefix)
+     * @param imageMimeType e.g. "image/jpeg", "image/png"
+     */
+    suspend fun completeWithVision(
+        feature: String,
+        systemPrompt: String,
+        userText: String,
+        imageBase64: String,
+        imageMimeType: String = "image/jpeg",
+        schoolId: UUID? = null,
+        temperature: Double = 0.4,
+        maxTokens: Int = 1024,
+    ): AiResult {
+        val visionProviders = listOf(AiProvider.GEMINI, AiProvider.OPENROUTER)
+        var lastError: String? = null
+        var failedOver = false
+
+        for (provider in visionProviders) {
+            val model = KeyVault.modelFor(provider)
+
+            if (!CircuitBreaker.allow(provider.code, model)) {
+                log.debug("Vision: {} circuit OPEN, skipping", provider.code)
+                failedOver = true
+                continue
+            }
+            val key = KeyVault.keyFor(provider)
+            if (key.isNullOrBlank()) {
+                failedOver = true
+                continue
+            }
+            val baseUrl = KeyVault.baseUrlFor(provider)
+
+            val rlCheck = RateLimiter.check(provider.code, model, maxTokens + 1000, provider)
+            if (!rlCheck.allowed) {
+                log.debug("Vision: {} rate limited, skipping", provider.code)
+                failedOver = true
+                lastError = "rate_limited: ${rlCheck.reason}"
+                continue
+            }
+
+            val extraHeaders = if (provider == AiProvider.OPENROUTER) {
+                mapOf(
+                    "HTTP-Referer" to "https://vidyaprayag.app",
+                    "X-Title" to "VidyaPrayag",
+                )
+            } else emptyMap()
+
+            val messages = listOf(
+                VisionLlmMessage(
+                    role = "system",
+                    content = listOf(VisionContentPart(type = "text", text = systemPrompt)),
+                ),
+                VisionLlmMessage(
+                    role = "user",
+                    content = listOf(
+                        VisionContentPart(type = "text", text = userText),
+                        VisionContentPart(
+                            type = "image_url",
+                            imageUrl = VisionImageUrl(url = "data:$imageMimeType;base64,$imageBase64"),
+                        ),
+                    ),
+                ),
+            )
+
+            val started = System.currentTimeMillis()
+            val result = llm.completeWithVision(
+                baseUrl = baseUrl,
+                apiKey = key,
+                model = model,
+                messages = messages,
+                temperature = temperature,
+                maxTokens = maxTokens,
+                extraHeaders = extraHeaders,
+            )
+            val latency = System.currentTimeMillis() - started
+
+            if (result.ok && !result.content.isNullOrBlank()) {
+                val validated = GuardrailService.validateResponse(result.content)
+                if (validated == null) {
+                    CircuitBreaker.recordFailure(provider.code, model, rateLimited = false)
+                    lastError = "empty_after_validation"
+                    failedOver = true
+                    continue
+                }
+                CircuitBreaker.recordSuccess(provider.code, model, latency)
+                RateLimiter.record(provider.code, model,
+                    result.inputTokens + result.outputTokens, provider)
+                val routing = if (failedOver) "failed_over" else "direct"
+                logUsage(
+                    feature = feature,
+                    schoolId = schoolId,
+                    userId = null,
+                    lane = AiLane.REASON,
+                    providerUsed = provider.code,
+                    modelUsed = result.modelUsed ?: model,
+                    inTok = result.inputTokens,
+                    outTok = result.outputTokens,
+                    costUsd = 0.0,
+                    latencyMs = latency,
+                    status = "success",
+                    routing = routing,
+                    errorMessage = null,
+                )
+                return AiResult(
+                    ok = true,
+                    content = validated,
+                    providerUsed = provider.code,
+                    modelUsed = result.modelUsed ?: model,
+                    inputTokens = result.inputTokens,
+                    outputTokens = result.outputTokens,
+                    routingDecision = routing,
+                )
+            } else {
+                val rateLimited = result.errorKind == LlmErrorKind.RATE_LIMITED
+                val isBadRequest = result.errorKind == LlmErrorKind.BAD_REQUEST
+                if (!isBadRequest) {
+                    CircuitBreaker.recordFailure(provider.code, model, rateLimited = rateLimited)
+                }
+                lastError = result.errorMessage
+                failedOver = true
+                log.warn("Vision: {} failed: {} — trying next", provider.code, result.errorMessage)
+            }
+        }
+
+        logUsage(
+            feature = feature,
+            schoolId = schoolId,
+            userId = null,
+            lane = AiLane.REASON,
+            providerUsed = null,
+            modelUsed = null,
+            inTok = 0,
+            outTok = 0,
+            costUsd = 0.0,
+            latencyMs = 0,
+            status = "failed",
+            routing = "unavailable",
+            errorMessage = lastError,
+        )
+        return AiResult.unavailable(lastError ?: "No vision-capable provider available")
     }
 }

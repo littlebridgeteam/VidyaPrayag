@@ -19,6 +19,7 @@ data class BrandingState(
     val subdomainAvailable: Boolean? = null,
     val error: String? = null,
     val infoMessage: String? = null,
+    val uploadingField: String? = null,
 )
 
 class BrandingViewModel(
@@ -142,6 +143,44 @@ class BrandingViewModel(
 
     fun clearSubdomainCheck() {
         _state.update { it.copy(subdomainAvailable = null) }
+    }
+
+    fun uploadAsset(field: String, bytes: ByteArray, fileName: String, mimeType: String) {
+        _state.update { it.copy(uploadingField = field, error = null, infoMessage = null) }
+        viewModelScope.launch {
+            when (val result = repository.uploadAsset(token(), field, bytes, fileName, mimeType)) {
+                is NetworkResult.Success -> {
+                    _state.update {
+                        it.copy(uploadingField = null, branding = result.data.data, infoMessage = "Asset uploaded")
+                    }
+                }
+                is NetworkResult.Error -> _state.update {
+                    it.copy(uploadingField = null, error = result.message)
+                }
+                is NetworkResult.ConnectionError -> _state.update {
+                    it.copy(uploadingField = null, error = "Connection error")
+                }
+            }
+        }
+    }
+
+    fun deleteAsset(field: String) {
+        _state.update { it.copy(uploadingField = field, error = null, infoMessage = null) }
+        viewModelScope.launch {
+            when (val result = repository.deleteAsset(token(), field)) {
+                is NetworkResult.Success -> {
+                    _state.update {
+                        it.copy(uploadingField = null, branding = result.data.data, infoMessage = "Asset removed")
+                    }
+                }
+                is NetworkResult.Error -> _state.update {
+                    it.copy(uploadingField = null, error = result.message)
+                }
+                is NetworkResult.ConnectionError -> _state.update {
+                    it.copy(uploadingField = null, error = "Connection error")
+                }
+            }
+        }
     }
 
     private fun reloadBranding(preserveMessage: Boolean = false) {

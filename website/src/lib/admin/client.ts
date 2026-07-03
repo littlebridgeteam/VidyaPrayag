@@ -45,6 +45,7 @@ import type {
   UpdateOtpProviderResponse,
   TriggerPulseResponse,
   DevSendNotificationResponse,
+  TriggerPewsResponse,
   AlumniDto,
   AlumniListResponse,
   AlumniCampaignDto,
@@ -63,6 +64,36 @@ import type {
   PewsEffectivenessTrend,
   PewsRiskLevel,
   PewsInterventionStatus,
+  PewsDraftMessage,
+  PewsSendParentResult,
+  ReportCardOversightSummary,
+  ReportCardPublishRequest,
+  ReportCardPublishResult,
+  ReportCardEffectivenessReport,
+  ReportCardTermConfig,
+  TutorTeacherScopeResponse,
+  TutorHeatmapResponse,
+  AiRateLimitEntry,
+  AiHealthEntry,
+  AiRecentUsageResponse,
+  SchoolDayConfigDto,
+  SchoolDayConfigListResponse,
+  CreateSchoolDayConfigRequest,
+  UpdateSchoolDayConfigRequest,
+  SchoolClassDto,
+  SchoolClassListResponse,
+  CreateSchoolClassRequest,
+  UpdateSchoolClassRequest,
+  SchoolSubjectDto,
+  SchoolSubjectListResponse,
+  CreateSchoolSubjectRequest,
+  UpdateSchoolSubjectRequest,
+  PeriodDetailDto,
+  CreatePeriodRequest,
+  UpdatePeriodRequest,
+  BulkCreatePeriodsRequest,
+  BulkCreatePeriodsResponse,
+  CopySectionRequest,
 } from "./types";
 
 interface Opts {
@@ -273,6 +304,8 @@ export const adminApi = {
     authRequest<TriggerPulseResponse>("/api/v1/admin/dev/trigger-pulse", { method: "POST" }),
   devSendNotification: (body: { user_id: string; title: string; body: string; deep_link?: string; category?: string; school_id?: string }) =>
     authRequest<DevSendNotificationResponse>("/api/v1/admin/dev/send-notification", { method: "POST", body }),
+  triggerPews: () =>
+    authRequest<TriggerPewsResponse>("/api/v1/admin/dev/trigger-pews", { method: "POST" }),
 
   // alumni management
   alumniList: (params?: { year?: number; profession?: string; city?: string; q?: string; page?: number; limit?: number }) => {
@@ -364,4 +397,79 @@ export const adminApi = {
     const qs = days ? `?days=${days}` : "";
     return authRequest<PewsEffectivenessTrend>(`/api/v1/school/pews/trend${qs}`);
   },
+  pewsDraftMessage: (interventionId: string, lang: string = "en") =>
+    authRequest<PewsDraftMessage>(`/api/v1/school/pews/interventions/${encodeURIComponent(interventionId)}/draft-message?lang=${encodeURIComponent(lang)}`, { method: "POST" }),
+  pewsSendParentMessage: (interventionId: string) =>
+    authRequest<PewsSendParentResult>(`/api/v1/school/pews/interventions/${encodeURIComponent(interventionId)}/send-parent-message`, { method: "POST" }),
+
+  // ── AI Report Card 2.0 ─────────────────────────────────────────────────────
+  // Admin (school-scoped) endpoints for oversight, publishing, and effectiveness.
+  reportCardOversight: (term: string, academicYearId?: string) => {
+    const qs = new URLSearchParams({ term });
+    if (academicYearId) qs.set("academicYearId", academicYearId);
+    return authRequest<ReportCardOversightSummary>(`/api/v1/report-card/oversight?${qs.toString()}`);
+  },
+  reportCardPublish: (body: ReportCardPublishRequest) =>
+    authRequest<ReportCardPublishResult>("/api/v1/report-card/publish", { method: "POST", body }),
+  reportCardEffectiveness: () =>
+    authRequest<ReportCardEffectivenessReport[]>("/api/v1/report-card/learn/effectiveness"),
+  reportCardTermConfig: () =>
+    authRequest<ReportCardTermConfig>("/api/v1/report-card/term-config"),
+
+  // ── AI Tutor 2.0 ───────────────────────────────────────────────────────────
+  // Teacher/admin heatmap scope + heatmap data. The server routes are JWT-scoped
+  // (teacher context), so the admin sees the same data as a teacher for their
+  // assigned classes.
+  tutorTeacherScope: () =>
+    authRequest<TutorTeacherScopeResponse>("/api/v1/tutor/heatmap/scope"),
+  tutorHeatmap: (classId: string, subjectId: string) =>
+    authRequest<TutorHeatmapResponse>(`/api/v1/tutor/heatmap/${encodeURIComponent(classId)}/${encodeURIComponent(subjectId)}`),
+
+  // ── AI Token Monitor (Dev Tools — super admin only) ────────────────────────
+  aiRateLimits: () =>
+    authRequest<AiRateLimitEntry[]>("/api/v1/admin/ai/rate-limits"),
+  aiHealth: () =>
+    authRequest<AiHealthEntry[]>("/api/v1/admin/ai/health"),
+  aiRecentUsage: (limit: number = 50, windowMin: number = 60) =>
+    authRequest<AiRecentUsageResponse>(`/api/v1/admin/ai/recent-usage?limit=${limit}&window=${windowMin}`),
+
+  // ── School Day Configuration (TIMETABLE_CLASS_TEACHER_PLAN.md Phase 0) ──────
+  schoolDayConfigs: () =>
+    authRequest<SchoolDayConfigListResponse>("/api/v1/school/day-config"),
+  schoolDayConfigCreate: (body: CreateSchoolDayConfigRequest) =>
+    authRequest<SchoolDayConfigDto>("/api/v1/school/day-config", { method: "POST", body }),
+  schoolDayConfigUpdate: (id: string, body: UpdateSchoolDayConfigRequest) =>
+    authRequest<SchoolDayConfigDto>(`/api/v1/school/day-config/${id}`, { method: "PUT", body }),
+  schoolDayConfigDeactivate: (id: string) =>
+    authRequest<unknown>(`/api/v1/school/day-config/${id}`, { method: "DELETE" }),
+
+  // ── School Classes & Subjects (SchoolClassesRouting.kt) ─────────────────────
+  schoolClasses: () =>
+    authRequest<SchoolClassListResponse>("/api/v1/school/classes"),
+  createSchoolClass: (body: CreateSchoolClassRequest) =>
+    authRequest<SchoolClassDto>("/api/v1/school/classes", { method: "POST", body }),
+  updateSchoolClass: (id: string, body: UpdateSchoolClassRequest) =>
+    authRequest<SchoolClassDto>(`/api/v1/school/classes/${id}`, { method: "PUT", body }),
+  deleteSchoolClass: (id: string) =>
+    authRequest<unknown>(`/api/v1/school/classes/${id}`, { method: "DELETE" }),
+  schoolSubjects: (classId: string) =>
+    authRequest<SchoolSubjectListResponse>(`/api/v1/school/classes/${classId}/subjects`),
+  createSchoolSubject: (classId: string, body: CreateSchoolSubjectRequest) =>
+    authRequest<SchoolSubjectDto>(`/api/v1/school/classes/${classId}/subjects`, { method: "POST", body }),
+  updateSchoolSubject: (id: string, body: UpdateSchoolSubjectRequest) =>
+    authRequest<SchoolSubjectDto>(`/api/v1/school/subjects/${id}`, { method: "PUT", body }),
+  deleteSchoolSubject: (id: string) =>
+    authRequest<unknown>(`/api/v1/school/subjects/${id}`, { method: "DELETE" }),
+
+  // ── Timetable Periods (SchoolTimetableRouting.kt) ───────────────────────────
+  createPeriod: (body: CreatePeriodRequest) =>
+    authRequest<PeriodDetailDto>("/api/v1/school/timetable/periods", { method: "POST", body }),
+  bulkCreatePeriods: (body: BulkCreatePeriodsRequest) =>
+    authRequest<BulkCreatePeriodsResponse>("/api/v1/school/timetable/periods/bulk", { method: "POST", body }),
+  updatePeriod: (id: string, body: UpdatePeriodRequest) =>
+    authRequest<PeriodDetailDto>(`/api/v1/school/timetable/periods/${id}`, { method: "PUT", body }),
+  deletePeriod: (id: string) =>
+    authRequest<unknown>(`/api/v1/school/timetable/periods/${id}`, { method: "DELETE" }),
+  copySection: (body: CopySectionRequest) =>
+    authRequest<BulkCreatePeriodsResponse>("/api/v1/school/timetable/periods/copy-section", { method: "POST", body }),
 };

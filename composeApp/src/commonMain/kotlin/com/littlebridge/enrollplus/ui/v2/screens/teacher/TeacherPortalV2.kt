@@ -27,7 +27,7 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 /** Full-screen overlays the teacher portal can push above its tab content. */
-private enum class TeacherOverlay { None, Notifications, HealthAlerts, TransportAttendance, Pews, ReportReview, ReportDraftEditor, Heatmap }
+private enum class TeacherOverlay { None, Notifications, HealthAlerts, TransportAttendance, Pews, ReportReview, ReportDraftEditor, Heatmap, DigitalIdCard, ScheduledMessages, EventRegistration, Messages }
 
 /**
  * TeacherPortalV2 — the teacher shell, rebuilt FROM SCRATCH on the Parents-Portal
@@ -89,6 +89,10 @@ fun TeacherPortalV2(
                     deepLinkTarget.params["section"]?.let { reportSection = it }
                     deepLinkTarget.params["term"]?.let { reportTerm = it }
                     overlay = TeacherOverlay.ReportReview
+                } else if (deepLinkTarget.screen == "tutor") {
+                    overlay = TeacherOverlay.Heatmap
+                } else if (deepLinkTarget.screen == "events") {
+                    overlay = TeacherOverlay.EventRegistration
                 } else {
                     tab = deepLinkTarget.screen
                 }
@@ -168,6 +172,35 @@ fun TeacherPortalV2(
             )
             return
         }
+        TeacherOverlay.DigitalIdCard -> {
+            com.littlebridge.enrollplus.ui.v2.screens.parent.DigitalIdCardScreen(
+                isTeacher = true,
+                onBack = { overlay = TeacherOverlay.None },
+                modifier = modifier,
+            )
+            return
+        }
+        TeacherOverlay.ScheduledMessages -> {
+            com.littlebridge.enrollplus.ui.v2.screens.school.ScheduledMessagesScreenV2(
+                onBack = { overlay = TeacherOverlay.None },
+                modifier = modifier,
+            )
+            return
+        }
+        TeacherOverlay.EventRegistration -> {
+            TeacherPtmEventRegistrationScreenV2(
+                onBack = { overlay = TeacherOverlay.None },
+                modifier = modifier,
+            )
+            return
+        }
+        TeacherOverlay.Messages -> {
+            TeacherMessagesScreenV2(
+                onBack = { overlay = TeacherOverlay.None },
+                modifier = modifier,
+            )
+            return
+        }
         TeacherOverlay.None -> Unit
     }
 
@@ -176,6 +209,7 @@ fun TeacherPortalV2(
         VNavItem("home", "Home", VIcons.Home),
         VNavItem("update", "Update", VIcons.Edit3, badge = obligations.totalOutstanding),
         VNavItem("classes", "Classes", VIcons.Users),
+        VNavItem("timetable", "Timetable", VIcons.Calendar),
         VNavItem("profile", "Profile", VIcons.User),
     )
 
@@ -186,6 +220,7 @@ fun TeacherPortalV2(
     val subline = when (tab) {
         "update" -> "Mark & publish"
         "classes" -> "Your classes & students"
+        "timetable" -> "Your weekly timetable"
         "profile" -> schoolName.ifBlank { "Your account" }
         else -> schoolName
     }
@@ -241,6 +276,10 @@ fun TeacherPortalV2(
                     onOpenPews = { overlay = TeacherOverlay.Pews },
                     onOpenReportReview = { overlay = TeacherOverlay.ReportReview },
                     onOpenHeatmap = { overlay = TeacherOverlay.Heatmap },
+                    onOpenIdCard = { overlay = TeacherOverlay.DigitalIdCard },
+                    onOpenScheduledMessages = { overlay = TeacherOverlay.ScheduledMessages },
+                    onOpenEvents = { overlay = TeacherOverlay.EventRegistration },
+                    onOpenMessages = { overlay = TeacherOverlay.Messages },
                 )
 
                 "update" -> key(updateScopeNonce) {
@@ -252,6 +291,8 @@ fun TeacherPortalV2(
                 }
 
                 "classes" -> TeacherClassesScreenV2()
+
+                "timetable" -> TeacherTimetableScreenV2()
 
                 "profile" -> TeacherProfileScreenV2(onLogout = onLogout)
             }

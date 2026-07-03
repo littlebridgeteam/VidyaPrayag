@@ -31,6 +31,7 @@ import com.littlebridge.enrollplus.core.EnvConfig
 import com.littlebridge.enrollplus.db.AiProviderConfigTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.neq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
@@ -52,6 +53,12 @@ enum class AiProvider(
     val tier: String,
     /** false ⇒ provider trains on inputs (PII-restricted): Mistral/SambaNova. */
     val noTraining: Boolean,
+    /** Free-tier requests per minute (0 = unlimited / not tracked). */
+    val freeTierRpm: Int,
+    /** Free-tier requests per day (0 = unlimited / not tracked). */
+    val freeTierRpd: Int,
+    /** Free-tier tokens per minute (0 = unlimited / not tracked). */
+    val freeTierTpm: Int,
     /** Optional override for providers that share an API key with another entry. */
     private val sharedApiKeyEnv: String? = null,
     private val sharedBaseUrlEnv: String? = null,
@@ -61,31 +68,41 @@ enum class AiProvider(
         defaultBaseUrl = "https://api.cerebras.ai/v1",
         defaultModelEnv = "AI_MODEL_CEREBRAS",
         // June 2026: free tier = 1M tokens/day, 5 RPM, 30K TPM, 8K context.
-        // gpt-oss-120b is the primary free model; zai-glm-4.7 also available.
         defaultModel = "gpt-oss-120b",
         tier = "fast",
         noTraining = true,
+        freeTierRpm = 5,
+        freeTierRpd = 0, // 1M TPD instead
+        freeTierTpm = 30_000,
     ),
     GROQ(
         code = "groq",
         defaultBaseUrl = "https://api.groq.com/openai/v1",
         defaultModelEnv = "AI_MODEL_GROQ_REASON",
-        // June 2026: free tier = ~30 RPM, ~14,400 RPD, ~12K TPM on 70B.
-        // Best free-tier throughput of all providers. 70B for REASON/BATCH.
-        defaultModel = "llama-3.3-70b-versatile",
+        // July 2026: llama-3.3-70b-versatile deprecated (shutdown Aug 16, 2026).
+        // Replaced with openai/gpt-oss-120b (Groq-recommended, same 120B MoE).
+        // Free tier = ~30 RPM, ~14,400 RPD, ~12K TPM.
+        defaultModel = "openai/gpt-oss-120b",
         tier = "reason",
         noTraining = true,
+        freeTierRpm = 30,
+        freeTierRpd = 14_400,
+        freeTierTpm = 12_000,
     ),
     GROQ_FAST(
         code = "groq_fast",
         defaultBaseUrl = "https://api.groq.com/openai/v1",
         defaultModelEnv = "AI_MODEL_GROQ_FAST",
-        // June 2026: llama-3.1-8b-instant on Groq free tier = ~14,400 RPM,
-        // ~500K TPM — massively higher limits than 70B. Ideal for FAST_CHAT.
+        // July 2026: llama-3.1-8b-instant deprecated (shutdown Aug 16, 2026).
+        // Replaced with openai/gpt-oss-20b (Groq-recommended 20B replacement).
+        // Free tier = ~14,400 RPM, ~500K TPM.
         // Shares the same API key and base URL as GROQ.
-        defaultModel = "llama-3.1-8b-instant",
+        defaultModel = "openai/gpt-oss-20b",
         tier = "fast",
         noTraining = true,
+        freeTierRpm = 14_400,
+        freeTierRpd = 0, // effectively unlimited
+        freeTierTpm = 500_000,
         sharedApiKeyEnv = "AI_GROQ_API_KEY",
         sharedBaseUrlEnv = "AI_GROQ_BASE_URL",
     ),
@@ -93,46 +110,78 @@ enum class AiProvider(
         code = "sambanova",
         defaultBaseUrl = "https://api.sambanova.ai/v1",
         defaultModelEnv = "AI_MODEL_SAMBANOVA",
-        // June 2026: free tier = 20 RPM, 20 RPD, 200K TPD — very low RPD.
-        // Use as secondary REASON, not primary. DeepSeek-V3.1 is current.
-        defaultModel = "DeepSeek-V3.1",
+        // July 2026: switched to gpt-oss-120b (user request). SambaNova free tier = 20 RPM, 20 RPD.
+        defaultModel = "gpt-oss-120b",
         tier = "reason",
-        // SambaNova free tier may use inputs for product improvement → treat as
-        // training-opt-in (PII-restricted) unless an operator overrides.
         noTraining = false,
+        freeTierRpm = 20,
+        freeTierRpd = 20,
+        freeTierTpm = 0, // 200K TPD, not per-minute
     ),
     MISTRAL(
         code = "mistral",
         defaultBaseUrl = "https://api.mistral.ai/v1",
         defaultModelEnv = "AI_MODEL_MISTRAL",
         // June 2026: free Experiment tier = ~1B tokens/month, ~1 RPS.
-        // mistral-small-latest for BATCH (cheaper, higher RPM than large).
-        // Free tier trains on data → PII-restricted.
         defaultModel = "mistral-small-latest",
         tier = "batch",
         noTraining = false,
+        freeTierRpm = 60, // ~1 RPS
+        freeTierRpd = 0,
+        freeTierTpm = 0, // ~1B TPM — effectively unlimited
     ),
     OPENROUTER(
         code = "openrouter",
         defaultBaseUrl = "https://openrouter.ai/api/v1",
         defaultModelEnv = "AI_MODEL_OPENROUTER",
-        // June 2026: free tier = 20 RPM, 50 RPD (1,000 RPD with $10 credit).
-        // 28+ free models. Used as last-resort fallback.
-        defaultModel = "meta-llama/llama-3.3-70b-instruct:free",
+        // July 2026: confirmed available via OpenRouter /api/v1/models endpoint.
+        // NVIDIA Nemotron 3 Ultra: 550B MoE (55B active), reasoning, 1M context, free.
+        defaultModel = "nvidia/nemotron-3-ultra-550b-a55b:free",
         tier = "reason",
         noTraining = true,
+        freeTierRpm = 20,
+        freeTierRpd = 50,
+        freeTierTpm = 0,
     ),
     GEMINI(
         code = "gemini",
         defaultBaseUrl = "https://generativelanguage.googleapis.com/v1beta/openai",
         defaultModelEnv = "AI_MODEL_GEMINI",
-        // June 2026: free tier = 15 RPM, 1M TPM, 1,500 RPD on Flash-Lite;
-        // 10 RPM, 250K TPM, 250 RPD on Flash. OpenAI-compatible endpoint.
-        // No credit card, no expiration. BUT: Google may use free-tier prompts
-        // for training → noTraining = false (PII-restricted).
+        // June 2026: free tier = 15 RPM, 1M TPM, 1,500 RPD on Flash.
         defaultModel = "gemini-2.5-flash",
         tier = "reason",
         noTraining = false,
+        freeTierRpm = 15,
+        freeTierRpd = 1_500,
+        freeTierTpm = 1_000_000,
+    ),
+    NVIDIA_REASON(
+        code = "nvidia_reason",
+        defaultBaseUrl = "https://integrate.api.nvidia.com/v1",
+        defaultModelEnv = "AI_MODEL_NVIDIA_REASON",
+        // July 2026: switched from llama-3.3-70b (deprecated) to MiniMax M2.7.
+        // 230B MoE, strong reasoning + coding. NVIDIA NIM free tier ~40 RPM, 1K RPD.
+        defaultModel = "minimaxai/minimax-m2.7",
+        tier = "reason",
+        noTraining = true,
+        freeTierRpm = 40,
+        freeTierRpd = 1_000,
+        freeTierTpm = 5_000,
+    ),
+    NVIDIA_FAST(
+        code = "nvidia_fast",
+        defaultBaseUrl = "https://integrate.api.nvidia.com/v1",
+        defaultModelEnv = "AI_MODEL_NVIDIA_FAST",
+        // July 2026: switched from llama-3.1-8b (deprecated) to DeepSeek V4 Flash.
+        // MoE flash model, fast inference. NVIDIA NIM free tier ~100 RPM, 1K RPD.
+        defaultModel = "deepseek-ai/deepseek-v4-flash",
+        tier = "fast",
+        noTraining = true,
+        freeTierRpm = 100,
+        freeTierRpd = 1_000,
+        freeTierTpm = 10_000,
+        sharedApiKeyEnv = "AI_NVIDIA_REASON_API_KEY",
+        sharedBaseUrlEnv = "AI_NVIDIA_REASON_BASE_URL",
     );
 
     /** env var holding the raw API key for this provider. */
@@ -228,6 +277,17 @@ object KeyVault {
         baseUrl: String,
     ) = dbQuery {
         val now = Instant.now()
+
+        // Deactivate any existing rows for this provider that have a DIFFERENT
+        // model name — prevents stale model overrides from winning in modelFor().
+        AiProviderConfigTable.update({
+            (AiProviderConfigTable.provider eq provider.code) and
+                (AiProviderConfigTable.model neq model)
+        }) {
+            it[isActive] = false
+            it[updatedAt] = now
+        }
+
         val existing = AiProviderConfigTable.selectAll().where {
             (AiProviderConfigTable.provider eq provider.code) and
                 (AiProviderConfigTable.model eq model)
@@ -253,6 +313,7 @@ object KeyVault {
             }) {
                 it[apiKeyEncrypted] = encryptedKey
                 it[AiProviderConfigTable.baseUrl] = baseUrl
+                it[isActive] = true
                 it[noTraining] = provider.noTraining
                 it[updatedAt] = now
             }
@@ -304,6 +365,15 @@ object KeyVault {
             }.orderBy(AiProviderConfigTable.priority)
                 .firstOrNull()
                 ?.get(AiProviderConfigTable.model)
+        }
+        // Guard: if the DB has a deprecated model, fall back to the current default.
+        val deprecated = setOf(
+            "meta-llama/llama-3.3-70b-instruct:free",
+            "google/gemini-2.0-flash-exp:free",
+        )
+        if (dbModel != null && dbModel in deprecated) {
+            log.warn("DB model '{}' is deprecated for {}, falling back to default", dbModel, provider.code)
+            return env(provider.defaultModelEnv) ?: provider.defaultModel
         }
         return dbModel ?: env(provider.defaultModelEnv) ?: provider.defaultModel
     }

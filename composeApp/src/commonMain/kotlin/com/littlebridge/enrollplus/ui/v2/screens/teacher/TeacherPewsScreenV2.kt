@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -60,6 +61,11 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
@@ -80,7 +86,7 @@ fun TeacherPewsScreenV2(
             onStart = { id -> viewModel.updateIntervention(id, status = "in_progress") },
             onMarkDone = { id, outcome -> viewModel.updateIntervention(id, status = "done", outcome = outcome) },
             onDismiss = { id -> viewModel.updateIntervention(id, status = "dismissed") },
-            onGenerateDraft = { id -> viewModel.generateParentDraft(id) },
+            onGenerateDraft = { id, lang -> viewModel.generateParentDraft(id, lang) },
             onSendParentMessage = viewModel::sendParentMessage,
             onClearDraft = viewModel::clearDraft,
             onClearMessage = viewModel::clearMessages,
@@ -96,7 +102,7 @@ private fun TeacherPewsContent(
     onStart: (String) -> Unit,
     onMarkDone: (String, String) -> Unit,
     onDismiss: (String) -> Unit,
-    onGenerateDraft: (String) -> Unit,
+    onGenerateDraft: (String, String) -> Unit,
     onSendParentMessage: (String) -> Unit,
     onClearDraft: (String) -> Unit,
     onClearMessage: () -> Unit,
@@ -150,7 +156,7 @@ private fun TeacherStudentCard(
     onStart: (String) -> Unit,
     onMarkDone: (String, String) -> Unit,
     onDismiss: (String) -> Unit,
-    onGenerateDraft: (String) -> Unit,
+    onGenerateDraft: (String, String) -> Unit,
     onSendParentMessage: (String) -> Unit,
     onClearDraft: (String) -> Unit,
 ) {
@@ -174,6 +180,10 @@ private fun TeacherStudentCard(
                 )
             }
             VBadge(text = levelLabel, tone = tone)
+            if (s.hasOpenIntervention) {
+                Spacer(Modifier.width(4.dp))
+                VBadge(text = "Under intervention", tone = VBadgeTone.Neutral)
+            }
         }
 
         // deterministic metrics
@@ -260,7 +270,7 @@ private fun TeacherStudentCard(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(VIcons.Sparkles, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(12.dp))
                                     Spacer(Modifier.size(4.dp))
-                                    Text("PARENT MESSAGE (${draftLang?.uppercase() ?: "HI"})", style = VTheme.type.label.colored(c.tealDeep).copy(fontWeight = FontWeight.Bold, fontSize = 10.sp), modifier = Modifier.weight(1f))
+                                    Text("PARENT MESSAGE (${draftLang?.uppercase() ?: "EN"})", style = VTheme.type.label.colored(c.tealDeep).copy(fontWeight = FontWeight.Bold, fontSize = 10.sp), modifier = Modifier.weight(1f))
                                     if (parentDrafts[iv.id] != null) {
                                         VButton("✕", { onClearDraft(iv.id) }, variant = VButtonVariant.Ghost, size = VButtonSize.Sm)
                                     }
@@ -283,7 +293,21 @@ private fun TeacherStudentCard(
                             VButton("Dismiss", { onDismiss(iv.id) }, variant = VButtonVariant.Ghost, size = VButtonSize.Sm, enabled = !isUpdating)
                         }
                     } else if (iv.status == "in_progress") {
-                        // In-progress: action-type-specific workflow
+                        // In-progress: show who initiated it
+                        val initiatorLabel = iv.initiatedByName?.let { name ->
+                            val role = iv.initiatedByRole?.let { r ->
+                                if (r in listOf("school_admin", "admin")) "Admin" else "Teacher"
+                            } ?: ""
+                            "✓ Initiated by $name${if (role.isNotBlank()) " ($role)" else ""}"
+                        }
+                        if (initiatorLabel != null) {
+                            Spacer(Modifier.height(6.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Icon(VIcons.Check, contentDescription = null, tint = c.success, modifier = Modifier.size(13.dp))
+                                Text(initiatorLabel, style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 11.sp))
+                            }
+                        }
+                        // action-type-specific workflow
                         if (isParentAction) {
                             // Parent-contact action: Send the message
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -296,13 +320,43 @@ private fun TeacherStudentCard(
                                         enabled = !isUpdating,
                                     )
                                 } else {
-                                    VButton(
-                                        "Draft parent message",
-                                        { onGenerateDraft(iv.id) },
-                                        variant = VButtonVariant.Secondary,
-                                        size = VButtonSize.Sm,
-                                        enabled = !isDraftLoading,
-                                    )
+                                    var draftLang by remember { mutableStateOf("en") }
+                                    var langDropdownOpen by remember { mutableStateOf(false) }
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    ) {
+                                        VButton(
+                                            "Draft parent message",
+                                            { onGenerateDraft(iv.id, draftLang) },
+                                            variant = VButtonVariant.Secondary,
+                                            size = VButtonSize.Sm,
+                                            enabled = !isDraftLoading,
+                                        )
+                                        Box {
+                                            VButton(
+                                                draftLang.uppercase(),
+                                                { langDropdownOpen = true },
+                                                variant = VButtonVariant.Ghost,
+                                                size = VButtonSize.Sm,
+                                            )
+                                            DropdownMenu(
+                                                expanded = langDropdownOpen,
+                                                onDismissRequest = { langDropdownOpen = false },
+                                                containerColor = c.card,
+                                            ) {
+                                                listOf("en" to "English", "hi" to "हिन्दी", "mr" to "मराठी", "ta" to "தமிழ்", "te" to "తెలుగు", "bn" to "বাংলা").forEach { (code, label) ->
+                                                    DropdownMenuItem(
+                                                        text = { Text(label, style = VTheme.type.body.colored(c.ink)) },
+                                                        onClick = {
+                                                            draftLang = code
+                                                            langDropdownOpen = false
+                                                        },
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                                 VButton("Dismiss", { onDismiss(iv.id) }, variant = VButtonVariant.Ghost, size = VButtonSize.Sm, enabled = !isUpdating)
                             }

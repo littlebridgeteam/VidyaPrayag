@@ -6,6 +6,9 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardActi
 import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardAnalytics
 import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardOverview
 import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardSummary
+import com.littlebridge.enrollplus.feature.teacher.domain.model.PaceSnapshotsResponse
+import com.littlebridge.enrollplus.feature.teacher.domain.model.PaceAlertsResponse
+import com.littlebridge.enrollplus.feature.teacher.domain.model.PaceAlertResolveResponse
 
 /**
  * Reads for the redesigned admin home (SchoolHomeScreenV2). Backed by
@@ -19,4 +22,11 @@ interface AdminDashboardRepository {
     suspend fun getAnalytics(token: String): NetworkResult<ApiResponse<AdminDashboardAnalytics>>
     suspend fun getActivity(token: String): NetworkResult<ApiResponse<AdminDashboardActivity>>
     suspend fun getOverview(token: String): NetworkResult<ApiResponse<AdminDashboardOverview>>
+
+    // ── Agentic Syllabus — pace monitoring (admin) ───────────────────────────
+    suspend fun getPaceSnapshots(token: String, classId: String? = null, section: String? = null): NetworkResult<PaceSnapshotsResponse>
+    suspend fun getPaceAlerts(token: String): NetworkResult<PaceAlertsResponse>
+    suspend fun resolvePaceAlert(token: String, alertId: String): NetworkResult<PaceAlertResolveResponse>
+    suspend fun getPaceCoverage(token: String, classId: String? = null, section: String? = null): NetworkResult<PaceSnapshotsResponse>
+    suspend fun recalculatePace(token: String): NetworkResult<PaceSnapshotsResponse>
 }

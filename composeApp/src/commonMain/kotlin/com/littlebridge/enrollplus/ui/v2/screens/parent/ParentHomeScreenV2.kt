@@ -96,6 +96,9 @@ fun ParentHomeScreenV2(
     onOpenTutor: () -> Unit = {},
     onOpenTutorProgress: () -> Unit = {},
     onOpenScholarships: () -> Unit = {},
+    onOpenIdCard: () -> Unit = {},
+    onOpenLibrary: () -> Unit = {},
+    onOpenEvents: () -> Unit = {},
     viewModel: ParentDashboardViewModel = koinViewModel(),
     permissionVm: PermissionViewModel = koinViewModel(),
     nudgeViewModel: com.littlebridge.enrollplus.feature.pews.presentation.ParentNudgeViewModel = koinViewModel(),
@@ -145,8 +148,13 @@ fun ParentHomeScreenV2(
         onOpenTutor = onOpenTutor,
         onOpenTutorProgress = onOpenTutorProgress,
         onOpenScholarships = onOpenScholarships,
+        onOpenIdCard = onOpenIdCard,
+        onOpenLibrary = onOpenLibrary,
+        onOpenEvents = onOpenEvents,
         nudge = nudgeState.nudge?.takeIf { nudgeState.visible },
         onNudgeAction = { action ->
+            // Acknowledge the nudge so it doesn't reappear, then route.
+            nudgeViewModel.acknowledgeNudge(activeChildId)
             // The server's deep-link targets map onto existing parent surfaces.
             // We route by intent: anything mentioning "message"/"teacher" → the
             // conversations surface; everything else (attendance) → academics.
@@ -156,6 +164,9 @@ fun ParentHomeScreenV2(
             } else {
                 onOpenAcademics()
             }
+        },
+        onNudgeDismiss = {
+            nudgeViewModel.acknowledgeNudge(activeChildId)
         },
         modifier = modifier,
     )
@@ -185,8 +196,12 @@ private fun ParentDashboardContent(
     onOpenTutor: () -> Unit = {},
     onOpenTutorProgress: () -> Unit = {},
     onOpenScholarships: () -> Unit = {},
+    onOpenIdCard: () -> Unit = {},
+    onOpenLibrary: () -> Unit = {},
+    onOpenEvents: () -> Unit = {},
     nudge: com.littlebridge.enrollplus.feature.pews.domain.model.PewsParentNudgeDto? = null,
     onNudgeAction: (com.littlebridge.enrollplus.feature.pews.domain.model.PewsParentActionDto) -> Unit = {},
+    onNudgeDismiss: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val c = VTheme.colors
@@ -287,7 +302,7 @@ private fun ParentDashboardContent(
                     // real concern (server returns show=true). The card is supportive,
                     // never alarming, and deep-links into attendance / message teacher.
                     if (nudge != null) {
-                        ParentNudgeCard(nudge = nudge, onAction = onNudgeAction)
+                        ParentNudgeCard(nudge = nudge, onAction = onNudgeAction, onDismiss = onNudgeDismiss)
                     }
 
                     // ── Weekly Pulse entry point ────────────────────────────────────
@@ -352,6 +367,33 @@ private fun ParentDashboardContent(
                         subtitle = "Browse & apply for scholarship opportunities",
                         icon = VIcons.Sparkles,
                         onClick = onOpenScholarships,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
+                    // ── Digital ID Card ────────────────────────────────────────────
+                    VActionCard(
+                        title = "Digital ID Card",
+                        subtitle = "View your child's digital school ID card",
+                        icon = VIcons.IdCard,
+                        onClick = onOpenIdCard,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
+                    // ── Library ───────────────────────────────────────────────────────
+                    VActionCard(
+                        title = "Library",
+                        subtitle = "Search books, view issued books & reserve",
+                        icon = VIcons.BookOpen,
+                        onClick = onOpenLibrary,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
+                    // ── Event Registration ────────────────────────────────────────
+                    VActionCard(
+                        title = "School Events",
+                        subtitle = "Register for PTM, events & book time slots",
+                        icon = VIcons.Calendar,
+                        onClick = onOpenEvents,
                         modifier = Modifier.fillMaxWidth(),
                     )
 
