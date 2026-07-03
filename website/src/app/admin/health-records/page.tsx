@@ -3,26 +3,32 @@
 import { useState, useEffect, useCallback } from "react";
 import { authRequest } from "@/lib/admin/client";
 import { Card, CardHeader, EmptyState, FadeIn, Skeleton, Badge } from "@/components/admin/Primitives";
+import { AdminButton } from "@/components/admin/Toolbar";
 import { IconHealth } from "@/components/admin/icons";
 
-interface HealthRecordDto {
+interface HealthIncidentDto {
   id: string;
-  student_name: string;
-  blood_group: string;
-  allergies: string;
-  conditions: string;
-  last_checkup: string;
+  student_id: string;
+  date: string;
+  time: string | null;
+  description: string;
+  treatment: string | null;
+  medication_given: string | null;
+  parent_notified: boolean;
+  severity: string;
+  attended_by_name: string | null;
 }
 
 export default function HealthRecordsPage() {
-  const [records, setRecords] = useState<HealthRecordDto[]>([]);
+  const [records, setRecords] = useState<HealthIncidentDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
-      const res = await authRequest<{ data: HealthRecordDto[] } | HealthRecordDto[]>("/api/v1/school/health-records");
-      setRecords(Array.isArray(res) ? res : (res as { data: HealthRecordDto[] }).data ?? []);
+      const res = await authRequest<{ incidents: HealthIncidentDto[] }>("/api/v1/school/health/incidents");
+      setRecords(res.incidents ?? []);
     } catch (e) {
       setError(`Failed to load health records: ${(e as Error).message}`);
     } finally {
@@ -31,6 +37,19 @@ export default function HealthRecordsPage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  const notifyParent = useCallback(async (id: string) => {
+    setBusyId(id);
+    setError(null);
+    try {
+      await authRequest(`/api/v1/school/health/incidents/${id}/notify`, { method: "PATCH" });
+      setRecords(prev => prev.map(r => r.id === id ? { ...r, parent_notified: true } : r));
+    } catch (e) {
+      setError(`Failed to mark notified: ${(e as Error).message}`);
+    } finally {
+      setBusyId(null);
+    }
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -48,25 +67,31 @@ export default function HealthRecordsPage() {
 
       <FadeIn delay={0.05}>
         <Card>
-          <CardHeader title="Health Records" subtitle={`${records.length} record${records.length !== 1 ? "s" : ""}`} />
-          {loading ? <Skeleton className="h-40" /> : error ? <EmptyState title="Error" hint={error} icon={<IconHealth />} /> : records.length === 0 ? <EmptyState title="No records" hint="Health records will appear here." icon={<IconHealth />} /> : (
+          <CardHeader title="Health Incidents" subtitle={`${records.length} incident${records.length !== 1 ? "s" : ""}`} />
+          {loading ? <Skeleton className="h-40" /> : error ? <EmptyState title="Error" hint={error} icon={<IconHealth />} /> : records.length === 0 ? <EmptyState title="No incidents" hint="Health incidents will appear here." icon={<IconHealth />} /> : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-[13px]">
                 <thead className="text-[11px] uppercase tracking-wide text-ink-3 border-b border-navy/[0.06]">
                   <tr>
-                    <th className="px-5 py-3 font-semibold">Student</th>
-                    <th className="px-5 py-3 font-semibold">Blood Group</th>
-                    <th className="px-5 py-3 font-semibold">Allergies</th>
-                    <th className="px-5 py-3 font-semibold">Conditions</th>
+                    <th className="px-5 py-3 font-semibold">Date</th>
+                    <th className="px-5 py-3 font-semibold">Description</th>
+                    <th className="px-5 py-3 font-semibold">Severity</th>
+                    <th className="px-5 py-3 font-semibold">Treatment</th>
+                    <th className="px-5 py-3 font-semibold">Notified</th>
+                    <th className="px-5 py-3 font-semibold">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-navy/[0.03]">
                   {records.map((r) => (
                     <tr key={r.id} className="hover:bg-navy/[0.02] transition-colors">
-                      <td className="px-5 py-3 font-semibold text-navy-deep">{r.student_name}</td>
-                      <td className="px-5 py-3"><Badge tone="neutral">{r.blood_group || "—"}</Badge></td>
-                      <td className="px-5 py-3 text-ink-2">{r.allergies || "None"}</td>
-                      <td className="px-5 py-3 text-ink-3">{r.conditions || "None"}</td>
+                      <td className="px-5 py-3 text-ink-3">{r.date}{r.time ? ` ${r.time}` : ""}</td>
+                      <td className="px-5 py-3 font-semibold text-navy-deep">{r.description}</td>
+                      <td className="px-5 py-3"><Badge tone={r.severity === "major" ? "danger" : r.severity === "moderate" ? "warning" : "neutral"}>{r.severity}</Badge></td>
+                      <td className="px-5 py-3 text-ink-2">{r.treatment || "—"}</td>
+                      <td className="px-5 py-3"><Badge tone={r.parent_notified ? "success" : "neutral"}>{r.parent_notified ? "Yes" : "No"}</Badge></td>
+                      <td className="px-5 py-3">
+                        {!r.parent_notified && <AdminButton onClick={() => notifyParent(r.id)} disabled={busyId === r.id}>Mark Notified</AdminButton>}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

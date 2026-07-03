@@ -6,13 +6,11 @@ import { Card, CardHeader, EmptyState, FadeIn, Skeleton, Badge } from "@/compone
 import { IconCalendarPlatform } from "@/components/admin/icons";
 
 interface CalendarEventDto {
-  id: string;
-  title: string;
-  type: string;
-  startDate: string;
-  endDate: string;
-  status: string;
-  venue: string | null;
+  date: string;
+  day: string;
+  event_id: string;
+  event_title: string;
+  event_description: string;
 }
 
 export default function CalendarPage() {
@@ -22,9 +20,8 @@ export default function CalendarPage() {
 
   const load = useCallback(async () => {
     try {
-      const res = await authRequest<{ events: CalendarEventDto[] } | CalendarEventDto[]>("/api/v1/school/calendar?view_type=month");
-      const raw = res as Record<string, unknown>;
-      setEvents((Array.isArray(raw) ? raw : (raw.events as CalendarEventDto[])) ?? []);
+      const res = await authRequest<{ calendar_events: CalendarEventDto[]; summary: { working_days: number; public_holidays: number; school_holidays: number } }>("/api/v1/school/calendar?view_type=month");
+      setEvents(res.calendar_events ?? []);
     } catch (e) {
       setError(`Failed to load calendar: ${(e as Error).message}`);
     } finally {
@@ -56,21 +53,19 @@ export default function CalendarPage() {
               <table className="w-full text-left text-[13px]">
                 <thead className="text-[11px] uppercase tracking-wide text-ink-3 border-b border-navy/[0.06]">
                   <tr>
-                    <th className="px-5 py-3 font-semibold">Title</th>
-                    <th className="px-5 py-3 font-semibold">Type</th>
-                    <th className="px-5 py-3 font-semibold">Start</th>
-                    <th className="px-5 py-3 font-semibold">End</th>
-                    <th className="px-5 py-3 font-semibold">Venue</th>
+                    <th className="px-5 py-3 font-semibold">Date</th>
+                    <th className="px-5 py-3 font-semibold">Day</th>
+                    <th className="px-5 py-3 font-semibold">Event</th>
+                    <th className="px-5 py-3 font-semibold">Description</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-navy/[0.03]">
                   {events.map((e) => (
-                    <tr key={e.id} className="hover:bg-navy/[0.02] transition-colors">
-                      <td className="px-5 py-3 font-semibold text-navy-deep">{e.title}</td>
-                      <td className="px-5 py-3"><Badge tone="neutral">{e.type}</Badge></td>
-                      <td className="px-5 py-3 text-ink-3">{new Date(e.startDate).toLocaleDateString()}</td>
-                      <td className="px-5 py-3 text-ink-3">{new Date(e.endDate).toLocaleDateString()}</td>
-                      <td className="px-5 py-3 text-ink-3">{e.venue ?? "—"}</td>
+                    <tr key={e.event_id} className="hover:bg-navy/[0.02] transition-colors">
+                      <td className="px-5 py-3 text-ink-3">{e.date}</td>
+                      <td className="px-5 py-3 text-ink-3">{e.day}</td>
+                      <td className="px-5 py-3 font-semibold text-navy-deep">{e.event_title}</td>
+                      <td className="px-5 py-3 text-ink-2">{e.event_description || "—"}</td>
                     </tr>
                   ))}
                 </tbody>

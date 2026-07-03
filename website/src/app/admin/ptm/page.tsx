@@ -3,15 +3,19 @@
 import { useState, useEffect, useCallback } from "react";
 import { authRequest } from "@/lib/admin/client";
 import { Card, CardHeader, EmptyState, FadeIn, Skeleton, Badge } from "@/components/admin/Primitives";
+import { AdminButton } from "@/components/admin/Toolbar";
 import { IconPtm } from "@/components/admin/icons";
 
 interface PtmEventDto {
   id: string;
   title: string;
-  date: string;
-  total_slots: number;
-  booked_slots: number;
+  type: string;
+  startDate: string;
   status: string;
+  registrationEnabled: boolean;
+  totalRegistrations: number;
+  hasSlots: boolean;
+  slotCount: number;
 }
 
 export default function PtmPage() {
@@ -21,9 +25,8 @@ export default function PtmPage() {
 
   const load = useCallback(async () => {
     try {
-      const res = await authRequest<{ events: PtmEventDto[] } | PtmEventDto[]>("/api/v1/school/events/admin?type=PTM");
-      const raw = res as Record<string, unknown>;
-      setEvents((Array.isArray(raw) ? raw : (raw.events as PtmEventDto[])) ?? []);
+      const res = await authRequest<{ events: PtmEventDto[] }>("/api/v1/school/events?type=PTM");
+      setEvents(res.events ?? []);
     } catch (e) {
       setError(`Failed to load PTM events: ${(e as Error).message}`);
     } finally {
@@ -56,9 +59,12 @@ export default function PtmPage() {
                 <div key={e.id} className="flex items-center justify-between px-5 py-3">
                   <div>
                     <p className="text-[14px] font-semibold text-navy-deep">{e.title}</p>
-                    <p className="text-[12px] text-ink-3">{new Date(e.date).toLocaleDateString()} · {e.booked_slots}/{e.total_slots} slots booked</p>
+                    <p className="text-[12px] text-ink-3">{new Date(e.startDate).toLocaleDateString()} · {e.totalRegistrations} registrations{e.hasSlots ? ` · ${e.slotCount} slots` : ""}</p>
                   </div>
-                  <Badge tone={e.status === "active" ? "success" : "neutral"}>{e.status}</Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge tone={e.status === "PUBLISHED" ? "success" : "neutral"}>{e.status}</Badge>
+                    {e.status !== "CANCELLED" && <AdminButton variant="danger" onClick={async () => { await authRequest(`/api/v1/school/events/${e.id}/cancel`, { method: "POST" }); setEvents(prev => prev.map(x => x.id === e.id ? { ...x, status: "CANCELLED" } : x)); }}>Cancel</AdminButton>}
+                  </div>
                 </div>
               ))}
             </div>

@@ -3,16 +3,17 @@
 import { useState, useEffect, useCallback } from "react";
 import { authRequest } from "@/lib/admin/client";
 import { Card, CardHeader, EmptyState, FadeIn, Skeleton, Badge } from "@/components/admin/Primitives";
+import { AdminButton } from "@/components/admin/Toolbar";
 import { IconAdmissions } from "@/components/admin/icons";
 
 interface InquiryDto {
   id: string;
   student_name: string;
   parent_name: string;
-  phone: string;
-  grade_applying: string;
+  class: string;
+  date: string;
   status: string;
-  created_at: string;
+  profile_pic: string | null;
 }
 
 export default function AdmissionsPage() {
@@ -20,10 +21,12 @@ export default function AdmissionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [busyId, setBusyId] = useState<string | null>(null);
+
   const load = useCallback(async () => {
     try {
-      const res = await authRequest<{ data: InquiryDto[] } | InquiryDto[]>("/api/v1/school/admissions/inquiries");
-      setInquiries(Array.isArray(res) ? res : (res as { data: InquiryDto[] }).data ?? []);
+      const res = await authRequest<{ enquiries: InquiryDto[] }>("/api/v1/admissions/enquiries?limit=100");
+      setInquiries(res.enquiries ?? []);
     } catch (e) {
       setError(`Failed to load admissions: ${(e as Error).message}`);
     } finally {
@@ -33,10 +36,23 @@ export default function AdmissionsPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  const updateStatus = useCallback(async (id: string, status: string) => {
+    setBusyId(id);
+    setError(null);
+    try {
+      await authRequest(`/api/v1/admissions/enquiries/${id}/status`, { method: "PATCH", body: { status } });
+      setInquiries(prev => prev.map(i => i.id === id ? { ...i, status } : i));
+    } catch (e) {
+      setError(`Failed to update status: ${(e as Error).message}`);
+    } finally {
+      setBusyId(null);
+    }
+  }, []);
+
   const statusTone = (s: string): "success" | "warning" | "danger" | "neutral" => {
-    if (s === "enrolled" || s === "admitted") return "success";
-    if (s === "pending" || s === "review") return "warning";
-    if (s === "rejected" || s === "withdrawn") return "danger";
+    if (s === "converted") return "success";
+    if (s === "new" || s === "followup") return "warning";
+    if (s === "rejected") return "danger";
     return "neutral";
   };
 
@@ -67,6 +83,7 @@ export default function AdmissionsPage() {
                     <th className="px-5 py-3 font-semibold">Phone</th>
                     <th className="px-5 py-3 font-semibold">Grade</th>
                     <th className="px-5 py-3 font-semibold">Status</th>
+                    <th className="px-5 py-3 font-semibold">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-navy/[0.03]">
@@ -74,9 +91,16 @@ export default function AdmissionsPage() {
                     <tr key={i.id} className="hover:bg-navy/[0.02] transition-colors">
                       <td className="px-5 py-3 font-semibold text-navy-deep">{i.student_name}</td>
                       <td className="px-5 py-3 text-ink-2">{i.parent_name}</td>
-                      <td className="px-5 py-3 text-ink-3">{i.phone}</td>
-                      <td className="px-5 py-3 text-ink-3">{i.grade_applying}</td>
+                      <td className="px-5 py-3 text-ink-3">{i.date}</td>
+                      <td className="px-5 py-3 text-ink-3">{i.class}</td>
                       <td className="px-5 py-3"><Badge tone={statusTone(i.status)}>{i.status}</Badge></td>
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-1.5">
+                          {i.status !== "followup" && <AdminButton variant="ghost" onClick={() => updateStatus(i.id, "followup")} disabled={busyId === i.id}>Follow-up</AdminButton>}
+                          {i.status !== "converted" && <AdminButton onClick={() => updateStatus(i.id, "converted")} disabled={busyId === i.id}>Convert</AdminButton>}
+                          {i.status !== "rejected" && <AdminButton variant="danger" onClick={() => updateStatus(i.id, "rejected")} disabled={busyId === i.id}>Reject</AdminButton>}
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

@@ -3,26 +3,31 @@
 import { useState, useEffect, useCallback } from "react";
 import { authRequest } from "@/lib/admin/client";
 import { Card, CardHeader, EmptyState, FadeIn, Skeleton, Badge } from "@/components/admin/Primitives";
-import { IconPace } from "@/components/admin/icons";
+import { AdminButton } from "@/components/admin/Toolbar";
+import { IconPace, IconCheck } from "@/components/admin/icons";
 
 interface PaceAlertDto {
   id: string;
-  class_name: string;
-  subject: string;
-  teacher_name: string;
-  pace_status: string;
-  units_behind: number;
-  last_updated: string;
+  className?: string;
+  subjectName?: string;
+  teacherName?: string;
+  alertLevel?: string;
+  expectedCoveragePct?: number;
+  actualCoveragePct?: number;
+  unitsBehind?: number;
+  createdAt?: string;
+  resolvedAt?: string | null;
 }
 
 export default function PaceAlertsPage() {
   const [alerts, setAlerts] = useState<PaceAlertDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [resolvingId, setResolvingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
-      const res = await authRequest<{ alerts: PaceAlertDto[] } | PaceAlertDto[]>("/api/v1/school/pace/alerts");
+      const res = await authRequest<{ alerts: PaceAlertDto[] } | PaceAlertDto[]>("/api/v1/school/syllabus-pace/alerts");
       const raw = res as Record<string, unknown>;
       setAlerts((Array.isArray(raw) ? raw : (raw.alerts as PaceAlertDto[])) ?? []);
     } catch (e) {
@@ -34,10 +39,24 @@ export default function PaceAlertsPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const paceTone = (s: string): "success" | "warning" | "danger" | "neutral" => {
-    if (s === "on_track") return "success";
-    if (s === "behind" || s === "at_risk") return "warning";
-    if (s === "critical" || s === "severely_behind") return "danger";
+  const resolveAlert = useCallback(async (id: string) => {
+    setResolvingId(id);
+    try {
+      await authRequest(`/api/v1/school/syllabus-pace/alerts/${id}/resolve`, { method: "POST" });
+      setAlerts(prev => prev.filter(a => a.id !== id));
+    } catch (e) {
+      setError(`Failed to resolve alert: ${(e as Error).message}`);
+    } finally {
+      setResolvingId(null);
+    }
+  }, []);
+
+  const alertTone = (s?: string): "success" | "warning" | "danger" | "neutral" => {
+    if (!s) return "neutral";
+    const v = s.toLowerCase();
+    if (v === "ahead" || v === "on_track") return "success";
+    if (v === "behind") return "warning";
+    if (v === "critical") return "danger";
     return "neutral";
   };
 
@@ -66,18 +85,24 @@ export default function PaceAlertsPage() {
                     <th className="px-5 py-3 font-semibold">Class</th>
                     <th className="px-5 py-3 font-semibold">Subject</th>
                     <th className="px-5 py-3 font-semibold">Teacher</th>
-                    <th className="px-5 py-3 font-semibold">Units Behind</th>
-                    <th className="px-5 py-3 font-semibold">Status</th>
+                    <th className="px-5 py-3 font-semibold">Coverage</th>
+                    <th className="px-5 py-3 font-semibold">Level</th>
+                    <th className="px-5 py-3 font-semibold">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-navy/[0.03]">
                   {alerts.map((a) => (
                     <tr key={a.id} className="hover:bg-navy/[0.02] transition-colors">
-                      <td className="px-5 py-3 font-semibold text-navy-deep">{a.class_name}</td>
-                      <td className="px-5 py-3 text-ink-2">{a.subject}</td>
-                      <td className="px-5 py-3 text-ink-3">{a.teacher_name}</td>
-                      <td className="px-5 py-3 text-ink-3">{a.units_behind}</td>
-                      <td className="px-5 py-3"><Badge tone={paceTone(a.pace_status)}>{a.pace_status}</Badge></td>
+                      <td className="px-5 py-3 font-semibold text-navy-deep">{a.className ?? "-"}</td>
+                      <td className="px-5 py-3 text-ink-2">{a.subjectName ?? "-"}</td>
+                      <td className="px-5 py-3 text-ink-3">{a.teacherName ?? "-"}</td>
+                      <td className="px-5 py-3 text-ink-3">{a.actualCoveragePct ?? 0}% / {a.expectedCoveragePct ?? 0}%</td>
+                      <td className="px-5 py-3"><Badge tone={alertTone(a.alertLevel)}>{a.alertLevel ?? "unknown"}</Badge></td>
+                      <td className="px-5 py-3">
+                        <AdminButton variant="ghost" onClick={() => resolveAlert(a.id)} disabled={resolvingId === a.id}>
+                          <IconCheck width={14} height={14} /> Resolve
+                        </AdminButton>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

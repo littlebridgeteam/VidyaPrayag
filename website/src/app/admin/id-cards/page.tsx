@@ -3,14 +3,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { authRequest } from "@/lib/admin/client";
 import { Card, CardHeader, EmptyState, FadeIn, Skeleton, Badge } from "@/components/admin/Primitives";
+import { AdminButton } from "@/components/admin/Toolbar";
 import { IconIdCard } from "@/components/admin/icons";
 
 interface TemplateDto {
   id: string;
   name: string;
-  orientation: string;
-  is_active: boolean;
-  created_at: string;
+  roleType: string;
+  isActive: boolean;
+  createdAt: string;
 }
 
 export default function IdCardsPage() {
@@ -20,8 +21,8 @@ export default function IdCardsPage() {
 
   const load = useCallback(async () => {
     try {
-      const res = await authRequest<{ data: TemplateDto[] } | TemplateDto[]>("/api/v1/school/id-cards/templates");
-      setTemplates(Array.isArray(res) ? res : (res as { data: TemplateDto[] }).data ?? []);
+      const res = await authRequest<TemplateDto[]>("/api/v1/school/id-cards/templates");
+      setTemplates(Array.isArray(res) ? res : []);
     } catch (e) {
       setError(`Failed to load ID card templates: ${(e as Error).message}`);
     } finally {
@@ -54,9 +55,12 @@ export default function IdCardsPage() {
                 <div key={t.id} className="flex items-center justify-between px-5 py-3">
                   <div>
                     <p className="text-[14px] font-semibold text-navy-deep">{t.name}</p>
-                    <p className="text-[12px] text-ink-3">{t.orientation} · Created {new Date(t.created_at).toLocaleDateString()}</p>
+                    <p className="text-[12px] text-ink-3 capitalize">{t.roleType} · Created {new Date(t.createdAt).toLocaleDateString()}</p>
                   </div>
-                  <Badge tone={t.is_active ? "success" : "neutral"}>{t.is_active ? "Active" : "Inactive"}</Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge tone={t.isActive ? "success" : "neutral"}>{t.isActive ? "Active" : "Inactive"}</Badge>
+                    <AdminButton variant="danger" onClick={async () => { await authRequest(`/api/v1/school/id-cards/templates/${t.id}`, { method: "DELETE" }); setTemplates(prev => prev.filter(x => x.id !== t.id)); }}>Delete</AdminButton>
+                  </div>
                 </div>
               ))}
             </div>

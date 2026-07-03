@@ -3,16 +3,18 @@
 import { useState, useEffect, useCallback } from "react";
 import { authRequest } from "@/lib/admin/client";
 import { Card, CardHeader, EmptyState, FadeIn, Skeleton, Badge } from "@/components/admin/Primitives";
+import { AdminButton } from "@/components/admin/Toolbar";
 import { IconLibrary } from "@/components/admin/icons";
 
 interface BookDto {
   id: string;
+  isbn: string | null;
   title: string;
-  author: string;
-  isbn: string;
-  total_copies: number;
-  available_copies: number;
-  category: string;
+  author: string | null;
+  category: string | null;
+  totalCopies: number;
+  availableCopies: number;
+  isArchived: boolean;
 }
 
 export default function LibraryPage() {
@@ -22,7 +24,7 @@ export default function LibraryPage() {
 
   const load = useCallback(async () => {
     try {
-      const res = await authRequest<{ data: BookDto[] } | BookDto[]>("/api/v1/school/library/books?limit=100");
+      const res = await authRequest<BookDto[] | { data: BookDto[] }>("/api/v1/school/library/books?limit=100");
       setBooks(Array.isArray(res) ? res : (res as { data: BookDto[] }).data ?? []);
     } catch (e) {
       setError(`Failed to load library: ${(e as Error).message}`);
@@ -59,18 +61,22 @@ export default function LibraryPage() {
                     <th className="px-5 py-3 font-semibold">Author</th>
                     <th className="px-5 py-3 font-semibold">Category</th>
                     <th className="px-5 py-3 font-semibold">Available</th>
+                    <th className="px-5 py-3 font-semibold">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-navy/[0.03]">
                   {books.map((b) => (
                     <tr key={b.id} className="hover:bg-navy/[0.02] transition-colors">
                       <td className="px-5 py-3 font-semibold text-navy-deep">{b.title}</td>
-                      <td className="px-5 py-3 text-ink-2">{b.author}</td>
-                      <td className="px-5 py-3 text-ink-3">{b.category}</td>
+                      <td className="px-5 py-3 text-ink-2">{b.author ?? "—"}</td>
+                      <td className="px-5 py-3 text-ink-3">{b.category ?? "—"}</td>
                       <td className="px-5 py-3">
-                        <Badge tone={b.available_copies > 0 ? "success" : "danger"}>
-                          {b.available_copies}/{b.total_copies}
+                        <Badge tone={b.availableCopies > 0 ? "success" : "danger"}>
+                          {b.availableCopies}/{b.totalCopies}
                         </Badge>
+                      </td>
+                      <td className="px-5 py-3">
+                        <AdminButton variant="danger" onClick={async () => { await authRequest(`/api/v1/school/library/books/${b.id}`, { method: "DELETE" }); setBooks(prev => prev.filter(x => x.id !== b.id)); }}>Delete</AdminButton>
                       </td>
                     </tr>
                   ))}

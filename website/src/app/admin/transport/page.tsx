@@ -3,22 +3,25 @@
 import { useState, useEffect, useCallback } from "react";
 import { authRequest } from "@/lib/admin/client";
 import { Card, CardHeader, EmptyState, FadeIn, Skeleton, Badge } from "@/components/admin/Primitives";
+import { AdminButton } from "@/components/admin/Toolbar";
 import { IconTransport } from "@/components/admin/icons";
 
 interface RouteDto {
   id: string;
   name: string;
-  vehicle_number: string;
-  driver_name: string;
-  stops_count: number;
-  is_active: boolean;
+  description: string | null;
+  isActive: boolean;
+  stops: Array<{ id: string; name: string; sequence: number }>;
+  createdAt: string;
 }
 interface VehicleDto {
   id: string;
-  bus_number: string;
+  busNumber: string;
   capacity: number;
-  driver_name: string;
-  is_active: boolean;
+  driverName: string | null;
+  driverPhone: string | null;
+  routeId: string | null;
+  isActive: boolean;
 }
 
 export default function TransportPage() {
@@ -30,11 +33,11 @@ export default function TransportPage() {
   const load = useCallback(async () => {
     try {
       const [r, v] = await Promise.all([
-        authRequest<{ data: RouteDto[] } | RouteDto[]>("/api/v1/school/transport/routes"),
-        authRequest<{ data: VehicleDto[] } | VehicleDto[]>("/api/v1/school/transport/vehicles"),
+        authRequest<RouteDto[]>("/api/v1/school/transport/routes?all=true"),
+        authRequest<VehicleDto[]>("/api/v1/school/transport/vehicles?all=true"),
       ]);
-      setRoutes(Array.isArray(r) ? r : (r as { data: RouteDto[] }).data ?? []);
-      setVehicles(Array.isArray(v) ? v : (v as { data: VehicleDto[] }).data ?? []);
+      setRoutes(Array.isArray(r) ? r : []);
+      setVehicles(Array.isArray(v) ? v : []);
     } catch (e) {
       setError(`Failed to load transport data: ${(e as Error).message}`);
     } finally {
@@ -68,9 +71,12 @@ export default function TransportPage() {
                   <div key={r.id} className="flex items-center justify-between px-5 py-3">
                     <div>
                       <p className="text-[14px] font-semibold text-navy-deep">{r.name}</p>
-                      <p className="text-[12px] text-ink-3">{r.stops_count} stops · {r.driver_name}</p>
+                      <p className="text-[12px] text-ink-3">{r.stops?.length ?? 0} stops{r.description ? ` · ${r.description}` : ""}</p>
                     </div>
-                    <Badge tone={r.is_active ? "success" : "neutral"}>{r.is_active ? "Active" : "Inactive"}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge tone={r.isActive ? "success" : "neutral"}>{r.isActive ? "Active" : "Inactive"}</Badge>
+                      <AdminButton variant="danger" onClick={async () => { await authRequest(`/api/v1/school/transport/routes/${r.id}`, { method: "DELETE" }); setRoutes(prev => prev.filter(x => x.id !== r.id)); }}>Delete</AdminButton>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -86,10 +92,13 @@ export default function TransportPage() {
                 {vehicles.map((v) => (
                   <div key={v.id} className="flex items-center justify-between px-5 py-3">
                     <div>
-                      <p className="text-[14px] font-semibold text-navy-deep">{v.bus_number}</p>
-                      <p className="text-[12px] text-ink-3">Capacity: {v.capacity} · {v.driver_name}</p>
+                      <p className="text-[14px] font-semibold text-navy-deep">{v.busNumber}</p>
+                      <p className="text-[12px] text-ink-3">Capacity: {v.capacity}{v.driverName ? ` · ${v.driverName}` : ""}</p>
                     </div>
-                    <Badge tone={v.is_active ? "success" : "neutral"}>{v.is_active ? "Active" : "Inactive"}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge tone={v.isActive ? "success" : "neutral"}>{v.isActive ? "Active" : "Inactive"}</Badge>
+                      <AdminButton variant="danger" onClick={async () => { await authRequest(`/api/v1/school/transport/vehicles/${v.id}`, { method: "DELETE" }); setVehicles(prev => prev.filter(x => x.id !== v.id)); }}>Delete</AdminButton>
+                    </div>
                   </div>
                 ))}
               </div>

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { authRequest } from "@/lib/admin/client";
 import { Card, CardHeader, EmptyState, FadeIn, Skeleton, Badge } from "@/components/admin/Primitives";
+import { AdminButton } from "@/components/admin/Toolbar";
 import { IconEvent } from "@/components/admin/icons";
 
 interface EventDto {
@@ -24,7 +25,7 @@ export default function EventsPage() {
 
   const load = useCallback(async () => {
     try {
-      const res = await authRequest<{ events: EventDto[] }>("/api/v1/school/events/admin");
+      const res = await authRequest<{ events: EventDto[] }>("/api/v1/school/events");
       setEvents(res.events ?? []);
     } catch (e) {
       setError(`Failed to load events: ${(e as Error).message}`);
@@ -62,6 +63,7 @@ export default function EventsPage() {
                     <th className="px-5 py-3 font-semibold">Date</th>
                     <th className="px-5 py-3 font-semibold">Registrations</th>
                     <th className="px-5 py-3 font-semibold">Status</th>
+                    <th className="px-5 py-3 font-semibold">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-navy/[0.03]">
@@ -72,6 +74,11 @@ export default function EventsPage() {
                       <td className="px-5 py-3 text-ink-3">{new Date(e.startDate).toLocaleDateString()}</td>
                       <td className="px-5 py-3 text-ink-3">{e.totalRegistrations}{e.maxAttendees ? `/${e.maxAttendees}` : ""}</td>
                       <td className="px-5 py-3"><Badge tone={e.registrationEnabled ? "success" : "neutral"}>{e.status}</Badge></td>
+                      <td className="px-5 py-3">
+                        {e.status !== "CANCELLED" && (
+                          <AdminButton variant="danger" onClick={async () => { await authRequest(`/api/v1/school/events/${e.id}/cancel`, { method: "POST" }); setEvents(prev => prev.map(x => x.id === e.id ? { ...x, status: "CANCELLED" } : x)); }}>Cancel</AdminButton>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

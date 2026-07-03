@@ -3,24 +3,27 @@
 import { useState, useEffect, useCallback } from "react";
 import { authRequest } from "@/lib/admin/client";
 import { Card, CardHeader, EmptyState, FadeIn, Skeleton, Badge } from "@/components/admin/Primitives";
-import { IconScholarship } from "@/components/admin/icons";
+import { AdminButton } from "@/components/admin/Toolbar";
+import { IconScholarship, IconCheck, IconClose } from "@/components/admin/icons";
 
 interface SchemeDto {
   id: string;
   title: string;
-  scholarship_type: string;
-  status: string;
-  eligibility_criteria: string;
-  waiver_percentage: number;
-  total_amount: number;
-  application_count: number;
+  scholarshipType: string;
+  isActive: boolean;
+  eligibilityCriteria: string;
+  waiverPercentage: number | null;
+  numericAmount: number | null;
+  amount: string;
+  category: string;
 }
 interface ApplicationDto {
   id: string;
-  student_name: string;
-  scheme_title: string;
+  studentName: string | null;
+  scholarshipTitle: string | null;
   status: string;
-  applied_at: string;
+  parentApplicationText: string | null;
+  remarks: string | null;
 }
 
 export default function ScholarshipsPage() {
@@ -29,14 +32,16 @@ export default function ScholarshipsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [busyId, setBusyId] = useState<string | null>(null);
+
   const load = useCallback(async () => {
     try {
       const [s, a] = await Promise.all([
-        authRequest<{ data: SchemeDto[] } | SchemeDto[]>("/api/v1/school/scholarships?all=true"),
-        authRequest<{ data: ApplicationDto[] } | ApplicationDto[]>("/api/v1/school/scholarship-applications"),
+        authRequest<SchemeDto[]>("/api/v1/school/scholarships?all=true"),
+        authRequest<ApplicationDto[]>("/api/v1/school/scholarship-applications"),
       ]);
-      setSchemes(Array.isArray(s) ? s : (s as { data: SchemeDto[] }).data ?? []);
-      setApplications(Array.isArray(a) ? a : (a as { data: ApplicationDto[] }).data ?? []);
+      setSchemes(Array.isArray(s) ? s : []);
+      setApplications(Array.isArray(a) ? a : []);
     } catch (e) {
       setError(`Failed to load scholarships: ${(e as Error).message}`);
     } finally {
@@ -45,6 +50,32 @@ export default function ScholarshipsPage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  const approveApp = useCallback(async (id: string) => {
+    setBusyId(id);
+    setError(null);
+    try {
+      await authRequest(`/api/v1/school/scholarship-applications/${id}/approve`, { method: "POST", body: {} });
+      setApplications(prev => prev.map(a => a.id === id ? { ...a, status: "APPROVED" } : a));
+    } catch (e) {
+      setError(`Failed to approve: ${(e as Error).message}`);
+    } finally {
+      setBusyId(null);
+    }
+  }, []);
+
+  const rejectApp = useCallback(async (id: string) => {
+    setBusyId(id);
+    setError(null);
+    try {
+      await authRequest(`/api/v1/school/scholarship-applications/${id}/reject`, { method: "POST", body: {} });
+      setApplications(prev => prev.map(a => a.id === id ? { ...a, status: "REJECTED" } : a));
+    } catch (e) {
+      setError(`Failed to reject: ${(e as Error).message}`);
+    } finally {
+      setBusyId(null);
+    }
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -70,9 +101,12 @@ export default function ScholarshipsPage() {
                   <div key={s.id} className="flex items-center justify-between px-5 py-3">
                     <div>
                       <p className="text-[14px] font-semibold text-navy-deep">{s.title}</p>
-                      <p className="text-[12px] text-ink-3">{s.scholarship_type} · {s.application_count} applications</p>
+                      <p className="text-[12px] text-ink-3">{s.scholarshipType} · {s.category}</p>
                     </div>
-                    <Badge tone={s.status === "active" ? "success" : "neutral"}>{s.status}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge tone={s.isActive ? "success" : "neutral"}>{s.isActive ? "Active" : "Inactive"}</Badge>
+                      <AdminButton variant="danger" onClick={async () => { await authRequest(`/api/v1/school/scholarships/${s.id}`, { method: "DELETE" }); setSchemes(prev => prev.filter(x => x.id !== s.id)); }}>Delete</AdminButton>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -86,12 +120,20 @@ export default function ScholarshipsPage() {
             {loading ? <Skeleton className="h-32" /> : error ? <EmptyState title="Error" hint={error} icon={<IconScholarship />} /> : applications.length === 0 ? <EmptyState title="No applications" hint="Scholarship applications will appear here." icon={<IconScholarship />} /> : (
               <div className="divide-y divide-navy/[0.04]">
                 {applications.map((a) => (
-                  <div key={a.id} className="flex items-center justify-between px-5 py-3">
+                  <div key={a.id} className="flex flex-col gap-3 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <p className="text-[14px] font-semibold text-navy-deep">{a.student_name}</p>
-                      <p className="text-[12px] text-ink-3">{a.scheme_title}</p>
+                      <p className="text-[14px] font-semibold text-navy-deep">{a.studentName ?? "Unknown"}</p>
+                      <p className="text-[12px] text-ink-3">{a.scholarshipTitle ?? "—"}</p>
                     </div>
-                    <Badge tone={a.status === "approved" ? "success" : a.status === "rejected" ? "danger" : "warning"}>{a.status}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge tone={a.status === "APPROVED" || a.status === "DISBURSED" ? "success" : a.status === "REJECTED" ? "danger" : "warning"}>{a.status}</Badge>
+                      {a.status === "PENDING" && (
+                        <>
+                          <AdminButton variant="ghost" onClick={() => rejectApp(a.id)} disabled={busyId === a.id}><IconClose width={14} height={14} /> Reject</AdminButton>
+                          <AdminButton onClick={() => approveApp(a.id)} disabled={busyId === a.id}><IconCheck width={14} height={14} /> Approve</AdminButton>
+                        </>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
