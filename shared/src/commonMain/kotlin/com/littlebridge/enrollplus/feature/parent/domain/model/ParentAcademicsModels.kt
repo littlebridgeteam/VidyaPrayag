@@ -287,4 +287,12 @@ data class ParentQuizQuestionDto(
     val question: String,
     val options: List<String> = emptyList(),
     @SerialName("marks") val marks: Int = 1,
+    @SerialName("question_type") val questionType: String = "MCQ",
+    @SerialName("match_pairs") val matchPairs: List<ParentMatchPairDto> = emptyList(),
+)
+
+@Serializable
+data class ParentMatchPairDto(
+    val left: String = "",
+    val right: String = "",
 )

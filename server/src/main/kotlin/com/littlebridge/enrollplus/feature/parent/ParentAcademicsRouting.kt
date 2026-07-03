@@ -37,18 +37,29 @@ import com.littlebridge.enrollplus.db.SYSTEM_SCHOOL_ID
 import com.littlebridge.enrollplus.db.SyllabusProgressTable
 import com.littlebridge.enrollplus.db.SyllabusPacePlanTable
 import com.littlebridge.enrollplus.db.SyllabusUnitsTable
+import com.littlebridge.enrollplus.db.SyllabusQuizzesTable
+import com.littlebridge.enrollplus.db.SyllabusQuizQuestionsTable
+import com.littlebridge.enrollplus.db.SyllabusQuizAnswersTable
 import com.littlebridge.enrollplus.db.TeacherPeriodsTable
 import com.littlebridge.enrollplus.db.TeacherSubjectAssignmentsTable
 import com.littlebridge.enrollplus.feature.ai.SyllabusAiService
+import com.littlebridge.enrollplus.feature.teacher.MatchPairSer
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.routing.*
+import io.ktor.server.request.receive
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.serializer
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -218,6 +229,90 @@ data class ParentSyllabusV2Data(
     val subjects: List<ParentSyllabusV2SubjectDto> = emptyList(),
 )
 
+// ── Quiz DTOs (server-side, mirrors shared module) ──────────────────────────
+
+@Serializable
+data class ParentMatchPairDto(
+    val left: String = "",
+    val right: String = "",
+)
+
+@Serializable
+data class ParentQuizDto(
+    val id: String,
+    val title: String = "",
+    val subject: String = "",
+    @SerialName("unit_title") val unitTitle: String = "",
+    @SerialName("num_questions") val numQuestions: Int = 0,
+    @SerialName("total_marks") val totalMarks: Int = 0,
+    val status: String = "DRAFT",
+    @SerialName("published_at") val publishedAt: String? = null,
+    @SerialName("created_at") val createdAt: String? = null,
+)
+
+@Serializable
+data class ParentQuizListData(
+    val quizzes: List<ParentQuizDto> = emptyList(),
+)
+
+@Serializable
+data class ParentQuizQuestionDto(
+    val id: String,
+    val question: String,
+    val options: List<String> = emptyList(),
+    val marks: Int = 1,
+    @SerialName("question_type") val questionType: String = "MCQ",
+    @SerialName("match_pairs") val matchPairs: List<ParentMatchPairDto> = emptyList(),
+)
+
+@Serializable
+data class ParentQuizDetailData(
+    val id: String,
+    val title: String = "",
+    val subject: String = "",
+    val questions: List<ParentQuizQuestionDto> = emptyList(),
+    @SerialName("total_marks") val totalMarks: Int = 0,
+)
+
+@Serializable
+data class QuizAnswerDto(
+    @SerialName("question_id") val questionId: String,
+    @SerialName("selected_index") val selectedIndex: Int,
+)
+
+@Serializable
+data class QuizSubmitRequest(
+    @SerialName("quiz_id") val quizId: String,
+    val answers: List<QuizAnswerDto> = emptyList(),
+)
+
+@Serializable
+data class QuizQuestionResultDto(
+    @SerialName("question_id") val questionId: String,
+    val question: String,
+    @SerialName("selected_index") val selectedIndex: Int,
+    @SerialName("correct_index") val correctIndex: Int,
+    val correct: Boolean,
+    val explanation: String? = null,
+)
+
+@Serializable
+data class QuizResultDto(
+    val id: String,
+    @SerialName("quiz_id") val quizId: String,
+    val score: Int,
+    @SerialName("total_marks") val totalMarks: Int,
+    val percentage: Int,
+    @SerialName("submitted_at") val submittedAt: String? = null,
+    @SerialName("question_results") val questionResults: List<QuizQuestionResultDto> = emptyList(),
+)
+
+@Serializable
+data class QuizSubmitResponse(
+    val success: Boolean = true,
+    val data: QuizResultDto,
+)
+
 // ── Resolved + authorized child (RA-56 ownership guard) ───────────────────────
 
 private data class ResolvedChild(
@@ -322,11 +417,29 @@ fun Route.parentAcademicsRouting() {
                     return@get
                 }
                 val rows = dbQuery {
-                    AttendanceRecordsTable.selectAll().where {
-                        (AttendanceRecordsTable.schoolId eq child.schoolId) and
-                            (AttendanceRecordsTable.type eq "student") and
-                            (AttendanceRecordsTable.personId eq child.studentCode)
-                    }.orderBy(AttendanceRecordsTable.date, SortOrder.DESC).map {
+                    // T-201: teacher attendance writes use the typed studentId (UUID FK
+                    // to students.id), not the legacy personId text column. Resolve the
+                    // child's studentCode → students.id UUID first, then query by it.
+                    val studentUuid = StudentsTable.selectAll().where {
+                        (StudentsTable.schoolId eq child.schoolId) and
+                            (StudentsTable.studentCode eq child.studentCode)
+                    }.firstOrNull()?.get(StudentsTable.id)?.value
+
+                    val query = if (studentUuid != null) {
+                        AttendanceRecordsTable.selectAll().where {
+                            (AttendanceRecordsTable.schoolId eq child.schoolId) and
+                                (AttendanceRecordsTable.type eq "student") and
+                                (AttendanceRecordsTable.studentId eq studentUuid)
+                        }
+                    } else {
+                        // Fallback: legacy personId path (for pre-T-201 data)
+                        AttendanceRecordsTable.selectAll().where {
+                            (AttendanceRecordsTable.schoolId eq child.schoolId) and
+                                (AttendanceRecordsTable.type eq "student") and
+                                (AttendanceRecordsTable.personId eq child.studentCode)
+                        }
+                    }
+                    query.orderBy(AttendanceRecordsTable.date, SortOrder.DESC).map {
                         ParentAttendanceDayDto(
                             date = it[AttendanceRecordsTable.date].toString(),
                             status = it[AttendanceRecordsTable.status].lowercase(),
@@ -418,31 +531,91 @@ fun Route.parentAcademicsRouting() {
                     return@get
                 }
                 val subjects = dbQuery {
-                    // RA-S19: same section-fallback hardening as the marks join — only filter
-                    // on section when it came from a linked student row, else relax to class.
-                    val units = SyllabusUnitsTable.selectAll().where {
-                        var cond = (SyllabusUnitsTable.schoolId eq child.schoolId) and
-                            (SyllabusUnitsTable.className eq child.grade)
+                    // New typed path FIRST: read from CurriculumUnitsTable + SyllabusProgressTable
+                    // (where the teacher's one-tap toggle actually writes).
+                    val assignments = TeacherSubjectAssignmentsTable.selectAll().where {
+                        (TeacherSubjectAssignmentsTable.schoolId eq child.schoolId) and
+                            (TeacherSubjectAssignmentsTable.className eq child.grade) and
+                            (TeacherSubjectAssignmentsTable.isActive eq true)
+                    }.let { rows ->
                         if (child.sectionResolved) {
-                            cond = cond and (SyllabusUnitsTable.section eq child.section)
-                        }
-                        cond
-                    }.orderBy(SyllabusUnitsTable.position, SortOrder.ASC).toList()
+                            rows.filter { it[TeacherSubjectAssignmentsTable.section] == child.section }
+                        } else rows
+                    }
 
-                    units.groupBy { it[SyllabusUnitsTable.subject] }.map { (subject, list) ->
-                        val covered = list.count { it[SyllabusUnitsTable.isCovered] }
-                        val progress = if (list.isNotEmpty()) (covered * 100) / list.size else 0
+                    val typedSubjects = assignments.map { asgRow ->
+                        val assignmentId = asgRow[TeacherSubjectAssignmentsTable.id].value
+                        val subjectName = asgRow[TeacherSubjectAssignmentsTable.subject]
+                        val classId = asgRow[TeacherSubjectAssignmentsTable.classId]
+                        val subjectId = asgRow[TeacherSubjectAssignmentsTable.subjectId]
+
+                        val curUnits = if (classId != null && subjectId != null) {
+                            CurriculumUnitsTable.selectAll().where {
+                                (CurriculumUnitsTable.classId eq classId) and
+                                    (CurriculumUnitsTable.subjectId eq subjectId) and
+                                    (CurriculumUnitsTable.isActive eq true) and
+                                    (CurriculumUnitsTable.approvalStatus eq "APPROVED")
+                            }.orderBy(CurriculumUnitsTable.position, SortOrder.ASC).toList()
+                        } else emptyList()
+
+                        val progressRows = if (curUnits.isNotEmpty()) {
+                            SyllabusProgressTable.selectAll().where {
+                                (SyllabusProgressTable.assignmentId eq assignmentId) and
+                                    (SyllabusProgressTable.isCovered eq true)
+                            }.toList()
+                        } else emptyList()
+
+                        val coveredUnitIds = progressRows.map { it[SyllabusProgressTable.unitId] }.toSet()
+                        val coveredCount = curUnits.count { it[CurriculumUnitsTable.id].value in coveredUnitIds }
+                        val progressPct = if (curUnits.isNotEmpty()) (coveredCount * 100) / curUnits.size else 0
+
                         ParentSyllabusSubjectDto(
-                            subject = subject,
-                            progress = progress,
-                            units = list.map {
+                            subject = subjectName,
+                            progress = progressPct,
+                            units = curUnits.map { uRow ->
+                                val unitId = uRow[CurriculumUnitsTable.id].value
+                                val progRow = progressRows.find { it[SyllabusProgressTable.unitId] == unitId }
                                 ParentSyllabusUnitDto(
-                                    title = it[SyllabusUnitsTable.title],
-                                    isCovered = it[SyllabusUnitsTable.isCovered],
-                                    coveredOn = it[SyllabusUnitsTable.coveredOn]?.toString(),
+                                    title = uRow[CurriculumUnitsTable.title],
+                                    isCovered = progRow?.get(SyllabusProgressTable.isCovered) ?: false,
+                                    coveredOn = progRow?.get(SyllabusProgressTable.coveredOn)?.toString(),
                                 )
                             },
                         )
+                    }
+
+                    if (typedSubjects.isNotEmpty() && typedSubjects.any { it.units.isNotEmpty() }) {
+                        typedSubjects
+                    } else {
+                        // Fallback: legacy SyllabusUnitsTable (for pre-T-403 data)
+                        val units = SyllabusUnitsTable.selectAll().where {
+                            var cond = (SyllabusUnitsTable.schoolId eq child.schoolId) and
+                                (SyllabusUnitsTable.className eq child.grade)
+                            if (child.sectionResolved) {
+                                cond = cond and (SyllabusUnitsTable.section eq child.section)
+                            }
+                            cond
+                        }.orderBy(SyllabusUnitsTable.position, SortOrder.ASC).toList()
+
+                        if (units.isNotEmpty()) {
+                            units.groupBy { it[SyllabusUnitsTable.subject] }.map { (subject, list) ->
+                                val covered = list.count { it[SyllabusUnitsTable.isCovered] }
+                                val progress = if (list.isNotEmpty()) (covered * 100) / list.size else 0
+                                ParentSyllabusSubjectDto(
+                                    subject = subject,
+                                    progress = progress,
+                                    units = list.map {
+                                        ParentSyllabusUnitDto(
+                                            title = it[SyllabusUnitsTable.title],
+                                            isCovered = it[SyllabusUnitsTable.isCovered],
+                                            coveredOn = it[SyllabusUnitsTable.coveredOn]?.toString(),
+                                        )
+                                    },
+                                )
+                            }
+                        } else {
+                            typedSubjects
+                        }
                     }
                 }
                 call.ok(
@@ -716,6 +889,390 @@ fun Route.parentAcademicsRouting() {
                         subjects = subjects,
                     ),
                     message = "Syllabus loaded",
+                )
+            }
+
+            // ── Quizzes — published quizzes for the child's class ────────────
+            get("/quizzes") {
+                val child = call.requireOwnedChild() ?: return@get
+                if (child.schoolId == null || child.grade == null) {
+                    call.ok(ParentQuizListData(quizzes = emptyList()), message = "No quizzes yet")
+                    return@get
+                }
+
+                val quizzes = dbQuery {
+                    val assignments = TeacherSubjectAssignmentsTable.selectAll().where {
+                        (TeacherSubjectAssignmentsTable.schoolId eq child.schoolId) and
+                            (TeacherSubjectAssignmentsTable.className eq child.grade) and
+                            (TeacherSubjectAssignmentsTable.isActive eq true)
+                    }.let { rows ->
+                        if (child.sectionResolved) {
+                            rows.filter { it[TeacherSubjectAssignmentsTable.section] == child.section }
+                        } else rows
+                    }
+
+                    val assignmentIds = assignments.map { it[TeacherSubjectAssignmentsTable.id].value }
+                    val subjectMap = assignments.associate { it[TeacherSubjectAssignmentsTable.id].value to it[TeacherSubjectAssignmentsTable.subject] }
+
+                    SyllabusQuizzesTable.selectAll().where {
+                        (SyllabusQuizzesTable.schoolId eq child.schoolId) and
+                            (SyllabusQuizzesTable.status eq "PUBLISHED") and
+                            (SyllabusQuizzesTable.assignmentId inList assignmentIds)
+                    }.orderBy(SyllabusQuizzesTable.publishedAt, SortOrder.DESC).toList()
+                        .map { qRow ->
+                            val asgId = qRow[SyllabusQuizzesTable.assignmentId]
+                            val qId = qRow[SyllabusQuizzesTable.id].value
+                            val questionCount = dbQuery {
+                                SyllabusQuizQuestionsTable.selectAll().where {
+                                    SyllabusQuizQuestionsTable.quizId eq qId
+                                }.count()
+                            }
+                            val alreadySubmitted = child.studentCode?.let { sc ->
+                                dbQuery {
+                                    SyllabusQuizAnswersTable.selectAll().where {
+                                        (SyllabusQuizAnswersTable.quizId eq qId) and
+                                            (SyllabusQuizAnswersTable.studentId eq sc)
+                                    }.firstOrNull()
+                                } != null
+                            } ?: false
+
+                            ParentQuizDto(
+                                id = qId.toString(),
+                                title = qRow[SyllabusQuizzesTable.title],
+                                subject = subjectMap[asgId] ?: "",
+                                numQuestions = questionCount.toInt(),
+                                totalMarks = questionCount.toInt(),
+                                status = if (alreadySubmitted) "SUBMITTED" else "PENDING",
+                                publishedAt = qRow[SyllabusQuizzesTable.publishedAt]?.toString(),
+                            )
+                        }
+                }
+
+                call.ok(ParentQuizListData(quizzes = quizzes), message = "Quizzes loaded")
+            }
+
+            // ── Quiz detail — questions without correct answers ──────────────
+            get("/quiz/{id}") {
+                val child = call.requireOwnedChild() ?: return@get
+                val quizIdStr = call.parameters["id"]
+                if (quizIdStr.isNullOrBlank()) {
+                    call.fail("Quiz ID is required", HttpStatusCode.BadRequest, "MISSING_PARAM"); return@get
+                }
+                val quizId = UUID.fromString(quizIdStr)
+
+                val quizRow = dbQuery {
+                    SyllabusQuizzesTable.selectAll().where {
+                        (SyllabusQuizzesTable.id eq quizId) and
+                            (SyllabusQuizzesTable.status eq "PUBLISHED")
+                    }.singleOrNull()
+                }
+
+                if (quizRow == null) {
+                    call.fail("Quiz not found or not published", HttpStatusCode.NotFound, "QUIZ_NOT_FOUND"); return@get
+                }
+
+                val subjectName = dbQuery {
+                    TeacherSubjectAssignmentsTable.selectAll().where {
+                        TeacherSubjectAssignmentsTable.id eq quizRow[SyllabusQuizzesTable.assignmentId]
+                    }.firstOrNull()?.get(TeacherSubjectAssignmentsTable.subject) ?: ""
+                }
+
+                val questions = dbQuery {
+                    SyllabusQuizQuestionsTable.selectAll().where {
+                        SyllabusQuizQuestionsTable.quizId eq quizId
+                    }.orderBy(SyllabusQuizQuestionsTable.position, SortOrder.ASC).toList()
+                }
+
+                val questionDtos = questions.map { qr ->
+                    val opts = runCatching {
+                        Json.decodeFromString(
+                            ListSerializer(serializer<String>()),
+                            qr[SyllabusQuizQuestionsTable.optionsJson]
+                        )
+                    }.getOrDefault(emptyList())
+
+                    val matchPairs = runCatching {
+                        Json.decodeFromString(
+                            ListSerializer(serializer<MatchPairSer>()),
+                            qr[SyllabusQuizQuestionsTable.matchPairsJson]
+                        )
+                    }.getOrDefault(emptyList())
+
+                    ParentQuizQuestionDto(
+                        id = qr[SyllabusQuizQuestionsTable.id].value.toString(),
+                        question = qr[SyllabusQuizQuestionsTable.questionText],
+                        options = opts,
+                        marks = 1,
+                        questionType = qr[SyllabusQuizQuestionsTable.questionType],
+                        matchPairs = matchPairs.map { ParentMatchPairDto(left = it.left, right = it.right) },
+                    )
+                }
+
+                call.ok(
+                    ParentQuizDetailData(
+                        id = quizId.toString(),
+                        title = quizRow[SyllabusQuizzesTable.title],
+                        subject = subjectName,
+                        questions = questionDtos,
+                        totalMarks = questionDtos.size,
+                    ),
+                    message = "Quiz loaded",
+                )
+            }
+
+            // ── Quiz submit — submit answers and get results ─────────────────
+            post("/quiz/submit") {
+                val child = call.requireOwnedChild() ?: return@post
+                val req = runCatching {
+                    call.receive<QuizSubmitRequest>()
+                }.getOrNull()
+                if (req == null) {
+                    call.fail("Invalid request body", HttpStatusCode.BadRequest, "BAD_REQUEST"); return@post
+                }
+
+                val quizId = UUID.fromString(req.quizId)
+                val quizRow = dbQuery {
+                    SyllabusQuizzesTable.selectAll().where {
+                        (SyllabusQuizzesTable.id eq quizId) and
+                            (SyllabusQuizzesTable.status eq "PUBLISHED")
+                    }.singleOrNull()
+                }
+
+                if (quizRow == null) {
+                    call.fail("Quiz not found or not published", HttpStatusCode.NotFound, "QUIZ_NOT_FOUND"); return@post
+                }
+
+                val questions = dbQuery {
+                    SyllabusQuizQuestionsTable.selectAll().where {
+                        SyllabusQuizQuestionsTable.quizId eq quizId
+                    }.orderBy(SyllabusQuizQuestionsTable.position, SortOrder.ASC).toList()
+                }
+
+                val now = Instant.now()
+                var correctCount = 0
+                val studentId = child.studentCode ?: "unknown"
+                val questionResults = mutableListOf<QuizQuestionResultDto>()
+
+                req.answers.forEach { ans ->
+                    val qId = UUID.fromString(ans.questionId)
+                    val qRow = questions.find { it[SyllabusQuizQuestionsTable.id].value == qId }
+                    if (qRow != null) {
+                        val opts = runCatching {
+                            Json.decodeFromString(
+                                ListSerializer(serializer<String>()),
+                                qRow[SyllabusQuizQuestionsTable.optionsJson]
+                            )
+                        }.getOrDefault(emptyList())
+                        val selectedAnswer = opts.getOrNull(ans.selectedIndex) ?: ""
+                        val isCorrect = qRow[SyllabusQuizQuestionsTable.correctAnswer].equals(selectedAnswer, ignoreCase = true) ||
+                            qRow[SyllabusQuizQuestionsTable.correctAnswer].equals(ans.selectedIndex.toString(), ignoreCase = true)
+                        if (isCorrect) correctCount++
+                        val correctIdx = opts.indexOfFirst { it.startsWith(qRow[SyllabusQuizQuestionsTable.correctAnswer]) }.takeIf { it >= 0 } ?: 0
+
+                        questionResults.add(
+                            QuizQuestionResultDto(
+                                questionId = qId.toString(),
+                                question = qRow[SyllabusQuizQuestionsTable.questionText],
+                                selectedIndex = ans.selectedIndex,
+                                correctIndex = correctIdx,
+                                correct = isCorrect,
+                                explanation = qRow[SyllabusQuizQuestionsTable.explanation],
+                            )
+                        )
+
+                        dbQuery {
+                            SyllabusQuizAnswersTable.insert {
+                                it[SyllabusQuizAnswersTable.id] = UUID.randomUUID()
+                                it[SyllabusQuizAnswersTable.quizId] = quizId
+                                it[SyllabusQuizAnswersTable.studentId] = studentId
+                                it[SyllabusQuizAnswersTable.questionId] = qId
+                                it[SyllabusQuizAnswersTable.answerText] = selectedAnswer
+                                it[SyllabusQuizAnswersTable.isCorrect] = isCorrect
+                                it[SyllabusQuizAnswersTable.createdAt] = now
+                            }
+                        }
+                    }
+                }
+
+                val totalMarks = questions.size
+                val percentage = if (totalMarks > 0) (correctCount * 100) / totalMarks else 0
+
+                call.ok(
+                    QuizResultDto(
+                        id = UUID.randomUUID().toString(),
+                        quizId = req.quizId,
+                        score = correctCount,
+                        totalMarks = totalMarks,
+                        percentage = percentage,
+                        submittedAt = now.toString(),
+                        questionResults = questionResults,
+                    ),
+                )
+            }
+        }
+
+        // ── Quiz endpoints at parent level (matching client API URLs) ──────
+        route("/api/v1/parent/quiz") {
+            get("/{id}") {
+                val quizIdStr = call.parameters["id"]
+                if (quizIdStr.isNullOrBlank()) {
+                    call.fail("Quiz ID is required", HttpStatusCode.BadRequest, "MISSING_PARAM"); return@get
+                }
+                val quizId = UUID.fromString(quizIdStr)
+
+                val quizRow = dbQuery {
+                    SyllabusQuizzesTable.selectAll().where {
+                        (SyllabusQuizzesTable.id eq quizId) and
+                            (SyllabusQuizzesTable.status eq "PUBLISHED")
+                    }.singleOrNull()
+                }
+
+                if (quizRow == null) {
+                    call.fail("Quiz not found or not published", HttpStatusCode.NotFound, "QUIZ_NOT_FOUND"); return@get
+                }
+
+                val subjectName = dbQuery {
+                    TeacherSubjectAssignmentsTable.selectAll().where {
+                        TeacherSubjectAssignmentsTable.id eq quizRow[SyllabusQuizzesTable.assignmentId]
+                    }.firstOrNull()?.get(TeacherSubjectAssignmentsTable.subject) ?: ""
+                }
+
+                val questions = dbQuery {
+                    SyllabusQuizQuestionsTable.selectAll().where {
+                        SyllabusQuizQuestionsTable.quizId eq quizId
+                    }.orderBy(SyllabusQuizQuestionsTable.position, SortOrder.ASC).toList()
+                }
+
+                val questionDtos = questions.map { qr ->
+                    val opts = runCatching {
+                        Json.decodeFromString(
+                            ListSerializer(serializer<String>()),
+                            qr[SyllabusQuizQuestionsTable.optionsJson]
+                        )
+                    }.getOrDefault(emptyList())
+
+                    val matchPairs = runCatching {
+                        Json.decodeFromString(
+                            ListSerializer(serializer<MatchPairSer>()),
+                            qr[SyllabusQuizQuestionsTable.matchPairsJson]
+                        )
+                    }.getOrDefault(emptyList())
+
+                    ParentQuizQuestionDto(
+                        id = qr[SyllabusQuizQuestionsTable.id].value.toString(),
+                        question = qr[SyllabusQuizQuestionsTable.questionText],
+                        options = opts,
+                        marks = 1,
+                        questionType = qr[SyllabusQuizQuestionsTable.questionType],
+                        matchPairs = matchPairs.map { ParentMatchPairDto(left = it.left, right = it.right) },
+                    )
+                }
+
+                call.ok(
+                    ParentQuizDetailData(
+                        id = quizId.toString(),
+                        title = quizRow[SyllabusQuizzesTable.title],
+                        subject = subjectName,
+                        questions = questionDtos,
+                        totalMarks = questionDtos.size,
+                    ),
+                    message = "Quiz loaded",
+                )
+            }
+
+            post("/submit") {
+                val req = runCatching {
+                    call.receive<QuizSubmitRequest>()
+                }.getOrNull()
+                if (req == null) {
+                    call.fail("Invalid request body", HttpStatusCode.BadRequest, "BAD_REQUEST"); return@post
+                }
+
+                val quizId = UUID.fromString(req.quizId)
+                val quizRow = dbQuery {
+                    SyllabusQuizzesTable.selectAll().where {
+                        (SyllabusQuizzesTable.id eq quizId) and
+                            (SyllabusQuizzesTable.status eq "PUBLISHED")
+                    }.singleOrNull()
+                }
+
+                if (quizRow == null) {
+                    call.fail("Quiz not found or not published", HttpStatusCode.NotFound, "QUIZ_NOT_FOUND"); return@post
+                }
+
+                val questions = dbQuery {
+                    SyllabusQuizQuestionsTable.selectAll().where {
+                        SyllabusQuizQuestionsTable.quizId eq quizId
+                    }.orderBy(SyllabusQuizQuestionsTable.position, SortOrder.ASC).toList()
+                }
+
+                val now = Instant.now()
+                var correctCount = 0
+                val questionResults = mutableListOf<QuizQuestionResultDto>()
+
+                // Resolve student ID from parent's token
+                val uid = call.principalUserId()?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                val childRow = uid?.let { u ->
+                    dbQuery {
+                        ChildrenTable.selectAll().where { ChildrenTable.parentId eq u }.firstOrNull()
+                    }
+                }
+                val studentId = childRow?.get(ChildrenTable.studentCode) ?: "unknown"
+
+                req.answers.forEach { ans ->
+                    val qId = UUID.fromString(ans.questionId)
+                    val qRow = questions.find { it[SyllabusQuizQuestionsTable.id].value == qId }
+                    if (qRow != null) {
+                        val opts = runCatching {
+                            Json.decodeFromString(
+                                ListSerializer(serializer<String>()),
+                                qRow[SyllabusQuizQuestionsTable.optionsJson]
+                            )
+                        }.getOrDefault(emptyList())
+                        val selectedAnswer = opts.getOrNull(ans.selectedIndex) ?: ""
+                        val isCorrect = qRow[SyllabusQuizQuestionsTable.correctAnswer].equals(selectedAnswer, ignoreCase = true) ||
+                            qRow[SyllabusQuizQuestionsTable.correctAnswer].equals(ans.selectedIndex.toString(), ignoreCase = true)
+                        if (isCorrect) correctCount++
+                        val correctIdx = opts.indexOfFirst { it.startsWith(qRow[SyllabusQuizQuestionsTable.correctAnswer]) }.takeIf { it >= 0 } ?: 0
+
+                        questionResults.add(
+                            QuizQuestionResultDto(
+                                questionId = qId.toString(),
+                                question = qRow[SyllabusQuizQuestionsTable.questionText],
+                                selectedIndex = ans.selectedIndex,
+                                correctIndex = correctIdx,
+                                correct = isCorrect,
+                                explanation = qRow[SyllabusQuizQuestionsTable.explanation],
+                            )
+                        )
+
+                        dbQuery {
+                            SyllabusQuizAnswersTable.insert {
+                                it[SyllabusQuizAnswersTable.id] = UUID.randomUUID()
+                                it[SyllabusQuizAnswersTable.quizId] = quizId
+                                it[SyllabusQuizAnswersTable.studentId] = studentId
+                                it[SyllabusQuizAnswersTable.questionId] = qId
+                                it[SyllabusQuizAnswersTable.answerText] = selectedAnswer
+                                it[SyllabusQuizAnswersTable.isCorrect] = isCorrect
+                                it[SyllabusQuizAnswersTable.createdAt] = now
+                            }
+                        }
+                    }
+                }
+
+                val totalMarks = questions.size
+                val percentage = if (totalMarks > 0) (correctCount * 100) / totalMarks else 0
+
+                call.ok(
+                    QuizResultDto(
+                        id = UUID.randomUUID().toString(),
+                        quizId = req.quizId,
+                        score = correctCount,
+                        totalMarks = totalMarks,
+                        percentage = percentage,
+                        submittedAt = now.toString(),
+                        questionResults = questionResults,
+                    ),
                 )
             }
         }

@@ -134,7 +134,8 @@ class TutorAgentService(
           get_homework_context for homework load.
         - If the child's doubt reveals a misconception, call log_misconception
           to record it. This is the ONLY write tool.
-        - Produce a TutorTurn as JSON with this exact schema:
+        - After gathering context, respond with your FINAL answer as plain text
+          containing a single JSON object (NOT a tool call) with this schema:
         {
           "mode": "SOCRATIC_STEP | HINT | EXPLANATION | PRACTICE_SET | PLAN_UPDATE | ESCALATE",
           "groundedRefs": [{"topicId": "...", "source": "MARKS|SYLLABUS|NCERT|RAG", "value": "..."}],
@@ -144,6 +145,8 @@ class TutorAgentService(
           "teacherFlag": {"topicId": "...", "reason": "...", "severity": "low|medium|high"},
           "misconception": {"topicId": "...", "type": "...", "evidence": "..."}
         }
+        - Do NOT try to call "TutorTurn" as a tool. It is NOT a tool.
+          Your final response must be plain text containing the JSON object above.
         - Mode SOCRATIC_STEP: guide the child with a question that helps them
           think. "What do you get when you find a common denominator first?"
         - Mode HINT: give a targeted hint, not the answer.

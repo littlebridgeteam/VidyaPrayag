@@ -347,7 +347,8 @@ object TutorTools {
                 })
                 put("topic_id", buildJsonObject {
                     put("type", "string")
-                    put("description", "The topic's UUID (curriculum_units.id)")
+                    put("description", "The topic's UUID (curriculum_units.id), or null if not applicable")
+                    put("nullable", true)
                 })
                 put("child_id", buildJsonObject {
                     put("type", "string")
@@ -364,7 +365,7 @@ object TutorTools {
             })
             put("required", JsonArray(listOf(
                 JsonPrimitive("school_id"), JsonPrimitive("class_id"),
-                JsonPrimitive("subject_id"), JsonPrimitive("topic_id"),
+                JsonPrimitive("subject_id"),
                 JsonPrimitive("child_id"), JsonPrimitive("misconception_type"),
             )))
         }
@@ -376,7 +377,7 @@ object TutorTools {
             val subjectId = (args["subject_id"] as? JsonPrimitive)?.content
                 ?: return errorJson("subject_id required")
             val topicId = (args["topic_id"] as? JsonPrimitive)?.content
-                ?: return errorJson("topic_id required")
+                ?: return errorJson("topic_id required (pass the curriculum_units.id UUID)")
             val childId = (args["child_id"] as? JsonPrimitive)?.content
                 ?: return errorJson("child_id required")
             val misconceptionType = (args["misconception_type"] as? JsonPrimitive)?.content
@@ -388,7 +389,7 @@ object TutorTools {
             val subjectUuid = runCatching { UUID.fromString(subjectId) }.getOrNull()
                 ?: return errorJson("invalid subject_id")
             val topicUuid = runCatching { UUID.fromString(topicId) }.getOrNull()
-                ?: return errorJson("invalid topic_id")
+                ?: return errorJson("invalid topic_id: '$topicId' is not a valid UUID")
             val childUuid = runCatching { UUID.fromString(childId) }.getOrNull()
                 ?: return errorJson("invalid child_id")
 

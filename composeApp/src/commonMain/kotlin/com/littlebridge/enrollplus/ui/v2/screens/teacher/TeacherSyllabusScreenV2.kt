@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -41,6 +43,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.Color
 import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizDto
 import com.littlebridge.enrollplus.feature.teacher.domain.model.SylAutoFillChapter
 import com.littlebridge.enrollplus.feature.teacher.domain.model.SylParsedUnit
@@ -684,7 +687,7 @@ private fun QuizSheet(viewModel: TeacherSyllabusViewModel) {
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .heightIn(min = 200.dp, max = 400.dp),
+                .heightIn(min = 200.dp, max = 520.dp),
             padding = 20.dp,
         ) {
             Column(
@@ -709,6 +712,67 @@ private fun QuizSheet(viewModel: TeacherSyllabusViewModel) {
                     ) { Icon(VIcons.Close, contentDescription = "Close", tint = c.ink2, modifier = Modifier.size(16.dp)) }
                 }
 
+                // ── Unit selection (multiple) ──────────────────────────────
+                Text("Select units", style = VTheme.type.bodyStrong.colored(c.ink2).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
+                val allUnits = state.units
+                Column(
+                    Modifier.fillMaxWidth().heightIn(max = 150.dp).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    allUnits.forEach { u ->
+                        val isSelected = u.id in state.quizSelectedUnitIds
+                        val ixUnit = remember { MutableInteractionSource() }
+                        Row(
+                            Modifier.fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (isSelected) c.accent.copy(alpha = 0.08f) else Color.Transparent)
+                                .clickable(interactionSource = ixUnit, indication = null) { viewModel.toggleQuizUnit(u.id) }
+                                .padding(horizontal = 8.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Box(
+                                Modifier.size(16.dp).clip(RoundedCornerShape(4.dp))
+                                    .background(if (isSelected) c.accentDeep else c.cream)
+                                    .border(1.dp, if (isSelected) c.accentDeep else c.hairline, RoundedCornerShape(4.dp)),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                if (isSelected) Icon(VIcons.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(12.dp))
+                            }
+                            Text(
+                                u.title,
+                                style = VTheme.type.body.colored(if (isSelected) c.navyDeep else c.ink2).copy(fontSize = 12.sp),
+                                maxLines = 1,
+                            )
+                        }
+                    }
+                }
+
+                // ── Question types ─────────────────────────────────────────
+                Text("Question types", style = VTheme.type.bodyStrong.colored(c.ink2).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("MCQ" to "MCQ", "FILL_BLANK" to "Fill-ups", "TRUE_FALSE" to "True/False", "MATCH" to "Match").forEach { (type, label) ->
+                        val selected = type in state.quizQuestionTypes
+                        val ixType = remember { MutableInteractionSource() }
+                        Box(
+                            Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (selected) c.accent.copy(alpha = 0.14f) else c.cream)
+                                .border(1.dp, if (selected) c.accentDeep else c.hairline, RoundedCornerShape(10.dp))
+                                .clickable(interactionSource = ixType, indication = null) { viewModel.toggleQuizQuestionType(type) }
+                                .padding(vertical = 8.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                label,
+                                style = VTheme.type.body.colored(if (selected) c.accentDeep else c.ink2).copy(fontSize = 11.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal),
+                            )
+                        }
+                    }
+                }
+
+                // ── Number of questions ────────────────────────────────────
                 Text("Number of questions: ${state.quizNumQuestions}", style = VTheme.type.bodyStrong.colored(c.ink2).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                     val ixMinus = remember { MutableInteractionSource() }
@@ -726,6 +790,7 @@ private fun QuizSheet(viewModel: TeacherSyllabusViewModel) {
                     ) { Icon(VIcons.Plus, contentDescription = null, tint = c.ink2, modifier = Modifier.size(16.dp)) }
                 }
 
+                // ── Difficulty ─────────────────────────────────────────────
                 Text("Difficulty", style = VTheme.type.bodyStrong.colored(c.ink2).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("EASY", "MEDIUM", "HARD").forEach { diff ->

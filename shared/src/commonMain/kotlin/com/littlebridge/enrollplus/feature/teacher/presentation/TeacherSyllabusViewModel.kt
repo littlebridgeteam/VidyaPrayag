@@ -96,8 +96,10 @@ data class TeacherSyllabusState(
     val quizError: String? = null,
     val showQuizSheet: Boolean = false,
     val quizUnitId: String = "",
+    val quizSelectedUnitIds: Set<String> = emptySet(),
     val quizNumQuestions: Int = 5,
     val quizDifficulty: String = "MEDIUM",
+    val quizQuestionTypes: Set<String> = setOf("MCQ"),
     // ── Agentic: NCERT auto-fill ──
     val isAutoFilling: Boolean = false,
     val autoFillChapters: List<SylAutoFillChapter> = emptyList(),
@@ -471,7 +473,11 @@ class TeacherSyllabusViewModel(
     // ── Agentic: Quiz generation ──────────────────────────────────────────────
 
     fun openQuizSheet(unitId: String) = _state.update {
-        it.copy(showQuizSheet = true, quizUnitId = unitId, quizNumQuestions = 5, quizDifficulty = "MEDIUM", quizError = null)
+        it.copy(showQuizSheet = true, quizUnitId = unitId, quizSelectedUnitIds = setOf(unitId), quizNumQuestions = 5, quizDifficulty = "MEDIUM", quizQuestionTypes = setOf("MCQ"), quizError = null)
+    }
+
+    fun openQuizSheetMulti(unitIds: Set<String>) = _state.update {
+        it.copy(showQuizSheet = true, quizUnitId = unitIds.firstOrNull() ?: "", quizSelectedUnitIds = unitIds, quizNumQuestions = 5, quizDifficulty = "MEDIUM", quizQuestionTypes = setOf("MCQ"), quizError = null)
     }
 
     fun closeQuizSheet() = _state.update { it.copy(showQuizSheet = false, quizError = null) }
@@ -480,9 +486,19 @@ class TeacherSyllabusViewModel(
 
     fun setQuizDifficulty(value: String) = _state.update { it.copy(quizDifficulty = value) }
 
+    fun toggleQuizUnit(unitId: String) = _state.update {
+        val newSet = if (unitId in it.quizSelectedUnitIds) it.quizSelectedUnitIds - unitId else it.quizSelectedUnitIds + unitId
+        it.copy(quizSelectedUnitIds = newSet)
+    }
+
+    fun toggleQuizQuestionType(type: String) = _state.update {
+        val newSet = if (type in it.quizQuestionTypes) it.quizQuestionTypes - type else it.quizQuestionTypes + type
+        it.copy(quizQuestionTypes = if (newSet.isEmpty()) setOf("MCQ") else newSet)
+    }
+
     fun generateQuiz() {
         val s0 = _state.value
-        if (s0.assignmentId.isBlank() || s0.quizUnitId.isBlank()) return
+        if (s0.assignmentId.isBlank() || s0.quizSelectedUnitIds.isEmpty()) return
         viewModelScope.launch {
             _state.update { it.copy(isGeneratingQuiz = true, quizError = null) }
             val token = preferenceRepository.getUserToken().first()
@@ -492,9 +508,11 @@ class TeacherSyllabusViewModel(
             }
             val request = QuizGenerateRequest(
                 assignmentId = s0.assignmentId,
-                unitId = s0.quizUnitId,
+                unitIds = s0.quizSelectedUnitIds.toList(),
+                unitId = s0.quizSelectedUnitIds.firstOrNull() ?: "",
                 numQuestions = s0.quizNumQuestions,
                 difficulty = s0.quizDifficulty,
+                questionTypes = s0.quizQuestionTypes.toList(),
             )
             when (val result = repository.generateQuiz(token, request)) {
                 is NetworkResult.Success -> {

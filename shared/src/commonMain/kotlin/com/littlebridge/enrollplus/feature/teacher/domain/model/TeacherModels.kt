@@ -877,9 +877,11 @@ data class SylDeleteUnitResponse(
 @Serializable
 data class QuizGenerateRequest(
     @SerialName("assignment_id") val assignmentId: String,
-    @SerialName("unit_id") val unitId: String,
+    @SerialName("unit_ids") val unitIds: List<String> = emptyList(),
+    @SerialName("unit_id") val unitId: String = "", // legacy single-unit field
     @SerialName("num_questions") val numQuestions: Int = 5,
     val difficulty: String = "MEDIUM", // EASY | MEDIUM | HARD
+    @SerialName("question_types") val questionTypes: List<String> = listOf("MCQ"), // MCQ | FILL_BLANK | TRUE_FALSE | MATCH
 )
 
 @Serializable
@@ -893,9 +895,11 @@ data class QuizDto(
     val id: String,
     @SerialName("assignment_id") val assignmentId: String,
     @SerialName("unit_id") val unitId: String,
+    @SerialName("unit_ids") val unitIds: List<String> = emptyList(),
     val title: String = "",
     val questions: List<QuizQuestionDto> = emptyList(),
     val status: String = "DRAFT", // DRAFT | PUBLISHED
+    @SerialName("question_types") val questionTypes: List<String> = emptyList(),
     @SerialName("created_at") val createdAt: String? = null,
 )
 
@@ -907,9 +911,18 @@ data class QuizQuestionDto(
     @SerialName("correct_index") val correctIndex: Int = 0,
     val explanation: String? = null,
     @SerialName("marks") val marks: Int = 1,
+    @SerialName("question_type") val questionType: String = "MCQ", // MCQ | FILL_BLANK | TRUE_FALSE | MATCH
+    @SerialName("correct_answer") val correctAnswer: String = "",
+    @SerialName("match_pairs") val matchPairs: List<MatchPairDto> = emptyList(),
 )
 
 // ── Quiz publish ──
+
+@Serializable
+data class MatchPairDto(
+    val left: String = "",
+    val right: String = "",
+)
 
 @Serializable
 data class QuizPublishResponse(

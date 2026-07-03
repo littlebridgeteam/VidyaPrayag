@@ -314,6 +314,10 @@ object DatabaseFactory {
         // Agentic Quiz System (migration_111) — quiz questions + answers.
         QuizQuestionsTable,
         QuizAnswersTable,
+        // Syllabus Quiz System (migration_112) — syllabus-linked quizzes + questions + answers.
+        SyllabusQuizzesTable,
+        SyllabusQuizQuestionsTable,
+        SyllabusQuizAnswersTable,
     )
 
     /** True when DATABASE_URL is set → we're talking to Postgres / Supabase. */

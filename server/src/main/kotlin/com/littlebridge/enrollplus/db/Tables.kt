@@ -3578,4 +3578,51 @@ object QuizAnswersTable : UUIDTable("quiz_answers", "id") {
     val createdAt    = timestamp("created_at")
 }
 
+// =====================================================================
+// syllabus_quizzes  (Agentic Quiz System — migration_112)
+//   AI-generated quizzes linked to syllabus assignments. Supports
+//   MCQ, FILL_BLANK, TRUE_FALSE, and MATCH question types.
+//   Multiple units can be selected per quiz.
+// =====================================================================
+object SyllabusQuizzesTable : UUIDTable("syllabus_quizzes", "id") {
+    val schoolId           = uuid("school_id")
+    val assignmentId       = uuid("assignment_id")
+    val unitIds            = text("unit_ids").default("")    // comma-separated UUIDs
+    val title              = varchar("title", 200).default("")
+    val questionTypes      = text("question_types").default("MCQ")  // comma-separated
+    val status             = varchar("status", 12).default("DRAFT")  // DRAFT | PUBLISHED
+    val difficulty         = varchar("difficulty", 10).default("MEDIUM")
+    val createdAt          = timestamp("created_at")
+    val publishedAt        = timestamp("published_at").nullable()
+}
+
+// =====================================================================
+// syllabus_quiz_questions  (Agentic Quiz System — migration_112)
+//   Individual questions for syllabus quizzes.
+// =====================================================================
+object SyllabusQuizQuestionsTable : UUIDTable("syllabus_quiz_questions", "id") {
+    val quizId             = uuid("quiz_id")
+    val questionType       = varchar("question_type", 12)  // MCQ | FILL_BLANK | TRUE_FALSE | MATCH
+    val questionText       = text("question_text")
+    val optionsJson        = text("options_json").default("[]")
+    val correctAnswer      = text("correct_answer").default("")
+    val explanation        = text("explanation").default("")
+    val matchPairsJson     = text("match_pairs_json").default("[]")
+    val position           = integer("position").default(0)
+    val createdAt          = timestamp("created_at")
+}
+
+// =====================================================================
+// syllabus_quiz_answers  (Agentic Quiz System — migration_112)
+//   Per-question student answers for syllabus quizzes.
+// =====================================================================
+object SyllabusQuizAnswersTable : UUIDTable("syllabus_quiz_answers", "id") {
+    val quizId             = uuid("quiz_id")
+    val studentId          = varchar("student_id", 50)
+    val questionId         = uuid("question_id")
+    val answerText         = text("answer_text")
+    val isCorrect          = bool("is_correct").default(false)
+    val createdAt          = timestamp("created_at")
+}
+
 val SYSTEM_SCHOOL_ID: UUID = UUID(0, 0)
