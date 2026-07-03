@@ -10,12 +10,11 @@ interface EventDto {
   id: string;
   title: string;
   type: string;
-  startDate: string;
   status: string;
-  registrationEnabled: boolean;
-  totalRegistrations: number;
-  maxAttendees: number | null;
-  venue: string | null;
+  start_date: string;
+  end_date: string;
+  audience: string;
+  description: string;
 }
 
 export default function EventsPage() {
@@ -25,7 +24,7 @@ export default function EventsPage() {
 
   const load = useCallback(async () => {
     try {
-      const res = await authRequest<{ events: EventDto[] }>("/api/v1/school/events");
+      const res = await authRequest<{ events: EventDto[]; total: number }>("/api/admin/calendar/events");
       setEvents(res.events ?? []);
     } catch (e) {
       setError(`Failed to load events: ${(e as Error).message}`);
@@ -61,7 +60,7 @@ export default function EventsPage() {
                     <th className="px-5 py-3 font-semibold">Title</th>
                     <th className="px-5 py-3 font-semibold">Type</th>
                     <th className="px-5 py-3 font-semibold">Date</th>
-                    <th className="px-5 py-3 font-semibold">Registrations</th>
+                    <th className="px-5 py-3 font-semibold">Audience</th>
                     <th className="px-5 py-3 font-semibold">Status</th>
                     <th className="px-5 py-3 font-semibold">Action</th>
                   </tr>
@@ -71,12 +70,12 @@ export default function EventsPage() {
                     <tr key={e.id} className="hover:bg-navy/[0.02] transition-colors">
                       <td className="px-5 py-3 font-semibold text-navy-deep">{e.title}</td>
                       <td className="px-5 py-3 text-ink-2">{e.type}</td>
-                      <td className="px-5 py-3 text-ink-3">{new Date(e.startDate).toLocaleDateString()}</td>
-                      <td className="px-5 py-3 text-ink-3">{e.totalRegistrations}{e.maxAttendees ? `/${e.maxAttendees}` : ""}</td>
-                      <td className="px-5 py-3"><Badge tone={e.registrationEnabled ? "success" : "neutral"}>{e.status}</Badge></td>
+                      <td className="px-5 py-3 text-ink-3">{new Date(e.start_date).toLocaleDateString()}</td>
+                      <td className="px-5 py-3 text-ink-3">{e.audience}</td>
+                      <td className="px-5 py-3"><Badge tone={e.status === "PUBLISHED" ? "success" : "neutral"}>{e.status}</Badge></td>
                       <td className="px-5 py-3">
                         {e.status !== "CANCELLED" && (
-                          <AdminButton variant="danger" onClick={async () => { await authRequest(`/api/v1/school/events/${e.id}/cancel`, { method: "POST" }); setEvents(prev => prev.map(x => x.id === e.id ? { ...x, status: "CANCELLED" } : x)); }}>Cancel</AdminButton>
+                          <AdminButton variant="danger" onClick={async () => { await authRequest(`/api/admin/calendar/events/${e.id}`, { method: "PUT", body: { status: "CANCELLED" } }); setEvents(prev => prev.map(x => x.id === e.id ? { ...x, status: "CANCELLED" } : x)); }}>Cancel</AdminButton>
                         )}
                       </td>
                     </tr>

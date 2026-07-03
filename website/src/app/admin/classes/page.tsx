@@ -60,9 +60,9 @@ export default function ClassesPage() {
                     return (
                       <tr key={(row.id as string) ?? i} className="hover:bg-navy/[0.02] transition-colors">
                         <td className="px-5 py-3 font-semibold text-navy-deep">{String(row.name ?? row.className ?? "—")}</td>
-                        <td className="px-5 py-3 text-ink-2">{String(row.section ?? "—")}</td>
-                        <td className="px-5 py-3 text-ink-3">{String(row.subjectCount ?? (Array.isArray(row.subjects) ? row.subjects.length : "—"))}</td>
-                        <td className="px-5 py-3 text-ink-3">{String(row.studentCount ?? "—")}</td>
+                        <td className="px-5 py-3 text-ink-2">{Array.isArray(row.sections) ? row.sections.join(", ") : String(row.section ?? "—")}</td>
+                        <td className="px-5 py-3 text-ink-3">{String(row.subject_count ?? "—")}</td>
+                        <td className="px-5 py-3 text-ink-3">{String(row.student_count ?? "—")}</td>
                       </tr>
                     );
                   })}

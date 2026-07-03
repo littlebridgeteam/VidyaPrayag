@@ -10,12 +10,11 @@ interface PtmEventDto {
   id: string;
   title: string;
   type: string;
-  startDate: string;
   status: string;
-  registrationEnabled: boolean;
-  totalRegistrations: number;
-  hasSlots: boolean;
-  slotCount: number;
+  start_date: string;
+  end_date: string;
+  audience: string;
+  description: string;
 }
 
 export default function PtmPage() {
@@ -25,7 +24,7 @@ export default function PtmPage() {
 
   const load = useCallback(async () => {
     try {
-      const res = await authRequest<{ events: PtmEventDto[] }>("/api/v1/school/events?type=PTM");
+      const res = await authRequest<{ events: PtmEventDto[]; total: number }>("/api/admin/calendar/events?type=PTM");
       setEvents(res.events ?? []);
     } catch (e) {
       setError(`Failed to load PTM events: ${(e as Error).message}`);
@@ -59,11 +58,11 @@ export default function PtmPage() {
                 <div key={e.id} className="flex items-center justify-between px-5 py-3">
                   <div>
                     <p className="text-[14px] font-semibold text-navy-deep">{e.title}</p>
-                    <p className="text-[12px] text-ink-3">{new Date(e.startDate).toLocaleDateString()} · {e.totalRegistrations} registrations{e.hasSlots ? ` · ${e.slotCount} slots` : ""}</p>
+                    <p className="text-[12px] text-ink-3">{new Date(e.start_date).toLocaleDateString()}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge tone={e.status === "PUBLISHED" ? "success" : "neutral"}>{e.status}</Badge>
-                    {e.status !== "CANCELLED" && <AdminButton variant="danger" onClick={async () => { await authRequest(`/api/v1/school/events/${e.id}/cancel`, { method: "POST" }); setEvents(prev => prev.map(x => x.id === e.id ? { ...x, status: "CANCELLED" } : x)); }}>Cancel</AdminButton>}
+                    {e.status !== "CANCELLED" && <AdminButton variant="danger" onClick={async () => { await authRequest(`/api/admin/calendar/events/${e.id}`, { method: "PUT", body: { status: "CANCELLED" } }); setEvents(prev => prev.map(x => x.id === e.id ? { ...x, status: "CANCELLED" } : x)); }}>Cancel</AdminButton>}
                   </div>
                 </div>
               ))}

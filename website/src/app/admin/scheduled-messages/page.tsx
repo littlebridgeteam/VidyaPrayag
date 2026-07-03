@@ -97,14 +97,14 @@ export default function ScheduledMessagesPage() {
       await authRequest("/api/v1/school/scheduled-messages", {
         method: "POST",
         body: {
-          message_type: createForm.messageType,
-          scheduled_at: iso,
+          messageType: createForm.messageType,
+          scheduledAt: iso,
           title: createForm.title,
-          body_preview: createForm.bodyPreview,
-          audience_type: createForm.audienceType,
-          audience_label: createForm.audienceLabel,
+          bodyPreview: createForm.bodyPreview,
+          audienceType: createForm.audienceType,
+          audienceLabel: createForm.audienceLabel,
           payload: { title: createForm.title, body: createForm.bodyPreview },
-          add_to_calendar: false,
+          addToCalendar: false,
         },
       });
       setShowCreate(false);
