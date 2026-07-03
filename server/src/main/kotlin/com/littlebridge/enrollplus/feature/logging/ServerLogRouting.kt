@@ -12,6 +12,7 @@
  */
 package com.littlebridge.enrollplus.feature.logging
 
+import com.littlebridge.enrollplus.core.fail
 import com.littlebridge.enrollplus.core.ok
 import com.littlebridge.enrollplus.core.principalUserUuid
 import com.littlebridge.enrollplus.db.AppUsersTable
