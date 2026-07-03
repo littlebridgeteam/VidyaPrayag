@@ -104,6 +104,33 @@ object JwtConfig {
             .sign(algorithm)
     }
 
+    /**
+     * Multi-Branch (MULTI_BRANCH_SPEC.md §8.3): issue a token with org admin
+     * claims. The organization_id and org_admin_role are read from app_users
+     * at login time and embedded as JWT claims so downstream guards can scope
+     * queries by organization without an extra DB round-trip.
+     */
+    fun issueTokenWithOrg(
+        userId: String,
+        role: String,
+        name: String,
+        organizationId: String?,
+        orgAdminRole: String?
+    ): String {
+        val ttl = if (role in ADMIN_ROLES) ADMIN_EXPIRY_SECS else DEFAULT_EXPIRY_SECS
+        val builder = JWT.create()
+            .withIssuer(issuer)
+            .withAudience(audience)
+            .withSubject(userId)
+            .withClaim("role", role)
+            .withClaim("name", name)
+            .withIssuedAt(Date())
+            .withExpiresAt(Date(System.currentTimeMillis() + ttl * 1000))
+        organizationId?.let { builder.withClaim("organization_id", it) }
+        orgAdminRole?.let { builder.withClaim("org_admin_role", it) }
+        return builder.sign(algorithm)
+    }
+
     /** Issue an opaque refresh token. In production, persist + rotate it. */
     fun issueRefreshToken(userId: String): String =
         JWT.create()

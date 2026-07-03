@@ -18,6 +18,7 @@ package com.littlebridge.enrollplus.feature.branding
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.SchoolBrandingTable
 import com.littlebridge.enrollplus.db.SchoolsTable
+import com.littlebridge.enrollplus.feature.media.SupabaseStorage
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -176,6 +177,15 @@ class BrandingService {
             }
         }
 
+        // Sync legacy fields to schools table so institutional profile reflects branding changes
+        if (req.logoUrl != null || req.primaryColor != null) {
+            SchoolsTable.update({ SchoolsTable.id eq schoolId }) {
+                req.logoUrl?.let { url -> it[logoUrl] = url }
+                req.primaryColor?.let { color -> it[brandColor] = color }
+                it[updatedAt] = now
+            }
+        }
+
         val schoolName = SchoolsTable.selectAll()
             .where { SchoolsTable.id eq schoolId }
             .singleOrNull()?.get(SchoolsTable.name) ?: "Unknown School"
@@ -213,6 +223,13 @@ class BrandingService {
                 it[createdAt] = now
                 it[updatedAt] = now
             }
+        }
+
+        // Reset legacy fields in schools table to defaults
+        SchoolsTable.update({ SchoolsTable.id eq schoolId }) {
+            it[logoUrl] = null
+            it[brandColor] = "#2563EB"
+            it[updatedAt] = now
         }
 
         val schoolName = SchoolsTable.selectAll()
@@ -304,6 +321,143 @@ class BrandingService {
             schoolName = schoolName,
             branding = rowToDto(row, schoolName),
         )
+    }
+
+    // ── Asset Upload (M-1: FR-001) ───────────────────────────────────────
+
+    private val assetFields = mapOf(
+        "logo" to SchoolBrandingTable.logoUrl,
+        "logo_dark" to SchoolBrandingTable.logoDarkUrl,
+        "favicon" to SchoolBrandingTable.faviconUrl,
+        "app_icon" to SchoolBrandingTable.appIconUrl,
+        "splash_screen" to SchoolBrandingTable.splashScreenUrl,
+        "login_background" to SchoolBrandingTable.loginBackgroundUrl,
+    )
+
+    fun validAssetFields(): Set<String> = assetFields.keys
+
+    /**
+     * Upload a branding asset (logo, favicon, app icon, splash, etc.) to Supabase
+     * Storage and atomically update the matching column in school_branding.
+     *
+     * @param schoolId  tenant scope
+     * @param field     one of [validAssetFields]
+     * @param bytes     file content
+     * @param contentType MIME type from multipart part
+     * @return updated branding DTO, or null if storage isn't configured
+     */
+    suspend fun uploadAsset(
+        schoolId: UUID,
+        field: String,
+        bytes: ByteArray,
+        contentType: String,
+    ): SchoolBrandingDto? {
+        val column = assetFields[field]
+            ?: throw IllegalArgumentException("Invalid asset field: $field")
+
+        if (!SupabaseStorage.isConfigured()) return null
+
+        // Upload to Supabase under BRANDING kind for path isolation
+        val result = SupabaseStorage.upload(schoolId, "BRANDING", bytes, contentType)
+            ?: return null
+
+        // Delete the old asset if it was a Supabase URL (prevent orphaned bytes)
+        val oldRow = dbQuery {
+            SchoolBrandingTable.selectAll()
+                .where { SchoolBrandingTable.schoolId eq schoolId }
+                .singleOrNull()
+        }
+        oldRow?.getOrNull(column)?.let { oldUrl ->
+            SupabaseStorage.objectPathFromPublicUrl(oldUrl)?.let { path ->
+                SupabaseStorage.delete(path)
+            }
+        }
+
+        // Update the branding row with the new URL
+        return dbQuery {
+            val now = Instant.now()
+            val existing = SchoolBrandingTable.selectAll()
+                .where { SchoolBrandingTable.schoolId eq schoolId }
+                .singleOrNull()
+
+            if (existing != null) {
+                SchoolBrandingTable.update(
+                    { SchoolBrandingTable.schoolId eq schoolId }
+                ) {
+                    it[column] = result.url
+                    it[isCustomized] = true
+                    it[updatedAt] = now
+                }
+            } else {
+                SchoolBrandingTable.insert {
+                    it[SchoolBrandingTable.schoolId] = schoolId
+                    it[column] = result.url
+                    it[isCustomized] = true
+                    it[createdAt] = now
+                    it[updatedAt] = now
+                }
+            }
+
+            // Sync logo to schools table if the uploaded asset is the logo
+            if (field == "logo") {
+                SchoolsTable.update({ SchoolsTable.id eq schoolId }) {
+                    it[logoUrl] = result.url
+                    it[updatedAt] = now
+                }
+            }
+
+            val schoolName = SchoolsTable.selectAll()
+                .where { SchoolsTable.id eq schoolId }
+                .singleOrNull()?.get(SchoolsTable.name) ?: "Unknown School"
+
+            SchoolBrandingTable.selectAll()
+                .where { SchoolBrandingTable.schoolId eq schoolId }
+                .single().let { rowToDto(it, schoolName) }
+        }
+    }
+
+    /**
+     * Remove a specific branding asset (set the column to null and delete from storage).
+     */
+    suspend fun deleteAsset(schoolId: UUID, field: String): SchoolBrandingDto = dbQuery {
+        val column = assetFields[field]
+            ?: throw IllegalArgumentException("Invalid asset field: $field")
+
+        val now = Instant.now()
+        val existing = SchoolBrandingTable.selectAll()
+                .where { SchoolBrandingTable.schoolId eq schoolId }
+                .singleOrNull()
+
+        if (existing != null) {
+            // Best-effort delete from storage
+            existing.getOrNull(column)?.let { oldUrl ->
+                SupabaseStorage.objectPathFromPublicUrl(oldUrl)?.let { path ->
+                    SupabaseStorage.delete(path)
+                }
+            }
+            SchoolBrandingTable.update(
+                { SchoolBrandingTable.schoolId eq schoolId }
+            ) {
+                it[column] = null
+                it[updatedAt] = now
+            }
+        }
+
+        // Sync logo removal to schools table if the deleted asset is the logo
+        if (field == "logo") {
+            SchoolsTable.update({ SchoolsTable.id eq schoolId }) {
+                it[logoUrl] = null
+                it[updatedAt] = now
+            }
+        }
+
+        val schoolName = SchoolsTable.selectAll()
+            .where { SchoolsTable.id eq schoolId }
+            .singleOrNull()?.get(SchoolsTable.name) ?: "Unknown School"
+
+        SchoolBrandingTable.selectAll()
+            .where { SchoolBrandingTable.schoolId eq schoolId }
+            .singleOrNull()?.let { rowToDto(it, schoolName) } ?: defaultDto(schoolId, schoolName)
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────

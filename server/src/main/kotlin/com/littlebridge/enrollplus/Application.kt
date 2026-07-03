@@ -81,6 +81,7 @@ import com.littlebridge.enrollplus.feature.notifications.notificationsRouting
 import com.littlebridge.enrollplus.feature.notifications.NotificationScheduler
 import com.littlebridge.enrollplus.feature.notifications.notificationPreferencesRouting
 import com.littlebridge.enrollplus.feature.onboarding.onboardingRouting
+import com.littlebridge.enrollplus.feature.organization.organizationRouting
 import com.littlebridge.enrollplus.feature.parent.parentDashboardRouting
 import com.littlebridge.enrollplus.feature.parent.parentFeesRouting
 import com.littlebridge.enrollplus.feature.parent.parentLeaveRouting
@@ -508,5 +509,10 @@ fun Application.module() {
         //   /api/v1/school/day-config          — admin, school-scoped CRUD
         schoolDayConfigRouting()
         timetableImportRouting()
+
+        // Multi-Branch / School Chain Support (MULTI_BRANCH_SPEC.md)
+        //   /api/admin/organizations[…]              — super admin: org CRUD, branch linking, admin promotion
+        //   /api/v1/organization/{dashboard,branches,compare,transfers[…]}  — org admin: aggregate views + transfers
+        organizationRouting()
     }
 }

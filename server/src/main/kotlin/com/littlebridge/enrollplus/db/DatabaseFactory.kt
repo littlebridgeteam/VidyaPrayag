@@ -304,6 +304,11 @@ object DatabaseFactory {
         // Timetable Change Requests (migration_108_timetable_management.sql)
         // Teacher-initiated timetable change requests with admin review workflow.
         TimetableChangeRequestsTable,
+        // Multi-Branch / School Chain Support (MULTI_BRANCH_SPEC.md)
+        // Applied by docs/db/migration_051_multi_branch.sql (must run before
+        // deploy; AUTO_CREATE_TABLES is OFF in prod).
+        SchoolOrganizationsTable,
+        StudentTransfersTable,
     )
 
     /** True when DATABASE_URL is set → we're talking to Postgres / Supabase. */

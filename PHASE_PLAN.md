@@ -304,3 +304,50 @@ API/schema. Per the hard UI rule those screens render only real/local state and 
 *Rewritten 2026-06-06 from a file-by-file audit of `backend-by-abuzar`, cross-checked against every
 commit message and PR #2. Claims that could be over-read (notably "portal complete" = authored, not
 live) are flagged explicitly above.*
+
+---
+
+## UPDATE — 2026-07-03 Re-Audit (branch `development_v1.0.1`)
+
+> **Every number below is from a shell command against the live source, not from prior docs.**
+
+### What changed since June 6
+
+The June 6 headline ("new UI is built but DORMANT, app still renders old UI") is **fully resolved**.
+
+| Pillar | June 6 status | July 3 status |
+|---|---|---|
+| **A. `shared/` data layer** | ✅ intact + teacher vertical | ✅ **20 feature verticals**, 93 ViewModels, 43 API clients (0 stubs), 195 Koin defs |
+| **B. `ui/v2/` new UI** | ⚠️ built but DORMANT | ✅ **LIVE** — `App.kt` renders `NavGraphV2`; old UI deleted; 99 screens, 96 files use `koinViewModel()`; MockV2.kt deleted |
+| **C. `server/` backend** | ✅ teacher vertical closed | ✅ **33 feature dirs**, 90 routing files, 611 unique routes, 124 DB tables, 49 SQL migrations |
+
+### Phase status update
+
+| Phase | June 6 status | July 3 status |
+|---|---|---|
+| Phase 1 (Design system) | ✅ done | ✅ done |
+| Phase 2 (Teacher data layer) | ✅ done | ✅ done |
+| Phase 3 (All screens authored) | ✅ done | ✅ done + **wired to real VMs** |
+| Phase 4 (Polish) | ⚠️ not started | 🟡 partial — dark mode done, font bundling TODO |
+| Phase 5A-E (Teacher backend) | ✅ done | ✅ done |
+| **UI cutover** (Step 8) | ❌ not done | ✅ **DONE** — `App.kt` → `NavGraphV2`, old `ui/` deleted |
+| **Backend wire-up** | ❌ mock-driven | ✅ **DONE** — all 43 API clients make real HTTP calls |
+
+### Remaining work (verified July 2026)
+
+- [ ] **CRITICAL: `NonTeachingStaffTable` SQL DDL** — table defined in `Tables.kt:1613`, registered in `DatabaseFactory`, but no `CREATE TABLE` in any SQL migration file. Prod (Postgres) will 500. SQLite dev auto-creates it.
+- [ ] **Fee Payment Gateway** — 0% implemented. No tables, no routes, no client. #1 competitive gap.
+- [ ] **Audit Log** — no general audit trail table (only `library_audit_log`).
+- [ ] **DPDP Compliance** — no consent tables, no data export/erasure endpoints.
+- [ ] **2FA** — no TOTP/2FA implementation.
+- [ ] ~~**iOS Push (APNs)**~~ — ⏸️ deferred (iOS deprioritized for now)
+- [ ] **Bulk Import/Export** — no CSV import/export endpoints.
+- [ ] **Font bundling** — Plus Jakarta Sans + DM Mono not yet bundled into `composeResources`.
+- [ ] **Night-tone QA pass** — dark mode implemented but not QA'd across all 99 screens.
+- [ ] **Per-target smoke test** — Android + JVM desktop + wasmJs build verification needed.
+
+### New features built since June 6 (not in original audit)
+
+19 major feature areas were built and wired end-to-end: Library Management (13 tables), Transport Tracking (6 tables), ID Card Generation, Health Records (3 tables), Alumni Management (7 tables), Scholarship Workflow, School Branding, Parent Pulse, PEWS Early Warning System, Event Registration, Scheduled Messages, Timetable Management, Report Card 2.0 (32 files), AI Infrastructure (LlmClient + CircuitBreaker + GuardrailService), AI Tutor (55+ files), Lesson Planning (3 tables), School Day Config, Classes/Subjects management, Academic Year Management, Unified Calendar Events.
+
+See `BACKEND_GAPS.md §11` and `IMPLEMENTATION_BACKLOG.md` for full details.

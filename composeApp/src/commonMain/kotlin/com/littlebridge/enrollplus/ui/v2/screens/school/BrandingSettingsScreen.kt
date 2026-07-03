@@ -22,11 +22,13 @@ import com.littlebridge.enrollplus.feature.branding.domain.model.SchoolBranding
 import com.littlebridge.enrollplus.feature.branding.domain.model.UpdateBrandingRequest
 import com.littlebridge.enrollplus.feature.branding.presentation.BrandingThemeManager
 import com.littlebridge.enrollplus.feature.branding.presentation.BrandingViewModel
+import com.littlebridge.enrollplus.platform.rememberMediaPicker
 import com.littlebridge.enrollplus.ui.v2.components.*
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import coil3.compose.AsyncImage
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -110,6 +112,8 @@ fun BrandingSettingsScreen(
         onAssignSubdomain = { sub -> viewModel.updateSubdomain(sub) },
         onRemoveSubdomain = { viewModel.removeSubdomain() },
         onSubdomainInputChanged = { viewModel.clearSubdomainCheck() },
+        onUploadAsset = { field, bytes, fileName, mimeType -> viewModel.uploadAsset(field, bytes, fileName, mimeType) },
+        onDeleteAsset = { field -> viewModel.deleteAsset(field) },
         onRetry = { viewModel.loadBranding() },
         modifier = modifier,
     )
@@ -129,6 +133,8 @@ private fun BrandingSettingsContent(
     onAssignSubdomain: (String) -> Unit,
     onRemoveSubdomain: () -> Unit,
     onSubdomainInputChanged: () -> Unit,
+    onUploadAsset: (String, ByteArray, String, String) -> Unit,
+    onDeleteAsset: (String) -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -287,6 +293,62 @@ private fun BrandingSettingsContent(
                     },
                     full = true,
                     loading = state.isLoading,
+                )
+
+                // ── Brand Assets Section ───────────────────────────────────
+                Spacer(Modifier.height(8.dp))
+                Text("Brand Assets", style = VTheme.type.h3.colored(c.ink))
+                Text(
+                    "Upload your school's logo, app icon, and splash screen. These appear on the login screen, splash, and app icon.",
+                    style = VTheme.type.caption.colored(c.ink3),
+                )
+                AssetUploadRow(
+                    label = "Logo",
+                    field = "logo",
+                    url = branding?.logoUrl,
+                    isUploading = state.uploadingField == "logo",
+                    onUpload = onUploadAsset,
+                    onDelete = onDeleteAsset,
+                )
+                AssetUploadRow(
+                    label = "Dark Logo",
+                    field = "logo_dark",
+                    url = branding?.logoDarkUrl,
+                    isUploading = state.uploadingField == "logo_dark",
+                    onUpload = onUploadAsset,
+                    onDelete = onDeleteAsset,
+                )
+                AssetUploadRow(
+                    label = "Favicon",
+                    field = "favicon",
+                    url = branding?.faviconUrl,
+                    isUploading = state.uploadingField == "favicon",
+                    onUpload = onUploadAsset,
+                    onDelete = onDeleteAsset,
+                )
+                AssetUploadRow(
+                    label = "App Icon",
+                    field = "app_icon",
+                    url = branding?.appIconUrl,
+                    isUploading = state.uploadingField == "app_icon",
+                    onUpload = onUploadAsset,
+                    onDelete = onDeleteAsset,
+                )
+                AssetUploadRow(
+                    label = "Splash Screen",
+                    field = "splash_screen",
+                    url = branding?.splashScreenUrl,
+                    isUploading = state.uploadingField == "splash_screen",
+                    onUpload = onUploadAsset,
+                    onDelete = onDeleteAsset,
+                )
+                AssetUploadRow(
+                    label = "Login Background",
+                    field = "login_background",
+                    url = branding?.loginBackgroundUrl,
+                    isUploading = state.uploadingField == "login_background",
+                    onUpload = onUploadAsset,
+                    onDelete = onDeleteAsset,
                 )
 
                 // ── Subdomain Section ──────────────────────────────────────
@@ -560,6 +622,83 @@ private fun ColorPickerSection(
                 placeholder = "#2563EB",
                 singleLine = true,
             )
+        }
+    }
+}
+
+@Composable
+private fun AssetUploadRow(
+    label: String,
+    field: String,
+    url: String?,
+    isUploading: Boolean,
+    onUpload: (String, ByteArray, String, String) -> Unit,
+    onDelete: (String) -> Unit,
+) {
+    val c = VTheme.colors
+    val picker = rememberMediaPicker(
+        onPicked = { bytes, mimeType, fileName ->
+            onUpload(field, bytes, fileName, mimeType)
+        },
+        onUnsupported = { /* silently ignore — admin can try a different format */ },
+    )
+
+    VCard(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            // Preview thumbnail or placeholder
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(c.ink.copy(alpha = 0.06f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (url != null) {
+                    AsyncImage(
+                        model = url,
+                        contentDescription = label,
+                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(10.dp)),
+                    )
+                } else {
+                    Icon(VIcons.Upload, contentDescription = null, tint = c.ink3, modifier = Modifier.size(20.dp))
+                }
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(label, style = VTheme.type.bodyStrong.colored(c.ink))
+                Text(
+                    if (url != null) "Uploaded" else "Not set",
+                    style = VTheme.type.caption.colored(c.ink3),
+                )
+            }
+
+            if (isUploading) {
+                androidx.compose.material3.CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp,
+                    color = c.accent,
+                )
+            } else {
+                if (url != null) {
+                    VButton(
+                        text = "Remove",
+                        onClick = { onDelete(field) },
+                        variant = VButtonVariant.Ghost,
+                        tone = VButtonTone.Rose,
+                        size = VButtonSize.Sm,
+                    )
+                }
+                VButton(
+                    text = if (url != null) "Replace" else "Upload",
+                    onClick = { picker.launchImage() },
+                    variant = VButtonVariant.Secondary,
+                    size = VButtonSize.Sm,
+                )
+            }
         }
     }
 }

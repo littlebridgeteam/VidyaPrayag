@@ -35,7 +35,7 @@ object BrandingColorMapper {
         )
     }
 
-    private fun parseHex(hex: String): Color? {
+    fun parseHex(hex: String): Color? {
         return try {
             val value = hex.removePrefix("#")
             if (value.length == 6) {
