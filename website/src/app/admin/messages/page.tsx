@@ -161,8 +161,8 @@ export default function MessagesPage() {
     try {
       const res = await authRequest<ThreadMessagesResponse>(`/api/v1/school/messages/threads/${thread.id}/messages?limit=50`);
       setMessages(res.messages ?? []);
-      await authRequest(`/api/v1/school/messages/threads/${thread.id}/read`, { method: "POST" });
       setThreads(prev => prev.map(t => t.id === thread.id ? { ...t, unread_count: 0 } : t));
+      authRequest(`/api/v1/school/messages/threads/${thread.id}/read`, { method: "POST" }).catch(() => {});
     } catch (e) {
       setMsgError(`Failed to load conversation: ${(e as Error).message}`);
     } finally {
