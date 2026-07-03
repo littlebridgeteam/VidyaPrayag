@@ -1,8 +1,9 @@
 "use client";
 
-import { use, useState } from "react";
+import { useState } from "react";
 import useSWR, { mutate } from "swr";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { adminApi } from "@/lib/admin/client";
 import { ApiError } from "@/lib/api";
 import { Card, EmptyState, FadeIn, Badge } from "@/components/admin/Primitives";
@@ -10,8 +11,9 @@ import { AdminButton, Modal } from "@/components/admin/Toolbar";
 import { IconAlumni } from "@/components/admin/icons";
 import type { AlumniDto } from "@/lib/admin/types";
 
-export default function AlumniDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function AlumniDetailPage() {
+  const params = useParams<{ id: string }>();
+  const id = params?.id ?? "";
   const { data: alumni, error, isLoading } = useSWR<AlumniDto>(`alumni-${id}`, () => adminApi.alumniGet(id));
   const [editOpen, setEditOpen] = useState(false);
   const [busy, setBusy] = useState(false);
