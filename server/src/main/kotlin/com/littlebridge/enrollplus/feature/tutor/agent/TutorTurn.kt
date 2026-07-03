@@ -1,7 +1,6 @@
 // FILE: server/src/main/kotlin/com/littlebridge/enrollplus/feature/tutor/agent/TutorTurn.kt
 package com.littlebridge.enrollplus.feature.tutor.agent
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -16,62 +15,62 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class TutorTurn(
     val mode: String,                    // SOCRATIC_STEP | HINT | EXPLANATION | PRACTICE_SET | PLAN_UPDATE | ESCALATE
-    @SerialName("grounded_refs") val groundedRefs: List<GroundedRef> = emptyList(),
-    @SerialName("student_facing") val studentFacing: StudentFacing? = null,
+    val groundedRefs: List<GroundedRef> = emptyList(),
+    val studentFacing: StudentFacing? = null,
     val practice: List<PracticeQuestion>? = null,
-    @SerialName("plan_delta") val planDelta: PlanDelta? = null,
-    @SerialName("teacher_flag") val teacherFlag: TeacherFlag? = null,
+    val planDelta: PlanDelta? = null,
+    val teacherFlag: TeacherFlag? = null,
     val misconception: MisconceptionLog? = null,
 )
 
 @Serializable
 data class GroundedRef(
-    @SerialName("topic_id") val topicId: String,
-    val source: String,                  // MARKS | SYLLABUS | NCERT | RAG
-    val value: String,
+    val topicId: String = "",
+    val source: String = "",                  // MARKS | SYLLABUS | NCERT | RAG
+    val value: String = "",
 )
 
 @Serializable
 data class StudentFacing(
     val text: String,
-    @SerialName("math_blocks") val mathBlocks: List<String> = emptyList(),  // LaTeX strings
-    @SerialName("next_prompt") val nextPrompt: String? = null,
+    val mathBlocks: List<String> = emptyList(),  // LaTeX strings
+    val nextPrompt: String? = null,
 )
 
 @Serializable
 data class PracticeQuestion(
-    @SerialName("question_id") val questionId: String,
-    val stem: String,
+    val questionId: String = "",
+    val stem: String = "",
     val options: List<String>? = null,
-    @SerialName("answer_key") val answerKey: String,
-    @SerialName("topic_id") val topicId: String,
-    val difficulty: String,              // easy | medium | hard
+    val answerKey: String = "",
+    val topicId: String = "",
+    val difficulty: String = "",              // easy | medium | hard
 )
 
 @Serializable
 data class PlanDelta(
-    @SerialName("add_reviews") val addReviews: List<AddReview> = emptyList(),
-    @SerialName("adjust_difficulty") val adjustDifficulty: String? = null,
+    val addReviews: List<AddReview> = emptyList(),
+    val adjustDifficulty: String? = null,
 )
 
 @Serializable
 data class AddReview(
-    @SerialName("topic_id") val topicId: String,
-    val priority: String,                // high | medium | low
+    val topicId: String = "",
+    val priority: String = "",                // high | medium | low
 )
 
 @Serializable
 data class TeacherFlag(
-    @SerialName("topic_id") val topicId: String,
-    val reason: String,
-    val severity: String,                // low | medium | high
+    val topicId: String = "",
+    val reason: String = "",
+    val severity: String = "",                // low | medium | high
 )
 
 @Serializable
 data class MisconceptionLog(
-    @SerialName("topic_id") val topicId: String,
-    val type: String,
-    val evidence: String,
+    val topicId: String = "",
+    val type: String = "",
+    val evidence: String = "",
 )
 
 // ──────────────────────────────────────────────────────────────────────────
