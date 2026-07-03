@@ -139,6 +139,8 @@ import com.littlebridge.enrollplus.feature.teacher.teacherRouting
 import com.littlebridge.enrollplus.feature.teacher.teacherSelfLeaveRouting
 import com.littlebridge.enrollplus.feature.teacher.teacherStudentRouting
 import com.littlebridge.enrollplus.feature.teacher.teacherSyllabusRouting
+import com.littlebridge.enrollplus.feature.teacher.teacherQuizRouting
+import com.littlebridge.enrollplus.feature.school.syllabusPaceRouting
 import com.littlebridge.enrollplus.feature.user.parentRouting
 import com.littlebridge.enrollplus.feature.user.parentMessagesRouting
 import com.littlebridge.enrollplus.feature.user.userDetailsRouting
@@ -230,6 +232,11 @@ fun main() {
     // Start the Library job scheduler (overdue notifications, due-date reminders,
     // reservation expiry, announcement expiry, monthly audit log retention).
     com.littlebridge.enrollplus.feature.library.LibraryJobScheduler.start(
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)
+    )
+
+    // Start the Auto Daily Summary job (end-of-day AI summary for missing teacher logs).
+    com.littlebridge.enrollplus.feature.ai.DailySummaryAutoJob.start(
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)
     )
 
@@ -418,6 +425,7 @@ fun Application.module() {
         teacherAttendanceRouting()   // T-203/T-205 /api/v1/teacher/attendance — typed, assignment-scoped attendance load/save (Doc 06 §3.8); legacy packed-grade handler deleted
         teacherGradebookRouting()    // T-303/T-304/T-305 /api/v1/teacher/assessments — typed assessment lifecycle: list/create, marks load/SAVE (no publish, the B-MK-1 fix), publish/unpublish, history (Doc 07 §2/§5/§6); converged from /gradebook to canonical /assessments in T-305 (legacy /marks + /assessments handlers deleted)
         teacherSyllabusRouting()     // T-402/T-403 /api/v1/teacher/syllabus — typed, assignment-scoped syllabus: hierarchical load, create unit (B-SYL-1 fix), rename/reorder, one-tap covered toggle w/ typed covered_on (Doc 08 §1.2/§3); converged from staged /syllabus-typed to canonical /syllabus in T-403 (legacy /syllabus GET+PATCH handler in teacherTaskRoutes deleted)
+        teacherQuizRouting()         // /api/v1/teacher/syllabus/quiz — AI-generated quizzes with MCQ/FILL_BLANK/TRUE_FALSE/MATCH types, multiple unit selection
         teacherClassesRouting()      // T-501/T-502/T-504 /api/v1/teacher/classes[/{id}] — single-aggregated-query class list (kills B-CLS-1 N+1), real is_class_teacher (B-CLS-3), composite class detail w/ real roster (F-CLS-5); CONVERGED from staged /classes-v2 to canonical /classes[/{id}] in T-504 (legacy looping /classes handler in teacherRouting DELETED)
         teacherStudentRouting()      // T-503/T-504 /api/v1/teacher/students/{id} — scoped student profile (403 if teacher doesn't teach the student; B-PROF-1/2/F-PROF-3); CONVERGED from staged /students-v2 to canonical /students/{id} in T-504
         teacherHomeworkRouting()     // T-405/T-406 /api/v1/teacher/homework — typed homework lifecycle: assign (fixes dead button F-HW-1/B-HW-1), roster-joined submissions board (B-HW-3), extend (whole-class/single-student), review/grade, close (Doc 08 Part B); CONVERGED from staged /homework-v2 to canonical /homework in T-406 (legacy /homework GET+POST handler in teacherTaskRoutes DELETED)
@@ -514,5 +522,9 @@ fun Application.module() {
         //   /api/admin/organizations[…]              — super admin: org CRUD, branch linking, admin promotion
         //   /api/v1/organization/{dashboard,branches,compare,transfers[…]}  — org admin: aggregate views + transfers
         organizationRouting()
+
+        // Agentic Syllabus Management — admin pace monitoring
+        //   /api/v1/school/pace/{snapshots,alerts,alerts/{id}/resolve}
+        syllabusPaceRouting()
     }
 }

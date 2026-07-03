@@ -92,8 +92,8 @@ object AiService {
     private fun laneProviders(lane: AiLane): List<AiProvider> = when (lane) {
         AiLane.FAST_CHAT -> listOf(AiProvider.GROQ_FAST, AiProvider.NVIDIA_FAST, AiProvider.CEREBRAS, AiProvider.GROQ, AiProvider.OPENROUTER)
         AiLane.CLASSIFY  -> listOf(AiProvider.GROQ_FAST, AiProvider.NVIDIA_FAST, AiProvider.GROQ, AiProvider.CEREBRAS, AiProvider.OPENROUTER)
-        AiLane.REASON    -> listOf(AiProvider.GROQ, AiProvider.NVIDIA_REASON, AiProvider.GEMINI, AiProvider.SAMBANOVA, AiProvider.CEREBRAS,
-                                   AiProvider.OPENROUTER, AiProvider.MISTRAL)
+        AiLane.REASON    -> listOf(AiProvider.GROQ, AiProvider.GEMINI, AiProvider.SAMBANOVA, AiProvider.CEREBRAS,
+                                   AiProvider.NVIDIA_REASON, AiProvider.OPENROUTER, AiProvider.MISTRAL)
         AiLane.BATCH     -> listOf(AiProvider.GROQ, AiProvider.NVIDIA_REASON, AiProvider.GEMINI, AiProvider.MISTRAL, AiProvider.OPENROUTER)
     }
 
@@ -282,12 +282,17 @@ object AiService {
                 )
             } else {
                 val rl = result.errorKind == LlmErrorKind.RATE_LIMITED
+                val isBadRequest = result.errorKind == LlmErrorKind.BAD_REQUEST
                 // Record the attempt against the rate limiter even on failure,
                 // so a 429 from the provider updates our counters.
                 if (rl) {
                     RateLimiter.record(provider.code, model, estTokens, provider)
                 }
-                CircuitBreaker.recordFailure(provider.code, model, rateLimited = rl)
+                // BAD_REQUEST (400) is our fault (bad schema/prompt), not the
+                // provider's — don't penalize the circuit breaker for it.
+                if (!isBadRequest) {
+                    CircuitBreaker.recordFailure(provider.code, model, rateLimited = rl)
+                }
                 lastError = result.errorMessage ?: result.errorKind?.name
                 failedOver = true
                 log.debug("Provider {} failed ({}); trying next", provider.code, result.errorKind)
@@ -739,7 +744,10 @@ object AiService {
                 )
             } else {
                 val rateLimited = result.errorKind == LlmErrorKind.RATE_LIMITED
-                CircuitBreaker.recordFailure(provider.code, model, rateLimited = rateLimited)
+                val isBadRequest = result.errorKind == LlmErrorKind.BAD_REQUEST
+                if (!isBadRequest) {
+                    CircuitBreaker.recordFailure(provider.code, model, rateLimited = rateLimited)
+                }
                 lastError = result.errorMessage
                 failedOver = true
                 log.warn("Vision: {} failed: {} — trying next", provider.code, result.errorMessage)

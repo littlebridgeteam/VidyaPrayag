@@ -309,6 +309,22 @@ object DatabaseFactory {
         // deploy; AUTO_CREATE_TABLES is OFF in prod).
         SchoolOrganizationsTable,
         StudentTransfersTable,
+        // Agentic Syllabus Management (migration_110) — AI syllabus lifecycle:
+        // sources, daily log, pace plan, popup prefs, pace alerts.
+        SyllabusSourcesTable,
+        DailyClassLogTable,
+        SyllabusPacePlanTable,
+        SyllabusPopupPrefsTable,
+        SyllabusPaceAlertsTable,
+        // Agentic Quiz System (migration_111) — quiz questions + answers.
+        QuizQuestionsTable,
+        QuizAnswersTable,
+        // Syllabus Quiz System (migration_112) — syllabus-linked quizzes + questions + answers.
+        SyllabusQuizzesTable,
+        SyllabusQuizQuestionsTable,
+        SyllabusQuizAnswersTable,
+        // NCERT syllabus reference (migration_111) — auto-fill data for syllabus.
+        NcertSyllabusReferenceTable,
     )
 
     /** True when DATABASE_URL is set → we're talking to Postgres / Supabase. */

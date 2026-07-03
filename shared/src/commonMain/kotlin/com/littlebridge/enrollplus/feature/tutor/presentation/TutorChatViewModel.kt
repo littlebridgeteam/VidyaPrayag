@@ -108,8 +108,8 @@ class TutorChatViewModel(
                                 question = "",
                                 conversationHistory = it.conversationHistory + ChatMessage(
                                     role = "tutor",
-                                    text = turn.studentFacing.text,
-                                    nextPrompt = turn.studentFacing.nextPrompt,
+                                    text = turn.studentFacing?.text ?: "I'm here to help. What would you like to work on?",
+                                    nextPrompt = turn.studentFacing?.nextPrompt,
                                     isPractice = turn.practice?.isNotEmpty() == true,
                                     practiceQuestions = turn.practice,
                                 ),

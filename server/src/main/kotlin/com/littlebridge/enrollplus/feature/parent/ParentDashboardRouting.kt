@@ -26,10 +26,12 @@ import com.littlebridge.enrollplus.core.principalName
 import com.littlebridge.enrollplus.core.principalUserId
 import com.littlebridge.enrollplus.db.AppConfigTable
 import com.littlebridge.enrollplus.db.AppUsersTable
+import com.littlebridge.enrollplus.db.AttendanceRecordsTable
 import com.littlebridge.enrollplus.db.ChildrenTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.FeeRecordsTable
 import com.littlebridge.enrollplus.db.SchoolsTable
+import com.littlebridge.enrollplus.db.StudentsTable
 import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.routing.*
@@ -38,6 +40,7 @@ import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.selectAll
+import java.time.LocalDate
 import java.time.LocalTime
 import java.util.UUID
 
@@ -161,17 +164,37 @@ fun Route.parentDashboardRouting() {
                                    else "${timeOfDayGreeting()}, $displayFirstName"
 
                     // ----- children (RA-31: ALL active children, oldest first) -----
+                    val today = LocalDate.now()
                     val children = ChildrenTable.selectAll()
                         .where { (ChildrenTable.parentId eq uid) and (ChildrenTable.isActive eq true) }
                         .orderBy(ChildrenTable.createdAt, SortOrder.ASC)
-                        .map {
+                        .map { childRow ->
+                            val childSchoolId = childRow[ChildrenTable.schoolId]
+                            val childStudentCode = childRow[ChildrenTable.studentCode]
+                            // Look up today's live attendance from AttendanceRecordsTable
+                            val liveStatus = if (childSchoolId != null && childStudentCode != null) {
+                                val studentUuid = StudentsTable.selectAll().where {
+                                    (StudentsTable.schoolId eq childSchoolId) and
+                                        (StudentsTable.studentCode eq childStudentCode)
+                                }.firstOrNull()?.get(StudentsTable.id)?.value
+
+                                if (studentUuid != null) {
+                                    AttendanceRecordsTable.selectAll().where {
+                                        (AttendanceRecordsTable.schoolId eq childSchoolId) and
+                                            (AttendanceRecordsTable.type eq "student") and
+                                            (AttendanceRecordsTable.studentId eq studentUuid) and
+                                            (AttendanceRecordsTable.date eq today)
+                                    }.firstOrNull()?.get(AttendanceRecordsTable.status)
+                                } else null
+                            } else null
+
                             ChildSummary(
-                                id = it[ChildrenTable.id].value.toString(),
-                                name = it[ChildrenTable.childName],
-                                overallProgress = it[ChildrenTable.overallProgress],
-                                currentLevel = it[ChildrenTable.currentLevel],
-                                attendanceStatus = it[ChildrenTable.attendanceStatus],
-                                profilePic = it[ChildrenTable.profilePic]
+                                id = childRow[ChildrenTable.id].value.toString(),
+                                name = childRow[ChildrenTable.childName],
+                                overallProgress = childRow[ChildrenTable.overallProgress],
+                                currentLevel = childRow[ChildrenTable.currentLevel],
+                                attendanceStatus = liveStatus ?: childRow[ChildrenTable.attendanceStatus],
+                                profilePic = childRow[ChildrenTable.profilePic]
                             )
                         }
                     // First child mirrored into child_summary for backward compatibility.

@@ -16,7 +16,7 @@ import kotlinx.serialization.Serializable
 data class TutorTurn(
     val mode: String,                    // SOCRATIC_STEP | HINT | EXPLANATION | PRACTICE_SET | PLAN_UPDATE | ESCALATE
     val groundedRefs: List<GroundedRef> = emptyList(),
-    val studentFacing: StudentFacing,
+    val studentFacing: StudentFacing? = null,
     val practice: List<PracticeQuestion>? = null,
     val planDelta: PlanDelta? = null,
     val teacherFlag: TeacherFlag? = null,
@@ -25,9 +25,9 @@ data class TutorTurn(
 
 @Serializable
 data class GroundedRef(
-    val topicId: String,
-    val source: String,                  // MARKS | SYLLABUS | NCERT | RAG
-    val value: String,
+    val topicId: String? = null,
+    val source: String = "",                  // MARKS | SYLLABUS | NCERT | RAG
+    val value: String = "",
 )
 
 @Serializable
@@ -39,12 +39,12 @@ data class StudentFacing(
 
 @Serializable
 data class PracticeQuestion(
-    val questionId: String,
-    val stem: String,
+    val questionId: String = "",
+    val stem: String = "",
     val options: List<String>? = null,
-    val answerKey: String,
-    val topicId: String,
-    val difficulty: String,              // easy | medium | hard
+    val answerKey: String = "",
+    val topicId: String? = null,
+    val difficulty: String = "",              // easy | medium | hard
 )
 
 @Serializable
@@ -55,22 +55,22 @@ data class PlanDelta(
 
 @Serializable
 data class AddReview(
-    val topicId: String,
-    val priority: String,                // high | medium | low
+    val topicId: String? = null,
+    val priority: String = "",                // high | medium | low
 )
 
 @Serializable
 data class TeacherFlag(
-    val topicId: String,
-    val reason: String,
-    val severity: String,                // low | medium | high
+    val topicId: String? = null,
+    val reason: String = "",
+    val severity: String = "",                // low | medium | high
 )
 
 @Serializable
 data class MisconceptionLog(
-    val topicId: String,
-    val type: String,
-    val evidence: String,
+    val topicId: String? = null,
+    val type: String = "",
+    val evidence: String = "",
 )
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -99,6 +99,9 @@ object TutorTurnCodec {
             }
         }
         json.decodeFromString(TutorTurn.serializer(), cleaned)
+            // If the model omitted studentFacing, provide a minimal default
+            // so downstream code doesn't NPE.
+            ?.let { if (it.studentFacing == null) it.copy(studentFacing = StudentFacing(text = "I'm here to help. What would you like to work on?")) else it }
     } catch (e: Exception) {
         null
     }

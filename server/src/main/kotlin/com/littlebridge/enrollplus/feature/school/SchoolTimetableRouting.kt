@@ -39,8 +39,11 @@ import com.littlebridge.enrollplus.core.fail
 import com.littlebridge.enrollplus.core.ok
 import com.littlebridge.enrollplus.core.requireSchoolAdmin
 import com.littlebridge.enrollplus.core.requireSchoolContext
+import com.littlebridge.enrollplus.core.ClassNaming
 import com.littlebridge.enrollplus.db.AppUsersTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
+import com.littlebridge.enrollplus.db.SchoolClassesTable
+import com.littlebridge.enrollplus.db.SchoolSubjectsTable
 import com.littlebridge.enrollplus.db.TeacherPeriodsTable
 import com.littlebridge.enrollplus.db.TeacherSubjectAssignmentsTable
 import com.littlebridge.enrollplus.feature.notifications.Notify
@@ -65,6 +68,35 @@ import java.util.UUID
 // T-101: teacher_periods.start_time/end_time are now typed `time` (LocalTime).
 // Format back to the "HH:mm" wire contract this endpoint's DTOs expect.
 private val TT_HHMM: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
+/**
+ * Resolve classId and subjectId from display strings (className, subject)
+ * by looking up SchoolClassesTable and SchoolSubjectsTable.
+ * Must be called inside a dbQuery transaction.
+ */
+private fun resolveClassAndSubjectIds(
+    schoolId: UUID,
+    className: String,
+    subject: String,
+): Pair<UUID?, UUID?> {
+    val wantClassKey = ClassNaming.classKey(className)
+    val classRow = SchoolClassesTable.selectAll()
+        .where { SchoolClassesTable.schoolId eq schoolId }
+        .toList()
+        .firstOrNull {
+            ClassNaming.classKey(it[SchoolClassesTable.name]) == wantClassKey ||
+                ClassNaming.classKey(it[SchoolClassesTable.code]) == wantClassKey
+        }
+    val classId = classRow?.get(SchoolClassesTable.id)?.value
+    val subjectId = classId?.let { cid ->
+        SchoolSubjectsTable.selectAll()
+            .where { SchoolSubjectsTable.classId eq cid }
+            .toList()
+            .firstOrNull { it[SchoolSubjectsTable.subName].equals(subject, ignoreCase = true) }
+            ?.get(SchoolSubjectsTable.id)?.value
+    }
+    return classId to subjectId
+}
 
 // ───────────────────────────────── DTOs ──────────────────────────────────────
 
@@ -277,15 +309,29 @@ fun Route.schoolTimetableRouting() {
                 }.firstOrNull()
 
                 val assignmentUuid = if (existingAsg != null) {
-                    existingAsg[TeacherSubjectAssignmentsTable.id].value
+                    val asgId = existingAsg[TeacherSubjectAssignmentsTable.id].value
+                    // Backfill classId/subjectId if missing on existing assignment
+                    if (existingAsg[TeacherSubjectAssignmentsTable.classId] == null ||
+                        existingAsg[TeacherSubjectAssignmentsTable.subjectId] == null) {
+                        val (rcid, rsid) = resolveClassAndSubjectIds(ctx.schoolId, req.className, req.subject)
+                        TeacherSubjectAssignmentsTable.update({ TeacherSubjectAssignmentsTable.id eq asgId }) {
+                            if (rcid != null) it[TeacherSubjectAssignmentsTable.classId] = rcid
+                            if (rsid != null) it[TeacherSubjectAssignmentsTable.subjectId] = rsid
+                            it[TeacherSubjectAssignmentsTable.updatedAt] = Instant.now()
+                        }
+                    }
+                    asgId
                 } else {
                     // Create the assignment if it doesn't exist
                     val newAsgId = UUID.randomUUID()
+                    val (resolvedClassId, resolvedSubjectId) = resolveClassAndSubjectIds(ctx.schoolId, req.className, req.subject)
                     TeacherSubjectAssignmentsTable.insert {
                         it[TeacherSubjectAssignmentsTable.id] = newAsgId
                         it[TeacherSubjectAssignmentsTable.schoolId] = ctx.schoolId
+                        it[TeacherSubjectAssignmentsTable.classId] = resolvedClassId
                         it[TeacherSubjectAssignmentsTable.className] = req.className
                         it[TeacherSubjectAssignmentsTable.section] = req.section
+                        it[TeacherSubjectAssignmentsTable.subjectId] = resolvedSubjectId
                         it[TeacherSubjectAssignmentsTable.subject] = req.subject
                         it[TeacherSubjectAssignmentsTable.teacherId] = teacherUuid
                         it[TeacherSubjectAssignmentsTable.teacherName] = teacherName
@@ -416,14 +462,27 @@ fun Route.schoolTimetableRouting() {
                     }.firstOrNull()
 
                     val assignmentUuid = if (existingAsg != null) {
-                        existingAsg[TeacherSubjectAssignmentsTable.id].value
+                        val asgId = existingAsg[TeacherSubjectAssignmentsTable.id].value
+                        if (existingAsg[TeacherSubjectAssignmentsTable.classId] == null ||
+                            existingAsg[TeacherSubjectAssignmentsTable.subjectId] == null) {
+                            val (rcid, rsid) = resolveClassAndSubjectIds(ctx.schoolId, item.className, item.subject)
+                            TeacherSubjectAssignmentsTable.update({ TeacherSubjectAssignmentsTable.id eq asgId }) {
+                                if (rcid != null) it[TeacherSubjectAssignmentsTable.classId] = rcid
+                                if (rsid != null) it[TeacherSubjectAssignmentsTable.subjectId] = rsid
+                                it[TeacherSubjectAssignmentsTable.updatedAt] = Instant.now()
+                            }
+                        }
+                        asgId
                     } else {
                         val newAsgId = UUID.randomUUID()
+                        val (resolvedClassId, resolvedSubjectId) = resolveClassAndSubjectIds(ctx.schoolId, item.className, item.subject)
                         TeacherSubjectAssignmentsTable.insert {
                             it[TeacherSubjectAssignmentsTable.id] = newAsgId
                             it[TeacherSubjectAssignmentsTable.schoolId] = ctx.schoolId
+                            it[TeacherSubjectAssignmentsTable.classId] = resolvedClassId
                             it[TeacherSubjectAssignmentsTable.className] = item.className
                             it[TeacherSubjectAssignmentsTable.section] = item.section
+                            it[TeacherSubjectAssignmentsTable.subjectId] = resolvedSubjectId
                             it[TeacherSubjectAssignmentsTable.subject] = item.subject
                             it[TeacherSubjectAssignmentsTable.teacherId] = teacherUuid
                             it[TeacherSubjectAssignmentsTable.teacherName] = teacherName
@@ -665,14 +724,27 @@ fun Route.schoolTimetableRouting() {
                     }.firstOrNull()
 
                     val assignmentUuid = if (existingAsg != null) {
-                        existingAsg[TeacherSubjectAssignmentsTable.id].value
+                        val asgId = existingAsg[TeacherSubjectAssignmentsTable.id].value
+                        if (existingAsg[TeacherSubjectAssignmentsTable.classId] == null ||
+                            existingAsg[TeacherSubjectAssignmentsTable.subjectId] == null) {
+                            val (rcid, rsid) = resolveClassAndSubjectIds(ctx.schoolId, req.className, srcSubject)
+                            TeacherSubjectAssignmentsTable.update({ TeacherSubjectAssignmentsTable.id eq asgId }) {
+                                if (rcid != null) it[TeacherSubjectAssignmentsTable.classId] = rcid
+                                if (rsid != null) it[TeacherSubjectAssignmentsTable.subjectId] = rsid
+                                it[TeacherSubjectAssignmentsTable.updatedAt] = Instant.now()
+                            }
+                        }
+                        asgId
                     } else {
                         val newAsgId = UUID.randomUUID()
+                        val (resolvedClassId, resolvedSubjectId) = resolveClassAndSubjectIds(ctx.schoolId, req.className, srcSubject)
                         TeacherSubjectAssignmentsTable.insert {
                             it[TeacherSubjectAssignmentsTable.id] = newAsgId
                             it[TeacherSubjectAssignmentsTable.schoolId] = ctx.schoolId
+                            it[TeacherSubjectAssignmentsTable.classId] = resolvedClassId
                             it[TeacherSubjectAssignmentsTable.className] = req.className
                             it[TeacherSubjectAssignmentsTable.section] = req.toSection
+                            it[TeacherSubjectAssignmentsTable.subjectId] = resolvedSubjectId
                             it[TeacherSubjectAssignmentsTable.subject] = srcSubject
                             it[TeacherSubjectAssignmentsTable.teacherId] = srcTeacherId
                             it[TeacherSubjectAssignmentsTable.teacherName] = teacherName

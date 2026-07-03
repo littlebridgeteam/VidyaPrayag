@@ -357,9 +357,9 @@ class LlmClient(
             HttpClient(CIO) {
                 expectSuccess = false   // we classify statuses ourselves
                 install(HttpTimeout) {
-                    connectTimeoutMillis = 8_000
-                    requestTimeoutMillis = 60_000
-                    socketTimeoutMillis = 60_000
+                    connectTimeoutMillis = 10_000
+                    requestTimeoutMillis = 120_000
+                    socketTimeoutMillis = 120_000
                 }
                 install(ContentNegotiation) { json(codec) }
                 install(Logging) { level = LogLevel.NONE }  // never echo prompts/keys
