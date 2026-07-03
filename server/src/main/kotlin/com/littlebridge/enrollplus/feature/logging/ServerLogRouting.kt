@@ -52,6 +52,9 @@ data class ServerLogDto(
 )
 
 @Serializable
+data class HttpLoggingToggleDto(val enabled: Boolean)
+
+@Serializable
 data class ServerLogsPageDto(
     val logs: List<ServerLogDto> = emptyList(),
     val total: Int = 0,
@@ -277,18 +280,18 @@ fun Route.serverLogRouting() {
             // -------- toggle HTTP request logging --------
             get("/http-logging-toggle") {
                 if (call.requireSuperAdminLog() == null) return@get
-                call.ok(mapOf("enabled" to ServerLogWriter.isHttpLoggingEnabled()), message = "HTTP logging status")
+                call.ok(HttpLoggingToggleDto(enabled = ServerLogWriter.isHttpLoggingEnabled()), message = "HTTP logging status")
             }
 
             post("/http-logging-toggle") {
                 if (call.requireSuperAdminLog() == null) return@post
                 val enabled = call.request.queryParameters["enabled"]?.toBooleanStrictOrNull()
                 if (enabled == null) {
-                    call.respond(HttpStatusCode.BadRequest, mapOf("message" to "Missing or invalid 'enabled' query param"))
+                    call.fail("Missing or invalid 'enabled' query param", HttpStatusCode.BadRequest)
                     return@post
                 }
                 ServerLogWriter.setHttpLoggingEnabled(enabled)
-                call.ok(mapOf("enabled" to enabled), message = if (enabled) "HTTP logging enabled" else "HTTP logging disabled")
+                call.ok(HttpLoggingToggleDto(enabled = enabled), message = if (enabled) "HTTP logging enabled" else "HTTP logging disabled")
             }
         }
     }
