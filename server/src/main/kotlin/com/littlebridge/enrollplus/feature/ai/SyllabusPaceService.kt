@@ -12,6 +12,7 @@
 package com.littlebridge.enrollplus.feature.ai
 
 import com.littlebridge.enrollplus.db.AcademicYearsTable
+import com.littlebridge.enrollplus.db.CalendarEventsTable
 import com.littlebridge.enrollplus.db.CurriculumUnitsTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.DailyClassLogTable
@@ -36,7 +37,6 @@ import org.jetbrains.exposed.sql.update
 import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.time.LocalDate
-import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 object SyllabusPaceService {
@@ -56,6 +56,13 @@ object SyllabusPaceService {
         @SerialName("deviation_pct") val deviationPct: Int,
         val level: String,  // ON_TRACK | BEHIND | CRITICAL | AHEAD
         @SerialName("needs_recalc") val needsRecalc: Boolean,
+        @SerialName("weekly_periods") val weeklyPeriods: Int = 0,
+        @SerialName("classes_elapsed") val classesElapsed: Int = 0,
+        @SerialName("classes_remaining") val classesRemaining: Int = 0,
+        @SerialName("estimated_completion_date") val estimatedCompletionDate: String = "",
+        @SerialName("topics_per_class") val topicsPerClass: Double = 0.0,
+        @SerialName("holiday_days_counted") val holidayDaysCounted: Int = 0,
+        @SerialName("avg_coverage_per_class") val avgCoveragePerClass: Double = 0.0,
     )
 
     @Serializable
@@ -148,6 +155,32 @@ object SyllabusPaceService {
         val holidayDays = academicYear?.get(AcademicYearsTable.holidayDays) ?: 0
         val totalAcademicDays = (academicDays - holidayDays).coerceAtLeast(1)
 
+        // Count actual holidays from CalendarEventsTable (HOLIDAY + PUBLISHED, overlapping year range)
+        val actualHolidayDates = dbQuery {
+            CalendarEventsTable.selectAll().where {
+                (CalendarEventsTable.schoolId eq schoolId) and
+                    (CalendarEventsTable.type eq "HOLIDAY") and
+                    (CalendarEventsTable.status eq "PUBLISHED") and
+                    (CalendarEventsTable.isActive eq true)
+            }.filter { row ->
+                val sDate = row[CalendarEventsTable.startDate]
+                val eDate = row[CalendarEventsTable.endDate]
+                sDate != null && eDate != null
+            }.flatMap { row ->
+                val sDate = row[CalendarEventsTable.startDate]
+                val eDate = row[CalendarEventsTable.endDate]
+                val dates = mutableListOf<LocalDate>()
+                var d = sDate
+                while (d != null && !d.isAfter(eDate)) {
+                    if (!d.isBefore(yearStart) && !d.isAfter(yearEnd)) dates.add(d)
+                    d = d.plusDays(1)
+                }
+                dates
+            }.toSet()
+        }
+        val actualHolidayCount = actualHolidayDates.size
+
+        // Get weekly scheduled periods for this assignment
         val weeklyPeriods = dbQuery {
             TeacherPeriodsTable.selectAll().where {
                 (TeacherPeriodsTable.assignmentId eq assignmentId) and
@@ -155,13 +188,44 @@ object SyllabusPaceService {
             }.count()
         }.toInt()
 
-        val totalClassesExpected = weeklyPeriods * (totalAcademicDays / 7).coerceAtLeast(1)
+        // Collect the weekdays this assignment has periods on
+        val scheduledWeekdays = dbQuery {
+            TeacherPeriodsTable.selectAll().where {
+                (TeacherPeriodsTable.assignmentId eq assignmentId) and
+                    (TeacherPeriodsTable.isActive eq true)
+            }.map { it[TeacherPeriodsTable.weekday] }.toSet()
+        }
 
+        // Count actual elapsed class sessions: weekdays from yearStart to today
+        // that match scheduled weekdays, minus holidays
         val today = LocalDate.now()
-        val daysElapsed = ChronoUnit.DAYS.between(yearStart, today).toInt().coerceAtLeast(0)
-        val classesElapsed = if (weeklyPeriods > 0) {
-            (daysElapsed * weeklyPeriods / 7).coerceAtLeast(0)
+        val classesElapsed = if (scheduledWeekdays.isNotEmpty()) {
+            var count = 0
+            var d = yearStart
+            while (!d.isAfter(today)) {
+                if (d.dayOfWeek.value in scheduledWeekdays && d !in actualHolidayDates) {
+                    count++
+                }
+                d = d.plusDays(1)
+            }
+            count
         } else 0
+
+        // Count remaining class sessions: weekdays from today+1 to yearEnd
+        // that match scheduled weekdays, minus holidays
+        val classesRemaining = if (scheduledWeekdays.isNotEmpty()) {
+            var count = 0
+            var d = today.plusDays(1)
+            while (!d.isAfter(yearEnd)) {
+                if (d.dayOfWeek.value in scheduledWeekdays && d !in actualHolidayDates) {
+                    count++
+                }
+                d = d.plusDays(1)
+            }
+            count
+        } else 0
+
+        val totalClassesExpected = classesElapsed + classesRemaining
 
         val expectedPct = if (totalClassesExpected > 0) {
             (classesElapsed * 100 / totalClassesExpected).coerceIn(0, 100)
@@ -176,12 +240,32 @@ object SyllabusPaceService {
         }
 
         val now = Instant.now()
+        val topicsPerClass = if (classesElapsed > 0) totalTopics.toDouble() / classesElapsed else 0.0
+        val avgCoveragePerClass = if (classesElapsed > 0) actualPct.toDouble() / classesElapsed else 0.0
+        // Estimate completion date: if classesRemaining > 0, project from today
+        // by counting forward the scheduled weekdays (minus holidays) needed
+        val estimatedCompletionDate = if (classesRemaining > 0 && scheduledWeekdays.isNotEmpty() && actualPct < 100) {
+            val remainingPct = 100 - actualPct
+            val classesNeeded = if (avgCoveragePerClass > 0) (remainingPct / avgCoveragePerClass).toInt() else classesRemaining
+            var counted = 0
+            var d = today.plusDays(1)
+            while (counted < classesNeeded && !d.isAfter(yearEnd.plusMonths(2))) {
+                if (d.dayOfWeek.value in scheduledWeekdays && d !in actualHolidayDates) {
+                    counted++
+                }
+                if (counted < classesNeeded) d = d.plusDays(1)
+            }
+            d.toString()
+        } else if (actualPct >= 100) {
+            today.toString()
+        } else ""
+
         val aiEstimateJson = json.encodeToString(
             SyllabusAiService.PacePlanEstimate.serializer(),
             SyllabusAiService.PacePlanEstimate(
-                perClassPct = if (totalClassesExpected > 0) 100.0 / totalClassesExpected else 0.0,
+                perClassPct = if (classesElapsed > 0) actualPct.toDouble() / classesElapsed else 0.0,
                 estimatedCompletionWeek = if (weeklyPeriods > 0) totalTopics / weeklyPeriods else 0,
-                reasoning = "Computed from $totalTopics topics, $weeklyPeriods weekly periods, $totalAcademicDays academic days.",
+                reasoning = "Computed from $totalTopics topics, $weeklyPeriods weekly periods, $classesElapsed classes elapsed, $actualHolidayCount holiday days, $classesRemaining classes remaining.",
             )
         )
 
@@ -243,6 +327,13 @@ object SyllabusPaceService {
             deviationPct = deviationPct,
             level = level,
             needsRecalc = false,
+            weeklyPeriods = weeklyPeriods,
+            classesElapsed = classesElapsed,
+            classesRemaining = classesRemaining,
+            estimatedCompletionDate = estimatedCompletionDate,
+            topicsPerClass = topicsPerClass,
+            holidayDaysCounted = actualHolidayCount,
+            avgCoveragePerClass = avgCoveragePerClass,
         )
     }
 
@@ -468,6 +559,13 @@ object SyllabusPaceService {
                         else -> "ON_TRACK"
                     },
                     needsRecalc = planRow[SyllabusPacePlanTable.needsRecalc],
+                    weeklyPeriods = 0,
+                    classesElapsed = planRow[SyllabusPacePlanTable.classesElapsed],
+                    classesRemaining = planRow[SyllabusPacePlanTable.totalClassesExpected] - planRow[SyllabusPacePlanTable.classesElapsed],
+                    estimatedCompletionDate = "",
+                    topicsPerClass = 0.0,
+                    holidayDaysCounted = 0,
+                    avgCoveragePerClass = 0.0,
                 )
             } else null
         }

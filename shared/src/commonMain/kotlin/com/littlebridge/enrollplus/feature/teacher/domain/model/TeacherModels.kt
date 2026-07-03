@@ -781,6 +781,13 @@ data class SylPaceWarning(
     @SerialName("actual_pct") val actualPct: Int = 0,
     @SerialName("deviation_pct") val deviationPct: Int = 0,
     val message: String = "",
+    @SerialName("weekly_periods") val weeklyPeriods: Int = 0,
+    @SerialName("classes_elapsed") val classesElapsed: Int = 0,
+    @SerialName("classes_remaining") val classesRemaining: Int = 0,
+    @SerialName("estimated_completion_date") val estimatedCompletionDate: String = "",
+    @SerialName("topics_per_class") val topicsPerClass: Double = 0.0,
+    @SerialName("holiday_days_counted") val holidayDaysCounted: Int = 0,
+    @SerialName("avg_coverage_per_class") val avgCoveragePerClass: Double = 0.0,
 )
 
 // ── Daily class log ──

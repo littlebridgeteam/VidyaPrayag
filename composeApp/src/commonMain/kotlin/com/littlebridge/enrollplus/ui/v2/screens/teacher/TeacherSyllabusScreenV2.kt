@@ -31,7 +31,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -427,6 +430,8 @@ private fun ParseSyllabusSheet(viewModel: TeacherSyllabusViewModel) {
 private fun DailyLogPopup(viewModel: TeacherSyllabusViewModel) {
     val c = VTheme.colors
     val state by viewModel.state.collectAsStateV2()
+    val expandedChapters = remember { mutableStateMapOf<String, Boolean>() }
+    val expandedTopics = remember { mutableStateMapOf<String, Boolean>() }
 
     Box(
         Modifier
@@ -441,7 +446,7 @@ private fun DailyLogPopup(viewModel: TeacherSyllabusViewModel) {
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .heightIn(min = 200.dp, max = 520.dp),
+                .heightIn(min = 200.dp, max = 620.dp),
             padding = 20.dp,
         ) {
             Column(
@@ -469,43 +474,61 @@ private fun DailyLogPopup(viewModel: TeacherSyllabusViewModel) {
                     ) { Icon(VIcons.Close, contentDescription = "Close", tint = c.ink2, modifier = Modifier.size(16.dp)) }
                 }
 
-                // Topic selection
-                if (state.topics.isNotEmpty()) {
-                    Text("Topics covered today", style = VTheme.type.bodyStrong.colored(c.ink2).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
+                val selectedCount = state.dailyLogSelectedTopicIds.size
+                Text(
+                    if (selectedCount == 0) "Select topics covered today" else "$selectedCount topic${if (selectedCount > 1) "s" else ""} selected",
+                    style = VTheme.type.bodyStrong.colored(c.ink2).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
+                )
+
+                if (state.units.isNotEmpty()) {
                     LazyColumn(
-                        Modifier.fillMaxWidth().heightIn(max = 160.dp),
+                        Modifier.fillMaxWidth().weight(1f),
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
-                        items(state.topics) { topic ->
-                            val selected = topic.id in state.dailyLogSelectedTopicIds
-                            Row(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(if (selected) c.teal.copy(alpha = 0.1f) else c.cream)
-                                    .clickable(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = null,
-                                    ) { viewModel.toggleDailyLogTopic(topic.id) }
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                Box(
-                                    Modifier.size(20.dp).clip(CircleShape)
-                                        .background(if (selected) c.tealDeep else c.cream)
-                                        .border(1.dp, if (selected) c.tealDeep else c.hairline, CircleShape),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    if (selected) Icon(VIcons.Check, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(12.dp))
+                        state.chapters.forEach { chapter ->
+                            val chapterTopics = state.units.filter { it.parentId == chapter.id }
+                            val isExpanded = expandedChapters[chapter.id] ?: false
+                            item(key = "ch-${chapter.id}") {
+                                DailyLogChapterRow(
+                                    title = chapter.title,
+                                    expanded = isExpanded,
+                                    onToggle = { expandedChapters[chapter.id] = !isExpanded },
+                                )
+                            }
+                            if (isExpanded) {
+                                chapterTopics.forEach { topic ->
+                                    val topicSubtopics = state.units.filter { it.parentId == topic.id }
+                                    val topicExpanded = expandedTopics[topic.id] ?: false
+                                    val topicSelected = topic.id in state.dailyLogSelectedTopicIds
+                                    item(key = "tp-${topic.id}") {
+                                        DailyLogTopicRow(
+                                            title = topic.title,
+                                            selected = topicSelected,
+                                            hasSubtopics = topicSubtopics.isNotEmpty(),
+                                            expanded = topicExpanded,
+                                            onToggleSelect = { viewModel.toggleDailyLogTopic(topic.id) },
+                                            onToggleExpand = { expandedTopics[topic.id] = !topicExpanded },
+                                        )
+                                    }
+                                    if (topicExpanded && topicSubtopics.isNotEmpty()) {
+                                        topicSubtopics.forEach { subtopic ->
+                                            val subSelected = subtopic.id in state.dailyLogSelectedTopicIds
+                                            item(key = "st-${subtopic.id}") {
+                                                DailyLogSubtopicRow(
+                                                    title = subtopic.title,
+                                                    selected = subSelected,
+                                                    onToggle = { viewModel.toggleDailyLogTopic(subtopic.id) },
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
-                                Text(topic.title, style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp))
                             }
                         }
                     }
                 }
 
-                // Coverage slider (simple +/- controls)
+                // Coverage slider
                 Text("Coverage: ${state.dailyLogCoveragePct}%", style = VTheme.type.bodyStrong.colored(c.ink2).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                     val ixMinus = remember { MutableInteractionSource() }
@@ -542,6 +565,102 @@ private fun DailyLogPopup(viewModel: TeacherSyllabusViewModel) {
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun DailyLogChapterRow(title: String, expanded: Boolean, onToggle: () -> Unit) {
+    val c = VTheme.colors
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(c.cream)
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onToggle() }
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(
+            if (expanded) VIcons.ChevronDown else VIcons.ChevronRight,
+            contentDescription = null,
+            tint = c.ink2,
+            modifier = Modifier.size(16.dp),
+        )
+        Text(title, style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 13.sp, fontWeight = FontWeight.Bold))
+    }
+}
+
+@Composable
+private fun DailyLogTopicRow(
+    title: String,
+    selected: Boolean,
+    hasSubtopics: Boolean,
+    expanded: Boolean,
+    onToggleSelect: () -> Unit,
+    onToggleExpand: () -> Unit,
+) {
+    val c = VTheme.colors
+    Row(
+        Modifier.fillMaxWidth().padding(start = 28.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (selected) c.teal.copy(alpha = 0.08f) else androidx.compose.ui.graphics.Color.Transparent)
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Box(
+            Modifier.size(18.dp).clip(CircleShape)
+                .background(if (selected) c.tealDeep else c.cream)
+                .border(1.dp, if (selected) c.tealDeep else c.hairline, CircleShape)
+                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onToggleSelect() },
+            contentAlignment = Alignment.Center,
+        ) {
+            if (selected) Icon(VIcons.Check, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(11.dp))
+        }
+        Text(
+            title,
+            style = VTheme.type.body.colored(c.ink).copy(fontSize = 12.sp),
+            modifier = Modifier.weight(1f).clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ) { onToggleSelect() },
+        )
+        if (hasSubtopics) {
+            Box(
+                Modifier.size(20.dp).clip(CircleShape)
+                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onToggleExpand() },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    if (expanded) VIcons.ChevronDown else VIcons.ChevronRight,
+                    contentDescription = null,
+                    tint = c.ink3,
+                    modifier = Modifier.size(14.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DailyLogSubtopicRow(title: String, selected: Boolean, onToggle: () -> Unit) {
+    val c = VTheme.colors
+    Row(
+        Modifier.fillMaxWidth().padding(start = 56.dp)
+            .clip(RoundedCornerShape(6.dp))
+            .background(if (selected) c.teal.copy(alpha = 0.06f) else androidx.compose.ui.graphics.Color.Transparent)
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onToggle() }
+            .padding(horizontal = 8.dp, vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Box(
+            Modifier.size(14.dp).clip(CircleShape)
+                .background(if (selected) c.tealDeep else c.cream)
+                .border(1.dp, if (selected) c.tealDeep else c.hairline, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (selected) Icon(VIcons.Check, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(9.dp))
+        }
+        Text(title, style = VTheme.type.body.colored(c.ink2).copy(fontSize = 11.sp))
     }
 }
 
@@ -746,6 +865,28 @@ private fun PaceWarningBanner(warning: com.littlebridge.enrollplus.feature.teach
                 if (warning.message.isNotBlank()) {
                     Text(warning.message, style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp))
                 }
+                Spacer(Modifier.height(4.dp))
+                val metricsText = buildString {
+                    if (warning.classesElapsed > 0) {
+                        append("${warning.classesElapsed} classes done")
+                        if (warning.classesRemaining > 0) append(" · ${warning.classesRemaining} left")
+                    }
+                    if (warning.weeklyPeriods > 0) {
+                        append(" · ${warning.weeklyPeriods}/week")
+                    }
+                    if (warning.holidayDaysCounted > 0) {
+                        append(" · ${warning.holidayDaysCounted} holidays")
+                    }
+                }
+                if (metricsText.isNotBlank()) {
+                    Text(metricsText, style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp))
+                }
+                if (warning.estimatedCompletionDate.isNotBlank()) {
+                    Text("Est. completion: ${warning.estimatedCompletionDate}", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp))
+                }
+                if (warning.avgCoveragePerClass > 0) {
+                    Text("Avg ${"%.1f".format(warning.avgCoveragePerClass)}%/class", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp))
+                }
             }
         }
     }
@@ -798,7 +939,7 @@ private fun AutoFillPreviewSheet(viewModel: TeacherSyllabusViewModel) {
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .heightIn(min = 200.dp, max = 560.dp)
+                .heightIn(min = 200.dp, max = 600.dp)
                 .padding(bottom = 0.dp),
             padding = 20.dp,
         ) {
@@ -840,7 +981,7 @@ private fun AutoFillPreviewSheet(viewModel: TeacherSyllabusViewModel) {
                 )
 
                 LazyColumn(
-                    Modifier.fillMaxWidth().heightIn(max = 280.dp),
+                    Modifier.fillMaxWidth().weight(1f),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     items(state.autoFillChapters) { ch ->

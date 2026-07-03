@@ -100,8 +100,15 @@ object NcertReferenceService {
     }
 
     fun normalizeClassLevel(input: String): String {
-        val digits = input.trim().replace(Regex("^(Class|Grade)\\s*", RegexOption.IGNORE_CASE), "").trim()
-        return if (digits.all { it.isDigit() }) "Class $digits" else input.trim()
+        val cleaned = input.trim().replace(Regex("^(Class|Grade)\\s*", RegexOption.IGNORE_CASE), "").trim()
+        // Strip ordinal suffixes: "11th" → "11", "3rd" → "3"
+        val digits = cleaned.replace(Regex("(st|nd|rd|th)$", RegexOption.IGNORE_CASE), "").trim()
+        if (digits.all { it.isDigit() } && digits.isNotEmpty()) return "Class $digits"
+        // Roman numerals: XI → 11, XII → 12, etc.
+        val romanMap = mapOf("I" to 1, "II" to 2, "III" to 3, "IV" to 4, "V" to 5, "VI" to 6, "VII" to 7, "VIII" to 8, "IX" to 9, "X" to 10, "XI" to 11, "XII" to 12)
+        val romanNum = romanMap[cleaned.uppercase()]
+        if (romanNum != null) return "Class $romanNum"
+        return input.trim()
     }
 
     fun normalizeSubjectName(input: String): String {
@@ -115,7 +122,7 @@ object NcertReferenceService {
             "sanskrit" -> "Sanskrit"
             "physics" -> "Physics"
             "chemistry" -> "Chemistry"
-            "biology" -> "Biology"
+            "biology", "bio" -> "Biology"
             "computer science", "cs" -> "Computer Science"
             "economics" -> "Economics"
             "evs", "environmental studies", "environmental science" -> "EVS"

@@ -91,6 +91,7 @@ import org.jetbrains.exposed.sql.update
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
+import org.slf4j.LoggerFactory
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Server-side DTOs — mirror shared/.../teacher/domain/model/TeacherModels.kt
@@ -258,6 +259,13 @@ data class SylPaceWarningDto(
     @SerialName("actual_pct") val actualPct: Int = 0,
     @SerialName("deviation_pct") val deviationPct: Int = 0,
     val message: String = "",
+    @SerialName("weekly_periods") val weeklyPeriods: Int = 0,
+    @SerialName("classes_elapsed") val classesElapsed: Int = 0,
+    @SerialName("classes_remaining") val classesRemaining: Int = 0,
+    @SerialName("estimated_completion_date") val estimatedCompletionDate: String = "",
+    @SerialName("topics_per_class") val topicsPerClass: Double = 0.0,
+    @SerialName("holiday_days_counted") val holidayDaysCounted: Int = 0,
+    @SerialName("avg_coverage_per_class") val avgCoveragePerClass: Double = 0.0,
 )
 
 // ── Agentic Syllabus: Daily Log DTOs ────────────────────────────────────────
@@ -955,8 +963,11 @@ private fun Route.syllabusAutoFill() {
         val className = asg.className
         val subject = asg.subject
 
+        log.info("Auto-fill lookup: className='{}' subject='{}'", className, subject)
+
         val ncertSyllabus = NcertReferenceService.getSyllabus(className, subject)
         if (ncertSyllabus == null || ncertSyllabus.chapters.isEmpty()) {
+            log.info("Auto-fill: no NCERT reference found for '{}' '{}'", className, subject)
             call.ok(SylAutoFillResultDto(found = false, source = "", classLevel = className, subject = subject),
                 message = "No NCERT reference found for $className $subject")
             return@post
@@ -1220,6 +1231,13 @@ private fun Route.syllabusPaceWarning() {
                 actualPct = snapshot.actualPct,
                 deviationPct = snapshot.deviationPct,
                 message = msg,
+                weeklyPeriods = snapshot.weeklyPeriods,
+                classesElapsed = snapshot.classesElapsed,
+                classesRemaining = snapshot.classesRemaining,
+                estimatedCompletionDate = snapshot.estimatedCompletionDate,
+                topicsPerClass = snapshot.topicsPerClass,
+                holidayDaysCounted = snapshot.holidayDaysCounted,
+                avgCoveragePerClass = snapshot.avgCoveragePerClass,
             ),
             message = "OK",
         )
@@ -1545,6 +1563,7 @@ private fun Route.syllabusPopupPrefsGet() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 private val imageHttpClient by lazy { HttpClient(CIO) }
+private val log = LoggerFactory.getLogger("TeacherSyllabusRouting")
 
 private suspend fun fetchImageAsBase64(url: String): String? = try {
     val resp = imageHttpClient.get(url)
