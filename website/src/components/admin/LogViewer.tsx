@@ -63,33 +63,13 @@ export function LogViewer() {
     loadStats();
   }, [load, loadStats]);
 
-  // SSE live stream — auto-reconnect on drop.
+  // Auto-refresh logs every 10s (polling — EventSource can't send JWT headers).
   useEffect(() => {
-    let es: EventSource | null = null;
-    let retryTimer: ReturnType<typeof setTimeout> | null = null;
-
-    const connect = () => {
-      es = new EventSource("/api/v1/admin/dev/logs/stream");
-      es.onmessage = (ev) => {
-        try {
-          const log: ServerLogDto = JSON.parse(ev.data);
-          setLogs((prev) => [log, ...prev].slice(0, 100));
-        } catch {
-          // ignore malformed events
-        }
-      };
-      es.onerror = () => {
-        es?.close();
-        retryTimer = setTimeout(connect, 5000);
-      };
-    };
-    connect();
-
-    return () => {
-      es?.close();
-      if (retryTimer) clearTimeout(retryTimer);
-    };
-  }, []);
+    const interval = setInterval(() => {
+      load();
+    }, 10_000);
+    return () => clearInterval(interval);
+  }, [load]);
 
   const handleFilter = () => {
     setOffset(0);
