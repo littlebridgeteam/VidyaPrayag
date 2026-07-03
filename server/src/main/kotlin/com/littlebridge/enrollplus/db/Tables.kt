@@ -2957,7 +2957,7 @@ object TutorMisconceptionsTable : UUIDTable("tutor_misconceptions", "id") {
     val schoolId           = uuid("school_id")
     val classId            = uuid("class_id")
     val subjectId          = uuid("subject_id")
-    val topicId            = uuid("topic_id")
+    val topicId            = uuid("topic_id").nullable()
     val childId            = uuid("child_id")
     val misconceptionType = varchar("misconception_type", 128)
     val evidence           = text("evidence").default("")

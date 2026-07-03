@@ -346,9 +346,8 @@ object TutorTools {
                     put("description", "The subject's UUID")
                 })
                 put("topic_id", buildJsonObject {
+                    put("description", "The topic's UUID (curriculum_units.id). Omit if not applicable.")
                     put("type", "string")
-                    put("description", "The topic's UUID (curriculum_units.id), or null if not applicable")
-                    put("nullable", true)
                 })
                 put("child_id", buildJsonObject {
                     put("type", "string")
@@ -377,7 +376,6 @@ object TutorTools {
             val subjectId = (args["subject_id"] as? JsonPrimitive)?.content
                 ?: return errorJson("subject_id required")
             val topicId = (args["topic_id"] as? JsonPrimitive)?.content
-                ?: return errorJson("topic_id required (pass the curriculum_units.id UUID)")
             val childId = (args["child_id"] as? JsonPrimitive)?.content
                 ?: return errorJson("child_id required")
             val misconceptionType = (args["misconception_type"] as? JsonPrimitive)?.content
@@ -388,8 +386,7 @@ object TutorTools {
                 ?: return errorJson("invalid class_id")
             val subjectUuid = runCatching { UUID.fromString(subjectId) }.getOrNull()
                 ?: return errorJson("invalid subject_id")
-            val topicUuid = runCatching { UUID.fromString(topicId) }.getOrNull()
-                ?: return errorJson("invalid topic_id: '$topicId' is not a valid UUID")
+            val topicUuid = topicId?.let { runCatching { UUID.fromString(it) }.getOrNull() }
             val childUuid = runCatching { UUID.fromString(childId) }.getOrNull()
                 ?: return errorJson("invalid child_id")
 

@@ -124,6 +124,12 @@ class TutorAgentService(
         concepts and solve problems using the SOCRATIC method — you guide,
         you do NOT solve problems for them.
 
+        CRITICAL: "TutorTurn" is NOT a tool. Do NOT call it. Your available
+        tools are ONLY: get_learner_bundle, get_weak_topics, get_syllabus_position,
+        get_due_reviews, get_homework_context, log_misconception,
+        retrieve_knowledge. Your final response must be plain text containing
+        a JSON object (NOT a tool call).
+
         STRICT RULES:
         - Use ONLY data from the provided learner bundle and tool results.
           NEVER invent numbers, scores, or facts. Every figure in your output
@@ -230,7 +236,7 @@ class TutorAgentService(
         appendLine()
         appendLine("Child's doubt: $question")
         appendLine()
-        appendLine("Analyze this doubt and produce a TutorTurn. Call tools to gather context first.")
+        appendLine("Analyze this doubt and produce a structured JSON response. Call tools to gather context first.")
     }
 
     private suspend fun persistSession(

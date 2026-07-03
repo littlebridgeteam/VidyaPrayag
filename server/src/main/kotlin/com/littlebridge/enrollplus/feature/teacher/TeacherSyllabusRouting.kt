@@ -709,6 +709,86 @@ private fun Route.syllabusToggleProgress() {
                     it[updatedAt] = now
                 }
             }
+
+            // ── Parent-child propagation ──────────────────────────────────
+            // 1) If this is a PARENT (chapter) marked covered → mark all children
+            //    (topics) covered too.
+            // 2) If this is a CHILD (topic) unmarked → unmark its parent (chapter)
+            //    so the chapter doesn't show covered when a topic isn't.
+            val parentId = unitRow[CurriculumUnitsTable.parentId]
+            if (parentId == null && req.isCovered) {
+                // Parent marked covered → cover all children
+                val childIds = CurriculumUnitsTable.selectAll().where {
+                    (CurriculumUnitsTable.parentId eq unitId) and
+                        (CurriculumUnitsTable.isActive eq true)
+                }.map { it[CurriculumUnitsTable.id].value }
+
+                childIds.forEach { childId ->
+                    val childProg = SyllabusProgressTable.selectAll().where {
+                        (SyllabusProgressTable.unitId eq childId) and
+                            (SyllabusProgressTable.section eq section) and
+                            (SyllabusProgressTable.assignmentId eq asg.assignmentId)
+                    }.singleOrNull()
+
+                    if (childProg != null) {
+                        SyllabusProgressTable.update({
+                            SyllabusProgressTable.id eq childProg[SyllabusProgressTable.id]
+                        }) {
+                            it[isCovered] = true
+                            it[SyllabusProgressTable.coveredOn] = coveredOn
+                            it[coveredBy] = ctx.userId
+                            it[coveragePercent] = 100
+                            it[updatedAt] = now
+                        }
+                    } else {
+                        SyllabusProgressTable.insert {
+                            it[id] = UUID.randomUUID()
+                            it[SyllabusProgressTable.unitId] = childId
+                            it[SyllabusProgressTable.section] = section
+                            it[assignmentId] = asg.assignmentId
+                            it[isCovered] = true
+                            it[SyllabusProgressTable.coveredOn] = coveredOn
+                            it[coveredBy] = ctx.userId
+                            it[coveragePercent] = 100
+                            it[createdAt] = now
+                            it[updatedAt] = now
+                        }
+                    }
+                }
+            } else if (parentId != null && !req.isCovered) {
+                // Child unmarked → unmark parent
+                val parentProg = SyllabusProgressTable.selectAll().where {
+                    (SyllabusProgressTable.unitId eq parentId) and
+                        (SyllabusProgressTable.section eq section) and
+                        (SyllabusProgressTable.assignmentId eq asg.assignmentId)
+                }.singleOrNull()
+
+                if (parentProg != null && parentProg[SyllabusProgressTable.isCovered]) {
+                    SyllabusProgressTable.update({
+                        SyllabusProgressTable.id eq parentProg[SyllabusProgressTable.id]
+                    }) {
+                        it[isCovered] = false
+                        it[SyllabusProgressTable.coveredOn] = null
+                        it[coveredBy] = null
+                        it[coveragePercent] = 0
+                        it[updatedAt] = now
+                    }
+                } else if (parentProg == null) {
+                    // Parent had no progress row yet — insert as uncovered
+                    SyllabusProgressTable.insert {
+                        it[id] = UUID.randomUUID()
+                        it[SyllabusProgressTable.unitId] = parentId
+                        it[SyllabusProgressTable.section] = section
+                        it[assignmentId] = asg.assignmentId
+                        it[isCovered] = false
+                        it[SyllabusProgressTable.coveredOn] = null
+                        it[coveredBy] = null
+                        it[coveragePercent] = 0
+                        it[createdAt] = now
+                        it[updatedAt] = now
+                    }
+                }
+            }
         }
         val node = nodeForUnit(asg, unitId)
         if (node == null) {

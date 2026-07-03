@@ -687,11 +687,11 @@ private fun QuizSheet(viewModel: TeacherSyllabusViewModel) {
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .heightIn(min = 200.dp, max = 520.dp),
+                .heightIn(min = 200.dp, max = 600.dp),
             padding = 20.dp,
         ) {
             Column(
-                Modifier.fillMaxWidth().clickable(
+                Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                 ) {},

@@ -206,13 +206,32 @@ class TeacherSyllabusViewModel(
             )
             when (val result = repository.toggleSyllabusProgress(token, request)) {
                 is NetworkResult.Success -> {
-                    // Reconcile to the server's authoritative node (covered_on/note).
-                    val node = result.data.data?.toUi()
+                    // Reload full syllabus to reflect parent-child propagation
+                    // (marking a chapter covers all its topics; unmarking a topic
+                    // unmarks its parent chapter).
+                    val reloadResult = repository.loadSyllabus(token, s0.assignmentId)
                     _state.update { s ->
-                        s.copy(
-                            updatingUnitId = null,
-                            units = if (node != null) s.units.map { if (it.id == unitId) node else it } else s.units,
-                        )
+                        when (reloadResult) {
+                            is NetworkResult.Success -> {
+                                val d = reloadResult.data.data
+                                val uiUnits = d.units.map { u -> u.toUi() }
+                                s.copy(
+                                    updatingUnitId = null,
+                                    units = uiUnits,
+                                    coveredCount = d.coveredCount,
+                                    totalCount = d.totalCount,
+                                    hasDraftUnits = uiUnits.any { it.approvalStatus == "DRAFT" },
+                                )
+                            }
+                            else -> {
+                                // Fallback: update just the toggled node
+                                val node = result.data.data?.toUi()
+                                s.copy(
+                                    updatingUnitId = null,
+                                    units = if (node != null) s.units.map { if (it.id == unitId) node else it } else s.units,
+                                )
+                            }
+                        }
                     }
                 }
                 is NetworkResult.Error ->
@@ -517,9 +536,11 @@ class TeacherSyllabusViewModel(
             when (val result = repository.generateQuiz(token, request)) {
                 is NetworkResult.Success -> {
                     val quiz = result.data.data
-                    _state.update { it.copy(isGeneratingQuiz = false, showQuizSheet = false) }
                     if (quiz != null) {
+                        _state.update { it.copy(isGeneratingQuiz = false, showQuizSheet = false) }
                         loadQuizzes()
+                    } else {
+                        _state.update { it.copy(isGeneratingQuiz = false, quizError = "Quiz generation failed. Please try again.") }
                     }
                 }
                 is NetworkResult.Error -> _state.update { it.copy(isGeneratingQuiz = false, quizError = result.message) }
