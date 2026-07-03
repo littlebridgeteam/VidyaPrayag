@@ -116,3 +116,45 @@ export const IconReport = (p: P) => (
 export const IconLogs = (p: P) => (
   <svg {...base(p)}><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M7 9l3 3-3 3" /><path d="M13 15h4" /></svg>
 );
+export const IconTransport = (p: P) => (
+  <svg {...base(p)}><rect x="4" y="5" width="16" height="12" rx="2" /><path d="M4 11h16" /><circle cx="8" cy="19" r="1.5" /><circle cx="16" cy="19" r="1.5" /><path d="M7 19h10" /></svg>
+);
+export const IconLibrary = (p: P) => (
+  <svg {...base(p)}><path d="M5 4v16M9 4v16M13 4v16M17 4v16" /><path d="M3 4h18" /></svg>
+);
+export const IconScholarship = (p: P) => (
+  <svg {...base(p)}><path d="M12 3l8 4-8 4-8-4 8-4Z" /><path d="M8 9v5c0 1 2 2 4 2s4-1 4-2V9" /><path d="M20 7v5" /></svg>
+);
+export const IconSchedule = (p: P) => (
+  <svg {...base(p)}><circle cx="12" cy="12" r="8.5" /><path d="M12 7v5l3 2" /></svg>
+);
+export const IconClasses = (p: P) => (
+  <svg {...base(p)}><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 9h18M9 5v14" /></svg>
+);
+export const IconHealth = (p: P) => (
+  <svg {...base(p)}><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 11c0 5.5-7 10-7 10Z" /><path d="M12 11v3" /></svg>
+);
+export const IconIdCard = (p: P) => (
+  <svg {...base(p)}><rect x="3" y="6" width="18" height="12" rx="2" /><circle cx="8" cy="11" r="1.5" /><path d="M6 15h4M14 10h4M14 14h4" /></svg>
+);
+export const IconEvent = (p: P) => (
+  <svg {...base(p)}><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 9h18M8 3v4M16 3v4" /><path d="M8 14l2 2 4-4" /></svg>
+);
+export const IconAdmissions = (p: P) => (
+  <svg {...base(p)}><path d="M14 3v5h5" /><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-5Z" /><path d="M9 13l2 2 4-4" /></svg>
+);
+export const IconLink = (p: P) => (
+  <svg {...base(p)}><path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1" /><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1" /></svg>
+);
+export const IconBranding = (p: P) => (
+  <svg {...base(p)}><circle cx="12" cy="12" r="8.5" /><path d="M12 7v10M9.5 9.5h4a2 2 0 0 1 0 4h-4" /></svg>
+);
+export const IconCalendarPlatform = (p: P) => (
+  <svg {...base(p)}><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 9h18M8 3v4M16 3v4M7 13h4M13 13h4M7 17h4" /></svg>
+);
+export const IconPtm = (p: P) => (
+  <svg {...base(p)}><path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H8l-4 4V6a1 1 0 0 1 1-1Z" /><path d="M9 10h6M9 13h4" /></svg>
+);
+export const IconPace = (p: P) => (
+  <svg {...base(p)}><path d="M3 12h4l2-6 4 14 2-8h6" /><path d="M19 9l2 3-2 3" /></svg>
+);
