@@ -185,27 +185,55 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
 
     return when (segments.first()) {
         "parent" -> {
-            val tab = segments.getOrNull(1) ?: "home"
-            val overlay = when (segments.getOrNull(2)) {
-                "leave" -> "leave"
-                "messages" -> "messages"
-                "notifications" -> "notifications"
-                "calendar" -> "calendar"
-                "events" -> "events"
-                "transport" -> "transport"
-                "library" -> "library"
-                "scholarships" -> "scholarships"
-                "health" -> "health"
-                "pulse" -> "pulse"
-                "id-card", "digital-id" -> "id-card"
-                "report-card" -> "report-card"
-                "tutor" -> "tutor"
-                "timetable" -> "timetable"
-                "fees" -> "fees"
-                "announcements" -> "announcements"
-                else -> null
+            val secondSeg = segments.getOrNull(1) ?: "home"
+            val thirdSeg = segments.getOrNull(2)
+            // Valid bottom-nav tabs in ParentPortalV2.
+            val validTabs = setOf("home", "academics", "fees", "conversations", "profile")
+            if (secondSeg in validTabs) {
+                // Second segment is a tab name; third segment (if any) is an overlay.
+                val overlay = when (thirdSeg) {
+                    "leave" -> "leave"
+                    "messages" -> "messages"
+                    "notifications" -> "notifications"
+                    "calendar" -> "calendar"
+                    "events" -> "events"
+                    "transport" -> "transport"
+                    "library" -> "library"
+                    "scholarships" -> "scholarships"
+                    "health" -> "health"
+                    "pulse" -> "pulse"
+                    "id-card", "digital-id" -> "id-card"
+                    "report-card" -> "report-card"
+                    "tutor" -> "tutor"
+                    "timetable" -> "timetable"
+                    "fees" -> "fees"
+                    "announcements" -> "announcements"
+                    else -> null
+                }
+                DeepLinkTarget.ParentTab(EntryRole.Parent, secondSeg, overlay)
+            } else {
+                // Second segment is an overlay/screen name, not a bottom-nav tab.
+                // Map it to the correct tab + overlay so the LaunchedEffect can navigate.
+                val (mappedTab, mappedOverlay) = when (secondSeg) {
+                    "announcements" -> "home" to "announcements"
+                    "transport" -> "home" to "transport"
+                    "leave" -> "home" to "leave"
+                    "messages" -> "home" to "messages"
+                    "notifications" -> "home" to "notifications"
+                    "calendar" -> "home" to "calendar"
+                    "events" -> "home" to "events"
+                    "library" -> "home" to "library"
+                    "scholarships" -> "home" to "scholarships"
+                    "health" -> "home" to "health"
+                    "pulse" -> "home" to "pulse"
+                    "id-card", "digital-id" -> "home" to "id-card"
+                    "report-card" -> "academics" to "report-card"
+                    "tutor" -> "academics" to "tutor"
+                    "timetable" -> "academics" to "timetable"
+                    else -> "home" to null
+                }
+                DeepLinkTarget.ParentTab(EntryRole.Parent, mappedTab, mappedOverlay)
             }
-            DeepLinkTarget.ParentTab(EntryRole.Parent, tab, overlay)
         }
         "teacher" -> {
             val screen = segments.getOrNull(1) ?: "home"
