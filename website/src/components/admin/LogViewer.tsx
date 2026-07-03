@@ -63,11 +63,11 @@ export function LogViewer() {
     loadStats();
   }, [load, loadStats]);
 
-  // Auto-refresh logs every 10s (polling — EventSource can't send JWT headers).
+  // Auto-refresh logs every 500ms (polling — EventSource can't send JWT headers).
   useEffect(() => {
     const interval = setInterval(() => {
       load();
-    }, 10_000);
+    }, 500);
     return () => clearInterval(interval);
   }, [load]);
 
