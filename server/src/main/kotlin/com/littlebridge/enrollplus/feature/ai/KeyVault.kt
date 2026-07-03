@@ -134,8 +134,9 @@ enum class AiProvider(
         code = "openrouter",
         defaultBaseUrl = "https://openrouter.ai/api/v1",
         defaultModelEnv = "AI_MODEL_OPENROUTER",
-        // June 2026: free tier = 20 RPM, 50 RPD (1,000 RPD with $10 credit).
-        defaultModel = "meta-llama/llama-3.3-70b-instruct:free",
+        // July 2026: llama-3.3-70b-instruct:free is constantly rate-limited upstream.
+        // Switched to google/gemini-2.0-flash-exp:free — more reliable free tier on OpenRouter.
+        defaultModel = "google/gemini-2.0-flash-exp:free",
         tier = "reason",
         noTraining = true,
         freeTierRpm = 20,

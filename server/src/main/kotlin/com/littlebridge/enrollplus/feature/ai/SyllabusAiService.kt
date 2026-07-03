@@ -193,7 +193,8 @@ object SyllabusAiService {
             return null
         }
         return try {
-            val obj = json.parseToJsonElement(result.content).jsonObject
+            val cleaned = result.content.trim().removePrefix("```json").removePrefix("```").removeSuffix("```").trim()
+            val obj = json.parseToJsonElement(cleaned).jsonObject
             PacePlanEstimate(
                 perClassPct = obj["per_class_pct"]?.jsonPrimitive?.contentOrNull?.toDoubleOrNull() ?: 0.0,
                 estimatedCompletionWeek = obj["estimated_completion_week"]?.jsonPrimitive?.contentOrNull?.toIntOrNull() ?: 0,
@@ -277,7 +278,8 @@ object SyllabusAiService {
             return null
         }
         return try {
-            val obj = json.parseToJsonElement(result.content).jsonObject
+            val cleaned = result.content.trim().removePrefix("```json").removePrefix("```").removeSuffix("```").trim()
+            val obj = json.parseToJsonElement(cleaned).jsonObject
             AlertReconfirmation(
                 confirmed = obj["confirmed"]?.jsonPrimitive?.contentOrNull?.toBooleanStrictOrNull() ?: false,
                 reasoning = obj["reasoning"]?.jsonPrimitive?.contentOrNull ?: "",
@@ -349,7 +351,11 @@ object SyllabusAiService {
 
     private fun parseHierarchyJson(content: String, provider: String?): ParsedHierarchy {
         return try {
-            val obj = json.parseToJsonElement(content).jsonObject
+            val cleaned = content.trim()
+                .removePrefix("```json").removePrefix("```")
+                .removeSuffix("```")
+                .trim()
+            val obj = json.parseToJsonElement(cleaned).jsonObject
             val chapters = obj["chapters"]?.jsonArray?.map { ch ->
                 val chObj = ch.jsonObject
                 ParsedChapter(
@@ -376,7 +382,12 @@ object SyllabusAiService {
 
     private fun parseQuizJson(content: String): List<GeneratedQuestion> {
         return try {
-            val arr = json.parseToJsonElement(content).jsonArray
+            // Strip markdown code fences if present (```json ... ```)
+            val cleaned = content.trim()
+                .removePrefix("```json").removePrefix("```")
+                .removeSuffix("```")
+                .trim()
+            val arr = json.parseToJsonElement(cleaned).jsonArray
             arr.map { el ->
                 val obj = el.jsonObject
                 GeneratedQuestion(
