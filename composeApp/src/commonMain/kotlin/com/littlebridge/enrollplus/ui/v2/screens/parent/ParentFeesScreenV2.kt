@@ -32,6 +32,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VLabel
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
@@ -110,7 +112,7 @@ private fun ParentFeesContent(
                     .padding(bottom = 130.dp),
                 verticalArrangement = Arrangement.spacedBy(d.sm + 4.dp),
             ) {
-            Text("Fees", style = VTheme.type.h1.colored(c.ink))
+            Text(appString(StringKeys.PF_FEES), style = VTheme.type.h1.colored(c.ink))
             // ── Hero: outstanding balance + collection progress ─────────────────
             VCard(padding = 0.dp) {
                 Box(
@@ -149,8 +151,8 @@ private fun ParentFeesContent(
                                 .padding(horizontal = 16.dp, vertical = 10.dp),
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("Pay now", style = VTheme.type.bodyStrong.colored(Color.White))
-                                Text(" · Coming Soon", style = VTheme.type.caption.colored(Color.White.copy(alpha = 0.8f)))
+                                Text(appString(StringKeys.PF_PAY_NOW), style = VTheme.type.bodyStrong.colored(Color.White))
+                                Text(appString(StringKeys.PF_COMING_SOON), style = VTheme.type.caption.colored(Color.White.copy(alpha = 0.8f)))
                             }
                         }
                     }

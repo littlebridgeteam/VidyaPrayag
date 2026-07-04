@@ -42,6 +42,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VNavItem
 import com.littlebridge.enrollplus.ui.v2.components.VScreenScaffold
 import com.littlebridge.enrollplus.ui.v2.components.VStatusDot
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.navigation.DeepLinkTarget
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.screens.auth.ParentLinkChildScreenV2
@@ -257,17 +259,17 @@ fun ParentPortalV2(
     }
 
     val items = listOf(
-        VNavItem("home", "Home", VIcons.Home),
-        VNavItem("academics", "Academics", VIcons.School),
-        VNavItem("fees", "Fees", VIcons.Wallet),
+        VNavItem("home", appString(StringKeys.PPRT_HOME), VIcons.Home),
+        VNavItem("academics", appString(StringKeys.PPRT_ACADEMICS), VIcons.School),
+        VNavItem("fees", appString(StringKeys.PPRT_FEES), VIcons.Wallet),
         // Phase 3 (commit 9): "Activity" → "Conversations". The tab now leads with real two-way
         // messaging (Chat icon), with announcements one segment away — see ParentConversationsScreenV2.
         // The dock badge rides the real unread notifications count so the parent always sees pending
         // conversation activity at a glance.
-        VNavItem("conversations", "Conversations", VIcons.Chat, badge = notifications.unreadCount),
+        VNavItem("conversations", appString(StringKeys.PPRT_CONVERSATIONS), VIcons.Chat, badge = notifications.unreadCount),
         // Phase 4 (commit 10): the flagship house-colored collectible player card lives on its own
         // tab — see ParentProfileCardScreenV2.
-        VNavItem("profile", "Profile", VIcons.User),
+        VNavItem("profile", appString(StringKeys.PPRT_PROFILE), VIcons.User),
     )
 
     VScreenScaffold(
@@ -285,13 +287,13 @@ fun ParentPortalV2(
                 ?.toInt()
                 ?: (progress.overallProgress * 100).toInt()
             val subline = when {
-                level > 0 && rawProgress > 0 -> "Level $level · $rawProgress% journey"
-                level > 0 -> "Level $level"
+                level > 0 && rawProgress > 0 -> appString(StringKeys.PPRT_LEVEL_JOURNEY, "level" to level, "percent" to rawProgress)
+                level > 0 -> appString(StringKeys.PPRT_LEVEL, "level" to level)
                 progress.journeyDescription.isNotBlank() -> progress.journeyDescription
-                else -> "Your child"
+                else -> appString(StringKeys.PPRT_YOUR_CHILD)
             }
             ParentHeader(
-                childName = child?.name?.takeIf { it.isNotBlank() } ?: "Your child",
+                childName = child?.name?.takeIf { it.isNotBlank() } ?: appString(StringKeys.PPRT_YOUR_CHILD),
                 childSubline = subline,
                 childPhoto = child?.profilePic,
                 children = dashboard.children,
@@ -420,7 +422,7 @@ private fun ParentHeader(
                     VAvatar(name = childName.ifBlank { "?" }, src = childPhoto, size = 34.dp)
                     Column {
                         Text(
-                            childName.ifBlank { "Your child" },
+                            childName.ifBlank { appString(StringKeys.PPRT_YOUR_CHILD) },
                             style = VTheme.type.bodyStrong.colored(c.ink)
                                 .copy(fontSize = 13.5.sp, fontWeight = FontWeight.ExtraBold),
                         )
@@ -432,7 +434,7 @@ private fun ParentHeader(
                     if (canSwitch) {
                         Icon(
                             VIcons.ChevronDown,
-                            contentDescription = "Switch child",
+                            contentDescription = appString(StringKeys.PPRT_SWITCH_CHILD),
                             tint = c.ink3,
                             modifier = Modifier.size(16.dp),
                         )
@@ -462,7 +464,7 @@ private fun ParentHeader(
                                         )
                                         if (ch.currentLevel > 0) {
                                             Text(
-                                                "Level ${ch.currentLevel}",
+                                                appString(StringKeys.PPRT_LEVEL, "level" to ch.currentLevel),
                                                 style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp),
                                             )
                                         }

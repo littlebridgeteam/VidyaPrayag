@@ -42,6 +42,8 @@ import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -89,7 +91,7 @@ private fun AcademicCalendarContent(
 ) {
     val c = VTheme.colors
     Column(modifier.fillMaxSize().background(c.background)) {
-        VBackHeader(title = "Academic calendar", onBack = onBack)
+        VBackHeader(title = appString(StringKeys.CAL_ACADEMIC_TITLE), onBack = onBack)
 
         VStateHost(
             loading = state.isLoading,
@@ -99,8 +101,8 @@ private fun AcademicCalendarContent(
             // we never got back a month label (i.e. the call never resolved).
             isEmpty = !state.isLoading && state.errorMessage == null && state.currentMonth.isBlank(),
             modifier = Modifier.weight(1f).fillMaxWidth(),
-            emptyTitle = "Calendar not available",
-            emptyBody = "Sign in with a school account to view the academic calendar.",
+            emptyTitle = appString(StringKeys.CAL_NOT_AVAILABLE),
+            emptyBody = appString(StringKeys.CAL_SIGN_IN_PROMPT),
             emptyIcon = VIcons.Calendar,
             onRetry = onRetry,
             skeleton = { com.littlebridge.enrollplus.ui.v2.screens.SkeletonCalendar() },
@@ -118,12 +120,12 @@ private fun AcademicCalendarContent(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    MonthPill("‹ Prev", onClick = onPrev)
+                    MonthPill(appString(StringKeys.CAL_PREV), onClick = onPrev)
                     Text(
                         state.currentMonth.ifBlank { "—" },
                         style = VTheme.type.bodyStrong.colored(c.ink),
                     )
-                    MonthPill("Next ›", onClick = onNext)
+                    MonthPill(appString(StringKeys.CAL_NEXT_BTN), onClick = onNext)
                 }
 
                 // Day grid — derive the visible month from `currentDate` (ISO YYYY-MM-DD),
@@ -178,22 +180,22 @@ private fun AcademicCalendarContent(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         StatPill(
-                            label = "Working days",
+                            label = appString(StringKeys.CAL_WORKING_DAYS),
                             value = state.workingDays.toString(),
                             modifier = Modifier.weight(1f),
                         )
                         StatPill(
-                            label = "Holidays",
+                            label = appString(StringKeys.CAL_HOLIDAYS),
                             value = state.holidays.toString(),
                             modifier = Modifier.weight(1f),
                         )
                     }
                 }
 
-                VLabel("Upcoming events")
+                VLabel(appString(StringKeys.CAL_UPCOMING_EVENTS))
                 if (state.calendarEvents.isEmpty()) {
                     Text(
-                        "No events scheduled for this month.",
+                        appString(StringKeys.CAL_NO_EVENTS),
                         style = VTheme.type.caption.colored(c.ink2),
                     )
                 } else {

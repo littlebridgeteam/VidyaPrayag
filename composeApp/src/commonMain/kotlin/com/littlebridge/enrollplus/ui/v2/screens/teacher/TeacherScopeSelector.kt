@@ -30,7 +30,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.teacher.domain.model.TeacherClassSummaryDto
+import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 
@@ -49,8 +51,8 @@ fun TeacherScopeSelector(
     classes: List<TeacherClassSummaryDto>,
     onPick: (TeacherClassSummaryDto) -> Unit,
     modifier: Modifier = Modifier,
-    title: String = "Pick a class",
-    caption: String = "Choose one of your allocations to continue",
+    title: String = appString(StringKeys.TC_PICK_CLASS),
+    caption: String = appString(StringKeys.TC_PICK_ALLOCATION_DESC),
 ) {
     val c = VTheme.colors
     var query by remember { mutableStateOf("") }
@@ -60,7 +62,7 @@ fun TeacherScopeSelector(
     }
 
     Column(modifier.fillMaxWidth()) {
-        TEyebrow("SELECT SCOPE", dot = c.accent)
+        TEyebrow(appString(StringKeys.SCH_SELECT_SCOPE), dot = c.accent)
         Spacer(Modifier.height(6.dp))
         Text(title, style = VTheme.type.h2.colored(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold))
         Spacer(Modifier.height(2.dp))
@@ -102,7 +104,7 @@ private fun ScopeSearchField(value: String, onChange: (String) -> Unit) {
             cursorBrush = androidx.compose.ui.graphics.SolidColor(c.accent),
             decorationBox = { inner ->
                 Box {
-                    if (value.isBlank()) Text("Search your classes", style = VTheme.type.body.colored(c.ink3).copy(fontSize = 14.sp))
+                    if (value.isBlank()) Text(appString(StringKeys.TC_SEARCH_CLASSES), style = VTheme.type.body.colored(c.ink3).copy(fontSize = 14.sp))
                     inner()
                 }
             },
@@ -135,12 +137,12 @@ private fun ScopeRow(cls: TeacherClassSummaryDto, onPick: (TeacherClassSummaryDt
                     style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 15.sp, fontWeight = FontWeight.ExtraBold),
                 )
                 if (cls.isClassTeacher) {
-                    TPill("CLASS TEACHER", bg = c.accent.copy(alpha = 0.12f), fg = c.accentDeep)
+                    TPill(appString(StringKeys.TC_CLASS_TEACHER), bg = c.accent.copy(alpha = 0.12f), fg = c.accentDeep)
                 }
             }
             Spacer(Modifier.height(2.dp))
             Text(
-                "${cls.subject.ifBlank { "—" }} · ${cls.studentCount} students",
+                appString(StringKeys.TC_STUDENTS_COUNT, "subject" to cls.subject.ifBlank { "—" }, "count" to cls.studentCount.toString()),
                 style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp),
             )
         }

@@ -36,6 +36,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
@@ -64,7 +66,7 @@ fun TeacherPerformanceScreenV2(
     Column(modifier.fillMaxSize().statusBarsPadding()
         .imePadding()
         .navigationBarsPadding()) {
-        VBackHeader(title = "Teacher Performance", onBack = onBack)
+        VBackHeader(title = appString(StringKeys.SCH_TEACHER_PERFORMANCE), onBack = onBack)
         TeacherPerformanceContent(
             state = state,
             onRetry = viewModel::load,
@@ -94,8 +96,8 @@ private fun TeacherPerformanceContent(
                 state.accountabilityMatrix.isEmpty() &&
                 state.deptEfficiencies.isEmpty() &&
                 state.aggregateCompliance.isBlank(),
-            emptyTitle = "No data yet",
-            emptyBody = "Teacher analytics will appear here once faculty start posting attendance and marks.",
+            emptyTitle = appString(StringKeys.SCH_NO_DATA_YET),
+            emptyBody = appString(StringKeys.SCH_TEACHER_PERFORMANCE_DESC),
             emptyIcon = VIcons.Users,
             onRetry = onRetry,
         ) {
@@ -103,7 +105,7 @@ private fun TeacherPerformanceContent(
             VCard {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     Column(Modifier.weight(1f)) {
-                        Text("Aggregate compliance", style = VTheme.type.label.colored(c.ink3))
+                        Text(appString(StringKeys.SCH_AGGREGATE_COMPLIANCE), style = VTheme.type.label.colored(c.ink3))
                         Spacer(Modifier.height(4.dp))
                         Text(state.aggregateCompliance.ifBlank { "—" }, style = VTheme.type.dataLg.colored(c.ink))
                     }
@@ -115,7 +117,7 @@ private fun TeacherPerformanceContent(
 
             // Star Faculty
             if (state.starFaculty.isNotEmpty()) {
-                VSectionHeader(title = "STAR FACULTY")
+                VSectionHeader(title = appString(StringKeys.SCH_STAR_FACULTY))
                 VCard {
                     state.starFaculty.forEachIndexed { i, t ->
                         if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(c.border1))
@@ -126,13 +128,13 @@ private fun TeacherPerformanceContent(
 
             // Accountability matrix
             if (state.accountabilityMatrix.isNotEmpty()) {
-                VSectionHeader(title = "ACCOUNTABILITY MATRIX")
+                VSectionHeader(title = appString(StringKeys.SCH_ACCOUNTABILITY_MATRIX))
                 state.accountabilityMatrix.forEach { f -> AccountabilityCard(f) }
             }
 
             // Department efficiencies
             if (state.deptEfficiencies.isNotEmpty()) {
-                VSectionHeader(title = "DEPARTMENT EFFICIENCY")
+                VSectionHeader(title = appString(StringKeys.SCH_DEPARTMENT_EFFICIENCY))
                 VCard {
                     state.deptEfficiencies.forEachIndexed { i, d ->
                         if (i > 0) Spacer(Modifier.height(10.dp))
@@ -197,9 +199,9 @@ private fun AccountabilityCard(f: FacultyAccountability) {
         }
         Spacer(Modifier.height(10.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Box(Modifier.weight(1f)) { MiniStat(label = "Compliance", value = "${f.complianceScore}%") }
-            Box(Modifier.weight(1f)) { MiniStat(label = "Delay", value = f.avgUpdateDelay) }
-            Box(Modifier.weight(1f)) { MiniStat(label = "Avg mark", value = f.studentAvgMark) }
+            Box(Modifier.weight(1f)) { MiniStat(label = appString(StringKeys.SCH_COMPLIANCE), value = "${f.complianceScore}%") }
+            Box(Modifier.weight(1f)) { MiniStat(label = appString(StringKeys.SCH_DELAY), value = f.avgUpdateDelay) }
+            Box(Modifier.weight(1f)) { MiniStat(label = appString(StringKeys.SCH_AVG_MARK), value = f.studentAvgMark) }
         }
     }
 }

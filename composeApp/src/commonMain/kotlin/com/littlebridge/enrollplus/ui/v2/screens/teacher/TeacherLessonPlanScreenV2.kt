@@ -35,6 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.feature.teacher.domain.model.HomeworkItemDto
 import com.littlebridge.enrollplus.feature.teacher.domain.model.SyllabusNodeDto
 import com.littlebridge.enrollplus.feature.teacher.presentation.LessonPlanMode
@@ -46,6 +47,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
@@ -102,7 +104,7 @@ private fun LessonPlanListMode(viewModel: TeacherLessonPlanViewModel, scopeLabel
         item {
             TCard(padding = 16.dp) {
                 Column {
-                    TEyebrow("LESSON PLANS", dot = c.accent)
+                    TEyebrow(appString(StringKeys.TC_LESSON_PLANS), dot = c.accent)
                     Spacer(Modifier.height(6.dp))
                     Text(
                         scopeLabel.ifBlank { state.scopeLabel },
@@ -111,7 +113,7 @@ private fun LessonPlanListMode(viewModel: TeacherLessonPlanViewModel, scopeLabel
                     Spacer(Modifier.height(12.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         VButton(
-                            text = "New plan",
+                            text = appString(StringKeys.TC_NEW_PLAN),
                             onClick = { viewModel.openNewEditor() },
                             modifier = Modifier.weight(1f),
                             variant = VButtonVariant.Primary,
@@ -120,7 +122,7 @@ private fun LessonPlanListMode(viewModel: TeacherLessonPlanViewModel, scopeLabel
                             leading = { Icon(VIcons.Plus, contentDescription = null, modifier = Modifier.size(15.dp)) },
                         )
                         VButton(
-                            text = "Calendar",
+                            text = appString(StringKeys.TC_CALENDAR),
                             onClick = { viewModel.openCalendar() },
                             modifier = Modifier.weight(1f),
                             variant = VButtonVariant.Secondary,
@@ -129,7 +131,7 @@ private fun LessonPlanListMode(viewModel: TeacherLessonPlanViewModel, scopeLabel
                             leading = { Icon(VIcons.Calendar, contentDescription = null, modifier = Modifier.size(15.dp)) },
                         )
                         VButton(
-                            text = "Templates",
+                            text = appString(StringKeys.TC_TEMPLATES),
                             onClick = { viewModel.openTemplates() },
                             modifier = Modifier.weight(1f),
                             variant = VButtonVariant.Secondary,
@@ -145,10 +147,10 @@ private fun LessonPlanListMode(viewModel: TeacherLessonPlanViewModel, scopeLabel
         // Status filter chips
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                LessonStatusChip("All", state.statusFilter == null) { viewModel.setStatusFilter(null) }
-                LessonStatusChip("Planned", state.statusFilter == "planned") { viewModel.setStatusFilter("planned") }
-                LessonStatusChip("Completed", state.statusFilter == "completed") { viewModel.setStatusFilter("completed") }
-                LessonStatusChip("Skipped", state.statusFilter == "skipped") { viewModel.setStatusFilter("skipped") }
+                LessonStatusChip(appString(StringKeys.TC_ALL), state.statusFilter == null) { viewModel.setStatusFilter(null) }
+                LessonStatusChip(appString(StringKeys.TC_PLANNED), state.statusFilter == "planned") { viewModel.setStatusFilter("planned") }
+                LessonStatusChip(appString(StringKeys.TC_COMPLETED), state.statusFilter == "completed") { viewModel.setStatusFilter("completed") }
+                LessonStatusChip(appString(StringKeys.TC_SKIPPED), state.statusFilter == "skipped") { viewModel.setStatusFilter("skipped") }
             }
         }
 
@@ -159,9 +161,9 @@ private fun LessonPlanListMode(viewModel: TeacherLessonPlanViewModel, scopeLabel
             state.error != null && state.items.isEmpty() -> item {
                 TCard {
                     Column {
-                        Text("Couldn't load lesson plans", style = VTheme.type.bodyStrong.colored(c.ink))
+                        Text(appString(StringKeys.TC_COULDNT_LOAD_LESSON_PLANS), style = VTheme.type.bodyStrong.colored(c.ink))
                         Spacer(Modifier.height(8.dp))
-                        VButton("Retry", onClick = { viewModel.retry() }, tone = VButtonTone.Lavender, size = VButtonSize.Sm)
+                        VButton(appString(StringKeys.COMMON_BUTTON_RETRY), onClick = { viewModel.retry() }, tone = VButtonTone.Lavender, size = VButtonSize.Sm)
                     }
                 }
             }
@@ -173,8 +175,8 @@ private fun LessonPlanListMode(viewModel: TeacherLessonPlanViewModel, scopeLabel
                     ) {
                         TIconDisc(VIcons.ClipboardList, tint = c.accent, bg = c.accent.copy(alpha = 0.14f), size = 48.dp, glyph = 24.dp)
                         Spacer(Modifier.height(10.dp))
-                        Text("No lesson plans yet", style = VTheme.type.h3.colored(c.ink))
-                        Text("Create your first lesson plan for this class.", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp))
+                        Text(appString(StringKeys.TC_NO_LESSON_PLANS_YET), style = VTheme.type.h3.colored(c.ink))
+                        Text(appString(StringKeys.TC_CREATE_FIRST_LESSON_PLAN), style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp))
                     }
                 }
             }
@@ -238,7 +240,7 @@ private fun LessonPlanRow(plan: LessonPlanSummary, onClick: () -> Unit) {
                 overflow = TextOverflow.Ellipsis,
             )
             Spacer(Modifier.height(2.dp))
-            val dateText = plan.plannedDate?.let { prettyDateShort(it) } ?: "No date"
+            val dateText = plan.plannedDate?.let { prettyDateShort(it) } ?: appString(StringKeys.TC_NO_DATE)
             val unitText = plan.unitTitle?.let { " · $it" } ?: ""
             Text(
                 "$dateText · ${plan.durationMinutes} min$unitText",
@@ -278,9 +280,9 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
                         Modifier.size(34.dp).clip(CircleShape).background(c.cream)
                             .clickable(interactionSource = ix, indication = null) { viewModel.closeEditor() },
                         contentAlignment = Alignment.Center,
-                    ) { Icon(VIcons.ArrowLeft, contentDescription = "Back", tint = c.ink2, modifier = Modifier.size(18.dp)) }
+                    ) { Icon(VIcons.ArrowLeft, contentDescription = appString(StringKeys.COMMON_BUTTON_BACK), tint = c.ink2, modifier = Modifier.size(18.dp)) }
                     Spacer(Modifier.width(12.dp))
-                    TEyebrow(if (e.isNew) "NEW LESSON PLAN" else "EDIT LESSON PLAN", dot = c.accent)
+                    TEyebrow(if (e.isNew) appString(StringKeys.TC_NEW_LESSON_PLAN) else appString(StringKeys.TC_EDIT_LESSON_PLAN), dot = c.accent)
                 }
             }
         }
@@ -289,8 +291,8 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
         item {
             TCard(padding = 16.dp) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Title", style = VTheme.type.label.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
-                    VInput(value = e.title, onValueChange = viewModel::setEditorTitle, placeholder = "Lesson title")
+                    Text(appString(StringKeys.TC_TITLE), style = VTheme.type.label.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
+                    VInput(value = e.title, onValueChange = viewModel::setEditorTitle, placeholder = appString(StringKeys.TC_LESSON_TITLE))
                 }
             }
         }
@@ -300,12 +302,12 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
             TCard(padding = 16.dp) {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Column(Modifier.weight(1f)) {
-                        Text("Planned date", style = VTheme.type.label.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
+                        Text(appString(StringKeys.TC_PLANNED_DATE), style = VTheme.type.label.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
                         Spacer(Modifier.height(6.dp))
                         VInput(value = e.plannedDate, onValueChange = viewModel::setEditorDate, placeholder = "YYYY-MM-DD")
                     }
                     Column(Modifier.width(100.dp)) {
-                        Text("Minutes", style = VTheme.type.label.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
+                        Text(appString(StringKeys.TC_MINUTES), style = VTheme.type.label.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
                         Spacer(Modifier.height(6.dp))
                         VInput(value = e.durationMinutes.toString(), onValueChange = { v -> v.toIntOrNull()?.let { viewModel.setEditorDuration(it) } }, placeholder = "45")
                     }
@@ -317,9 +319,9 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
         item {
             TCard(padding = 16.dp) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Curriculum unit (optional)", style = VTheme.type.label.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
+                    Text(appString(StringKeys.TC_CURRICULUM_UNIT_OPTIONAL), style = VTheme.type.label.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
                     if (state.syllabusUnits.isEmpty()) {
-                        Text("No syllabus units available", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp))
+                        Text(appString(StringKeys.TC_NO_SYLLABUS_UNITS), style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp))
                     } else {
                         UnitPicker(
                             units = state.syllabusUnits,
@@ -335,9 +337,9 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
         item {
             TCard(padding = 16.dp) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Link homework (optional)", style = VTheme.type.label.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
+                    Text(appString(StringKeys.TC_LINK_HOMEWORK_OPTIONAL), style = VTheme.type.label.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
                     if (state.homeworkOptions.isEmpty()) {
-                        Text("No active homework for this class", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp))
+                        Text(appString(StringKeys.TC_NO_ACTIVE_HOMEWORK_CLASS), style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp))
                     } else {
                         HomeworkPicker(
                             homework = state.homeworkOptions,
@@ -353,7 +355,7 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
         item {
             TCard(padding = 16.dp) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Objectives", style = VTheme.type.label.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
+                    Text(appString(StringKeys.TC_OBJECTIVES), style = VTheme.type.label.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
                     e.objectives.forEachIndexed { i, obj ->
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Box(Modifier.size(6.dp).clip(CircleShape).background(c.accent))
@@ -363,18 +365,18 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
                                 Modifier.size(24.dp).clip(CircleShape).background(c.cream)
                                     .clickable(interactionSource = ix, indication = null) { viewModel.removeObjective(i) },
                                 contentAlignment = Alignment.Center,
-                            ) { Icon(VIcons.Close, contentDescription = "Remove", tint = c.ink3, modifier = Modifier.size(12.dp)) }
+                            ) { Icon(VIcons.Close, contentDescription = appString(StringKeys.TC_REMOVE), tint = c.ink3, modifier = Modifier.size(12.dp)) }
                         }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         VInput(
                             value = objectiveText,
                             onValueChange = { objectiveText = it },
-                            placeholder = "Add objective…",
+                            placeholder = appString(StringKeys.TC_ADD_OBJECTIVE),
                             modifier = Modifier.weight(1f),
                         )
                         VButton(
-                            text = "Add",
+                            text = appString(StringKeys.TC_ADD),
                             onClick = { viewModel.addObjective(objectiveText); objectiveText = "" },
                             size = VButtonSize.Sm,
                             variant = VButtonVariant.Secondary,
@@ -389,7 +391,7 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
         item {
             TCard(padding = 16.dp) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Activities", style = VTheme.type.label.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
+                    Text(appString(StringKeys.TC_ACTIVITIES), style = VTheme.type.label.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
                     e.activities.forEachIndexed { i, act ->
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Box(Modifier.size(6.dp).clip(CircleShape).background(c.tealDeep))
@@ -399,24 +401,24 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
                                 Modifier.size(24.dp).clip(CircleShape).background(c.cream)
                                     .clickable(interactionSource = ix, indication = null) { viewModel.removeActivity(i) },
                                 contentAlignment = Alignment.Center,
-                            ) { Icon(VIcons.Close, contentDescription = "Remove", tint = c.ink3, modifier = Modifier.size(12.dp)) }
+                            ) { Icon(VIcons.Close, contentDescription = appString(StringKeys.TC_REMOVE), tint = c.ink3, modifier = Modifier.size(12.dp)) }
                         }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         VInput(
                             value = activityText,
                             onValueChange = { activityText = it },
-                            placeholder = "Add activity…",
+                            placeholder = appString(StringKeys.TC_ADD_ACTIVITY),
                             modifier = Modifier.weight(1f),
                         )
                         VInput(
                             value = activityDuration,
                             onValueChange = { activityDuration = it },
-                            placeholder = "min",
+                            placeholder = appString(StringKeys.TC_MIN),
                             modifier = Modifier.width(60.dp),
                         )
                         VButton(
-                            text = "Add",
+                            text = appString(StringKeys.TC_ADD),
                             onClick = {
                                 val dur = activityDuration.toIntOrNull() ?: 15
                                 viewModel.addActivity(activityText, dur)
@@ -436,7 +438,7 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
         item {
             TCard(padding = 16.dp) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Resources", style = VTheme.type.label.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
+                    Text(appString(StringKeys.TC_RESOURCES), style = VTheme.type.label.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
                     e.resources.forEachIndexed { i, res ->
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Box(Modifier.size(6.dp).clip(CircleShape).background(c.tealDeep))
@@ -446,18 +448,18 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
                                 Modifier.size(24.dp).clip(CircleShape).background(c.cream)
                                     .clickable(interactionSource = ix, indication = null) { viewModel.removeResource(i) },
                                 contentAlignment = Alignment.Center,
-                            ) { Icon(VIcons.Close, contentDescription = "Remove", tint = c.ink3, modifier = Modifier.size(12.dp)) }
+                            ) { Icon(VIcons.Close, contentDescription = appString(StringKeys.TC_REMOVE), tint = c.ink3, modifier = Modifier.size(12.dp)) }
                         }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         VInput(
                             value = resourceText,
                             onValueChange = { resourceText = it },
-                            placeholder = "Add resource…",
+                            placeholder = appString(StringKeys.TC_ADD_RESOURCE),
                             modifier = Modifier.weight(1f),
                         )
                         VButton(
-                            text = "Add",
+                            text = appString(StringKeys.TC_ADD),
                             onClick = { viewModel.addResource(resourceText); resourceText = "" },
                             size = VButtonSize.Sm,
                             variant = VButtonVariant.Secondary,
@@ -472,8 +474,8 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
         item {
             TCard(padding = 16.dp) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Assessment method", style = VTheme.type.label.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
-                    VInput(value = e.assessmentMethod, onValueChange = viewModel::setEditorAssessment, placeholder = "How will you assess? (optional)")
+                    Text(appString(StringKeys.TC_ASSESSMENT_METHOD), style = VTheme.type.label.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
+                    VInput(value = e.assessmentMethod, onValueChange = viewModel::setEditorAssessment, placeholder = appString(StringKeys.TC_HOW_ASSESS_OPTIONAL))
                 }
             }
         }
@@ -489,7 +491,7 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 VButton(
-                    text = if (e.isNew) "Create plan" else "Save changes",
+                    text = if (e.isNew) appString(StringKeys.TC_CREATE_PLAN) else appString(StringKeys.TC_SAVE_CHANGES),
                     onClick = { viewModel.savePlan() },
                     full = true,
                     variant = VButtonVariant.Primary,
@@ -500,7 +502,7 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
                 if (!e.isNew) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         VButton(
-                            text = "Complete",
+                            text = appString(StringKeys.TC_COMPLETE),
                             onClick = { viewModel.completePlan() },
                             modifier = Modifier.weight(1f),
                             variant = VButtonVariant.Secondary,
@@ -510,7 +512,7 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
                             enabled = !e.isCompleted && !e.isSkipped,
                         )
                         VButton(
-                            text = "Skip",
+                            text = appString(StringKeys.TC_SKIP),
                             onClick = { viewModel.skipPlan() },
                             modifier = Modifier.weight(1f),
                             variant = VButtonVariant.Secondary,
@@ -521,14 +523,14 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         VButton(
-                            text = "Save as template",
+                            text = appString(StringKeys.TC_SAVE_AS_TEMPLATE),
                             onClick = { viewModel.openSaveTemplateDialog() },
                             modifier = Modifier.weight(1f),
                             variant = VButtonVariant.Ghost,
                             size = VButtonSize.Sm,
                         )
                         VButton(
-                            text = "Delete",
+                            text = appString(StringKeys.COMMON_BUTTON_DELETE),
                             onClick = { viewModel.deletePlan() },
                             modifier = Modifier.weight(1f),
                             variant = VButtonVariant.Ghost,
@@ -552,8 +554,8 @@ private fun SaveTemplateDialog(viewModel: TeacherLessonPlanViewModel) {
     val state by viewModel.state.collectAsStateV2()
     TCard(padding = 16.dp) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Save as template", style = VTheme.type.h3.colored(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold))
-            VInput(value = state.templateTitle, onValueChange = viewModel::setTemplateTitle, placeholder = "Template title")
+            Text(appString(StringKeys.TC_SAVE_AS_TEMPLATE), style = VTheme.type.h3.colored(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold))
+            VInput(value = state.templateTitle, onValueChange = viewModel::setTemplateTitle, placeholder = appString(StringKeys.TC_TEMPLATE_TITLE))
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 val ix = remember { MutableInteractionSource() }
                 Box(
@@ -565,11 +567,11 @@ private fun SaveTemplateDialog(viewModel: TeacherLessonPlanViewModel) {
                 ) {
                     if (state.templateIsShared) Icon(VIcons.Check, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(14.dp))
                 }
-                Text("Share with other teachers in school", style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp))
+                Text(appString(StringKeys.TC_SHARE_WITH_TEACHERS), style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                VButton("Cancel", onClick = { viewModel.closeSaveTemplateDialog() }, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost, size = VButtonSize.Md)
-                VButton("Save", onClick = { viewModel.saveTemplate() }, modifier = Modifier.weight(1f), tone = VButtonTone.Lavender, size = VButtonSize.Md, loading = state.isSavingTemplate)
+                VButton(appString(StringKeys.COMMON_BUTTON_CANCEL), onClick = { viewModel.closeSaveTemplateDialog() }, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost, size = VButtonSize.Md)
+                VButton(appString(StringKeys.COMMON_BUTTON_SAVE), onClick = { viewModel.saveTemplate() }, modifier = Modifier.weight(1f), tone = VButtonTone.Lavender, size = VButtonSize.Md, loading = state.isSavingTemplate)
             }
         }
     }
@@ -598,9 +600,9 @@ private fun LessonPlanCalendarMode(viewModel: TeacherLessonPlanViewModel) {
                         Modifier.size(34.dp).clip(CircleShape).background(c.cream)
                             .clickable(interactionSource = ix, indication = null) { viewModel.closeCalendar() },
                         contentAlignment = Alignment.Center,
-                    ) { Icon(VIcons.ArrowLeft, contentDescription = "Back", tint = c.ink2, modifier = Modifier.size(18.dp)) }
+                    ) { Icon(VIcons.ArrowLeft, contentDescription = appString(StringKeys.COMMON_BUTTON_BACK), tint = c.ink2, modifier = Modifier.size(18.dp)) }
                     Spacer(Modifier.width(12.dp))
-                    TEyebrow("CALENDAR", dot = c.accent)
+                    TEyebrow(appString(StringKeys.TC_CALENDAR), dot = c.accent)
                     Spacer(Modifier.width(8.dp))
                     Text(cal.month.ifBlank { "—" }, style = VTheme.type.h3.colored(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold))
                 }
@@ -615,7 +617,7 @@ private fun LessonPlanCalendarMode(viewModel: TeacherLessonPlanViewModel) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                         TIconDisc(VIcons.Calendar, tint = c.accent, bg = c.accent.copy(alpha = 0.14f), size = 48.dp, glyph = 24.dp)
                         Spacer(Modifier.height(10.dp))
-                        Text("No plans this month", style = VTheme.type.h3.colored(c.ink))
+                        Text(appString(StringKeys.TC_NO_PLANS_THIS_MONTH), style = VTheme.type.h3.colored(c.ink))
                     }
                 }
             }
@@ -675,9 +677,9 @@ private fun LessonPlanTemplatesMode(viewModel: TeacherLessonPlanViewModel) {
                         Modifier.size(34.dp).clip(CircleShape).background(c.cream)
                             .clickable(interactionSource = ix, indication = null) { viewModel.closeTemplates() },
                         contentAlignment = Alignment.Center,
-                    ) { Icon(VIcons.ArrowLeft, contentDescription = "Back", tint = c.ink2, modifier = Modifier.size(18.dp)) }
+                    ) { Icon(VIcons.ArrowLeft, contentDescription = appString(StringKeys.COMMON_BUTTON_BACK), tint = c.ink2, modifier = Modifier.size(18.dp)) }
                     Spacer(Modifier.width(12.dp))
-                    TEyebrow("TEMPLATES", dot = c.accent)
+                    TEyebrow(appString(StringKeys.TC_TEMPLATES), dot = c.accent)
                 }
             }
         }
@@ -688,9 +690,9 @@ private fun LessonPlanTemplatesMode(viewModel: TeacherLessonPlanViewModel) {
             item {
                 TCard {
                     Column {
-                        Text("Couldn't load templates", style = VTheme.type.bodyStrong.colored(c.ink))
+                        Text(appString(StringKeys.TC_COULDNT_LOAD_TEMPLATES), style = VTheme.type.bodyStrong.colored(c.ink))
                         Spacer(Modifier.height(8.dp))
-                        VButton("Retry", onClick = { viewModel.loadTemplates() }, tone = VButtonTone.Lavender, size = VButtonSize.Sm)
+                        VButton(appString(StringKeys.COMMON_BUTTON_RETRY), onClick = { viewModel.loadTemplates() }, tone = VButtonTone.Lavender, size = VButtonSize.Sm)
                     }
                 }
             }
@@ -700,8 +702,8 @@ private fun LessonPlanTemplatesMode(viewModel: TeacherLessonPlanViewModel) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                         TIconDisc(VIcons.ClipboardList, tint = c.accent, bg = c.accent.copy(alpha = 0.14f), size = 48.dp, glyph = 24.dp)
                         Spacer(Modifier.height(10.dp))
-                        Text("No templates yet", style = VTheme.type.h3.colored(c.ink))
-                        Text("Save a lesson plan as a template for quick reuse.", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp))
+                        Text(appString(StringKeys.TC_NO_TEMPLATES_YET), style = VTheme.type.h3.colored(c.ink))
+                        Text(appString(StringKeys.TC_SAVE_LESSON_AS_TEMPLATE), style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp))
                     }
                 }
             }
@@ -739,12 +741,12 @@ private fun TemplateRow(
                     Text("${template.objectives.size} objectives · ${template.durationMinutes} min", style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp))
                 }
                 if (template.isShared) {
-                    TPill("SHARED", bg = c.teal.copy(alpha = 0.12f), fg = c.tealDeep)
+                    TPill(appString(StringKeys.TC_SHARED), bg = c.teal.copy(alpha = 0.12f), fg = c.tealDeep)
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 VButton(
-                    text = "Use template",
+                    text = appString(StringKeys.TC_USE_TEMPLATE),
                     onClick = onInstantiate,
                     modifier = Modifier.weight(1f),
                     variant = VButtonVariant.Primary,
@@ -752,7 +754,7 @@ private fun TemplateRow(
                     size = VButtonSize.Sm,
                 )
                 VButton(
-                    text = "Delete",
+                    text = appString(StringKeys.COMMON_BUTTON_DELETE),
                     onClick = onDelete,
                     modifier = Modifier.weight(1f),
                     variant = VButtonVariant.Ghost,
@@ -769,12 +771,12 @@ private fun InstantiateDialog(viewModel: TeacherLessonPlanViewModel) {
     val state by viewModel.state.collectAsStateV2()
     TCard(padding = 16.dp) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Instantiate from template", style = VTheme.type.h3.colored(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold))
-            Text("Pick a date for this lesson plan", style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.sp))
+            Text(appString(StringKeys.TC_INSTANTIATE_FROM_TEMPLATE), style = VTheme.type.h3.colored(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold))
+            Text(appString(StringKeys.TC_PICK_DATE_FOR_LESSON), style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.sp))
             VInput(value = state.instantiateDate, onValueChange = viewModel::setInstantiateDate, placeholder = "YYYY-MM-DD")
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                VButton("Cancel", onClick = { viewModel.closeInstantiateDialog() }, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost, size = VButtonSize.Md)
-                VButton("Create", onClick = { viewModel.instantiateFromTemplate() }, modifier = Modifier.weight(1f), tone = VButtonTone.Lavender, size = VButtonSize.Md, loading = state.isInstantiating)
+                VButton(appString(StringKeys.COMMON_BUTTON_CANCEL), onClick = { viewModel.closeInstantiateDialog() }, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost, size = VButtonSize.Md)
+                VButton(appString(StringKeys.COMMON_BUTTON_CREATE), onClick = { viewModel.instantiateFromTemplate() }, modifier = Modifier.weight(1f), tone = VButtonTone.Lavender, size = VButtonSize.Md, loading = state.isInstantiating)
             }
         }
     }
@@ -791,7 +793,7 @@ private fun UnitPicker(
     onPick: (String?) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        PickerRow(label = "No unit linked", selected = selectedId == null, onClick = { onPick(null) })
+        PickerRow(label = appString(StringKeys.TC_NO_UNIT_LINKED), selected = selectedId == null, onClick = { onPick(null) })
         units.forEach { unit ->
             val indent = (unit.depth.coerceIn(0, 3) * 12).dp
             PickerRow(
@@ -811,7 +813,7 @@ private fun HomeworkPicker(
     onPick: (String?) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        PickerRow(label = "No homework linked", selected = selectedId == null, onClick = { onPick(null) })
+        PickerRow(label = appString(StringKeys.TC_NO_HOMEWORK_LINKED), selected = selectedId == null, onClick = { onPick(null) })
         homework.forEach { hw ->
             PickerRow(
                 label = "${hw.title} (due ${hw.dueDate})",

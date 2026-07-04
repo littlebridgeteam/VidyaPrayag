@@ -64,6 +64,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.ui.v2.components.VAvatar
+import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
@@ -80,6 +81,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VTag
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.VThemeRegistry
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.feature.admin.presentation.AcademicInfoOBViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.BrandingInfoOBViewModel
@@ -122,7 +124,14 @@ fun SchoolOnboardingScreenV2(
     VTheme(themeDef = VThemeRegistry.resolve("warm")) {
         val c = VTheme.colors
         val d = VTheme.dimens
-        val titles = listOf("School identity", "Academic year", "Classes & sections", "Subjects", "Teachers", "Students")
+        val titles = listOf(
+            appString(StringKeys.OB_T_IDENTITY),
+            appString(StringKeys.OB_T_ACADEMIC),
+            appString(StringKeys.OB_T_CLASSES),
+            appString(StringKeys.OB_T_SUBJECTS),
+            appString(StringKeys.OB_T_TEACHERS),
+            appString(StringKeys.OB_T_STUDENTS),
+        )
 
         // Map the server's onboarding step to this wizard's 1-based step index.
         // BASIC→1, BRANDING→2 (academic-year UI), ACADEMIC→3 (classes), REVIEW→6.
@@ -273,7 +282,7 @@ fun SchoolOnboardingScreenV2(
             val resolvedName = launchState.schoolName
                 .takeIf { it.isNotBlank() && it != "—" }
                 ?: legalName.takeIf { it.isNotBlank() }
-                ?: "Your school"
+                ?: appString(StringKeys.OB_CM_YOUR_SCHOOL)
             CompletionScreen(
                 schoolName = resolvedName,
                 provisionedTeachers = provisionState.results,
@@ -297,7 +306,7 @@ fun SchoolOnboardingScreenV2(
             // ── Header + step indicator ─────────────────────────────────────────────
             Column(Modifier.fillMaxWidth().padding(horizontal = d.lg, vertical = d.md)) {
                 Spacer(Modifier.height(d.sm))
-                Text("ONBOARDING", style = VTheme.type.labelStrong.colored(c.ink3))
+                Text(appString(StringKeys.OB_ONBOARDING), style = VTheme.type.labelStrong.colored(c.ink3))
                 Spacer(Modifier.height(d.sm))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(d.xs)) {
                     repeat(6) { i ->
@@ -319,7 +328,7 @@ fun SchoolOnboardingScreenV2(
                 }
                 Spacer(Modifier.height(d.md))
                 Text(titles[step - 1], style = VTheme.type.h2.colored(c.ink))
-                Text("Step $step of 6", style = VTheme.type.caption.colored(c.ink3))
+                Text(appString(StringKeys.OB_STEP_OF, "step" to step, "total" to 6), style = VTheme.type.caption.colored(c.ink3))
             }
 
             // §13.2 — wrap the per-step body in an AnimatedContent so each step
@@ -417,7 +426,7 @@ fun SchoolOnboardingScreenV2(
             ) {
                 if (step > 1) {
                     VButton(
-                        text = "Back",
+                        text = appString(StringKeys.OB_BACK),
                         onClick = { if (!isSubmitting) step-- },
                         variant = VButtonVariant.Ghost,
                         tone = VButtonTone.Navy,
@@ -425,14 +434,14 @@ fun SchoolOnboardingScreenV2(
                     )
                 }
                 VButton(
-                    text = if (step < 6) "Continue" else "Finish setup",
+                    text = if (step < 6) appString(StringKeys.OB_CONTINUE) else appString(StringKeys.OB_FINISH),
                     onClick = { continueClicked() },
                     full = true,
                     size = VButtonSize.Lg,
                     tone = if (step == 6) VButtonTone.Teal else VButtonTone.Navy,
                     loading = isSubmitting,
                     enabled = !isSubmitting,
-                    successLabel = "Setting up",
+                    successLabel = appString(StringKeys.OB_SETTING_UP),
                     trailing = { Icon(VIcons.ArrowRight, contentDescription = null, modifier = Modifier.size(16.dp)) },
                 )
             }
@@ -458,24 +467,24 @@ private fun IdentityStep(
     val c = VTheme.colors
     val d = VTheme.dimens
 
-    VInput(legalName, onLegalNameChange, label = "Full legal name", placeholder = "Saraswati Vidya Mandir", modifier = Modifier.fillMaxWidth())
-    VInput(shortName, onShortNameChange, label = "Short name", placeholder = "SVM", modifier = Modifier.fillMaxWidth())
-    VInput(affiliation, onAffiliationChange, label = "Affiliation number", placeholder = "UP/CBSE/2021/4421", modifier = Modifier.fillMaxWidth())
+    VInput(legalName, onLegalNameChange, label = appString(StringKeys.OB_ID_LEGAL_NAME), placeholder = appString(StringKeys.OB_ID_LEGAL_PH), modifier = Modifier.fillMaxWidth())
+    VInput(shortName, onShortNameChange, label = appString(StringKeys.OB_ID_SHORT_NAME), placeholder = appString(StringKeys.OB_ID_SHORT_PH), modifier = Modifier.fillMaxWidth())
+    VInput(affiliation, onAffiliationChange, label = appString(StringKeys.OB_ID_AFFIL), placeholder = appString(StringKeys.OB_ID_AFFIL_PH), modifier = Modifier.fillMaxWidth())
 
-    Text("BOARD", style = VTheme.type.labelStrong.colored(c.ink3))
+    Text(appString(StringKeys.OB_ID_BOARD), style = VTheme.type.labelStrong.colored(c.ink3))
     FlowRow(horizontalArrangement = Arrangement.spacedBy(d.sm), verticalArrangement = Arrangement.spacedBy(d.sm)) {
         listOf("CBSE", "ICSE", "UP State", "Other").forEach { b ->
             VTag(text = b, active = board == b, onClick = { onBoardChange(b) })
         }
     }
-    Text("SCHOOL TYPE", style = VTheme.type.labelStrong.colored(c.ink3))
+    Text(appString(StringKeys.OB_ID_SCHOOL_TYPE), style = VTheme.type.labelStrong.colored(c.ink3))
     FlowRow(horizontalArrangement = Arrangement.spacedBy(d.sm), verticalArrangement = Arrangement.spacedBy(d.sm)) {
         listOf("Government", "Private Aided", "Private Unaided", "Central").forEach { t ->
             VTag(text = t, active = schoolType == t, onClick = { onSchoolTypeChange(t) })
         }
     }
-    VInput(principal, onPrincipalChange, label = "Principal's name", placeholder = "Dr. Anita Verma", modifier = Modifier.fillMaxWidth())
-    VInput(principalMobile, onPrincipalMobileChange, label = "Principal's mobile", placeholder = "+91 98XXX XXXXX", modifier = Modifier.fillMaxWidth())
+    VInput(principal, onPrincipalChange, label = appString(StringKeys.OB_ID_PRINCIPAL), placeholder = appString(StringKeys.OB_ID_PRINCIPAL_PH), modifier = Modifier.fillMaxWidth())
+    VInput(principalMobile, onPrincipalMobileChange, label = appString(StringKeys.OB_ID_PRINCIPAL_MOB), placeholder = appString(StringKeys.OB_ID_PRINCIPAL_MOB_PH), modifier = Modifier.fillMaxWidth())
 }
 
 // ═══ Step 2 — Academic year ═════════════════════════════════════════════════════
@@ -491,24 +500,24 @@ private fun AcademicYearStep() {
     var endTime by remember { mutableStateOf("") }
     var periods by remember { mutableStateOf("") }
 
-    Text("CURRENT ACADEMIC YEAR", style = VTheme.type.labelStrong.colored(c.ink3))
+    Text(appString(StringKeys.OB_AY_CURRENT), style = VTheme.type.labelStrong.colored(c.ink3))
     Row(horizontalArrangement = Arrangement.spacedBy(d.sm)) {
         listOf("2025-26", "2026-27").forEach { y -> VTag(text = y, active = year == y, onClick = { year = y }) }
     }
     Row(horizontalArrangement = Arrangement.spacedBy(d.sm)) {
-        VDatePicker(starts, { starts = it }, label = "Year starts", placeholder = "Start date", modifier = Modifier.weight(1f))
-        VDatePicker(ends, { ends = it }, label = "Year ends", placeholder = "End date", modifier = Modifier.weight(1f))
+        VDatePicker(starts, { starts = it }, label = appString(StringKeys.OB_AY_STARTS), placeholder = appString(StringKeys.OB_AY_STARTS), modifier = Modifier.weight(1f))
+        VDatePicker(ends, { ends = it }, label = appString(StringKeys.OB_AY_ENDS), placeholder = appString(StringKeys.OB_AY_ENDS), modifier = Modifier.weight(1f))
     }
-    Text("WORKING DAYS", style = VTheme.type.labelStrong.colored(c.ink3))
+    Text(appString(StringKeys.OB_AY_WORKING_DAYS), style = VTheme.type.labelStrong.colored(c.ink3))
     Row(horizontalArrangement = Arrangement.spacedBy(d.sm)) {
         VTag(text = "Mon–Fri", active = workingDays == "Mon–Fri", onClick = { workingDays = "Mon–Fri" })
         VTag(text = "Mon–Sat", active = workingDays == "Mon–Sat", onClick = { workingDays = "Mon–Sat" })
     }
     Row(horizontalArrangement = Arrangement.spacedBy(d.sm)) {
-        VInput(startTime, { startTime = it }, label = "Start time", placeholder = "08:00 AM", modifier = Modifier.weight(1f))
-        VInput(endTime, { endTime = it }, label = "End time", placeholder = "02:00 PM", modifier = Modifier.weight(1f))
+        VInput(startTime, { startTime = it }, label = appString(StringKeys.OB_AY_START_TIME), placeholder = "08:00 AM", modifier = Modifier.weight(1f))
+        VInput(endTime, { endTime = it }, label = appString(StringKeys.OB_AY_END_TIME), placeholder = "02:00 PM", modifier = Modifier.weight(1f))
     }
-    VInput(periods, { periods = it }, label = "Periods per day", placeholder = "8", modifier = Modifier.fillMaxWidth())
+    VInput(periods, { periods = it }, label = appString(StringKeys.OB_AY_PERIODS), placeholder = appString(StringKeys.OB_AY_PERIODS_PH), modifier = Modifier.fillMaxWidth())
 }
 
 // ═══ Step 3 — Classes & sections ════════════════════════════════════════════════
@@ -520,9 +529,9 @@ private fun ClassesStep(classesBuilt: MutableList<OBClass>) {
     var newClassName by remember { mutableStateOf("") }
 
     VCard(modifier = Modifier.fillMaxWidth()) {
-        Text("TIP", style = VTheme.type.labelStrong.colored(c.ink3))
+        Text(appString(StringKeys.OB_CL_TIP), style = VTheme.type.labelStrong.colored(c.ink3))
         Text(
-            "Pick the sections your school actually runs. Subjects and teachers in the next steps will only show these classes.",
+            appString(StringKeys.OB_CL_TIP_BODY),
             style = VTheme.type.caption.colored(c.ink2),
             modifier = Modifier.padding(top = 4.dp),
         )
@@ -531,7 +540,7 @@ private fun ClassesStep(classesBuilt: MutableList<OBClass>) {
         VCard(modifier = Modifier.fillMaxWidth()) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(cl.name, style = VTheme.type.bodyStrong.colored(c.ink), modifier = Modifier.weight(1f))
-                Text("${cl.sections.size} sections", style = VTheme.type.dataSm.colored(c.ink3))
+                Text(appString(StringKeys.OB_CL_SECTIONS, "count" to cl.sections.size), style = VTheme.type.dataSm.colored(c.ink3))
             }
             Spacer(Modifier.height(d.sm))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(d.xs), verticalArrangement = Arrangement.spacedBy(d.xs)) {
@@ -545,12 +554,12 @@ private fun ClassesStep(classesBuilt: MutableList<OBClass>) {
         }
     }
     VCard(modifier = Modifier.fillMaxWidth()) {
-        Text("ADD CLASS MANUALLY", style = VTheme.type.labelStrong.colored(c.ink3))
+        Text(appString(StringKeys.OB_CL_ADD_MANUAL), style = VTheme.type.labelStrong.colored(c.ink3))
         Spacer(Modifier.height(d.sm))
         Row(horizontalArrangement = Arrangement.spacedBy(d.sm), verticalAlignment = Alignment.CenterVertically) {
-            VInput(newClassName, { newClassName = it }, placeholder = "e.g. Class 11, Nursery, KG", modifier = Modifier.weight(1f))
+            VInput(newClassName, { newClassName = it }, placeholder = appString(StringKeys.OB_CL_ADD_PH), modifier = Modifier.weight(1f))
             VButton(
-                text = "Add",
+                text = appString(StringKeys.OB_CL_ADD_BTN),
                 onClick = {
                     if (newClassName.isNotBlank()) {
                         classesBuilt.add(OBClass(newClassName.trim(), mutableStateListOf("A")))
@@ -581,11 +590,11 @@ private fun SubjectsStep(subjects: MutableList<OBSubject>, classCodes: List<Stri
     VCard(modifier = Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f)) {
-                Text("SUBJECTS OFFERED", style = VTheme.type.labelStrong.colored(c.ink3))
-                Text("Tap a subject's class chips to set where it's taught.", style = VTheme.type.caption.colored(c.ink3), modifier = Modifier.padding(top = 2.dp))
+                Text(appString(StringKeys.OB_SJ_OFFERED), style = VTheme.type.labelStrong.colored(c.ink3))
+                Text(appString(StringKeys.OB_SJ_TAP_HINT), style = VTheme.type.caption.colored(c.ink3), modifier = Modifier.padding(top = 2.dp))
             }
             Text(
-                "Apply to all",
+                appString(StringKeys.OB_SJ_APPLY_ALL),
                 style = VTheme.type.caption.colored(c.tealDeep),
                 modifier = Modifier.padding(start = d.sm),
             )
@@ -599,7 +608,7 @@ private fun SubjectsStep(subjects: MutableList<OBSubject>, classCodes: List<Stri
                     Text("${s.code} · ${s.type}", style = VTheme.type.dataSm.colored(c.ink3))
                 }
                 VBadge(
-                    text = if (s.classes.isEmpty()) "No classes" else "${s.classes.size} / ${classCodes.size}",
+                    text = if (s.classes.isEmpty()) appString(StringKeys.OB_SJ_NO_CLASSES) else "${s.classes.size} / ${classCodes.size}",
                     tone = if (s.classes.isEmpty()) VBadgeTone.Warning else VBadgeTone.Success,
                 )
             }
@@ -637,11 +646,9 @@ private fun TeachersStep(
     // Name-only entries are still usable for subject assignment but create no
     // login — those teachers can be provisioned later from the dashboard.
     VCard(modifier = Modifier.fillMaxWidth()) {
-        Text("ADD A TEACHER", style = VTheme.type.labelStrong.colored(c.ink3))
+        Text(appString(StringKeys.OB_TC_ADD), style = VTheme.type.labelStrong.colored(c.ink3))
         Text(
-            "Enter a work email to create the teacher's login account now — they'll " +
-                "get a one-time password to sign in. Name only? You can add their " +
-                "login later from the dashboard.",
+            appString(StringKeys.OB_TC_ADD_DESC),
             style = VTheme.type.caption.colored(c.ink3),
             modifier = Modifier.padding(top = 2.dp),
         )
@@ -649,8 +656,8 @@ private fun TeachersStep(
         VInput(
             newTeacherName,
             onNewTeacherNameChange,
-            label = "Full name",
-            placeholder = "Mrs. Kavita Nair",
+            label = appString(StringKeys.OB_TC_FULL_NAME),
+            placeholder = appString(StringKeys.OB_TC_FULL_NAME_PH),
             leadingIcon = VIcons.User,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -659,14 +666,14 @@ private fun TeachersStep(
             VInput(
                 newTeacherEmail,
                 onNewTeacherEmailChange,
-                label = "Work email (optional)",
-                placeholder = "kavita@svm.edu.in",
+                label = appString(StringKeys.OB_TC_WORK_EMAIL),
+                placeholder = appString(StringKeys.OB_TC_WORK_EMAIL_PH),
                 leadingIcon = VIcons.Mail,
                 keyboardType = KeyboardType.Email,
                 modifier = Modifier.weight(1f),
             )
             VButton(
-                text = "Add",
+                text = appString(StringKeys.OB_CL_ADD_BTN),
                 onClick = onAddTeacher,
                 tone = VButtonTone.Teal,
                 size = VButtonSize.Lg,
@@ -680,8 +687,8 @@ private fun TeachersStep(
             Column(Modifier.fillMaxWidth().padding(vertical = d.md), horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(VIcons.User, contentDescription = null, tint = c.ink3, modifier = Modifier.size(28.dp))
                 Spacer(Modifier.height(d.xs))
-                Text("No teachers added yet", style = VTheme.type.bodyStrong.colored(c.ink))
-                Text("Add a teacher above to assign subjects, or continue and do it later.", style = VTheme.type.caption.colored(c.ink3), textAlign = TextAlign.Center)
+                Text(appString(StringKeys.OB_TC_NONE_YET), style = VTheme.type.bodyStrong.colored(c.ink))
+                Text(appString(StringKeys.OB_TC_NONE_DESC), style = VTheme.type.caption.colored(c.ink3), textAlign = TextAlign.Center)
             }
         }
         return
@@ -696,8 +703,8 @@ private fun TeachersStep(
     VCard(modifier = Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f)) {
-                Text("TEACHER COVERAGE", style = VTheme.type.labelStrong.colored(c.ink3))
-                Text("$coveredCount of ${allSlots.size} subject × class slots assigned", style = VTheme.type.caption.colored(c.ink3), modifier = Modifier.padding(top = 2.dp))
+                Text(appString(StringKeys.OB_TC_COVERAGE), style = VTheme.type.labelStrong.colored(c.ink3))
+                Text(appString(StringKeys.OB_TC_COVERAGE_OF, "covered" to coveredCount, "total" to allSlots.size), style = VTheme.type.caption.colored(c.ink3), modifier = Modifier.padding(top = 2.dp))
             }
             Text(
                 "$coverage%",
@@ -708,7 +715,7 @@ private fun TeachersStep(
         VProgressBar(value = coverage.toFloat(), modifier = Modifier.fillMaxWidth())
         if (coverage < 100 && allSlots.isNotEmpty()) {
             Spacer(Modifier.height(d.xs))
-            Text("${allSlots.size - coveredCount} unassigned — keep adding assignments below.", style = VTheme.type.caption.colored(c.warningInk))
+            Text(appString(StringKeys.OB_TC_UNASSIGNED, "count" to (allSlots.size - coveredCount)), style = VTheme.type.caption.colored(c.warningInk))
         }
     }
 
@@ -724,7 +731,7 @@ private fun TeachersStep(
                         Text(meta, style = VTheme.type.dataSm.colored(c.ink3))
                     }
                 }
-                VBadge(text = "${t.assignments.size} slots", tone = if (t.assignments.isNotEmpty()) VBadgeTone.Arctic else VBadgeTone.Neutral)
+                VBadge(text = appString(StringKeys.OB_TC_SLOTS, "count" to t.assignments.size), tone = if (t.assignments.isNotEmpty()) VBadgeTone.Arctic else VBadgeTone.Neutral)
             }
             Spacer(Modifier.height(d.sm))
             // ── Assignment matrix — bordered header grid (110px + repeat(N,1fr)) ──
@@ -806,7 +813,7 @@ private fun TeachersStep(
     }
 
     VButton(
-        text = "Import roster from CSV",
+        text = appString(StringKeys.OB_TC_IMPORT_CSV),
         onClick = {},
         full = true,
         tone = VButtonTone.Sand,
@@ -860,21 +867,20 @@ private fun StudentsStep() {
         Column(Modifier.fillMaxWidth().padding(vertical = d.lg), horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(VIcons.Upload, contentDescription = null, tint = c.ink3, modifier = Modifier.size(32.dp))
             Spacer(Modifier.height(d.sm))
-            Text("Drop your students CSV here", style = VTheme.type.bodyStrong.colored(c.ink))
-            Text("or tap to browse", style = VTheme.type.caption.colored(c.ink3))
+            Text(appString(StringKeys.OB_ST_DROP_CSV), style = VTheme.type.bodyStrong.colored(c.ink))
+            Text(appString(StringKeys.OB_ST_OR_BROWSE), style = VTheme.type.caption.colored(c.ink3))
             Spacer(Modifier.height(d.md))
-            VButton(text = "Download template", onClick = {}, variant = VButtonVariant.Secondary, size = VButtonSize.Sm)
+            VButton(text = appString(StringKeys.OB_ST_DOWNLOAD), onClick = {}, variant = VButtonVariant.Secondary, size = VButtonSize.Sm)
         }
     }
     VCard(modifier = Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("No roster imported yet", style = VTheme.type.bodyStrong.colored(c.ink), modifier = Modifier.weight(1f))
-            VBadge(text = "Optional", tone = VBadgeTone.Neutral)
+            Text(appString(StringKeys.OB_ST_NONE_YET), style = VTheme.type.bodyStrong.colored(c.ink), modifier = Modifier.weight(1f))
+            VBadge(text = appString(StringKeys.OB_ST_OPTIONAL), tone = VBadgeTone.Neutral)
         }
         Spacer(Modifier.height(d.sm))
         Text(
-            "Importing students now is optional — you can finish setup and add students " +
-                "anytime from your dashboard. Validation results will appear here once a CSV is uploaded.",
+            appString(StringKeys.OB_ST_OPTIONAL_DESC),
             style = VTheme.type.caption.colored(c.ink3),
         )
     }
@@ -935,12 +941,12 @@ private fun CompletionScreen(
                 }
                 Spacer(Modifier.height(28.dp))
                 Text(
-                    "You're all set",
+                    appString(StringKeys.OB_CM_ALL_SET),
                     style = VTheme.type.h1.colored(Color.White).copy(fontSize = 30.sp, letterSpacing = (-0.02).em),
                     textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(6.dp))
-                Text("$schoolName is live on VidyaPrayag.", style = VTheme.type.body.colored(Color.White.copy(alpha = 0.88f)), textAlign = TextAlign.Center)
+                Text(appString(StringKeys.OB_CM_IS_LIVE, "school" to schoolName), style = VTheme.type.body.colored(Color.White.copy(alpha = 0.88f)), textAlign = TextAlign.Center)
             }
         }
 
@@ -949,12 +955,10 @@ private fun CompletionScreen(
             OnboardingCompletedCard()
             val created = provisionedTeachers.filter { it.created && !it.initialPassword.isNullOrBlank() }
             if (created.isNotEmpty()) {
-                Text("TEACHER LOGINS CREATED", style = VTheme.type.labelStrong.colored(c.ink3))
+                Text(appString(StringKeys.OB_CM_TEACHER_LOGINS), style = VTheme.type.labelStrong.colored(c.ink3))
                 VCard(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        "Share these one-time passwords with your teachers. They'll be " +
-                            "asked to set their own password on first sign-in. You won't " +
-                            "see these again — reset anytime from the dashboard.",
+                        appString(StringKeys.OB_CM_SHARE_OTP),
                         style = VTheme.type.caption.colored(c.ink3),
                     )
                     created.forEach { t ->
@@ -965,7 +969,7 @@ private fun CompletionScreen(
                         Text(t.identifier, style = VTheme.type.dataSm.colored(c.ink3))
                         Spacer(Modifier.height(2.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Password: ", style = VTheme.type.caption.colored(c.ink3))
+                            Text(appString(StringKeys.OB_CM_PASSWORD), style = VTheme.type.caption.colored(c.ink3))
                             Text(
                                 t.initialPassword.orEmpty(),
                                 style = VTheme.type.dataSm.colored(c.tealDeep).copy(fontWeight = FontWeight.Bold),
@@ -980,10 +984,10 @@ private fun CompletionScreen(
             val failed = provisionedTeachers.filter { !it.created }
             if (failed.isNotEmpty()) {
                 VCard(modifier = Modifier.fillMaxWidth()) {
-                    Text("Couldn't create some logins", style = VTheme.type.bodyStrong.colored(c.warningInk))
+                    Text(appString(StringKeys.OB_CM_COULDNT_CREATE), style = VTheme.type.bodyStrong.colored(c.warningInk))
                     failed.forEach { t ->
                         Text(
-                            "${t.name} (${t.identifier}) — ${t.message ?: "failed"}. Add them later from the dashboard.",
+                            appString(StringKeys.OB_CM_ADD_LATER, "name" to t.name, "id" to t.identifier, "msg" to (t.message ?: "failed")),
                             style = VTheme.type.caption.colored(c.ink3),
                             modifier = Modifier.padding(top = 2.dp),
                         )
@@ -993,7 +997,7 @@ private fun CompletionScreen(
 
             Spacer(Modifier.height(d.xs))
             VButton(
-                text = "Open dashboard",
+                text = appString(StringKeys.OB_CM_OPEN_DASH),
                 onClick = onComplete,
                 full = true,
                 size = VButtonSize.Lg,
@@ -1001,7 +1005,7 @@ private fun CompletionScreen(
                 trailing = { Icon(VIcons.ArrowRight, contentDescription = null, modifier = Modifier.size(16.dp)) },
             )
             Text(
-                "You can edit any of this later in Settings.",
+                appString(StringKeys.OB_CM_EDIT_LATER),
                 style = VTheme.type.caption.colored(c.ink3),
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,
@@ -1119,7 +1123,7 @@ fun OnboardingCompletedCard(
 
 
             Text(
-                text = "Your school is ready 🎉",
+                text = appString(StringKeys.OB_CM_READY),
                 style = VTheme.type.h3
                     .colored(c.ink)
                     .copy(
@@ -1129,7 +1133,7 @@ fun OnboardingCompletedCard(
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "Your profile setup is complete. You can now start building your digital campus by adding teachers, students and parents.",
+                text = appString(StringKeys.OB_CM_PROFILE_DONE),
                 style = VTheme.type.body
                     .colored(c.ink3),
                 textAlign = TextAlign.Center

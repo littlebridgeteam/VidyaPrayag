@@ -48,7 +48,9 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.components.VInput
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
@@ -78,11 +80,11 @@ fun StudentRosterScreenV2(
         .imePadding()
         .navigationBarsPadding()) {
         VBackHeader(
-            title = "Students",
+            title = appString(StringKeys.SCH_STUDENTS_HEADER),
             onBack = onBack,
             action = {
                 VButton(
-                    text = "Add",
+                    text = appString(StringKeys.COMMON_BUTTON_CREATE),
                     onClick = { showAdd = true },
                     variant = VButtonVariant.Secondary,
                     size = VButtonSize.Sm,
@@ -101,7 +103,7 @@ fun StudentRosterScreenV2(
 
     // Auto-close the add dialog once a student is successfully added.
     LaunchedEffect(state.infoMessage) {
-        if (showAdd && state.infoMessage == "Student added") {
+        if (showAdd && state.infoMessage != null) {
             showAdd = false
             viewModel.clearMessages()
         }
@@ -119,10 +121,9 @@ fun StudentRosterScreenV2(
     val removal = pendingRemoval
     VConfirmDialog(
         visible = removal != null,
-        title = "Remove student",
-        message = "Remove ${removal?.fullName ?: "this student"} from the roster? " +
-            "They will no longer appear in attendance or analytics. This can be reversed by re-adding them.",
-        confirmLabel = "Remove",
+        title = appString(StringKeys.SCH_REMOVE_STUDENT),
+        message = appString(StringKeys.SCH_REMOVE_STUDENT_ROSTER_MSG, "name" to (removal?.fullName ?: appString(StringKeys.SCH_THIS_STUDENT))),
+        confirmLabel = appString(StringKeys.SCH_REMOVE),
         icon = VIcons.AlertTriangle,
         onConfirm = {
             removal?.let { viewModel.removeStudent(it.id) }
@@ -151,8 +152,8 @@ private fun StudentRosterContent(
             loading = state.isLoading,
             error = state.error,
             isEmpty = state.students.isEmpty(),
-            emptyTitle = "No students yet",
-            emptyBody = "Add your first student so they appear in attendance, marks and analytics.",
+            emptyTitle = appString(StringKeys.SCH_NO_STUDENTS_YET),
+            emptyBody = appString(StringKeys.SCH_NO_STUDENTS_YET_DESC),
             emptyIcon = VIcons.Users,
             onRetry = onRetry,
             skeleton = { com.littlebridge.enrollplus.ui.v2.screens.SkeletonList(rows = 8) },
@@ -209,22 +210,22 @@ private fun StudentCard(
                 }
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                     DropdownMenuItem(
-                        text = { Text("View Profile") },
+                        text = { Text(appString(StringKeys.SCH_VIEW_PROFILE)) },
                         onClick = { menuOpen = false; onOpen() },
                         leadingIcon = { Icon(VIcons.User, contentDescription = null, modifier = Modifier.size(18.dp)) },
                     )
                     DropdownMenuItem(
-                        text = { Text("Edit") },
+                        text = { Text(appString(StringKeys.COMMON_BUTTON_EDIT)) },
                         onClick = { menuOpen = false; onOpen() },
                         leadingIcon = { Icon(VIcons.Settings, contentDescription = null, modifier = Modifier.size(18.dp)) },
                     )
                     DropdownMenuItem(
-                        text = { Text("Contact Parent") },
+                        text = { Text(appString(StringKeys.SCH_CONTACT_PARENT)) },
                         onClick = { menuOpen = false; onOpen() },
                         leadingIcon = { Icon(VIcons.Phone, contentDescription = null, modifier = Modifier.size(18.dp)) },
                     )
                     DropdownMenuItem(
-                        text = { Text("Remove", style = VTheme.type.body.colored(c.dangerInk)) },
+                        text = { Text(appString(StringKeys.SCH_REMOVE), style = VTheme.type.body.colored(c.dangerInk)) },
                         onClick = { menuOpen = false; onRemove() },
                         leadingIcon = { Icon(VIcons.Close, contentDescription = null, modifier = Modifier.size(18.dp)) },
                     )
@@ -236,14 +237,14 @@ private fun StudentCard(
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             VBadge(
-                text = if (student.status.equals("active", ignoreCase = true)) "Active" else "Inactive",
+                text = if (student.status.equals("active", ignoreCase = true)) appString(StringKeys.SCH_ACTIVE) else appString(StringKeys.SCH_INACTIVE),
                 tone = if (student.status.equals("active", ignoreCase = true)) VBadgeTone.Success else VBadgeTone.Neutral,
             )
             if (student.isNewAdmission) {
-                VBadge(text = "New Admission", tone = VBadgeTone.Arctic)
+                VBadge(text = appString(StringKeys.SCH_NEW_ADMISSION), tone = VBadgeTone.Arctic)
             }
             if (lowAttendance) {
-                VBadge(text = "Low Attendance", tone = VBadgeTone.Warning)
+                VBadge(text = appString(StringKeys.SCH_LOW_ATTENDANCE), tone = VBadgeTone.Warning)
             }
         }
 
@@ -253,19 +254,19 @@ private fun StudentCard(
             MetricChip(
                 icon = VIcons.Check,
                 value = if (student.attendancePercent > 0f) "${student.attendancePercent.toInt()}%" else "—",
-                label = "Attendance",
+                label = appString(StringKeys.SCH_ATTENDANCE),
                 modifier = Modifier.weight(1f),
             )
             MetricChip(
                 icon = VIcons.Heart,
                 value = student.parentCount.toString(),
-                label = "Parents",
+                label = appString(StringKeys.SCH_PARENTS),
                 modifier = Modifier.weight(1f),
             )
             MetricChip(
                 icon = VIcons.Users,
                 value = student.teacherCount.toString(),
-                label = "Teachers",
+                label = appString(StringKeys.SCH_TEACHERS),
                 modifier = Modifier.weight(1f),
             )
         }
@@ -311,29 +312,29 @@ private fun AddStudentDialog(
     Dialog(onDismissRequest = onDismiss) {
         VCard(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Add student", style = VTheme.type.h3.colored(c.ink))
-                VInput(name, { name = it }, label = "Full name", placeholder = "e.g. Aarav Sharma", leadingIcon = VIcons.User)
-                VInput(className, { className = it }, label = "Class", placeholder = "e.g. Grade 4")
-                VInput(section, { section = it }, label = "Section", placeholder = "A")
-                VInput(roll, { roll = it }, label = "Roll number", placeholder = "e.g. 12", keyboardType = KeyboardType.Number)
+                Text(appString(StringKeys.SCH_ADD_STUDENT), style = VTheme.type.h3.colored(c.ink))
+                VInput(name, { name = it }, label = appString(StringKeys.SCH_FULL_NAME), placeholder = appString(StringKeys.SCH_FULL_NAME_PH), leadingIcon = VIcons.User)
+                VInput(className, { className = it }, label = appString(StringKeys.SCH_CLASS), placeholder = appString(StringKeys.SCH_CLASS_PH))
+                VInput(section, { section = it }, label = appString(StringKeys.SCH_SECTION), placeholder = "A")
+                VInput(roll, { roll = it }, label = appString(StringKeys.SCH_ROLL_NUMBER), placeholder = appString(StringKeys.SCH_ROLL_NUMBER_PH), keyboardType = KeyboardType.Number)
                 // ISSUE 2b: parent phone is optional but used by parent-link phone-match.
                 VInput(
                     parentPhone,
                     // keep digits + a leading + and common separators while typing
                     { input -> parentPhone = input.filter { it.isDigit() || it == '+' || it == ' ' || it == '-' } },
-                    label = "Parent/Guardian phone (optional)",
-                    placeholder = "e.g. 98765 43210",
+                    label = appString(StringKeys.SCH_PARENT_PHONE_OPTIONAL),
+                    placeholder = appString(StringKeys.SCH_PARENT_PHONE_PH),
                     keyboardType = KeyboardType.Phone,
                 )
                 if (parentPhone.isNotBlank() && !phoneOk) {
-                    Text("Phone must have at least 10 digits.", style = VTheme.type.label.colored(c.dangerInk))
+                    Text(appString(StringKeys.SCH_PHONE_MIN_DIGITS), style = VTheme.type.label.colored(c.dangerInk))
                 }
                 if (error != null) {
                     Text(error, style = VTheme.type.body.colored(c.dangerInk))
                 }
                 Spacer(Modifier.height(2.dp))
                 VButton(
-                    text = "Add student",
+                    text = appString(StringKeys.SCH_ADD_STUDENT),
                     onClick = { onSubmit(name, className, section, roll, parentPhone) },
                     variant = VButtonVariant.Primary,
                     full = true,
@@ -341,7 +342,7 @@ private fun AddStudentDialog(
                     loading = isSubmitting,
                 )
                 VButton(
-                    text = "Cancel",
+                    text = appString(StringKeys.COMMON_BUTTON_CLOSE),
                     onClick = onDismiss,
                     variant = VButtonVariant.Ghost,
                     full = true,

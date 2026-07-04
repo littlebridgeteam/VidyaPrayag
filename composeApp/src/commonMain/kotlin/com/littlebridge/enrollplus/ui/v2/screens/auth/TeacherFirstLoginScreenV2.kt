@@ -36,6 +36,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.VThemeRegistry
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 
 /**
  * TeacherFirstLoginScreenV2 — the one-time "set a new password" gate, translated from
@@ -79,24 +81,24 @@ fun TeacherFirstLoginScreenV2(
         Spacer(Modifier.height(VTheme.dimens.xxl))
         // §5: React `Label` component = labelStrong (11/700/0.10em UPPER), ink3.
         Text(
-            if (teacherName.isNullOrBlank()) "Welcome" else "Welcome, $teacherName",
+            if (teacherName.isNullOrBlank()) appString(StringKeys.OB_WELCOME) else "${appString(StringKeys.OB_WELCOME)}, $teacherName",
             style = VTheme.type.labelStrong.colored(VTheme.colors.ink3),
         )
         Spacer(Modifier.height(VTheme.dimens.xs))
         // §5: React heading is <h1> (32/800), not h2.
-        Text("Set a new password", style = VTheme.type.h1.colored(VTheme.colors.ink))
+        Text(appString(StringKeys.AUTH_SET_NEW_PASSWORD), style = VTheme.type.h1.colored(VTheme.colors.ink))
         Text(
-            "For your security, choose a fresh password before continuing. You'll only do this once.",
+            appString(StringKeys.AUTH_FIRST_LOGIN_DESC),
             style = VTheme.type.body.colored(VTheme.colors.ink2),
             modifier = Modifier.padding(top = VTheme.dimens.xs),
         )
 
         Spacer(Modifier.height(VTheme.dimens.xl))
-        VInput(current, { current = it; error = null }, label = "Current temporary password", placeholder = "••••••••", isPassword = true, modifier = Modifier.fillMaxWidth())
+        VInput(current, { current = it; error = null }, label = appString(StringKeys.AUTH_CURRENT_TEMP_PW), placeholder = "••••••••", isPassword = true, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(VTheme.dimens.md))
-        VInput(newPassword, { newPassword = it; error = null }, label = "New password", placeholder = "At least 8 characters", isPassword = true, modifier = Modifier.fillMaxWidth())
+        VInput(newPassword, { newPassword = it; error = null }, label = appString(StringKeys.AUTH_NEW_PASSWORD), placeholder = appString(StringKeys.AUTH_PASSWORD_8_PH), isPassword = true, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(VTheme.dimens.md))
-        VInput(confirm, { confirm = it; error = null }, label = "Confirm new password", placeholder = "Re-enter", isPassword = true, modifier = Modifier.fillMaxWidth())
+        VInput(confirm, { confirm = it; error = null }, label = appString(StringKeys.AUTH_CONFIRM_PASSWORD), placeholder = appString(StringKeys.AUTH_REENTER_PH), isPassword = true, modifier = Modifier.fillMaxWidth())
 
         if (error != null) {
             Spacer(Modifier.height(VTheme.dimens.sm))
@@ -104,11 +106,18 @@ fun TeacherFirstLoginScreenV2(
         }
 
         Spacer(Modifier.height(VTheme.dimens.xl))
+        val pwTooShortMsg = appString(StringKeys.AUTH_PW_TOO_SHORT)
+        val pwNoMatchMsg = appString(StringKeys.AUTH_PW_NO_MATCH)
+        val connErrorMsg = appString(StringKeys.AUTH_CONN_ERROR)
         VButton(
-            text = "Update & continue",
+            text = appString(StringKeys.AUTH_UPDATE_CONTINUE),
             loading = submitting,
             onClick = {
-                error = validate(current, newPassword, confirm)
+                error = validate(
+                    current, newPassword, confirm,
+                    pwTooShort = pwTooShortMsg,
+                    pwNoMatch = pwNoMatchMsg,
+                )
                 if (error == null && !submitting) {
                     submitting = true
                     scope.launch {
@@ -118,7 +127,7 @@ fun TeacherFirstLoginScreenV2(
                         when (val r = authRepository.changePassword(current.ifBlank { null }, newPassword)) {
                             is NetworkResult.Success -> { submitting = false; onDone() }
                             is NetworkResult.Error -> { submitting = false; error = r.message }
-                            is NetworkResult.ConnectionError -> { submitting = false; error = "Connection error. Please try again." }
+                            is NetworkResult.ConnectionError -> { submitting = false; error = connErrorMsg }
                         }
                     }
                 }
@@ -132,7 +141,7 @@ fun TeacherFirstLoginScreenV2(
         )
         Spacer(Modifier.height(VTheme.dimens.md))
         VButton(
-            text = "Need help signing in?",
+            text = appString(StringKeys.AUTH_NEED_HELP),
             onClick = {},
             full = true,
             variant = VButtonVariant.Ghost,
@@ -147,8 +156,8 @@ fun TeacherFirstLoginScreenV2(
  * (generated) password is optional in the forced first-change flow — the server
  * does not require it to match — so we only enforce the new-password rules here.
  */
-private fun validate(current: String, newPassword: String, confirm: String): String? = when {
-    newPassword.length < 8 -> "New password must be at least 8 characters."
-    newPassword != confirm -> "Passwords don't match."
+private fun validate(current: String, newPassword: String, confirm: String, pwTooShort: String, pwNoMatch: String): String? = when {
+    newPassword.length < 8 -> pwTooShort
+    newPassword != confirm -> pwNoMatch
     else -> null
 }

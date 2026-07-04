@@ -74,6 +74,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
@@ -234,7 +236,7 @@ fun ParentProfileCardScreenV2(
                     accent = c.successInk,
                     value = attendancePct?.let { "$it%" } ?: "—",
                     ratio = attendancePct?.let { it / 100f },
-                    label = "Attendance",
+                    label = appString(StringKeys.PC_ATTENDANCE),
                     modifier = Modifier.weight(1f),
                 )
                 MetricTile(
@@ -242,7 +244,7 @@ fun ParentProfileCardScreenV2(
                     accent = c.accentDeep,
                     value = scorePct?.let { "$it%" } ?: "—",
                     ratio = scorePct?.let { it / 100f },
-                    label = "Latest score",
+                    label = appString(StringKeys.PC_LATEST_SCORE),
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -252,7 +254,7 @@ fun ParentProfileCardScreenV2(
                     accent = Color(0xFF6C8DF5), // sky
                     value = "L${child?.currentLevel ?: 0}",
                     ratio = journeyPct / 100f,
-                    label = "$journeyPct% to next",
+                    label = appString(StringKeys.PC_TO_NEXT, "percent" to journeyPct),
                     modifier = Modifier.weight(1f),
                 )
                 MetricTile(
@@ -260,7 +262,7 @@ fun ParentProfileCardScreenV2(
                     accent = c.teal,
                     value = state.coveredToday.size.toString(),
                     ratio = null,
-                    label = "Topics today",
+                    label = appString(StringKeys.PC_TOPICS_TODAY),
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -984,24 +986,24 @@ private fun ProfileCardContent(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             StatTile(
-                label = "ATTEND",
+                label = appString(StringKeys.PC_ATTEND),
                 value = attendancePct?.let { "$it%" } ?: "—",
                 ratio = attendancePct?.let { it / 100f },
                 house = house,
                 modifier = Modifier.weight(1f),
             )
             StatTile(
-                label = "SCORE",
+                label = appString(StringKeys.PC_SCORE),
                 value = scorePct?.let { "$it%" } ?: "—",
                 ratio = scorePct?.let { it / 100f },
                 house = house,
                 modifier = Modifier.weight(1f),
             )
             StatTile(
-                label = "TODAY",
+                label = appString(StringKeys.PC_TODAY),
                 value = topicsToday.toString(),
                 ratio = null,
-                sub = if (topicsToday == 1) "topic" else "topics",
+                sub = if (topicsToday == 1) appString(StringKeys.PC_TOPIC) else appString(StringKeys.PC_TOPICS),
                 house = house,
                 modifier = Modifier.weight(1f),
             )

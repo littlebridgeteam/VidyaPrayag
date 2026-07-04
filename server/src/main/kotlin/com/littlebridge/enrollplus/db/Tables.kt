@@ -62,7 +62,7 @@ object AppUsersTable : UUIDTable("app_users", "id") {
     val email            = varchar("email", 255).nullable().uniqueIndex()
     val passwordHash     = text("password_hash").nullable()
     val profilePicUrl    = text("profile_pic_url").nullable()
-    val languagePref     = varchar("language_pref", 8).default("hi")
+    val languagePref     = varchar("language_pref", 8).default("en")
     val isPhoneVerified  = bool("is_phone_verified").default(false)
     val isEmailVerified  = bool("is_email_verified").default(false)
     val profileCompleted = bool("profile_completed").default(false)
@@ -3674,4 +3674,56 @@ object SyllabusQuizAnswersTable : UUIDTable("syllabus_quiz_answers", "id") {
     val isCorrect          = bool("is_correct").default(false)
     val createdAt          = timestamp("created_at")
 }
+// =====================================================================
+// language_pref_history  (Multi-Language — migration_071)
+//   Append-only audit trail of every language preference change.
+//   Tracks user, old/new language, timestamp, and source of change.
+// =====================================================================
+object LanguagePrefHistoryTable : UUIDTable("language_pref_history", "id") {
+    val userId    = uuid("user_id")
+    val schoolId  = uuid("school_id").nullable()
+    val oldLang   = varchar("old_lang", 8).nullable()
+    val newLang   = varchar("new_lang", 8)
+    val changedAt = timestamp("changed_at")
+    val changeSource = varchar("source", 16).default("app")
+
+    init {
+        index("idx_lang_pref_history_user", false, userId, changedAt)
+        index("idx_lang_pref_history_school", false, schoolId, changedAt)
+    }
+}
+
+// =====================================================================
+// server_string_overrides  (Multi-Language — migration_073)
+//   DB-backed overrides for ServerStrings notification templates.
+//   Super Admin can update translations from the website without a
+//   server redeploy. Resolution: DB override → compiled default → en.
+// =====================================================================
+object ServerStringOverridesTable : UUIDTable("server_string_overrides", "id") {
+    val stringKey = varchar("string_key", 128)
+    val lang      = varchar("lang", 8)
+    val value     = text("value")
+    val updatedBy = uuid("updated_by").nullable()
+    val updatedAt = timestamp("updated_at")
+
+    init {
+        uniqueIndex("uq_string_key_lang", stringKey, lang)
+    }
+}
+
+// =====================================================================
+// server_string_override_history  (Translation Management Dashboard audit log)
+//   Tracks every create/update/delete on server_string_overrides so the
+//   admin dashboard can show version history and who changed what.
+// =====================================================================
+object ServerStringOverrideHistoryTable : UUIDTable("server_string_override_history", "id") {
+    val stringKey  = varchar("string_key", 128)
+    val lang       = varchar("lang", 8)
+    val oldValue   = text("old_value").nullable()
+    val newValue   = text("new_value")
+    val action     = varchar("action", 16) // upsert | delete
+    val changedBy  = uuid("changed_by").nullable()
+    val changedAt  = timestamp("changed_at")
+}
+
 val SYSTEM_SCHOOL_ID: UUID = UUID(0, 0)

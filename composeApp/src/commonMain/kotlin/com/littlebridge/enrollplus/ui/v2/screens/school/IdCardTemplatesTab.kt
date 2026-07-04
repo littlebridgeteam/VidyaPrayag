@@ -59,6 +59,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VProgressRing
 import com.littlebridge.enrollplus.ui.v2.components.VTag
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 
 // ════════════════════════════════════════════════════════════════════════════
 // STATS BANNER — Progress ring + breakdown + achievement badge
@@ -73,14 +75,26 @@ internal fun IdCardStatsBanner(
     onBadgeClick: () -> Unit = {},
 ) {
     val c = VTheme.colors
-    val milestone = remember(totalCards) {
-        when {
-            totalCards >= 500 -> Triple("ID Card Master", Icons.Filled.Star, VBadgeTone.Accent)
-            totalCards >= 100 -> Triple("Century Club", Icons.Filled.Star, VBadgeTone.Success)
-            totalCards >= 50 -> Triple("Half Century", Icons.Filled.Check, VBadgeTone.Warning)
-            totalCards >= 1 -> Triple("First Steps", Icons.Filled.Check, VBadgeTone.Arctic)
-            else -> Triple("Getting Started", Icons.Filled.Add, VBadgeTone.Neutral)
-        }
+    val milestoneLabel = when {
+        totalCards >= 500 -> appString(StringKeys.IDCARD_MILESTONE_MASTER)
+        totalCards >= 100 -> appString(StringKeys.IDCARD_MILESTONE_CENTURY)
+        totalCards >= 50 -> appString(StringKeys.IDCARD_MILESTONE_HALF)
+        totalCards >= 1 -> appString(StringKeys.IDCARD_MILESTONE_FIRST)
+        else -> appString(StringKeys.IDCARD_MILESTONE_START)
+    }
+    val milestoneIcon = when {
+        totalCards >= 500 -> Icons.Filled.Star
+        totalCards >= 100 -> Icons.Filled.Star
+        totalCards >= 50 -> Icons.Filled.Check
+        totalCards >= 1 -> Icons.Filled.Check
+        else -> Icons.Filled.Add
+    }
+    val milestoneTone = when {
+        totalCards >= 500 -> VBadgeTone.Accent
+        totalCards >= 100 -> VBadgeTone.Success
+        totalCards >= 50 -> VBadgeTone.Warning
+        totalCards >= 1 -> VBadgeTone.Arctic
+        else -> VBadgeTone.Neutral
     }
 
     VCard(
@@ -102,15 +116,15 @@ internal fun IdCardStatsBanner(
                     label = totalCards.toString(),
                 )
                 Text(
-                    text = "Total Cards",
+                    text = appString(StringKeys.IDCARD_TOTAL_CARDS),
                     style = VTheme.type.caption.colored(c.ink3),
                 )
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                StatRow(label = "Students", count = studentCards, color = c.accent)
-                StatRow(label = "Teachers", count = teacherCards, color = c.tealDeep)
-                StatRow(label = "Staff", count = staffCards, color = c.warmOrange)
+                StatRow(label = appString(StringKeys.IDCARD_STUDENTS), count = studentCards, color = c.accent)
+                StatRow(label = appString(StringKeys.IDCARD_TEACHERS), count = teacherCards, color = c.tealDeep)
+                StatRow(label = appString(StringKeys.IDCARD_STAFF), count = staffCards, color = c.warmOrange)
             }
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -127,14 +141,14 @@ internal fun IdCardStatsBanner(
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
-                        milestone.second,
-                        contentDescription = milestone.first,
+                        milestoneIcon,
+                        contentDescription = milestoneLabel,
                         tint = c.accentDeep,
                         modifier = Modifier.size(24.dp),
                     )
                 }
                 Text(
-                    text = milestone.first,
+                    text = milestoneLabel,
                     style = VTheme.type.caption.colored(c.ink2).copy(fontWeight = FontWeight.Bold),
                     textAlign = TextAlign.Center,
                     modifier = Modifier.width(72.dp),
@@ -164,16 +178,19 @@ private fun StatRow(label: String, count: Int, color: Color) {
 // ════════════════════════════════════════════════════════════════════════════
 
 private val AVAILABLE_FIELDS = listOf("name", "role", "class", "school", "photo", "qrOnFront", "emergencyContact", "bloodGroup")
-private val FIELD_LABELS = mapOf(
-    "name" to "Name",
-    "role" to "Role",
-    "class" to "Class",
-    "school" to "School",
-    "photo" to "Photo",
-    "qrOnFront" to "QR on Front",
-    "emergencyContact" to "Emergency",
-    "bloodGroup" to "Blood Group",
-)
+
+@Composable
+private fun fieldLabel(field: String): String = when (field) {
+    "name" -> appString(StringKeys.IDCARD_FIELD_NAME)
+    "role" -> appString(StringKeys.IDCARD_FIELD_ROLE)
+    "class" -> appString(StringKeys.IDCARD_FIELD_CLASS)
+    "school" -> appString(StringKeys.IDCARD_FIELD_SCHOOL)
+    "photo" -> appString(StringKeys.IDCARD_FIELD_PHOTO)
+    "qrOnFront" -> appString(StringKeys.IDCARD_FIELD_QR)
+    "emergencyContact" -> appString(StringKeys.IDCARD_FIELD_EMERGENCY)
+    "bloodGroup" -> appString(StringKeys.IDCARD_FIELD_BLOOD)
+    else -> field
+}
 
 private val PRESET_COLORS = listOf(
     0xFF6C5CE0.toInt() to "Lavender",
@@ -221,8 +238,8 @@ internal fun TemplatesTab(
             }
         } else if (state.templates.isEmpty()) {
             VEmptyState(
-                title = "No templates yet",
-                body = "Create your first ID card template with the visual builder below.",
+                title = appString(StringKeys.IDCARD_NO_TEMPLATES),
+                body = appString(StringKeys.IDCARD_NO_TEMPLATES_DESC),
                 icon = Icons.Filled.School,
                 modifier = Modifier.padding(top = 24.dp),
             )
@@ -238,7 +255,7 @@ internal fun TemplatesTab(
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            text = "CREATE NEW TEMPLATE",
+            text = appString(StringKeys.IDCARD_CREATE_NEW),
             style = VTheme.type.label.colored(c.ink3),
             modifier = Modifier.padding(horizontal = 16.dp),
         )
@@ -248,16 +265,16 @@ internal fun TemplatesTab(
             OutlinedTextField(
                 value = templateName,
                 onValueChange = { templateName = it },
-                label = { Text("Template Name") },
+                label = { Text(appString(StringKeys.IDCARD_TEMPLATE_NAME)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
             )
             Spacer(modifier = Modifier.height(12.dp))
 
-            Text("Card Type", style = VTheme.type.bodyStrong.colored(c.ink))
+            Text(appString(StringKeys.IDCARD_CARD_TYPE), style = VTheme.type.bodyStrong.colored(c.ink))
             Spacer(modifier = Modifier.height(6.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("student" to "Student", "teacher" to "Teacher", "staff" to "Staff").forEach { (role, label) ->
+                listOf("student" to appString(StringKeys.IDCARD_STUDENT), "teacher" to appString(StringKeys.IDCARD_TEACHER_ROLE), "staff" to appString(StringKeys.IDCARD_STAFF_ROLE)).forEach { (role, label) ->
                     VTag(
                         text = label,
                         active = selectedRole == role,
@@ -268,13 +285,13 @@ internal fun TemplatesTab(
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text("Fields to Display", style = VTheme.type.bodyStrong.colored(c.ink))
+            Text(appString(StringKeys.IDCARD_FIELDS_DISPLAY), style = VTheme.type.bodyStrong.colored(c.ink))
             Spacer(modifier = Modifier.height(6.dp))
             AVAILABLE_FIELDS.chunked(3).forEach { rowFields ->
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     rowFields.forEach { field ->
                         VTag(
-                            text = FIELD_LABELS[field] ?: field,
+                            text = fieldLabel(field),
                             active = field in selectedFields,
                             onClick = {
                                 selectedFields = if (field in selectedFields) selectedFields - field else selectedFields + field
@@ -287,7 +304,7 @@ internal fun TemplatesTab(
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text("Accent Color", style = VTheme.type.bodyStrong.colored(c.ink))
+            Text(appString(StringKeys.IDCARD_ACCENT_COLOR), style = VTheme.type.bodyStrong.colored(c.ink))
             Spacer(modifier = Modifier.height(6.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 PRESET_COLORS.forEach { (argb, name) ->
@@ -301,10 +318,10 @@ internal fun TemplatesTab(
             }
             Spacer(modifier = Modifier.height(20.dp))
 
-            Text("Live Preview", style = VTheme.type.bodyStrong.colored(c.ink))
+            Text(appString(StringKeys.IDCARD_LIVE_PREVIEW), style = VTheme.type.bodyStrong.colored(c.ink))
             Spacer(modifier = Modifier.height(8.dp))
             LiveCardPreview(
-                templateName = templateName.ifBlank { "Preview" },
+                templateName = templateName.ifBlank { appString(StringKeys.IDCARD_PREVIEW) },
                 roleType = selectedRole,
                 fields = selectedFields,
                 accentArgb = accentColorArgb,
@@ -312,7 +329,7 @@ internal fun TemplatesTab(
             Spacer(modifier = Modifier.height(16.dp))
 
             VButton(
-                text = if (state.isLoading) "Creating..." else "Create Template",
+                text = if (state.isLoading) appString(StringKeys.IDCARD_CREATING) else appString(StringKeys.IDCARD_CREATE_BTN),
                 onClick = {
                     if (templateName.isNotBlank()) {
                         viewModel.clearMessages()
@@ -403,7 +420,7 @@ private fun LiveCardPreview(
                     )
                 } else {
                     Text(
-                        text = "ID CARD",
+                        text = appString(StringKeys.IDCARD_ID_CARD),
                         style = VTheme.type.caption.colored(Color.White),
                         modifier = Modifier.padding(horizontal = 12.dp),
                     )
@@ -481,7 +498,7 @@ private fun LiveCardPreview(
                 contentAlignment = Alignment.CenterStart,
             ) {
                 Text(
-                    text = "Scan QR to verify",
+                    text = appString(StringKeys.IDCARD_SCAN_QR),
                     style = VTheme.type.caption.colored(Color.White).copy(fontSize = 8.sp),
                     modifier = Modifier.padding(horizontal = 12.dp),
                 )
@@ -575,15 +592,15 @@ private fun TemplateCard(
                         tone = VBadgeTone.Accent,
                     )
                     if (template.isActive) {
-                        VBadge(text = "Active", tone = VBadgeTone.Success, leadingIcon = Icons.Filled.Check)
+                        VBadge(text = appString(StringKeys.IDCARD_ACTIVE), tone = VBadgeTone.Success, leadingIcon = Icons.Filled.Check)
                     } else {
-                        VBadge(text = "Inactive", tone = VBadgeTone.Neutral)
+                        VBadge(text = appString(StringKeys.IDCARD_INACTIVE), tone = VBadgeTone.Neutral)
                     }
                 }
             }
             if (template.isActive) {
                 VButton(
-                    text = "Deactivate",
+                    text = appString(StringKeys.IDCARD_DEACTIVATE),
                     onClick = onDeactivate,
                     variant = VButtonVariant.Secondary,
                     size = VButtonSize.Sm,

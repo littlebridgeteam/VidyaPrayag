@@ -45,6 +45,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VTag
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -81,8 +83,8 @@ fun AdminAuthScreenV2(
     LaunchedEffect(state.isAuthSuccessful) { if (state.isAuthSuccessful) onAuthSuccess() }
 
     AuthScaffoldV2(
-        title = "School Administration",
-        subtitle = "Sign in with your staff credentials to manage your institution.",
+        title = appString(StringKeys.AUTH_ADMIN_TITLE),
+        subtitle = appString(StringKeys.AUTH_ADMIN_SUBTITLE),
         error = state.error,
         onBack = onBack,
         modifier = modifier,
@@ -93,7 +95,7 @@ fun AdminAuthScreenV2(
                 VInput(
                     value = state.identifier,
                     onValueChange = viewModel::onIdentifierChanged,
-                    label = "Email or staff ID",
+                    label = appString(StringKeys.AUTH_EMAIL_OR_STAFF_ID),
                     placeholder = "office@svm.edu.in  ·  SVM001.T07",
                     leadingIcon = VIcons.Mail,
                     keyboardType = KeyboardType.Email,
@@ -104,7 +106,7 @@ fun AdminAuthScreenV2(
                 VInput(
                     value = state.password,
                     onValueChange = viewModel::onPasswordChanged,
-                    label = "Password",
+                    label = appString(StringKeys.AUTH_PASSWORD),
                     placeholder = "••••••••",
                     leadingIcon = VIcons.Lock,
                     isPassword = true,
@@ -113,7 +115,7 @@ fun AdminAuthScreenV2(
                     trailing = {
                         Icon(
                             VIcons.Eye,
-                            contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                            contentDescription = if (passwordVisible) appString(StringKeys.AUTH_HIDE_PASSWORD) else appString(StringKeys.AUTH_SHOW_PASSWORD),
                             tint = c.ink3,
                             modifier = Modifier
                                 .size(18.dp)
@@ -126,7 +128,7 @@ fun AdminAuthScreenV2(
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "Forgot Password?",
+                    appString(StringKeys.AUTH_FORGOT_PASSWORD),
                     style = VTheme.type.caption.colored(c.tealDeep).copy(fontWeight = FontWeight.SemiBold),
                     modifier = Modifier.align(Alignment.End),
                 )
@@ -141,7 +143,7 @@ fun AdminAuthScreenV2(
                     VInput(
                         value = state.name,
                         onValueChange = viewModel::onNameChanged,
-                        label = "Your name",
+                        label = appString(StringKeys.AUTH_YOUR_NAME),
                         placeholder = "Dr. Anita Verma",
                         leadingIcon = VIcons.User,
                         modifier = Modifier.fillMaxWidth(),
@@ -155,7 +157,7 @@ fun AdminAuthScreenV2(
                     VInput(
                         value = state.identifier,
                         onValueChange = viewModel::onIdentifierChanged,
-                        label = "Work email",
+                        label = appString(StringKeys.AUTH_WORK_EMAIL),
                         placeholder = "office@svm.edu.in",
                         leadingIcon = VIcons.Mail,
                         keyboardType = KeyboardType.Email,
@@ -165,13 +167,13 @@ fun AdminAuthScreenV2(
                     VInput(
                         value = state.schoolName,
                         onValueChange = viewModel::onSchoolNameChanged,
-                        label = "School name",
+                        label = appString(StringKeys.AUTH_SCHOOL_NAME),
                         placeholder = "Saraswati Vidya Mandir",
                         leadingIcon = VIcons.School,
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Spacer(Modifier.height(12.dp))
-                    Text("BOARD", style = VTheme.type.labelStrong.colored(c.ink3))
+                    Text(appString(StringKeys.AUTH_BOARD), style = VTheme.type.labelStrong.colored(c.ink3))
                     Spacer(Modifier.height(6.dp))
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -185,7 +187,7 @@ fun AdminAuthScreenV2(
                     VInput(
                         value = state.city,
                         onValueChange = viewModel::onCityChanged,
-                        label = "City (optional)",
+                        label = appString(StringKeys.AUTH_CITY_OPTIONAL),
                         placeholder = "Lucknow",
                         leadingIcon = VIcons.MapPin,
                         modifier = Modifier.fillMaxWidth(),
@@ -194,8 +196,8 @@ fun AdminAuthScreenV2(
                     VInput(
                         value = state.password,
                         onValueChange = viewModel::onPasswordChanged,
-                        label = "Create a password",
-                        placeholder = "At least 8 characters",
+                        label = appString(StringKeys.AUTH_CREATE_PASSWORD),
+                        placeholder = appString(StringKeys.AUTH_PASSWORD_8_PH),
                         leadingIcon = VIcons.Lock,
                         isPassword = true,
                         passwordVisible = passwordVisible,
@@ -203,7 +205,7 @@ fun AdminAuthScreenV2(
                         trailing = {
                             Icon(
                                 VIcons.Eye,
-                                contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                                contentDescription = if (passwordVisible) appString(StringKeys.AUTH_HIDE_PASSWORD) else appString(StringKeys.AUTH_SHOW_PASSWORD),
                                 tint = c.ink3,
                                 modifier = Modifier
                                     .size(18.dp)
@@ -220,15 +222,13 @@ fun AdminAuthScreenV2(
                     // + a pending school) and otherwise direct provisioned staff to
                     // their administrator.
                     Text(
-                        "No account exists for this email.",
+                        appString(StringKeys.AUTH_NO_ACCOUNT),
                         style = VTheme.type.bodyStrong.colored(c.ink),
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "New to VidyaPrayag? Register your school below to set it up and " +
-                            "create your administrator account. Teachers and additional staff " +
-                            "are added by your school administrator after onboarding.",
+                        appString(StringKeys.AUTH_NEW_REGISTER),
                         style = VTheme.type.body.colored(c.ink3),
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -239,7 +239,7 @@ fun AdminAuthScreenV2(
                 VInput(
                     value = state.password,
                     onValueChange = viewModel::onPasswordChanged,
-                    label = "Password",
+                    label = appString(StringKeys.AUTH_PASSWORD),
                     placeholder = "••••••••",
                     leadingIcon = VIcons.Lock,
                     isPassword = true,
@@ -257,7 +257,7 @@ fun AdminAuthScreenV2(
             AuthStep.SignupDetails -> {
                 if (state.isRegisterSchool) {
                     VButton(
-                        text = "Register & continue",
+                        text = appString(StringKeys.AUTH_REGISTER_CONTINUE),
                         onClick = viewModel::registerSchool,
                         full = true,
                         size = VButtonSize.Lg,
@@ -270,7 +270,7 @@ fun AdminAuthScreenV2(
                     AuthBackLink(onClick = viewModel::cancelRegisterSchool, modifier = Modifier.align(Alignment.CenterHorizontally))
                 } else {
                     VButton(
-                        text = "Onboard your school",
+                        text = appString(StringKeys.AUTH_ONBOARD_SCHOOL),
                         onClick = viewModel::startRegisterSchool,
                         full = true,
                         size = VButtonSize.Lg,
@@ -283,7 +283,7 @@ fun AdminAuthScreenV2(
                 }
             }
             else -> {
-                val ctaLabel = if (state.step == AuthStep.Identifier) "Continue" else "Sign In"
+                val ctaLabel = if (state.step == AuthStep.Identifier) appString(StringKeys.COMMON_BUTTON_CONTINUE) else appString(StringKeys.AUTH_SIGN_IN)
                 VButton(
                     text = ctaLabel,
                     onClick = { if (state.step == AuthStep.Identifier) viewModel.onContinue() else viewModel.onSubmit() },
@@ -365,7 +365,7 @@ fun SchoolRegistrationPrompt(
 
 
             Text(
-                text = "Are you setting up a school?",
+                text = appString(StringKeys.AUTH_SETTING_UP_SCHOOL),
                 style = VTheme.type.bodyStrong.colored(c.ink),
                 textAlign = TextAlign.Center
             )
@@ -375,7 +375,7 @@ fun SchoolRegistrationPrompt(
 
 
             Text(
-                text = "Create your administrator account and bring your school onto VidyaPrayag.",
+                text = appString(StringKeys.AUTH_CREATE_ADMIN_ACCT),
                 style = VTheme.type.caption.colored(c.ink3),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
@@ -389,7 +389,7 @@ fun SchoolRegistrationPrompt(
                 onClick = onRegisterSchool
             ) {
                 Text(
-                    text = "Register my school →",
+                    text = appString(StringKeys.AUTH_REGISTER_MY_SCHOOL),
                     style = VTheme.type.bodyStrong.colored(c.tealDeep)
                 )
             }

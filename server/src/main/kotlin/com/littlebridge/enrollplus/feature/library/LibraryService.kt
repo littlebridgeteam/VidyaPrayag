@@ -185,6 +185,27 @@ class LibraryService(
             if (copy.status != "available") throw LibraryConflictException("Copy is not available")
             val activeIssue = repo.findActiveIssueForCopy(schoolId, copyId)
             if (activeIssue != null) throw LibraryConflictException("Copy already issued")
+        } else {
+            // Auto-assign first available copy
+            val availableCopy = repo.listCopiesForBook(schoolId, UUID.fromString(req.bookId))
+                .firstOrNull { it.status == "available" }
+            if (availableCopy != null) {
+                // Use this copy
+                val resolvedCopyId = availableCopy.id
+                val today0 = LocalDate.now()
+                val dueDate0 = dueDateCalculator.calculate(today0, loanDays)
+                val issueId0 = repo.createIssue(
+                    schoolId, UUID.fromString(req.bookId), resolvedCopyId, borrowerId,
+                    req.borrowerType, req.borrowerName, today0, dueDate0,
+                )
+                val updated = repo.updateCopyStatusConditional(schoolId, resolvedCopyId, "available", "issued")
+                if (updated == 0) throw LibraryConflictException("COPY_ALREADY_ISSUED")
+                repo.updateBookAvailability(schoolId, UUID.fromString(req.bookId), -1)
+                repo.appendAuditLog(schoolId, actorId, actorName, "ISSUE_BOOK", "issue", issueId0,
+                    metadata = mapOf("bookId" to req.bookId, "borrowerName" to req.borrowerName))
+                LibraryEventBus.publish(BookIssued(schoolId, UUID.fromString(req.bookId), resolvedCopyId, borrowerId, req.borrowerName, dueDate0, actorId, actorName))
+                return repo.findIssueById(schoolId, issueId0)!!.toDto(book.title)
+            }
         }
 
         val today = LocalDate.now()

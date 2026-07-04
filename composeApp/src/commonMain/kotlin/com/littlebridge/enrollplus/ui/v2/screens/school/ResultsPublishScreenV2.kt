@@ -35,6 +35,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VTag
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
@@ -63,7 +65,7 @@ fun ResultsPublishScreenV2(
     Column(modifier.fillMaxSize().statusBarsPadding()
         .imePadding()
         .navigationBarsPadding()) {
-        VBackHeader(title = "Results", onBack = onBack)
+        VBackHeader(title = appString(StringKeys.SCH_RESULTS), onBack = onBack)
         ResultsContent(
             state = state,
             onSelectTest = viewModel::selectTest,
@@ -93,21 +95,21 @@ private fun ResultsContent(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         if (state.availableTests.isNotEmpty()) {
-            FilterRow(label = "TESTS", items = state.availableTests, selected = state.selectedTest, onSelect = onSelectTest)
+            FilterRow(label = appString(StringKeys.SCH_TESTS), items = state.availableTests, selected = state.selectedTest, onSelect = onSelectTest)
         }
         if (state.availableClasses.isNotEmpty()) {
-            FilterRow(label = "CLASSES", items = state.availableClasses, selected = state.selectedClass, onSelect = onSelectClass)
+            FilterRow(label = appString(StringKeys.SCH_CLASSES), items = state.availableClasses, selected = state.selectedClass, onSelect = onSelectClass)
         }
         if (state.availableSubjects.isNotEmpty()) {
-            FilterRow(label = "SUBJECTS", items = state.availableSubjects, selected = state.selectedSubject, onSelect = onSelectSubject)
+            FilterRow(label = appString(StringKeys.SCH_SUBJECTS), items = state.availableSubjects, selected = state.selectedSubject, onSelect = onSelectSubject)
         }
 
         VStateHost(
             loading = state.isLoading,
             error = state.errorMessage,
             isEmpty = state.students.isEmpty(),
-            emptyTitle = "No results yet",
-            emptyBody = "Pick a test/class/subject above. Once teachers enter marks, the class summary and students will appear here.",
+            emptyTitle = appString(StringKeys.SCH_NO_RESULTS_YET),
+            emptyBody = appString(StringKeys.SCH_NO_RESULTS_DESC),
             emptyIcon = VIcons.ClipboardList,
             onRetry = onRetry,
         ) {
@@ -115,7 +117,7 @@ private fun ResultsContent(
             VCard {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     Column(Modifier.weight(1f)) {
-                        Text("Class average", style = VTheme.type.label.colored(c.ink3))
+                        Text(appString(StringKeys.SCH_CLASS_AVERAGE), style = VTheme.type.label.colored(c.ink3))
                         Spacer(Modifier.height(4.dp))
                         Text(state.classAverage, style = VTheme.type.dataLg.colored(c.ink))
                     }
@@ -123,13 +125,13 @@ private fun ResultsContent(
                 }
                 Spacer(Modifier.height(12.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Box(Modifier.weight(1f)) { MiniCount("Exceeding", state.exceedingCount.toString(), VBadgeTone.Success) }
-                    Box(Modifier.weight(1f)) { MiniCount("Meeting", state.meetingCount.toString(), VBadgeTone.Arctic) }
-                    Box(Modifier.weight(1f)) { MiniCount("Below", state.belowCount.toString(), VBadgeTone.Danger) }
+                    Box(Modifier.weight(1f)) { MiniCount(appString(StringKeys.SCH_EXCEEDING), state.exceedingCount.toString(), VBadgeTone.Success) }
+                    Box(Modifier.weight(1f)) { MiniCount(appString(StringKeys.SCH_MEETING), state.meetingCount.toString(), VBadgeTone.Arctic) }
+                    Box(Modifier.weight(1f)) { MiniCount(appString(StringKeys.SCH_BELOW), state.belowCount.toString(), VBadgeTone.Danger) }
                 }
             }
 
-            VSectionHeader(title = "STUDENTS")
+            VSectionHeader(title = appString(StringKeys.SCH_STUDENTS_HEADER))
             state.students.forEach { s -> StudentResultCard(s) }
         }
     }
@@ -193,7 +195,7 @@ private fun StudentResultCard(s: StudentResult) {
                 }
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    "Score ${s.score} · Attendance ${s.attendance}",
+                    appString(StringKeys.SCH_SCORE_ATTENDANCE, "score" to s.score, "attendance" to s.attendance),
                     style = VTheme.type.dataSm.colored(c.ink2),
                 )
                 if (s.trend.isNotBlank()) {

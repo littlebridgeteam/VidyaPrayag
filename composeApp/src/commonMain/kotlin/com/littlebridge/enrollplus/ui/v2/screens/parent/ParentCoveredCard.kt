@@ -24,6 +24,8 @@ import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.parent.presentation.CoveredUnit
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.components.VStatusDot
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
@@ -54,7 +56,7 @@ fun ParentCoveredCard(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Icon(VIcons.BookOpen, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(14.dp))
                 Text(
-                    if (schoolDayEnded) "COVERED TODAY · SUMMARY" else "COVERED TODAY · LIVE",
+                    if (schoolDayEnded) appString(StringKeys.PCC_COVERED_SUMMARY) else appString(StringKeys.PCC_COVERED_LIVE),
                     style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 10.sp),
                 )
             }
@@ -84,12 +86,12 @@ fun ParentCoveredCard(
                 }
                 Column(Modifier.weight(1f)) {
                     Text(
-                        if (schoolDayEnded) "Nothing logged today" else "Nothing covered yet today",
+                        if (schoolDayEnded) appString(StringKeys.PCC_NOTHING_LOGGED) else appString(StringKeys.PCC_NOTHING_COVERED),
                         style = VTheme.type.h3.colored(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold, fontSize = 15.sp),
                     )
                     Text(
-                        if (schoolDayEnded) "Teachers didn't log syllabus coverage today"
-                        else "This fills in live as the school day progresses",
+                        if (schoolDayEnded) appString(StringKeys.PCC_NOTHING_LOGGED_DESC)
+                        else appString(StringKeys.PCC_FILLS_LIVE),
                         style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp),
                     )
                 }
@@ -97,7 +99,11 @@ fun ParentCoveredCard(
         } else {
             val subjectCount = coveredToday.map { it.subject }.distinct().size
             Text(
-                "$count ${if (count == 1) "topic" else "topics"} across $subjectCount ${if (subjectCount == 1) "subject" else "subjects"}",
+                appString(StringKeys.PCC_TOPICS_ACROSS,
+                    "count" to count,
+                    "topic" to if (count == 1) "topic" else "topics",
+                    "subjectCount" to subjectCount,
+                    "subject" to if (subjectCount == 1) "subject" else "subjects"),
                 style = VTheme.type.h3.colored(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold, fontSize = 15.sp),
             )
             Spacer(Modifier.height(8.dp))
@@ -106,7 +112,7 @@ fun ParentCoveredCard(
                 coveredToday.take(2).forEach { u -> CoveredRow(u) }
                 if (count > 2) {
                     Text(
-                        "+${count - 2} more",
+                        appString(StringKeys.PCC_MORE, "count" to count - 2),
                         style = VTheme.type.label.colored(c.accentDeep).copy(fontWeight = FontWeight.SemiBold, fontSize = 10.sp),
                     )
                 }
@@ -115,7 +121,7 @@ fun ParentCoveredCard(
 
         Spacer(Modifier.height(8.dp))
         Text(
-            "Tap for the full breakdown",
+            appString(StringKeys.PCC_TAP_BREAKDOWN),
             style = VTheme.type.label.colored(c.ink3).copy(fontSize = 9.sp, letterSpacing = 0.4.sp),
         )
     }

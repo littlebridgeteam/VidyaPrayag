@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.feature.teacher.domain.model.ObligationItemDto
 import com.littlebridge.enrollplus.feature.teacher.presentation.BellSlotUi
 import com.littlebridge.enrollplus.feature.teacher.presentation.ResolvedDayUi
@@ -47,6 +48,7 @@ import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherTodayView
 import com.littlebridge.enrollplus.platform.BiometricMethod
 import com.littlebridge.enrollplus.ui.v2.components.VActionCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
@@ -144,57 +146,57 @@ fun TeacherHomeScreenV2(
             )
 
             VActionCard(
-                title = "Needs Attention",
-                subtitle = "Students in your classes the early-warning system has flagged",
+                title = appString(StringKeys.TC_NEEDS_ATTENTION),
+                subtitle = appString(StringKeys.TC_NEEDS_ATTENTION_DESC),
                 icon = VIcons.AlertTriangle,
                 onClick = onOpenPews,
             )
 
             VActionCard(
-                title = "Report Card Review",
-                subtitle = "Review and approve AI-generated report card drafts for your classes",
+                title = appString(StringKeys.TC_REPORT_CARD_REVIEW),
+                subtitle = appString(StringKeys.TC_REPORT_CARD_REVIEW_DESC),
                 icon = VIcons.FileText,
                 onClick = onOpenReportReview,
             )
 
             VActionCard(
-                title = "Health Alerts",
-                subtitle = "Allergies & conditions for students in your classes",
+                title = appString(StringKeys.TC_HEALTH_ALERTS),
+                subtitle = appString(StringKeys.TC_HEALTH_ALERTS_DESC),
                 icon = VIcons.Heart,
                 onClick = onOpenHealthAlerts,
             )
 
             VActionCard(
-                title = "Transport Attendance",
-                subtitle = "Mark pickup & drop for students on your bus route",
+                title = appString(StringKeys.TC_TRANSPORT_ATTENDANCE),
+                subtitle = appString(StringKeys.TC_TRANSPORT_ATTENDANCE_DESC),
                 icon = VIcons.MapPin,
                 onClick = onOpenTransportAttendance,
             )
 
             VActionCard(
-                title = "Digital ID Card",
-                subtitle = "View your digital school ID card",
+                title = appString(StringKeys.TC_DIGITAL_ID_CARD),
+                subtitle = appString(StringKeys.TC_DIGITAL_ID_CARD_DESC),
                 icon = VIcons.IdCard,
                 onClick = onOpenIdCard,
             )
 
             VActionCard(
-                title = "Messages",
-                subtitle = "Chat with parents and school admin",
+                title = appString(StringKeys.TC_MESSAGES),
+                subtitle = appString(StringKeys.TC_MESSAGES_DESC),
                 icon = VIcons.Chat,
                 onClick = onOpenMessages,
             )
 
             VActionCard(
-                title = "Scheduled Messages",
-                subtitle = "View and manage your scheduled announcements and broadcasts",
+                title = appString(StringKeys.TC_SCHEDULED_MESSAGES),
+                subtitle = appString(StringKeys.TC_SCHEDULED_MESSAGES_DESC),
                 icon = VIcons.Clock,
                 onClick = onOpenScheduledMessages,
             )
 
             VActionCard(
-                title = "PTM & Events",
-                subtitle = "View your PTM slots and event registrations",
+                title = appString(StringKeys.TC_PTM_EVENTS),
+                subtitle = appString(StringKeys.TC_PTM_EVENTS_DESC),
                 icon = VIcons.Calendar,
                 onClick = onOpenEvents,
             )
@@ -222,7 +224,7 @@ private fun GreetingHeroCard(
     onCheckIn: (method: String) -> Unit,
 ) {
     val c = VTheme.colors
-    val name = teacherName.trim().substringBefore(" ").ifBlank { "Teacher" }
+    val name = teacherName.trim().substringBefore(" ").ifBlank { appString(StringKeys.TEACHER_TITLE) }
     Box(
         Modifier
             .fillMaxWidth()
@@ -240,14 +242,14 @@ private fun GreetingHeroCard(
                 TEyebrow(teacherGreeting().uppercase(), dot = c.accent)
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "Hi, $name",
+                    appString(StringKeys.TC_HI_NAME, "name" to name),
                     style = VTheme.type.h1.colored(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold, fontSize = 26.sp),
                 )
                 Spacer(Modifier.height(4.dp))
                 val line = when {
-                    obligations.isAllCaughtUp -> "You're all caught up — have a great day."
-                    obligations.totalOutstanding > 0 -> "${obligations.totalOutstanding} thing${if (obligations.totalOutstanding == 1) "" else "s"} need your attention."
-                    else -> "Here's your day at a glance."
+                    obligations.isAllCaughtUp -> appString(StringKeys.TC_ALL_CAUGHT_UP_DAY)
+                    obligations.totalOutstanding > 0 -> appString(StringKeys.TC_THINGS_NEED_ATTENTION, "count" to obligations.totalOutstanding.toString(), "plural" to if (obligations.totalOutstanding == 1) "" else "s")
+                    else -> appString(StringKeys.TC_DAY_AT_A_GLANCE)
                 }
                 Text(line, style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.5.sp))
             }
@@ -287,7 +289,7 @@ private fun CheckInRing(checkIn: TeacherCheckInState, onCheckIn: (method: String
             } else {
                 Icon(
                     if (checkedIn) VIcons.Check else VIcons.ShieldCheck,
-                    contentDescription = "Check in",
+                    contentDescription = appString(StringKeys.TC_CHECK_IN),
                     tint = accent,
                     modifier = Modifier.size(30.dp),
                 )
@@ -295,7 +297,7 @@ private fun CheckInRing(checkIn: TeacherCheckInState, onCheckIn: (method: String
         }
         Spacer(Modifier.height(6.dp))
         Text(
-            if (checkedIn) "Checked in" else "Tap to check in",
+            if (checkedIn) appString(StringKeys.TC_CHECKED_IN) else appString(StringKeys.TC_TAP_TO_CHECK_IN),
             style = VTheme.type.label.colored(accent).copy(fontSize = 9.5.sp, fontWeight = FontWeight.Bold),
         )
     }
@@ -325,7 +327,7 @@ private fun AttendanceSummaryCard(
     SwipeExpandCard(face = face, faceCount = 2, onFaceChange = { face = it }, padding = 18.dp) { f ->
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                TEyebrow("ATTENDANCE TODAY", dot = if (unmarked == 0) c.successInk else c.warningInk)
+                TEyebrow(appString(StringKeys.TC_ATTENDANCE_TODAY), dot = if (unmarked == 0) c.successInk else c.warningInk)
                 Spacer(Modifier.weight(1f))
                 FaceDots(face, 2)
             }
@@ -345,30 +347,30 @@ private fun AttendanceSummaryCard(
                         Spacer(Modifier.width(16.dp))
                         Column(Modifier.weight(1f)) {
                             Text(
-                                if (totalToday == 0) "No classes today"
-                                else if (unmarked == 0) "All attendance done"
-                                else "$unmarked class${if (unmarked == 1) "" else "es"} to mark",
+                                if (totalToday == 0) appString(StringKeys.TC_NO_CLASSES_TODAY)
+                                else if (unmarked == 0) appString(StringKeys.TC_ALL_ATTENDANCE_DONE)
+                                else appString(StringKeys.TC_CLASSES_TO_MARK, "count" to unmarked.toString(), "plural" to if (unmarked == 1) "" else "es"),
                                 style = VTheme.type.h3.colored(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold, fontSize = 16.sp),
                             )
                             Spacer(Modifier.height(2.dp))
                             Text(
-                                "$done of $totalToday classes marked",
+                                appString(StringKeys.TC_CLASSES_MARKED, "done" to done.toString(), "total" to totalToday.toString()),
                                 style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp),
                             )
                             Spacer(Modifier.height(10.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                TMetricTile(done.toString(), "Done", c.successInk, Modifier.weight(1f))
-                                TMetricTile(unmarked.toString(), "Pending", c.warningInk, Modifier.weight(1f))
+                                TMetricTile(done.toString(), appString(StringKeys.TC_DONE), c.successInk, Modifier.weight(1f))
+                                TMetricTile(unmarked.toString(), appString(StringKeys.TC_PENDING), c.warningInk, Modifier.weight(1f))
                             }
                         }
                     }
                     Spacer(Modifier.height(10.dp))
-                    TSwipeHint("Swipe to see each class →")
+                    TSwipeHint(appString(StringKeys.TC_SWIPE_SEE_CLASSES))
                 }
                 else -> {
                     // Per-class list — the detail in-place (no navigation), tap a row to mark.
                     if (periods.isEmpty()) {
-                        Text("No classes scheduled today.", style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.sp))
+                        Text(appString(StringKeys.TC_NO_CLASSES_SCHEDULED_TODAY), style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.sp))
                     } else {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             periods.forEach { p ->
@@ -377,7 +379,7 @@ private fun AttendanceSummaryCard(
                         }
                     }
                     Spacer(Modifier.height(8.dp))
-                    TSwipeHint("← Swipe back to summary")
+                    TSwipeHint(appString(StringKeys.TC_SWIPE_BACK_TO_SUMMARY))
                 }
             }
         }
@@ -411,9 +413,9 @@ private fun AttendanceClassRow(p: ResolvedPeriodUi, onOpen: (assignmentId: Strin
             )
         }
         if (p.attendanceMarked) {
-            TPill("DONE", bg = c.success.copy(alpha = 0.16f), fg = c.successInk)
+            TPill(appString(StringKeys.TC_DONE), bg = c.success.copy(alpha = 0.16f), fg = c.successInk)
         } else {
-            TPill("MARK", bg = c.accent.copy(alpha = 0.12f), fg = c.accentDeep)
+            TPill(appString(StringKeys.TC_MARK), bg = c.accent.copy(alpha = 0.12f), fg = c.accentDeep)
         }
     }
 }
@@ -434,7 +436,7 @@ private fun ScheduleCard(today: TeacherTodayState, onOpenLessonPlan: (assignment
     SwipeExpandCard(face = face, faceCount = maxFace + 1, onFaceChange = { face = it }, padding = 18.dp) { f ->
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                TEyebrow("TODAY'S SCHEDULE", dot = c.accent)
+                TEyebrow(appString(StringKeys.TC_TODAYS_SCHEDULE), dot = c.accent)
                 Spacer(Modifier.weight(1f))
                 if (maxFace > 0) FaceDots(f, maxFace + 1)
                 Spacer(Modifier.width(8.dp))
@@ -443,9 +445,9 @@ private fun ScheduleCard(today: TeacherTodayState, onOpenLessonPlan: (assignment
             Spacer(Modifier.height(12.dp))
             when {
                 today.isLoading && day == null -> Box(Modifier.fillMaxWidth().height(60.dp), contentAlignment = Alignment.Center) { TeacherSpinner(26.dp) }
-                day == null -> Text("Couldn't load your schedule.", style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.sp))
+                day == null -> Text(appString(StringKeys.TC_COULDNT_LOAD_SCHEDULE), style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.sp))
                 day.isHoliday -> HolidayRow(day)
-                day.periods.isEmpty() -> Text("No periods scheduled today.", style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.sp))
+                day.periods.isEmpty() -> Text(appString(StringKeys.TC_NO_PERIODS_TODAY), style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.sp))
                 else -> when (f) {
                     0 -> {
                         // Compact face: current or next class only
@@ -469,10 +471,10 @@ private fun ScheduleCard(today: TeacherTodayState, onOpenLessonPlan: (assignment
                             // No current or next — show first period
                             periods.firstOrNull()?.let {
                                 SchedulePeriodRow(it, isNow = false, isNext = false, onOpenLessonPlan = onOpenLessonPlan)
-                            } ?: Text("No periods scheduled today.", style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.sp))
+                            } ?: Text(appString(StringKeys.TC_NO_PERIODS_TODAY), style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.sp))
                         }
                         Spacer(Modifier.height(10.dp))
-                        TSwipeHint("Swipe to see full schedule →")
+                        TSwipeHint(appString(StringKeys.TC_SWIPE_FULL_SCHEDULE))
                     }
                     else -> {
                         // Expanded face: all periods
@@ -491,7 +493,7 @@ private fun ScheduleCard(today: TeacherTodayState, onOpenLessonPlan: (assignment
                             }
                         }
                         Spacer(Modifier.height(8.dp))
-                        TSwipeHint("← Swipe back to current class")
+                        TSwipeHint(appString(StringKeys.TC_SWIPE_BACK_TO_CURRENT))
                     }
                 }
             }
@@ -509,7 +511,7 @@ private fun HolidayRow(day: ResolvedDayUi) {
     ) {
         TIconDisc(VIcons.Calendar, tint = c.navy, bg = c.navy.copy(alpha = 0.12f), size = 36.dp, glyph = 18.dp)
         Column {
-            Text("Holiday", style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 14.sp, fontWeight = FontWeight.Bold))
+            Text(appString(StringKeys.TC_HOLIDAY), style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 14.sp, fontWeight = FontWeight.Bold))
             val holidayName = day.holidayName
             if (!holidayName.isNullOrBlank()) Text(holidayName, style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp))
         }
@@ -543,11 +545,11 @@ private fun SchedulePeriodRow(
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
-                    if (p.isCancelled) "${p.classLabel} · ${p.subject} (cancelled)" else "${p.classLabel} · ${p.subject}",
+                    if (p.isCancelled) appString(StringKeys.TC_CLASS_CANCELLED, "label" to "${p.classLabel} · ${p.subject}") else "${p.classLabel} · ${p.subject}",
                     style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 13.5.sp, fontWeight = FontWeight.Bold),
                 )
-                if (isNow) TPill("NOW", bg = accent.copy(alpha = 0.18f), fg = accent)
-                else if (isNext) TPill("NEXT", bg = c.accent.copy(alpha = 0.10f), fg = c.accentDeep)
+                if (isNow) TPill(appString(StringKeys.TC_NOW), bg = accent.copy(alpha = 0.18f), fg = accent)
+                else if (isNext) TPill(appString(StringKeys.TC_NEXT), bg = c.accent.copy(alpha = 0.10f), fg = c.accentDeep)
                 // Lesson plan chip (LESSON_PLANNING_SPEC §7.3)
                 p.lessonPlanStatus?.let { lps ->
                     val lpColor = when (lps) {
@@ -580,7 +582,7 @@ private fun SchedulePeriodRow(
                         if (p.room.isNotBlank()) append(p.room)
                         if (sub != null) {
                             if (isNotEmpty()) append(" · ")
-                            append("Sub: $sub")
+                            append(appString(StringKeys.TC_SUB_COLON, "name" to sub))
                         }
                     },
                     style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp),
@@ -605,7 +607,7 @@ private fun RemindersCard(
     TCard(padding = 18.dp) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                TEyebrow("WHAT NEEDS YOU", dot = if (obligations.isAllCaughtUp) c.successInk else c.warningInk)
+                TEyebrow(appString(StringKeys.TC_WHAT_NEEDS_YOU), dot = if (obligations.isAllCaughtUp) c.successInk else c.warningInk)
                 Spacer(Modifier.weight(1f))
                 if (obligations.totalOutstanding > 0) {
                     TPill(obligations.totalOutstanding.toString(), bg = c.warning.copy(alpha = 0.18f), fg = c.warningInk)
@@ -616,8 +618,8 @@ private fun RemindersCard(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     TIconDisc(VIcons.Sparkles, tint = c.successInk, bg = c.success.copy(alpha = 0.16f), size = 40.dp, glyph = 20.dp)
                     Column {
-                        Text("All caught up", style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 14.sp, fontWeight = FontWeight.Bold))
-                        Text("Nothing pending right now.", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp))
+                        Text(appString(StringKeys.TC_ALL_CAUGHT_UP), style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 14.sp, fontWeight = FontWeight.Bold))
+                        Text(appString(StringKeys.TC_NOTHING_PENDING), style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp))
                     }
                 }
             } else {
@@ -684,7 +686,7 @@ private fun BellScheduleSection(slots: List<BellSlotUi>) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Icon(VIcons.Clock, contentDescription = null, tint = c.ink3, modifier = Modifier.size(12.dp))
             Text(
-                "BELL SCHEDULE",
+                appString(StringKeys.TC_BELL_SCHEDULE),
                 style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 9.5.sp),
             )
         }

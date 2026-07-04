@@ -94,6 +94,16 @@ import type {
   BulkCreatePeriodsRequest,
   BulkCreatePeriodsResponse,
   CopySectionRequest,
+  LanguageDistributionDto,
+  UserLanguagePrefDto,
+  LanguageAdoptionDto,
+  UsersByLanguageDto,
+  ServerStringEntry,
+  ServerStringsResponse,
+  UpsertServerStringRequest,
+  BulkUpsertServerStringRequest,
+  BulkUpsertServerStringResponse,
+  StringOverrideHistoryResponse,
 } from "./types";
 
 interface Opts {
@@ -472,4 +482,30 @@ export const adminApi = {
     authRequest<unknown>(`/api/v1/school/timetable/periods/${id}`, { method: "DELETE" }),
   copySection: (body: CopySectionRequest) =>
     authRequest<BulkCreatePeriodsResponse>("/api/v1/school/timetable/periods/copy-section", { method: "POST", body }),
+
+  // ── Multi-Language i18n (I18nRouting.kt) ───────────────────────────────────
+  languageDistribution: () =>
+    authRequest<{ distribution: LanguageDistributionDto[] }>("/api/v1/school/language-distribution"),
+  usersLanguagePref: () =>
+    authRequest<{ users: UserLanguagePrefDto[] }>("/api/v1/school/users-language-pref"),
+  languageAdoption: () =>
+    authRequest<LanguageAdoptionDto>("/api/admin/language-adoption"),
+  usersByLanguage: () =>
+    authRequest<UsersByLanguageDto[]>("/api/admin/users-by-language"),
+  serverStrings: () =>
+    authRequest<ServerStringsResponse>("/api/admin/server-strings"),
+  upsertServerString: (key: string, body: UpsertServerStringRequest) =>
+    authRequest<ServerStringEntry>(`/api/admin/server-strings/${encodeURIComponent(key)}`, { method: "PATCH", body }),
+  deleteServerString: (key: string, lang: string) =>
+    authRequest<unknown>(`/api/admin/server-strings/${encodeURIComponent(key)}?lang=${encodeURIComponent(lang)}`, { method: "DELETE" }),
+  bulkUpsertServerStrings: (body: BulkUpsertServerStringRequest) =>
+    authRequest<BulkUpsertServerStringResponse>(`/api/admin/server-strings/bulk`, { method: "PATCH", body }),
+  stringOverrideHistory: (params?: { key?: string; lang?: string; limit?: number }) => {
+    const qs = new URLSearchParams();
+    if (params?.key) qs.set("key", params.key);
+    if (params?.lang) qs.set("lang", params.lang);
+    if (params?.limit) qs.set("limit", String(params.limit));
+    const q = qs.toString();
+    return authRequest<StringOverrideHistoryResponse>(`/api/admin/server-strings/history${q ? `?${q}` : ""}`);
+  },
 };

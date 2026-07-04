@@ -52,6 +52,8 @@ import com.littlebridge.enrollplus.ui.v2.theme.VMotion
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.VThemeRegistry
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -220,7 +222,7 @@ fun AuthScaffoldV2(
             ) {
                 Icon(VIcons.ShieldCheck, contentDescription = null, tint = c.ink3, modifier = Modifier.size(13.dp))
                 Text(
-                    "Secured with end-to-end encryption",
+                    appString(StringKeys.AUTH_SECURED),
                     style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp),
                 )
             }
@@ -234,7 +236,7 @@ fun AuthBackLink(onClick: () -> Unit, modifier: Modifier = Modifier) {
     val c = VTheme.colors
     val interaction = remember { MutableInteractionSource() }
     Text(
-        "‹ Back",
+        appString(StringKeys.AUTH_BACK_LINK),
         style = VTheme.type.caption.colored(c.ink3).copy(fontWeight = FontWeight.SemiBold),
         modifier = modifier
             .clip(RoundedCornerShape(999.dp))

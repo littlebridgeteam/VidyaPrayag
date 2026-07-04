@@ -50,7 +50,9 @@ import com.littlebridge.enrollplus.ui.v2.components.VActionCard
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
@@ -92,7 +94,7 @@ fun StudentProfileScreenV2(
             .imePadding()
             .navigationBarsPadding(),
     ) {
-        VBackHeader(title = "Student", onBack = onBack)
+        VBackHeader(title = appString(StringKeys.SCH_STUDENT), onBack = onBack)
         StudentProfileContent(
             state = state,
             onRetry = viewModel::retry,
@@ -123,8 +125,8 @@ private fun StudentProfileContent(
             loading = state.isLoading,
             error = state.error,
             isEmpty = state.profile == null && !state.isLoading && state.error == null,
-            emptyTitle = "No profile",
-            emptyBody = "This student's record could not be found.",
+            emptyTitle = appString(StringKeys.SCH_NO_PROFILE),
+            emptyBody = appString(StringKeys.SCH_NO_STUDENT_PROFILE_DESC),
             emptyIcon = VIcons.User,
             onRetry = onRetry,
         ) {
@@ -134,8 +136,8 @@ private fun StudentProfileContent(
             if (onOpenHealth != null) {
                 Spacer(Modifier.height(8.dp))
                 VActionCard(
-                    title = "Health Records",
-                    subtitle = "View and manage health profile, immunizations, and incidents",
+                    title = appString(StringKeys.SCH_HEALTH_RECORDS),
+                    subtitle = appString(StringKeys.SCH_HEALTH_RECORDS_DESC),
                     icon = VIcons.Heart,
                     onClick = { onOpenHealth(p.student.id, p.student.fullName) },
                 )
@@ -152,10 +154,9 @@ private fun StudentProfileContent(
 
     VConfirmDialog(
         visible = confirmRemove,
-        title = "Remove student",
-        message = "Remove ${state.profile?.student?.fullName ?: "this student"} from your school? " +
-            "Their records will be hidden. This can be reversed by re-adding them.",
-        confirmLabel = "Remove",
+        title = appString(StringKeys.SCH_REMOVE_STUDENT),
+        message = appString(StringKeys.SCH_REMOVE_STUDENT_MSG, "name" to (state.profile?.student?.fullName ?: appString(StringKeys.SCH_THIS_STUDENT))),
+        confirmLabel = appString(StringKeys.SCH_REMOVE),
         icon = VIcons.AlertTriangle,
         onConfirm = { confirmRemove = false; onRemove() },
         onDismiss = { confirmRemove = false },
@@ -203,18 +204,18 @@ private fun HeroBanner(p: StudentProfileDto) {
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     VBadge(
-                        text = if (active) "Active" else "Inactive",
+                        text = if (active) appString(StringKeys.SCH_ACTIVE) else appString(StringKeys.SCH_INACTIVE),
                         tone = if (active) VBadgeTone.Success else VBadgeTone.Neutral,
                         leadingIcon = VIcons.Check,
                     )
-                    if (p.isNewAdmission) VBadge(text = "New Admission", tone = VBadgeTone.Arctic)
+                    if (p.isNewAdmission) VBadge(text = appString(StringKeys.SCH_NEW_ADMISSION), tone = VBadgeTone.Arctic)
                 }
             }
         }
         Spacer(Modifier.height(16.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-            HeroFact(VIcons.Bookmark, "Admission No.", s.studentCode)
-            HeroFact(VIcons.User, "Roll No.", s.rollNumber)
+            HeroFact(VIcons.Bookmark, appString(StringKeys.SCH_ADMISSION_NO), s.studentCode)
+            HeroFact(VIcons.User, appString(StringKeys.SCH_ROLL_NO), s.rollNumber)
         }
     }
 }
@@ -241,16 +242,16 @@ private fun HeroFact(icon: ImageVector, label: String, value: String) {
 @Composable
 private fun KpiCarousel(p: StudentProfileDto) {
     val kpis = buildList {
-        add(KpiCardData("Attendance", "${p.attendancePercent.toInt()}%", "overall", VIcons.Check, VBadgeTone.Success))
-        add(KpiCardData("Teachers", p.teacherCount.toString(), "connected", VIcons.Users, VBadgeTone.Arctic))
-        add(KpiCardData("Parents", p.parentCount.toString(), "linked", VIcons.Heart, VBadgeTone.Warning))
-        add(KpiCardData("Subjects", p.subjectCount.toString(), "studied", VIcons.BookOpen, VBadgeTone.Arctic))
+        add(KpiCardData(appString(StringKeys.SCH_ATTENDANCE), "${p.attendancePercent.toInt()}%", appString(StringKeys.SCH_OVERALL), VIcons.Check, VBadgeTone.Success))
+        add(KpiCardData(appString(StringKeys.SCH_TEACHERS), p.teacherCount.toString(), appString(StringKeys.SCH_CONNECTED), VIcons.Users, VBadgeTone.Arctic))
+        add(KpiCardData(appString(StringKeys.SCH_PARENTS), p.parentCount.toString(), appString(StringKeys.SCH_LINKED), VIcons.Heart, VBadgeTone.Warning))
+        add(KpiCardData(appString(StringKeys.SCH_SUBJECTS), p.subjectCount.toString(), appString(StringKeys.SCH_STUDIED), VIcons.BookOpen, VBadgeTone.Arctic))
         p.academicScore?.let {
-            add(KpiCardData("Academic Score", "${it.toInt()}%", "average", VIcons.Star, VBadgeTone.Success))
+            add(KpiCardData(appString(StringKeys.SCH_ACADEMIC_SCORE), "${it.toInt()}%", appString(StringKeys.SCH_AVERAGE), VIcons.Star, VBadgeTone.Success))
         }
     }
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "OVERVIEW")
+        VSectionHeader(title = appString(StringKeys.SCH_OVERVIEW))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             items(kpis) { kpi -> KpiCard(kpi) }
         }
@@ -288,13 +289,13 @@ private fun KpiCard(data: KpiCardData) {
 private fun AcademicOverview(p: StudentProfileDto) {
     val s = p.student
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "ACADEMIC OVERVIEW")
+        VSectionHeader(title = appString(StringKeys.SCH_ACADEMIC_OVERVIEW))
         VCard(padding = 18.dp) {
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                DetailRow(VIcons.School, "Class", s.className)
-                DetailRow(VIcons.Bookmark, "Section", s.section)
-                DetailRow(VIcons.User, "Roll Number", s.rollNumber)
-                DetailRow(VIcons.Calendar, "Admission Date", p.admissionDate?.takeIf { it.isNotBlank() } ?: "—")
+                DetailRow(VIcons.School, appString(StringKeys.SCH_CLASS), s.className)
+                DetailRow(VIcons.Bookmark, appString(StringKeys.SCH_SECTION), s.section)
+                DetailRow(VIcons.User, appString(StringKeys.SCH_ROLL_NUMBER), s.rollNumber)
+                DetailRow(VIcons.Calendar, appString(StringKeys.SCH_ADMISSION_DATE), p.admissionDate?.takeIf { it.isNotBlank() } ?: "—")
             }
         }
     }
@@ -305,9 +306,9 @@ private fun AcademicOverview(p: StudentProfileDto) {
 @Composable
 private fun TeacherConnections(teachers: List<StudentTeacherDto>) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "TEACHER CONNECTIONS")
+        VSectionHeader(title = appString(StringKeys.SCH_TEACHER_CONNECTIONS))
         if (teachers.isEmpty()) {
-            EmptyCard(VIcons.Users, "No teachers connected yet.")
+            EmptyCard(VIcons.Users, appString(StringKeys.SCH_NO_TEACHERS_CONNECTED))
         } else {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(teachers) { t -> TeacherConnectionCard(t) }
@@ -339,9 +340,9 @@ private fun TeacherConnectionCard(t: StudentTeacherDto) {
 @Composable
 private fun ParentConnections(parents: List<StudentParentDto>) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "PARENT CONNECTIONS")
+        VSectionHeader(title = appString(StringKeys.SCH_PARENT_CONNECTIONS))
         if (parents.isEmpty()) {
-            EmptyCard(VIcons.Heart, "No parents linked yet.")
+            EmptyCard(VIcons.Heart, appString(StringKeys.SCH_NO_PARENTS_LINKED))
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 parents.forEach { ParentConnectionCard(it) }
@@ -364,7 +365,7 @@ private fun ParentConnectionCard(parent: StudentParentDto) {
                 }
             }
             if (parent.isPrimaryGuardian) {
-                VBadge(text = "Primary Guardian", tone = VBadgeTone.Success)
+                VBadge(text = appString(StringKeys.SCH_PRIMARY_GUARDIAN), tone = VBadgeTone.Success)
             }
         }
     }
@@ -376,10 +377,10 @@ private fun ParentConnectionCard(parent: StudentParentDto) {
 private fun AttendanceOverview(p: StudentProfileDto) {
     val c = VTheme.colors
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "ATTENDANCE OVERVIEW")
+        VSectionHeader(title = appString(StringKeys.SCH_ATTENDANCE_OVERVIEW))
         VCard(padding = 18.dp) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Attendance rate", style = VTheme.type.bodyStrong.colored(c.ink2))
+                Text(appString(StringKeys.SCH_ATTENDANCE_RATE), style = VTheme.type.bodyStrong.colored(c.ink2))
                 Text("${p.attendanceRate}%", style = VTheme.type.bodyStrong.colored(c.ink))
             }
             Spacer(Modifier.height(8.dp))
@@ -390,9 +391,9 @@ private fun AttendanceOverview(p: StudentProfileDto) {
             )
             Spacer(Modifier.height(14.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                StatPill("Present", p.presentDays, Modifier.weight(1f))
-                StatPill("Absent", p.absentDays, Modifier.weight(1f))
-                StatPill("Late", p.lateDays, Modifier.weight(1f))
+                StatPill(appString(StringKeys.SCH_PRESENT), p.presentDays, Modifier.weight(1f))
+                StatPill(appString(StringKeys.SCH_ABSENT), p.absentDays, Modifier.weight(1f))
+                StatPill(appString(StringKeys.SCH_LATE), p.lateDays, Modifier.weight(1f))
             }
         }
     }
@@ -415,9 +416,9 @@ private fun StatPill(label: String, value: Int, modifier: Modifier = Modifier) {
 private fun InsightsSection(insights: List<String>) {
     val c = VTheme.colors
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "INSIGHTS")
+        VSectionHeader(title = appString(StringKeys.SCH_INSIGHTS))
         if (insights.isEmpty()) {
-            EmptyCard(VIcons.Sparkles, "No insights available yet.")
+            EmptyCard(VIcons.Sparkles, appString(StringKeys.SCH_NO_INSIGHTS_YET))
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 insights.forEach { insight ->
@@ -443,9 +444,9 @@ private fun InsightsSection(insights: List<String>) {
 @Composable
 private fun ActivityTimeline(activities: List<StudentActivityDto>) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "RECENT ACTIVITY")
+        VSectionHeader(title = appString(StringKeys.SCH_RECENT_ACTIVITY))
         if (activities.isEmpty()) {
-            EmptyCard(VIcons.Calendar, "No recent activity yet.")
+            EmptyCard(VIcons.Calendar, appString(StringKeys.SCH_NO_RECENT_ACTIVITY))
         } else {
             VCard(padding = 18.dp) {
                 Column {
@@ -497,9 +498,9 @@ private fun formatActivityMeta(activity: StudentActivityDto): String {
 private fun MarksSection(p: StudentProfileDto) {
     val c = VTheme.colors
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "MARKS")
+        VSectionHeader(title = appString(StringKeys.SCH_MARKS))
         if (p.marks.isEmpty()) {
-            EmptyCard(VIcons.BookOpen, "No marks recorded yet.")
+            EmptyCard(VIcons.BookOpen, appString(StringKeys.SCH_NO_MARKS_RECORDED))
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 p.marks.forEach { m ->
@@ -527,9 +528,9 @@ private fun MarksSection(p: StudentProfileDto) {
 private fun LeaveSection(p: StudentProfileDto) {
     val c = VTheme.colors
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "LEAVE")
+        VSectionHeader(title = appString(StringKeys.SCH_LEAVE))
         if (p.leave.isEmpty()) {
-            EmptyCard(VIcons.Calendar, "No leave applications.")
+            EmptyCard(VIcons.Calendar, appString(StringKeys.SCH_NO_LEAVE_APPLICATIONS))
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 p.leave.forEach { l ->
@@ -561,9 +562,9 @@ private fun LeaveSection(p: StudentProfileDto) {
 private fun FeesSection(p: StudentProfileDto) {
     val c = VTheme.colors
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "FEES")
+        VSectionHeader(title = appString(StringKeys.SCH_FEES))
         if (p.fees.isEmpty()) {
-            EmptyCard(VIcons.Bookmark, "No fee records.")
+            EmptyCard(VIcons.Bookmark, appString(StringKeys.SCH_NO_FEE_RECORDS))
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 p.fees.forEach { f ->
@@ -571,7 +572,7 @@ private fun FeesSection(p: StudentProfileDto) {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                             Column(Modifier.weight(1f)) {
                                 Text(f.title, style = VTheme.type.bodyStrong.colored(c.ink))
-                                f.dueDate?.let { Text("Due $it", style = VTheme.type.label.colored(c.ink3)) }
+                                f.dueDate?.let { Text(appString(StringKeys.SCH_DUE, "date" to it), style = VTheme.type.label.colored(c.ink3)) }
                             }
                             Column(horizontalAlignment = Alignment.End) {
                                 Text(
@@ -601,11 +602,11 @@ private fun FeesSection(p: StudentProfileDto) {
 private fun ContactInformation(p: StudentProfileDto) {
     val primary = p.parents.firstOrNull { it.isPrimaryGuardian } ?: p.parents.firstOrNull()
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "CONTACT INFORMATION")
+        VSectionHeader(title = appString(StringKeys.SCH_CONTACT_INFORMATION))
         VCard(padding = 18.dp) {
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                DetailRow(VIcons.Heart, "Primary Guardian", primary?.name ?: "—")
-                DetailRow(VIcons.Phone, "Phone", primary?.phone?.takeIf { it.isNotBlank() } ?: "—")
+                DetailRow(VIcons.Heart, appString(StringKeys.SCH_PRIMARY_GUARDIAN), primary?.name ?: "—")
+                DetailRow(VIcons.Phone, appString(StringKeys.SCH_PHONE), primary?.phone?.takeIf { it.isNotBlank() } ?: "—")
             }
         }
     }
@@ -617,12 +618,12 @@ private fun ContactInformation(p: StudentProfileDto) {
 private fun AdministrativeInformation(p: StudentProfileDto) {
     val s = p.student
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "ADMINISTRATIVE INFORMATION")
+        VSectionHeader(title = appString(StringKeys.SCH_ADMINISTRATIVE_INFO))
         VCard(padding = 18.dp) {
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                DetailRow(VIcons.Bookmark, "Admission Number", s.studentCode)
-                DetailRow(VIcons.Calendar, "Admission Date", p.admissionDate?.takeIf { it.isNotBlank() } ?: "—")
-                DetailRow(VIcons.User, "Student ID", s.id)
+                DetailRow(VIcons.Bookmark, appString(StringKeys.SCH_ADMISSION_NUMBER), s.studentCode)
+                DetailRow(VIcons.Calendar, appString(StringKeys.SCH_ADMISSION_DATE), p.admissionDate?.takeIf { it.isNotBlank() } ?: "—")
+                DetailRow(VIcons.User, appString(StringKeys.SCH_STUDENT_ID), s.id)
             }
         }
     }
@@ -655,12 +656,12 @@ private fun DangerZone(
 ) {
     val c = VTheme.colors
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "DANGER ZONE")
+        VSectionHeader(title = appString(StringKeys.SCH_DANGER_ZONE))
         VCard(padding = 18.dp, border = true) {
-            Text("Remove student", style = VTheme.type.bodyStrong.colored(c.dangerInk))
+            Text(appString(StringKeys.SCH_REMOVE_STUDENT), style = VTheme.type.bodyStrong.colored(c.dangerInk))
             Spacer(Modifier.height(4.dp))
             Text(
-                "Removing this student hides their records from your school. This can be reversed by re-adding them.",
+                appString(StringKeys.SCH_REMOVE_STUDENT_DANGER),
                 style = VTheme.type.caption.colored(c.ink2),
             )
             Spacer(Modifier.height(14.dp))
@@ -669,7 +670,7 @@ private fun DangerZone(
                 Spacer(Modifier.height(8.dp))
             }
             VButton(
-                text = "Remove from school",
+                text = appString(StringKeys.SCH_REMOVE_FROM_SCHOOL),
                 onClick = onRequestRemove,
                 variant = VButtonVariant.Destructive,
                 full = true,

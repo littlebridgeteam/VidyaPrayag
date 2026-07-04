@@ -84,6 +84,10 @@ class MainViewModelTest {
         override suspend fun setProfileCompleted(completed: Boolean?) {}
         override fun getUserName(): Flow<String?> = flowOf(null)
         override suspend fun setUserName(name: String?) {}
+        override fun getCachedBranding(): Flow<String?> = flowOf(null)
+        override suspend fun setCachedBranding(brandingJson: String?) {}
+        override fun getLanguagePref(): Flow<String> = flowOf("en")
+        override suspend fun setLanguagePref(lang: String) {}
     }
 
     class FakeNotificationService : NotificationService {

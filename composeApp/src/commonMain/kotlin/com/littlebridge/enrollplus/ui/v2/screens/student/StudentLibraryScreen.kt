@@ -67,20 +67,27 @@ import com.littlebridge.enrollplus.ui.v2.screens.library.SwipeableIssueCard
 import com.littlebridge.enrollplus.ui.v2.screens.library.ViewModeToggle
 import com.littlebridge.enrollplus.ui.v2.screens.library.parseDaysRemaining
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
 
-private enum class StudentLibraryTab(val label: String) {
-    Browse("Browse"),
-    MyBooks("My Books"),
-    History("History"),
-    Wishlist("Wishlist"),
-    Reservations("Reservations"),
-    Acquisition("Requests"),
-    Profile("Profile"),
-    Badges("Badges"),
-    Discussions("Discussions"),
+private enum class StudentLibraryTab {
+    Browse, MyBooks, History, Wishlist, Reservations, Acquisition, Profile, Badges, Discussions;
+
+    @Composable
+    fun label(): String = when (this) {
+        Browse       -> appString(StringKeys.STU_LIB_TAB_BROWSE)
+        MyBooks      -> appString(StringKeys.STU_LIB_TAB_MY_BOOKS)
+        History      -> appString(StringKeys.STU_LIB_TAB_HISTORY)
+        Wishlist     -> appString(StringKeys.STU_LIB_TAB_WISHLIST)
+        Reservations -> appString(StringKeys.STU_LIB_TAB_RESERVATIONS)
+        Acquisition  -> appString(StringKeys.STU_LIB_TAB_REQUESTS)
+        Profile      -> appString(StringKeys.STU_LIB_TAB_PROFILE)
+        Badges       -> appString(StringKeys.STU_LIB_TAB_BADGES)
+        Discussions  -> appString(StringKeys.STU_LIB_TAB_DISCUSSIONS)
+    }
 }
 
 @Composable
@@ -117,7 +124,7 @@ fun StudentLibraryScreen(
     Column(
         modifier = Modifier.fillMaxSize(),
     ) {
-        com.littlebridge.enrollplus.ui.v2.components.VBackHeader(title = "Library", onBack = onBack)
+        com.littlebridge.enrollplus.ui.v2.components.VBackHeader(title = appString(StringKeys.STU_LIB_TITLE), onBack = onBack)
 
         if (state.isOffline) {
             Row(
@@ -127,7 +134,7 @@ fun StudentLibraryScreen(
             ) {
                 Text("⚠️", style = VTheme.type.caption)
                 Text(
-                    if (state.isStaleData) "Offline — showing cached data" else "Offline — check your connection",
+                    if (state.isStaleData) appString(StringKeys.STU_LIB_OFFLINE_CACHED) else appString(StringKeys.STU_LIB_OFFLINE_CHECK),
                     style = VTheme.type.caption.colored(c.warningInk),
                 )
             }
@@ -140,7 +147,7 @@ fun StudentLibraryScreen(
         ) {
             StudentLibraryTab.entries.forEach { tab ->
                 VBadge(
-                    text = tab.label,
+                    text = tab.label(),
                     tone = if (activeTab == tab) VBadgeTone.Accent else VBadgeTone.Neutral,
                     modifier = Modifier.clickable { activeTab = tab },
                 )
@@ -181,8 +188,8 @@ fun StudentLibraryScreen(
 
     if (showCoachMark && activeTab == StudentLibraryTab.Browse) {
         CoachMarkOverlay(
-            targetText = "Welcome to Library!",
-            message = "Search for any book by title, author, or ISBN. Use filters to narrow down results.",
+            targetText = appString(StringKeys.STU_LIB_COACHMARK_TITLE),
+            message = appString(StringKeys.STU_LIB_COACHMARK_MSG),
             onDismiss = { showCoachMark = false },
         )
     }
@@ -219,7 +226,7 @@ private fun BrowseTab(
         // Greeting header (UIX-016)
         item {
             GreetingHeader(
-                userName = state.profile?.let { "Reader" } ?: "Reader",
+                userName = state.profile?.let { appString(StringKeys.STU_LIB_READER) } ?: appString(StringKeys.STU_LIB_READER),
                 overdueCount = state.issuedBooks.count { parseDaysRemaining(it.dueDate) < 0 },
                 dueTomorrowCount = state.issuedBooks.count { parseDaysRemaining(it.dueDate) in 0..1 },
                 reservationReadyCount = state.reservations.count { it.status == "notified" },
@@ -266,11 +273,11 @@ private fun BrowseTab(
             VInput(
                 value = state.searchQuery,
                 onValueChange = { viewModel.updateSearchQuery(it) },
-                label = "Search books",
+                label = appString(StringKeys.STU_LIB_SEARCH_BOOKS),
                 modifier = Modifier.fillMaxWidth(),
             )
             VButton(
-                text = "Search",
+                text = appString(StringKeys.STU_LIB_SEARCH),
                 onClick = { viewModel.searchBooks(1) },
                 full = true,
                 tone = VButtonTone.Lavender,
@@ -281,7 +288,7 @@ private fun BrowseTab(
         // Trending carousel
         if (state.trending.isNotEmpty()) {
             item {
-                Text("Trending Now", style = VTheme.type.bodyStrong.colored(c.ink))
+                Text(appString(StringKeys.STU_LIB_TRENDING_NOW), style = VTheme.type.bodyStrong.colored(c.ink))
                 Spacer(Modifier.height(4.dp))
             }
             item {
@@ -297,7 +304,7 @@ private fun BrowseTab(
                                 )
                                 Text(book.title, style = VTheme.type.bodyStrong.colored(c.ink), maxLines = 1)
                                 book.author?.let { Text(it, style = VTheme.type.caption.colored(c.ink2), maxLines = 1) }
-                                VBadge(text = "${book.issueCount} issues", tone = VBadgeTone.Accent)
+                                VBadge(text = appString(StringKeys.STU_LIB_ISSUES_COUNT, "count" to book.issueCount), tone = VBadgeTone.Accent)
                             }
                         }
                     }
@@ -309,7 +316,7 @@ private fun BrowseTab(
         if (state.recommendations.isNotEmpty()) {
             item {
                 Spacer(Modifier.height(4.dp))
-                Text("Recommended For You", style = VTheme.type.bodyStrong.colored(c.ink))
+                Text(appString(StringKeys.STU_LIB_RECOMMENDED), style = VTheme.type.bodyStrong.colored(c.ink))
                 Spacer(Modifier.height(4.dp))
             }
             items(state.recommendations.take(5), key = { it.bookId }) { rec ->
@@ -328,7 +335,7 @@ private fun BrowseTab(
                             Text(rec.title, style = VTheme.type.bodyStrong.colored(c.ink))
                             rec.author?.let { Text(it, style = VTheme.type.caption.colored(c.ink2)) }
                             rec.category?.let { VBadge(text = it, tone = VBadgeTone.Neutral) }
-                            rec.reason?.let { Text("Why: $it", style = VTheme.type.caption.colored(c.ink3), maxLines = 2) }
+                            rec.reason?.let { Text(appString(StringKeys.STU_LIB_WHY, "reason" to it), style = VTheme.type.caption.colored(c.ink3), maxLines = 2) }
                         }
                     }
                 }
@@ -349,7 +356,7 @@ private fun BrowseTab(
 
         // Search results
         if (state.books.isEmpty()) {
-            item { IllustratedEmptyState(title = "No books found", body = "Try a different search query.", icon = VIcons.Search) }
+            item { IllustratedEmptyState(title = appString(StringKeys.STU_LIB_NO_BOOKS_FOUND), body = appString(StringKeys.STU_LIB_TRY_DIFFERENT), icon = VIcons.Search) }
         } else {
             item {
                 Row(
@@ -357,7 +364,7 @@ private fun BrowseTab(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("${state.booksTotal} books", style = VTheme.type.caption.colored(c.ink3))
+                    Text(appString(StringKeys.STU_LIB_BOOKS_COUNT, "count" to state.booksTotal), style = VTheme.type.caption.colored(c.ink3))
                     ViewModeToggle(viewMode = viewMode, onModeChange = onViewModeChange)
                 }
             }
@@ -377,7 +384,7 @@ private fun BrowseTab(
             if (state.books.size < state.booksTotal) {
                 item {
                     VButton(
-                        text = "Load More (${state.booksTotal - state.books.size} remaining)",
+                        text = appString(StringKeys.STU_LIB_LOAD_MORE, "remaining" to (state.booksTotal - state.books.size)),
                         onClick = { viewModel.searchBooks(state.booksPage + 1) },
                         full = true,
                         variant = VButtonVariant.Secondary,
@@ -439,7 +446,7 @@ private fun BookCard(
             com.littlebridge.enrollplus.ui.v2.screens.library.TagChips(tags = book.tags)
             if (book.availableCopies == 0) {
                 VButton(
-                    text = "Reserve",
+                    text = appString(StringKeys.STU_LIB_RESERVE),
                     onClick = { viewModel.reserveBook(book.id) },
                     variant = VButtonVariant.Secondary,
                     tone = VButtonTone.Lavender,
@@ -452,7 +459,7 @@ private fun BookCard(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 VButton(
-                    text = "+ Wishlist",
+                    text = appString(StringKeys.STU_LIB_ADD_WISHLIST),
                     onClick = { viewModel.addToWishlist(book.id) },
                     variant = VButtonVariant.Secondary,
                     tone = VButtonTone.Sky,
@@ -460,7 +467,7 @@ private fun BookCard(
                     loading = isActionLoading,
                 )
                 VButton(
-                    text = "Share",
+                    text = appString(StringKeys.COMMON_BUTTON_SHARE),
                     onClick = { onShareQr(book.id, book.title) },
                     variant = VButtonVariant.Secondary,
                     tone = VButtonTone.Sand,
@@ -495,16 +502,16 @@ private fun ProfileTab(state: StudentLibraryState, viewModel: StudentLibraryView
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("My Library Profile", style = VTheme.type.h2.colored(c.ink))
+        Text(appString(StringKeys.STU_LIB_MY_PROFILE), style = VTheme.type.h2.colored(c.ink))
 
         VCard {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                ProfileStat("Books Read", p?.totalBooksRead?.toString() ?: "0")
-                ProfileStat("Currently Issued", p?.currentlyIssued?.toString() ?: "0")
-                ProfileStat("Overdue", p?.overdueCount?.toString() ?: "0")
-                ProfileStat("Outstanding Fine", "₹${"%.2f".format(p?.outstandingFine ?: 0.0)}")
-                ProfileStat("Current Streak", "${p?.currentStreak ?: 0} days")
-                ProfileStat("Longest Streak", "${p?.longestStreak ?: 0} days")
+                ProfileStat(appString(StringKeys.STU_LIB_BOOKS_READ), p?.totalBooksRead?.toString() ?: "0")
+                ProfileStat(appString(StringKeys.STU_LIB_CURRENTLY_ISSUED), p?.currentlyIssued?.toString() ?: "0")
+                ProfileStat(appString(StringKeys.STU_LIB_OVERDUE), p?.overdueCount?.toString() ?: "0")
+                ProfileStat(appString(StringKeys.STU_LIB_OUTSTANDING_FINE), "₹${"%.2f".format(p?.outstandingFine ?: 0.0)}")
+                ProfileStat(appString(StringKeys.STU_LIB_CURRENT_STREAK), appString(StringKeys.STU_LIB_STREAK_DAYS, "count" to (p?.currentStreak ?: 0)))
+                ProfileStat(appString(StringKeys.STU_LIB_LONGEST_STREAK), appString(StringKeys.STU_LIB_STREAK_DAYS, "count" to (p?.longestStreak ?: 0)))
             }
         }
 
@@ -516,7 +523,7 @@ private fun ProfileTab(state: StudentLibraryState, viewModel: StudentLibraryView
 
         val goal = state.readingGoal
         if (goal != null) {
-            Text("Reading Goal", style = VTheme.type.h2.colored(c.ink))
+            Text(appString(StringKeys.STU_LIB_READING_GOAL), style = VTheme.type.h2.colored(c.ink))
             VCard {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -531,23 +538,23 @@ private fun ProfileTab(state: StudentLibraryState, viewModel: StudentLibraryView
                         tone = if (goal.isAchieved) VBadgeTone.Success else VBadgeTone.Accent,
                     )
                     if (goal.isAchieved) {
-                        Text("Goal achieved! 🎉", style = VTheme.type.caption.colored(c.successInk))
+                        Text(appString(StringKeys.STU_LIB_GOAL_ACHIEVED), style = VTheme.type.caption.colored(c.successInk))
                     }
                 }
             }
         }
 
         // Set / Update Reading Goal
-        Text("Set Reading Goal", style = VTheme.type.h2.colored(c.ink))
+        Text(appString(StringKeys.STU_LIB_SET_READING_GOAL), style = VTheme.type.h2.colored(c.ink))
         var goalCount by remember { mutableStateOf("5") }
         var period by remember { mutableStateOf("monthly") }
         var targetYear by remember { mutableStateOf(java.time.LocalDate.now().year.toString()) }
         VCard {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                VInput(value = goalCount, onValueChange = { goalCount = it }, label = "Goal (number of books)", modifier = Modifier.fillMaxWidth())
-                Text("Period", style = VTheme.type.caption.colored(c.ink2))
+                VInput(value = goalCount, onValueChange = { goalCount = it }, label = appString(StringKeys.STU_LIB_GOAL_COUNT), modifier = Modifier.fillMaxWidth())
+                Text(appString(StringKeys.STU_LIB_PERIOD), style = VTheme.type.caption.colored(c.ink2))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    listOf("monthly" to "Monthly", "quarterly" to "Quarterly", "yearly" to "Yearly").forEach { (key, label) ->
+                    listOf("monthly" to appString(StringKeys.STU_LIB_MONTHLY), "quarterly" to appString(StringKeys.STU_LIB_QUARTERLY), "yearly" to appString(StringKeys.STU_LIB_YEARLY)).forEach { (key, label) ->
                         VBadge(
                             text = label,
                             tone = if (period == key) VBadgeTone.Accent else VBadgeTone.Neutral,
@@ -555,9 +562,9 @@ private fun ProfileTab(state: StudentLibraryState, viewModel: StudentLibraryView
                         )
                     }
                 }
-                VInput(value = targetYear, onValueChange = { targetYear = it }, label = "Target Year", modifier = Modifier.fillMaxWidth())
+                VInput(value = targetYear, onValueChange = { targetYear = it }, label = appString(StringKeys.STU_LIB_TARGET_YEAR), modifier = Modifier.fillMaxWidth())
                 VButton(
-                    text = "Set Goal",
+                    text = appString(StringKeys.STU_LIB_SET_GOAL),
                     onClick = {
                         viewModel.setReadingGoal(
                             goalCount.toIntOrNull() ?: 5,
@@ -588,7 +595,7 @@ private fun BadgesTab(state: StudentLibraryState, viewModel: StudentLibraryViewM
 
     if (state.badges.isEmpty()) {
         Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-            IllustratedEmptyState(title = "No badges yet", body = "Read more books to earn badges!", icon = VIcons.Star)
+            IllustratedEmptyState(title = appString(StringKeys.STU_LIB_NO_BADGES), body = appString(StringKeys.STU_LIB_READ_MORE_BADGES), icon = VIcons.Star)
         }
         return
     }
@@ -607,11 +614,11 @@ private fun BadgesTab(state: StudentLibraryState, viewModel: StudentLibraryViewM
                     Column {
                         Text(badge.badgeName, style = VTheme.type.bodyStrong.colored(c.ink))
                         badge.earnedAt?.let {
-                            Text("Earned: $it", style = VTheme.type.caption.colored(c.ink2))
+                            Text(appString(StringKeys.STU_LIB_EARNED_ON, "date" to it), style = VTheme.type.caption.colored(c.ink2))
                         }
                     }
                     VBadge(
-                        text = if (badge.isEarned) "Earned" else "Locked",
+                        text = if (badge.isEarned) appString(StringKeys.STU_LIB_EARNED) else appString(StringKeys.STU_LIB_LOCKED),
                         tone = if (badge.isEarned) VBadgeTone.Success else VBadgeTone.Neutral,
                     )
                 }
@@ -641,7 +648,7 @@ private fun MyBooksTab(state: StudentLibraryState, viewModel: StudentLibraryView
         modifier = Modifier.fillMaxSize(),
     ) {
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("My Books", style = VTheme.type.h2.colored(c.ink))
+        Text(appString(StringKeys.STU_LIB_TAB_MY_BOOKS), style = VTheme.type.h2.colored(c.ink))
 
         if (state.error != null && state.issuedBooks.isEmpty()) {
             VErrorState(message = state.error ?: "", onRetry = { viewModel.loadIssuedBooks() })
@@ -654,7 +661,7 @@ private fun MyBooksTab(state: StudentLibraryState, viewModel: StudentLibraryView
         }
 
         if (state.issuedBooks.isEmpty()) {
-            IllustratedEmptyState(title = "No books issued", body = "Browse the library and issue a book to get started.", icon = VIcons.BookOpen)
+            IllustratedEmptyState(title = appString(StringKeys.STU_LIB_NO_BOOKS_ISSUED), body = appString(StringKeys.STU_LIB_BROWSE_TO_ISSUE), icon = VIcons.BookOpen)
             return@Column
         }
 
@@ -673,12 +680,12 @@ private fun MyBooksTab(state: StudentLibraryState, viewModel: StudentLibraryView
                             Text(issue.bookTitle, style = VTheme.type.bodyStrong.colored(c.ink))
                             com.littlebridge.enrollplus.ui.v2.screens.library.DueDateBadge(dueDate = issue.dueDate)
                             VBadge(
-                                text = "Renewals: ${issue.renewalCount}/2",
+                                text = appString(StringKeys.STU_LIB_RENEWALS, "count" to issue.renewalCount),
                                 tone = if (issue.renewalCount >= 2) VBadgeTone.Warning else VBadgeTone.Neutral,
                             )
                             if (issue.fineAmount > 0 && issue.fineStatus == "pending") {
                                 VBadge(
-                                    text = "Fine: ₹${"%.2f".format(issue.fineAmount)}",
+                                    text = appString(StringKeys.STU_LIB_FINE_AMOUNT, "amount" to "%.2f".format(issue.fineAmount)),
                                     tone = VBadgeTone.Warning,
                                 )
                             }
@@ -687,7 +694,7 @@ private fun MyBooksTab(state: StudentLibraryState, viewModel: StudentLibraryView
                                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                             ) {
                                 VButton(
-                                    text = "Renew",
+                                    text = appString(StringKeys.STU_LIB_RENEW),
                                     onClick = { viewModel.renewBook(issue.id) },
                                     variant = VButtonVariant.Secondary,
                                     tone = VButtonTone.Lavender,
@@ -712,7 +719,7 @@ private fun HistoryTab(state: StudentLibraryState, viewModel: StudentLibraryView
     LaunchedEffect(Unit) { viewModel.loadHistory() }
 
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Reading History", style = VTheme.type.h2.colored(c.ink))
+        Text(appString(StringKeys.STU_LIB_READING_HISTORY), style = VTheme.type.h2.colored(c.ink))
 
         if (state.error != null && state.history.isEmpty()) {
             VErrorState(message = state.error ?: "", onRetry = { viewModel.loadHistory() })
@@ -725,7 +732,7 @@ private fun HistoryTab(state: StudentLibraryState, viewModel: StudentLibraryView
         }
 
         if (state.history.isEmpty()) {
-            IllustratedEmptyState(title = "No history yet", body = "Your reading history will appear here.", icon = VIcons.Clock)
+            IllustratedEmptyState(title = appString(StringKeys.STU_LIB_NO_HISTORY), body = appString(StringKeys.STU_LIB_HISTORY_APPEAR), icon = VIcons.Clock)
             return@Column
         }
 
@@ -775,7 +782,7 @@ private fun WishlistTab(state: StudentLibraryState, viewModel: StudentLibraryVie
     LaunchedEffect(Unit) { viewModel.loadWishlist() }
 
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("My Wishlist", style = VTheme.type.h2.colored(c.ink))
+        Text(appString(StringKeys.STU_LIB_MY_WISHLIST), style = VTheme.type.h2.colored(c.ink))
 
         if (state.isLoading && state.wishlist.isEmpty()) {
             repeat(2) { BookCardSkeleton() }
@@ -787,7 +794,7 @@ private fun WishlistTab(state: StudentLibraryState, viewModel: StudentLibraryVie
                 VErrorState(message = state.error ?: "", onRetry = { viewModel.loadWishlist() })
                 return@Column
             }
-            IllustratedEmptyState(title = "Wishlist is empty", body = "Add books to your wishlist to read later.", icon = VIcons.Heart)
+            IllustratedEmptyState(title = appString(StringKeys.STU_LIB_WISHLIST_EMPTY), body = appString(StringKeys.STU_LIB_WISHLIST_EMPTY_BODY), icon = VIcons.Heart)
             return@Column
         }
 
@@ -807,7 +814,7 @@ private fun WishlistTab(state: StudentLibraryState, viewModel: StudentLibraryVie
                             item.addedAt?.let { Text(it, style = VTheme.type.caption.colored(c.ink2)) }
                         }
                         VButton(
-                            text = "Remove",
+                            text = appString(StringKeys.STU_LIB_REMOVE),
                             onClick = { viewModel.removeFromWishlist(item.bookId) },
                             variant = VButtonVariant.Secondary,
                             tone = VButtonTone.Rose,
@@ -829,7 +836,7 @@ private fun ReservationsTab(state: StudentLibraryState, viewModel: StudentLibrar
     LaunchedEffect(Unit) { viewModel.loadReservations() }
 
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("My Reservations", style = VTheme.type.h2.colored(c.ink))
+        Text(appString(StringKeys.STU_LIB_MY_RESERVATIONS), style = VTheme.type.h2.colored(c.ink))
 
         if (state.isLoading && state.reservations.isEmpty()) {
             repeat(2) { BookCardSkeleton() }
@@ -841,7 +848,7 @@ private fun ReservationsTab(state: StudentLibraryState, viewModel: StudentLibrar
                 VErrorState(message = state.error ?: "", onRetry = { viewModel.loadReservations() })
                 return@Column
             }
-            IllustratedEmptyState(title = "No reservations", body = "Reserve a book from the Browse tab to see it here.", icon = VIcons.BookOpen)
+            IllustratedEmptyState(title = appString(StringKeys.STU_LIB_NO_RESERVATIONS), body = appString(StringKeys.STU_LIB_RESERVE_FROM_BROWSE), icon = VIcons.BookOpen)
             return@Column
         }
 
@@ -870,11 +877,11 @@ private fun ReservationsTab(state: StudentLibraryState, viewModel: StudentLibrar
                             )
                             res.waitlistPosition?.let { VBadge(text = "#$it", tone = VBadgeTone.Neutral) }
                         }
-                        Text("Reserved: ${res.createdAt}", style = VTheme.type.caption.colored(c.ink3))
+                        Text(appString(StringKeys.STU_LIB_RESERVED_ON, "date" to res.createdAt), style = VTheme.type.caption.colored(c.ink3))
 
                         if (res.status == "pending" || res.status == "notified") {
                             VButton(
-                                text = "Cancel",
+                                text = appString(StringKeys.COMMON_BUTTON_CANCEL),
                                 onClick = { showCancelConfirm = res.id },
                                 variant = VButtonVariant.Secondary,
                                 tone = VButtonTone.Rose,
@@ -891,15 +898,15 @@ private fun ReservationsTab(state: StudentLibraryState, viewModel: StudentLibrar
     if (showCancelConfirm != null) {
         AlertDialog(
             onDismissRequest = { showCancelConfirm = null },
-            title = { Text("Cancel Reservation?") },
-            text = { Text("Are you sure you want to cancel this reservation?") },
+            title = { Text(appString(StringKeys.STU_LIB_CANCEL_RESERVATION_TITLE)) },
+            text = { Text(appString(StringKeys.STU_LIB_CANCEL_RESERVATION_MSG)) },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.cancelReservation(showCancelConfirm!!)
                     showCancelConfirm = null
-                }) { Text("Cancel Reservation") }
+                }) { Text(appString(StringKeys.STU_LIB_CANCEL_RESERVATION_BTN)) }
             },
-            dismissButton = { TextButton(onClick = { showCancelConfirm = null }) { Text("Keep") } },
+            dismissButton = { TextButton(onClick = { showCancelConfirm = null }) { Text(appString(StringKeys.STU_LIB_KEEP)) } },
         )
     }
 }
@@ -911,14 +918,14 @@ private fun AcquisitionRequestsTab(state: StudentLibraryState, viewModel: Studen
     LaunchedEffect(Unit) { viewModel.loadAcquisitionRequests() }
 
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Acquisition Requests", style = VTheme.type.h2.colored(c.ink))
+        Text(appString(StringKeys.STU_LIB_ACQUISITION_REQUESTS), style = VTheme.type.h2.colored(c.ink))
 
         if (state.acquisitionRequests.isEmpty()) {
             if (state.error != null) {
                 VErrorState(message = state.error ?: "", onRetry = { viewModel.loadAcquisitionRequests() })
                 return@Column
             }
-            IllustratedEmptyState(title = "No requests", body = "Your book acquisition requests will appear here.", icon = VIcons.Plus)
+            IllustratedEmptyState(title = appString(StringKeys.STU_LIB_NO_REQUESTS), body = appString(StringKeys.STU_LIB_REQUESTS_APPEAR), icon = VIcons.Plus)
             return@Column
         }
 
@@ -930,9 +937,9 @@ private fun AcquisitionRequestsTab(state: StudentLibraryState, viewModel: Studen
                 VCard {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(req.title, style = VTheme.type.bodyStrong.colored(c.ink))
-                        req.author?.let { Text("Author: $it", style = VTheme.type.caption.colored(c.ink2)) }
-                        req.isbn?.let { Text("ISBN: $it", style = VTheme.type.caption.colored(c.ink2)) }
-                        req.reason?.let { Text("Reason: $it", style = VTheme.type.caption.colored(c.ink3)) }
+                        req.author?.let { Text(appString(StringKeys.STU_LIB_AUTHOR_LABEL, "name" to it), style = VTheme.type.caption.colored(c.ink2)) }
+                        req.isbn?.let { Text(appString(StringKeys.STU_LIB_ISBN_LABEL, "isbn" to it), style = VTheme.type.caption.colored(c.ink2)) }
+                        req.reason?.let { Text(appString(StringKeys.STU_LIB_REASON_LABEL, "reason" to it), style = VTheme.type.caption.colored(c.ink3)) }
                         Row(
                             Modifier.fillMaxWidth().padding(top = 4.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -965,13 +972,13 @@ private fun DiscussionsTab(state: StudentLibraryState, viewModel: StudentLibrary
     var message by remember { mutableStateOf("") }
 
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Book Discussions", style = VTheme.type.h2.colored(c.ink))
+        Text(appString(StringKeys.STU_LIB_BOOK_DISCUSSIONS), style = VTheme.type.h2.colored(c.ink))
 
         VCard {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                VInput(value = bookId, onValueChange = { bookId = it }, label = "Book ID", modifier = Modifier.fillMaxWidth())
+                VInput(value = bookId, onValueChange = { bookId = it }, label = appString(StringKeys.STU_LIB_BOOK_ID), modifier = Modifier.fillMaxWidth())
                 VButton(
-                    text = "Load Discussions",
+                    text = appString(StringKeys.STU_LIB_LOAD_DISCUSSIONS),
                     onClick = { if (bookId.isNotBlank()) viewModel.loadDiscussions(bookId) },
                     full = true,
                     tone = VButtonTone.Lavender,
@@ -993,14 +1000,14 @@ private fun DiscussionsTab(state: StudentLibraryState, viewModel: StudentLibrary
                 }
             }
         } else {
-            IllustratedEmptyState(title = "No discussions", body = "Enter a book ID to view and join discussions.", icon = VIcons.Chat)
+            IllustratedEmptyState(title = appString(StringKeys.STU_LIB_NO_DISCUSSIONS), body = appString(StringKeys.STU_LIB_ENTER_BOOK_ID), icon = VIcons.Chat)
         }
 
         VCard {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                VInput(value = message, onValueChange = { message = it }, label = "Write a message", modifier = Modifier.fillMaxWidth())
+                VInput(value = message, onValueChange = { message = it }, label = appString(StringKeys.STU_LIB_WRITE_MESSAGE), modifier = Modifier.fillMaxWidth())
                 VButton(
-                    text = "Post",
+                    text = appString(StringKeys.STU_LIB_POST),
                     onClick = {
                         if (bookId.isNotBlank() && message.isNotBlank()) {
                             viewModel.postDiscussion(bookId, message)

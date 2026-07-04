@@ -42,6 +42,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.auth.ParentLinkChildScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.discovery.DiscoveryScreenV2
 import com.littlebridge.enrollplus.ui.v2.theme.VMotion
@@ -97,23 +99,23 @@ fun ParentUnlinkedScreenV2(
                     .padding(top = 20.dp, bottom = 4.dp),
             ) {
                 Text(
-                    "Welcome to VidyaPrayag",
+                    appString(StringKeys.PU_WELCOME),
                     style = VTheme.type.label.colored(c.accentDeep)
                         .copy(fontWeight = FontWeight.Bold, letterSpacing = 0.08.sp),
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
                     when (tab) {
-                        UnlinkedTab.Link -> "Follow your child's journey"
-                        UnlinkedTab.Explore -> "Find the right school"
+                        UnlinkedTab.Link -> appString(StringKeys.PU_LINK_TITLE)
+                        UnlinkedTab.Explore -> appString(StringKeys.PU_EXPLORE_TITLE)
                     },
                     style = VTheme.type.h1.colored(c.ink),
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
                     when (tab) {
-                        UnlinkedTab.Link -> "Link your child to their school to see attendance, marks and more."
-                        UnlinkedTab.Explore -> "Browse schools on VidyaPrayag, compare them, and enquire."
+                        UnlinkedTab.Link -> appString(StringKeys.PU_LINK_DESC)
+                        UnlinkedTab.Explore -> appString(StringKeys.PU_EXPLORE_DESC)
                     },
                     style = VTheme.type.body.colored(c.ink2),
                 )
@@ -214,14 +216,14 @@ private fun UnlinkedTabBar(
         }
         Row(Modifier.fillMaxSize()) {
             UnlinkedTabButton(
-                label = "Link a child",
+                label = appString(StringKeys.PU_LINK_CHILD),
                 icon = VIcons.Users,
                 active = selected == UnlinkedTab.Link,
                 onClick = { onSelect(UnlinkedTab.Link) },
                 modifier = Modifier.weight(1f),
             )
             UnlinkedTabButton(
-                label = "Explore schools",
+                label = appString(StringKeys.PU_EXPLORE_SCHOOLS),
                 icon = VIcons.Search,
                 active = selected == UnlinkedTab.Explore,
                 onClick = { onSelect(UnlinkedTab.Explore) },

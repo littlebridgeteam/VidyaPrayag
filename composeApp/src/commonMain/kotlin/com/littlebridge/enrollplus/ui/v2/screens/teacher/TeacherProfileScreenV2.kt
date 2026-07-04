@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.feature.teacher.domain.model.TeacherSelfLeaveDto
 import com.littlebridge.enrollplus.feature.teacher.presentation.ActionResult
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherProfile
@@ -49,9 +50,13 @@ import com.littlebridge.enrollplus.ui.v2.components.VDatePicker
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.components.VThemePicker
+import com.littlebridge.enrollplus.ui.v2.components.VLanguagePicker
+import com.littlebridge.enrollplus.core.locale.LocaleManager
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -82,6 +87,8 @@ fun TeacherProfileScreenV2(
     val themeName by actionsViewModel.themeName.collectAsStateV2()
     val themeMode by actionsViewModel.themeMode.collectAsStateV2()
     val customThemeId by actionsViewModel.customThemeId.collectAsStateV2()
+    val localeManager = koinInject<LocaleManager>()
+    val currentLocale by localeManager.currentLocale.collectAsStateV2()
 
     var showLeaveComposer by remember { mutableStateOf(false) }
     var showPasswordForm by remember { mutableStateOf(false) }
@@ -93,7 +100,7 @@ fun TeacherProfileScreenV2(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            Text("Profile", style = VTheme.type.h1.colored(c.navyDeep))
+            Text(appString(StringKeys.TC_PROFILE), style = VTheme.type.h1.colored(c.navyDeep))
             Spacer(Modifier.height(4.dp))
         }
 
@@ -104,10 +111,10 @@ fun TeacherProfileScreenV2(
                 profileState.profile != null -> IdentityCard(profileState.profile!!)
                 else -> TCard {
                     Column {
-                        Text("Couldn't load profile", style = VTheme.type.bodyStrong.colored(c.navyDeep))
+                        Text(appString(StringKeys.TC_COULDNT_LOAD_PROFILE), style = VTheme.type.bodyStrong.colored(c.navyDeep))
                         profileState.error?.let { Spacer(Modifier.height(4.dp)); Text(it, style = VTheme.type.caption.colored(c.ink3)) }
                         Spacer(Modifier.height(12.dp))
-                        VButton("Try again", onClick = { profileViewModel.load() }, size = VButtonSize.Sm, tone = VButtonTone.Lavender)
+                        VButton(appString(StringKeys.COMMON_BUTTON_TRY_AGAIN), onClick = { profileViewModel.load() }, size = VButtonSize.Sm, tone = VButtonTone.Lavender)
                     }
                 }
             }
@@ -163,10 +170,24 @@ fun TeacherProfileScreenV2(
             }
         }
 
+        // 4b — Language
+        item {
+            TCard {
+                Column {
+                    Text(appString(StringKeys.TC_LANGUAGE), style = VTheme.type.h3.colored(c.navyDeep))
+                    Spacer(Modifier.height(10.dp))
+                    VLanguagePicker(
+                        currentLang = currentLocale,
+                        onSelect = { lang -> localeManager.setLocale(lang) },
+                    )
+                }
+            }
+        }
+
         // 5 — Logout
         item {
             VButton(
-                text = "Log out",
+                text = appString(StringKeys.TC_LOG_OUT),
                 onClick = { confirmLogout = true },
                 variant = VButtonVariant.Destructive,
                 full = true,
@@ -175,7 +196,7 @@ fun TeacherProfileScreenV2(
             Spacer(Modifier.height(8.dp))
             profileState.profile?.let {
                 Text(
-                    "Signed in as ${it.username}",
+                    appString(StringKeys.TC_SIGNED_IN_AS, "username" to it.username),
                     style = VTheme.type.caption.colored(c.ink3),
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -185,9 +206,9 @@ fun TeacherProfileScreenV2(
 
     if (confirmLogout) {
         TeacherConfirmDialog(
-            title = "Log out?",
-            body = "You'll need to sign in again to access your classes.",
-            confirmLabel = "Log out",
+            title = appString(StringKeys.TC_LOG_OUT_Q),
+            body = appString(StringKeys.TC_LOG_OUT_DESC),
+            confirmLabel = appString(StringKeys.TC_LOG_OUT),
             destructive = true,
             onConfirm = {
                 confirmLogout = false
@@ -234,13 +255,13 @@ private fun IdentityCard(p: TeacherProfile) {
             }
             if (p.subjects.isNotEmpty()) {
                 Spacer(Modifier.height(12.dp))
-                TEyebrow("SUBJECTS")
+                TEyebrow(appString(StringKeys.TC_SUBJECTS))
                 Spacer(Modifier.height(6.dp))
                 ChipFlow(p.subjects) { s -> teacherSubjectColor(c, s) }
             }
             if (p.classes.isNotEmpty()) {
                 Spacer(Modifier.height(12.dp))
-                TEyebrow("CLASSES")
+                TEyebrow(appString(StringKeys.TC_CLASSES))
                 Spacer(Modifier.height(6.dp))
                 ChipFlow(p.classes) { c.navy }
             }
@@ -295,14 +316,14 @@ private fun LeaveCard(
         Column {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.weight(1f)) {
-                    Text("My leave", style = VTheme.type.h3.colored(c.navyDeep))
+                    Text(appString(StringKeys.TC_MY_LEAVE), style = VTheme.type.h3.colored(c.navyDeep))
                     if (leave.pendingCount > 0) {
                         Spacer(Modifier.height(2.dp))
-                        Text("${leave.pendingCount} pending", style = VTheme.type.caption.colored(c.warningInk))
+                        Text(appString(StringKeys.TC_PENDING_COUNT, "count" to leave.pendingCount.toString()), style = VTheme.type.caption.colored(c.warningInk))
                     }
                 }
                 VButton(
-                    text = if (showComposer) "Close" else "Apply",
+                    text = if (showComposer) appString(StringKeys.COMMON_BUTTON_CLOSE) else appString(StringKeys.TC_APPLY),
                     onClick = onToggleComposer,
                     size = VButtonSize.Sm,
                     variant = if (showComposer) VButtonVariant.Ghost else VButtonVariant.Secondary,
@@ -322,9 +343,9 @@ private fun LeaveCard(
                 leave.isLoading && leave.requests.isEmpty() -> Box(Modifier.fillMaxWidth().height(40.dp), contentAlignment = Alignment.Center) { TeacherSpinner(24.dp) }
                 leave.error != null && leave.requests.isEmpty() -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(leave.error ?: "", style = VTheme.type.caption.colored(c.ink3), modifier = Modifier.weight(1f))
-                    VButton("Retry", onClick = onRetry, size = VButtonSize.Sm, variant = VButtonVariant.Ghost)
+                    VButton(appString(StringKeys.COMMON_BUTTON_RETRY), onClick = onRetry, size = VButtonSize.Sm, variant = VButtonVariant.Ghost)
                 }
-                leave.requests.isEmpty() -> Text("No leave requests yet.", style = VTheme.type.body.colored(c.ink3))
+                leave.requests.isEmpty() -> Text(appString(StringKeys.TC_NO_LEAVE_REQUESTS), style = VTheme.type.body.colored(c.ink3))
                 else -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     leave.requests.forEach { LeaveRow(it) }
                 }
@@ -345,13 +366,13 @@ private fun LeaveComposer(
     val inFlight = applyResult is ActionResult.InFlight
 
     Column(Modifier.padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VDatePicker(value = from, onValueChange = { from = it }, label = "From", enabled = !inFlight)
-        VDatePicker(value = to, onValueChange = { to = it }, label = "To", enabled = !inFlight)
+        VDatePicker(value = from, onValueChange = { from = it }, label = appString(StringKeys.TC_FROM), enabled = !inFlight)
+        VDatePicker(value = to, onValueChange = { to = it }, label = appString(StringKeys.TC_TO), enabled = !inFlight)
         VInput(
             value = reason,
             onValueChange = { reason = it },
-            label = "Reason",
-            placeholder = "Why are you applying?",
+            label = appString(StringKeys.TC_REASON),
+            placeholder = appString(StringKeys.TC_WHY_APPLYING),
             singleLine = false,
             enabled = !inFlight,
         )
@@ -359,7 +380,7 @@ private fun LeaveComposer(
             Text(applyResult.message, style = VTheme.type.caption.colored(c.dangerInk))
         }
         VButton(
-            text = "Submit request",
+            text = appString(StringKeys.TC_SUBMIT_REQUEST),
             onClick = { onApply(from, to, reason) },
             full = true,
             tone = VButtonTone.Lavender,
@@ -432,8 +453,8 @@ private fun PasswordCard(
                 TIconDisc(VIcons.Lock, c.navy, c.navy.copy(alpha = 0.10f))
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("Password", style = VTheme.type.bodyStrong.colored(c.navyDeep))
-                    Text("Change your sign-in password", style = VTheme.type.caption.colored(c.ink3))
+                    Text(appString(StringKeys.TC_PASSWORD), style = VTheme.type.bodyStrong.colored(c.navyDeep))
+                    Text(appString(StringKeys.TC_CHANGE_PASSWORD), style = VTheme.type.caption.colored(c.ink3))
                 }
                 Icon(
                     if (expanded) VIcons.ChevronUp else VIcons.ChevronRight,
@@ -461,25 +482,25 @@ private fun PasswordForm(
 
     Column(Modifier.padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         VInput(
-            value = old, onValueChange = { old = it }, label = "Current password",
+            value = old, onValueChange = { old = it }, label = appString(StringKeys.TC_CURRENT_PASSWORD),
             isPassword = true, passwordVisible = reveal, enabled = !inFlight,
             keyboardType = KeyboardType.Password,
         )
         VInput(
-            value = new0, onValueChange = { new0 = it }, label = "New password",
-            hint = "At least 8 characters",
+            value = new0, onValueChange = { new0 = it }, label = appString(StringKeys.TC_NEW_PASSWORD),
+            hint = appString(StringKeys.TC_AT_LEAST_),
             isPassword = true, passwordVisible = reveal, enabled = !inFlight,
             keyboardType = KeyboardType.Password,
         )
         VInput(
-            value = confirm, onValueChange = { confirm = it }, label = "Confirm new password",
+            value = confirm, onValueChange = { confirm = it }, label = appString(StringKeys.TC_CONFIRM_NEW_PASSWORD),
             isPassword = true, passwordVisible = reveal, enabled = !inFlight,
             keyboardType = KeyboardType.Password,
             trailing = {
                 val ix = remember { MutableInteractionSource() }
                 Icon(
                     VIcons.Eye,
-                    contentDescription = "Toggle visibility",
+                    contentDescription = appString(StringKeys.TC_TOGGLE_VISIBILITY),
                     tint = c.ink3,
                     modifier = Modifier.size(18.dp).clickable(interactionSource = ix, indication = null) { reveal = !reveal },
                 )
@@ -489,7 +510,7 @@ private fun PasswordForm(
             Text(result.message, style = VTheme.type.caption.colored(c.dangerInk))
         }
         VButton(
-            text = "Update password",
+            text = appString(StringKeys.TC_UPDATE_PASSWORD),
             onClick = { onSubmit(old, new0, confirm) },
             full = true,
             tone = VButtonTone.Navy,

@@ -44,6 +44,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 
@@ -65,9 +67,9 @@ fun DueDateBadge(
         else -> VBadgeTone.Success
     }
     val text = when {
-        daysRemaining < 0 -> "${-daysRemaining}d overdue"
-        daysRemaining == 0 -> "Due today"
-        else -> "${daysRemaining}d left"
+        daysRemaining < 0 -> appString(StringKeys.LIB_UIX_OVERDUE, "count" to -daysRemaining)
+        daysRemaining == 0 -> appString(StringKeys.LIB_UIX_DUE_TODAY)
+        else -> appString(StringKeys.LIB_UIX_DUE_LEFT, "count" to daysRemaining)
     }
 
     if (daysRemaining < 0) {
@@ -100,11 +102,11 @@ fun FineMeter(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Text("Fine: ₹${"%.2f".format(currentFine)}", style = VTheme.type.caption.colored(c.warningInk))
+            Text(appString(StringKeys.LIB_UIX_FINE_AMOUNT, "amount" to "%.2f".format(currentFine)), style = VTheme.type.caption.colored(c.warningInk))
             if (replacementCost != null && replacementCost > 0) {
-                Text("Cap: ₹${"%.2f".format(replacementCost)}", style = VTheme.type.caption.colored(c.ink3))
+                Text(appString(StringKeys.LIB_UIX_FINE_CAP, "amount" to "%.2f".format(replacementCost)), style = VTheme.type.caption.colored(c.ink3))
             } else {
-                Text("No cap", style = VTheme.type.caption.colored(c.ink3))
+                Text(appString(StringKeys.LIB_UIX_NO_CAP), style = VTheme.type.caption.colored(c.ink3))
             }
         }
         Spacer(Modifier.height(4.dp))
@@ -117,10 +119,10 @@ fun FineMeter(
                 trackColor = c.cream,
             )
             if (progress >= 1f) {
-                Text("Fine capped at replacement cost", style = VTheme.type.caption.colored(c.dangerInk))
+                Text(appString(StringKeys.LIB_UIX_FINE_CAPPED), style = VTheme.type.caption.colored(c.dangerInk))
             }
         } else {
-            Text("₹${"%.2f".format(currentFine)} (no cap)", style = VTheme.type.body.colored(c.warningInk).copy(fontWeight = FontWeight.SemiBold))
+            Text(appString(StringKeys.LIB_UIX_FINE_NO_CAP, "amount" to "%.2f".format(currentFine)), style = VTheme.type.body.colored(c.warningInk).copy(fontWeight = FontWeight.SemiBold))
         }
     }
 }
@@ -163,7 +165,7 @@ fun BookCover(
     if (!coverUrl.isNullOrBlank()) {
         AsyncImage(
             model = coverUrl,
-            contentDescription = "Cover for $title",
+            contentDescription = appString(StringKeys.LIB_UIX_COVER_FOR, "title" to title),
             modifier = modifier.clip(RoundedCornerShape(6.dp)),
             contentScale = ContentScale.Crop,
         )
@@ -207,7 +209,7 @@ fun AvailabilityBadge(
         reservationCount < 3 -> VBadgeTone.Warning
         else -> VBadgeTone.Danger
     }
-    val text = "$availableCopies/$totalCopies available"
+    val text = appString(StringKeys.LIB_UIX_AVAILABILITY, "available" to availableCopies, "total" to totalCopies)
     VBadge(text = text, tone = tone, modifier = modifier)
 }
 
@@ -320,15 +322,15 @@ fun FilterSheet(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("Filters", style = VTheme.type.bodyStrong.colored(c.ink))
+        Text(appString(StringKeys.LIB_UIX_FILTERS), style = VTheme.type.bodyStrong.colored(c.ink))
 
-        Text("Category", style = VTheme.type.caption.colored(c.ink2))
+        Text(appString(StringKeys.LIB_UIX_CATEGORY), style = VTheme.type.caption.colored(c.ink2))
         Row(
             modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             VBadge(
-                text = "All",
+                text = appString(StringKeys.LIB_UIX_ALL),
                 tone = if (selectedCategory == null) VBadgeTone.Accent else VBadgeTone.Neutral,
                 modifier = Modifier.clickable { onCategoryChange(null) },
             )
@@ -341,9 +343,9 @@ fun FilterSheet(
             }
         }
 
-        Text("Availability", style = VTheme.type.caption.colored(c.ink2))
+        Text(appString(StringKeys.LIB_UIX_AVAIL_LABEL), style = VTheme.type.caption.colored(c.ink2))
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            listOf("all" to "All", "available" to "Available Only").forEach { (key, label) ->
+            listOf("all" to appString(StringKeys.LIB_UIX_ALL), "available" to appString(StringKeys.LIB_UIX_AVAILABLE_ONLY)).forEach { (key, label) ->
                 VBadge(
                     text = label,
                     tone = if (availability == key) VBadgeTone.Accent else VBadgeTone.Neutral,
@@ -352,9 +354,9 @@ fun FilterSheet(
             }
         }
 
-        Text("Sort By", style = VTheme.type.caption.colored(c.ink2))
+        Text(appString(StringKeys.LIB_UIX_SORT_BY), style = VTheme.type.caption.colored(c.ink2))
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            listOf("newest" to "Newest", "title" to "Title A-Z", "author" to "Author", "popular" to "Popular").forEach { (key, label) ->
+            listOf("newest" to appString(StringKeys.LIB_UIX_SORT_NEWEST), "title" to appString(StringKeys.LIB_UIX_SORT_TITLE_AZ), "author" to appString(StringKeys.LIB_UIX_SORT_AUTHOR), "popular" to appString(StringKeys.LIB_UIX_SORT_POPULAR)).forEach { (key, label) ->
                 VBadge(
                     text = label,
                     tone = if (sortBy == key) VBadgeTone.Accent else VBadgeTone.Neutral,
@@ -368,7 +370,7 @@ fun FilterSheet(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             VButton(
-                text = "Clear",
+                text = appString(StringKeys.LIB_UIX_CLEAR),
                 onClick = onClear,
                 variant = VButtonVariant.Secondary,
                 tone = VButtonTone.Sand,
@@ -376,7 +378,7 @@ fun FilterSheet(
                 modifier = Modifier.weight(1f),
             )
             VButton(
-                text = "Apply Filters",
+                text = appString(StringKeys.LIB_UIX_APPLY_FILTERS),
                 onClick = onApply,
                 tone = VButtonTone.Lavender,
                 size = VButtonSize.Sm,
@@ -418,7 +420,7 @@ fun TrendingCarousel(
                     )
                     Text(book.title, style = VTheme.type.caption.colored(c.ink), maxLines = 1)
                     book.author?.let { Text(it, style = VTheme.type.caption.colored(c.ink2), maxLines = 1) }
-                    VBadge(text = "${book.issueCount} issues", tone = VBadgeTone.Accent)
+                    VBadge(text = appString(StringKeys.LIB_UIX_ISSUES_COUNT, "count" to book.issueCount), tone = VBadgeTone.Accent)
                 }
             }
         }

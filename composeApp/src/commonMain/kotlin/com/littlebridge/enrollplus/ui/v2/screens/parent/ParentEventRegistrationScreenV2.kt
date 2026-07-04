@@ -43,6 +43,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VInput
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
@@ -184,16 +186,16 @@ private fun EventDetailContent(
     if (showCancelDialog) {
         AlertDialog(
             onDismissRequest = { showCancelDialog = false },
-            title = { Text("Cancel Registration") },
-            text = { Text("Are you sure you want to cancel your registration for ${event.title}?") },
+            title = { Text(appString(StringKeys.PE_CANCEL_REGISTRATION)) },
+            text = { Text(appString(StringKeys.PE_CANCEL_REGISTRATION_MSG, "title" to event.title)) },
             confirmButton = {
                 TextButton(onClick = {
                     showCancelDialog = false
                     onCancel()
-                }) { Text("Yes, Cancel") }
+                }) { Text(appString(StringKeys.PE_YES_CANCEL)) }
             },
             dismissButton = {
-                TextButton(onClick = { showCancelDialog = false }) { Text("Keep") }
+                TextButton(onClick = { showCancelDialog = false }) { Text(appString(StringKeys.PL_KEEP)) }
             },
         )
     }

@@ -16,6 +16,7 @@ class InMemoryPreferenceManager : PreferenceRepository {
     private val fcmToken = MutableStateFlow<String?>(null)
     private val notificationsDeclined = MutableStateFlow(false)
     private val fontScale = MutableStateFlow(1f)
+    private val languagePref = MutableStateFlow("")
 
     override fun getThemeName(): Flow<String> {
         return themeName
@@ -71,6 +72,9 @@ class InMemoryPreferenceManager : PreferenceRepository {
 
     override fun getFontScale(): Flow<Float> = fontScale
     override suspend fun setFontScale(scale: Float) { fontScale.value = scale.coerceIn(0.85f, 2f) }
+
+    override fun getLanguagePref(): Flow<String> = languagePref
+    override suspend fun setLanguagePref(lang: String) { languagePref.value = lang }
 
     override suspend fun clearSession() {
         userRole.value = "GUEST"
