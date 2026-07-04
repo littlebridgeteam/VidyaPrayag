@@ -30,6 +30,8 @@ import com.littlebridge.enrollplus.db.ChildrenTable
 import com.littlebridge.enrollplus.db.StudentsTable
 import com.littlebridge.enrollplus.db.EnrollmentsTable
 import com.littlebridge.enrollplus.feature.ai.SyllabusAiService
+import com.littlebridge.enrollplus.feature.notifications.Notify
+import com.littlebridge.enrollplus.feature.notifications.NotifyRecipients
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -389,6 +391,23 @@ fun Route.teacherQuizRouting() {
                         it[AnnouncementsTable.createdAt] = now
                         it[AnnouncementsTable.updatedAt] = now
                     }
+                }
+
+                // Notify parents about the new quiz — deep link to academics tab
+                // so they can find the quiz in the Quizzes sub-tab.
+                val parents = NotifyRecipients.parentsOfClass(ctx.schoolId, className)
+                if (parents.isNotEmpty()) {
+                    Notify.toUsers(
+                        userIds = parents,
+                        category = "quiz",
+                        title = "New Quiz: ${quizTitle.ifBlank { "Quiz" }}",
+                        body = "A new quiz has been published for $subjectName${if (className.isNotBlank()) " - Class $className" else ""}. Check Academics > Quizzes to attempt it.",
+                        schoolId = ctx.schoolId,
+                        actorId = ctx.userId,
+                        deepLink = "/parent/academics/quizzes",
+                        refType = "quiz",
+                        refId = quizId.toString(),
+                    )
                 }
 
                 val questions = dbQuery {

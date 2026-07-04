@@ -305,6 +305,10 @@ class LibraryService(
                 category = "library",
                 title = "📖 Book Renewed: ${book?.title ?: "Book"}",
                 body = "Your due date has been extended to $newDueDate. Renewal ${issue.renewalCount + 1} of $maxRenewals.",
+                schoolId = schoolId,
+                deepLink = "/student/library",
+                refType = "library_issue",
+                refId = issueId.toString(),
             )
         }
 
@@ -344,6 +348,10 @@ class LibraryService(
                 category = "library",
                 title = "📕 Book Marked Lost: ${book.title}",
                 body = "Your book has been marked as lost. A fine of ₹$fine has been charged.",
+                schoolId = schoolId,
+                deepLink = "/student/library",
+                refType = "library_issue",
+                refId = issueId.toString(),
             )
         }
 
@@ -376,6 +384,10 @@ class LibraryService(
                 category = "library",
                 title = "💰 Fine Paid: ${book?.title ?: "Book"}",
                 body = "Your fine of ₹${issue?.fineAmount ?: 0.0} has been paid.",
+                schoolId = schoolId,
+                deepLink = "/student/library",
+                refType = "library_issue",
+                refId = issueId.toString(),
             )
         }
     }
@@ -402,6 +414,10 @@ class LibraryService(
                 category = "library",
                 title = "✅ Fine Waived: ${book?.title ?: "Book"}",
                 body = "Your fine of ₹${issue.fineAmount} has been waived. Reason: $sanitizedReason",
+                schoolId = schoolId,
+                deepLink = "/student/library",
+                refType = "library_issue",
+                refId = issueId.toString(),
             )
         }
     }

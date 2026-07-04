@@ -82,6 +82,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun MessagesScreenV2(
     onBack: () -> Unit = {},
     modifier: Modifier = Modifier,
+    initialThreadId: String? = null,
     viewModel: MessagesViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
@@ -89,6 +90,17 @@ fun MessagesScreenV2(
     val errorMessage by viewModel.errorMessage.collectAsStateV2()
     val conversation by viewModel.conversation.collectAsStateV2()
     val compose by viewModel.compose.collectAsStateV2()
+
+    // Deep-link: auto-open a specific conversation when initialThreadId is provided.
+    LaunchedEffect(initialThreadId, state.threads) {
+        if (initialThreadId != null && conversation.threadId == null && !isLoading && state.threads.isNotEmpty()) {
+            val thread = state.threads.firstOrNull { it.id == initialThreadId }
+            if (thread != null) {
+                viewModel.markAsRead(thread.id)
+                viewModel.openConversation(thread.id)
+            }
+        }
+    }
 
     // RA-S07: the compose-new sheet is the topmost layer — back closes it first.
     if (compose.isOpen) {

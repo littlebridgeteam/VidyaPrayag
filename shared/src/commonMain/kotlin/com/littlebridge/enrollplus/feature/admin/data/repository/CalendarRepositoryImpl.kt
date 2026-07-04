@@ -13,6 +13,7 @@ class CalendarRepositoryImpl(
     override suspend fun getCalendar(
         token: String,
         date: String?,
-        viewType: String
-    ): NetworkResult<ApiResponse<CalendarResponse>> = api.getCalendar(token, date, viewType)
+        viewType: String,
+        endpoint: String
+    ): NetworkResult<ApiResponse<CalendarResponse>> = api.getCalendar(token, date, viewType, endpoint)
 }

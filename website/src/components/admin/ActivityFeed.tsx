@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
+import { useRouter } from "next/navigation";
 import type { ActivityItem } from "@/lib/admin/types";
 import { Card, CardHeader, EmptyState, Skeleton } from "./Primitives";
+import { mapDeepLinkToAdminRoute } from "./Topbar";
 
 /**
  * Activity feed, real institutional events merged server-side from
@@ -59,6 +61,7 @@ export function ActivityFeed({
   data: ActivityItem[] | undefined;
   loading: boolean;
 }) {
+  const router = useRouter();
   const grouped = useMemo(() => {
     const map = new Map<string, ActivityItem[]>();
     (data ?? []).forEach((item) => {
@@ -89,8 +92,14 @@ export function ActivityFeed({
                   {bucket}
                 </p>
                 <ul className="space-y-0.5">
-                  {items.map((item) => (
-                    <li key={item.id} className="flex gap-3 rounded-2xl px-3 py-2.5 transition-colors hover:bg-navy/[0.03]">
+                  {items.map((item) => {
+                    const route = item.deep_link ? mapDeepLinkToAdminRoute(item.deep_link) : null;
+                    return (
+                    <li
+                      key={item.id}
+                      onClick={() => route && router.push(route)}
+                      className={`flex gap-3 rounded-2xl px-3 py-2.5 transition-colors hover:bg-navy/[0.03] ${route ? "cursor-pointer" : ""}`}
+                    >
                       <span
                         className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
                         style={{ background: CATEGORY_DOT[item.category] ?? CATEGORY_DOT.general }}
@@ -107,7 +116,8 @@ export function ActivityFeed({
                         <p className="mt-0.5 text-[11px] text-ink-placeholder">{relTime(item.iso_time)}</p>
                       </div>
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
               </div>
             ))}

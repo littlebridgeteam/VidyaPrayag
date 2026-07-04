@@ -81,6 +81,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun NotificationsScreenV2(
     onBack: () -> Unit,
+    onDeepLink: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: NotificationsViewModel = koinViewModel(),
 ) {
@@ -92,6 +93,8 @@ fun NotificationsScreenV2(
         onBack = onBack,
         onMarkAll = viewModel::markAllRead,
         onMarkRead = viewModel::markRead,
+        onClearAll = viewModel::clearAll,
+        onDeepLink = onDeepLink,
         onRetry = viewModel::load,
         modifier = modifier.statusBarsPadding()
             .imePadding()
@@ -108,6 +111,8 @@ private fun NotificationsContent(
     onBack: () -> Unit,
     onMarkAll: () -> Unit,
     onMarkRead: (String) -> Unit,
+    onClearAll: () -> Unit,
+    onDeepLink: (String) -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -124,6 +129,7 @@ private fun NotificationsContent(
             body = it.body,
             time = it.time,
             unread = it.unread,
+            deepLink = it.deepLink,
         )
     }
     val unread = items.count { it.unread }
@@ -136,20 +142,42 @@ private fun NotificationsContent(
             title = "Notifications",
             onBack = onBack,
             // React action: `<Check 14/> Mark all` — a text+icon button in teal-deep / 700.
+            // Added `Clear` button to remove read notifications.
             action = {
                 Row(
-                    Modifier
-                        .clip(RoundedCornerShape(999.dp))
-                        .clickable { onMarkAll() },
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Icon(VIcons.Check, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(14.dp))
-                    Text(
-                        "Mark all",
-                        style = VTheme.type.caption.colored(c.tealDeep).copy(fontWeight = FontWeight.Bold),
-                        maxLines = 1,
-                    )
+                    Row(
+                        Modifier
+                            .clip(RoundedCornerShape(999.dp))
+                            .clickable { onMarkAll() },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Icon(VIcons.Check, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(14.dp))
+                        Text(
+                            "Mark all",
+                            style = VTheme.type.caption.colored(c.tealDeep).copy(fontWeight = FontWeight.Bold),
+                            maxLines = 1,
+                        )
+                    }
+                    if (items.any { !it.unread }) {
+                        Row(
+                            Modifier
+                                .clip(RoundedCornerShape(999.dp))
+                                .clickable { onClearAll() },
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Icon(VIcons.Close, contentDescription = null, tint = c.ink3, modifier = Modifier.size(14.dp))
+                            Text(
+                                "Clear",
+                                style = VTheme.type.caption.colored(c.ink3).copy(fontWeight = FontWeight.Bold),
+                                maxLines = 1,
+                            )
+                        }
+                    }
                 }
             },
         )
@@ -277,7 +305,13 @@ private fun NotificationsContent(
                             visible = shown,
                             enter = VMotion.fadeUp(delayMs = 0, fromY = 8),
                         ) {
-                            NotificationRow(n, onClick = { onMarkRead(n.id) })
+                            NotificationRow(
+                                n,
+                                onClick = {
+                                    onMarkRead(n.id)
+                                    n.deepLink?.let { onDeepLink(it) }
+                                },
+                            )
                         }
                     }
                 }
@@ -403,6 +437,7 @@ data class VNotification(
     val body: String,
     val time: String,
     val unread: Boolean,
+    val deepLink: String? = null,
 )
 
 // §9 one-off literals (lifted verbatim from Notifications.tsx; not part of the global palette):

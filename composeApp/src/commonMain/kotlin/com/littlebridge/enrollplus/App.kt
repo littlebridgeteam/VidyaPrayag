@@ -69,6 +69,10 @@ fun App(
     // NavGraphV2 parses it and routes to the correct portal/screen.
     deepLink: String? = null,
     onDeepLinkConsumed: () -> Unit = {},
+    // Push notification ref info for auto-mark-read (Android only).
+    pushRefType: String? = null,
+    pushRefId: String? = null,
+    onPushRefConsumed: () -> Unit = {},
 ) {
     KoinContext {
         // Signal the platform host after the first composition lands. SideEffect runs
@@ -145,6 +149,16 @@ fun App(
         // session. The next session therefore builds every VM from scratch: no state
         // can bleed across a role switch.
         val isAuthenticated = !authState.token.isNullOrBlank()
+
+        // Auto-mark notification as read when a push notification is tapped.
+        // Uses refType+refId to identify the notification on the server.
+        if (pushRefType != null && pushRefId != null && isAuthenticated) {
+            val notificationsVm: com.littlebridge.enrollplus.feature.parent.presentation.NotificationsViewModel = koinViewModel()
+            LaunchedEffect(pushRefType, pushRefId) {
+                notificationsVm.markByRef(pushRefType, pushRefId)
+                onPushRefConsumed()
+            }
+        }
 
         Box(modifier = Modifier.fillMaxSize().background(splashColors.background)) {
             // PHASE 2 — Splash shows the brand while the session check (JWT + role) runs in

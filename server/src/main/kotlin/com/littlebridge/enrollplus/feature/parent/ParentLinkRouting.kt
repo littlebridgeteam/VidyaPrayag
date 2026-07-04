@@ -614,7 +614,7 @@ fun Route.parentLinkRouting() {
                                 body = "A parent requested to link to roll ${req.rollNumber}.",
                                 schoolId = result.schoolId,
                                 actorId = uid,
-                                deepLink = "admin/link-requests",
+                                deepLink = "/admin/link-requests",
                                 refType = "link_request",
                                 refId = result.linkId.toString(),
                             )
@@ -634,7 +634,7 @@ fun Route.parentLinkRouting() {
                                 body = "A parent's phone didn't match the number on record for roll ${req.rollNumber}.",
                                 schoolId = result.schoolId,
                                 actorId = uid,
-                                deepLink = "admin/link-requests",
+                                deepLink = "/admin/link-requests",
                                 refType = "link_request",
                                 refId = result.linkId.toString(),
                             )
@@ -846,7 +846,7 @@ fun Route.parentLinkRouting() {
                             body = "${outcome.childName} has been linked to your account.",
                             schoolId = ctx.schoolId,
                             actorId = ctx.userId,
-                            deepLink = "parent/dashboard",
+                            deepLink = "/parent/dashboard",
                             refType = "link_request",
                             refId = linkId.toString(),
                         )
@@ -899,7 +899,7 @@ fun Route.parentLinkRouting() {
                             body = "Your request to link ${outcome.childName ?: "a child"} was not approved. Please verify the roll number with the school.",
                             schoolId = ctx.schoolId,
                             actorId = ctx.userId,
-                            deepLink = "parent/link-child",
+                            deepLink = "/parent/link-child",
                             refType = "link_request",
                             refId = linkId.toString(),
                         )

@@ -10,7 +10,7 @@ import type { StudentDto, TeacherAccountDto } from "@/lib/admin/types";
 import { Card, EmptyState, FadeIn, Avatar, Badge } from "@/components/admin/Primitives";
 import { DataTable, type Column } from "@/components/admin/DataTable";
 import { Toolbar, Modal, AdminButton } from "@/components/admin/Toolbar";
-import { IconPlus, IconTrash, IconPeople } from "@/components/admin/icons";
+import { IconPlus, IconTrash, IconPeople, IconKey } from "@/components/admin/icons";
 
 type Tab = "students" | "teachers";
 
@@ -370,6 +370,16 @@ function TeachersTab({ autoOpen }: { autoOpen?: boolean }) {
     await refresh();
   }
 
+  async function resetPwd(t: TeacherAccountDto) {
+    if (!confirm(`Reset password for ${t.name}? They will receive a new temporary password.`)) return;
+    try {
+      await adminApi.resetTeacherPassword(t.id);
+      alert("Password reset. The teacher will receive instructions.");
+    } catch (e) {
+      alert(e instanceof ApiError ? e.message : "Failed to reset password.");
+    }
+  }
+
   const columns: Column<TeacherAccountDto>[] = [
     {
       key: "name",
@@ -404,14 +414,27 @@ function TeachersTab({ autoOpen }: { autoOpen?: boolean }) {
       accessor: () => "",
       align: "right",
       cell: (r) => (
-        <button
-          type="button"
-          onClick={() => remove(r)}
-          aria-label={`Remove ${r.name}`}
-          className="rounded-lg p-2 text-ink-3 transition-colors hover:bg-danger/10 hover:text-danger"
-        >
-          <IconTrash width={17} height={17} />
-        </button>
+        <div className="flex items-center justify-end gap-1">
+          {r.email && (
+            <button
+              type="button"
+              onClick={() => resetPwd(r)}
+              aria-label={`Reset password for ${r.name}`}
+              className="rounded-lg p-2 text-ink-3 transition-colors hover:bg-accent/10 hover:text-accent-deep"
+              title="Reset password"
+            >
+              <IconKey width={17} height={17} />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => remove(r)}
+            aria-label={`Remove ${r.name}`}
+            className="rounded-lg p-2 text-ink-3 transition-colors hover:bg-danger/10 hover:text-danger"
+          >
+            <IconTrash width={17} height={17} />
+          </button>
+        </div>
       ),
     },
   ];

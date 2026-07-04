@@ -572,6 +572,8 @@ val viewModelModule = module {
     factory { MessagesViewModel(get(), get(), get()) }
     factory { SchedulePTMViewModel(get(), get()) }
     factory { AcademicCalendarViewModel(get(), get()) }
+    // Parent-specific calendar VM uses the parent endpoint (school endpoint returns 403)
+    factory(qualifier = org.koin.core.qualifier.named("parentCalendar")) { AcademicCalendarViewModel(get(), get(), "api/v1/parent/calendar") }
     // VP-CAL: premium Academic Calendar platform + unified create-event + Academic Year mgmt
     factory { com.littlebridge.enrollplus.feature.admin.presentation.AcademicCalendarPlatformViewModel(get(), get()) }
     factory { com.littlebridge.enrollplus.feature.admin.presentation.UnifiedCreateEventViewModel(get()) }
