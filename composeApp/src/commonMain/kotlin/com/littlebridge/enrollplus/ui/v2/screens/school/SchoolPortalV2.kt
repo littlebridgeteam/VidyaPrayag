@@ -144,8 +144,8 @@ fun SchoolPortalV2(
                     "calendar" -> overlay = SchoolOverlay.AcademicCalendarPlatform
                     "fees" -> { tab = "records"; overlay = SchoolOverlay.None }
                     "tutor" -> { tab = "home"; overlay = SchoolOverlay.None }
-                    "timetable" -> { tab = "home"; overlay = SchoolOverlay.None }
-                    "timetable-requests" -> { tab = "home"; overlay = SchoolOverlay.None }
+                    "timetable" -> overlay = SchoolOverlay.ClassesSubjects
+                    "timetable-requests" -> overlay = SchoolOverlay.ClassesSubjects
                     "pace-alerts", "pace" -> { tab = "home"; overlay = SchoolOverlay.None }
                     // Valid bottom-nav tabs
                     "home", "people", "records", "comms", "settings" -> tab = target.screen
@@ -171,7 +171,8 @@ fun SchoolPortalV2(
                     pathOnly.startsWith("link-requests") -> overlay = SchoolOverlay.LinkRequests
                     pathOnly.startsWith("admissions") -> overlay = SchoolOverlay.AdmissionsCRM
                     pathOnly.startsWith("calendar") -> overlay = SchoolOverlay.AcademicCalendarPlatform
-                    pathOnly.startsWith("timetable-requests") -> { tab = "home"; overlay = SchoolOverlay.None }
+                    pathOnly.startsWith("timetable-requests") -> overlay = SchoolOverlay.ClassesSubjects
+                    pathOnly.startsWith("timetable") -> overlay = SchoolOverlay.ClassesSubjects
                     pathOnly.startsWith("report-card") -> overlay = SchoolOverlay.ReportPublish
                     pathOnly.startsWith("tutor") -> { tab = "home"; overlay = SchoolOverlay.None }
                     pathOnly.startsWith("ptm") -> overlay = SchoolOverlay.SchedulePTM

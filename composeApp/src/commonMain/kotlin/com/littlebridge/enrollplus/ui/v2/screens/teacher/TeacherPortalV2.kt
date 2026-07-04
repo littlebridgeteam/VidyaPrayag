@@ -97,10 +97,10 @@ fun TeacherPortalV2(
                     "tutor" -> overlay = TeacherOverlay.Heatmap
                     "events" -> overlay = TeacherOverlay.EventRegistration
                     "announcements" -> { tab = "home"; overlay = TeacherOverlay.None }
-                    "leave-requests", "leave" -> { tab = "home"; overlay = TeacherOverlay.None }
+                    "leave-requests", "leave" -> { tab = "profile"; overlay = TeacherOverlay.None }
                     "library" -> { tab = "home"; overlay = TeacherOverlay.None }
                     "messages" -> overlay = TeacherOverlay.Messages
-                    "timetable-requests" -> { tab = "home"; overlay = TeacherOverlay.None }
+                    "timetable-requests" -> { tab = "timetable"; overlay = TeacherOverlay.None }
                     "calendar" -> { tab = "home"; overlay = TeacherOverlay.None }
                     // Valid bottom-nav tabs
                     "home", "update", "classes", "timetable", "profile" -> tab = target.screen
@@ -116,11 +116,11 @@ fun TeacherPortalV2(
                 when {
                     pathOnly.startsWith("messages") -> overlay = TeacherOverlay.Messages
                     pathOnly.startsWith("announcements") -> { tab = "home"; overlay = TeacherOverlay.None }
-                    pathOnly.startsWith("leave") -> { tab = "home"; overlay = TeacherOverlay.None }
+                    pathOnly.startsWith("leave") -> { tab = "profile"; overlay = TeacherOverlay.None }
                     pathOnly.startsWith("transport") -> overlay = TeacherOverlay.TransportAttendance
                     pathOnly.startsWith("tutor") -> overlay = TeacherOverlay.Heatmap
                     pathOnly.startsWith("events") -> overlay = TeacherOverlay.EventRegistration
-                    pathOnly.startsWith("timetable-requests") -> { tab = "home"; overlay = TeacherOverlay.None }
+                    pathOnly.startsWith("timetable-requests") -> { tab = "timetable"; overlay = TeacherOverlay.None }
                     pathOnly.startsWith("timetable") -> { tab = "timetable"; overlay = TeacherOverlay.None }
                     else -> tab = "home"
                 }
