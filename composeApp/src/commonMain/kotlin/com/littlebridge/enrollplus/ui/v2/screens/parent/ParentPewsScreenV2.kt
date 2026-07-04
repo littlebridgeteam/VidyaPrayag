@@ -46,6 +46,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
@@ -142,7 +144,7 @@ private fun NudgeCard(nudge: PewsParentNudgeDto, onAction: (String) -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text("Attendance", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp))
+                Text(appString(StringKeys.PPEWS_ATTENDANCE), style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp))
                 Text("$att%", style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 14.sp))
             }
         }

@@ -78,6 +78,7 @@ import com.littlebridge.enrollplus.feature.content.supportRouting
 import com.littlebridge.enrollplus.feature.gateway.api.gatewayRouting
 import com.littlebridge.enrollplus.feature.health.healthRouting
 import com.littlebridge.enrollplus.feature.healthcheck.healthCheckRouting
+import com.littlebridge.enrollplus.feature.i18n.i18nRouting
 import com.littlebridge.enrollplus.feature.idcard.idCardRouting
 import com.littlebridge.enrollplus.feature.idcard.IdCardExpiryCheckJob
 import com.littlebridge.enrollplus.feature.library.libraryRouting
@@ -228,6 +229,10 @@ fun main() {
                 if (it is IllegalStateException) throw it
                 appLog.warn("KeyVault bootstrap failed (AI will degrade gracefully): {}", it.message)
             }
+
+        // Multi-Language: load ServerStrings DB overrides into in-memory cache.
+        runCatching { com.littlebridge.enrollplus.feature.i18n.ServerStringOverrideRepository.loadAllIntoCache() }
+            .onFailure { appLog.warn("ServerString overrides load failed (using compiled defaults): {}", it.message) }
     }
 
     // Start the PEWS daily job (Sense → Reason → Act pipeline; hourly tick).
@@ -668,5 +673,11 @@ fun Application.module() {
         // Agentic Syllabus Management — admin pace monitoring
         //   /api/v1/school/pace/{snapshots,alerts,alerts/{id}/resolve}
         syllabusPaceRouting()
+
+        // Multi-Language Support (MULTI_LANGUAGE_SPEC.md)
+        //   /api/v1/user/{language-pref, language-history}       — any role
+        //   /api/v1/school/{language-distribution, users-language-pref}  — school admin
+        //   /api/admin/{language-adoption, users-by-language, server-strings[…]}  — super admin
+        i18nRouting()
     }
 }

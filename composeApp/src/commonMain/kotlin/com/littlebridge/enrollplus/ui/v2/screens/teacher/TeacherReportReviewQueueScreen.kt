@@ -28,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.feature.reportcard.domain.model.ReportCardModels
 import com.littlebridge.enrollplus.feature.reportcard.presentation.TeacherReportReviewViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
@@ -37,6 +38,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 
@@ -70,9 +72,9 @@ fun TeacherReportReviewQueueScreen(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            VButton(text = "Back", onClick = onBack, variant = VButtonVariant.Secondary, size = VButtonSize.Sm)
+            VButton(text = appString(StringKeys.COMMON_BUTTON_BACK), onClick = onBack, variant = VButtonVariant.Secondary, size = VButtonSize.Sm)
             Column {
-                Text("Report Card Review", style = VTheme.type.h3.colored(c.ink))
+                Text(appString(StringKeys.TC_REPORT_CARD_REVIEW), style = VTheme.type.h3.colored(c.ink))
                 Text("$className $section • $term", style = VTheme.type.caption.colored(c.ink2))
             }
         }
@@ -83,10 +85,10 @@ fun TeacherReportReviewQueueScreen(
                 Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                SummaryChip("Total", state.drafts.size, c.accent)
-                SummaryChip("Draft", state.drafts.count { it.status == "draft" }, c.warning)
-                SummaryChip("Flagged", state.drafts.count { it.status == "flagged_for_review" }, c.danger)
-                SummaryChip("Approved", state.drafts.count { it.status == "approved" }, c.success)
+                SummaryChip(appString(StringKeys.TC_TOTAL), state.drafts.size, c.accent)
+                SummaryChip(appString(StringKeys.TC_DRAFT), state.drafts.count { it.status == "draft" }, c.warning)
+                SummaryChip(appString(StringKeys.TC_FLAGGED), state.drafts.count { it.status == "flagged_for_review" }, c.danger)
+                SummaryChip(appString(StringKeys.SW_APPROVED), state.drafts.count { it.status == "approved" }, c.success)
             }
         }
 
@@ -113,13 +115,13 @@ fun TeacherReportReviewQueueScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(state.error!!, style = VTheme.type.body.colored(c.danger))
                         Spacer(Modifier.height(8.dp))
-                        VButton(text = "Retry", onClick = { viewModel.loadReviewQueue(className, section, term) })
+                        VButton(text = appString(StringKeys.COMMON_BUTTON_RETRY), onClick = { viewModel.loadReviewQueue(className, section, term) })
                     }
                 }
             }
             state.isEmpty -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No drafts found for this class/term", style = VTheme.type.body.colored(c.ink2))
+                    Text(appString(StringKeys.TC_NO_DRAFTS_FOUND), style = VTheme.type.body.colored(c.ink2))
                 }
             }
             else -> {
@@ -173,10 +175,10 @@ private fun DraftReviewCard(
         else -> VBadgeTone.Neutral
     }
     val statusLabel = when (draft.status) {
-        "draft" -> "Draft"
-        "flagged_for_review" -> "Flagged"
-        "approved" -> "Approved"
-        "published" -> "Published"
+        "draft" -> appString(StringKeys.TC_DRAFT)
+        "flagged_for_review" -> appString(StringKeys.TC_FLAGGED)
+        "approved" -> appString(StringKeys.SW_APPROVED)
+        "published" -> appString(StringKeys.TC_PUBLISHED)
         else -> draft.status
     }
 
@@ -187,14 +189,14 @@ private fun DraftReviewCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("Student: ${draft.studentId.take(8)}…", style = VTheme.type.body.colored(c.ink).copy(fontWeight = FontWeight.Medium))
+                Text(appString(StringKeys.TC_STUDENT_COLON, "id" to draft.studentId.take(8)), style = VTheme.type.body.colored(c.ink).copy(fontWeight = FontWeight.Medium))
                 VBadge(text = statusLabel, tone = statusTone)
             }
 
             if (draft.groundingFlags != null) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     Icon(VIcons.AlertCircle, contentDescription = null, tint = c.warning, modifier = Modifier.size(12.dp))
-                    Text("Grounding flags detected", style = VTheme.type.caption.colored(c.warning).copy(fontSize = 11.sp))
+                    Text(appString(StringKeys.TC_GROUNDING_FLAGS_DETECTED), style = VTheme.type.caption.colored(c.warning).copy(fontSize = 11.sp))
                 }
             }
 
@@ -206,16 +208,16 @@ private fun DraftReviewCard(
 
             if (draft.status == "draft" || draft.status == "flagged_for_review") {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    VButton(text = "Edit", onClick = onEdit, variant = VButtonVariant.Secondary, size = VButtonSize.Sm)
+                    VButton(text = appString(StringKeys.COMMON_BUTTON_EDIT), onClick = onEdit, variant = VButtonVariant.Secondary, size = VButtonSize.Sm)
                     VButton(
-                        text = if (approving) "…" else "Approve",
+                        text = if (approving) "…" else appString(StringKeys.TC_APPROVE),
                         onClick = onApprove,
                         variant = VButtonVariant.Primary,
                         size = VButtonSize.Sm,
                         enabled = !approving,
                     )
                     VButton(
-                        text = if (regenerating) "…" else "Regenerate",
+                        text = if (regenerating) "…" else appString(StringKeys.TC_REGENERATE),
                         onClick = onRegenerate,
                         variant = VButtonVariant.Secondary,
                         size = VButtonSize.Sm,

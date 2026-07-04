@@ -113,6 +113,9 @@ export const IconBook = (p: P) => (
 export const IconReport = (p: P) => (
   <svg {...base(p)}><path d="M4 4h16a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" /><path d="M7 8h6M7 12h10M7 16h7" /><path d="M15 4v4h2" /></svg>
 );
+export const IconLanguage = (p: P) => (
+  <svg {...base(p)}><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></svg>
+);
 export const IconLogs = (p: P) => (
   <svg {...base(p)}><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M7 9l3 3-3 3" /><path d="M13 15h4" /></svg>
 );

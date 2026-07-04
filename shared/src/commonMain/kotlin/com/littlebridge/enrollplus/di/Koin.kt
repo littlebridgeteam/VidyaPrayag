@@ -297,9 +297,10 @@ val commonModule = module {
     single<com.littlebridge.enrollplus.feature.content.domain.repository.ContentRepository> { 
         com.littlebridge.enrollplus.feature.content.data.repository.ContentRepositoryImpl(get())
     }
-    single<com.littlebridge.enrollplus.feature.auth.domain.repository.AuthRepository> { 
+    single<com.littlebridge.enrollplus.feature.auth.domain.repository.AuthRepository> {
         // RA-S05: 4th arg = SelectedChildHolder (cleared on logout).
-        com.littlebridge.enrollplus.feature.auth.data.repository.AuthRepositoryImpl(get(), get(), get(), get())
+        // 5th arg = LocaleManager (syncs languagePref from login response).
+        com.littlebridge.enrollplus.feature.auth.data.repository.AuthRepositoryImpl(get(), get(), get(), get(), get())
     }
     single<com.littlebridge.enrollplus.feature.parent.domain.repository.ParentRepository> {
         com.littlebridge.enrollplus.feature.parent.data.repository.ParentRepositoryImpl(get())
@@ -516,6 +517,21 @@ val commonModule = module {
 
     // UseCases
     factory { GetSchoolsUseCase(get()) }
+
+    // ── Multi-Language i18n (MULTI_LANGUAGE_SPEC.md) ──────────────────
+    single {
+        com.littlebridge.enrollplus.feature.i18n.data.remote.LanguageApi(
+            client = get(),
+            baseUrl = AppConfig.schoolBaseUrl
+        )
+    }
+    single<com.littlebridge.enrollplus.feature.i18n.domain.repository.LanguageRepository> {
+        com.littlebridge.enrollplus.feature.i18n.data.repository.LanguageRepositoryImpl(get())
+    }
+    factory { com.littlebridge.enrollplus.feature.i18n.domain.usecase.GetLanguagePrefUseCase(get()) }
+    factory { com.littlebridge.enrollplus.feature.i18n.domain.usecase.UpdateLanguagePrefUseCase(get()) }
+    single { com.littlebridge.enrollplus.core.locale.NetworkMonitor() }
+    single { com.littlebridge.enrollplus.core.locale.LocaleManager(get(), get(), get()) }
 }
 
 val viewModelModule = module {

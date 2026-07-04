@@ -40,6 +40,8 @@ import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentSyllabusData
 import com.littlebridge.enrollplus.feature.parent.presentation.CoveredUnit
 import com.littlebridge.enrollplus.ui.v2.components.VStatusDot
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 
@@ -142,10 +144,10 @@ private fun Sheet(
         ) {
             // ── today's topics ──────────────────────────────────────────────
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Today's topics", style = VTheme.type.labelStrong.colored(c.ink2))
+                Text(appString(StringKeys.PCD_TODAYS_TOPICS), style = VTheme.type.labelStrong.colored(c.ink2))
                 if (coveredToday.isEmpty()) {
                     Text(
-                        "No topics logged today yet",
+                        appString(StringKeys.PCD_NO_TOPICS),
                         style = VTheme.type.body.colored(c.ink3).copy(fontSize = 13.sp),
                     )
                 } else {
@@ -167,7 +169,7 @@ private fun Sheet(
             val subjects = syllabus?.subjects.orEmpty()
             if (subjects.isNotEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    Text("Syllabus coverage", style = VTheme.type.labelStrong.colored(c.ink2))
+                    Text(appString(StringKeys.PCD_SYLLABUS_COVERAGE), style = VTheme.type.labelStrong.colored(c.ink2))
                     subjects.forEach { s ->
                         // Each subject carries its own harmonious hue (keyed by name → stable
                         // everywhere), so the coverage list reads expressive, not a violet block.

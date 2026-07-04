@@ -66,9 +66,7 @@ class LibraryMigrationTest {
     fun `all 8 core library tables are created with correct schema`() {
         transaction {
             SchemaUtils.createMissingTablesAndColumns(*libraryTables)
-        }
 
-        transaction {
             val existingTables = SchemaUtils.listTables().map { it.lowercase() }.toSet()
 
             // The 8 core tables from the spec
@@ -95,12 +93,8 @@ class LibraryMigrationTest {
         // Running twice should not throw or create duplicates
         transaction {
             SchemaUtils.createMissingTablesAndColumns(*libraryTables)
-        }
-        transaction {
             SchemaUtils.createMissingTablesAndColumns(*libraryTables)
-        }
 
-        transaction {
             val existingTables = SchemaUtils.listTables().map { it.lowercase() }.toSet()
             assertEquals(1, existingTables.count { it == "library_books" })
             assertEquals(1, existingTables.count { it == "library_issues" })
@@ -111,15 +105,11 @@ class LibraryMigrationTest {
     fun `rollback drops all library tables cleanly`() {
         transaction {
             SchemaUtils.createMissingTablesAndColumns(*libraryTables)
-        }
 
-        transaction {
             libraryTables.reversed().forEach { table ->
                 SchemaUtils.drop(table)
             }
-        }
 
-        transaction {
             val existingTables = SchemaUtils.listTables().map { it.lowercase() }.toSet()
             assertTrue("library_books" !in existingTables, "library_books should be dropped")
             assertTrue("library_book_copies" !in existingTables, "library_book_copies should be dropped")

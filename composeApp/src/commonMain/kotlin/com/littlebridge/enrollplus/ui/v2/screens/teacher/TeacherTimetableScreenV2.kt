@@ -33,6 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.feature.admin.domain.model.TimetableChangeRequestDto
 import com.littlebridge.enrollplus.feature.teacher.domain.model.ResolvedDayDto
 import com.littlebridge.enrollplus.feature.teacher.domain.model.ResolvedPeriodDto
@@ -47,6 +48,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VEmptyState
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
@@ -57,8 +59,6 @@ private val WEEKDAY_LABELS = mapOf(
     1 to "Mon", 2 to "Tue", 3 to "Wed", 4 to "Thu", 5 to "Fri", 6 to "Sat", 7 to "Sun",
 )
 
-private val TIMETABLE_TABS = listOf("This Week", "Change Requests")
-
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TeacherTimetableScreenV2(
@@ -66,7 +66,8 @@ fun TeacherTimetableScreenV2(
     viewModel: TeacherTimetableViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
-    var activeTab by remember { mutableStateOf("This Week") }
+    val thisWeekLabel = appString(StringKeys.TC_THIS_WEEK)
+    var activeTab by remember { mutableStateOf(thisWeekLabel) }
     var selectedDay by remember { mutableStateOf(1) }
     var showRequestDialog by remember { mutableStateOf(false) }
     var requestKind by remember { mutableStateOf("NEW_PERIOD") }
@@ -74,13 +75,13 @@ fun TeacherTimetableScreenV2(
 
     Column(modifier.fillMaxSize().statusBarsPadding()) {
         VTopTabs(
-            tabs = TIMETABLE_TABS,
+            tabs = listOf(appString(StringKeys.TC_THIS_WEEK), appString(StringKeys.TC_CHANGE_REQUESTS)),
             selected = activeTab,
             onSelect = { activeTab = it },
         )
 
         when (activeTab) {
-            "This Week" -> {
+            appString(StringKeys.TC_THIS_WEEK) -> {
                 // Day selector
                 Row(
                     Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
@@ -104,9 +105,9 @@ fun TeacherTimetableScreenV2(
                 ) {
                     if (periods.isEmpty()) {
                         VEmptyState(
-                            title = "No periods for ${WEEKDAY_LABELS[selectedDay]}",
+                            title = appString(StringKeys.TC_NO_PERIODS_FOR_DAY, "day" to (WEEKDAY_LABELS[selectedDay] ?: "")),
                             icon = VIcons.Calendar,
-                            body = "Your weekly schedule will appear here.",
+                            body = appString(StringKeys.TC_WEEKLY_SCHEDULE_APPEAR),
                         )
                     } else {
                         periods.forEach { period ->
@@ -127,7 +128,7 @@ fun TeacherTimetableScreenV2(
                     }
 
                     VButton(
-                        text = "+ Request New Period",
+                        text = appString(StringKeys.TC_REQUEST_NEW_PERIOD),
                         onClick = {
                             requestKind = "NEW_PERIOD"
                             requestPeriod = null
@@ -149,16 +150,16 @@ fun TeacherTimetableScreenV2(
                 }
             }
 
-            "Change Requests" -> {
+            appString(StringKeys.TC_CHANGE_REQUESTS) -> {
                 Column(
                     Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     if (state.changeRequests.isEmpty()) {
                         VEmptyState(
-                            title = "No change requests",
+                            title = appString(StringKeys.TC_NO_CHANGE_REQUESTS),
                             icon = VIcons.Calendar,
-                            body = "Your timetable change requests will appear here.",
+                            body = appString(StringKeys.TC_CHANGE_REQUESTS_APPEAR),
                         )
                     } else {
                         state.changeRequests.forEach { req ->
@@ -229,7 +230,7 @@ private fun TeacherPeriodCard(
                 Spacer(Modifier.height(2.dp))
                 Text(period.subject, style = VTheme.type.bodyStrong.colored(c.ink))
                 if (period.room.isNotBlank()) {
-                    Text("Room ${period.room}", style = VTheme.type.caption.colored(c.ink3))
+                    Text(appString(StringKeys.TC_ROOM_N, "n" to period.room), style = VTheme.type.caption.colored(c.ink3))
                 }
             }
 
@@ -290,10 +291,10 @@ private fun ChangeRequestItemCard(req: TimetableChangeRequestDto) {
             }
 
             if (req.reason.isNotBlank()) {
-                Text("Reason: ${req.reason}", style = VTheme.type.caption.colored(c.ink3))
+                Text(appString(StringKeys.TC_REASON_COLON, "reason" to req.reason), style = VTheme.type.caption.colored(c.ink3))
             }
             if (req.adminNote.isNotBlank()) {
-                Text("Admin note: ${req.adminNote}", style = VTheme.type.caption.colored(c.ink3))
+                Text(appString(StringKeys.TC_ADMIN_NOTE_COLON, "note" to req.adminNote), style = VTheme.type.caption.colored(c.ink3))
             }
         }
     }
@@ -325,23 +326,23 @@ private fun ChangeRequestDialog(
             ) {
                 Text(
                     when (kind) {
-                        "NEW_PERIOD" -> "Request New Period"
-                        "UPDATE_PERIOD" -> "Request Period Update"
-                        "DELETE_PERIOD" -> "Request Period Deletion"
-                        else -> "Change Request"
+                        "NEW_PERIOD" -> appString(StringKeys.TC_REQUEST_NEW_PERIOD)
+                        "UPDATE_PERIOD" -> appString(StringKeys.TC_REQUEST_PERIOD_UPDATE)
+                        "DELETE_PERIOD" -> appString(StringKeys.TC_REQUEST_PERIOD_DELETION)
+                        else -> appString(StringKeys.TC_CHANGE_REQUEST)
                     },
                     style = VTheme.type.h3, fontWeight = FontWeight.Bold, color = VTheme.colors.ink,
                 )
                 Text(
-                    "This will be sent to your school admin for approval.",
+                    appString(StringKeys.TC_SENT_TO_ADMIN_FOR_APPROVAL),
                     style = VTheme.type.caption.colored(VTheme.colors.ink2),
                 )
 
                 if (kind == "NEW_PERIOD") {
                     // Assignment selector
-                    Text("Class / Subject", style = VTheme.type.caption.colored(VTheme.colors.ink2))
+                    Text(appString(StringKeys.TC_CLASS_SUBJECT), style = VTheme.type.caption.colored(VTheme.colors.ink2))
                     if (assignments.isEmpty()) {
-                        Text("No assignments found.", style = VTheme.type.caption.colored(VTheme.colors.ink3))
+                        Text(appString(StringKeys.TC_NO_ASSIGNMENTS_FOUND), style = VTheme.type.caption.colored(VTheme.colors.ink3))
                     } else {
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             assignments.forEach { asg ->
@@ -358,14 +359,14 @@ private fun ChangeRequestDialog(
                     VCard(Modifier.fillMaxWidth()) {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text("${period.className}-${period.section} ${period.subject}", style = VTheme.type.bodyStrong.colored(VTheme.colors.ink))
-                            Text("${period.startTime}–${period.endTime} · Room ${period.room}", style = VTheme.type.caption.colored(VTheme.colors.ink2))
+                            Text("${period.startTime}–${period.endTime} · ${appString(StringKeys.TC_ROOM_N, "n" to period.room)}", style = VTheme.type.caption.colored(VTheme.colors.ink2))
                         }
                     }
                 }
 
                 // Weekday selector
                 if (kind != "DELETE_PERIOD") {
-                    Text("Day", style = VTheme.type.caption.colored(VTheme.colors.ink2))
+                    Text(appString(StringKeys.TC_DAY), style = VTheme.type.caption.colored(VTheme.colors.ink2))
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         (1..6).forEach { day ->
                             VBadge(
@@ -379,29 +380,29 @@ private fun ChangeRequestDialog(
                     // Time inputs
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Box(Modifier.weight(1f)) {
-                            VInput(value = startTime, onValueChange = { startTime = it }, label = "Start", hint = "HH:mm", placeholder = "09:00")
+                            VInput(value = startTime, onValueChange = { startTime = it }, label = appString(StringKeys.TC_START), hint = "HH:mm", placeholder = "09:00")
                         }
                         Box(Modifier.weight(1f)) {
-                            VInput(value = endTime, onValueChange = { endTime = it }, label = "End", hint = "HH:mm", placeholder = "10:00")
+                            VInput(value = endTime, onValueChange = { endTime = it }, label = appString(StringKeys.TC_END), hint = "HH:mm", placeholder = "10:00")
                         }
                     }
-                    VInput(value = room, onValueChange = { room = it }, label = "Room", hint = "e.g. 101", placeholder = "101")
+                    VInput(value = room, onValueChange = { room = it }, label = appString(StringKeys.TC_ROOM), hint = appString(StringKeys.TC_ROOM_HINT), placeholder = "101")
                 }
 
                 // Reason (always required)
                 VInput(
                     value = reason,
                     onValueChange = { reason = it },
-                    label = "Reason",
-                    hint = "Why is this change needed?",
-                    placeholder = "e.g. Room conflict, schedule swap...",
+                    label = appString(StringKeys.TC_REASON),
+                    hint = appString(StringKeys.TC_WHY_CHANGE_NEEDED),
+                    placeholder = appString(StringKeys.TC_CHANGE_REASON_PH),
                 )
 
                 // Actions
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    VButton(text = "Cancel", onClick = onDismiss, variant = VButtonVariant.Ghost)
+                    VButton(text = appString(StringKeys.COMMON_BUTTON_CANCEL), onClick = onDismiss, variant = VButtonVariant.Ghost)
                     VButton(
-                        text = "Submit Request",
+                        text = appString(StringKeys.TC_SUBMIT_REQUEST),
                         onClick = {
                             val r = reason.trim().ifBlank { return@VButton }
                             val aid = selectedAssignmentId.ifBlank { null }

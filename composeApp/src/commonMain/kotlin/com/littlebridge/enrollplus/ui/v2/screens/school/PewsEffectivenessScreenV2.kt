@@ -44,6 +44,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
@@ -57,7 +59,7 @@ fun PewsEffectivenessScreenV2(
     val state by viewModel.state.collectAsStateV2()
 
     Column(modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
-        VBackHeader(title = "Effectiveness", onBack = onBack)
+        VBackHeader(title = appString(StringKeys.SCH_EFFECTIVENESS), onBack = onBack)
         PewsEffectivenessContent(
             state = state,
             onRetry = viewModel::load,
@@ -78,8 +80,8 @@ private fun PewsEffectivenessContent(
         error = state.error,
         isEmpty = state.isEmpty,
         emptyIcon = VIcons.ShieldCheck,
-        emptyTitle = "No data yet",
-        emptyBody = "Effectiveness data appears after the first PEWS run with interventions.",
+        emptyTitle = appString(StringKeys.SCH_NO_DATA_YET),
+        emptyBody = appString(StringKeys.SCH_EFFECTIVENESS_DESC),
         onRetry = onRetry,
         modifier = modifier,
     ) {
@@ -110,24 +112,24 @@ private fun EffectivenessSummaryCard(eff: PewsEffectivenessDto) {
 
     VCard {
         Text(
-            "INTERVENTION OUTCOMES",
+            appString(StringKeys.SCH_INTERVENTION_OUTCOMES),
             style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
         )
         Spacer(Modifier.height(12.dp))
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            MiniStat("Open", "${eff.open}", c.ink)
-            MiniStat("Resolved", "$resolved", c.ink)
-            MiniStat("Improved", "$improvedRate%", c.successInk)
+            MiniStat(appString(StringKeys.SCH_OPEN), "${eff.open}", c.ink)
+            MiniStat(appString(StringKeys.SCH_RESOLVED), "$resolved", c.ink)
+            MiniStat(appString(StringKeys.SCH_IMPROVED), "$improvedRate%", c.successInk)
         }
 
         Spacer(Modifier.height(16.dp))
 
-        OutcomeBar("Improved", eff.improved, eff.total, c.success)
+        OutcomeBar(appString(StringKeys.SCH_IMPROVED), eff.improved, eff.total, c.success)
         Spacer(Modifier.height(6.dp))
-        OutcomeBar("No change", eff.unchanged, eff.total, c.ink3)
+        OutcomeBar(appString(StringKeys.SCH_NO_CHANGE), eff.unchanged, eff.total, c.ink3)
         Spacer(Modifier.height(6.dp))
-        OutcomeBar("Worsened", eff.worsened, eff.total, c.danger)
+        OutcomeBar(appString(StringKeys.SCH_WORSENED), eff.worsened, eff.total, c.danger)
     }
 }
 
@@ -138,7 +140,7 @@ private fun TrendChartCard(points: List<PewsTrendPointDto>) {
 
     VCard {
         Text(
-            "RISK TREND (30 DAYS)",
+            appString(StringKeys.SCH_RISK_TREND_30),
             style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
         )
         Spacer(Modifier.height(12.dp))
@@ -171,9 +173,9 @@ private fun TrendChartCard(points: List<PewsTrendPointDto>) {
 
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            TrendLegend("High", c.danger)
-            TrendLegend("Medium", c.warning)
-            TrendLegend("Watch", c.success)
+            TrendLegend(appString(StringKeys.SCH_HIGH), c.danger)
+            TrendLegend(appString(StringKeys.SCH_MEDIUM), c.warning)
+            TrendLegend(appString(StringKeys.SCH_WATCH), c.success)
         }
     }
 }

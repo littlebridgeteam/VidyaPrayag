@@ -36,6 +36,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
@@ -67,14 +69,14 @@ fun BusTrackingScreenV2(
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
-        VBackHeader(title = "Bus Tracking", onBack = onBack)
+        VBackHeader(title = appString(StringKeys.BT_BUS_TRACKING), onBack = onBack)
 
         VStateHost(
             loading = state.isLoading && state.routeProgress == null,
             error = state.error,
             isEmpty = state.routeProgress == null && state.childRoute == null,
-            emptyTitle = "No transport assignment found",
-            emptyBody = "This child is not assigned to any bus route yet.",
+            emptyTitle = appString(StringKeys.BT_NO_TRANSPORT),
+            emptyBody = appString(StringKeys.BT_NO_TRANSPORT_DESC),
             onRetry = { viewModel.loadLiveLocation(childId) },
             modifier = Modifier.fillMaxSize(),
         ) {
@@ -123,7 +125,7 @@ private fun BusTrackingContent(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        "Waiting for bus location…",
+                        appString(StringKeys.BT_WAITING),
                         style = VTheme.type.body,
                         color = c.ink3,
                     )
@@ -144,12 +146,12 @@ private fun BusTrackingContent(
             ) {
                 Column {
                     Text(
-                        progress?.routeName ?: "Route",
+                        progress?.routeName ?: appString(StringKeys.BT_ROUTE),
                         style = VTheme.type.h3,
                         color = c.ink,
                     )
                     Text(
-                        "Bus: ${progress?.busNumber ?: "—"}",
+                        appString(StringKeys.BT_BUS, "bus" to (progress?.busNumber ?: "—")),
                         style = VTheme.type.body,
                         color = c.ink2,
                     )
@@ -157,7 +159,7 @@ private fun BusTrackingContent(
 
                 progress?.etaMinutes?.let { eta ->
                     VBadge(
-                        text = "ETA $eta min",
+                        text = appString(StringKeys.BT_ETA, "eta" to eta),
                         tone = VBadgeTone.Accent,
                     )
                 }
@@ -174,7 +176,7 @@ private fun BusTrackingContent(
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        "Next stop: ${nextStop.name}",
+                        appString(StringKeys.BT_NEXT_STOP, "stop" to nextStop.name),
                         style = VTheme.type.body,
                         color = c.ink,
                     )

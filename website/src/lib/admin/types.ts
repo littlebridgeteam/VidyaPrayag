@@ -1039,3 +1039,84 @@ export interface CopySectionRequest {
   from_section: string;
   to_section: string;
 }
+
+// ── Multi-Language i18n (MULTI_LANGUAGE_SPEC.md §9) ─────────────────────────
+
+export interface LanguageDistributionDto {
+  language: string;
+  count: number;
+  percentage: number;
+}
+
+export interface UserLanguagePrefDto {
+  user_id: string;
+  name: string;
+  role: string;
+  language: string;
+}
+
+export interface LanguageAdoptionDto {
+  total_users: number;
+  by_language: LanguageDistributionDto[];
+  by_role: Record<string, LanguageDistributionDto[]>;
+}
+
+export interface UsersByLanguageDto {
+  language: string;
+  roles: Record<string, UserLanguagePrefDto[]>;
+}
+
+export interface ServerStringTranslation {
+  value: string;
+  is_override: boolean;
+  updated_by: string | null;
+  updated_at: string | null;
+}
+
+export interface ServerStringEntry {
+  key: string;
+  translations: Record<string, ServerStringTranslation>;
+}
+
+export interface ServerStringsResponse {
+  strings: ServerStringEntry[];
+  total_keys: number;
+  languages: string[];
+}
+
+export interface UpsertServerStringRequest {
+  lang: string;
+  value: string;
+}
+
+export interface BulkUpsertServerStringItem {
+  key: string;
+  lang: string;
+  value: string;
+}
+
+export interface BulkUpsertServerStringRequest {
+  items: BulkUpsertServerStringItem[];
+}
+
+export interface BulkUpsertServerStringResponse {
+  updated: number;
+  errors: Array<{ key: string; lang: string; error: string }>;
+}
+
+export interface StringOverrideHistoryEntry {
+  id: string;
+  string_key: string;
+  lang: string;
+  old_value: string | null;
+  new_value: string;
+  action: string;
+  changed_by: string | null;
+  changed_by_name: string | null;
+  changed_at: string;
+}
+
+export interface StringOverrideHistoryResponse {
+  history: StringOverrideHistoryEntry[];
+  total: number;
+}

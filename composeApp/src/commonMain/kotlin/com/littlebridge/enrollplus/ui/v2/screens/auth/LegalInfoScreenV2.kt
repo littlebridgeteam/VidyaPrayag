@@ -37,6 +37,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VLabel
 import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.VThemeRegistry
 import com.littlebridge.enrollplus.ui.v2.theme.colored
@@ -72,13 +74,16 @@ fun LegalInfoScreenV2(
     val c = VTheme.colors
     val d = VTheme.dimens
 
-    val tabs = listOf("Privacy", "Terms", "Help Desk")
+    val tabPrivacy = appString(StringKeys.LEGAL_TAB_PRIVACY)
+    val tabTerms = appString(StringKeys.LEGAL_TAB_TERMS)
+    val tabHelp = appString(StringKeys.LEGAL_TAB_HELP)
+    val tabs = listOf(tabPrivacy, tabTerms, tabHelp)
     var selected by remember {
         mutableStateOf(
             when (initial) {
-                LegalDoc.Privacy -> "Privacy"
-                LegalDoc.Terms -> "Terms"
-                LegalDoc.Help -> "Help Desk"
+                LegalDoc.Privacy -> tabPrivacy
+                LegalDoc.Terms -> tabTerms
+                LegalDoc.Help -> tabHelp
             },
         )
     }
@@ -98,7 +103,7 @@ fun LegalInfoScreenV2(
         ) {
             BackChip(onClick = onBack)
             Text(
-                "Legal & Support",
+                appString(StringKeys.LEGAL_TITLE),
                 style = VTheme.type.h4.colored(c.ink).copy(fontWeight = FontWeight.Bold),
             )
         }
@@ -113,13 +118,13 @@ fun LegalInfoScreenV2(
                 .padding(horizontal = 20.dp, vertical = 20.dp),
         ) {
             when (selected) {
-                "Privacy" -> PrivacyContent()
-                "Terms" -> TermsContent()
+                tabPrivacy -> PrivacyContent()
+                tabTerms -> TermsContent()
                 else -> HelpDeskContent()
             }
             Spacer(Modifier.height(28.dp))
             Text(
-                "VidyaSetu · Little Bridge",
+                appString(StringKeys.LEGAL_FOOTER),
                 style = VTheme.type.caption.colored(c.ink3),
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -134,81 +139,58 @@ fun LegalInfoScreenV2(
 
 @Composable
 private fun PrivacyContent() {
-    DocHeader(icon = VIcons.ShieldCheck, eyebrow = "Your data", title = "Privacy Policy")
+    DocHeader(icon = VIcons.ShieldCheck, eyebrow = appString(StringKeys.LEGAL_PRIV_EYEBROW), title = appString(StringKeys.LEGAL_PRIV_TITLE))
     LastUpdated()
-    Para(
-        "VidyaSetu connects parents and schools. We collect only the information needed to run the " +
-            "service: your name and contact details, the school and children you are linked to, and " +
-            "the academic records (attendance, marks, fees, messages) your school shares with you.",
-    )
-    SectionTitle("What we collect")
-    Bullet("Account details — name, phone or email used to sign in.")
-    Bullet("School linkage — the institution and student(s) connected to your account.")
-    Bullet("Academic data — attendance, assessments, fees and announcements published by your school.")
-    Bullet("Messages — communication you send or receive through the in-app channels.")
+    Para(appString(StringKeys.LEGAL_PRIV_INTRO))
+    SectionTitle(appString(StringKeys.LEGAL_PRIV_COLLECT_T))
+    Bullet(appString(StringKeys.LEGAL_PRIV_COLLECT_1))
+    Bullet(appString(StringKeys.LEGAL_PRIV_COLLECT_2))
+    Bullet(appString(StringKeys.LEGAL_PRIV_COLLECT_3))
+    Bullet(appString(StringKeys.LEGAL_PRIV_COLLECT_4))
 
-    SectionTitle("How we use it")
-    Bullet("To show you your child's academic information and school updates.")
-    Bullet("To deliver notifications you have opted into (results, fees, announcements).")
-    Bullet("To keep your account secure and prevent misuse.")
+    SectionTitle(appString(StringKeys.LEGAL_PRIV_USE_T))
+    Bullet(appString(StringKeys.LEGAL_PRIV_USE_1))
+    Bullet(appString(StringKeys.LEGAL_PRIV_USE_2))
+    Bullet(appString(StringKeys.LEGAL_PRIV_USE_3))
 
-    SectionTitle("What we never do")
-    Bullet("We do not sell your data.")
-    Bullet("We do not use your data for third-party advertising.")
-    Bullet("We do not share your child's records outside your school's authorised staff and your linked parent account.")
+    SectionTitle(appString(StringKeys.LEGAL_PRIV_NEVER_T))
+    Bullet(appString(StringKeys.LEGAL_PRIV_NEVER_1))
+    Bullet(appString(StringKeys.LEGAL_PRIV_NEVER_2))
+    Bullet(appString(StringKeys.LEGAL_PRIV_NEVER_3))
 
-    SectionTitle("Your data is school-scoped")
-    Para(
-        "Every record is tied to your school. Access is decided server-side from your signed-in " +
-            "session — you only ever see the data belonging to your own account and school.",
-    )
+    SectionTitle(appString(StringKeys.LEGAL_PRIV_SCOPED_T))
+    Para(appString(StringKeys.LEGAL_PRIV_SCOPED_B))
 
-    SectionTitle("Retention & deletion")
-    Para(
-        "We keep your data while your account is active. To request access, correction, or deletion " +
-            "of your information, contact us at the Help Desk — we respond to every request.",
-    )
+    SectionTitle(appString(StringKeys.LEGAL_PRIV_RETENTION_T))
+    Para(appString(StringKeys.LEGAL_PRIV_RETENTION_B))
 }
 
 @Composable
 private fun TermsContent() {
-    DocHeader(icon = VIcons.FileText, eyebrow = "The agreement", title = "Terms of Service")
+    DocHeader(icon = VIcons.FileText, eyebrow = appString(StringKeys.LEGAL_TERMS_EYEBROW), title = appString(StringKeys.LEGAL_TERMS_TITLE))
     LastUpdated()
-    Para(
-        "By using VidyaSetu you agree to these terms. They are written to be clear and fair. If you " +
-            "do not agree, please do not use the app.",
-    )
-    SectionTitle("Using the app")
-    Bullet("You must provide accurate information when creating your account.")
-    Bullet("You are responsible for keeping your login credentials confidential.")
-    Bullet("Use the app only for its intended purpose — connecting with your school and tracking your child's progress.")
+    Para(appString(StringKeys.LEGAL_TERMS_INTRO))
+    SectionTitle(appString(StringKeys.LEGAL_TERMS_USE_T))
+    Bullet(appString(StringKeys.LEGAL_TERMS_USE_1))
+    Bullet(appString(StringKeys.LEGAL_TERMS_USE_2))
+    Bullet(appString(StringKeys.LEGAL_TERMS_USE_3))
 
-    SectionTitle("Accounts & access")
-    Para(
-        "Parent accounts link to children enrolled at a participating school. Teacher and staff " +
-            "accounts are created by your school's administrator. Schools control which records are " +
-            "published to parents.",
-    )
+    SectionTitle(appString(StringKeys.LEGAL_TERMS_ACCOUNTS_T))
+    Para(appString(StringKeys.LEGAL_TERMS_ACCOUNTS_B))
 
-    SectionTitle("Content & communication")
-    Bullet("Messages and announcements are part of the official school record.")
-    Bullet("Do not post unlawful, abusive, or misleading content.")
-    Bullet("We may suspend accounts that violate these terms or misuse the platform.")
+    SectionTitle(appString(StringKeys.LEGAL_TERMS_CONTENT_T))
+    Bullet(appString(StringKeys.LEGAL_TERMS_CONTENT_1))
+    Bullet(appString(StringKeys.LEGAL_TERMS_CONTENT_2))
+    Bullet(appString(StringKeys.LEGAL_TERMS_CONTENT_3))
 
-    SectionTitle("Availability")
-    Para(
-        "We work hard to keep VidyaSetu running, but the service is provided \"as is\". We are not " +
-            "liable for occasional downtime, and we may update features as the product evolves.",
-    )
+    SectionTitle(appString(StringKeys.LEGAL_TERMS_AVAIL_T))
+    Para(appString(StringKeys.LEGAL_TERMS_AVAIL_B))
 
-    SectionTitle("Changes to these terms")
-    Para(
-        "We may update these terms as the app grows. We will surface material changes in the app. " +
-            "Continued use after an update means you accept the revised terms.",
-    )
+    SectionTitle(appString(StringKeys.LEGAL_TERMS_CHANGES_T))
+    Para(appString(StringKeys.LEGAL_TERMS_CHANGES_B))
 
-    SectionTitle("Contact")
-    Para("Questions about these terms? Reach us via the Help Desk tab.")
+    SectionTitle(appString(StringKeys.LEGAL_TERMS_CONTACT_T))
+    Para(appString(StringKeys.LEGAL_TERMS_CONTACT_B))
 }
 
 @Composable
@@ -216,11 +198,8 @@ private fun HelpDeskContent() {
     val c = VTheme.colors
     val uriHandler = LocalUriHandler.current
 
-    DocHeader(icon = VIcons.Chat, eyebrow = "We're here", title = "Help Desk")
-    Para(
-        "Need a hand, found a bug, or have a question about your account? Our team reads every " +
-            "message and replies as quickly as we can.",
-    )
+    DocHeader(icon = VIcons.Chat, eyebrow = appString(StringKeys.LEGAL_HELP_EYEBROW), title = appString(StringKeys.LEGAL_HELP_TITLE))
+    Para(appString(StringKeys.LEGAL_HELP_INTRO))
     Spacer(Modifier.height(16.dp))
 
     // Primary contact card — taps open the device mail composer.
@@ -240,7 +219,7 @@ private fun HelpDeskContent() {
             }
             Column(Modifier.weight(1f)) {
                 Text(
-                    "Email support",
+                    appString(StringKeys.LEGAL_HELP_EMAIL),
                     style = VTheme.type.bodyStrong.colored(c.ink).copy(fontWeight = FontWeight.SemiBold),
                 )
                 Spacer(Modifier.height(2.dp))
@@ -251,24 +230,24 @@ private fun HelpDeskContent() {
     }
 
     Spacer(Modifier.height(20.dp))
-    SectionTitle("What to include")
-    Bullet("Your role (parent, teacher, or admin) and your school's name.")
-    Bullet("A short description of the problem or question.")
-    Bullet("A screenshot, if it helps explain the issue.")
+    SectionTitle(appString(StringKeys.LEGAL_HELP_INCLUDE_T))
+    Bullet(appString(StringKeys.LEGAL_HELP_INCLUDE_1))
+    Bullet(appString(StringKeys.LEGAL_HELP_INCLUDE_2))
+    Bullet(appString(StringKeys.LEGAL_HELP_INCLUDE_3))
 
     Spacer(Modifier.height(20.dp))
-    SectionTitle("Common questions")
+    SectionTitle(appString(StringKeys.LEGAL_HELP_FAQ_T))
     FaqRow(
-        "I can't link my child",
-        "Check the student code with your school's office, then try the Link Child flow again from your profile.",
+        appString(StringKeys.LEGAL_HELP_FAQ_Q1),
+        appString(StringKeys.LEGAL_HELP_FAQ_A1),
     )
     FaqRow(
-        "I forgot my password",
-        "Teachers and admins can ask their school administrator to reset it. Parents sign in with a one-time code.",
+        appString(StringKeys.LEGAL_HELP_FAQ_Q2),
+        appString(StringKeys.LEGAL_HELP_FAQ_A2),
     )
     FaqRow(
-        "I'm not getting notifications",
-        "Make sure notifications are enabled for VidyaSetu in your device settings.",
+        appString(StringKeys.LEGAL_HELP_FAQ_Q3),
+        appString(StringKeys.LEGAL_HELP_FAQ_A3),
     )
 }
 
@@ -288,7 +267,7 @@ private fun BackChip(onClick: () -> Unit) {
             .clickable(interactionSource = interaction, indication = null, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(VIcons.ArrowLeft, contentDescription = "Back", tint = c.ink, modifier = Modifier.size(20.dp))
+        Icon(VIcons.ArrowLeft, contentDescription = appString(StringKeys.LEGAL_BACK), tint = c.ink, modifier = Modifier.size(20.dp))
     }
 }
 
@@ -315,7 +294,7 @@ private fun DocHeader(icon: ImageVector, eyebrow: String, title: String) {
 private fun LastUpdated() {
     val c = VTheme.colors
     Text(
-        "Last updated: June 2026",
+        appString(StringKeys.LEGAL_LAST_UPDATED),
         style = VTheme.type.caption.colored(c.ink3),
     )
     Spacer(Modifier.height(14.dp))

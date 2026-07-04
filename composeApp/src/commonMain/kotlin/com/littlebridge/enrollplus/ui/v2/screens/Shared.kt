@@ -31,6 +31,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VEmptyState
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -72,12 +74,12 @@ fun VErrorState(
     VEmptyState(
         modifier = modifier,
         icon = VIcons.AlertTriangle,
-        title = "Something went wrong",
+        title = appString(StringKeys.COMMON_ERROR_GENERIC),
         body = message,
         action = if (onRetry != null) {
             {
                 VButton(
-                    text = "Retry",
+                    text = appString(StringKeys.COMMON_BUTTON_RETRY),
                     onClick = onRetry,
                     variant = VButtonVariant.Secondary,
                     tone = VButtonTone.Teal,
@@ -111,7 +113,7 @@ fun VStateHost(
     error: String?,
     isEmpty: Boolean,
     modifier: Modifier = Modifier,
-    emptyTitle: String = "Nothing here yet",
+    emptyTitle: String = appString(StringKeys.COMMON_EMPTY),
     emptyBody: String? = null,
     emptyIcon: androidx.compose.ui.graphics.vector.ImageVector? = VIcons.FileText,
     onRetry: (() -> Unit)? = null,

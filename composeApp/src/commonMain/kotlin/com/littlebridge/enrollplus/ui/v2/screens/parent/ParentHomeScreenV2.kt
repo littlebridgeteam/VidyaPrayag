@@ -53,6 +53,8 @@ import com.littlebridge.enrollplus.feature.parent.presentation.ParentDashboardVi
 import com.littlebridge.enrollplus.ui.v2.components.VAvatar
 import com.littlebridge.enrollplus.ui.v2.components.VEmptyState
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VErrorState
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.presentation.PermissionViewModel
@@ -173,12 +175,12 @@ fun ParentHomeScreenV2(
 
     VConfirmDialog(
         visible = showRationale,
-        title = "Stay Informed",
-        message = "Enable notifications to receive important updates about school events, attendance, and fee reminders.",
-        confirmLabel = "Enable",
+        title = appString(StringKeys.PH_STAY_INFORMED),
+        message = appString(StringKeys.PH_STAY_INFORMED_MSG),
+        confirmLabel = appString(StringKeys.PH_ENABLE),
         onConfirm = permissionVm::requestNotificationPermission,
         onDismiss = permissionVm::declineNotifications,
-        cancelLabel = "Not Now",
+        cancelLabel = appString(StringKeys.PH_NOT_NOW),
         icon = VIcons.Bell,
     )
 }
@@ -264,8 +266,8 @@ private fun ParentDashboardContent(
                 DashboardCenterState {
                     VEmptyState(
                         icon = VIcons.User,
-                        title = "No child linked yet",
-                        body = "Link your child to see their daily journey and progress.",
+                        title = appString(StringKeys.PH_NO_CHILD_LINKED),
+                        body = appString(StringKeys.PH_NO_CHILD_LINKED_DESC),
                     )
                 }
 
@@ -354,8 +356,8 @@ private fun ParentDashboardContent(
 
                     // ── Transport: track bus ────────────────────────────────────────
                     VActionCard(
-                        title = "Track Bus",
-                        subtitle = "Live bus location & ETA for your child",
+                        title = appString(StringKeys.PH_TRACK_BUS),
+                        subtitle = appString(StringKeys.PH_TRACK_BUS_DESC),
                         icon = VIcons.MapPin,
                         onClick = onOpenTransport,
                         modifier = Modifier.fillMaxWidth(),
@@ -363,8 +365,8 @@ private fun ParentDashboardContent(
 
                     // ── Scholarships ───────────────────────────────────────────────
                     VActionCard(
-                        title = "Scholarships",
-                        subtitle = "Browse & apply for scholarship opportunities",
+                        title = appString(StringKeys.PH_SCHOLARSHIPS),
+                        subtitle = appString(StringKeys.PH_SCHOLARSHIPS_DESC),
                         icon = VIcons.Sparkles,
                         onClick = onOpenScholarships,
                         modifier = Modifier.fillMaxWidth(),
@@ -372,8 +374,8 @@ private fun ParentDashboardContent(
 
                     // ── Digital ID Card ────────────────────────────────────────────
                     VActionCard(
-                        title = "Digital ID Card",
-                        subtitle = "View your child's digital school ID card",
+                        title = appString(StringKeys.PH_DIGITAL_ID),
+                        subtitle = appString(StringKeys.PH_DIGITAL_ID_DESC),
                         icon = VIcons.IdCard,
                         onClick = onOpenIdCard,
                         modifier = Modifier.fillMaxWidth(),
@@ -381,8 +383,8 @@ private fun ParentDashboardContent(
 
                     // ── Library ───────────────────────────────────────────────────────
                     VActionCard(
-                        title = "Library",
-                        subtitle = "Search books, view issued books & reserve",
+                        title = appString(StringKeys.PL_LIBRARY),
+                        subtitle = appString(StringKeys.PH_LIBRARY_DESC),
                         icon = VIcons.BookOpen,
                         onClick = onOpenLibrary,
                         modifier = Modifier.fillMaxWidth(),
@@ -390,8 +392,8 @@ private fun ParentDashboardContent(
 
                     // ── Event Registration ────────────────────────────────────────
                     VActionCard(
-                        title = "School Events",
-                        subtitle = "Register for PTM, events & book time slots",
+                        title = appString(StringKeys.PH_SCHOOL_EVENTS),
+                        subtitle = appString(StringKeys.PH_SCHOOL_EVENTS_DESC),
                         icon = VIcons.Calendar,
                         onClick = onOpenEvents,
                         modifier = Modifier.fillMaxWidth(),

@@ -30,6 +30,8 @@ import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
@@ -818,7 +820,7 @@ class LibraryRepository {
             append(action).append('|')
             append(entityType).append('|')
             append(entityId?.toString() ?: "").append('|')
-            append(metadata?.let { json.encodeToString(it) } ?: "")
+            append(metadata?.let { m -> JsonObject(m.mapValues { (_, v) -> JsonPrimitive(v?.toString()) }).toString() } ?: "")
         }
         val hash = java.security.MessageDigest.getInstance("SHA-256")
             .digest(payload.toByteArray())
@@ -831,7 +833,7 @@ class LibraryRepository {
             it[LibraryAuditLogTable.action] = action
             it[LibraryAuditLogTable.entityType] = entityType
             it[LibraryAuditLogTable.entityId] = entityId
-            it[LibraryAuditLogTable.metadata] = metadata?.let { m -> json.encodeToString(m) }
+            it[LibraryAuditLogTable.metadata] = metadata?.let { m -> JsonObject(m.mapValues { (_, v) -> JsonPrimitive(v?.toString()) }).toString() }
             it[LibraryAuditLogTable.previousState] = previousState
             it[LibraryAuditLogTable.newState] = newState
             it[LibraryAuditLogTable.hash] = hash

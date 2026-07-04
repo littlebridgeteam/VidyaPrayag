@@ -37,10 +37,15 @@ import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VThemePicker
+import com.littlebridge.enrollplus.ui.v2.components.VLanguagePicker
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.core.locale.LocaleManager
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -67,10 +72,14 @@ fun ParentProfileScreenV2(
     val state by viewModel.state.collectAsStateV2()
     val themeMode by viewModel.themeMode.collectAsStateV2()
     val customThemeId by viewModel.customThemeId.collectAsStateV2()
+    val localeManager = koinInject<LocaleManager>()
+    val currentLocale by localeManager.currentLocale.collectAsStateV2()
     ParentProfileContent(
         state = state,
         themeMode = themeMode,
         customThemeId = customThemeId,
+        currentLocale = currentLocale,
+        onLanguageSelect = { lang -> localeManager.setLocale(lang) },
         onThemeSelect = { mode, customId ->
             viewModel.setThemeMode(mode)
             viewModel.setCustomThemeId(customId)
@@ -91,6 +100,8 @@ private fun ParentProfileContent(
     state: ParentProfileState,
     themeMode: String,
     customThemeId: String?,
+    currentLocale: String,
+    onLanguageSelect: (String) -> Unit,
     onThemeSelect: (String, String?) -> Unit,
     onBack: () -> Unit,
     onLogout: () -> Unit,
@@ -212,6 +223,19 @@ private fun ParentProfileContent(
                                         modifier = Modifier.size(16.dp)
                                     )
                                 }
+                            }
+                        }
+                        Spacer(Modifier.height(8.dp))
+
+                        // ── Language picker ───────────────────────────────────
+                        VCard {
+                            Column {
+                                Text(appString(StringKeys.PP_LANGUAGE), style = VTheme.type.bodyStrong.colored(c.ink))
+                                Spacer(Modifier.height(10.dp))
+                                VLanguagePicker(
+                                    currentLang = currentLocale,
+                                    onSelect = onLanguageSelect,
+                                )
                             }
                         }
                         Spacer(Modifier.height(8.dp))

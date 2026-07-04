@@ -37,6 +37,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
@@ -60,7 +62,7 @@ fun ParentHealthScreenV2(
             .statusBarsPadding()
             .navigationBarsPadding(),
     ) {
-        VBackHeader(title = "Health Records", onBack = onBack)
+        VBackHeader(title = appString(StringKeys.PA_HEALTH_RECORDS), onBack = onBack)
 
         VStateHost(
             loading = state.isLoading,
@@ -89,7 +91,7 @@ private fun ParentHealthContent(data: ParentHealthResponse?) {
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Text(
-            data?.childName?.takeIf { it.isNotBlank() } ?: "Your child",
+            data?.childName?.takeIf { it.isNotBlank() } ?: appString(StringKeys.PHS_YOUR_CHILD),
             style = VTheme.type.h2.colored(c.ink),
         )
 
@@ -101,9 +103,9 @@ private fun ParentHealthContent(data: ParentHealthResponse?) {
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Icon(VIcons.Heart, contentDescription = null, tint = c.ink3, modifier = Modifier.size(32.dp))
-                    Text("No health profile linked yet", style = VTheme.type.bodyStrong.colored(c.ink))
+                    Text(appString(StringKeys.PHS_NO_PROFILE), style = VTheme.type.bodyStrong.colored(c.ink))
                     Text(
-                        "Once the school adds health records for your child, they will appear here.",
+                        appString(StringKeys.PHS_NO_PROFILE_DESC),
                         style = VTheme.type.caption.colored(c.ink2),
                     )
                 }
@@ -113,12 +115,12 @@ private fun ParentHealthContent(data: ParentHealthResponse?) {
         }
 
         if (immunizations.isNotEmpty()) {
-            VSectionHeader("Immunizations")
+            VSectionHeader(appString(StringKeys.PHS_IMMUNIZATIONS))
             immunizations.forEach { imm -> ImmunizationCard(imm) }
         }
 
         if (incidents.isNotEmpty()) {
-            VSectionHeader("Health Incidents")
+            VSectionHeader(appString(StringKeys.PHS_HEALTH_INCIDENTS))
             incidents.forEach { inc -> IncidentCard(inc) }
         }
 
@@ -137,38 +139,38 @@ private fun ProfileCard(profile: HealthProfileDto) {
             Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            VSectionHeader("Health Profile")
+            VSectionHeader(appString(StringKeys.PHS_HEALTH_PROFILE))
 
-            InfoRow("Blood Group", profile.bloodGroup)
-            InfoRow("Height", profile.heightCm?.let { "${it} cm" })
-            InfoRow("Weight", profile.weightKg?.let { "${it} kg" })
+            InfoRow(appString(StringKeys.PHS_BLOOD_GROUP), profile.bloodGroup)
+            InfoRow(appString(StringKeys.PHS_HEIGHT), profile.heightCm?.let { appString(StringKeys.PHS_HEIGHT_VALUE, "value" to it) })
+            InfoRow(appString(StringKeys.PHS_WEIGHT), profile.weightKg?.let { appString(StringKeys.PHS_WEIGHT_VALUE, "value" to it) })
 
             val allergies = parseJsonArray(profile.allergies)
             val conditions = parseJsonArray(profile.chronicConditions)
             val meds = parseJsonArray(profile.medications)
 
             if (allergies.isNotEmpty()) {
-                InfoRow("Allergies", allergies.joinToString(", "))
+                InfoRow(appString(StringKeys.PHS_ALLERGIES), allergies.joinToString(", "))
             }
             if (conditions.isNotEmpty()) {
-                InfoRow("Chronic Conditions", conditions.joinToString(", "))
+                InfoRow(appString(StringKeys.PHS_CHRONIC_CONDITIONS), conditions.joinToString(", "))
             }
             if (meds.isNotEmpty()) {
-                InfoRow("Medications", meds.joinToString(", "))
+                InfoRow(appString(StringKeys.PHS_MEDICATIONS), meds.joinToString(", "))
             }
 
             if (!profile.emergencyContactName.isNullOrBlank() || !profile.emergencyContactPhone.isNullOrBlank()) {
                 Spacer(Modifier.height(4.dp))
-                VSectionHeader("Emergency Contact")
-                InfoRow("Name", profile.emergencyContactName)
-                InfoRow("Phone", profile.emergencyContactPhone)
+                VSectionHeader(appString(StringKeys.PHS_EMERGENCY_CONTACT))
+                InfoRow(appString(StringKeys.PHS_NAME), profile.emergencyContactName)
+                InfoRow(appString(StringKeys.PHS_PHONE), profile.emergencyContactPhone)
             }
 
             if (!profile.doctorName.isNullOrBlank() || !profile.doctorPhone.isNullOrBlank()) {
                 Spacer(Modifier.height(4.dp))
-                VSectionHeader("Doctor")
-                InfoRow("Name", profile.doctorName)
-                InfoRow("Phone", profile.doctorPhone)
+                VSectionHeader(appString(StringKeys.PHS_DOCTOR))
+                InfoRow(appString(StringKeys.PHS_NAME), profile.doctorName)
+                InfoRow(appString(StringKeys.PHS_PHONE), profile.doctorPhone)
             }
         }
     }
@@ -185,12 +187,12 @@ private fun ImmunizationCard(imm: ImmunizationDto) {
         ) {
             Column(Modifier.weight(1f)) {
                 Text(imm.vaccineName, style = VTheme.type.bodyStrong.colored(c.ink))
-                Text("Dose ${imm.doseNumber} · ${imm.dateAdministered}", style = VTheme.type.caption.colored(c.ink2))
+                Text(appString(StringKeys.PHS_DOSE, "number" to imm.doseNumber, "date" to imm.dateAdministered), style = VTheme.type.caption.colored(c.ink2))
                 if (!imm.administeredBy.isNullOrBlank()) {
-                    Text("By ${imm.administeredBy}", style = VTheme.type.caption.colored(c.ink3))
+                    Text(appString(StringKeys.PHS_BY, "name" to imm.administeredBy), style = VTheme.type.caption.colored(c.ink3))
                 }
                 if (!imm.nextDueDate.isNullOrBlank()) {
-                    Text("Next due: ${imm.nextDueDate}", style = VTheme.type.caption.colored(c.tealDeep))
+                    Text(appString(StringKeys.PHS_NEXT_DUE, "date" to imm.nextDueDate), style = VTheme.type.caption.colored(c.tealDeep))
                 }
             }
             Box(
@@ -218,26 +220,26 @@ private fun IncidentCard(inc: HealthIncidentDto) {
             ) {
                 Text(inc.date, style = VTheme.type.bodyStrong.colored(c.ink))
                 val (badgeText, badgeTone) = when (inc.severity) {
-                    "major" -> "MAJOR" to VBadgeTone.Danger
-                    "moderate" -> "MODERATE" to VBadgeTone.Warning
-                    else -> "MINOR" to VBadgeTone.Success
+                    "major" -> appString(StringKeys.PHS_SEVERITY_MAJOR) to VBadgeTone.Danger
+                    "moderate" -> appString(StringKeys.PHS_SEVERITY_MODERATE) to VBadgeTone.Warning
+                    else -> appString(StringKeys.PHS_SEVERITY_MINOR) to VBadgeTone.Success
                 }
                 VBadge(text = badgeText, tone = badgeTone)
             }
             Text(inc.description, style = VTheme.type.body.colored(c.ink))
             if (!inc.treatment.isNullOrBlank()) {
-                Text("Treatment: ${inc.treatment}", style = VTheme.type.caption.colored(c.ink2))
+                Text(appString(StringKeys.PHS_TREATMENT, "treatment" to inc.treatment), style = VTheme.type.caption.colored(c.ink2))
             }
             if (!inc.medicationGiven.isNullOrBlank()) {
-                Text("Medication: ${inc.medicationGiven}", style = VTheme.type.caption.colored(c.ink2))
+                Text(appString(StringKeys.PHS_MEDICATION, "medication" to inc.medicationGiven), style = VTheme.type.caption.colored(c.ink2))
             }
             if (!inc.time.isNullOrBlank()) {
-                Text("Time: ${inc.time}", style = VTheme.type.caption.colored(c.ink3))
+                Text(appString(StringKeys.PHS_TIME, "time" to inc.time), style = VTheme.type.caption.colored(c.ink3))
             }
             if (inc.parentNotified) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     Icon(VIcons.Check, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(14.dp))
-                    Text("Parent notified", style = VTheme.type.caption.colored(c.tealDeep))
+                    Text(appString(StringKeys.PHS_PARENT_NOTIFIED), style = VTheme.type.caption.colored(c.tealDeep))
                 }
             }
         }
