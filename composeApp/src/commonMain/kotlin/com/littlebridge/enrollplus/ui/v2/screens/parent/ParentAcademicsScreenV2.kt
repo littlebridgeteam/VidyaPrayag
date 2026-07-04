@@ -54,7 +54,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
-import com.littlebridge.enrollplus.ui.v2.components.VComingSoon
+import com.littlebridge.enrollplus.ui.v2.components.VEmptyState
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VLabel
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
@@ -276,10 +276,9 @@ private fun ParentAcademicsContent(
                             onDraftIdConsumed = onReportDraftIdConsumed,
                         )
                     } else {
-                        VComingSoon(
+                        VEmptyState(
                             title = "AI Report Card",
-                            description = "Link your child to view their AI-generated report cards.",
-                            preview = { AiReportCardPreview() },
+                            body = "Link your child to view their AI-generated report cards.",
                         )
                     }
                 }

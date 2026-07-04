@@ -27,11 +27,12 @@ import com.littlebridge.enrollplus.ui.v2.navigation.parseDeepLink
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.screens.discovery.AcademicCalendarScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.notifications.NotificationsScreenV2
+import com.littlebridge.enrollplus.ui.v2.screens.parent.ParentLibraryScreenV2
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 /** Full-screen overlays the teacher portal can push above its tab content. */
-private enum class TeacherOverlay { None, Notifications, HealthAlerts, TransportAttendance, Pews, ReportReview, ReportDraftEditor, Heatmap, DigitalIdCard, ScheduledMessages, EventRegistration, Messages, Calendar }
+private enum class TeacherOverlay { None, Notifications, HealthAlerts, TransportAttendance, Pews, ReportReview, ReportDraftEditor, Heatmap, DigitalIdCard, ScheduledMessages, EventRegistration, Messages, Calendar, Library, Announcements }
 
 /**
  * TeacherPortalV2 — the teacher shell, rebuilt FROM SCRATCH on the Parents-Portal
@@ -75,6 +76,7 @@ fun TeacherPortalV2(
     var overlay by remember { mutableStateOf(TeacherOverlay.None) }
     var localDeepLink by remember { mutableStateOf<DeepLinkTarget?>(null) }
     var deepLinkThreadId by remember { mutableStateOf<String?>(null) }
+    var selectedRouteId by remember { mutableStateOf("") }
 
     // AI Report Card — review queue parameters (declared before LaunchedEffect
     // so the deep-link handler can write to them).
@@ -89,7 +91,10 @@ fun TeacherPortalV2(
         when (target) {
             is DeepLinkTarget.TeacherScreen -> {
                 when (target.screen) {
-                    "transport" -> overlay = TeacherOverlay.TransportAttendance
+                    "transport" -> {
+                        target.params["routeId"]?.let { selectedRouteId = it }
+                        overlay = TeacherOverlay.TransportAttendance
+                    }
                     "report-card", "report-review" -> {
                         target.params["className"]?.let { reportClassName = it }
                         target.params["section"]?.let { reportSection = it }
@@ -98,9 +103,9 @@ fun TeacherPortalV2(
                     }
                     "tutor" -> overlay = TeacherOverlay.Heatmap
                     "events" -> overlay = TeacherOverlay.EventRegistration
-                    "announcements" -> { tab = "home"; overlay = TeacherOverlay.None }
+                    "announcements" -> overlay = TeacherOverlay.Announcements
                     "leave-requests", "leave" -> { tab = "profile"; overlay = TeacherOverlay.None }
-                    "library" -> { tab = "home"; overlay = TeacherOverlay.None }
+                    "library" -> overlay = TeacherOverlay.Library
                     "pews" -> overlay = TeacherOverlay.Pews
                     "messages" -> overlay = TeacherOverlay.Messages
                     "timetable-requests" -> { tab = "timetable"; overlay = TeacherOverlay.None }
@@ -122,7 +127,7 @@ fun TeacherPortalV2(
                 val pathOnly = target.path.substringBefore("?").removePrefix("/")
                 when {
                     pathOnly.startsWith("messages") -> overlay = TeacherOverlay.Messages
-                    pathOnly.startsWith("announcements") -> { tab = "home"; overlay = TeacherOverlay.None }
+                    pathOnly.startsWith("announcements") -> overlay = TeacherOverlay.Announcements
                     pathOnly.startsWith("leave") -> { tab = "profile"; overlay = TeacherOverlay.None }
                     pathOnly.startsWith("transport") -> overlay = TeacherOverlay.TransportAttendance
                     pathOnly.startsWith("tutor") -> overlay = TeacherOverlay.Heatmap
@@ -131,7 +136,7 @@ fun TeacherPortalV2(
                     pathOnly.startsWith("timetable-requests") -> { tab = "timetable"; overlay = TeacherOverlay.None }
                     pathOnly.startsWith("timetable") -> { tab = "timetable"; overlay = TeacherOverlay.None }
                     pathOnly.startsWith("pews") -> overlay = TeacherOverlay.Pews
-                    pathOnly.startsWith("library") -> { tab = "home"; overlay = TeacherOverlay.None }
+                    pathOnly.startsWith("library") -> overlay = TeacherOverlay.Library
                     pathOnly.startsWith("broadcast") -> { tab = "home"; overlay = TeacherOverlay.None }
                     pathOnly.startsWith("lesson-plan") -> { tab = "update"; overlay = TeacherOverlay.None }
                     pathOnly.startsWith("syllabus") -> { tab = "update"; overlay = TeacherOverlay.None }
@@ -158,6 +163,7 @@ fun TeacherPortalV2(
     BackHandler(enabled = overlay != TeacherOverlay.None) {
         overlay = TeacherOverlay.None
         deepLinkThreadId = null
+        selectedRouteId = ""
         reportClassName = ""
         reportSection = "A"
         reportTerm = "Term 1"
@@ -186,8 +192,8 @@ fun TeacherPortalV2(
         }
         TeacherOverlay.TransportAttendance -> {
             TransportAttendanceScreenV2(
-                routeId = "",
-                onBack = { overlay = TeacherOverlay.None },
+                routeId = selectedRouteId,
+                onBack = { overlay = TeacherOverlay.None; selectedRouteId = "" },
                 modifier = modifier,
             )
             return
@@ -258,6 +264,24 @@ fun TeacherPortalV2(
         TeacherOverlay.Calendar -> {
             AcademicCalendarScreenV2(
                 onBack = { overlay = TeacherOverlay.None },
+                modifier = modifier,
+            )
+            return
+        }
+        TeacherOverlay.Library -> {
+            ParentLibraryScreenV2(
+                onBack = { overlay = TeacherOverlay.None },
+                modifier = modifier,
+            )
+            return
+        }
+        TeacherOverlay.Announcements -> {
+            NotificationsScreenV2(
+                onBack = { overlay = TeacherOverlay.None },
+                onDeepLink = { deepLinkString ->
+                    localDeepLink = parseDeepLink(deepLinkString, EntryRole.Teacher)
+                    overlay = TeacherOverlay.None
+                },
                 modifier = modifier,
             )
             return

@@ -1,11 +1,12 @@
 package com.littlebridge.enrollplus.feature.parent.domain.repository
 
 import com.littlebridge.enrollplus.core.network.NetworkResult
+import com.littlebridge.enrollplus.core.notification.NotificationFeedRepository
 import com.littlebridge.enrollplus.feature.parent.domain.model.*
 import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizSubmitRequest
 import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizSubmitResponse
 
-interface ParentRepository {
+interface ParentRepository : NotificationFeedRepository {
     suspend fun getDashboard(token: String): NetworkResult<ParentDashboardResponse>
     suspend fun getTrackProgress(token: String): NetworkResult<TrackProgressResponse>
     suspend fun getFees(token: String, childId: String? = null): NetworkResult<FeeResponse>

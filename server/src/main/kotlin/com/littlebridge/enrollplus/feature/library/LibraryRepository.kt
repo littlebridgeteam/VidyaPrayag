@@ -756,16 +756,16 @@ class LibraryRepository {
         updates.forEach { (k, v) ->
             if (v != null) {
                 when (k) {
-                    "defaultLoanDays" -> it[LibrarySettingsTable.defaultLoanDays] = v as Int
-                    "finePerDay" -> it[LibrarySettingsTable.finePerDay] = v as Double
-                    "maxBooksPerStudent" -> it[LibrarySettingsTable.maxBooksPerStudent] = v as Int
-                    "maxRenewals" -> it[LibrarySettingsTable.maxRenewals] = v as Int
-                    "reservationTimeoutDays" -> it[LibrarySettingsTable.reservationTimeoutDays] = v as Int
-                    "dueReminderDays" -> it[LibrarySettingsTable.dueReminderDays] = v as Int
-                    "fineCapEnabled" -> it[LibrarySettingsTable.fineCapEnabled] = v as Boolean
-                    "quickIssueEnabled" -> it[LibrarySettingsTable.quickIssueEnabled] = v as Boolean
-                    "bulkReturnEnabled" -> it[LibrarySettingsTable.bulkReturnEnabled] = v as Boolean
-                    "leaderboardEnabled" -> it[LibrarySettingsTable.leaderboardEnabled] = v as Boolean
+                    "defaultLoanDays" -> (v as? Int)?.let { it2 -> it[LibrarySettingsTable.defaultLoanDays] = it2 }
+                    "finePerDay" -> (v as? Double)?.let { it2 -> it[LibrarySettingsTable.finePerDay] = it2 }
+                    "maxBooksPerStudent" -> (v as? Int)?.let { it2 -> it[LibrarySettingsTable.maxBooksPerStudent] = it2 }
+                    "maxRenewals" -> (v as? Int)?.let { it2 -> it[LibrarySettingsTable.maxRenewals] = it2 }
+                    "reservationTimeoutDays" -> (v as? Int)?.let { it2 -> it[LibrarySettingsTable.reservationTimeoutDays] = it2 }
+                    "dueReminderDays" -> (v as? Int)?.let { it2 -> it[LibrarySettingsTable.dueReminderDays] = it2 }
+                    "fineCapEnabled" -> (v as? Boolean)?.let { it2 -> it[LibrarySettingsTable.fineCapEnabled] = it2 }
+                    "quickIssueEnabled" -> (v as? Boolean)?.let { it2 -> it[LibrarySettingsTable.quickIssueEnabled] = it2 }
+                    "bulkReturnEnabled" -> (v as? Boolean)?.let { it2 -> it[LibrarySettingsTable.bulkReturnEnabled] = it2 }
+                    "leaderboardEnabled" -> (v as? Boolean)?.let { it2 -> it[LibrarySettingsTable.leaderboardEnabled] = it2 }
                 }
             }
         }

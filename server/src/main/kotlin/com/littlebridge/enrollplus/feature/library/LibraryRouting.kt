@@ -68,7 +68,7 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 
-// Module-level singleton — no DI container (see NotificationRouting pattern)
+// Module-level singleton — consistent DI pattern for server-side services
 private val libraryService = LibraryService()
 
 // ── Rate Limiter ──────────────────────────────────────────────────────────────

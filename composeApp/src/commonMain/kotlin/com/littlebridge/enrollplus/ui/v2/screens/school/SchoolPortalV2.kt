@@ -17,6 +17,7 @@ import androidx.compose.ui.backhandler.BackHandler
 import com.littlebridge.enrollplus.feature.admin.presentation.MessagesViewModel
 import com.littlebridge.enrollplus.feature.alumni.presentation.AlumniViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VBottomNav
+import com.littlebridge.enrollplus.ui.v2.components.VEmptyState
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VNavItem
 import com.littlebridge.enrollplus.ui.v2.components.VScreenScaffold
@@ -72,6 +73,8 @@ private enum class SchoolOverlay {
     EventRegistration,
     ClassesSubjects,
     ClassDetail,
+    Tutor,
+    PaceAlerts,
 }
 
 /**
@@ -143,10 +146,10 @@ fun SchoolPortalV2(
                     "calendar" -> overlay = SchoolOverlay.AcademicCalendarPlatform
                     "fees" -> { tab = "records"; overlay = SchoolOverlay.None; recordsInitialTab = "Fee" }
                     "scholarship", "scholarships" -> overlay = SchoolOverlay.ScholarshipManagement
-                    "tutor" -> { tab = "home"; overlay = SchoolOverlay.None }
+                    "tutor" -> overlay = SchoolOverlay.Tutor
                     "timetable" -> overlay = SchoolOverlay.ClassesSubjects
                     "timetable-requests" -> overlay = SchoolOverlay.ClassesSubjects
-                    "pace-alerts", "pace" -> { tab = "home"; overlay = SchoolOverlay.None }
+                    "pace-alerts", "pace" -> overlay = SchoolOverlay.PaceAlerts
                     "alumni" -> overlay = SchoolOverlay.Alumni
                     "analytics", "intelligence" -> overlay = SchoolOverlay.AnalyticsDashboard
                     "daily-attendance" -> overlay = SchoolOverlay.DailyAttendance
@@ -184,7 +187,7 @@ fun SchoolPortalV2(
                     pathOnly.startsWith("timetable-requests") -> overlay = SchoolOverlay.ClassesSubjects
                     pathOnly.startsWith("timetable") -> overlay = SchoolOverlay.ClassesSubjects
                     pathOnly.startsWith("report-card") -> overlay = SchoolOverlay.ReportPublish
-                    pathOnly.startsWith("tutor") -> { tab = "home"; overlay = SchoolOverlay.None }
+                    pathOnly.startsWith("tutor") -> overlay = SchoolOverlay.Tutor
                     pathOnly.startsWith("ptm") -> overlay = SchoolOverlay.SchedulePTM
                     pathOnly.startsWith("health-records") -> overlay = SchoolOverlay.HealthRecords
                     pathOnly.startsWith("scheduled-messages") -> overlay = SchoolOverlay.ScheduledMessages
@@ -571,6 +574,22 @@ fun SchoolPortalV2(
                         profileReturnOverlay = SchoolOverlay.ClassDetail
                         overlay = SchoolOverlay.TeacherProfile
                     },
+                    modifier = modifier,
+                )
+                return
+            }
+            SchoolOverlay.Tutor -> {
+                VEmptyState(
+                    title = "Tutor Management",
+                    body = "The tutor management dashboard will be available here.",
+                    modifier = modifier,
+                )
+                return
+            }
+            SchoolOverlay.PaceAlerts -> {
+                VEmptyState(
+                    title = "Pace Alerts",
+                    body = "Pace alerts and snapshots will be available here.",
                     modifier = modifier,
                 )
                 return

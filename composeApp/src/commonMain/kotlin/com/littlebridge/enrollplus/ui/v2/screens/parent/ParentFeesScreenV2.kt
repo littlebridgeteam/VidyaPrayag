@@ -141,18 +141,6 @@ private fun ParentFeesContent(
                             }
                         }
                         Spacer(Modifier.height(16.dp))
-                        Box(
-                            Modifier
-                                .clip(RoundedCornerShape(999.dp))
-                                // RA-PP-THEME: website-accent violet CTA (was green teal).
-                                .background(c.accent)
-                                .padding(horizontal = 16.dp, vertical = 10.dp),
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("Pay now", style = VTheme.type.bodyStrong.colored(Color.White))
-                                Text(" · Coming Soon", style = VTheme.type.caption.colored(Color.White.copy(alpha = 0.8f)))
-                            }
-                        }
                     }
                 }
                 Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
