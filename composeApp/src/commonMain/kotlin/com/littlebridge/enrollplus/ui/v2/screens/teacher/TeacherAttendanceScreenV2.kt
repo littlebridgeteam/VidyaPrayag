@@ -29,6 +29,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.feature.teacher.presentation.AttendanceStatus
 import com.littlebridge.enrollplus.feature.teacher.presentation.StudentAttendance
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherAttendanceState
@@ -43,6 +44,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VDatePicker
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
@@ -75,11 +77,11 @@ fun TeacherAttendanceScreenV2(
             state.isLoading && state.students.isEmpty() -> TeacherCenterState { TeacherSpinner() }
             state.error != null && state.students.isEmpty() -> TeacherCenterState {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Couldn't load attendance", style = VTheme.type.h3.colored(c.ink))
+                    Text(appString(StringKeys.TC_COULDNT_LOAD_ATTENDANCE), style = VTheme.type.h3.colored(c.ink))
                     Spacer(Modifier.height(6.dp))
                     Text(state.error ?: "", style = VTheme.type.body.colored(c.ink2), maxLines = 3)
                     Spacer(Modifier.height(14.dp))
-                    VButton("Retry", onClick = { viewModel.retry() }, tone = VButtonTone.Lavender)
+                    VButton(appString(StringKeys.COMMON_BUTTON_RETRY), onClick = { viewModel.retry() }, tone = VButtonTone.Lavender)
                 }
             }
             else -> AttendanceBody(state.students, viewModel, scopeLabel)
@@ -105,7 +107,7 @@ private fun AttendanceBody(
         item {
             TCard(padding = 16.dp) {
                 Column {
-                    TEyebrow("MARKING ATTENDANCE", dot = c.accent)
+                    TEyebrow(appString(StringKeys.TC_MARKING_ATTENDANCE), dot = c.accent)
                     Spacer(Modifier.height(6.dp))
                     Text(
                         scopeLabel.ifBlank { "${state.className}-${state.section} · ${state.subject}" },
@@ -115,32 +117,32 @@ private fun AttendanceBody(
                     VDatePicker(
                         value = state.date,
                         onValueChange = { viewModel.changeDate(it) },
-                        label = "Date",
+                        label = appString(StringKeys.SCH_DATE),
                     )
                     if (state.isHoliday || state.isCancelled) {
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            if (state.isHoliday) "This is a holiday${state.holidayName?.let { " — $it" } ?: ""}." else "This class is cancelled on this date.",
+                            if (state.isHoliday) appString(StringKeys.TC_HOLIDAY_NOTICE, "name" to (state.holidayName?.let { " — $it" } ?: "")) else appString(StringKeys.TC_CLASS_CANCELLED_DATE),
                             style = VTheme.type.caption.colored(c.warningInk).copy(fontSize = 12.sp),
                         )
                     }
                     Spacer(Modifier.height(12.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        TMetricTile(state.presentCount.toString(), "Present", c.successInk, Modifier.weight(1f))
-                        TMetricTile(state.absentCount.toString(), "Absent", c.dangerInk, Modifier.weight(1f))
-                        TMetricTile(state.lateCount.toString(), "Late", c.warningInk, Modifier.weight(1f))
-                        TMetricTile(state.leaveCount.toString(), "Leave", c.navy, Modifier.weight(1f))
+                        TMetricTile(state.presentCount.toString(), appString(StringKeys.ATT_PRESENT), c.successInk, Modifier.weight(1f))
+                        TMetricTile(state.absentCount.toString(), appString(StringKeys.ATT_ABSENT), c.dangerInk, Modifier.weight(1f))
+                        TMetricTile(state.lateCount.toString(), appString(StringKeys.ATT_LATE), c.warningInk, Modifier.weight(1f))
+                        TMetricTile(state.leaveCount.toString(), appString(StringKeys.TEACHER_LEAVE), c.navy, Modifier.weight(1f))
                     }
                     if (state.alreadyMarked && state.lastMarkedBy != null) {
                         Spacer(Modifier.height(10.dp))
                         Text(
-                            "Last marked by ${state.lastMarkedBy ?: ""}${state.lastMarkedAt?.let { " · ${prettyDate(it.take(10))}" } ?: ""}",
+                            appString(StringKeys.TC_LAST_MARKED_BY, "name" to (state.lastMarkedBy ?: ""), "date" to (state.lastMarkedAt?.let { " · ${prettyDate(it.take(10))}" } ?: "")),
                             style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp),
                         )
                     }
                     Spacer(Modifier.height(12.dp))
                     VButton(
-                        text = "Mark all present",
+                        text = appString(StringKeys.TC_MARK_ALL_PRESENT),
                         onClick = { viewModel.markAllPresent() },
                         full = true,
                         variant = VButtonVariant.Secondary,
@@ -164,14 +166,14 @@ private fun AttendanceBody(
                 Spacer(Modifier.height(8.dp))
             }
             VButton(
-                text = if (state.alreadyMarked) "Update attendance" else "Save attendance",
+                text = if (state.alreadyMarked) appString(StringKeys.TC_UPDATE_ATTENDANCE) else appString(StringKeys.TC_SAVE_ATTENDANCE),
                 onClick = { viewModel.save() },
                 full = true,
                 tone = VButtonTone.Lavender,
                 size = VButtonSize.Lg,
                 loading = state.isSaving,
                 success = state.saveSuccess,
-                successLabel = "Saved",
+                successLabel = appString(StringKeys.TC_SAVED),
                 stateful = true,
                 enabled = students.isNotEmpty() && !state.isHoliday,
             )
@@ -200,7 +202,7 @@ private fun AttendanceStudentRow(s: StudentAttendance, onSetStatus: (String) -> 
             Column(Modifier.weight(1f)) {
                 Text(s.name, style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 14.sp, fontWeight = FontWeight.Bold), maxLines = 1)
                 Text(
-                    if (locked) "Roll ${s.rollNo} · On approved leave" else "Roll ${s.rollNo}",
+                    if (locked) appString(StringKeys.TC_ROLL_ON_LEAVE, "no" to s.rollNo) else appString(StringKeys.TC_ROLL_NO, "no" to s.rollNo),
                     style = VTheme.type.caption.colored(if (locked) c.navy else c.ink3).copy(fontSize = 11.sp),
                 )
             }
@@ -208,10 +210,10 @@ private fun AttendanceStudentRow(s: StudentAttendance, onSetStatus: (String) -> 
         // The 4-state segmented control sits on its own line under the identity for tap comfort.
         Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            StatusChip("P", AttendanceStatus.PRESENT, s.status, c.successInk, locked, onSetStatus, Modifier.weight(1f))
-            StatusChip("A", AttendanceStatus.ABSENT, s.status, c.dangerInk, locked, onSetStatus, Modifier.weight(1f))
-            StatusChip("Late", AttendanceStatus.LATE, s.status, c.warningInk, locked, onSetStatus, Modifier.weight(1f))
-            StatusChip("Leave", AttendanceStatus.LEAVE, s.status, c.navy, locked, onSetStatus, Modifier.weight(1f))
+            StatusChip(appString(StringKeys.TC_P), AttendanceStatus.PRESENT, s.status, c.successInk, locked, onSetStatus, Modifier.weight(1f))
+            StatusChip(appString(StringKeys.TC_A), AttendanceStatus.ABSENT, s.status, c.dangerInk, locked, onSetStatus, Modifier.weight(1f))
+            StatusChip(appString(StringKeys.ATT_LATE), AttendanceStatus.LATE, s.status, c.warningInk, locked, onSetStatus, Modifier.weight(1f))
+            StatusChip(appString(StringKeys.TEACHER_LEAVE), AttendanceStatus.LEAVE, s.status, c.navy, locked, onSetStatus, Modifier.weight(1f))
         }
     }
 }

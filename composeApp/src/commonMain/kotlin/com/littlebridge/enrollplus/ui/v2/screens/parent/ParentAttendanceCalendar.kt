@@ -42,6 +42,8 @@ import com.littlebridge.enrollplus.feature.parent.domain.model.ParentAttendanceD
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VLabel
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import com.littlebridge.enrollplus.util.MONTH_LONG
@@ -166,13 +168,13 @@ internal fun ParentAttendanceCalendar(
         Spacer(Modifier.height(16.dp))
 
         // ── Legend ──────────────────────────────────────────────────────────
-        VLabel("Legend")
+        VLabel(appString(StringKeys.PACL_LEGEND))
         Spacer(Modifier.height(8.dp))
         // COLOR IS SEMANTIC: present=green, late=amber, absent=red — meaning carried by colour.
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            LegendDot(c.successInk, "Present")
-            LegendDot(c.warningInk, "Late")
-            LegendDot(c.dangerInk, "Absent")
+            LegendDot(c.successInk, appString(StringKeys.PACL_PRESENT))
+            LegendDot(c.warningInk, appString(StringKeys.PACL_LATE))
+            LegendDot(c.dangerInk, appString(StringKeys.PACL_ABSENT))
         }
     }
 }

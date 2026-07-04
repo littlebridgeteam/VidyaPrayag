@@ -29,6 +29,8 @@ import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 
 /**
  * SriPreview — `mockups.tsx → SRIPreview`. The preview slot inside the Discovery "School Reputation
@@ -39,12 +41,12 @@ import com.littlebridge.enrollplus.ui.v2.theme.colored
 fun SriPreview(score: Float, modifier: Modifier = Modifier) {
     val c = VTheme.colors
     val signals = listOf(
-        "Academic outcomes" to 92,
-        "Teacher retention" to 84,
-        "Parent sentiment" to 78,
-        "Safety & infra" to 88,
-        "Co-curricular" to 71,
-        "Attendance norms" to 86,
+        appString(StringKeys.SRI_ACADEMIC_OUTCOMES) to 92,
+        appString(StringKeys.SRI_TEACHER_RETENTION) to 84,
+        appString(StringKeys.SRI_PARENT_SENTIMENT) to 78,
+        appString(StringKeys.SRI_SAFETY_INFRA) to 88,
+        appString(StringKeys.SRI_CO_CURRICULAR) to 71,
+        appString(StringKeys.SRI_ATTENDANCE_NORMS) to 86,
     )
     Column(modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.SpaceBetween) {
@@ -56,7 +58,7 @@ fun SriPreview(score: Float, modifier: Modifier = Modifier) {
                     },
                     style = VTheme.type.dataLg.colored(c.navy).copy(fontSize = 32.sp, fontWeight = FontWeight.SemiBold, lineHeight = 32.sp),
                 )
-                Text("Above Lucknow median (7.4)", style = VTheme.type.label.colored(c.ink3).copy(fontSize = 11.sp, fontWeight = FontWeight.Normal, letterSpacing = 0.sp), modifier = Modifier.padding(top = 2.dp))
+                Text(appString(StringKeys.SRI_ABOVE_MEDIAN), style = VTheme.type.label.colored(c.ink3).copy(fontSize = 11.sp, fontWeight = FontWeight.Normal, letterSpacing = 0.sp), modifier = Modifier.padding(top = 2.dp))
             }
             // "+0.3 YoY" chip — success tint bg, success ink.
             Row(
@@ -65,7 +67,7 @@ fun SriPreview(score: Float, modifier: Modifier = Modifier) {
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Icon(VIcons.TrendingUp, contentDescription = null, tint = c.successInk, modifier = Modifier.size(11.dp))
-                Text("+0.3 YoY", style = VTheme.type.label.colored(c.successInk).copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold))
+                Text(appString(StringKeys.SRI_YOY), style = VTheme.type.label.colored(c.successInk).copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold))
             }
         }
         Spacer(Modifier.height(12.dp))

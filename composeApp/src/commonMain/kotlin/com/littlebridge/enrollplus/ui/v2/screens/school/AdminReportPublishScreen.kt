@@ -32,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.feature.reportcard.domain.model.ReportCardModels
 import com.littlebridge.enrollplus.feature.reportcard.presentation.AdminReportPublishViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VButton
@@ -39,6 +40,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 
@@ -68,8 +70,8 @@ fun AdminReportPublishScreen(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            VButton(text = "Back", onClick = onBack, variant = VButtonVariant.Secondary, size = VButtonSize.Sm)
-            Text("Report Card Publishing", style = VTheme.type.h3.colored(c.ink))
+            VButton(text = appString(StringKeys.COMMON_BUTTON_BACK), onClick = onBack, variant = VButtonVariant.Secondary, size = VButtonSize.Sm)
+            Text(appString(StringKeys.SCH_REPORT_CARD_PUBLISHING), style = VTheme.type.h3.colored(c.ink))
         }
 
         // Term input + load
@@ -81,12 +83,12 @@ fun AdminReportPublishScreen(
             OutlinedTextField(
                 value = termInput,
                 onValueChange = { termInput = it },
-                label = { Text("Term") },
+                label = { Text(appString(StringKeys.SCH_TERM)) },
                 modifier = Modifier.weight(1f),
                 singleLine = true,
             )
             VButton(
-                text = "Load",
+                text = appString(StringKeys.COMMON_BUTTON_APPLY),
                 onClick = { viewModel.loadOversight(termInput) },
                 size = VButtonSize.Sm,
             )
@@ -96,10 +98,10 @@ fun AdminReportPublishScreen(
         state.termConfig?.let { config ->
             VCard(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                 Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    ConfigChip("Enabled", if (config.enabled) "Yes" else "No")
-                    ConfigChip("Current Term", config.currentTerm ?: "Not set")
-                    ConfigChip("Concurrency", config.batchConcurrency.toString())
-                    ConfigChip("Fallback", if (config.fallbackOnAiFail) "On" else "Off")
+                    ConfigChip(appString(StringKeys.SCH_ENABLED), if (config.enabled) appString(StringKeys.COMMON_YES) else appString(StringKeys.COMMON_NO))
+                    ConfigChip(appString(StringKeys.SCH_CURRENT_TERM), config.currentTerm ?: appString(StringKeys.SCH_NOT_SET))
+                    ConfigChip(appString(StringKeys.SCH_CONCURRENCY), config.batchConcurrency.toString())
+                    ConfigChip(appString(StringKeys.SCH_FALLBACK), if (config.fallbackOnAiFail) appString(StringKeys.COMMON_YES) else appString(StringKeys.COMMON_NO))
                 }
             }
         }
@@ -109,7 +111,7 @@ fun AdminReportPublishScreen(
                 VCard(Modifier.fillMaxWidth()) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Icon(VIcons.Check, contentDescription = null, tint = c.success, modifier = Modifier.size(16.dp))
-                        Text("$count reports published successfully", style = VTheme.type.body.colored(c.ink))
+                        Text(appString(StringKeys.SCH_N_REPORTS_PUBLISHED, "count" to count.toString()), style = VTheme.type.body.colored(c.ink))
                     }
                 }
             }
@@ -168,19 +170,19 @@ private fun OversightClassCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text("${row.className} ${row.section}", style = VTheme.type.h3.colored(c.ink).copy(fontSize = 15.sp))
-                Text("${row.totalDrafts} drafts", style = VTheme.type.caption.colored(c.ink2))
+                Text("${row.totalDrafts} " + appString(StringKeys.SCH_DRAFTS), style = VTheme.type.caption.colored(c.ink2))
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                StatusChip("Draft", row.draftCount, c.warning)
-                StatusChip("Flagged", row.flaggedCount, c.danger)
-                StatusChip("Approved", row.approvedCount, c.success)
-                StatusChip("Published", row.publishedCount, c.accent)
+                StatusChip(appString(StringKeys.SCH_DRAFT), row.draftCount, c.warning)
+                StatusChip(appString(StringKeys.SCH_FLAGGED), row.flaggedCount, c.danger)
+                StatusChip(appString(StringKeys.SCH_APPROVED), row.approvedCount, c.success)
+                StatusChip(appString(StringKeys.SCH_PUBLISHED), row.publishedCount, c.accent)
             }
 
             if (row.approvedCount > 0 && row.publishedCount == 0) {
                 VButton(
-                    text = if (publishing) "Publishing…" else "Publish ${row.approvedCount} Approved",
+                    text = if (publishing) appString(StringKeys.SCH_PUBLISHING) else appString(StringKeys.SCH_PUBLISH_N_APPROVED, "count" to row.approvedCount.toString()),
                     onClick = onPublish,
                     size = VButtonSize.Sm,
                     enabled = !publishing,

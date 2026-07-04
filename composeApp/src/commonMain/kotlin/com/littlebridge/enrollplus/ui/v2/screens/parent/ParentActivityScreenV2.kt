@@ -33,6 +33,8 @@ import com.littlebridge.enrollplus.feature.parent.presentation.ParentAnnouncemen
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VTag
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
@@ -81,7 +83,7 @@ private fun ParentActivityContent(
             .padding(horizontal = 20.dp)
             .padding(top = 20.dp, bottom = 140.dp),
     ) {
-        Text("Activity", style = VTheme.type.h1.colored(c.ink), modifier = Modifier.padding(bottom = 12.dp))
+        Text(appString(StringKeys.PAC_ACTIVITY), style = VTheme.type.h1.colored(c.ink), modifier = Modifier.padding(bottom = 12.dp))
 
         VStateHost(
             loading = state.isLoading,

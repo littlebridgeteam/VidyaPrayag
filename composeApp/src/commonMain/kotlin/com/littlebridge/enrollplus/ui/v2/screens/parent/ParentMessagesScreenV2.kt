@@ -58,6 +58,8 @@ import com.littlebridge.enrollplus.feature.parent.presentation.ParentMessageView
 import com.littlebridge.enrollplus.ui.v2.components.VAvatar
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
@@ -104,9 +106,9 @@ fun ParentMessagesScreenV2(
         }
     }
     val title = when {
-        state.composeOpen -> "New message"
-        state.openThreadId != null -> state.openThreadName.ifBlank { "Conversation" }
-        else -> "Messages"
+        state.composeOpen -> appString(StringKeys.PM_NEW_MESSAGE)
+        state.openThreadId != null -> state.openThreadName.ifBlank { appString(StringKeys.PM_CONVERSATION) }
+        else -> appString(StringKeys.PM_MESSAGES)
     }
 
     Column(modifier.fillMaxSize().statusBarsPadding()
@@ -148,7 +150,7 @@ fun ParentMessagesBody(
             state.composeOpen -> {
                 Column(Modifier.fillMaxSize()) {
                     VBackHeader(
-                        title = "New message",
+                        title = appString(StringKeys.PM_NEW_MESSAGE),
                         onBack = viewModel::closeCompose,
                     )
                     ParentComposeNewContent(
@@ -166,7 +168,7 @@ fun ParentMessagesBody(
             state.openThreadId != null -> {
                 Column(Modifier.fillMaxSize()) {
                     VBackHeader(
-                        title = state.openThreadName.ifBlank { "Conversation" },
+                        title = state.openThreadName.ifBlank { appString(StringKeys.PM_CONVERSATION) },
                         onBack = viewModel::closeThread,
                     )
                     ParentConversationContent(
@@ -219,8 +221,8 @@ private fun ParentThreadListContent(
             loading = loading,
             error = error,
             isEmpty = isEmpty,
-            emptyTitle = "No messages yet",
-            emptyBody = "Messages from your child's teachers and the school office will appear here.",
+            emptyTitle = appString(StringKeys.PM_NO_MESSAGES),
+            emptyBody = appString(StringKeys.PM_NO_MESSAGES_DESC),
             emptyIcon = VIcons.Chat,
             onRetry = onRetry,
         ) {
@@ -254,7 +256,7 @@ private fun ParentThreadListContent(
         ) {
             Icon(
                 VIcons.Edit3,
-                contentDescription = "New message",
+                contentDescription = appString(StringKeys.PM_NEW_MESSAGE),
                 tint = Color.White,
                 modifier = Modifier.size(24.dp),
             )
@@ -357,8 +359,8 @@ private fun ParentComposeNewContent(
                 loading = loading,
                 error = error,
                 isEmpty = isEmpty,
-                emptyTitle = "No one to message yet",
-                emptyBody = "Link your child to a school to message their teachers and the office.",
+                emptyTitle = appString(StringKeys.PM_NO_ONE_TO_MESSAGE),
+                emptyBody = appString(StringKeys.PM_NO_ONE_TO_MESSAGE_DESC),
                 emptyIcon = VIcons.Chat,
                 onRetry = onRetry,
             ) {
@@ -372,7 +374,7 @@ private fun ParentComposeNewContent(
                 ) {
                     item {
                         Text(
-                            "Select recipient",
+                            appString(StringKeys.PM_SELECT_RECIPIENT),
                             style = VTheme.type.label.colored(c.ink3),
                             modifier = Modifier.padding(bottom = 8.dp),
                         )
@@ -391,7 +393,7 @@ private fun ParentComposeNewContent(
         ParentComposeBar(
             text = body,
             onTextChange = { body = it },
-            placeholder = if (selected == null) "Pick a recipient above…" else "Message ${selected!!.name}…",
+            placeholder = if (selected == null) appString(StringKeys.PM_PICK_RECIPIENT_PH) else appString(StringKeys.PM_MESSAGE_NAME_PH, "name" to selected!!.name),
             enabled = selected != null && !sending,
             sending = sending,
             onSend = {
@@ -492,8 +494,8 @@ private fun ParentConversationContent(
                 loading = loading,
                 error = error,
                 isEmpty = isEmpty,
-                emptyTitle = "No messages yet",
-                emptyBody = "Send a message below to start the conversation.",
+                emptyTitle = appString(StringKeys.PM_NO_MESSAGES),
+                emptyBody = appString(StringKeys.PM_START_CONVERSATION),
                 emptyIcon = VIcons.Chat,
                 onRetry = onRetry,
             ) {
@@ -557,7 +559,7 @@ private fun ParentConversationContent(
         ParentComposeBar(
             text = reply,
             onTextChange = { reply = it },
-            placeholder = "Type a message…",
+            placeholder = appString(StringKeys.PM_TYPE_MESSAGE_PH),
             enabled = !sending,
             sending = sending,
             onSend = {
@@ -600,7 +602,7 @@ private fun ParentMessageBubble(msg: ParentMessageDto) {
         ) {
             if (isDeleted) {
                 Text(
-                    "This message was deleted",
+                    appString(StringKeys.PM_MESSAGE_DELETED),
                     style = VTheme.type.body.colored(textColor).copy(
                         fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
                     ),
@@ -669,7 +671,7 @@ private fun ParentMessageBubble(msg: ParentMessageDto) {
                 if (msg.editedAt != null && !isDeleted) {
                     Spacer(Modifier.size(4.dp))
                     Text(
-                        "edited",
+                        appString(StringKeys.PM_EDITED),
                         style = VTheme.type.caption.colored(timeColor).copy(fontSize = 9.sp),
                     )
                 }

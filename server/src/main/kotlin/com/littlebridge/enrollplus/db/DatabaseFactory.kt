@@ -325,6 +325,10 @@ object DatabaseFactory {
         SyllabusQuizAnswersTable,
         // NCERT syllabus reference (migration_111) — auto-fill data for syllabus.
         NcertSyllabusReferenceTable,
+        // Multi-Language (migration_071/073) — language pref history + server string overrides
+        LanguagePrefHistoryTable,
+        ServerStringOverridesTable,
+        ServerStringOverrideHistoryTable,
         // Server Logs (Notification Deep-Linking & Backend Log Viewer Plan §3.1)
         // Structured server-side log table for the super-admin Log Viewer.
         ServerLogsTable,

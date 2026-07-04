@@ -51,6 +51,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -74,7 +75,12 @@ import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
+import com.littlebridge.enrollplus.core.locale.LocaleManager
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.feature.i18n.domain.model.SUPPORTED_LANGUAGES
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.locale.appString
+import org.koin.compose.koinInject
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.VThemeRegistry
 import com.littlebridge.enrollplus.ui.v2.theme.colored
@@ -98,73 +104,94 @@ private data class EcosystemDomain(
     val metrics: List<String>,
 )
 
-private val SCHOOL_DOMAINS = listOf(
-    EcosystemDomain(VIcons.ListChecks, "School Intelligence", "Understand your school instantly",
-        listOf("Attendance trends", "Performance analytics", "Teacher activity")),
-    EcosystemDomain(VIcons.GraduationCap, "Teacher Empowerment", "Less paperwork. More teaching.",
-        listOf("Lesson planning", "Syllabus progress", "Class insights")),
-    EcosystemDomain(VIcons.Heart, "Parent Connection", "Every parent stays connected.",
-        listOf("Child's journey", "Direct messaging", "Real-time progress")),
-    EcosystemDomain(VIcons.TrendingUp, "Growth Engine", "From admission to graduation.",
-        listOf("Enquiry tracking", "Conversion funnel", "Retention metrics")),
+@Composable
+private fun SchoolDomains() = listOf(
+    EcosystemDomain(VIcons.ListChecks, appString(StringKeys.LV3_ECO_S1_T), appString(StringKeys.LV3_ECO_S1_S),
+        listOf(appString(StringKeys.LV3_ECO_S1_M1), appString(StringKeys.LV3_ECO_S1_M2), appString(StringKeys.LV3_ECO_S1_M3))),
+    EcosystemDomain(VIcons.GraduationCap, appString(StringKeys.LV3_ECO_S2_T), appString(StringKeys.LV3_ECO_S2_S),
+        listOf(appString(StringKeys.LV3_ECO_S2_M1), appString(StringKeys.LV3_ECO_S2_M2), appString(StringKeys.LV3_ECO_S2_M3))),
+    EcosystemDomain(VIcons.Heart, appString(StringKeys.LV3_ECO_S3_T), appString(StringKeys.LV3_ECO_S3_S),
+        listOf(appString(StringKeys.LV3_ECO_S3_M1), appString(StringKeys.LV3_ECO_S3_M2), appString(StringKeys.LV3_ECO_S3_M3))),
+    EcosystemDomain(VIcons.TrendingUp, appString(StringKeys.LV3_ECO_S4_T), appString(StringKeys.LV3_ECO_S4_S),
+        listOf(appString(StringKeys.LV3_ECO_S4_M1), appString(StringKeys.LV3_ECO_S4_M2), appString(StringKeys.LV3_ECO_S4_M3))),
 )
 
-private val PARENT_DOMAINS = listOf(
-    EcosystemDomain(VIcons.Calendar, "Attendance Calendar", "Every day, accounted for.",
-        listOf("Present days", "Late arrivals", "Absent patterns")),
-    EcosystemDomain(VIcons.BookOpen, "Academic Progress", "Marks the moment they're in.",
-        listOf("Live results", "Syllabus coverage", "Report cards")),
-    EcosystemDomain(VIcons.Wallet, "Fee Management", "Fees without the friction.",
-        listOf("Due dates", "Payment history", "Fee notices")),
-    EcosystemDomain(VIcons.Chat, "School Communication", "Talk to the right teacher.",
-        listOf("Direct messages", "Announcements", "PTM scheduling")),
+@Composable
+private fun ParentDomains() = listOf(
+    EcosystemDomain(VIcons.Calendar, appString(StringKeys.LV3_ECO_P1_T), appString(StringKeys.LV3_ECO_P1_S),
+        listOf(appString(StringKeys.LV3_ECO_P1_M1), appString(StringKeys.LV3_ECO_P1_M2), appString(StringKeys.LV3_ECO_P1_M3))),
+    EcosystemDomain(VIcons.BookOpen, appString(StringKeys.LV3_ECO_P2_T), appString(StringKeys.LV3_ECO_P2_S),
+        listOf(appString(StringKeys.LV3_ECO_P2_M1), appString(StringKeys.LV3_ECO_P2_M2), appString(StringKeys.LV3_ECO_P2_M3))),
+    EcosystemDomain(VIcons.Wallet, appString(StringKeys.LV3_ECO_P3_T), appString(StringKeys.LV3_ECO_P3_S),
+        listOf(appString(StringKeys.LV3_ECO_P3_M1), appString(StringKeys.LV3_ECO_P3_M2), appString(StringKeys.LV3_ECO_P3_M3))),
+    EcosystemDomain(VIcons.Chat, appString(StringKeys.LV3_ECO_P4_T), appString(StringKeys.LV3_ECO_P4_S),
+        listOf(appString(StringKeys.LV3_ECO_P4_M1), appString(StringKeys.LV3_ECO_P4_M2), appString(StringKeys.LV3_ECO_P4_M3))),
 )
 
 private data class TimelineEvent(val time: String, val title: String, val detail: String)
 
-private val SCHOOL_DAY = listOf(
-    TimelineEvent("08:00", "School opens", "Gates unlocked, system active"),
-    TimelineEvent("09:15", "Attendance synchronized", "1,240 students marked in 5 minutes"),
-    TimelineEvent("11:30", "Assessment completed", "Results published to parents instantly"),
-    TimelineEvent("02:00", "Parent update sent", "Announcements delivered to 1,200+ families"),
-    TimelineEvent("04:30", "Analytics generated", "AI insights ready for review"),
+@Composable
+private fun SchoolDay() = listOf(
+    TimelineEvent("08:00", appString(StringKeys.LV3_TL_S1_T), appString(StringKeys.LV3_TL_S1_D)),
+    TimelineEvent("09:15", appString(StringKeys.LV3_TL_S2_T), appString(StringKeys.LV3_TL_S2_D)),
+    TimelineEvent("11:30", appString(StringKeys.LV3_TL_S3_T), appString(StringKeys.LV3_TL_S3_D)),
+    TimelineEvent("02:00", appString(StringKeys.LV3_TL_S4_T), appString(StringKeys.LV3_TL_S4_D)),
+    TimelineEvent("04:30", appString(StringKeys.LV3_TL_S5_T), appString(StringKeys.LV3_TL_S5_D)),
 )
 
-private val PARENT_DAY = listOf(
-    TimelineEvent("07:30", "Bus tracking", "Live location shared with school"),
-    TimelineEvent("09:00", "Attendance marked", "Your child checked in — notification received"),
-    TimelineEvent("12:30", "Lunch break", "Cafeteria activity logged"),
-    TimelineEvent("03:30", "School ends", "Pickup confirmed, day summary sent"),
-    TimelineEvent("05:00", "Homework posted", "Assignments and syllabus updates available"),
+@Composable
+private fun ParentDay() = listOf(
+    TimelineEvent("07:30", appString(StringKeys.LV3_TL_P1_T), appString(StringKeys.LV3_TL_P1_D)),
+    TimelineEvent("09:00", appString(StringKeys.LV3_TL_P2_T), appString(StringKeys.LV3_TL_P2_D)),
+    TimelineEvent("12:30", appString(StringKeys.LV3_TL_P3_T), appString(StringKeys.LV3_TL_P3_D)),
+    TimelineEvent("03:30", appString(StringKeys.LV3_TL_P4_T), appString(StringKeys.LV3_TL_P4_D)),
+    TimelineEvent("05:00", appString(StringKeys.LV3_TL_P5_T), appString(StringKeys.LV3_TL_P5_D)),
 )
 
 private data class TrustMetric(val value: String, val label: String)
 
-private val SCHOOL_TRUST = listOf(
-    TrustMetric("24,000+", "Daily student interactions"),
-    TrustMetric("12,000+", "Parent connections"),
-    TrustMetric("99.9%", "Workflow reliability"),
+@Composable
+private fun SchoolTrust() = listOf(
+    TrustMetric(appString(StringKeys.LV3_TRUST_S1_V), appString(StringKeys.LV3_TRUST_S1_L)),
+    TrustMetric("12,000+", appString(StringKeys.LV3_TRUST_S2_L)),
+    TrustMetric("99.9%", appString(StringKeys.LV3_TRUST_S3_L)),
 )
 
-private val PARENT_TRUST = listOf(
-    TrustMetric("Instant", "Attendance notifications"),
-    TrustMetric("Real-time", "Results & marks updates"),
-    TrustMetric("24/7", "Access to school communication"),
+@Composable
+private fun ParentTrust() = listOf(
+    TrustMetric(appString(StringKeys.LV3_TRUST_P1_V), appString(StringKeys.LV3_TRUST_P1_L)),
+    TrustMetric(appString(StringKeys.LV3_TRUST_P2_V), appString(StringKeys.LV3_TRUST_P2_L)),
+    TrustMetric(appString(StringKeys.LV3_TRUST_P3_V), appString(StringKeys.LV3_TRUST_P3_L)),
 )
 
-private val SCHOOL_MORPH = listOf("Manage.", "Automate.", "Grow.", "Transform.")
-private val PARENT_MORPH = listOf("Track.", "Connect.", "Support.", "Celebrate.")
-
-private val SCHOOL_AI = listOf(
-    "Three students may require academic attention.",
-    "Fee collection improved 12% this month.",
-    "Teacher workload imbalance detected in Grade 8.",
+@Composable
+private fun SchoolMorph() = listOf(
+    appString(StringKeys.LV3_SCHOOL_MORPH_1),
+    appString(StringKeys.LV3_SCHOOL_MORPH_2),
+    appString(StringKeys.LV3_SCHOOL_MORPH_3),
+    appString(StringKeys.LV3_SCHOOL_MORPH_4),
 )
 
-private val PARENT_AI = listOf(
-    "Your child's attendance is above class average this month.",
-    "Math scores improved by 8% since last assessment.",
-    "PTM scheduled for Friday — please confirm your slot.",
+@Composable
+private fun ParentMorph() = listOf(
+    appString(StringKeys.LV3_PARENT_MORPH_1),
+    appString(StringKeys.LV3_PARENT_MORPH_2),
+    appString(StringKeys.LV3_PARENT_MORPH_3),
+    appString(StringKeys.LV3_PARENT_MORPH_4),
+)
+
+@Composable
+private fun SchoolAi() = listOf(
+    appString(StringKeys.LV3_AI_S1),
+    appString(StringKeys.LV3_AI_S2),
+    appString(StringKeys.LV3_AI_S3),
+)
+
+@Composable
+private fun ParentAi() = listOf(
+    appString(StringKeys.LV3_AI_P1),
+    appString(StringKeys.LV3_AI_P2),
+    appString(StringKeys.LV3_AI_P3),
 )
 
 private data class TestimonialData(
@@ -173,14 +200,16 @@ private data class TestimonialData(
     val org: String,
 )
 
-private val SCHOOL_TESTIMONIAL = TestimonialData(
-    "Finally a system teachers actually love.",
-    "Principal", "Modern School",
+@Composable
+private fun SchoolTestimonial() = TestimonialData(
+    appString(StringKeys.LV3_TEST_S_QUOTE),
+    appString(StringKeys.LV3_TEST_S_ROLE), appString(StringKeys.LV3_TEST_S_ORG),
 )
 
-private val PARENT_TESTIMONIAL = TestimonialData(
-    "I know exactly how my child is doing, every single day.",
-    "Parent", "Delhi Public School",
+@Composable
+private fun ParentTestimonial() = TestimonialData(
+    appString(StringKeys.LV3_TEST_P_QUOTE),
+    appString(StringKeys.LV3_TEST_P_ROLE), appString(StringKeys.LV3_TEST_P_ORG),
 )
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -370,7 +399,7 @@ private fun ImmersiveHero(
 
         // Brand name
         Text(
-            "EnRoll+",
+            appString(StringKeys.LV3_BRAND),
             style = VTheme.type.h1.colored(Color.White).copy(fontWeight = FontWeight.ExtraBold),
         )
 
@@ -389,9 +418,9 @@ private fun ImmersiveHero(
         ) { t ->
             Text(
                 if (t == 0)
-                    "The intelligence layer\nconnecting your entire school ecosystem."
+                    appString(StringKeys.LV3_SCHOOL_TAGLINE)
                 else
-                    "Your child's school day,\nin your pocket — clear and instant.",
+                    appString(StringKeys.LV3_PARENT_TAGLINE),
                 style = VTheme.type.body.colored(Color.White.copy(alpha = 0.85f)),
                 textAlign = TextAlign.Center,
             )
@@ -411,8 +440,8 @@ private fun ImmersiveHero(
             label = "hero-context",
         ) { t ->
             Text(
-                if (t == 0) "For principals, administrators and teachers"
-                else "For parents who want to stay close",
+                if (t == 0) appString(StringKeys.LV3_SCHOOL_CONTEXT)
+                else appString(StringKeys.LV3_PARENT_CONTEXT),
                 style = VTheme.type.caption.colored(Color.White.copy(alpha = 0.7f)),
                 textAlign = TextAlign.Center,
             )
@@ -422,7 +451,7 @@ private fun ImmersiveHero(
 
 @Composable
 private fun MorphingWord(tab: Int) {
-    val words = if (tab == 0) SCHOOL_MORPH else PARENT_MORPH
+    val words = if (tab == 0) SchoolMorph() else ParentMorph()
     var wordIndex by remember { mutableStateOf(0) }
     LaunchedEffect(tab) {
         wordIndex = 0
@@ -454,7 +483,7 @@ private fun AudiencePills(
     selected: Int,
     onSelect: (Int) -> Unit,
 ) {
-    val labels = listOf("Schools", "Parents")
+    val labels = listOf(appString(StringKeys.LV3_PILL_SCHOOLS), appString(StringKeys.LV3_PILL_PARENTS))
     val icons = listOf(VIcons.School, VIcons.User)
 
     Row(
@@ -551,7 +580,7 @@ private fun CommandCenterPreview(tab: Int, prevTab: Int) {
             if (t == 0) {
                 Column(Modifier.fillMaxWidth()) {
                     Text(
-                        "LIVE SCHOOL COMMAND CENTER",
+                        appString(StringKeys.LV3_CMD_SCHOOL_EYEBROW),
                         style = VTheme.type.label.colored(c.tealDeep),
                         modifier = Modifier.padding(bottom = 12.dp),
                     )
@@ -579,7 +608,7 @@ private fun CommandCenterPreview(tab: Int, prevTab: Int) {
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(
-                                    "Today's Overview",
+                                    appString(StringKeys.LV3_CMD_SCHOOL_TITLE),
                                     style = VTheme.type.h3.colored(Color.White),
                                 )
                                 val pulse by floatTransition.animateFloat(
@@ -601,13 +630,13 @@ private fun CommandCenterPreview(tab: Int, prevTab: Int) {
 
                             Spacer(Modifier.height(16.dp))
 
-                            CommandMetricRow("Students", "1,240", 0.92f)
+                            CommandMetricRow(appString(StringKeys.LV3_CMD_STUDENTS), "1,240", 0.92f)
                             Spacer(Modifier.height(10.dp))
-                            CommandMetricRow("Teachers", "84", 0.75f)
+                            CommandMetricRow(appString(StringKeys.LV3_CMD_TEACHERS), "84", 0.75f)
                             Spacer(Modifier.height(10.dp))
-                            CommandMetricRow("Attendance", "96%", 0.96f)
+                            CommandMetricRow(appString(StringKeys.LV3_CMD_ATTENDANCE), "96%", 0.96f)
                             Spacer(Modifier.height(10.dp))
-                            CommandMetricRow("Fee Collection", "₹12,40,000", 0.85f)
+                            CommandMetricRow(appString(StringKeys.LV3_CMD_FEE), "₹12,40,000", 0.85f)
                         }
                     }
 
@@ -617,15 +646,15 @@ private fun CommandCenterPreview(tab: Int, prevTab: Int) {
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         FloatingMiniMetric(
-                            title = "Admissions",
+                            title = appString(StringKeys.LV3_CMD_ADMISSIONS),
                             value = "+32",
-                            trend = "this month",
+                            trend = appString(StringKeys.LV3_CMD_ADMISSIONS_TREND),
                             modifier = Modifier.weight(1f).graphicsLayer { translationY = floatY * density },
                         )
                         FloatingMiniMetric(
-                            title = "Satisfaction",
+                            title = appString(StringKeys.LV3_CMD_SATISFACTION),
                             value = "98%",
-                            trend = "parent rating",
+                            trend = appString(StringKeys.LV3_CMD_SATISFACTION_TREND),
                             modifier = Modifier.weight(1f).graphicsLayer { translationY = -floatY * density },
                         )
                     }
@@ -633,7 +662,7 @@ private fun CommandCenterPreview(tab: Int, prevTab: Int) {
             } else {
                 Column(Modifier.fillMaxWidth()) {
                     Text(
-                        "YOUR CHILD'S DAY, LIVE",
+                        appString(StringKeys.LV3_CMD_PARENT_EYEBROW),
                         style = VTheme.type.label.colored(c.tealDeep),
                         modifier = Modifier.padding(bottom = 12.dp),
                     )
@@ -660,7 +689,7 @@ private fun CommandCenterPreview(tab: Int, prevTab: Int) {
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(
-                                    "Today's Snapshot",
+                                    appString(StringKeys.LV3_CMD_PARENT_TITLE),
                                     style = VTheme.type.h3.colored(Color.White),
                                 )
                                 val pulse2 by floatTransition.animateFloat(
@@ -676,19 +705,19 @@ private fun CommandCenterPreview(tab: Int, prevTab: Int) {
                                             .clip(RoundedCornerShape(999.dp))
                                             .background(Color(0xFF4ADE80)),
                                     )
-                                    Text("LIVE", style = VTheme.type.label.colored(Color(0xFF4ADE80)))
+                                    Text(appString(StringKeys.LV3_LIVE), style = VTheme.type.label.colored(Color(0xFF4ADE80)))
                                 }
                             }
 
                             Spacer(Modifier.height(16.dp))
 
-                            CommandMetricRow("Attendance", "Present", 0.96f)
+                            CommandMetricRow(appString(StringKeys.LV3_CMD_P_ATTENDANCE), appString(StringKeys.LV3_CMD_P_ATTENDANCE_V), 0.96f)
                             Spacer(Modifier.height(10.dp))
-                            CommandMetricRow("Last Test", "87%", 0.87f)
+                            CommandMetricRow(appString(StringKeys.LV3_CMD_P_LAST_TEST), "87%", 0.87f)
                             Spacer(Modifier.height(10.dp))
-                            CommandMetricRow("Fees Paid", "Current", 1.0f)
+                            CommandMetricRow(appString(StringKeys.LV3_CMD_P_FEES), appString(StringKeys.LV3_CMD_P_FEES_V), 1.0f)
                             Spacer(Modifier.height(10.dp))
-                            CommandMetricRow("Messages", "3 new", 0.3f)
+                            CommandMetricRow(appString(StringKeys.LV3_CMD_P_MESSAGES), "3 new", 0.3f)
                         }
                     }
 
@@ -698,15 +727,15 @@ private fun CommandCenterPreview(tab: Int, prevTab: Int) {
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         FloatingMiniMetric(
-                            title = "Homework",
+                            title = appString(StringKeys.LV3_CMD_HOMEWORK),
                             value = "2",
-                            trend = "pending today",
+                            trend = appString(StringKeys.LV3_CMD_HOMEWORK_TREND),
                             modifier = Modifier.weight(1f).graphicsLayer { translationY = floatY * density },
                         )
                         FloatingMiniMetric(
-                            title = "Next PTM",
+                            title = appString(StringKeys.LV3_CMD_PTM),
                             value = "Fri",
-                            trend = "3:00 PM slot",
+                            trend = appString(StringKeys.LV3_CMD_PTM_TREND),
                             modifier = Modifier.weight(1f).graphicsLayer { translationY = -floatY * density },
                         )
                     }
@@ -779,8 +808,7 @@ private fun FloatingMiniMetric(
 private fun EcosystemSection(tab: Int, prevTab: Int) {
     val c = VTheme.colors
     val d = VTheme.dimens
-    val domains = if (tab == 0) SCHOOL_DOMAINS else PARENT_DOMAINS
-    val eyebrow = if (tab == 0) "ONE PLATFORM. FOUR ECOSYSTEMS." else "EVERYTHING YOU NEED. IN ONE APP."
+    val domains = if (tab == 0) SchoolDomains() else ParentDomains()
 
     Column(Modifier.fillMaxWidth().padding(horizontal = d.lg)) {
         AnimatedContent(
@@ -788,7 +816,7 @@ private fun EcosystemSection(tab: Int, prevTab: Int) {
             transitionSpec = { tabSlide(tab, prevTab) },
             label = "eco-eyebrow",
         ) { t ->
-            Text(if (t == 0) "ONE PLATFORM. FOUR ECOSYSTEMS." else "EVERYTHING YOU NEED. IN ONE APP.",
+            Text(if (t == 0) appString(StringKeys.LV3_ECO_SCHOOL_EYEBROW) else appString(StringKeys.LV3_ECO_PARENT_EYEBROW),
                 style = VTheme.type.label.colored(c.tealDeep))
         }
         Spacer(Modifier.height(16.dp))
@@ -882,7 +910,7 @@ private fun EcosystemCard(domain: EcosystemDomain, index: Int) {
 private fun AIInsightSection(tab: Int, prevTab: Int) {
     val c = VTheme.colors
     val d = VTheme.dimens
-    val insights = if (tab == 0) SCHOOL_AI else PARENT_AI
+    val insights = if (tab == 0) SchoolAi() else ParentAi()
 
     var insightIndex by remember(tab) { mutableStateOf(0) }
     var displayedText by remember { mutableStateOf("") }
@@ -911,7 +939,7 @@ private fun AIInsightSection(tab: Int, prevTab: Int) {
     Column(Modifier.fillMaxWidth().padding(horizontal = d.lg)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Icon(VIcons.Sparkles, contentDescription = null, tint = c.accent, modifier = Modifier.size(18.dp))
-            Text("EnRoll Intelligence", style = VTheme.type.h4.colored(c.accentDeep).copy(fontWeight = FontWeight.Bold))
+            Text(appString(StringKeys.LV3_AI_TITLE), style = VTheme.type.h4.colored(c.accentDeep).copy(fontWeight = FontWeight.Bold))
         }
         Spacer(Modifier.height(12.dp))
 
@@ -941,7 +969,7 @@ private fun AIInsightSection(tab: Int, prevTab: Int) {
                             .clip(RoundedCornerShape(999.dp))
                             .background(c.accent),
                     )
-                    Text("AI ANALYSIS", style = VTheme.type.label.colored(c.accentDeep))
+                    Text(appString(StringKeys.LV3_AI_LABEL), style = VTheme.type.label.colored(c.accentDeep))
                 }
                 Spacer(Modifier.height(12.dp))
                 // Typing text
@@ -971,8 +999,7 @@ private fun AIInsightSection(tab: Int, prevTab: Int) {
 private fun SchoolTimelineSection(tab: Int, prevTab: Int) {
     val c = VTheme.colors
     val d = VTheme.dimens
-    val events = if (tab == 0) SCHOOL_DAY else PARENT_DAY
-    val eyebrow = if (tab == 0) "A DAY WITH EnRoll+" else "YOUR CHILD'S DAY, TIMELINED"
+    val events = if (tab == 0) SchoolDay() else ParentDay()
 
     Column(Modifier.fillMaxWidth().padding(horizontal = d.lg)) {
         AnimatedContent(
@@ -980,7 +1007,7 @@ private fun SchoolTimelineSection(tab: Int, prevTab: Int) {
             transitionSpec = { tabSlide(tab, prevTab) },
             label = "timeline-eyebrow",
         ) { t ->
-            Text(if (t == 0) "A DAY WITH EnRoll+" else "YOUR CHILD'S DAY, TIMELINED",
+            Text(if (t == 0) appString(StringKeys.LV3_TL_SCHOOL_EYEBROW) else appString(StringKeys.LV3_TL_PARENT_EYEBROW),
                 style = VTheme.type.label.colored(c.tealDeep))
         }
         Spacer(Modifier.height(16.dp))
@@ -1036,7 +1063,7 @@ private fun TimelineRow(event: TimelineEvent, isLast: Boolean) {
 private fun TrustMetricsSection(tab: Int, prevTab: Int) {
     val c = VTheme.colors
     val d = VTheme.dimens
-    val metrics = if (tab == 0) SCHOOL_TRUST else PARENT_TRUST
+    val metrics = if (tab == 0) SchoolTrust() else ParentTrust()
 
     val revealAlpha = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
@@ -1055,7 +1082,7 @@ private fun TrustMetricsSection(tab: Int, prevTab: Int) {
             transitionSpec = { tabSlide(tab, prevTab) },
             label = "trust-eyebrow",
         ) { t ->
-            Text(if (t == 0) "NUMBERS THAT MATTER" else "PEACE OF MIND, GUARANTEED",
+            Text(if (t == 0) appString(StringKeys.LV3_TRUST_SCHOOL_EYEBROW) else appString(StringKeys.LV3_TRUST_PARENT_EYEBROW),
                 style = VTheme.type.label.colored(c.tealDeep))
         }
         Spacer(Modifier.height(16.dp))
@@ -1100,7 +1127,7 @@ private fun TrustMetricRow(metric: TrustMetric) {
 private fun TestimonialSection(tab: Int, prevTab: Int) {
     val c = VTheme.colors
     val d = VTheme.dimens
-    val data = if (tab == 0) SCHOOL_TESTIMONIAL else PARENT_TESTIMONIAL
+    val data = if (tab == 0) SchoolTestimonial() else ParentTestimonial()
 
     Box(
         Modifier
@@ -1117,7 +1144,7 @@ private fun TestimonialSection(tab: Int, prevTab: Int) {
             transitionSpec = { tabSlide(tab, prevTab) },
             label = "testimonial",
         ) { t ->
-            val td = if (t == 0) SCHOOL_TESTIMONIAL else PARENT_TESTIMONIAL
+            val td = if (t == 0) SchoolTestimonial() else ParentTestimonial()
             Column {
                 Text(
                     "\u201C",
@@ -1185,7 +1212,7 @@ private fun PremiumCtaDock(
             .padding(bottom = 12.dp),
     ) {
         Text(
-            "Ready to experience smarter education?",
+            appString(StringKeys.LV3_CTA_PROMPT),
             style = VTheme.type.h4.colored(c.ink2).copy(fontWeight = FontWeight.SemiBold),
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),
@@ -1206,7 +1233,7 @@ private fun PremiumCtaDock(
             ) { t ->
                 if (t == 0) {
                     VButton(
-                        text = "Enter EnRoll+",
+                        text = appString(StringKeys.LV3_CTA_ENTER),
                         onClick = onAdmin,
                         variant = VButtonVariant.Primary,
                         tone = VButtonTone.Teal,
@@ -1219,7 +1246,7 @@ private fun PremiumCtaDock(
                     )
                 } else {
                     VButton(
-                        text = "Enter EnRoll+",
+                        text = appString(StringKeys.LV3_CTA_ENTER),
                         onClick = onParent,
                         variant = VButtonVariant.Primary,
                         tone = VButtonTone.Teal,
@@ -1234,7 +1261,7 @@ private fun PremiumCtaDock(
             }
 
             // Secondary button — 40%
-            val secondaryText = if (tab == 0) "I'm a Parent" else "I'm a School"
+            val secondaryText = if (tab == 0) appString(StringKeys.LV3_CTA_PARENT) else appString(StringKeys.LV3_CTA_SCHOOL)
             val secondaryAction = if (tab == 0) onParent else onAdmin
             VButton(
                 text = secondaryText,
@@ -1255,27 +1282,68 @@ private fun PremiumCtaDock(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                "By continuing you agree to our ",
+                appString(StringKeys.LV3_FOOTER_PREFIX),
                 style = VTheme.type.caption.colored(c.ink3),
                 textAlign = TextAlign.Center,
             )
             Text(
-                "Terms",
+                appString(StringKeys.LV3_FOOTER_TERMS),
                 style = VTheme.type.caption.colored(c.tealDeep).copy(fontWeight = FontWeight.SemiBold),
                 modifier = Modifier.clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                 ) { onLegal(LegalDoc.Terms) },
             )
-            Text(" & ", style = VTheme.type.caption.colored(c.ink3))
+            Text(appString(StringKeys.LV3_FOOTER_AND), style = VTheme.type.caption.colored(c.ink3))
             Text(
-                "Privacy",
+                appString(StringKeys.LV3_FOOTER_PRIVACY),
                 style = VTheme.type.caption.colored(c.tealDeep).copy(fontWeight = FontWeight.SemiBold),
                 modifier = Modifier.clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                 ) { onLegal(LegalDoc.Privacy) },
             )
+        }
+
+        Spacer(Modifier.height(10.dp))
+        LanguageSwitcherRow()
+    }
+}
+
+@Composable
+private fun LanguageSwitcherRow() {
+    val localeManager = koinInject<LocaleManager>()
+    val currentLocale by localeManager.currentLocale.collectAsState()
+    val c = VTheme.colors
+
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        SUPPORTED_LANGUAGES.forEach { lang ->
+            val isSelected = lang.code == currentLocale
+            Text(
+                text = lang.nativeName,
+                style = VTheme.type.caption.colored(if (isSelected) c.tealDeep else c.ink3).copy(
+                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                ),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(if (isSelected) c.tealDeep.copy(alpha = 0.08f) else Color.Transparent)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                    ) { localeManager.setLocale(lang.code) }
+                    .padding(horizontal = 10.dp, vertical = 4.dp),
+            )
+            if (lang.code != SUPPORTED_LANGUAGES.last().code) {
+                Text(
+                    text = "·",
+                    style = VTheme.type.caption.colored(c.ink3),
+                    modifier = Modifier.padding(horizontal = 2.dp),
+                )
+            }
         }
     }
 }

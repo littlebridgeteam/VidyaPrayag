@@ -44,6 +44,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 
@@ -85,7 +87,7 @@ fun ParentNudgeCard(
             }
             Column(Modifier.weight(1f)) {
                 Text(
-                    nudge.headline.ifBlank { "A little support for ${nudge.childName}" },
+                    nudge.headline.ifBlank { appString(StringKeys.PNC_HEADLINE_FALLBACK, "name" to nudge.childName) },
                     style = VTheme.type.h4.colored(c.ink).copy(fontWeight = FontWeight.Bold, fontSize = 15.sp),
                 )
                 if (nudge.message.isNotBlank()) {
@@ -123,7 +125,7 @@ fun ParentNudgeCard(
         Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             VButton(
-                text = "Got it",
+                text = appString(StringKeys.PNC_GOT_IT),
                 onClick = onDismiss,
                 variant = VButtonVariant.Ghost,
                 size = VButtonSize.Sm,

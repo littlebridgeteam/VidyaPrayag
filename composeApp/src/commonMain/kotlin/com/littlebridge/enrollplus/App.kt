@@ -30,6 +30,8 @@ import coil3.memory.MemoryCache
 import coil3.network.ktor3.KtorNetworkFetcherFactory
 import coil3.request.crossfade
 import com.littlebridge.enrollplus.presentation.MainViewModel
+import com.littlebridge.enrollplus.core.locale.LocaleManager
+import com.littlebridge.enrollplus.ui.v2.locale.LocalLocale
 import com.littlebridge.enrollplus.ui.v2.navigation.NavGraphV2
 import com.littlebridge.enrollplus.ui.v2.screens.auth.SplashScreenV2
 import com.littlebridge.enrollplus.ui.v2.theme.VColors
@@ -81,6 +83,10 @@ fun App(
 
         val viewModel: MainViewModel = koinViewModel()
         val authState by viewModel.authState.collectAsState()
+
+        // Multi-Language: provide the current locale to all composables via LocalLocale.
+        val localeManager = koinInject<LocaleManager>()
+        val currentLocale by localeManager.currentLocale.collectAsState()
 
         val httpClient = koinInject<HttpClient>()
         val platform = koinInject<Platform>()
@@ -161,6 +167,8 @@ fun App(
         }
 
         Box(modifier = Modifier.fillMaxSize().background(splashColors.background)) {
+         // Multi-Language: provide the current locale to all composables below.
+         CompositionLocalProvider(LocalLocale provides currentLocale) {
             // PHASE 2 — Splash shows the brand while the session check (JWT + role) runs in
             // parallel inside MainViewModel.authState. The instant `isLoaded` flips true we
             // crossfade straight into the role-driven graph: no artificial hold, no blank frame.
@@ -216,6 +224,7 @@ fun App(
                         .padding(horizontal = 8.dp, vertical = 2.dp)
                 )
             }
+         } // end CompositionLocalProvider
         }
     }
 }

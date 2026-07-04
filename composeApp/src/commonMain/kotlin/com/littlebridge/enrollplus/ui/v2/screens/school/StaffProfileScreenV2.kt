@@ -38,6 +38,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
@@ -67,7 +69,7 @@ fun StaffProfileScreenV2(
     Column(modifier.fillMaxSize().statusBarsPadding()
         .imePadding()
         .navigationBarsPadding()) {
-        VBackHeader(title = "Staff", onBack = onBack)
+        VBackHeader(title = appString(StringKeys.SCH_STAFF), onBack = onBack)
         StaffProfileContent(
             member = member,
             isLoading = state.isLoading,
@@ -104,8 +106,8 @@ private fun StaffProfileContent(
             loading = isLoading,
             error = error,
             isEmpty = member == null && !isLoading && error == null,
-            emptyTitle = "No profile",
-            emptyBody = "This staff member's record could not be found.",
+            emptyTitle = appString(StringKeys.SCH_NO_PROFILE),
+            emptyBody = appString(StringKeys.SCH_NO_PROFILE_DESC),
             emptyIcon = VIcons.User,
             onRetry = onRetry,
         ) {
@@ -124,12 +126,12 @@ private fun StaffProfileContent(
                 }
             }
 
-            VSectionHeader(title = "CONTACT")
+            VSectionHeader(title = appString(StringKeys.SCH_CONTACT))
             VCard {
                 val phone = m.phone?.takeIf { it.isNotBlank() }
                 val email = m.email?.takeIf { it.isNotBlank() }
                 if (phone == null && email == null) {
-                    Text("No contact details on file.", style = VTheme.type.body.colored(c.ink2))
+                    Text(appString(StringKeys.SCH_NO_CONTACT_DETAILS), style = VTheme.type.body.colored(c.ink2))
                 } else {
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         phone?.let {
@@ -150,7 +152,7 @@ private fun StaffProfileContent(
 
             Spacer(Modifier.height(12.dp))
             VButton(
-                text = "Remove from school",
+                text = appString(StringKeys.SCH_REMOVE_FROM_SCHOOL),
                 onClick = { confirmRemove = true },
                 variant = VButtonVariant.Destructive,
                 full = true,
@@ -163,10 +165,9 @@ private fun StaffProfileContent(
 
     VConfirmDialog(
         visible = confirmRemove,
-        title = "Remove staff member",
-        message = "Remove ${member?.fullName ?: "this staff member"} from your school? " +
-            "Their record will be hidden. This can be reversed by re-adding them.",
-        confirmLabel = "Remove",
+        title = appString(StringKeys.SCH_REMOVE_STAFF_MEMBER),
+        message = appString(StringKeys.SCH_REMOVE_STAFF_CONFIRM, "name" to (member?.fullName ?: appString(StringKeys.SCH_STAFF))),
+        confirmLabel = appString(StringKeys.SCH_REMOVE),
         icon = VIcons.AlertTriangle,
         onConfirm = { confirmRemove = false; onRemove() },
         onDismiss = { confirmRemove = false },

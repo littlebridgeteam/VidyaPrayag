@@ -28,9 +28,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.feature.health.domain.model.HealthAlertDto
 import com.littlebridge.enrollplus.feature.health.presentation.TeacherHealthAlertsViewModel
+import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
@@ -52,15 +54,15 @@ fun TeacherHealthAlertsScreenV2(
             .statusBarsPadding()
             .navigationBarsPadding(),
     ) {
-        VBackHeader(title = "Health Alerts", onBack = onBack)
+        VBackHeader(title = appString(StringKeys.TC_HEALTH_ALERTS), onBack = onBack)
 
         VStateHost(
             loading = state.isLoading,
             error = state.error,
             isEmpty = state.alerts.isEmpty(),
             onRetry = viewModel::load,
-            emptyTitle = "No health alerts",
-            emptyBody = "Students in your classes have no recorded allergies or chronic conditions.",
+            emptyTitle = appString(StringKeys.TC_NO_HEALTH_ALERTS),
+            emptyBody = appString(StringKeys.TC_NO_HEALTH_ALERTS_DESC),
             emptyIcon = VIcons.Heart,
             modifier = Modifier.fillMaxSize(),
         ) {
@@ -80,7 +82,7 @@ private fun TeacherHealthAlertsContent(alerts: List<HealthAlertDto>) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(
-            "Students with allergies or chronic conditions in your classes",
+            appString(StringKeys.TC_HEALTH_ALERTS_LIST_DESC),
             style = VTheme.type.caption.colored(c.ink2),
         )
 
@@ -103,10 +105,10 @@ private fun TeacherHealthAlertsContent(alerts: List<HealthAlertDto>) {
                         val allergies = parseJsonArray(alert.allergies)
                         val conditions = parseJsonArray(alert.chronicConditions)
                         if (allergies.isNotEmpty()) {
-                            Text("Allergies: ${allergies.joinToString(", ")}", style = VTheme.type.caption.colored(c.dangerInk))
+                            Text(appString(StringKeys.TC_ALLERGIES_LABEL, "list" to allergies.joinToString(", ")), style = VTheme.type.caption.colored(c.dangerInk))
                         }
                         if (conditions.isNotEmpty()) {
-                            Text("Conditions: ${conditions.joinToString(", ")}", style = VTheme.type.caption.colored(c.ink2))
+                            Text(appString(StringKeys.TC_CONDITIONS_LABEL, "list" to conditions.joinToString(", ")), style = VTheme.type.caption.colored(c.ink2))
                         }
                     }
                 }

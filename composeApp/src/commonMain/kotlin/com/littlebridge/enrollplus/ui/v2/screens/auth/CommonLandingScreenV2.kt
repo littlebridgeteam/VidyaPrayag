@@ -75,7 +75,9 @@ import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
+import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.VThemeRegistry
 import com.littlebridge.enrollplus.ui.v2.theme.colored
@@ -195,13 +197,13 @@ fun CommonLandingScreenV2(
                     ) { t ->
                         Column {
                             Text(
-                                if (t == 0) "SCHOOL MANAGEMENT" else "PARENT PORTAL",
+                                if (t == 0) appString(StringKeys.LANDING_SCHOOL_EYEBROW) else appString(StringKeys.LANDING_PARENT_EYEBROW),
                                 style = VTheme.type.label.colored(c.tealDeep),
                             )
                             Spacer(Modifier.height(8.dp))
                             Text(
-                                if (t == 0) "Run your whole school\nfrom one screen."
-                                else "Your child's school day,\nin your pocket.",
+                                if (t == 0) appString(StringKeys.LANDING_SCHOOL_HEADLINE)
+                                else appString(StringKeys.LANDING_PARENT_HEADLINE),
                                 style = VTheme.type.h1.colored(c.ink),
                             )
                             Spacer(Modifier.height(12.dp))
@@ -209,9 +211,9 @@ fun CommonLandingScreenV2(
                                 minLines = 3,
                                 maxLines = 3,
                                 text = if (t == 0)
-                                    "Attendance, admissions, results, fees and parent messaging — one platform your staff actually want to use."
+                                    appString(StringKeys.LANDING_SCHOOL_SUB)
                                 else
-                                    "Attendance, marks, fees and messages from the school — clear, instant, and always up to date.",
+                                    appString(StringKeys.LANDING_PARENT_SUB),
                                 style = VTheme.type.body.colored(c.ink2),
                             )
                         }
@@ -241,20 +243,20 @@ fun CommonLandingScreenV2(
                     if (t == 0) {
                         TabPane(
                             heroImage = { ContainedHeroPhoto(it) },
-                            features = SCHOOL_FEATURES,
+                            features = SchoolFeatures(),
                             imageA = Res.drawable.landing_school_1,
                             imageB = Res.drawable.landing_school_2,
                             networkImage = null,
-                            imageLabel = "A real school, run on VidyaSetu",
+                            imageLabel = appString(StringKeys.LANDING_IMG_LABEL_SCHOOL),
                         )
                     } else {
                         TabPane(
                             heroImage = { ContainedHeroPhoto(it) },
-                            features = PARENT_FEATURES,
+                            features = ParentFeatures(),
                             imageA = Res.drawable.landing_school_2,
                             imageB = Res.drawable.landing_school_1,
                             networkImage = PARENT_HERO_URL,
-                            imageLabel = "Stay close to your child's progress",
+                            imageLabel = appString(StringKeys.LANDING_IMG_LABEL_PARENT),
                         )
                     }
                 }
@@ -284,70 +286,72 @@ private data class LandingFeature(
 )
 
 /** Schools tab — drawn from the Admin + Teacher screen set. */
-private val SCHOOL_FEATURES = listOf(
+@Composable
+private fun SchoolFeatures() = listOf(
     LandingFeature(
         VIcons.ListChecks,
-        "Daily attendance in seconds",
-        "Mark a whole class in one pass — absences alert the right parent the moment you save.",
+        appString(StringKeys.LANDING_SCHOOL_F1_T),
+        appString(StringKeys.LANDING_SCHOOL_F1_D),
     ),
     LandingFeature(
         VIcons.Users,
-        "Admissions, end to end",
-        "Track every enquiry from first call to enrolment, with follow-ups and conversion built in.",
+        appString(StringKeys.LANDING_SCHOOL_F2_T),
+        appString(StringKeys.LANDING_SCHOOL_F2_D),
     ),
     LandingFeature(
         VIcons.TrendingUp,
-        "See trouble before it lands",
-        "Class and faculty analytics surface the students and teachers who need attention early.",
+        appString(StringKeys.LANDING_SCHOOL_F3_T),
+        appString(StringKeys.LANDING_SCHOOL_F3_D),
     ),
     LandingFeature(
         VIcons.FileText,
-        "Publish results, cleanly",
-        "Enter marks, review the class spread, and release report-ready results in one flow.",
+        appString(StringKeys.LANDING_SCHOOL_F4_T),
+        appString(StringKeys.LANDING_SCHOOL_F4_D),
     ),
     LandingFeature(
         VIcons.Megaphone,
-        "One voice to every parent",
-        "Announcements, messages and PTM scheduling — every conversation in one place, forever.",
+        appString(StringKeys.LANDING_SCHOOL_F5_T),
+        appString(StringKeys.LANDING_SCHOOL_F5_D),
     ),
     LandingFeature(
         VIcons.ShieldCheck,
-        "Accountability, not paperwork",
-        "Syllabus coverage, leave approvals and teacher compliance, tracked without the spreadsheets.",
+        appString(StringKeys.LANDING_SCHOOL_F6_T),
+        appString(StringKeys.LANDING_SCHOOL_F6_D),
     ),
 )
 
 /** Parents tab — drawn from the Parent screen set. */
-private val PARENT_FEATURES = listOf(
+@Composable
+private fun ParentFeatures() = listOf(
     LandingFeature(
         VIcons.Calendar,
-        "Every day, accounted for",
-        "A clear month calendar of present, late and absent days — no guessing, no chasing.",
+        appString(StringKeys.LANDING_PARENT_F1_T),
+        appString(StringKeys.LANDING_PARENT_F1_D),
     ),
     LandingFeature(
         VIcons.BookOpen,
-        "Marks the moment they're in",
-        "Real published results and syllabus progress for your child, the day the school releases them.",
+        appString(StringKeys.LANDING_PARENT_F2_T),
+        appString(StringKeys.LANDING_PARENT_F2_D),
     ),
     LandingFeature(
         VIcons.Wallet,
-        "Fees without the friction",
-        "See exactly what's due and what's paid, with the school's fee notices in the same place.",
+        appString(StringKeys.LANDING_PARENT_F3_T),
+        appString(StringKeys.LANDING_PARENT_F3_D),
     ),
     LandingFeature(
         VIcons.Chat,
-        "Talk to the right teacher",
-        "Message your child's class teacher or the school office directly — replies land in one thread.",
+        appString(StringKeys.LANDING_PARENT_F4_T),
+        appString(StringKeys.LANDING_PARENT_F4_D),
     ),
     LandingFeature(
         VIcons.Bell,
-        "Never miss what matters",
-        "School announcements and activity, filtered to what's relevant to your family.",
+        appString(StringKeys.LANDING_PARENT_F5_T),
+        appString(StringKeys.LANDING_PARENT_F5_D),
     ),
     LandingFeature(
         VIcons.Heart,
-        "Apply for leave in a tap",
-        "Request a day off and it routes straight to the class teacher, with status you can follow.",
+        appString(StringKeys.LANDING_PARENT_F6_T),
+        appString(StringKeys.LANDING_PARENT_F6_D),
     ),
 )
 
@@ -370,7 +374,7 @@ private fun TabSwitcher(
     modifier: Modifier = Modifier,
 ) {
     val c = VTheme.colors
-    val labels = listOf("For Schools", "For Parents")
+    val labels = listOf(appString(StringKeys.LANDING_TAB_SCHOOLS), appString(StringKeys.LANDING_TAB_PARENTS))
 
     Box(
         modifier
@@ -650,7 +654,7 @@ private fun CtaDock(
             ) {
                 if (t == 0) {
                     VButton(
-                        text = "Get Started — Schools",
+                        text = appString(StringKeys.LANDING_CTA_SCHOOLS),
                         onClick = onAdmin,
                         variant = VButtonVariant.Primary,
                         tone = VButtonTone.Teal,
@@ -669,14 +673,14 @@ private fun CtaDock(
                     )
 
                     OutlinedCta(
-                        text = "For Parents",
+                        text = appString(StringKeys.LANDING_OUTLINED_PARENTS),
                         onClick = onParent,
                         modifier = Modifier.weight(0.3f)
                     )
 
                 } else {
                     VButton(
-                        text = "Get Started — Parents",
+                        text = appString(StringKeys.LANDING_CTA_PARENTS),
                         onClick = onParent,
                         variant = VButtonVariant.Primary,
                         tone = VButtonTone.Teal,
@@ -695,7 +699,7 @@ private fun CtaDock(
                     )
 
                     OutlinedCta(
-                        text = "For Schools",
+                        text = appString(StringKeys.LANDING_OUTLINED_SCHOOLS),
                         onClick = onAdmin,
                         modifier = Modifier.weight(0.3f)
                     )
@@ -710,21 +714,21 @@ private fun CtaDock(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                "By continuing you agree to our ",
+                appString(StringKeys.LANDING_FOOTER_PREFIX),
                 style = VTheme.type.caption.colored(c.ink3),
                 textAlign = TextAlign.Center,
             )
             Text(
-                "Terms",
+                appString(StringKeys.LANDING_FOOTER_TERMS),
                 style = VTheme.type.caption.colored(c.tealDeep).copy(fontWeight = FontWeight.SemiBold),
                 modifier = Modifier.clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                 ) { onLegal(LegalDoc.Terms) },
             )
-            Text(" & ", style = VTheme.type.caption.colored(c.ink3))
+            Text(appString(StringKeys.LANDING_FOOTER_AND), style = VTheme.type.caption.colored(c.ink3))
             Text(
-                "Privacy",
+                appString(StringKeys.LANDING_FOOTER_PRIVACY),
                 style = VTheme.type.caption.colored(c.tealDeep).copy(fontWeight = FontWeight.SemiBold),
                 modifier = Modifier.clickable(
                     interactionSource = remember { MutableInteractionSource() },
@@ -901,7 +905,7 @@ fun AnimatedBrandHeader(
             ) {
 
                 Text(
-                    text = "EnRoll+",
+                    text = appString(StringKeys.LANDING_BRAND),
                     style = VTheme.type.h1
                         .colored(Color.White)
                         .copy(

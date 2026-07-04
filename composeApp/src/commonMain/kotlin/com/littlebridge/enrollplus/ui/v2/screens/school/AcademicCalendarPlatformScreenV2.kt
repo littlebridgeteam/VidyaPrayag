@@ -55,6 +55,8 @@ import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.util.todayIso
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -90,11 +92,11 @@ fun AcademicCalendarPlatformScreenV2(
 
     Column(modifier.fillMaxSize().background(c.background).statusBarsPadding().navigationBarsPadding()) {
         VBackHeader(
-            title = "Academic Calendar",
+            title = appString(StringKeys.ACALP_TITLE),
             onBack = onBack,
             action = {
                 VButton(
-                    text = "Create",
+                    text = appString(StringKeys.ACALP_CREATE),
                     onClick = onCreateEvent,
                     size = VButtonSize.Sm,
                     tone = VButtonTone.Teal,
@@ -108,8 +110,8 @@ fun AcademicCalendarPlatformScreenV2(
             error = state.errorMessage,
             isEmpty = state.isEmpty,
             modifier = Modifier.weight(1f).fillMaxWidth(),
-            emptyTitle = "No calendar yet",
-            emptyBody = "Create your first academic event to start planning the year.",
+            emptyTitle = appString(StringKeys.ACALP_EMPTY_TITLE),
+            emptyBody = appString(StringKeys.ACALP_EMPTY_BODY),
             emptyIcon = VIcons.Calendar,
             onRetry = { viewModel.load() },
         ) {
@@ -130,7 +132,7 @@ fun AcademicCalendarPlatformScreenV2(
                     // ── 2. Upcoming Highlights carousel ──────────────────────
                     val highlights = dash?.upcomingHighlights.orEmpty()
                     if (highlights.isNotEmpty()) {
-                        VLabel("Upcoming highlights")
+                        VLabel(appString(StringKeys.ACALP_HIGHLIGHTS))
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             items(highlights.size) { i ->
                                 HighlightCard(highlights[i], onClick = { onOpenEvent(highlights[i].id) })
@@ -139,7 +141,7 @@ fun AcademicCalendarPlatformScreenV2(
                     }
 
                     // ── 3. View Switcher ─────────────────────────────────────
-                    VLabel("View")
+                    VLabel(appString(StringKeys.ACALP_VIEW))
                     ViewSwitcher(state.viewMode, onSelect = viewModel::setViewMode)
 
                     // ── 4 / 5 — content for the selected view ────────────────
@@ -152,14 +154,14 @@ fun AcademicCalendarPlatformScreenV2(
                     // ── 5. Upcoming Events Timeline (always shown) ───────────
                     val timeline = dash?.upcomingTimeline.orEmpty()
                     if (timeline.isNotEmpty()) {
-                        VLabel("Upcoming events")
+                        VLabel(appString(StringKeys.ACALP_UPCOMING))
                         timeline.take(6).forEach { EventRow(it, onClick = { onOpenEvent(it.id) }) }
                     }
 
                     // ── 6. Draft Events ──────────────────────────────────────
                     val drafts = dash?.draftEvents.orEmpty()
                     if (drafts.isNotEmpty()) {
-                        VLabel("Draft events")
+                        VLabel(appString(StringKeys.ACALP_DRAFT_EVENTS))
                         drafts.take(6).forEach {
                             EventRow(it, onClick = { onOpenEvent(it.id) }, trailingBadge = "DRAFT")
                         }
@@ -168,7 +170,7 @@ fun AcademicCalendarPlatformScreenV2(
                     // ── 7. Published Events ──────────────────────────────────
                     val published = dash?.publishedEvents.orEmpty()
                     if (published.isNotEmpty()) {
-                        VLabel("Published events")
+                        VLabel(appString(StringKeys.ACALP_PUBLISHED_EVENTS))
                         published.take(6).forEach {
                             EventRow(it, onClick = { onOpenEvent(it.id) }, trailingBadge = "LIVE")
                         }
@@ -177,14 +179,14 @@ fun AcademicCalendarPlatformScreenV2(
                     // ── 8. Academic Milestones ───────────────────────────────
                     val milestones = dash?.milestones.orEmpty()
                     if (milestones.isNotEmpty()) {
-                        VLabel("Academic milestones")
+                        VLabel(appString(StringKeys.ACALP_MILESTONES))
                         milestones.take(6).forEach { MilestoneRow(it, onClick = { onOpenEvent(it.id) }) }
                     }
 
                     // ── 9. Calendar Analytics (KPI carousel) ─────────────────
                     val analytics = dash?.analytics.orEmpty()
                     if (analytics.isNotEmpty()) {
-                        VLabel("Calendar analytics")
+                        VLabel(appString(StringKeys.ACALP_ANALYTICS))
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             items(analytics.size) { i -> KpiCard(analytics[i]) }
                         }
@@ -212,16 +214,16 @@ private fun HeroOverview(
     val c = VTheme.colors
     VCard(background = c.navy, border = false) {
         Text(
-            academicYear?.let { "Academic Year $it" } ?: "Academic Calendar",
+            academicYear?.let { appString(StringKeys.ACALP_ACADEMIC_YEAR).replace("{year}", it) } ?: appString(StringKeys.ACALP_ACADEMIC_CAL),
             style = VTheme.type.h3.colored(Color.White),
         )
         Spacer(Modifier.height(4.dp))
-        Text("Centralized planning & scheduling", style = VTheme.type.caption.colored(Color.White.copy(alpha = 0.7f)))
+        Text(appString(StringKeys.ACALP_CENTRALIZED), style = VTheme.type.caption.colored(Color.White.copy(alpha = 0.7f)))
         Spacer(Modifier.height(16.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            HeroStat("Events", totalEvents.toString(), Modifier.weight(1f))
-            HeroStat("School days", academicDays.toString(), Modifier.weight(1f))
-            HeroStat("Holidays", holidayDays.toString(), Modifier.weight(1f))
+            HeroStat(appString(StringKeys.ACALP_EVENTS), totalEvents.toString(), Modifier.weight(1f))
+            HeroStat(appString(StringKeys.ACALP_SCHOOL_DAYS), academicDays.toString(), Modifier.weight(1f))
+            HeroStat(appString(StringKeys.ACALP_HOLIDAYS), holidayDays.toString(), Modifier.weight(1f))
         }
         if (nextEvent != null) {
             Spacer(Modifier.height(14.dp))
@@ -230,7 +232,7 @@ private fun HeroOverview(
                     .background(Color.White.copy(alpha = 0.08f)).padding(12.dp),
             ) {
                 Column {
-                    Text("NEXT EVENT", style = VTheme.type.label.colored(c.teal))
+                    Text(appString(StringKeys.ACALP_NEXT_EVENT), style = VTheme.type.label.colored(c.teal))
                     Spacer(Modifier.height(2.dp))
                     Text(nextEvent.title, style = VTheme.type.bodyStrong.colored(Color.White))
                     Text(
@@ -269,7 +271,7 @@ private fun HighlightCard(e: AcademicCalendarEventDto, onClick: () -> Unit) {
         Text(formatRange(e.startDate, e.endDate), style = VTheme.type.caption.colored(c.ink2))
         if (e.hasConflicts) {
             Spacer(Modifier.height(6.dp))
-            VBadge("Potential Schedule Conflict", tone = VBadgeTone.Warning)
+            VBadge(appString(StringKeys.ACALP_CONFLICT), tone = VBadgeTone.Warning)
         }
     }
 }
@@ -399,7 +401,7 @@ private fun InteractiveCalendar(events: List<AcademicCalendarEventDto>, onOpenEv
 private fun AgendaList(events: List<AcademicCalendarEventDto>, onOpenEvent: (String) -> Unit) {
     val c = VTheme.colors
     if (events.isEmpty()) {
-        Text("No events to show.", style = VTheme.type.caption.colored(c.ink2))
+        Text(appString(StringKeys.ACALP_NO_EVENTS), style = VTheme.type.caption.colored(c.ink2))
         return
     }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -411,7 +413,7 @@ private fun AgendaList(events: List<AcademicCalendarEventDto>, onOpenEvent: (Str
 private fun TimelineList(events: List<AcademicCalendarEventDto>, onOpenEvent: (String) -> Unit) {
     val c = VTheme.colors
     if (events.isEmpty()) {
-        Text("Nothing upcoming.", style = VTheme.type.caption.colored(c.ink2))
+        Text(appString(StringKeys.ACALP_NOTHING_UPCOMING), style = VTheme.type.caption.colored(c.ink2))
         return
     }
     Column {
@@ -452,7 +454,7 @@ private fun EventRow(
                 )
                 if (e.hasConflicts) {
                     Spacer(Modifier.height(4.dp))
-                    VBadge("Potential Schedule Conflict", tone = VBadgeTone.Warning)
+                    VBadge(appString(StringKeys.ACALP_CONFLICT), tone = VBadgeTone.Warning)
                 }
             }
             if (trailingBadge != null) {

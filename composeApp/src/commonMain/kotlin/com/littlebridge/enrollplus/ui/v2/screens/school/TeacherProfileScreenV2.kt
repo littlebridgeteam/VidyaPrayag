@@ -50,7 +50,9 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
@@ -94,7 +96,7 @@ fun TeacherProfileScreenV2(
             .imePadding()
             .navigationBarsPadding(),
     ) {
-        VBackHeader(title = "Teacher", onBack = onBack)
+        VBackHeader(title = appString(StringKeys.SCH_TEACHER), onBack = onBack)
         TeacherProfileContent(
             state = state,
             onRetry = viewModel::retry,
@@ -126,8 +128,8 @@ private fun TeacherProfileContent(
             loading = state.isLoading,
             error = state.error,
             isEmpty = state.profile == null && !state.isLoading && state.error == null,
-            emptyTitle = "No profile",
-            emptyBody = "This teacher's record could not be found.",
+            emptyTitle = appString(StringKeys.SCH_NO_PROFILE),
+            emptyBody = appString(StringKeys.SCH_NO_PROFILE_DESC),
             emptyIcon = VIcons.User,
             onRetry = onRetry,
         ) {
@@ -146,10 +148,9 @@ private fun TeacherProfileContent(
 
     VConfirmDialog(
         visible = confirmRemove,
-        title = "Remove teacher",
-        message = "Remove ${state.profile?.name ?: "this teacher"} from your school? " +
-            "They will lose access immediately. This can be reversed by re-adding them.",
-        confirmLabel = "Remove",
+        title = appString(StringKeys.SCH_REMOVE_TEACHER),
+        message = appString(StringKeys.SCH_REMOVE_TEACHER_MSG, "name" to (state.profile?.name ?: appString(StringKeys.SCH_THIS_TEACHER))),
+        confirmLabel = appString(StringKeys.SCH_REMOVE),
         icon = VIcons.AlertTriangle,
         onConfirm = { confirmRemove = false; onRemove() },
         onDismiss = { confirmRemove = false },
@@ -194,7 +195,7 @@ private fun HeroBanner(p: TeacherProfileDto) {
                     Text(sub, style = VTheme.type.caption.colored(c.ink2))
                 }
                 VBadge(
-                    text = if (active) "Active" else "Inactive",
+                    text = if (active) appString(StringKeys.SCH_ACTIVE) else appString(StringKeys.SCH_INACTIVE),
                     tone = if (active) VBadgeTone.Success else VBadgeTone.Neutral,
                     leadingIcon = VIcons.Check,
                 )
@@ -204,12 +205,12 @@ private fun HeroBanner(p: TeacherProfileDto) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
             HeroFact(
                 icon = VIcons.TrendingUp,
-                label = "Experience",
+                label = appString(StringKeys.SCH_EXPERIENCE),
                 value = p.experienceYears?.let { "$it yr${if (it == 1) "" else "s"}" } ?: "—",
             )
             HeroFact(
                 icon = VIcons.Calendar,
-                label = "Joined",
+                label = appString(StringKeys.SCH_JOINED),
                 value = p.joinedOn?.takeIf { it.isNotBlank() } ?: "—",
             )
         }
@@ -244,7 +245,7 @@ private fun HeroFact(icon: ImageVector, label: String, value: String) {
 private fun QuickActions(onOpenAssignments: () -> Unit) {
     val c = VTheme.colors
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "QUICK ACTIONS")
+        VSectionHeader(title = appString(StringKeys.SCH_QUICK_ACTIONS))
         VCard(padding = 16.dp, onClick = onOpenAssignments) {
             Row(
                 Modifier.fillMaxWidth(),
@@ -259,9 +260,9 @@ private fun QuickActions(onOpenAssignments: () -> Unit) {
                     Icon(VIcons.GraduationCap, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(20.dp))
                 }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text("Assignments", style = VTheme.type.h4.colored(c.ink))
+                    Text(appString(StringKeys.SCH_ASSIGNMENTS), style = VTheme.type.h4.colored(c.ink))
                     Text(
-                        "Manage classes, subjects & sections",
+                        appString(StringKeys.SCH_MANAGE_CLASSES_SUBJECTS),
                         style = VTheme.type.caption.colored(c.ink2),
                     )
                 }
@@ -276,14 +277,14 @@ private fun QuickActions(onOpenAssignments: () -> Unit) {
 @Composable
 private fun KpiCarousel(p: TeacherProfileDto) {
     val kpis = listOf(
-        KpiCardData("Total Students", p.studentCount.toString(), "across classes", VIcons.Users, VBadgeTone.Arctic),
-        KpiCardData("Classes", p.classCount.toString(), "sections taught", VIcons.School, VBadgeTone.Success),
-        KpiCardData("Subjects", p.subjectCount.toString(), "covered", VIcons.BookOpen, VBadgeTone.Warning),
-        KpiCardData("Attendance", "${p.attendancePercent.toInt()}%", "personal", VIcons.Check, VBadgeTone.Success),
-        KpiCardData("Assignments", "${p.assignmentCompletionPercent.toInt()}%", "completion", VIcons.Target, VBadgeTone.Arctic),
+        KpiCardData(appString(StringKeys.SCH_TOTAL_STUDENTS), p.studentCount.toString(), appString(StringKeys.SCH_ACROSS_CLASSES), VIcons.Users, VBadgeTone.Arctic),
+        KpiCardData(appString(StringKeys.SCH_CLASSES), p.classCount.toString(), appString(StringKeys.SCH_SECTIONS_TAUGHT), VIcons.School, VBadgeTone.Success),
+        KpiCardData(appString(StringKeys.SCH_SUBJECTS), p.subjectCount.toString(), appString(StringKeys.SCH_COVERED), VIcons.BookOpen, VBadgeTone.Warning),
+        KpiCardData(appString(StringKeys.SCH_ATTENDANCE), "${p.attendancePercent.toInt()}%", appString(StringKeys.SCH_PERSONAL), VIcons.Check, VBadgeTone.Success),
+        KpiCardData(appString(StringKeys.SCH_ASSIGNMENTS), "${p.assignmentCompletionPercent.toInt()}%", appString(StringKeys.SCH_COMPLETION), VIcons.Target, VBadgeTone.Arctic),
     )
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "OVERVIEW")
+        VSectionHeader(title = appString(StringKeys.SCH_OVERVIEW))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             items(kpis) { kpi -> KpiCard(kpi) }
         }
@@ -328,12 +329,12 @@ private fun KpiCard(data: KpiCardData) {
 @Composable
 private fun PerformanceOverview(p: TeacherProfileDto) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "PERFORMANCE")
+        VSectionHeader(title = appString(StringKeys.SCH_PERFORMANCE))
         VCard(padding = 18.dp) {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                MetricBar("Attendance", p.attendancePercent, VBadgeTone.Success)
-                MetricBar("Assignment Completion", p.assignmentCompletionPercent, VBadgeTone.Arctic)
-                MetricBar("Parent Satisfaction", p.parentSatisfactionPercent, VBadgeTone.Warning)
+                MetricBar(appString(StringKeys.SCH_ATTENDANCE), p.attendancePercent, VBadgeTone.Success)
+                MetricBar(appString(StringKeys.SCH_ASSIGNMENT_COMPLETION), p.assignmentCompletionPercent, VBadgeTone.Arctic)
+                MetricBar(appString(StringKeys.SCH_PARENT_SATISFACTION), p.parentSatisfactionPercent, VBadgeTone.Warning)
             }
         }
     }
@@ -356,9 +357,9 @@ private fun MetricBar(label: String, value: Float, tone: VBadgeTone) {
 @Composable
 private fun TeachingPortfolio(assignments: List<TeacherAssignmentDto>) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "TEACHING PORTFOLIO")
+        VSectionHeader(title = appString(StringKeys.SCH_TEACHING_PORTFOLIO))
         if (assignments.isEmpty()) {
-            EmptyCard(VIcons.BookOpen, "No class or subject assignments yet.")
+            EmptyCard(VIcons.BookOpen, appString(StringKeys.SCH_NO_ASSIGNMENTS_YET))
         } else {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(assignments) { a -> PortfolioCard(a) }
@@ -378,7 +379,7 @@ private fun PortfolioCard(a: TeacherAssignmentDto) {
             ) {
                 Icon(VIcons.BookOpen, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(18.dp))
             }
-            VBadge(text = "Sec ${a.section}", tone = VBadgeTone.Neutral)
+            VBadge(text = appString(StringKeys.SCH_SEC, "section" to a.section), tone = VBadgeTone.Neutral)
         }
         Spacer(Modifier.height(12.dp))
         Text(a.subject, style = VTheme.type.h4.colored(c.ink))
@@ -386,7 +387,7 @@ private fun PortfolioCard(a: TeacherAssignmentDto) {
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Icon(VIcons.Users, contentDescription = null, tint = c.ink3, modifier = Modifier.size(14.dp))
-            Text("${a.studentCount} students", style = VTheme.type.caption.colored(c.ink3))
+            Text(appString(StringKeys.SCH_N_STUDENTS, "count" to a.studentCount.toString()), style = VTheme.type.caption.colored(c.ink3))
         }
     }
 }
@@ -397,9 +398,9 @@ private fun PortfolioCard(a: TeacherAssignmentDto) {
 private fun InsightsSection(insights: List<String>) {
     val c = VTheme.colors
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "INSIGHTS")
+        VSectionHeader(title = appString(StringKeys.SCH_INSIGHTS))
         if (insights.isEmpty()) {
-            EmptyCard(VIcons.Sparkles, "No insights available yet.")
+            EmptyCard(VIcons.Sparkles, appString(StringKeys.SCH_NO_INSIGHTS_YET))
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 insights.forEach { insight ->
@@ -425,9 +426,9 @@ private fun InsightsSection(insights: List<String>) {
 @Composable
 private fun ActivityTimeline(activities: List<TeacherActivityDto>) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "RECENT ACTIVITY")
+        VSectionHeader(title = appString(StringKeys.SCH_RECENT_ACTIVITY))
         if (activities.isEmpty()) {
-            EmptyCard(VIcons.Clock, "No recent activity yet.")
+            EmptyCard(VIcons.Clock, appString(StringKeys.SCH_NO_RECENT_ACTIVITY))
         } else {
             VCard(padding = 18.dp) {
                 Column {
@@ -479,9 +480,9 @@ private fun formatActivityMeta(activity: TeacherActivityDto): String {
 @Composable
 private fun AchievementsCarousel(achievements: List<TeacherAchievementDto>) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "ACHIEVEMENTS")
+        VSectionHeader(title = appString(StringKeys.SCH_ACHIEVEMENTS))
         if (achievements.isEmpty()) {
-            EmptyCard(VIcons.Star, "No achievements yet.")
+            EmptyCard(VIcons.Star, appString(StringKeys.SCH_NO_ACHIEVEMENTS))
         } else {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 itemsIndexed(achievements) { index, item -> AchievementCard(item, index) }
@@ -514,16 +515,16 @@ private fun AchievementCard(item: TeacherAchievementDto, index: Int) {
 @Composable
 private fun ProfessionalDetails(p: TeacherProfileDto) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "PROFESSIONAL DETAILS")
+        VSectionHeader(title = appString(StringKeys.SCH_PROFESSIONAL_DETAILS))
         VCard(padding = 18.dp) {
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                DetailRow(VIcons.Mail, "Email", p.email?.takeIf { it.isNotBlank() } ?: "—")
-                DetailRow(VIcons.Phone, "Phone", p.phone?.takeIf { it.isNotBlank() } ?: "—")
-                DetailRow(VIcons.Calendar, "Joined Date", p.joinedOn?.takeIf { it.isNotBlank() } ?: "—")
+                DetailRow(VIcons.Mail, appString(StringKeys.SCH_EMAIL), p.email?.takeIf { it.isNotBlank() } ?: "—")
+                DetailRow(VIcons.Phone, appString(StringKeys.SCH_PHONE), p.phone?.takeIf { it.isNotBlank() } ?: "—")
+                DetailRow(VIcons.Calendar, appString(StringKeys.SCH_JOINED_DATE), p.joinedOn?.takeIf { it.isNotBlank() } ?: "—")
                 DetailRow(
                     VIcons.TrendingUp,
-                    "Experience",
-                    p.experienceYears?.let { "$it year${if (it == 1) "" else "s"}" } ?: "—",
+                    appString(StringKeys.SCH_EXPERIENCE),
+                    p.experienceYears?.let { appString(StringKeys.SCH_N_YEARS, "count" to it.toString()) } ?: "—",
                 )
             }
         }
@@ -557,12 +558,12 @@ private fun DangerZone(
 ) {
     val c = VTheme.colors
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "DANGER ZONE")
+        VSectionHeader(title = appString(StringKeys.SCH_DANGER_ZONE))
         VCard(padding = 18.dp, border = true) {
-            Text("Remove teacher", style = VTheme.type.bodyStrong.colored(c.dangerInk))
+            Text(appString(StringKeys.SCH_REMOVE_TEACHER), style = VTheme.type.bodyStrong.colored(c.dangerInk))
             Spacer(Modifier.height(4.dp))
             Text(
-                "Removing this teacher revokes their access immediately. This can be reversed by re-adding them.",
+                appString(StringKeys.SCH_REMOVE_TEACHER_DANGER),
                 style = VTheme.type.caption.colored(c.ink2),
             )
             Spacer(Modifier.height(14.dp))
@@ -571,7 +572,7 @@ private fun DangerZone(
                 Spacer(Modifier.height(8.dp))
             }
             VButton(
-                text = "Remove from school",
+                text = appString(StringKeys.SCH_REMOVE_FROM_SCHOOL),
                 onClick = onRequestRemove,
                 variant = VButtonVariant.Destructive,
                 full = true,

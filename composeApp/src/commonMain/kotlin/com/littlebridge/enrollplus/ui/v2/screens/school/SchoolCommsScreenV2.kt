@@ -46,6 +46,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
@@ -128,15 +130,21 @@ private fun SchoolCommsContent(
             .padding(top = 24.dp, bottom = 140.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text("Communications", style = VTheme.type.h1.colored(c.ink))
+        Text(appString(StringKeys.SCH_COMMUNICATIONS), style = VTheme.type.h1.colored(c.ink))
+        val tabLabels = listOf(
+            appString(StringKeys.SCH_ANNOUNCEMENTS),
+            appString(StringKeys.SCH_MESSAGES),
+            appString(StringKeys.SCH_PTM),
+            appString(StringKeys.SCH_NOTIFICATIONS),
+        )
         VTopTabs(
-            tabs = listOf("Announcements", "Messages", "PTM", "Notifications"),
+            tabs = tabLabels,
             selected = tab,
             onSelect = { tab = it },
         )
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             when (tab) {
-                "Announcements" -> AnnouncementsTab(
+                tabLabels[0] -> AnnouncementsTab(
                     state = state,
                     onRetry = onRetry,
                     onSelectCategory = onSelectCategory,
@@ -144,24 +152,21 @@ private fun SchoolCommsContent(
                     onCreateEvent = onCreateEvent,
                     onOpenScheduledMessages = onOpenScheduledMessages,
                 )
-                // RA-24: Messages and PTM have real backends (MessagesRouting,
-                // PtmRouting) and real screens — open them instead of showing a
-                // dead Coming-Soon card.
-                "Messages" -> CommsEntryCard(
+                tabLabels[1] -> CommsEntryCard(
                     icon = VIcons.Chat,
-                    title = "Parent messages",
-                    description = "Open two-way parent ↔ school message threads.",
+                    title = appString(StringKeys.SCH_PARENT_MESSAGES),
+                    description = appString(StringKeys.SCH_PARENT_MESSAGES_DESC),
                     onClick = onOpenMessages,
                 )
-                "PTM" -> CommsEntryCard(
+                tabLabels[2] -> CommsEntryCard(
                     icon = VIcons.Calendar,
-                    title = "Parent–Teacher meetings",
-                    description = "Schedule PTMs and track slot bookings.",
+                    title = appString(StringKeys.SCH_PARENT_TEACHER_MEETINGS),
+                    description = appString(StringKeys.SCH_PARENT_TEACHER_MEETINGS_DESC),
                     onClick = onOpenPtm,
                 )
-                "Notifications" -> VComingSoon(
-                    title = "Delivery log",
-                    description = "Push/SMS/WhatsApp delivery receipts surface here when the notifications service ships.",
+                tabLabels[3] -> VComingSoon(
+                    title = appString(StringKeys.SCH_DELIVERY_LOG),
+                    description = appString(StringKeys.SCH_DELIVERY_LOG_DESC),
                 )
             }
         }
@@ -187,17 +192,17 @@ private fun AnnouncementsTab(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text("Announcements", style = VTheme.type.h3.colored(c.ink))
+        Text(appString(StringKeys.SCH_ANNOUNCEMENTS), style = VTheme.type.h3.colored(c.ink))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             VButton(
-                text = "Scheduled",
+                text = appString(StringKeys.SCH_SCHEDULED),
                 onClick = onOpenScheduledMessages,
                 variant = VButtonVariant.Ghost,
                 size = VButtonSize.Sm,
                 leading = { Icon(VIcons.Clock, contentDescription = null, modifier = Modifier.size(14.dp)) },
             )
             VButton(
-                text = "New",
+                text = appString(StringKeys.SCH_NEW),
                 onClick = onCreateEvent,
                 variant = VButtonVariant.Primary,
                 size = VButtonSize.Sm,
@@ -212,8 +217,8 @@ private fun AnnouncementsTab(
         loading = state.isLoading,
         error = state.errorMessage,
         isEmpty = state.announcements.isEmpty(),
-        emptyTitle = "No announcements yet",
-        emptyBody = "Posts you publish to parents and staff will appear here.",
+        emptyTitle = appString(StringKeys.SCH_NO_ANNOUNCEMENTS),
+        emptyBody = appString(StringKeys.SCH_NO_ANNOUNCEMENTS_DESC),
         emptyIcon = VIcons.Megaphone,
         onRetry = onRetry,
         skeleton = { com.littlebridge.enrollplus.ui.v2.screens.SkeletonAnnouncements() },
@@ -225,7 +230,7 @@ private fun AnnouncementsTab(
             }
             if (categories.isNotEmpty()) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip("All", state.selectedCategory == null) { onSelectCategory(null) }
+                    FilterChip(appString(StringKeys.SCH_ALL), state.selectedCategory == null) { onSelectCategory(null) }
                     categories.forEach { cat ->
                         FilterChip(cat, state.selectedCategory.equals(cat, ignoreCase = true)) { onSelectCategory(cat) }
                     }
@@ -242,7 +247,7 @@ private fun AnnouncementsTab(
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.SpaceBetween) {
                             Text(a.title, style = VTheme.type.bodyStrong.colored(c.ink), modifier = Modifier.weight(1f))
                             if (a.isCalendarOnly) {
-                                VBadge(text = "Calendar Only", tone = VBadgeTone.Warning)
+                                VBadge(text = appString(StringKeys.SCH_CALENDAR_ONLY), tone = VBadgeTone.Warning)
                             } else if (a.category.isNotBlank()) {
                                 VBadge(text = a.category, tone = VBadgeTone.Arctic)
                             }
@@ -321,10 +326,10 @@ private fun AnnouncementDetailV2(
 ) {
     val c = VTheme.colors
     Column(modifier.fillMaxSize()) {
-        VBackHeader(title = "Announcement", onBack = onBack)
+        VBackHeader(title = appString(StringKeys.SCH_ANNOUNCEMENT), onBack = onBack)
         if (announcement == null) {
             Column(Modifier.fillMaxSize().padding(20.dp)) {
-                Text("Announcement unavailable", style = VTheme.type.h3.colored(c.ink))
+                Text(appString(StringKeys.SCH_ANNOUNCEMENT_UNAVAILABLE), style = VTheme.type.h3.colored(c.ink))
             }
             return
         }
@@ -333,7 +338,7 @@ private fun AnnouncementDetailV2(
         ) {
             Text(announcement.title, style = VTheme.type.h2.colored(c.ink))
             Text(
-                "${announcement.date} • Posted by School Administration",
+                appString(StringKeys.SCH_POSTED_BY, "date" to announcement.date),
                 style = VTheme.type.caption.colored(c.ink2),
                 modifier = Modifier.padding(top = 4.dp),
             )

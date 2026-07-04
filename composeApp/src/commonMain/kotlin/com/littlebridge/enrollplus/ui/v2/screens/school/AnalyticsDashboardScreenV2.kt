@@ -41,6 +41,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
@@ -69,7 +71,7 @@ fun AnalyticsDashboardScreenV2(
     Column(modifier.fillMaxSize().statusBarsPadding()
         .imePadding()
         .navigationBarsPadding()) {
-        VBackHeader(title = "Analytics", onBack = onBack)
+        VBackHeader(title = appString(StringKeys.SCH_ANALYTICS), onBack = onBack)
         AnalyticsContent(
             state = state,
             onRetry = viewModel::loadOverview,
@@ -98,8 +100,8 @@ private fun AnalyticsContent(
             isEmpty = state.performanceTrend.isEmpty() &&
                 state.cards.isEmpty() &&
                 state.insights.isEmpty(),
-            emptyTitle = "No analytics yet",
-            emptyBody = "The overview will populate once the analytics rollup endpoint has data.",
+            emptyTitle = appString(StringKeys.SCH_NO_ANALYTICS),
+            emptyBody = appString(StringKeys.SCH_NO_ANALYTICS_DESC),
             emptyIcon = VIcons.TrendingUp,
             onRetry = onRetry,
         ) {
@@ -108,11 +110,11 @@ private fun AnalyticsContent(
                 VCard {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                         Column(Modifier.weight(1f)) {
-                            Text("Performance trend", style = VTheme.type.label.colored(c.ink3))
+                            Text(appString(StringKeys.SCH_PERFORMANCE_TREND), style = VTheme.type.label.colored(c.ink3))
                             Spacer(Modifier.height(4.dp))
                             Text(state.currentGrowth, style = VTheme.type.dataLg.colored(c.ink))
                         }
-                        VBadge(text = "OVERVIEW", tone = VBadgeTone.Arctic)
+                        VBadge(text = appString(StringKeys.SCH_OVERVIEW), tone = VBadgeTone.Arctic)
                     }
                     Spacer(Modifier.height(12.dp))
                     TrendChart(
@@ -124,7 +126,7 @@ private fun AnalyticsContent(
 
             // Cards grid (2 per row)
             if (state.cards.isNotEmpty()) {
-                VSectionHeader(title = "OVERVIEW")
+                VSectionHeader(title = appString(StringKeys.SCH_OVERVIEW))
                 val pairs = state.cards.chunked(2)
                 pairs.forEach { pair ->
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -140,7 +142,7 @@ private fun AnalyticsContent(
 
             // Insights
             if (state.insights.isNotEmpty()) {
-                VSectionHeader(title = "INSIGHTS")
+                VSectionHeader(title = appString(StringKeys.SCH_INSIGHTS))
                 state.insights.forEach { item -> InsightCard(item) }
             }
         }

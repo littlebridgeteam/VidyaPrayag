@@ -38,6 +38,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 
@@ -82,8 +84,8 @@ fun ParentReportScreen(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            VButton(text = "Back", onClick = onBack, variant = VButtonVariant.Secondary, size = VButtonSize.Sm)
-            Text("AI Report Card", style = VTheme.type.h3.colored(c.ink))
+            VButton(text = appString(StringKeys.PL_BACK), onClick = onBack, variant = VButtonVariant.Secondary, size = VButtonSize.Sm)
+            Text(appString(StringKeys.PR_AI_REPORT_CARD), style = VTheme.type.h3.colored(c.ink))
         }
 
         when {
@@ -106,8 +108,8 @@ fun ParentReportScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(VIcons.Sparkles, contentDescription = null, tint = c.accent, modifier = Modifier.size(32.dp))
                         Spacer(Modifier.height(8.dp))
-                        Text("No published reports yet", style = VTheme.type.body.colored(c.ink2))
-                        Text("Reports will appear here once published by the school.",
+                        Text(appString(StringKeys.PR_NO_REPORTS), style = VTheme.type.body.colored(c.ink2))
+                        Text(appString(StringKeys.PR_NO_REPORTS_DESC),
                             style = VTheme.type.caption.colored(c.ink3))
                     }
                 }
@@ -139,33 +141,37 @@ private fun ConferencePackCard(pack: ReportCardModels.ConferencePack) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Icon(VIcons.Sparkles, contentDescription = null, tint = c.accent, modifier = Modifier.size(16.dp))
-                Text("Conference Pack", style = VTheme.type.h3.colored(c.ink).copy(fontSize = 16.sp))
+                Text(appString(StringKeys.PR_CONFERENCE_PACK), style = VTheme.type.h3.colored(c.ink).copy(fontSize = 16.sp))
             }
-            Text("${pack.studentName} — ${pack.className} ${pack.section} • ${pack.term}",
+            Text(appString(StringKeys.PR_CONFERENCE_SUBTITLE,
+                "studentName" to pack.studentName,
+                "className" to pack.className,
+                "section" to pack.section,
+                "term" to pack.term),
                 style = VTheme.type.body.colored(c.ink2))
 
             // Quick stats row
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 pack.overallPct?.let {
-                    StatChip("Overall", "${it.toInt()}%")
+                    StatChip(appString(StringKeys.PR_OVERALL), "${it.toInt()}%")
                 }
                 pack.overallGrade?.let {
-                    StatChip("Grade", it)
+                    StatChip(appString(StringKeys.PR_GRADE), it)
                 }
                 pack.attendancePct?.let {
-                    StatChip("Attendance", "$it%")
+                    StatChip(appString(StringKeys.PR_ATTENDANCE), "$it%")
                 }
             }
 
             if (pack.parentSummary.isNotBlank()) {
                 Spacer(Modifier.height(4.dp))
-                Text("Summary", style = VTheme.type.label.colored(c.ink).copy(fontWeight = FontWeight.Bold))
+                Text(appString(StringKeys.PR_SUMMARY), style = VTheme.type.label.colored(c.ink).copy(fontWeight = FontWeight.Bold))
                 Text(pack.parentSummary, style = VTheme.type.body.colored(c.ink2))
             }
 
             if (pack.focusAreas.isNotEmpty()) {
                 Spacer(Modifier.height(4.dp))
-                Text("Focus Areas", style = VTheme.type.label.colored(c.ink).copy(fontWeight = FontWeight.Bold))
+                Text(appString(StringKeys.PR_FOCUS_AREAS), style = VTheme.type.label.colored(c.ink).copy(fontWeight = FontWeight.Bold))
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     pack.focusAreas.forEach { fa ->
                         VBadge(text = fa, tone = VBadgeTone.Warning)
@@ -175,7 +181,7 @@ private fun ConferencePackCard(pack: ReportCardModels.ConferencePack) {
 
             if (pack.strengths.isNotEmpty()) {
                 Spacer(Modifier.height(4.dp))
-                Text("Strengths", style = VTheme.type.label.colored(c.ink).copy(fontWeight = FontWeight.Bold))
+                Text(appString(StringKeys.PR_STRENGTHS), style = VTheme.type.label.colored(c.ink).copy(fontWeight = FontWeight.Bold))
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     pack.strengths.forEach { s ->
                         VBadge(text = s, tone = VBadgeTone.Success)
@@ -185,7 +191,7 @@ private fun ConferencePackCard(pack: ReportCardModels.ConferencePack) {
 
             if (pack.conferenceTips.isNotEmpty()) {
                 Spacer(Modifier.height(4.dp))
-                Text("Conference Tips", style = VTheme.type.label.colored(c.ink).copy(fontWeight = FontWeight.Bold))
+                Text(appString(StringKeys.PR_CONFERENCE_TIPS), style = VTheme.type.label.colored(c.ink).copy(fontWeight = FontWeight.Bold))
                 pack.conferenceTips.forEach { tip ->
                     Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text("•", style = VTheme.type.body.colored(c.accent))
@@ -220,11 +226,11 @@ private fun ReportCardItem(report: ReportCardModels.ParentReport, onClick: () ->
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(report.term, style = VTheme.type.h3.colored(c.ink).copy(fontSize = 15.sp))
-                VBadge(text = "Published", tone = VBadgeTone.Success)
+                VBadge(text = appString(StringKeys.PR_PUBLISHED), tone = VBadgeTone.Success)
             }
             Text("${report.className} ${report.section}", style = VTheme.type.caption.colored(c.ink2))
             report.publishedAt?.let {
-                Text("Published: $it", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp))
+                Text(appString(StringKeys.PR_PUBLISHED_ON, "date" to it), style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp))
             }
         }
     }

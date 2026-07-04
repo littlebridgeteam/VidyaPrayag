@@ -58,6 +58,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VLabel
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
@@ -215,9 +217,9 @@ private fun ParentAcademicsContent(
                     Icon(VIcons.Calendar, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(20.dp))
                 }
                 Column(Modifier.weight(1f)) {
-                    Text("Apply for leave", style = VTheme.type.bodyStrong.colored(c.ink))
+                    Text(appString(StringKeys.PA_APPLY_LEAVE), style = VTheme.type.bodyStrong.colored(c.ink))
                     Text(
-                        "Request leave for your child — routed to their class teacher",
+                        appString(StringKeys.PA_LEAVE_DESC),
                         style = VTheme.type.caption.colored(c.ink2),
                     )
                 }
@@ -226,8 +228,8 @@ private fun ParentAcademicsContent(
         }
         // ── Health Records entry — quick access to child's health profile ─────
         VActionCard(
-            title = "Health Records",
-            subtitle = "View health profile, immunizations, and incidents",
+            title = appString(StringKeys.PA_HEALTH_RECORDS),
+            subtitle = appString(StringKeys.PA_HEALTH_RECORDS_DESC),
             icon = VIcons.Heart,
             onClick = onOpenHealth,
             modifier = Modifier.padding(horizontal = 20.dp),
@@ -276,8 +278,8 @@ private fun ParentAcademicsContent(
                         )
                     } else {
                         VComingSoon(
-                            title = "AI Report Card",
-                            description = "Link your child to view their AI-generated report cards.",
+                            title = appString(StringKeys.PA_AI_REPORT_CARD),
+                            description = appString(StringKeys.PA_AI_REPORT_CARD_DESC),
                             preview = { AiReportCardPreview() },
                         )
                     }
@@ -310,10 +312,10 @@ private fun AttendanceTab(academics: ParentAcademicsState, onRetry: () -> Unit) 
             // present/late/absent breakdown is colour-coded green/amber/red — not flattened to one
             // brand-violet tint.
             VCard {
-                VLabel("This term")
+                VLabel(appString(StringKeys.PA_THIS_TERM))
                 Spacer(Modifier.height(8.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Attendance rate", style = VTheme.type.bodyStrong.colored(c.ink))
+                    Text(appString(StringKeys.PA_ATTENDANCE_RATE), style = VTheme.type.bodyStrong.colored(c.ink))
                     Text(
                         "${data.attendanceRate}%",
                         style = VTheme.type.data.colored(c.successInk).copy(fontWeight = FontWeight.Bold),
@@ -348,9 +350,9 @@ private fun AttendanceTab(academics: ParentAcademicsState, onRetry: () -> Unit) 
                         Icon(VIcons.Calendar, contentDescription = null, tint = c.successInk, modifier = Modifier.size(20.dp))
                     }
                     Column(Modifier.weight(1f)) {
-                        Text("No attendance marked yet", style = VTheme.type.bodyStrong.colored(c.ink))
+                        Text(appString(StringKeys.PA_NO_ATTENDANCE), style = VTheme.type.bodyStrong.colored(c.ink))
                         Text(
-                            "Days will fill in below as the school marks attendance.",
+                            appString(StringKeys.PA_NO_ATTENDANCE_DESC),
                             style = VTheme.type.caption.colored(c.ink2),
                         )
                     }
@@ -396,8 +398,8 @@ private fun MarksTab(academics: ParentAcademicsState, onRetry: () -> Unit) {
         loading = academics.marksLoading,
         error = academics.marksError,
         isEmpty = data != null && data.results.isEmpty(),
-        emptyTitle = "No published marks yet",
-        emptyBody = "Marks appear here once teachers publish results to parents.",
+        emptyTitle = appString(StringKeys.PA_NO_MARKS),
+        emptyBody = appString(StringKeys.PA_NO_MARKS_DESC),
         onRetry = onRetry,
     ) {
         data?.results?.forEachIndexed { idx, m ->
@@ -474,8 +476,8 @@ private fun SyllabusTab(academics: ParentAcademicsState, onRetry: () -> Unit, on
         loading = isLoading,
         error = error,
         isEmpty = isEmpty,
-        emptyTitle = "No syllabus shared yet",
-        emptyBody = "A subject-wise coverage log will appear here once the school shares it.",
+        emptyTitle = appString(StringKeys.PA_NO_SYLLABUS),
+        emptyBody = appString(StringKeys.PA_NO_SYLLABUS_DESC),
         onRetry = onRetryV2,
     ) {
         val palette = subjectPalette(c)
@@ -508,7 +510,7 @@ private fun SyllabusTab(academics: ParentAcademicsState, onRetry: () -> Unit, on
                                 Modifier.clip(RoundedCornerShape(999.dp)).background(c.accent.copy(alpha = 0.12f))
                                     .padding(horizontal = 6.dp, vertical = 2.dp),
                             ) {
-                                Text("AI Est.", style = VTheme.type.label.colored(c.accentDeep).copy(fontWeight = FontWeight.Bold, fontSize = 9.sp))
+                                Text(appString(StringKeys.PA_AI_EST), style = VTheme.type.label.colored(c.accentDeep).copy(fontWeight = FontWeight.Bold, fontSize = 9.sp))
                             }
                             Spacer(Modifier.width(4.dp))
                         }
@@ -545,7 +547,7 @@ private fun SyllabusTab(academics: ParentAcademicsState, onRetry: () -> Unit, on
                                 if (u.isCovered) {
                                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                         if (u.isAiEstimated) {
-                                            Text("Est.", style = VTheme.type.caption.colored(c.accentDeep).copy(fontWeight = FontWeight.SemiBold, fontSize = 10.sp))
+                                            Text(appString(StringKeys.PA_EST), style = VTheme.type.caption.colored(c.accentDeep).copy(fontWeight = FontWeight.SemiBold, fontSize = 10.sp))
                                         } else {
                                             Icon(VIcons.Check, contentDescription = null, tint = c.successInk, modifier = Modifier.size(13.dp))
                                             Text(
@@ -555,7 +557,7 @@ private fun SyllabusTab(academics: ParentAcademicsState, onRetry: () -> Unit, on
                                         }
                                     }
                                 } else {
-                                    Text("Pending", style = VTheme.type.caption.colored(c.warningInk).copy(fontWeight = FontWeight.SemiBold))
+                                    Text(appString(StringKeys.PA_PENDING), style = VTheme.type.caption.colored(c.warningInk).copy(fontWeight = FontWeight.SemiBold))
                                 }
                             }
                         }
@@ -611,7 +613,7 @@ private fun SyllabusTab(academics: ParentAcademicsState, onRetry: () -> Unit, on
                                         )
                                     }
                                 } else {
-                                    Text("Pending", style = VTheme.type.caption.colored(c.warningInk).copy(fontWeight = FontWeight.SemiBold))
+                                    Text(appString(StringKeys.PA_PENDING), style = VTheme.type.caption.colored(c.warningInk).copy(fontWeight = FontWeight.SemiBold))
                                 }
                             }
                         }
@@ -652,8 +654,8 @@ private fun OverviewTab(state: TrackProgressState) {
         error = state.error,
         isEmpty = state.academicCompetencies.isEmpty() &&
             state.emotionalIntelligence.isEmpty() && state.emotionalDescription.isBlank(),
-        emptyTitle = "No progress data yet",
-        emptyBody = "Your child's competencies will appear here as teachers update them.",
+        emptyTitle = appString(StringKeys.PA_NO_PROGRESS),
+        emptyBody = appString(StringKeys.PA_NO_PROGRESS_DESC),
     ) {
         if (state.academicCompetencies.isNotEmpty()) {
             val palette = subjectPalette(c)
@@ -718,8 +720,8 @@ private fun OverviewTab(state: TrackProgressState) {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Text("Level ${state.currentLevel}", style = VTheme.type.dataLg.colored(c.ink))
-                    VBadge(text = "${(state.overallProgress * 100f).toInt()}% complete", tone = VBadgeTone.Accent)
+                    Text(appString(StringKeys.PA_LEVEL, "level" to state.currentLevel), style = VTheme.type.dataLg.colored(c.ink))
+                    VBadge(text = appString(StringKeys.PA_PERCENT_COMPLETE, "percent" to (state.overallProgress * 100f).toInt()), tone = VBadgeTone.Accent)
                 }
             }
         }
@@ -736,8 +738,8 @@ private fun DailySummaryTab(academics: ParentAcademicsState, onRetry: () -> Unit
         loading = academics.dailySummaryLoading,
         error = academics.dailySummaryError,
         isEmpty = data != null && data.entries.isEmpty(),
-        emptyTitle = "No daily logs yet",
-        emptyBody = "Daily class summaries will appear here once teachers start logging.",
+        emptyTitle = appString(StringKeys.PA_NO_DAILY_LOGS),
+        emptyBody = appString(StringKeys.PA_NO_DAILY_LOGS_DESC),
         onRetry = onRetry,
     ) {
         if (data != null) {
@@ -752,7 +754,7 @@ private fun DailySummaryTab(academics: ParentAcademicsState, onRetry: () -> Unit
                             Icon(VIcons.Sparkles, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(18.dp))
                         }
                         Column(Modifier.weight(1f)) {
-                            Text("AI Summary", style = VTheme.type.bodyStrong.colored(c.ink))
+                            Text(appString(StringKeys.PA_AI_SUMMARY), style = VTheme.type.bodyStrong.colored(c.ink))
                             Text(summary, style = VTheme.type.caption.colored(c.ink2))
                         }
                     }
@@ -770,7 +772,7 @@ private fun DailySummaryTab(academics: ParentAcademicsState, onRetry: () -> Unit
                         Column(horizontalAlignment = Alignment.End) {
                             Text("${entry.coveragePct}%", style = VTheme.type.data.colored(c.accentDeep).copy(fontWeight = FontWeight.Bold))
                             if (entry.isAiEstimated) {
-                                Text("AI estimated", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp))
+                                Text(appString(StringKeys.PA_AI_ESTIMATED), style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp))
                             }
                         }
                     }
@@ -811,8 +813,8 @@ private fun QuizzesTab(
         loading = academics.quizzesLoading,
         error = academics.quizzesError,
         isEmpty = quizzes.isEmpty(),
-        emptyTitle = "No quizzes yet",
-        emptyBody = "Quizzes will appear here once teachers publish them.",
+        emptyTitle = appString(StringKeys.PA_NO_QUIZZES),
+        emptyBody = appString(StringKeys.PA_NO_QUIZZES_DESC),
         onRetry = onRetry,
     ) {
         quizzes.forEach { quiz ->
@@ -832,11 +834,11 @@ private fun QuizzesTab(
                         Icon(VIcons.GraduationCap, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(20.dp))
                     }
                     Column(Modifier.weight(1f)) {
-                        Text(quiz.title.ifBlank { "Quiz" }, style = VTheme.type.bodyStrong.colored(c.ink))
-                        Text("${quiz.subject} · ${quiz.numQuestions} questions", style = VTheme.type.caption.colored(c.ink2))
+                        Text(quiz.title.ifBlank { appString(StringKeys.PA_QUIZ) }, style = VTheme.type.bodyStrong.colored(c.ink))
+                        Text(appString(StringKeys.PA_QUIZ_QUESTIONS, "subject" to quiz.subject, "count" to quiz.numQuestions), style = VTheme.type.caption.colored(c.ink2))
                     }
                     if (quiz.status == "PUBLISHED") {
-                        VBadge(text = "Start", tone = VBadgeTone.Accent)
+                        VBadge(text = appString(StringKeys.PA_START), tone = VBadgeTone.Accent)
                         Box(
                             Modifier.size(32.dp).clip(CircleShape).background(c.accent.copy(alpha = 0.1f)),
                             contentAlignment = Alignment.Center,
@@ -848,7 +850,7 @@ private fun QuizzesTab(
                             contentAlignment = Alignment.Center,
                         ) { Icon(VIcons.ArrowRight, contentDescription = "View", tint = c.accentDeep, modifier = Modifier.size(16.dp)) }
                     } else {
-                        VBadge(text = "Pending", tone = VBadgeTone.Neutral)
+                        VBadge(text = appString(StringKeys.PA_PENDING), tone = VBadgeTone.Neutral)
                     }
                 }
             }
@@ -890,7 +892,7 @@ private fun QuizDetailCard(
                     val qTypeLabel = when (q.questionType) {
                         "TRUE_FALSE" -> " (True/False)"
                         "FILL_BLANK" -> " (Fill in the blank)"
-                        "MATCH" -> " (Match)"
+                        "MATCH" -> appString(StringKeys.PA_MATCH)
                         else -> ""
                     }
                     Text("${qIdx + 1}. ${q.question}$qTypeLabel", style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 14.sp))
@@ -902,7 +904,7 @@ private fun QuizDetailCard(
                                 value = textAnswers[q.id] ?: "",
                                 onValueChange = { textAnswers[q.id] = it },
                                 modifier = Modifier.fillMaxWidth(),
-                                placeholder = { Text("Type your answer...", style = VTheme.type.body.colored(c.ink3).copy(fontSize = 13.sp)) },
+                                placeholder = { Text(appString(StringKeys.PA_TYPE_ANSWER), style = VTheme.type.body.colored(c.ink3).copy(fontSize = 13.sp)) },
                                 singleLine = true,
                                 shape = RoundedCornerShape(10.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
@@ -1042,7 +1044,7 @@ private fun QuizResultCard(
                 Text("${result.percentage}%", style = VTheme.type.dataLg.colored(c.accentDeep).copy(fontWeight = FontWeight.ExtraBold, fontSize = 20.sp))
             }
             Spacer(Modifier.height(12.dp))
-            Text("Score: ${result.score} / ${result.totalMarks}", style = VTheme.type.bodyStrong.colored(c.ink))
+            Text(appString(StringKeys.PA_SCORE, "score" to result.score, "total" to result.totalMarks), style = VTheme.type.bodyStrong.colored(c.ink))
             Spacer(Modifier.height(16.dp))
 
             Column(
@@ -1068,10 +1070,10 @@ private fun QuizResultCard(
                         }
                         Spacer(Modifier.height(6.dp))
                         if (qr.selectedAnswer.isNotBlank()) {
-                            Text("Your answer: ${qr.selectedAnswer}", style = VTheme.type.caption.colored(if (qr.correct) c.successInk else c.dangerInk).copy(fontSize = 12.sp))
+                            Text(appString(StringKeys.PA_YOUR_ANSWER, "answer" to qr.selectedAnswer), style = VTheme.type.caption.colored(if (qr.correct) c.successInk else c.dangerInk).copy(fontSize = 12.sp))
                         }
                         if (!qr.correct && qr.correctAnswer.isNotBlank()) {
-                            Text("Correct answer: ${qr.correctAnswer}", style = VTheme.type.caption.colored(c.successInk).copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold))
+                            Text(appString(StringKeys.PA_CORRECT_ANSWER, "answer" to qr.correctAnswer), style = VTheme.type.caption.colored(c.successInk).copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold))
                         }
                         val expl = qr.explanation
                         if (!expl.isNullOrBlank()) {
@@ -1086,15 +1088,15 @@ private fun QuizResultCard(
 
             // Leaderboard section
             if (academics.leaderboardLoading) {
-                Text("Loading leaderboard...", style = VTheme.type.caption.colored(c.ink2))
+                Text(appString(StringKeys.PA_LOADING_LEADERBOARD), style = VTheme.type.caption.colored(c.ink2))
             } else if (academics.leaderboardError != null) {
                 Text(academics.leaderboardError ?: "", style = VTheme.type.caption.colored(c.ink3))
             } else {
                 val lb = academics.leaderboard
                 if (lb != null && lb.entries.isNotEmpty()) {
-                    Text("Leaderboard", style = VTheme.type.bodyStrong.colored(c.ink))
+                    Text(appString(StringKeys.PA_LEADERBOARD), style = VTheme.type.bodyStrong.colored(c.ink))
                     Spacer(Modifier.height(4.dp))
-                    Text("${lb.totalParticipants} participants", style = VTheme.type.caption.colored(c.ink2))
+                    Text(appString(StringKeys.PA_PARTICIPANTS, "count" to lb.totalParticipants), style = VTheme.type.caption.colored(c.ink2))
                     Spacer(Modifier.height(10.dp))
                     Column(
                         Modifier.fillMaxWidth().heightIn(max = 300.dp).verticalScroll(rememberScrollState()),
@@ -1111,7 +1113,7 @@ private fun QuizResultCard(
                             ) {
                                 Text("#${entry.rank}", style = VTheme.type.bodyStrong.colored(c.accentDeep).copy(fontSize = 13.sp, fontWeight = FontWeight.Bold))
                                 Text(
-                                    entry.studentName + if (entry.isCurrentStudent) " (You)" else "",
+                                    entry.studentName + if (entry.isCurrentStudent) appString(StringKeys.PA_YOU) else "",
                                     style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp),
                                     modifier = Modifier.weight(1f),
                                 )
@@ -1124,7 +1126,7 @@ private fun QuizResultCard(
             }
 
             Spacer(Modifier.height(16.dp))
-            VButton("Back to Quizzes", onClick = onBack, full = true, variant = VButtonVariant.Secondary, tone = VButtonTone.Lavender)
+            VButton(appString(StringKeys.PA_BACK_TO_QUIZZES), onClick = onBack, full = true, variant = VButtonVariant.Secondary, tone = VButtonTone.Lavender)
         }
     }
 }
