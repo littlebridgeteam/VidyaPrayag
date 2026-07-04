@@ -797,7 +797,7 @@ private fun Route.assessmentPublishUnpublish() {
                 body = "Marks for \"$examName\" ($subject) have been published.",
                 schoolId = ctx.schoolId,
                 actorId = ctx.userId,
-                deepLink = "parent/academics/marks",
+                deepLink = "/parent/academics/marks",
                 refType = "assessment",
                 refId = assessmentId.toString(),
             )

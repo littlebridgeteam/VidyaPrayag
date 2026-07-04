@@ -229,6 +229,7 @@ fun Route.periodExceptionRouting() {
                     title = "Timetable update",
                     body = msg,
                     schoolId = ctx.schoolId,
+                    deepLink = "/parent/timetable",
                     refType = "period_exception",
                     refId = exception.id,
                 )
@@ -352,6 +353,7 @@ fun Route.periodExceptionRouting() {
                     body = "${kind} for ${exception.className}-${exception.section} ${exception.subject} on ${exception.date}",
                     schoolId = ctx.schoolId,
                     actorId = ctx.userId,
+                    deepLink = "/school/timetable",
                     refType = "period_exception",
                     refId = exception.id,
                 )

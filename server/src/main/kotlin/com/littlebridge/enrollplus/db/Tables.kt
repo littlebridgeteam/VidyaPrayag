@@ -3726,4 +3726,31 @@ object ServerStringOverrideHistoryTable : UUIDTable("server_string_override_hist
     val changedAt  = timestamp("changed_at")
 }
 
+// =====================================================================
+// server_logs  (Notification Deep-Linking & Backend Log Viewer Plan §3.1)
+//   Structured server-side log table for the super-admin Log Viewer.
+//   Categories: http | ai | job | auth | notification | pews | sync | general
+//   Levels: TRACE | DEBUG | INFO | WARN | ERROR
+// =====================================================================
+object ServerLogsTable : UUIDTable("server_logs", "id") {
+    val schoolId    = uuid("school_id").nullable()
+    val timestamp   = timestamp("timestamp")
+    val level       = varchar("level", 8)
+    val category    = varchar("category", 32)
+    val message     = text("message")
+    val actorId     = uuid("actor_id").nullable()
+    val endpoint    = text("endpoint").nullable()
+    val statusCode  = integer("status_code").nullable()
+    val durationMs  = long("duration_ms").nullable()
+    val detailsJson = text("details_json").default("{}")
+    val createdAt   = timestamp("created_at")
+
+    init {
+        index("idx_sl_timestamp", false, timestamp)
+        index("idx_sl_level", false, level)
+        index("idx_sl_category", false, category)
+        index("idx_sl_school", false, schoolId)
+    }
+}
+
 val SYSTEM_SCHOOL_ID: UUID = UUID(0, 0)

@@ -67,6 +67,7 @@ import com.littlebridge.enrollplus.feature.auth.otpAdminRouting
 import com.littlebridge.enrollplus.feature.config.appStatusRouting
 import com.littlebridge.enrollplus.feature.config.versionRouting
 import com.littlebridge.enrollplus.feature.devtools.devToolsRouting
+import com.littlebridge.enrollplus.feature.logging.serverLogRouting
 import com.littlebridge.enrollplus.feature.content.landingRouting
 import com.littlebridge.enrollplus.feature.content.supportRouting
 import com.littlebridge.enrollplus.feature.gateway.api.gatewayRouting
@@ -147,6 +148,8 @@ import com.littlebridge.enrollplus.feature.user.parentMessagesRouting
 import com.littlebridge.enrollplus.feature.user.userDetailsRouting
 import com.littlebridge.enrollplus.feature.user.userProfileRouting
 import com.littlebridge.enrollplus.core.ApiError
+import com.littlebridge.enrollplus.feature.logging.ServerLogWriter
+import kotlinx.coroutines.runBlocking
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
@@ -260,6 +263,9 @@ fun main() {
 fun Application.module() {
     install(IgnoreTrailingSlash)
 
+    // Load persisted logging toggle state from app_config so it survives restarts.
+    runBlocking { ServerLogWriter.initFromConfig() }
+
     // RA-36: reject oversized JSON bodies before they are buffered into memory.
     // Multipart uploads (media route) are exempt — they enforce their own 25 MB
     // streaming cap. Anything else declaring a Content-Length over the JSON limit
@@ -277,6 +283,42 @@ fun Application.module() {
                 ),
             )
             return@intercept finish()
+        }
+    }
+
+    // HTTP request/response logging → ServerLogWriter (structured DB log for
+    // the super-admin Log Viewer). Non-blocking, fire-and-forget.
+    intercept(ApplicationCallPipeline.Monitoring) {
+        val startTime = System.currentTimeMillis()
+        val method = call.request.httpMethod.value
+        val uri = call.request.uri
+        val actorId = call.principal<io.ktor.server.auth.jwt.JWTPrincipal>()?.payload?.subject
+
+        proceed()
+
+        val durationMs = System.currentTimeMillis() - startTime
+        val status = call.response.status()?.value ?: 0
+        val level = when {
+            status >= 500 -> "ERROR"
+            status >= 400 -> "WARN"
+            else -> "INFO"
+        }
+        runCatching {
+            ServerLogWriter.write(
+                level = level,
+                category = "http",
+                message = "$method $uri → $status (${durationMs}ms)",
+                actorId = actorId?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() },
+                endpoint = "$method $uri",
+                statusCode = status,
+                durationMs = durationMs,
+                details = mapOf(
+                    "method" to method,
+                    "uri" to uri,
+                    "status" to status,
+                    "duration_ms" to durationMs,
+                ),
+            )
         }
     }
 
@@ -315,13 +357,26 @@ fun Application.module() {
         allowMethod(HttpMethod.Get)
         allowMethod(HttpMethod.Post)
         allowMethod(HttpMethod.Put)
+        allowMethod(HttpMethod.Patch)
         allowMethod(HttpMethod.Delete)
         allowMethod(HttpMethod.Options)
     }
 
-    install(CallLogging)
+    install(CallLogging) {
+        filter { call ->
+            val method = call.request.httpMethod
+            val uri = call.request.uri
+            // Skip CORS preflight (OPTIONS) and repetitive polling endpoints
+            // from console logging — they still go to the DB via ServerLogWriter.
+            method != HttpMethod.Options &&
+                !uri.startsWith("/api/v1/admin/dev/logs") &&
+                !uri.startsWith("/api/v1/notifications")
+        }
+    }
 
     install(AutoHeadResponse)
+
+    install(io.ktor.server.sse.SSE)
 
     install(ContentNegotiation) {
         json(Json {
@@ -344,6 +399,13 @@ fun Application.module() {
     install(StatusPages) { configureErrorHandling() }
 
     routing {
+        // Global CORS preflight handler — must be before any authenticate{} block
+        // so OPTIONS requests don't get 403'd by the JWT auth plugin.
+        // {path...} is a Ktor tailcard that matches any number of path segments.
+        options("{path...}") {
+            call.respond(HttpStatusCode.NoContent)
+        }
+
         get("/") {
             call.respondText("Ktor: ${Greeting().greet()} — VidyaPrayag API v1 is live")
         }
@@ -453,6 +515,12 @@ fun Application.module() {
         // Super-admin developer tools (OTP provider switch, pulse trigger, ad-hoc
         // notification send). Guarded by requireSuperAdmin() inside the route.
         devToolsRouting()
+
+        // Super-admin server log viewer (Notification Deep-Linking & Backend Log Viewer Plan §3.2)
+        //   GET  /api/v1/admin/dev/logs          — paginated log query
+        //   GET  /api/v1/admin/dev/logs/stream   — SSE real-time stream
+        //   GET  /api/v1/admin/dev/logs/stats    — aggregate stats
+        serverLogRouting()
 
         // Student Health Records (HEALTH_RECORDS_SPEC.md — P1-12)
         //   /api/v1/school/health/{profiles,immunizations,incidents}  — admin/nurse

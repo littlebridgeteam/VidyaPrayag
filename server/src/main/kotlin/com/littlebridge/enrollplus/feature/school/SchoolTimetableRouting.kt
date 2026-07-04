@@ -401,6 +401,7 @@ fun Route.schoolTimetableRouting() {
                     title = "New period assigned",
                     body = "${period.subject} — ${period.className}-${period.section} on day ${period.weekday} at ${period.startTime}",
                     schoolId = ctx.schoolId,
+                    deepLink = "/teacher/timetable",
                     refType = "teacher_period",
                     refId = period.id,
                 )
@@ -644,6 +645,7 @@ fun Route.schoolTimetableRouting() {
                     title = "Period removed",
                     body = "${deleted.third} — ${deleted.second} period has been removed from the timetable",
                     schoolId = ctx.schoolId,
+                    deepLink = "/teacher/timetable",
                     refType = "teacher_period",
                     refId = periodId.toString(),
                 )

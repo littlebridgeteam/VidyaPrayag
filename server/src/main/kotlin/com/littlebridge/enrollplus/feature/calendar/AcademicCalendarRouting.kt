@@ -533,7 +533,7 @@ private suspend fun notifyEvent(
             body = dto.description.take(140),
             schoolId = schoolId,
             actorId = actorId,
-            deepLink = "calendar/${dto.id}",
+            deepLink = "/calendar/${dto.id}",
             refType = "calendar_event",
             refId = dto.id
         )

@@ -102,6 +102,7 @@ dependencies {
     implementation("io.ktor:ktor-server-auth-jwt:3.4.3")
     implementation("io.ktor:ktor-server-call-logging:3.4.3")
     implementation("io.ktor:ktor-server-auto-head-response:3.4.3")
+    implementation("io.ktor:ktor-server-sse:3.4.3")
 
     // -----------------------------------------------------------------
     // Ktor HTTP CLIENT — used by the OTP delivery layer (Fast2SMS, MSG91,

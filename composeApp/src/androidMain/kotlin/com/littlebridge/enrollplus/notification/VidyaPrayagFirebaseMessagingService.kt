@@ -65,6 +65,8 @@ class VidyaPrayagFirebaseMessagingService : FirebaseMessagingService() {
         const val KEY_DEEP_LINK = "deepLink"
         const val KEY_ENTITY_ID = "entityId"
         const val KEY_SCHOOL_ID = "schoolId"
+        const val KEY_REF_TYPE = "refType"
+        const val KEY_REF_ID = "refId"
     }
 
     /**
@@ -136,6 +138,8 @@ class VidyaPrayagFirebaseMessagingService : FirebaseMessagingService() {
         val deepLink = data[KEY_DEEP_LINK]
         val entityId = data[KEY_ENTITY_ID]
         val schoolId = data[KEY_SCHOOL_ID]
+        val refType = data[KEY_REF_TYPE]
+        val refId = data[KEY_REF_ID]
 
         if (title.isNullOrBlank() && body.isNullOrBlank()) {
             Log.w(TAG, "onMessageReceived: no title/body in payload — ignoring. dataKeys=${data.keys}")
@@ -145,7 +149,7 @@ class VidyaPrayagFirebaseMessagingService : FirebaseMessagingService() {
         Log.d(
             TAG,
             "onMessageReceived: title=${title?.take(40)} type=$type deepLink=$deepLink " +
-                "entityId=$entityId schoolId=$schoolId"
+                "entityId=$entityId schoolId=$schoolId refType=$refType refId=$refId"
         )
 
         runCatching {
@@ -156,7 +160,9 @@ class VidyaPrayagFirebaseMessagingService : FirebaseMessagingService() {
                 deepLink = deepLink,
                 type = type,
                 entityId = entityId,
-                schoolId = schoolId
+                schoolId = schoolId,
+                refType = refType,
+                refId = refId
             )
         }.onFailure { e ->
             Log.e(TAG, "Failed to display local notification for push payload.", e)

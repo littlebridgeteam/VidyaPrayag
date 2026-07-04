@@ -341,7 +341,16 @@ function AnalyticsGrid({ data }: { data: AlumniAnalyticsDto }) {
 
 function MentorshipTab() {
   const { data: mentorships, error: mErr, isLoading: mLoading } = useSWR("alumni-mentorships", () => adminApi.alumniMentorships());
-  const { data: requests, error: rErr, isLoading: rLoading } = useSWR("alumni-mentorship-requests", () => adminApi.alumniMentorshipRequests());
+  const { data: requests, error: rErr, isLoading: rLoading, mutate: mutateRequests } = useSWR("alumni-mentorship-requests", () => adminApi.alumniMentorshipRequests());
+
+  async function handleRequest(requestId: string, action: string) {
+    try {
+      await adminApi.alumniMentorshipRequestOverride(requestId, action);
+      await mutateRequests();
+    } catch (e) {
+      console.error(e);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -378,7 +387,7 @@ function MentorshipTab() {
         {requests && requests.length > 0 && (
           <div className="grid gap-3 sm:grid-cols-2">
             {requests.map((r) => (
-              <Card key={r.id} className="space-y-1">
+              <Card key={r.id} className="space-y-2">
                 <div className="flex items-center justify-between">
                   <p className="font-semibold text-ink">{r.alumniName}</p>
                   <Badge tone={r.status === "pending" ? "warning" : "neutral"}>{r.status}</Badge>
@@ -387,6 +396,22 @@ function MentorshipTab() {
                 <p className="text-[13px] text-ink-2">Requested by: {r.requestedByName}</p>
                 {r.expertiseArea && <p className="text-[13px] text-ink-2">Expertise: {r.expertiseArea}</p>}
                 {r.message && <p className="text-[13px] text-ink-2">{r.message}</p>}
+                {r.status === "pending" && (
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      onClick={() => handleRequest(r.id, "approve")}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-[13px] font-semibold text-white hover:bg-green-700"
+                    >
+                      <IconCheck className="h-4 w-4" /> Approve
+                    </button>
+                    <button
+                      onClick={() => handleRequest(r.id, "decline")}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-[13px] font-semibold text-white hover:bg-red-700"
+                    >
+                      <IconClose className="h-4 w-4" /> Decline
+                    </button>
+                  </div>
+                )}
               </Card>
             ))}
           </div>

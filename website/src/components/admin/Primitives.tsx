@@ -195,7 +195,8 @@ export function FadeIn({
 
 export function Avatar({ name, size = 36 }: { name: string; size?: number }) {
   // deterministic, no external image, soft pastel-tinted initials chip
-  const initials = name
+  const safeName = name ?? "";
+  const initials = safeName
     .trim()
     .split(/\s+/)
     .map((p) => p[0]?.toUpperCase() ?? "")

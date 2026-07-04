@@ -538,17 +538,29 @@ fun Route.teacherMessagesRouting() {
                         )
                     }
                 }
-                // One notification fan-out to every parent.
-                Notify.toUsers(
-                    userIds = parents,
-                    category = "message",
-                    title = "Message from ${ctx.fullName.ifBlank { "your child's teacher" }}",
-                    body = req.body.take(120),
-                    schoolId = ctx.schoolId,
-                    actorId = ctx.userId,
-                    deepLink = "parent/messages",
-                    refType = "message",
-                )
+                // Per-parent notification with the correct recipient thread ID
+                // so the deep link opens the specific chat, not just the message list.
+                parents.forEach { parentId ->
+                    runCatching {
+                        val senderThreadId = dbQuery {
+                            com.littlebridge.enrollplus.db.MessageThreadsTable.selectAll()
+                                .where {
+                                    (com.littlebridge.enrollplus.db.MessageThreadsTable.ownerUserId eq ctx.userId) and
+                                        (com.littlebridge.enrollplus.db.MessageThreadsTable.peerUserId eq parentId)
+                                }.firstOrNull()?.get(com.littlebridge.enrollplus.db.MessageThreadsTable.id)?.value
+                        }
+                        if (senderThreadId != null) {
+                            notifyMessageRecipient(
+                                recipientId = parentId,
+                                schoolId = ctx.schoolId,
+                                actorId = ctx.userId,
+                                actorName = ctx.fullName.ifBlank { "your child's teacher" },
+                                threadId = senderThreadId,
+                                body = req.body,
+                            )
+                        }
+                    }
+                }
                 call.created(TeacherClassBroadcastResponse(parents.size), message = "Message sent to ${parents.size} parents")
             }
         }

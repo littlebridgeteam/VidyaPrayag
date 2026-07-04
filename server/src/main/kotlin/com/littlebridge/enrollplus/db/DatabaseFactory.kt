@@ -329,6 +329,9 @@ object DatabaseFactory {
         LanguagePrefHistoryTable,
         ServerStringOverridesTable,
         ServerStringOverrideHistoryTable,
+        // Server Logs (Notification Deep-Linking & Backend Log Viewer Plan §3.1)
+        // Structured server-side log table for the super-admin Log Viewer.
+        ServerLogsTable,
     )
 
     /** True when DATABASE_URL is set → we're talking to Postgres / Supabase. */

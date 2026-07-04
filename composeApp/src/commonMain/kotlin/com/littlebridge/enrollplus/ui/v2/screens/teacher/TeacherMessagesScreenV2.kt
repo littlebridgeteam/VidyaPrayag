@@ -68,9 +68,23 @@ import org.koin.compose.viewmodel.koinViewModel
 fun TeacherMessagesScreenV2(
     onBack: () -> Unit = {},
     modifier: Modifier = Modifier,
+    initialThreadId: String? = null,
     viewModel: TeacherMessageViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
+
+    LaunchedEffect(Unit) { viewModel.loadThreads() }
+
+    // Deep-link: auto-open a specific conversation when initialThreadId is provided.
+    LaunchedEffect(initialThreadId, state.threads) {
+        if (initialThreadId != null && state.openThreadId == null && !state.loading && state.threads.isNotEmpty()) {
+            val thread = state.threads.firstOrNull { it.id == initialThreadId }
+            if (thread != null) {
+                viewModel.markAsRead(thread.id)
+                viewModel.openThread(thread.id, thread.senderName)
+            }
+        }
+    }
 
     val backHandler: () -> Unit = {
         when {

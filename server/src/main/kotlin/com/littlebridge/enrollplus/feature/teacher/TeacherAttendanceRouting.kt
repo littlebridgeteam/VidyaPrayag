@@ -405,7 +405,7 @@ fun Route.teacherAttendanceRouting() {
                             body = "Your child was $verb$context on ${date}.",
                             schoolId = ctx.schoolId,
                             actorId = ctx.userId,
-                            deepLink = "parent/academics/attendance",
+                            deepLink = "/parent/academics/attendance",
                             refType = "attendance",
                             refId = code,
                         )

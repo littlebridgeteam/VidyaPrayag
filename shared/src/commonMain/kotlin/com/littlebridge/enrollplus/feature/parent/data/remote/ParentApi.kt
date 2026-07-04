@@ -77,6 +77,20 @@ class ParentApi(
         }
     }
 
+    /** Mark a notification read by refType+refId (for push tap auto-read). */
+    suspend fun markNotificationByRef(token: String, refType: String, refId: String): NetworkResult<Unit> {
+        return safeApiCall {
+            client.post(getUrl("api/v1/notifications/mark-by-ref?refType=$refType&refId=$refId"))
+        }
+    }
+
+    /** Clear all read notifications from the server. */
+    suspend fun clearReadNotifications(token: String): NetworkResult<Unit> {
+        return safeApiCall {
+            client.delete(getUrl("api/v1/notifications/clear-all"))
+        }
+    }
+
     // ── RA-43 / RA-56: child-scoped academic reads ───────────────────────────
     // childId is a server-issued UUID (no encoding hazard); the school+child
     // ownership check lives server-side in requireOwnedChild().

@@ -45,6 +45,7 @@ import com.littlebridge.enrollplus.ui.v2.theme.colored
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.qualifier.Qualifier
 
 /**
  * AcademicCalendarScreenV2 — month grid + upcoming-events list, wired to the real
@@ -65,7 +66,8 @@ import org.koin.compose.viewmodel.koinViewModel
 fun AcademicCalendarScreenV2(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: AcademicCalendarViewModel = koinViewModel(),
+    viewModelQualifier: Qualifier? = null,
+    viewModel: AcademicCalendarViewModel = koinViewModel(qualifier = viewModelQualifier),
 ) {
     val state by viewModel.state.collectAsStateV2()
     AcademicCalendarContent(
