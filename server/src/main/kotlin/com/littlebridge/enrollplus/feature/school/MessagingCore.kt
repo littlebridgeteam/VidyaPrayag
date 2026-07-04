@@ -558,10 +558,27 @@ internal suspend fun notifyMessageRecipient(
 ) {
     if (recipientId == null || recipientId == actorId) return
     val recipient = dbQuery { resolveMessagingUser(recipientId) }
+    // Resolve the RECIPIENT's thread ID from the shared conversationId.
+    // The sender's threadId is a different row in MessageThreadsTable — the
+    // recipient's thread list shows their own rows, so the deep link must
+    // use the recipient's thread ID for the client to find and open it.
+    val recipientThreadId = dbQuery {
+        val senderRow = MessageThreadsTable.selectAll()
+            .where { MessageThreadsTable.id eq threadId }
+            .singleOrNull() ?: return@dbQuery null
+        val convId = senderRow.conversationKey()
+        MessageThreadsTable.selectAll()
+            .where {
+                (MessageThreadsTable.conversationId eq convId) and
+                    (MessageThreadsTable.ownerUserId eq recipientId)
+            }
+            .firstOrNull()?.get(MessageThreadsTable.id)?.value
+    } ?: threadId // fallback to sender's threadId if lookup fails
+
     val deepLink = when (recipient?.role) {
-        "parent" -> "/parent/messages/$threadId"
-        "teacher" -> "/teacher/messages/$threadId"
-        "admin", "school_admin", "super_admin" -> "/school/messages/$threadId"
+        "parent" -> "/parent/messages/$recipientThreadId"
+        "teacher" -> "/teacher/messages/$recipientThreadId"
+        "admin", "school_admin", "super_admin" -> "/school/messages/$recipientThreadId"
         else -> "messages"
     }
     runCatching {
@@ -574,7 +591,7 @@ internal suspend fun notifyMessageRecipient(
             actorId = actorId,
             deepLink = deepLink,
             refType = "message",
-            refId = threadId.toString(),
+            refId = recipientThreadId.toString(),
         )
     }
 }
