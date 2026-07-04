@@ -653,12 +653,12 @@ class LibraryService(
 
     suspend fun updateSettings(schoolId: UUID, req: UpdateSettingsRequest, actorId: UUID, actorName: String): LibrarySettingsDto {
         val updates = mutableMapOf<String, Any?>()
-        req.defaultLoanDays?.let { updates["defaultLoanDays"] = it }
-        req.finePerDay?.let { updates["finePerDay"] = it }
-        req.maxBooksPerStudent?.let { updates["maxBooksPerStudent"] = it }
-        req.maxRenewals?.let { updates["maxRenewals"] = it }
-        req.reservationTimeoutDays?.let { updates["reservationTimeoutDays"] = it }
-        req.dueReminderDays?.let { updates["dueReminderDays"] = it }
+        req.defaultLoanDays?.let { updates["defaultLoanDays"] = it.coerceIn(1, 365) }
+        req.finePerDay?.let { updates["finePerDay"] = it.coerceAtLeast(0.0) }
+        req.maxBooksPerStudent?.let { updates["maxBooksPerStudent"] = it.coerceIn(1, 50) }
+        req.maxRenewals?.let { updates["maxRenewals"] = it.coerceIn(0, 20) }
+        req.reservationTimeoutDays?.let { updates["reservationTimeoutDays"] = it.coerceIn(1, 90) }
+        req.dueReminderDays?.let { updates["dueReminderDays"] = it.coerceIn(0, 30) }
         req.fineCapEnabled?.let { updates["fineCapEnabled"] = it }
         req.quickIssueEnabled?.let { updates["quickIssueEnabled"] = it }
         req.bulkReturnEnabled?.let { updates["bulkReturnEnabled"] = it }

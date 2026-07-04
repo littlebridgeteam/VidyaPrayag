@@ -1650,13 +1650,26 @@ private val imageHttpClient by lazy {
 }
 private val log = LoggerFactory.getLogger("TeacherSyllabusRouting")
 
-private suspend fun fetchImageAsBase64(url: String): String? = try {
-    val resp = imageHttpClient.get(url)
-    val bytes = resp.readRawBytes()
-    java.util.Base64.getEncoder().encodeToString(bytes)
-} catch (e: Exception) {
-    log.warn("fetchImageAsBase64: failed to fetch {}", url, e)
-    null
+private const val MAX_IMAGE_BYTES = 5 * 1024 * 1024L // 5 MB cap
+
+private suspend fun fetchImageAsBase64(url: String): String? {
+    return try {
+        val resp = imageHttpClient.get(url)
+        val contentLength = resp.headers[io.ktor.http.HttpHeaders.ContentLength]?.toLongOrNull()
+        if (contentLength != null && contentLength > MAX_IMAGE_BYTES) {
+            log.warn("fetchImageAsBase64: refusing image {} — Content-Length {} exceeds {} byte cap", url, contentLength, MAX_IMAGE_BYTES)
+            return null
+        }
+        val bytes = resp.readRawBytes()
+        if (bytes.size > MAX_IMAGE_BYTES) {
+            log.warn("fetchImageAsBase64: refusing image {} — actual {} bytes exceeds {} byte cap", url, bytes.size, MAX_IMAGE_BYTES)
+            return null
+        }
+        java.util.Base64.getEncoder().encodeToString(bytes)
+    } catch (e: Exception) {
+        log.warn("fetchImageAsBase64: failed to fetch {}", url, e)
+        null
+    }
 }
 
 private fun guessMimeType(url: String): String {

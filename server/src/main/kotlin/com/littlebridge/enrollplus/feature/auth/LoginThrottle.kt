@@ -74,7 +74,7 @@ object LoginThrottle {
         val now = System.currentTimeMillis()
         maybeCleanup(now)
         for (key in listOf(ipKey(ip), idKey(identifier))) {
-            val list = hits.getOrPut(key) { mutableListOf() }
+            val list = hits.computeIfAbsent(key) { java.util.Collections.synchronizedList(mutableListOf()) }
             synchronized(list) {
                 val cutoff = now - windowMillis
                 list.removeAll { it < cutoff }

@@ -9,6 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -101,7 +102,7 @@ fun SchoolPortalV2(
     // UI_FIDELITY_AUDIT §0.5: Admin.tsx renders under `PhoneFrame dark`, but legacy `dark` == the
     // `.warm` scope, which is a WARM-LIGHT theme (lavender bg, dark ink, white cards) — NOT black.
     // Theme is now applied globally at the NavGraphV2 level from user preference.
-    var tab by remember { mutableStateOf("home") }
+    var tab by rememberSaveable { mutableStateOf("home") }
     var overlay by remember { mutableStateOf(SchoolOverlay.None) }
     var localDeepLink by remember { mutableStateOf<DeepLinkTarget?>(null) }
     var deepLinkThreadId by remember { mutableStateOf<String?>(null) }
@@ -119,7 +120,21 @@ fun SchoolPortalV2(
     fun graduateStudents(studentIds: List<String>, year: Int) {
         scope.launch {
             val token = prefs.getUserToken().first() ?: return@launch
-            alumniRepo.graduateStudents(token, GraduateStudentsRequest(studentIds, year))
+            try {
+                when (val result = alumniRepo.graduateStudents(token, GraduateStudentsRequest(studentIds, year))) {
+                    is com.littlebridge.enrollplus.core.network.NetworkResult.Success -> {
+                        com.littlebridge.enrollplus.util.AppLogger.d("SchoolPortal", "graduateStudents succeeded: ${result.data.message}")
+                    }
+                    is com.littlebridge.enrollplus.core.network.NetworkResult.Error -> {
+                        com.littlebridge.enrollplus.util.AppLogger.e("SchoolPortal", "graduateStudents failed: ${result.message}")
+                    }
+                    is com.littlebridge.enrollplus.core.network.NetworkResult.ConnectionError -> {
+                        com.littlebridge.enrollplus.util.AppLogger.e("SchoolPortal", "graduateStudents: connection error")
+                    }
+                }
+            } catch (e: Exception) {
+                com.littlebridge.enrollplus.util.AppLogger.e("SchoolPortal", "graduateStudents error: ${e.message}", e)
+            }
         }
     }
 
@@ -155,11 +170,21 @@ fun SchoolPortalV2(
                     "messages" -> { tab = "comms"; overlay = SchoolOverlay.Messages }
                     "announcements" -> { tab = "comms"; overlay = SchoolOverlay.None }
                     "calendar" -> overlay = SchoolOverlay.AcademicCalendarPlatform
-                    "fees" -> { tab = "records"; overlay = SchoolOverlay.None }
+                    "fees" -> { tab = "records"; overlay = SchoolOverlay.None; recordsInitialTab = "Fee" }
+                    "scholarship", "scholarships" -> overlay = SchoolOverlay.ScholarshipManagement
                     "tutor" -> { tab = "home"; overlay = SchoolOverlay.None }
                     "timetable" -> overlay = SchoolOverlay.ClassesSubjects
                     "timetable-requests" -> overlay = SchoolOverlay.ClassesSubjects
                     "pace-alerts", "pace" -> { tab = "home"; overlay = SchoolOverlay.None }
+                    "alumni" -> overlay = SchoolOverlay.Alumni
+                    "analytics", "intelligence" -> overlay = SchoolOverlay.AnalyticsDashboard
+                    "daily-attendance" -> overlay = SchoolOverlay.DailyAttendance
+                    "class-performance" -> overlay = SchoolOverlay.ClassPerformance
+                    "teacher-performance" -> overlay = SchoolOverlay.TeacherPerformance
+                    "student-roster" -> overlay = SchoolOverlay.StudentRoster
+                    "edit-profile" -> overlay = SchoolOverlay.EditProfile
+                    "staff" -> overlay = SchoolOverlay.Staff
+                    "report-effectiveness" -> overlay = SchoolOverlay.ReportEffectiveness
                     // Valid bottom-nav tabs
                     "home", "people", "records", "comms", "settings" -> tab = target.screen
                     else -> tab = "home"
@@ -192,6 +217,18 @@ fun SchoolPortalV2(
                     pathOnly.startsWith("ptm") -> overlay = SchoolOverlay.SchedulePTM
                     pathOnly.startsWith("health-records") -> overlay = SchoolOverlay.HealthRecords
                     pathOnly.startsWith("scheduled-messages") -> overlay = SchoolOverlay.ScheduledMessages
+                    pathOnly.startsWith("alumni") -> overlay = SchoolOverlay.Alumni
+                    pathOnly.startsWith("scholarship") -> overlay = SchoolOverlay.ScholarshipManagement
+                    pathOnly.startsWith("analytics") -> overlay = SchoolOverlay.AnalyticsDashboard
+                    pathOnly.startsWith("intelligence") -> overlay = SchoolOverlay.AnalyticsDashboard
+                    pathOnly.startsWith("daily-attendance") -> overlay = SchoolOverlay.DailyAttendance
+                    pathOnly.startsWith("class-performance") -> overlay = SchoolOverlay.ClassPerformance
+                    pathOnly.startsWith("teacher-performance") -> overlay = SchoolOverlay.TeacherPerformance
+                    pathOnly.startsWith("student-roster") -> overlay = SchoolOverlay.StudentRoster
+                    pathOnly.startsWith("edit-profile") -> overlay = SchoolOverlay.EditProfile
+                    pathOnly.startsWith("staff") -> overlay = SchoolOverlay.Staff
+                    pathOnly.startsWith("report-effectiveness") -> overlay = SchoolOverlay.ReportEffectiveness
+                    pathOnly.startsWith("fee-reminder") -> { tab = "records"; overlay = SchoolOverlay.None; recordsInitialTab = "Fee" }
                     else -> tab = "home"
                 }
             }
@@ -225,6 +262,8 @@ fun SchoolPortalV2(
         // the full-screen Notifications/Calendar overlay back to the admin tabs
         // instead of leaving the portal. Mirrors the React `onBack` wiring.
         BackHandler(enabled = overlay != SchoolOverlay.None) {
+            deepLinkThreadId = null
+            selectedPewsStudentCode = null
             when (overlay) {
                 SchoolOverlay.StudentProfile, SchoolOverlay.TeacherProfile -> {
                     val returnTo = profileReturnOverlay

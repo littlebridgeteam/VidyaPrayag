@@ -544,7 +544,7 @@ private fun ProfileTab(state: StudentLibraryState, viewModel: StudentLibraryView
         var targetYear by remember { mutableStateOf(java.time.LocalDate.now().year.toString()) }
         VCard {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                VInput(value = goalCount, onValueChange = { goalCount = it }, label = "Goal (number of books)", modifier = Modifier.fillMaxWidth())
+                VInput(value = goalCount, onValueChange = { v -> goalCount = v.filter { it.isDigit() }.take(4) }, label = "Goal (number of books)", modifier = Modifier.fillMaxWidth())
                 Text("Period", style = VTheme.type.caption.colored(c.ink2))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     listOf("monthly" to "Monthly", "quarterly" to "Quarterly", "yearly" to "Yearly").forEach { (key, label) ->
@@ -555,14 +555,14 @@ private fun ProfileTab(state: StudentLibraryState, viewModel: StudentLibraryView
                         )
                     }
                 }
-                VInput(value = targetYear, onValueChange = { targetYear = it }, label = "Target Year", modifier = Modifier.fillMaxWidth())
+                VInput(value = targetYear, onValueChange = { v -> targetYear = v.filter { it.isDigit() }.take(4) }, label = "Target Year", modifier = Modifier.fillMaxWidth())
                 VButton(
                     text = "Set Goal",
                     onClick = {
                         viewModel.setReadingGoal(
-                            goalCount.toIntOrNull() ?: 5,
+                            (goalCount.toIntOrNull() ?: 5).coerceIn(1, 1000),
                             period,
-                            targetYear.toIntOrNull() ?: java.time.LocalDate.now().year,
+                            (targetYear.toIntOrNull() ?: java.time.LocalDate.now().year).coerceIn(2000, 2100),
                         )
                     },
                     full = true,

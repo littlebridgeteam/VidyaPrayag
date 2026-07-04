@@ -9,6 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -37,9 +38,9 @@ private enum class TeacherOverlay { None, Notifications, HealthAlerts, Transport
  * design language (lavender canvas, white rounded cards, Canvas rings, floating
  * dock, brand violet reserved for active/brand moments).
  *
- * New 4-tab IA (replacing the old Today/Classes/Gradebook/Planner/Profile):
+ * New 5-tab IA (replacing the old Today/Classes/Gradebook/Planner/Profile):
  *
- *   HOME · UPDATE · CLASSES · PROFILE
+ *   HOME · UPDATE · CLASSES · TIMETABLE · PROFILE
  *
  *   • HOME    — time-sensitive greeting, first-login fingerprint check-in popup,
  *               attendance clubbed into DB-backed summary cards, today's schedule,
@@ -70,7 +71,7 @@ fun TeacherPortalV2(
     notificationsViewModel: NotificationsViewModel = koinViewModel(),
     preferenceRepository: PreferenceRepository = koinInject(),
 ) {
-    var tab by remember { mutableStateOf("home") }
+    var tab by rememberSaveable { mutableStateOf("home") }
     var overlay by remember { mutableStateOf(TeacherOverlay.None) }
     var localDeepLink by remember { mutableStateOf<DeepLinkTarget?>(null) }
     var deepLinkThreadId by remember { mutableStateOf<String?>(null) }
@@ -100,9 +101,14 @@ fun TeacherPortalV2(
                     "announcements" -> { tab = "home"; overlay = TeacherOverlay.None }
                     "leave-requests", "leave" -> { tab = "profile"; overlay = TeacherOverlay.None }
                     "library" -> { tab = "home"; overlay = TeacherOverlay.None }
+                    "pews" -> overlay = TeacherOverlay.Pews
                     "messages" -> overlay = TeacherOverlay.Messages
                     "timetable-requests" -> { tab = "timetable"; overlay = TeacherOverlay.None }
                     "calendar" -> overlay = TeacherOverlay.Calendar
+                    "broadcast" -> { tab = "home"; overlay = TeacherOverlay.None }
+                    "lesson-plan" -> { tab = "update"; overlay = TeacherOverlay.None }
+                    "syllabus" -> { tab = "update"; overlay = TeacherOverlay.None }
+                    "quizzes" -> { tab = "update"; overlay = TeacherOverlay.None }
                     // Valid bottom-nav tabs
                     "home", "update", "classes", "timetable", "profile" -> tab = target.screen
                     else -> tab = "home"
@@ -124,6 +130,12 @@ fun TeacherPortalV2(
                     pathOnly.startsWith("calendar") -> overlay = TeacherOverlay.Calendar
                     pathOnly.startsWith("timetable-requests") -> { tab = "timetable"; overlay = TeacherOverlay.None }
                     pathOnly.startsWith("timetable") -> { tab = "timetable"; overlay = TeacherOverlay.None }
+                    pathOnly.startsWith("pews") -> overlay = TeacherOverlay.Pews
+                    pathOnly.startsWith("library") -> { tab = "home"; overlay = TeacherOverlay.None }
+                    pathOnly.startsWith("broadcast") -> { tab = "home"; overlay = TeacherOverlay.None }
+                    pathOnly.startsWith("lesson-plan") -> { tab = "update"; overlay = TeacherOverlay.None }
+                    pathOnly.startsWith("syllabus") -> { tab = "update"; overlay = TeacherOverlay.None }
+                    pathOnly.startsWith("quizzes") -> { tab = "update"; overlay = TeacherOverlay.None }
                     else -> tab = "home"
                 }
             }
@@ -145,6 +157,10 @@ fun TeacherPortalV2(
 
     BackHandler(enabled = overlay != TeacherOverlay.None) {
         overlay = TeacherOverlay.None
+        deepLinkThreadId = null
+        reportClassName = ""
+        reportSection = "A"
+        reportTerm = "Term 1"
     }
     // From a non-home tab, Back returns to HOME (familiar app behaviour).
     BackHandler(enabled = overlay == TeacherOverlay.None && tab != "home") {
@@ -287,7 +303,14 @@ fun TeacherPortalV2(
             }
         },
         bottomBar = {
-            TeacherDock(items = items, selected = tab, onSelect = { tab = it })
+            TeacherDock(items = items, selected = tab, onSelect = { newTab ->
+            if (tab == "update" && newTab != "update") {
+                updateAssignmentId = null
+                updateScopeLabel = ""
+                updateInitialTool = UpdateTool.Attendance
+            }
+            tab = newTab
+        })
         },
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding())) {

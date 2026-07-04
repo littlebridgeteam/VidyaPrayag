@@ -83,6 +83,9 @@ object FirebaseAdminInitializer {
     @Volatile
     private var otpSenderCredentialSource: String? = null
 
+    private val appLock = Any()
+    private val otpSenderLock = Any()
+
     /**
      * Returns the initialized FirebaseApp or null when credentials
      * cannot be resolved.
@@ -90,7 +93,7 @@ object FirebaseAdminInitializer {
     fun app(): FirebaseApp? {
         if (attempted) return cachedApp
 
-        synchronized(this) {
+        synchronized(appLock) {
             if (attempted) return cachedApp
 
             cachedApp = initialise(
@@ -129,7 +132,7 @@ object FirebaseAdminInitializer {
     fun otpSenderApp(): FirebaseApp? {
         if (otpSenderAttempted) return cachedOtpSenderApp
 
-        synchronized(this) {
+        synchronized(otpSenderLock) {
             if (otpSenderAttempted) return cachedOtpSenderApp
 
             cachedOtpSenderApp = initialise(

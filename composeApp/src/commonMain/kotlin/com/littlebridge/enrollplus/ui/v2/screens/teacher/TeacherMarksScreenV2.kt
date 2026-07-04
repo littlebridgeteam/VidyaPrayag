@@ -174,8 +174,8 @@ private fun CreateAssessmentComposer(viewModel: TeacherGradebookViewModel, onDon
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                VInput(value = state.createMaxMarks, onValueChange = viewModel::setCreateMaxMarks, label = "Max marks", keyboardType = KeyboardType.Number, modifier = Modifier.weight(1f))
-                VInput(value = state.createPassMarks, onValueChange = viewModel::setCreatePassMarks, label = "Pass (optional)", keyboardType = KeyboardType.Number, modifier = Modifier.weight(1f))
+                VInput(value = state.createMaxMarks, onValueChange = { v -> viewModel.setCreateMaxMarks(v.filter { it.isDigit() || it == '.' }.take(6)) }, label = "Max marks", keyboardType = KeyboardType.Number, modifier = Modifier.weight(1f))
+                VInput(value = state.createPassMarks, onValueChange = { v -> viewModel.setCreatePassMarks(v.filter { it.isDigit() || it == '.' }.take(6)) }, label = "Pass (optional)", keyboardType = KeyboardType.Number, modifier = Modifier.weight(1f))
             }
             VDatePicker(value = state.createExamDate, onValueChange = viewModel::setCreateExamDate, label = "Exam date", placeholder = "Pick the test date")
             if (state.createError != null) {

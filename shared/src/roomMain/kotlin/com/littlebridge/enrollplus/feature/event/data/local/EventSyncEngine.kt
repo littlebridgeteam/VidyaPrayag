@@ -2,6 +2,7 @@ package com.littlebridge.enrollplus.feature.event.data.local
 
 import com.littlebridge.enrollplus.core.database.AppDatabase
 import com.littlebridge.enrollplus.core.network.NetworkResult
+import com.littlebridge.enrollplus.util.AppLogger
 import com.littlebridge.enrollplus.feature.event.data.repository.EventRegistrationRepositoryImpl
 import com.littlebridge.enrollplus.feature.event.domain.model.CancelRegistrationRequest
 import com.littlebridge.enrollplus.feature.event.domain.model.RegisterRequest
@@ -28,7 +29,7 @@ class EventSyncEngine(
             while (true) {
                 delay(POLL_INTERVAL_MS)
                 runCatching { drain() }
-                    .onFailure { println("[$TAG] drain failed: ${it.message}") }
+                    .onFailure { AppLogger.e(TAG, "drain failed: ${it.message}") }
             }
         }
     }

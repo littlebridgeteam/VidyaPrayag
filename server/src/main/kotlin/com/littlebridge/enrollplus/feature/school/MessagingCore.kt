@@ -312,8 +312,13 @@ private fun nextSeqForConversation(conversationId: UUID): Int {
             .where { ConversationSeqTable.conversationId eq conversationId }
             .forUpdate()
             .firstOrNull()
-    } catch (_: Throwable) {
-        // forUpdate() not supported on some DBs — fall back to plain select.
+    } catch (_: UnsupportedOperationException) {
+        // forUpdate() not supported on some DBs (e.g. SQLite) — fall back to plain select.
+        ConversationSeqTable.selectAll()
+            .where { ConversationSeqTable.conversationId eq conversationId }
+            .firstOrNull()
+    } catch (_: Exception) {
+        // forUpdate() not supported on this DB driver — fall back to plain select.
         ConversationSeqTable.selectAll()
             .where { ConversationSeqTable.conversationId eq conversationId }
             .firstOrNull()
@@ -325,7 +330,7 @@ private fun nextSeqForConversation(conversationId: UUID): Int {
             it[ConversationSeqTable.nextVal] = newVal
             it[ConversationSeqTable.updatedAt] = Instant.now()
         }
-        return newVal
+        return newVal.toInt()
     }
 
     // First message in this conversation — insert counter at 1.

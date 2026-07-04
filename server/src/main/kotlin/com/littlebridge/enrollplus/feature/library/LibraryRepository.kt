@@ -277,21 +277,21 @@ class LibraryRepository {
         }) {
             updates.forEach { (k, v) ->
                 when (k) {
-                    "title" -> it[LibraryBooksTable.title] = v as String
-                    "author" -> it[LibraryBooksTable.author] = v as String?
-                    "publisher" -> it[LibraryBooksTable.publisher] = v as String?
-                    "category" -> it[LibraryBooksTable.category] = v as String?
+                    "title" -> it[LibraryBooksTable.title] = v as? String ?: ""
+                    "author" -> it[LibraryBooksTable.author] = v as? String
+                    "publisher" -> it[LibraryBooksTable.publisher] = v as? String
+                    "category" -> it[LibraryBooksTable.category] = v as? String
                     "tags" -> it[LibraryBooksTable.tags] = (v as? List<String>)?.let { t -> json.encodeToString(t) }
-                    "shelfLocation" -> it[LibraryBooksTable.shelfLocation] = v as String?
-                    "coverUrl" -> it[LibraryBooksTable.coverUrl] = v as String?
+                    "shelfLocation" -> it[LibraryBooksTable.shelfLocation] = v as? String
+                    "coverUrl" -> it[LibraryBooksTable.coverUrl] = v as? String
                     "replacementCost" -> it[LibraryBooksTable.replacementCost] = v as? Double
-                    "seriesName" -> it[LibraryBooksTable.seriesName] = v as String?
+                    "seriesName" -> it[LibraryBooksTable.seriesName] = v as? String
                     "seriesNumber" -> it[LibraryBooksTable.seriesNumber] = v as? Int
-                    "language" -> it[LibraryBooksTable.language] = v as String
-                    "synopsis" -> it[LibraryBooksTable.synopsis] = v as String?
+                    "language" -> it[LibraryBooksTable.language] = v as? String ?: "en"
+                    "synopsis" -> it[LibraryBooksTable.synopsis] = v as? String
                     "pageCount" -> it[LibraryBooksTable.pageCount] = v as? Int
-                    "totalCopies" -> it[LibraryBooksTable.totalCopies] = v as Int
-                    "isArchived" -> it[LibraryBooksTable.isArchived] = v as Boolean
+                    "totalCopies" -> it[LibraryBooksTable.totalCopies] = v as? Int ?: 1
+                    "isArchived" -> it[LibraryBooksTable.isArchived] = v as? Boolean ?: false
                 }
             }
             it[updatedAt] = now

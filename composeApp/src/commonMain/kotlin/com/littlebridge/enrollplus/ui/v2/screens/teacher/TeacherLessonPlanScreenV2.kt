@@ -307,7 +307,7 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
                     Column(Modifier.width(100.dp)) {
                         Text("Minutes", style = VTheme.type.label.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
                         Spacer(Modifier.height(6.dp))
-                        VInput(value = e.durationMinutes.toString(), onValueChange = { v -> v.toIntOrNull()?.let { viewModel.setEditorDuration(it) } }, placeholder = "45")
+                        VInput(value = e.durationMinutes.toString(), onValueChange = { v -> v.filter { it.isDigit() }.take(4).toIntOrNull()?.let { viewModel.setEditorDuration(it.coerceIn(1, 600)) } }, placeholder = "45")
                     }
                 }
             }
@@ -411,14 +411,14 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
                         )
                         VInput(
                             value = activityDuration,
-                            onValueChange = { activityDuration = it },
+                            onValueChange = { v -> activityDuration = v.filter { it.isDigit() }.take(4) },
                             placeholder = "min",
                             modifier = Modifier.width(60.dp),
                         )
                         VButton(
                             text = "Add",
                             onClick = {
-                                val dur = activityDuration.toIntOrNull() ?: 15
+                                val dur = (activityDuration.toIntOrNull() ?: 15).coerceIn(1, 600)
                                 viewModel.addActivity(activityText, dur)
                                 activityText = ""
                                 activityDuration = "15"

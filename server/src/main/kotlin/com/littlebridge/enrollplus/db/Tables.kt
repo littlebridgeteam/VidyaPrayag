@@ -423,6 +423,10 @@ object SchoolMediaTable : UUIDTable("school_media", "id") {
     val sizeBytes  = long("size_bytes").default(0)
     val uploadedBy = uuid("uploaded_by").nullable()
     val createdAt  = timestamp("created_at")
+
+    init {
+        index("idx_school_media_school_id", isUnique = false, schoolId)
+    }
 }
 
 object StorageMetricsTable : Table("storage_metrics") {

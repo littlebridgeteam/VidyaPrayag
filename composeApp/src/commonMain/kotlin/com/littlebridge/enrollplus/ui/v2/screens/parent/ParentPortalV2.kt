@@ -17,12 +17,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -85,7 +87,7 @@ fun ParentPortalV2(
     // dock when a conversation or compose-new is open (WhatsApp pattern).
     messageViewModel: ParentMessageViewModel = koinViewModel(),
 ) {
-    var tab by remember { mutableStateOf("home") }
+    var tab by rememberSaveable { mutableStateOf("home") }
     var overlay by remember { mutableStateOf(ParentOverlay.None) }
     var localDeepLink by remember { mutableStateOf<DeepLinkTarget?>(null) }
     var deepLinkThreadId by remember { mutableStateOf<String?>(null) }
@@ -143,6 +145,7 @@ fun ParentPortalV2(
                 when {
                     pathOnly.startsWith("announcements") -> { tab = "conversations"; overlay = ParentOverlay.None; deepLinkSegment = ConversationsSegment.Announcements }
                     pathOnly.startsWith("fees") -> { tab = "fees"; overlay = ParentOverlay.None }
+                    pathOnly.startsWith("fee-reminder") -> { tab = "fees"; overlay = ParentOverlay.None }
                     pathOnly.startsWith("scholarships") -> { tab = "home"; overlay = ParentOverlay.Scholarships }
                     pathOnly.startsWith("transport") -> { tab = "home"; overlay = ParentOverlay.Transport }
                     pathOnly.startsWith("library") -> { tab = "home"; overlay = ParentOverlay.Library }
@@ -154,12 +157,14 @@ fun ParentPortalV2(
                     pathOnly.startsWith("calendar") -> { tab = "home"; overlay = ParentOverlay.Calendar }
                     pathOnly.startsWith("report-card") -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Report" }
                     pathOnly.startsWith("tutor") -> { overlay = ParentOverlay.TutorChat }
+                    pathOnly.startsWith("tutor-progress") -> { overlay = ParentOverlay.TutorProgress }
                     pathOnly.startsWith("timetable") -> { overlay = ParentOverlay.Calendar }
                     pathOnly.startsWith("marks") -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Marks" }
                     pathOnly.startsWith("attendance") -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Attendance" }
                     pathOnly.startsWith("homework") -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Homework" }
                     pathOnly.startsWith("syllabus") -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Syllabus" }
                     pathOnly.startsWith("link-child") -> { tab = "profile"; overlay = ParentOverlay.LinkChild }
+                    else -> { tab = "home"; overlay = ParentOverlay.None }
                 }
             }
             else -> Unit
@@ -187,11 +192,41 @@ fun ParentPortalV2(
         )
         return
     }
+    // ERR-002: If the dashboard failed to load, show an error state instead of
+    // silently rendering skeleton screens or falling through to the unlinked gate.
+    if (!dashboard.isLoading && dashboard.error != null) {
+        Box(
+            modifier = modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    "Unable to load your dashboard",
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    dashboard.error ?: "Unknown error",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Tap to retry",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.clickable { dashboardViewModel.load() },
+                )
+            }
+        }
+        return
+    }
 
     // §11 cross-platform — predictive back / edge-swipe dismisses the full-screen overlay back to
     // the tabs, not the portal.
     BackHandler(enabled = overlay != ParentOverlay.None) {
         overlay = ParentOverlay.None
+        deepLinkThreadId = null
+        deepLinkSegment = null
     }
 
     when (overlay) {
@@ -221,7 +256,12 @@ fun ParentPortalV2(
             // after signup/login — the "Linked children" row opens the link flow as an overlay.
             ParentProfileScreenV2(
                 onBack = { overlay = ParentOverlay.None },
-                onLogout = onLogout,
+                onLogout = {
+                    overlay = ParentOverlay.None
+                    deepLinkThreadId = null
+                    deepLinkSegment = null
+                    onLogout()
+                },
                 onLinkChild = { overlay = ParentOverlay.LinkChild },
                 onDiscoverSchools = { overlay = ParentOverlay.Discovery },
                 modifier = modifier,
@@ -304,8 +344,9 @@ fun ParentPortalV2(
         }
         ParentOverlay.DigitalIdCard -> {
             val child = dashboard.selectedChild
+            if (child == null) { overlay = ParentOverlay.None; return }
             DigitalIdCardScreen(
-                childId = child?.id,
+                childId = child.id,
                 isTeacher = false,
                 onBack = { overlay = ParentOverlay.None },
                 modifier = modifier,
@@ -432,7 +473,12 @@ fun ParentPortalV2(
                 // Phase 4 (commits 10–11): the flagship collectible player card, with a
                 // swipe-down account-options reveal (logout / link child / discover schools).
                 "profile" -> ParentProfileCardScreenV2(
-                    onLogout = onLogout,
+                    onLogout = {
+                        overlay = ParentOverlay.None
+                        deepLinkThreadId = null
+                        deepLinkSegment = null
+                        onLogout()
+                    },
                     onLinkChild = { overlay = ParentOverlay.LinkChild },
                     onDiscoverSchools = { overlay = ParentOverlay.Discovery },
                 )

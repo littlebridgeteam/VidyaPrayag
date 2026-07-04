@@ -67,37 +67,32 @@ private val landingLogger = LoggerFactory.getLogger("LandingRouting")
 fun Route.landingRouting() {
     route("/api/v1/content") {
         get("/landing") {
-            try {
-                val kv: Map<String, String> = dbQuery {
-                    LandingContentTable.selectAll().associate {
-                        it[LandingContentTable.key] to it[LandingContentTable.value]
-                    }
+            val kv: Map<String, String> = dbQuery {
+                LandingContentTable.selectAll().associate {
+                    it[LandingContentTable.key] to it[LandingContentTable.value]
                 }
-
-                val loginModes: List<String> = kv["login_modes"]?.let {
-                    lenientJson.parseToJsonElement(it).jsonArray.map { e -> e.toString().trim('"') }
-                } ?: listOf("EMAIL", "MOBILE")
-
-                val response = LandingResponse(
-                    topTagline = kv["top_tagline"]?.trim('"') ?: "Education with Trust.",
-                    subTagline = kv["sub_tagline"]?.trim('"') ?: "Progress with Purpose.",
-                    parentInfo = kv["parent_info"]?.let {
-                        lenientJson.decodeFromString(LandingSection.serializer(), it)
-                    } ?: LandingSection("FOR PARENTS", "Find schools", emptyList(), emptyList()),
-                    schoolInfo = kv["school_info"]?.let {
-                        lenientJson.decodeFromString(LandingSection.serializer(), it)
-                    } ?: LandingSection("FOR SCHOOLS", "Scale excellence", emptyList(), emptyList()),
-                    listOfOfferings = decodeList(kv["list_of_offerings"]),
-                    listOfPortals = decodeList(kv["list_of_portals"]),
-                    loginModes = loginModes,
-                    tosLink = kv["tos_link"]?.trim('"') ?: "https://vidyaprayag.com/terms",
-                    privacyPolicyLink = kv["privacy_policy_link"]?.trim('"') ?: "https://vidyaprayag.com/privacy"
-                )
-                call.ok(response, message = "Landing page content fetched successfully")
-            } catch (e: Exception) {
-                landingLogger.error("API_ERROR: Failed to fetch landing content", e)
-                throw e
             }
+
+            val loginModes: List<String> = kv["login_modes"]?.let {
+                lenientJson.parseToJsonElement(it).jsonArray.map { e -> e.toString().trim('"') }
+            } ?: listOf("EMAIL", "MOBILE")
+
+            val response = LandingResponse(
+                topTagline = kv["top_tagline"]?.trim('"') ?: "Education with Trust.",
+                subTagline = kv["sub_tagline"]?.trim('"') ?: "Progress with Purpose.",
+                parentInfo = kv["parent_info"]?.let {
+                    lenientJson.decodeFromString(LandingSection.serializer(), it)
+                } ?: LandingSection("FOR PARENTS", "Find schools", emptyList(), emptyList()),
+                schoolInfo = kv["school_info"]?.let {
+                    lenientJson.decodeFromString(LandingSection.serializer(), it)
+                } ?: LandingSection("FOR SCHOOLS", "Scale excellence", emptyList(), emptyList()),
+                listOfOfferings = decodeList(kv["list_of_offerings"]),
+                listOfPortals = decodeList(kv["list_of_portals"]),
+                loginModes = loginModes,
+                tosLink = kv["tos_link"]?.trim('"') ?: "https://vidyaprayag.com/terms",
+                privacyPolicyLink = kv["privacy_policy_link"]?.trim('"') ?: "https://vidyaprayag.com/privacy"
+            )
+            call.ok(response, message = "Landing page content fetched successfully")
         }
     }
 }

@@ -130,7 +130,7 @@ suspend inline fun <reified T> safeApiCall(block: () -> HttpResponse): NetworkRe
         AppLogger.e("API_CALL", "PARSING ERROR: ${e.message}")
         NetworkResult.Error("Data parsing error")
     } catch (e: Exception) {
-        AppLogger.e("API_CALL", "UNKNOWN ERROR: ${e.message}")
-        NetworkResult.Error(e.message ?: "An unknown error occurred")
+        AppLogger.e("API_CALL", "UNKNOWN ERROR: ${e::class.simpleName}: ${e.message}")
+        NetworkResult.Error("${e::class.simpleName}: ${e.message ?: "An unknown error occurred"}")
     }
 }

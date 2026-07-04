@@ -336,6 +336,7 @@ object DatabaseFactory {
     )
 
     /** True when DATABASE_URL is set → we're talking to Postgres / Supabase. */
+    @Volatile
     var isPostgres: Boolean = false
         private set
 
@@ -346,14 +347,17 @@ object DatabaseFactory {
     // ── Read replica support (spec §17 Connection Pool) ─────────────────────
     // When READ_REPLICA_URL is configured, read-heavy queries (search, analytics,
     // audit log, export) route to the replica via readQuery { }.
+    @Volatile
     private var readReplicaDb: Database? = null
 
     /** The read-replica HikariDataSource, exposed for shutdown cleanup (P3-AUDIT-014). */
+    @Volatile
     internal var readReplicaDataSource: HikariDataSource? = null
         private set
 
     val hasReadReplica: Boolean get() = readReplicaDb != null
 
+    @Synchronized
     fun init() {
         val dotenv = dotenv {
             ignoreIfMalformed = true
@@ -368,7 +372,8 @@ object DatabaseFactory {
                 databaseUrl,
                 user = resolve(dotenv, "DATABASE_USER"),
                 password = resolve(dotenv, "DATABASE_PASSWORD"),
-                poolSize = resolve(dotenv, "DB_POOL_SIZE")?.toIntOrNull() ?: 5
+                poolSize = resolve(dotenv, "DB_POOL_SIZE")?.toIntOrNull() ?: 5,
+                dotenv = dotenv
             )
         } else {
             logger.warn(
@@ -419,7 +424,8 @@ object DatabaseFactory {
                 replicaUrl,
                 user = resolve(dotenv, "READ_REPLICA_USER") ?: resolve(dotenv, "DATABASE_USER"),
                 password = resolve(dotenv, "READ_REPLICA_PASSWORD") ?: resolve(dotenv, "DATABASE_PASSWORD"),
-                poolSize = resolve(dotenv, "READ_REPLICA_POOL_SIZE")?.toIntOrNull() ?: 3
+                poolSize = resolve(dotenv, "READ_REPLICA_POOL_SIZE")?.toIntOrNull() ?: 3,
+                dotenv = dotenv
             )
             readReplicaDb = Database.connect(replicaDs)
             readReplicaDataSource = replicaDs
@@ -505,7 +511,7 @@ object DatabaseFactory {
     }
 
     /**
-     * Audit finding A: verify every one of the 36 registered tables exists.
+     * Audit finding A: verify every registered table exists (allTables has ~100+ entries).
      * In Postgres without auto-create, any missing table means an incomplete
      * provisioning recipe was used (see docs/db/PROVISION.sql for the only
      * complete one) and dependent routes would 500 at runtime — so we refuse
@@ -547,7 +553,8 @@ object DatabaseFactory {
         databaseUrl: String,
         user: String?,
         password: String?,
-        poolSize: Int
+        poolSize: Int,
+        dotenv: io.github.cdimascio.dotenv.Dotenv
     ): HikariDataSource {
         // Defensively strip any surrounding quotes/whitespace that may have slipped
         // through (e.g. a value read straight from a .properties file). Without this
@@ -567,20 +574,22 @@ object DatabaseFactory {
             else -> "jdbc:postgresql://$cleanUrl"
         }
 
-        // Auto-append SSL mode and PgBouncer threshold if missing
+        val sslMode = resolve(dotenv, "PG_SSLMODE") ?: "require"
+        val usePgBouncer = resolve(dotenv, "PG_PGBOUNCER")?.equals("true", ignoreCase = true) == true
+
         val finalJdbcUrl = buildString {
             append(jdbcUrl)
             val separator = if (jdbcUrl.contains("?")) "&" else "?"
             
             if (!jdbcUrl.contains("sslmode=") && isPostgres) {
-                append(separator).append("sslmode=require")
+                append(separator).append("sslmode=").append(sslMode)
             }
             
-            if (!contains("prepareThreshold=")) {
+            if (usePgBouncer && !contains("prepareThreshold=")) {
                 append(if (contains("?")) "&" else "?").append("prepareThreshold=0")
             }
             
-            if (!contains("currentSchema=")) {
+            if (!contains("currentSchema=") && !jdbcUrl.contains("currentSchema=")) {
                 append(if (contains("?")) "&" else "?").append("currentSchema=public")
             }
         }
@@ -613,7 +622,7 @@ object DatabaseFactory {
             jdbcUrl = "jdbc:sqlite:data.db"
             maximumPoolSize = 3
             isAutoCommit = false
-            transactionIsolation = "TRANSACTION_SERIALIZABLE"
+            transactionIsolation = "TRANSACTION_READ_COMMITTED"
             validate()
         }
         return HikariDataSource(config)
