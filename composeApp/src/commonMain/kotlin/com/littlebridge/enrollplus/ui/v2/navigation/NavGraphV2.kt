@@ -91,12 +91,23 @@ fun NavGraphV2(
         else brandingThemeManager.clear()
     }
 
-    // Parse the deep link once when it arrives.
+    // Parse the deep link once when it arrives — but only if we know the user's role.
+    // If the user is not yet authenticated (role is Unknown), defer parsing until the
+    // role is known. This prevents parseDeepLink from producing Generic targets for
+    // paths that should map to role-specific screens.
     var pendingNavigation by remember { mutableStateOf<DeepLinkTarget?>(null) }
+    var rawDeepLink by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(deepLink) {
         if (deepLink != null) {
-            pendingNavigation = parseDeepLink(deepLink, entryRole)
+            rawDeepLink = deepLink
             onDeepLinkConsumed()
+        }
+    }
+    LaunchedEffect(rawDeepLink, entryRole) {
+        val link = rawDeepLink
+        if (link != null && entryRole != EntryRole.Unknown) {
+            pendingNavigation = parseDeepLink(link, entryRole)
+            rawDeepLink = null
         }
     }
 
@@ -278,7 +289,15 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
                 else -> DeepLinkTarget.Generic(currentRole, path)
             }
         }
-        "calendar" -> DeepLinkTarget.Generic(currentRole, path)
+        "calendar" -> {
+            when (currentRole) {
+                EntryRole.Parent -> DeepLinkTarget.ParentTab(EntryRole.Parent, "home", "calendar")
+                EntryRole.Teacher -> DeepLinkTarget.TeacherScreen(EntryRole.Teacher, "calendar")
+                EntryRole.SchoolAdmin, EntryRole.SuperAdmin ->
+                    DeepLinkTarget.SchoolScreen(currentRole, "calendar")
+                else -> DeepLinkTarget.Generic(currentRole, path)
+            }
+        }
         "messages" -> {
             val threadId = segments.getOrNull(1)
             when (currentRole) {

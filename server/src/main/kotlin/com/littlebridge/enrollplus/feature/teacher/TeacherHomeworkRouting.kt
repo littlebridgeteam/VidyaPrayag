@@ -540,7 +540,7 @@ private fun Route.homeworkListAndAssign() {
                 body = "${asg.subject}: $title — due $dueDate.",
                 schoolId = ctx.schoolId,
                 actorId = ctx.userId,
-                deepLink = "/parent/academics",
+                deepLink = "/parent/academics/homework",
                 refType = "homework",
                 refId = newId.toString(),
             )

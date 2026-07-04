@@ -340,15 +340,24 @@ internal suspend fun notifyLeaveDecision(
         "rejected" -> "rejected"
         else -> "updated"
     }
-    Notify.toUsers(
-        userIds = recipients,
-        category = "leave",
-        title = "Leave request $verb",
-        body = "$requesterName's leave request was $verb.",
-        schoolId = schoolId,
-        actorId = actorId,
-        deepLink = parentDeepLink,
-        refType = "leave_request",
-        refId = leaveId.toString(),
-    )
+    // Send role-appropriate deep links to each recipient.
+    for (recipientId in recipients) {
+        val recipient = runCatching { dbQuery { resolveMessagingUser(recipientId) } }.getOrNull()
+        val deepLink = when (recipient?.role?.lowercase()) {
+            "teacher" -> "/teacher/leave-requests"
+            "admin", "school_admin", "super_admin" -> "/school/leave-requests"
+            else -> parentDeepLink
+        }
+        Notify.toUser(
+            userId = recipientId,
+            category = "leave",
+            title = "Leave request $verb",
+            body = "$requesterName's leave request was $verb.",
+            schoolId = schoolId,
+            actorId = actorId,
+            deepLink = deepLink,
+            refType = "leave_request",
+            refId = leaveId.toString(),
+        )
+    }
 }

@@ -99,7 +99,7 @@ fun Route.agentRouting() {
                     body = "Your child's tutor session flagged a safety concern: ${result.safetyFlag}. " +
                         "A teacher may reach out to discuss next steps.",
                     schoolId = schoolId,
-                    deepLink = "/parent/academics",
+                    deepLink = "/parent/academics/tutor",
                     refType = "tutor_session",
                     refId = result.sessionId?.toString(),
                 )

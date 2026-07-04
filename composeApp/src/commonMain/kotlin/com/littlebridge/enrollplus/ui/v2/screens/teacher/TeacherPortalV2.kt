@@ -101,6 +101,7 @@ fun TeacherPortalV2(
                     "library" -> { tab = "home"; overlay = TeacherOverlay.None }
                     "messages" -> overlay = TeacherOverlay.Messages
                     "timetable-requests" -> { tab = "home"; overlay = TeacherOverlay.None }
+                    "calendar" -> { tab = "home"; overlay = TeacherOverlay.None }
                     // Valid bottom-nav tabs
                     "home", "update", "classes", "timetable", "profile" -> tab = target.screen
                     else -> tab = "home"
