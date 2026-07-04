@@ -6,6 +6,7 @@ import com.littlebridge.enrollplus.core.network.safeApiCall
 import com.littlebridge.enrollplus.feature.branding.domain.model.*
 import io.ktor.client.*
 import io.ktor.client.request.*
+import io.ktor.client.request.forms.*
 import io.ktor.http.*
 
 class BrandingApi(
@@ -58,6 +59,45 @@ class BrandingApi(
     suspend fun removeSubdomain(token: String): NetworkResult<ApiResponse<RemoveSubdomainResponse>> = safeApiCall {
         client.delete(getUrl("api/v1/school/branding/subdomain")) {
             bearerAuth(token)
+        }
+    }
+
+    // ── Asset Upload (M-1: FR-001) ──────────────────────────────────────
+
+    suspend fun uploadAsset(
+        token: String,
+        field: String,
+        bytes: ByteArray,
+        fileName: String,
+        mimeType: String,
+    ): NetworkResult<ApiResponse<SchoolBranding>> = safeApiCall {
+        client.post(getUrl("api/v1/school/branding/assets")) {
+            bearerAuth(token)
+            setBody(
+                MultiPartFormDataContent(
+                    formData {
+                        append("field", field)
+                        append(
+                            "file",
+                            bytes,
+                            Headers.build {
+                                append(HttpHeaders.ContentType, mimeType)
+                                append(
+                                    HttpHeaders.ContentDisposition,
+                                    "filename=\"$fileName\""
+                                )
+                            }
+                        )
+                    }
+                )
+            )
+        }
+    }
+
+    suspend fun deleteAsset(token: String, field: String): NetworkResult<ApiResponse<SchoolBranding>> = safeApiCall {
+        client.delete(getUrl("api/v1/school/branding/assets")) {
+            bearerAuth(token)
+            parameter("field", field)
         }
     }
 

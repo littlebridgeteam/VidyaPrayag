@@ -29,18 +29,23 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
+import com.littlebridge.enrollplus.feature.branding.presentation.BrandingThemeManager
 import com.littlebridge.enrollplus.ui.v2.components.VBrandLogo
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.theme.VMotion
@@ -48,6 +53,7 @@ import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.VThemeRegistry
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 
 /**
  * AuthScaffoldV2 — the shared chrome for the role-scoped auth screens (PHASE 4).
@@ -68,6 +74,14 @@ fun AuthScaffoldV2(
 ) = VTheme(themeDef = VThemeRegistry.resolve("light")) {
     val c = VTheme.colors
 
+    // Branding: observe cached school branding for branded auth experience
+    val brandingManager = koinInject<BrandingThemeManager>()
+    val branding by brandingManager.branding.collectAsState()
+    val heroColor = remember(branding?.primaryColor) {
+        branding?.primaryColor?.let { com.littlebridge.enrollplus.ui.v2.theme.BrandingColorMapper.parseHex(it) } ?: c.teal
+    }
+    val logoUrl = branding?.logoUrl
+
     val logoScale = remember { Animatable(0.85f) }
     val logoAlpha = remember { Animatable(0f) }
     val sheetY = remember { Animatable(40f) }
@@ -85,11 +99,20 @@ fun AuthScaffoldV2(
             .background(c.background)
             .verticalScroll(rememberScrollState()),
     ) {
-        // ── teal brand hero ──
+        // ── brand hero (school-branded when available) ──
         Box(
-            Modifier.fillMaxWidth().heightIn(min = 300.dp).background(c.teal),
+            Modifier.fillMaxWidth().heightIn(min = 300.dp).background(heroColor),
             contentAlignment = Alignment.Center,
         ) {
+            // Optional login background image overlay
+            if (branding?.loginBackgroundUrl != null) {
+                AsyncImage(
+                    model = branding!!.loginBackgroundUrl,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                )
+            }
             // back chip — top-start, above the status bar inset
             val backInteraction = remember { MutableInteractionSource() }
             Box(
@@ -110,14 +133,31 @@ fun AuthScaffoldV2(
                 Modifier.statusBarsPadding().padding(horizontal = 24.dp, vertical = 44.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                VBrandLogo(
-                    size = 132.dp,
-                    modifier = Modifier.graphicsLayer {
-                        scaleX = logoScale.value
-                        scaleY = logoScale.value
-                        alpha = logoAlpha.value
-                    },
-                )
+                if (logoUrl != null) {
+                    // School logo from branding kit
+                    AsyncImage(
+                        model = logoUrl,
+                        contentDescription = "School logo",
+                        modifier = Modifier
+                            .size(132.dp)
+                            .clip(RoundedCornerShape(24.dp))
+                            .graphicsLayer {
+                                scaleX = logoScale.value
+                                scaleY = logoScale.value
+                                alpha = logoAlpha.value
+                            },
+                        contentScale = ContentScale.Fit,
+                    )
+                } else {
+                    VBrandLogo(
+                        size = 132.dp,
+                        modifier = Modifier.graphicsLayer {
+                            scaleX = logoScale.value
+                            scaleY = logoScale.value
+                            alpha = logoAlpha.value
+                        },
+                    )
+                }
                 Spacer(Modifier.height(20.dp))
                 Text(
                     title,

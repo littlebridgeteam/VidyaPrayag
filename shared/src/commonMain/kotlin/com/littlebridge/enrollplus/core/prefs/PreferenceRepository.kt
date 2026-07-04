@@ -59,5 +59,12 @@ interface PreferenceRepository {
     fun getFontScale(): Flow<Float>
     suspend fun setFontScale(scale: Float)
 
+    // --- school branding cache (for branded splash/login before auth) ---
+    // The serialized SchoolBranding JSON from the last authenticated session.
+    // Loaded on app start so the splash/login screens can show the school's
+    // brand immediately, without waiting for a network call.
+    fun getCachedBranding(): Flow<String?>
+    suspend fun setCachedBranding(brandingJson: String?)
+
     suspend fun clearSession()
 }

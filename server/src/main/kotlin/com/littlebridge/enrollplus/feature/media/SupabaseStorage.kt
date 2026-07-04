@@ -90,6 +90,9 @@ object SupabaseStorage {
         "image/webp" to "webp",
         "image/gif" to "gif",
         "image/heic" to "heic",
+        "image/svg+xml" to "svg",
+        "image/x-icon" to "ico",
+        "image/vnd.microsoft.icon" to "ico",
     )
     private val VIDEO_TYPES = mapOf(
         "video/mp4" to "mp4",

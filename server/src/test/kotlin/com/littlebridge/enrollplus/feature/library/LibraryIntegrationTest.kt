@@ -378,3 +378,4 @@ class LibraryIntegrationTest {
         )
         assertEquals("issued", reIssue.status)
     }
+}

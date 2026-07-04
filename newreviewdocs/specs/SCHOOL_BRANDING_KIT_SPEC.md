@@ -1,10 +1,206 @@
 # School Branding Kit — Technical Specification
 
-> **Document status:** Implementation-ready blueprint
-> **Last updated:** 2026-06-27
+> **Document status:** Partially implemented — see §0 for status
+> **Last updated:** 2026-07-03
 > **Prerequisites:** None
 > **Source:** `DIFFERENTIATING_FEATURES.md` §7.2
 > **Template:** `_SPEC_TEMPLATE.md` v1 (25 mandatory + 6 optional sections)
+
+---
+
+## 0. Implementation Status Audit
+
+> **Audited:** 2026-07-03 on branch `feature/school-branding-kit`
+> **Method:** Full codebase search across `server/`, `shared/`, and `composeApp/` modules.
+
+### 0.1 What Exists (Implemented)
+
+| # | Component | File | Status | Notes |
+|---|---|---|---|---|
+| E-1 | **DB Table** | `server/.../db/Tables.kt:2986-3005` | ✅ Complete | `SchoolBrandingTable` — all columns match spec §6.10 |
+| E-2 | **DB Migration** | `docs/db/migration_101_school_branding.sql` | ✅ Complete | DDL + subdomain index, matches spec Appendix E |
+| E-3 | **DatabaseFactory registration** | `server/.../db/DatabaseFactory.kt:275` | ✅ Complete | `SchoolBrandingTable` registered in `allTables` |
+| E-4 | **Server BrandingService** | `server/.../feature/branding/BrandingService.kt` (348 lines) | ✅ Complete | CRUD, subdomain management, reset, default fallback, hex/subdomain validation. DTOs defined inline. |
+| E-5 | **Server BrandingRouting** | `server/.../feature/branding/BrandingRouting.kt` (137 lines) | ✅ Complete | Admin endpoints (GET/PATCH/POST reset/subdomain) + public endpoints (GET branding/{schoolId}, GET subdomain/{subdomain}). **Missing: upload endpoint.** |
+| E-6 | **Server Application.kt wiring** | `server/.../Application.kt:63,495` | ✅ Complete | `brandingRouting()` imported and mounted |
+| E-7 | **Shared DTOs** | `shared/.../feature/branding/domain/model/BrandingModels.kt` (62 lines) | ✅ Complete | `SchoolBranding`, `UpdateBrandingRequest`, `SubdomainRequest`, `SubdomainResponse`, `SubdomainCheckResponse`, `RemoveSubdomainResponse`, `SubdomainResolution` |
+| E-8 | **Shared Repository Interface** | `shared/.../feature/branding/domain/repository/BrandingRepository.kt` (17 lines) | ✅ Complete | All 8 methods matching API endpoints |
+| E-9 | **Shared Repository Impl** | `shared/.../feature/branding/data/repository/BrandingRepositoryImpl.kt` (22 lines) | ✅ Complete | Delegates to `BrandingApi` |
+| E-10 | **Shared BrandingApi (Ktor client)** | `shared/.../feature/branding/data/remote/BrandingApi.kt` (74 lines) | ✅ Complete | All admin + public endpoints. **Missing: upload method.** |
+| E-11 | **Shared BrandingViewModel** | `shared/.../feature/branding/presentation/BrandingViewModel.kt` (164 lines) | ✅ Complete | `loadBranding`, `updateBranding`, `resetBranding`, `checkSubdomain`, `updateSubdomain`, `removeSubdomain`. State: `BrandingState` with isLoading, branding, subdomainAvailable, error, infoMessage. |
+| E-12 | **Shared BrandingThemeManager** | `shared/.../feature/branding/presentation/BrandingThemeManager.kt` (57 lines) | ✅ Complete | App-lifecycle singleton. Fetches branding after login, holds `StateFlow<SchoolBranding?>`. Silent fallback to default on error. `clear()` on logout. |
+| E-13 | **Compose BrandingColorMapper** | `composeApp/.../ui/v2/theme/BrandingColorMapper.kt` (88 lines) | ✅ Complete | Maps hex → `VColors` token overrides (`accent`, `accentSoft`, `accentDeep`, `accentTint`, `teal`, `tealDeep`). Derives tint for light/dark. Returns base unchanged if not customized. |
+| E-14 | **Compose NavGraphV2 integration** | `composeApp/.../ui/v2/navigation/NavGraphV2.kt:76-91` | ✅ Complete | Injects `BrandingThemeManager`, applies `BrandingColorMapper` to theme def, fetches branding on auth, clears on logout. 300ms crossfade on theme/branding switch. |
+| E-15 | **Compose BrandingSettingsScreen** | `composeApp/.../ui/v2/screens/school/BrandingSettingsScreen.kt` (566 lines) | ✅ Complete | Color pickers (preset swatches + hex input), live preview card (mock header + buttons + swatches), subdomain management (input + check + assign + remove), reset to defaults with confirm dialog. Uses VTheme, VCard, VButton, VInput, VBadge, VStateHost. |
+| E-16 | **Compose SchoolSettingsScreenV2** | `composeApp/.../ui/v2/screens/school/SchoolSettingsScreenV2.kt:194` | ✅ Complete | "Branding Kit" settings row with icon + description |
+| E-17 | **Compose SchoolPortalV2 routing** | `composeApp/.../ui/v2/screens/school/SchoolPortalV2.kt:71,423-426,581` | ✅ Complete | `SchoolOverlay.BrandingKit` → shows `BrandingSettingsScreen` |
+| E-18 | **Koin DI registration** | `shared/.../di/Koin.kt:436-449,653-654` | ✅ Complete | `BrandingApi` (single), `BrandingRepository` (single), `BrandingThemeManager` (single), `BrandingViewModel` (factory) |
+| E-19 | **Onboarding integration** | `shared/.../feature/admin/presentation/BrandingInfoOBViewModel.kt` | ✅ Partial | Onboarding-time branding info collection exists. Uses `MediaApi` for logo upload during onboarding. Some fields remain local-only (not yet persisted to `school_branding` server-side). |
+
+### 0.2 What's Missing (Not Implemented)
+
+| # | Gap | Spec Section | Impact | Priority |
+|---|---|---|---|---|
+| M-1 | **Asset Upload API (FR-001)** | §9.1, §8.3 | Admin cannot upload logo/favicon/app-icon/splash via branding settings. No `POST /api/v1/school/branding/upload` endpoint, no `uploadAsset()` in `BrandingService`, no upload method in `BrandingApi`/`BrandingRepository`. | **High** |
+| M-2 | **Branded Login Screen (FR-004)** | §10.1, §10.3 | Login/auth screens (`CommonLandingScreenV3.kt`, `SplashScreenV2.kt`) don't show school logo/name. No branding fetch before login. | **High** |
+| M-3 | **Branded SplashScreen (FR section 10.1)** | §10.1, §10.8 | `SplashScreenV2.kt` uses hardcoded `VBrandLogo`. No school splash image support. | **Medium** |
+| M-4 | **Branded Communications (FR-005)** | §15, §10.10 R10 | No email template branding, no report card header branding, no ID card branding. Server has no integration between `school_branding` and email/report/idcard templates. | **Medium** |
+| M-5 | **Use Cases (Clean Architecture)** | §11.4 | No use case classes (`GetBrandingUseCase`, `UpdateBrandingUseCase`, etc.). ViewModel calls repository directly. Deviates from project convention. | **Low** |
+| M-6 | **DataStore Caching** | §11.8, §8.9 NFR-6 | No branding caching in DataStore. `BrandingThemeManager` holds in-memory only; re-fetches every app launch. Spec requires session persistence. | **Medium** |
+| M-7 | **Subdomain Routing (Web)** | §10.8, FR-006 | No web app subdomain middleware. No code resolves school from subdomain on web platform. | **Low** |
+| M-8 | **Server-side Caching** | §8.9 | No server-side branding cache (10-min TTL). Every request hits DB directly. | **Low** |
+| M-9 | **Rate Limiting** | §8.11 | No rate limiting on branding update (10/school/hr), asset upload (20/school/hr), or subdomain check (30/school/hr). | **Low** |
+| M-10 | **Audit Logging** | §16 | No audit logging for branding updates, subdomain assignments/removals, or asset uploads. | **Low** |
+| M-11 | **Env Config** | Appendix D | No `BRANDING_*` env vars in `.env.example` or `EnvConfig`. Defaults are hardcoded in `BrandingService`. | **Low** |
+| M-12 | **Health Checks** | Appendix F | No `/health/branding` endpoint. | **Low** |
+| M-13 | **Analytics** | §20 | No branding adoption metrics or subdomain registry API for super admin. | **Low** |
+| M-14 | **Tests** | §21 | No unit tests, integration tests, or E2E tests for branding. | **Medium** |
+| M-15 | **Dynamic App Icon (Android)** | §10.7 | No Android adaptive icon support with school logo. | **Low** |
+| M-16 | **Login Background URL** | §6.2, §9.3 | Field exists in DB/model/service but no UI to set it and no login screen uses it. | **Low** |
+| M-17 | **Logo Dark URL** | §6.2, §9.3 | Field exists in DB/model/service but no UI to set it and no dark mode logo fallback logic. | **Low** |
+| M-18 | **Branding Preview on Login Screen** | §10.6 R2 | The `BrandingSettingsScreen` has a live preview card, but the actual login screen doesn't use school branding. | **Medium** |
+
+### 0.3 Summary
+
+- **Backend (server):** ~90% complete. CRUD, subdomain, reset, public endpoints all working. Missing: asset upload endpoint, server-side caching, rate limiting, audit logging.
+- **Shared (KMP):** ~85% complete. Models, repository, API client, ViewModel, ThemeManager all working. Missing: use cases, DataStore caching, upload API method.
+- **Client (Compose):** ~70% complete. BrandingSettingsScreen with color picker + preview + subdomain management is fully built. Dynamic theming via `BrandingColorMapper` + `NavGraphV2` integration is working. Missing: branded login/splash screens, asset upload UI, web subdomain routing.
+- **Cross-cutting:** Missing tests, env config, health checks, analytics, audit logging.
+
+### 0.4 Production-Grade Gaps (Research-Based)
+
+> **Researched:** 2026-07-03 — benchmarked against Studeia, Classe365, TalentLMS, Cube, Authaz, Developex SaaS guide, and other white-label school/SaaS platforms.
+
+The current spec covers basic branding (logo, 3 colors, subdomain). For a production-grade school management app, the following must-have capabilities are **not in the spec at all**. These are organized by category.
+
+#### A. Communication Branding (Entirely Missing)
+
+| # | Feature | Description | Why It Matters |
+|---|---|---|---|
+| PG-A1 | **Custom Email Sender** | Per-school SMTP/SendGrid/Resend config. Emails sent from `noreply@schooldomain.com` instead of `noreply@vidyaprayag.com`. `TenantEmailConfig` table. | Parents trust emails from their school's domain. Deliverability improves (SPF/DKIM match). |
+| PG-A2 | **Branded Email Templates** | Email header/footer with school logo + colors. 40+ template types (fee reminder, attendance alert, exam result, holiday notice, etc.) all carry school branding. | Every communication reinforces school identity. Currently all emails use Vidya Prayag branding. |
+| PG-A3 | **Custom Reply-To Address** | School admin sets reply-to email. Parent replies go to school, not platform. | Operational necessity — parents should reach their school, not the platform team. |
+| PG-A4 | **SMS Sender ID** | Per-school alphanumeric sender ID (e.g., `DPSRKP` instead of `VIDYAPR`). DLT-compliant registration for India. | SMS is primary communication channel in Indian schools. Sender ID = brand recognition. |
+| PG-A5 | **WhatsApp Template Branding** | WhatsApp Business API templates with school name in header. School-specific template approval flow. | WhatsApp is the #1 messaging channel for Indian parents. Templates must carry school identity. |
+| PG-A6 | **Push Notification Branding** | Notification title prefixed with school short name. Optional custom notification icon per school. | Parents with multiple school apps can distinguish notifications. |
+| PG-A7 | **Email Unsubscribe Management** | Per-school unsubscribe links, digest preferences, frequency caps. CAN-SPAM/GDPR compliance. | Legal compliance. Currently no unsubscribe infrastructure. |
+
+#### B. Document Branding (Entirely Missing)
+
+| # | Feature | Description | Why It Matters |
+|---|---|---|---|
+| PG-B1 | **Report Card Headers** | Report card PDF header with school logo, name, address, colors. Footer with school contact + website. | Report cards are official school documents. Must carry school identity, not platform branding. |
+| PG-B2 | **Fee Receipt/Invoice Branding** | Fee receipts, invoices, payment confirmations with school logo + header + colors. | Financial documents must look official and school-branded for parent trust. |
+| PG-B3 | **Transfer Certificate Branding** | TC header with school logo, name, affiliation body. Official seal placement. | TC is a legal document. Must carry school's official letterhead. |
+| PG-B4 | **Exam Hall Ticket Branding** | Hall tickets with school header, exam details, student photo. | Exam documents must be school-branded for authenticity. |
+| PG-B5 | **ID Card Branding** | ID card templates use school logo, colors, design. Front/back config per school. | ID cards are physical brand assets students carry daily. |
+| PG-B6 | **Certificate Branding** | Achievement/character certificates with school letterhead, logo, seal. | Certificates represent school authority. Must be branded. |
+| PG-B7 | **Newsletter/Notice Branding** | Digital newsletters, notice board PDFs with school header + colors. | Regular communications should reinforce school identity. |
+| PG-B8 | **Admission Form Branding** | Online + printable admission forms with school branding. | First impression for prospective parents. |
+
+#### C. Typography & Font Customization (Marked as Non-Goal — Should Reconsider)
+
+| # | Feature | Description | Why It Matters |
+|---|---|---|---|
+| PG-C1 | **Custom Font Upload** | Admin uploads WOFF2/WOFF/TTF font files. Stored in Supabase Storage. Applied to headings + body text. | Schools have brand fonts (e.g., DPS uses specific typeface). System fonts feel generic. |
+| PG-C2 | **Google Fonts Integration** | Admin selects from Google Fonts library. No upload needed. Font URL stored in branding config. | Zero-friction font customization. Google Fonts covers 99% of school brand fonts. |
+| PG-C3 | **Font Weight Control** | Separate heading + body font weight selection (100-900 scale). | Fine-grained typography control for brand consistency. |
+| PG-C4 | **Font Size Scale** | Adjustable base font size (small/medium/large) or custom rem scale. | Schools may prefer larger text for parent readability. |
+
+#### D. Advanced Theming (Partially Missing)
+
+| # | Feature | Description | Why It Matters |
+|---|---|---|---|
+| PG-D1 | **Dark Mode Color Palette** | Separate dark mode colors per school (not auto-derived). Admin sets dark-mode primary/secondary/accent. | Auto-derived dark colors often look wrong. Schools need deliberate dark palette. |
+| PG-D2 | **Auto-Generated Palette** | Admin picks ONE primary color. System generates full palette (tints, shades, accents, semantic colors) using color theory. | Reduces admin effort. Guarantees harmonious palette. Cube.do does this excellently. |
+| PG-D3 | **Accessibility/Contrast Checking** | WCAG AA contrast ratio validation (4.5:1 text, 3:1 large text). Warn admin if colors fail. Suggest accessible alternatives. | Legal compliance (ADA/Section 508). Prevents unreadable color combinations. |
+| PG-D4 | **Color Blindness Simulation** | Preview branding in deuteranopia, protanopia, tritanopia modes. | 8% of men have color vision deficiency. Ensure branding is distinguishable. |
+| PG-D5 | **Border Radius / Shape Control** | Configurable corner radius (none/small/medium/large/pill) for buttons + cards. | Some school brands are sharp/angular, others are soft/rounded. |
+| PG-D6 | **Preset Theme Templates** | 5-10 curated branding presets (Minimal, Bold, Soft, Dark-first, Brand-forward). Admin picks a preset then customizes. | Reduces setup time. Gives non-designers a good starting point. |
+| PG-D7 | **Seasonal/Event Branding** | Schedule branding changes for festivals, events, holidays (e.g., Diwali theme for 2 weeks). Auto-revert to default. | Indian schools celebrate many festivals. Seasonal branding builds engagement. |
+| PG-D8 | **Background Image / Pattern** | Optional login screen background image or pattern overlay. Admin uploads or picks from presets. | Login screen is the first impression. Background image adds personality. |
+
+#### E. Mobile App Branding (Partially Missing)
+
+| # | Feature | Description | Why It Matters |
+|---|---|---|---|
+| PG-E1 | **Dynamic App Icon (Android)** | Adaptive icon with school logo as foreground. `<activity-alias>` mechanism for icon switching. | Home screen icon = daily brand impression. Currently shows Vidya Prayag icon for all schools. |
+| PG-E2 | **Branded Push Notification Icon** | Custom notification small icon per school (monochrome silhouette of school logo). | Notification shade shows school icon, not generic app icon. |
+| PG-E3 | **App Store Listing Customization** | Per-school Play Store listing (screenshots, description, feature graphic) for white-label builds. | White-label schools need their own store presence. |
+| PG-E4 | **Deep Linking per School** | School-specific deep link domain (e.g., `dpsrkpuram.app.link`) for sharing content within the app. | Branded links when parents share attendance/results via WhatsApp. |
+| PG-E5 | **Branded Onboarding Flow** | First-launch onboarding uses school colors + logo + welcome message from principal. | First impression for new parents. Currently generic Vidya Prayag onboarding. |
+
+#### F. Web / Domain Branding (Partially Missing)
+
+| # | Feature | Description | Why It Matters |
+|---|---|---|---|
+| PG-F1 | **Custom Domain (Not Just Subdomain)** | School can use their own domain (e.g., `app.dpsrkpuram.com`) with CNAME + automatic TLS via Let's Encrypt. | Premium schools demand their own domain. Subdomain feels like a shared platform. |
+| PG-F2 | **Automatic TLS/SSL** | On-demand TLS certificate provisioning for custom domains/subdomains. Zero-config HTTPS. | Security + SEO. Browsers flag HTTP as insecure. |
+| PG-F3 | **Custom Favicon per School** | Browser tab favicon uses school logo, not Vidya Prayag logo. | Brand consistency in browser tabs. Small but noticed. |
+| PG-F4 | **SEO Meta Tags per School** | Per-school `<title>`, `<meta description>`, Open Graph tags for social sharing. | When parents share the web app link, it should show school name + logo, not Vidya Prayag. |
+| PG-F5 | **Custom Error Pages** | School-branded 404, 500, maintenance pages. | Generic error pages break brand immersion. |
+| PG-F6 | **PWA Manifest per School** | Per-school `manifest.json` with school name, icon, theme color, display mode. | Installable PWA shows school branding on home screen, not Vidya Prayag. |
+
+#### G. Brand Asset Management (Missing)
+
+| # | Feature | Description | Why It Matters |
+|---|---|---|---|
+| PG-G1 | **Asset Versioning** | Keep previous logo/icon versions when updating. Allow rollback to previous asset. | Admin uploads wrong logo → needs to revert quickly. |
+| PG-G2 | **Auto Image Optimization** | Server auto-generates multiple sizes (512px, 256px, 128px, 64px) from uploaded logo. WebP conversion for smaller payload. | Performance: serve right size to right device. Bandwidth savings in India. |
+| PG-G3 | **Brand Asset Library** | Store multiple assets per school (primary logo, horizontal logo, monogram, mascot, banner). Use different assets in different contexts. | Schools have multiple brand assets. One logo URL is insufficient. |
+| PG-G4 | **Asset Validation & Preview** | Validate image dimensions, file size, format before upload. Show preview at actual size in context (header, login, report card). | Prevents broken/ugly branding from wrong image dimensions. |
+
+#### H. Branding Governance (Missing)
+
+| # | Feature | Description | Why It Matters |
+|---|---|---|---|
+| PG-H1 | **Branding Change History** | Full audit trail of branding changes (who, when, what changed, old value, new value). | Accountability. Essential for multi-admin schools. |
+| PG-H2 | **Branding Approval Workflow** | For schools with multiple admins: branding changes require approval from principal/super-admin before going live. | Prevents rogue admin from changing school branding inappropriately. |
+| PG-H3 | **Branding Rollback** | One-click revert to previous branding configuration. | Quick recovery from bad branding changes. |
+| PG-H4 | **"Powered by" Toggle** | Show/hide "Powered by Vidya Prayag" footer. Hidden on Enterprise/premium tier. | Monetization lever. Premium schools pay to remove platform branding. |
+| PG-H5 | **Branding Lock** | Super-admin can lock branding for a school (prevent changes by school admin). | For managed/standardized school groups (e.g., DPS society controls all branch branding). |
+| PG-H6 | **Branding Schedule** | Schedule branding changes in advance (e.g., set Diwali theme for Oct 20-Nov 5). Auto-applies and auto-reverts. | Admin doesn't need to manually change and revert branding for events. |
+
+#### I. Multi-Campus Branding (Missing)
+
+| # | Feature | Description | Why It Matters |
+|---|---|---|---|
+| PG-I1 | **Per-Campus Branding Overrides** | School groups (e.g., DPS Society) can set shared base branding with per-campus accent overrides. | Large school networks need both consistency and individuality. |
+| PG-I2 | **Campus Selector with Branding** | Login screen shows campus selector (if multi-campus), each campus shows its accent color. | Parents with children in different campuses need visual distinction. |
+
+#### J. Accessibility & Compliance (Missing)
+
+| # | Feature | Description | Why It Matters |
+|---|---|---|---|
+| PG-J1 | **WCAG AA Contrast Validation** | Server-side + client-side validation that text/background combinations meet 4.5:1 (normal) or 3:1 (large) contrast ratio. Block or warn on failing combinations. | Legal compliance. India's RPWD Act 2016 + global accessibility standards. |
+| PG-J2 | **Accessible Color Suggestions** | When admin picks a color that fails contrast, suggest the nearest accessible alternative. | Helps non-designer admins make accessible choices. |
+| PG-J3 | **Minimum Font Size Enforcement** | Prevent admin from setting font sizes below readability threshold (12px body, 16px heading minimum). | Prevents unreadable UI from bad admin choices. |
+
+#### K. Performance & Infrastructure (Missing)
+
+| # | Feature | Description | Why It Matters |
+|---|---|---|---|
+| PG-K1 | **Branding CDN Delivery** | Brand assets served via CDN (Cloudflare/Supabase CDN). Not directly from DB or storage bucket. | Fast logo loading worldwide. Critical for web app. |
+| PG-K2 | **Responsive Logo Variants** | Auto-generate logo variants for different screen densities (1x, 2x, 3x) and contexts (header, login, report card). | Crisp logo on all devices. No blurry or oversized images. |
+| PG-K3 | **Branding Prefetch** | App prefetches branding on splash screen (before login screen renders). No flash of default branding. | NFR-2 says < 200ms. Prefetch eliminates visible flash entirely. |
+| PG-K4 | **Brand Asset Compression** | Auto-compress uploaded images (PNG → WebP for photos, optimized PNG for logos with transparency). | India mobile bandwidth is limited. Smaller assets = faster load. |
+
+#### L. Analytics & Insights (Missing)
+
+| # | Feature | Description | Why It Matters |
+|---|---|---|---|
+| PG-L1 | **Branding Adoption Dashboard** | Super-admin dashboard: % schools with custom branding, popular colors, asset upload trends, subdomain usage. | Platform-level insights for product team. |
+| PG-L2 | **Branding Impact Metrics** | Correlate branding adoption with parent engagement (app opens, notification response rate). | Justify branding feature investment. |
+| PG-L3 | **Subdomain Registry** | Super-admin view of all custom subdomains + domains. Search, filter, manage. | Platform governance. Prevent subdomain squatting. |
+
+### 0.5 Recommended Priority for Production
+
+| Priority | Items | Rationale |
+|---|---|---|
+| **P0 — Ship Now** | PG-A2 (branded email templates), PG-B1 (report card headers), PG-B2 (fee receipts), PG-D3 (contrast checking), PG-K3 (branding prefetch) | Core communications + documents must be school-branded. Accessibility is legal. |
+| **P1 — Next Sprint** | PG-A1 (custom email sender), PG-A4 (SMS sender ID), PG-A5 (WhatsApp branding), PG-B3-B8 (document branding), PG-D1 (dark mode palette), PG-D2 (auto-palette), PG-G2 (image optimization) | Complete the branding surface area across all touchpoints. |
+| **P2 — Quarter 2** | PG-C1-C4 (custom fonts), PG-D5-D8 (advanced theming), PG-E1-E5 (mobile branding), PG-F1-F6 (web/domain), PG-G1/G3/G4 (asset management) | Deep customization for premium schools. |
+| **P3 — Quarter 3** | PG-H1-H6 (governance), PG-I1-I2 (multi-campus), PG-J1-J3 (accessibility), PG-K1/K2/K4 (perf), PG-L1-L3 (analytics) | Enterprise features + governance + optimization. |
 
 ---
 

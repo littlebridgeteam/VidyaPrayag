@@ -85,6 +85,11 @@ fun App(
         val httpClient = koinInject<HttpClient>()
         val platform = koinInject<Platform>()
 
+        // Restore cached school branding so splash/login screens can show the
+        // school's brand immediately (before authentication completes).
+        val brandingThemeManager = koinInject<com.littlebridge.enrollplus.feature.branding.presentation.BrandingThemeManager>()
+        LaunchedEffect(Unit) { brandingThemeManager.loadCached() }
+
         setSingletonImageLoaderFactory { context: PlatformContext ->
             ImageLoader.Builder(context)
                 .components {
