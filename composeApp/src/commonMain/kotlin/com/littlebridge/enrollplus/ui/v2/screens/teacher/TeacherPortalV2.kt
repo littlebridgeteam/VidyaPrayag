@@ -14,8 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.backhandler.BackHandler
-import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
-import com.littlebridge.enrollplus.feature.parent.presentation.NotificationsViewModel
+import com.littlebridge.enrollplus.core.notification.presentation.NotificationsViewModel
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherObligationsViewModel
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherProfileViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
@@ -28,7 +27,6 @@ import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.screens.discovery.AcademicCalendarScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.notifications.NotificationsScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.parent.ParentLibraryScreenV2
-import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 /** Full-screen overlays the teacher portal can push above its tab content. */
@@ -70,7 +68,6 @@ fun TeacherPortalV2(
     profileViewModel: TeacherProfileViewModel = koinViewModel(),
     obligationsViewModel: TeacherObligationsViewModel = koinViewModel(),
     notificationsViewModel: NotificationsViewModel = koinViewModel(),
-    preferenceRepository: PreferenceRepository = koinInject(),
 ) {
     var tab by rememberSaveable { mutableStateOf("home") }
     var overlay by remember { mutableStateOf(TeacherOverlay.None) }
@@ -333,6 +330,13 @@ fun TeacherPortalV2(
                 updateScopeLabel = ""
                 updateInitialTool = UpdateTool.Attendance
             }
+            if (overlay == TeacherOverlay.ReportReview || overlay == TeacherOverlay.ReportDraftEditor) {
+                reportClassName = ""
+                reportSection = "A"
+                reportTerm = "Term 1"
+                reportDraftId = ""
+            }
+            overlay = TeacherOverlay.None
             tab = newTab
         })
         },

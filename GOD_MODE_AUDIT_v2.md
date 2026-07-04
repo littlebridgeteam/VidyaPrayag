@@ -4679,3 +4679,111 @@ All 13 CON issues verified in the 2026-06-14 re-audit. No new findings.
 ---
 
 *End of Phase 6 Batch 6 Fix Log*
+
+---
+
+## Phase 6 Batch 7 Fix Log — CYC, STM, NAV, SCH Architectural Items
+
+### CYC-001: Teacher portal uses parent's NotificationsViewModel — FIXED
+- **File**: `composeApp/.../teacher/TeacherPortalV2.kt:18`
+- **Fix**: Changed import from `feature.parent.presentation.NotificationsViewModel` (typealias) to `core.notification.presentation.NotificationsViewModel` (actual class). Removes cross-feature dependency.
+
+### CYC-002: TeacherPortalV2 injects PreferenceRepository directly — FIXED
+- **File**: `composeApp/.../teacher/TeacherPortalV2.kt:17,73`
+- **Fix**: Removed unused `PreferenceRepository` injection and `koinInject` import. The dependency was injected but never referenced in the file.
+
+### CYC-003/004: SchoolPortalV2 injects AlumniRepository/PreferenceRepository — already fixed
+- **Status**: No imports of `AlumniRepository` or `PreferenceRepository` found in SchoolPortalV2.kt.
+
+### CYC-016: TransportService instantiated directly — already fixed
+- **File**: `server/.../transport/TransportRouting.kt:49`
+- **Status**: `private val transportService = TransportService()` is a module-level singleton val, created once at class load. Not per-request.
+
+### CYC-017: LibraryService/LibraryRepository instantiated directly — already fixed
+- **File**: `server/.../library/LibraryRouting.kt:72`
+- **Status**: `private val libraryService = LibraryService()` is a module-level singleton val. Not per-request.
+
+### CYC-011: 10 school screens import from feature.admin — DEFERRED
+- **Status**: 140 imports across 28 files. Moving shared models to `feature.school.domain` is a large-scale refactoring initiative for a future phase. Would touch every school screen and risk build breakage.
+
+### STM-009: Teacher update scope nonce overflow — already fixed
+- **File**: `composeApp/.../teacher/TeacherPortalV2.kt:374`
+- **Status**: Nonce variable no longer exists. Replaced with `key(updateAssignmentId, updateScopeLabel, updateInitialTool)` composition.
+
+### STM-011: Teacher report params not cleared on tab change — FIXED
+- **File**: `composeApp/.../teacher/TeacherPortalV2.kt:336-341`
+- **Fix**: Added clearing of `reportClassName`, `reportSection`, `reportTerm`, `reportDraftId` and `overlay` when switching tabs away from report-related overlays.
+
+### STM-012: updateScopeLabel not reset on tab switch — already fixed
+- **File**: `composeApp/.../teacher/TeacherPortalV2.kt:331-335`
+- **Status**: Already resets `updateAssignmentId`, `updateScopeLabel`, `updateInitialTool` when switching away from "update" tab.
+
+### STM-010: createEventOrigin can be SchoolOverlay.None — already fixed
+- **File**: `composeApp/.../school/SchoolPortalV2.kt:616`
+- **Status**: `createEventOrigin` is reset to `AcademicCalendarPlatform` on tab change. The `None` case is intentional for home/comms origin.
+
+### STM-013: Parent overlay not cleared on logout — already fixed
+- **File**: `composeApp/.../parent/ParentPortalV2.kt:260-264,481-485`
+- **Status**: Logout handlers clear `overlay`, `deepLinkThreadId`, `deepLinkSegment` before calling `onLogout()`.
+
+### STM-014/NAV-023: profileReturnOverlay persists across navigation — already fixed
+- **File**: `composeApp/.../school/SchoolPortalV2.kt:617`
+- **Status**: `profileReturnOverlay` is reset to `SchoolOverlay.None` on tab change.
+
+### STM-015: ParentAcademicsScreenV2 tab state not persisted — already fixed
+- **File**: `composeApp/.../parent/ParentAcademicsScreenV2.kt:144`
+- **Status**: Uses `rememberSaveable { mutableStateOf("Overview") }`.
+
+### STM-017-024: Form state consolidation — DEFERRED
+- **Status**: 8 form screens use independent `remember` variables. Consolidating into data classes is a best-practice refactoring, not a bug fix. The forms work correctly as-is. Deferred to future phase.
+
+### NAV-014: parseQueryParams doesn't URL-decode — already fixed
+- **File**: `composeApp/.../navigation/NavGraphV2.kt:463,477`
+- **Status**: `urlDecode()` function handles percent-decoding. Applied at line 463.
+
+### API-015: studentCountFor in-memory count — already fixed
+- **File**: `server/.../school/TeacherAssignmentRouting.kt:210-218`
+- **Status**: SQL `LIKE` pre-filter on `className` added. In-memory `ClassNaming.sameClassSection` filter still needed for fuzzy matching.
+
+### SCH-006: Table count comment mismatch — already fixed
+- **File**: `server/.../db/DatabaseFactory.kt:399,438,531`
+- **Status**: Uses `allTables.size` dynamically. No hardcoded count.
+
+### SCH-007: SQLite SERIALIZABLE isolation — already fixed
+- **File**: `server/.../db/DatabaseFactory.kt:625`
+- **Status**: SQLite uses `TRANSACTION_READ_COMMITTED`.
+
+### SCH-008: PG SSL mode configurable — already fixed
+- **File**: `server/.../db/DatabaseFactory.kt:577,584-586`
+- **Status**: `PG_SSLMODE` env var controls SSL mode. Only appends if not already in URL.
+
+### SCH-009: prepareThreshold conditional — already fixed
+- **File**: `server/.../db/DatabaseFactory.kt:578,588-590`
+- **Status**: `prepareThreshold=0` only appended when `PG_PGBOUNCER=true`.
+
+### SCH-010: currentSchema conditional — already fixed
+- **File**: `server/.../db/DatabaseFactory.kt:592-594`
+- **Status**: Only appends `currentSchema=public` if not already specified in URL.
+
+### SCH-017: No index on MessagesTable.conversationId — already fixed
+- **File**: `server/.../db/Tables.kt:821`
+- **Status**: Composite index `idx_messages_conv_seq(conversationId, seq)` serves as leading-column index for `conversationId`-only queries.
+
+### SCH-018: No index on SchoolMediaTable.schoolId — already fixed
+- **File**: `server/.../db/Tables.kt:428`
+- **Status**: Index `idx_school_media_school_id` exists on `schoolId`.
+
+### SCH-001-005, SCH-011-016, SCH-019-021: Schema integrity — DEFERRED
+- **Status**: These involve adding FK constraints, check constraints, ENUM types, Room entities, and Flyway migration runner. All require careful migration planning and are deferred to a dedicated schema hardening phase.
+
+### Build Verification
+- Server + Shared + ComposeApp: `./gradlew :server:compileKotlin :shared:compileKotlinJvm :composeApp:compileDevDebugKotlinAndroid` — **BUILD SUCCESSFUL**
+
+### Summary
+- **Issues fixed in this batch**: 3 (CYC-001, CYC-002, STM-011)
+- **Issues verified as already fixed**: 17 (CYC-003/004/016/017, STM-009/010/012/013/014/015, NAV-014/023, API-015, SCH-006/007/008/009/010/017/018)
+- **Issues deferred (large-scale refactoring)**: CYC-011 (140 imports/28 files), STM-017-024 (8 form refactors), SCH-001-005/011-016/019-021 (schema migrations)
+
+---
+
+*End of Phase 6 Batch 7 Fix Log*
