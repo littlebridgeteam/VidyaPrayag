@@ -367,25 +367,11 @@ fun TSwipeHint(text: String = "Swipe for more", modifier: Modifier = Modifier) {
 // Format helpers (local, no extra util churn)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** "2026-06-25" → "25 Jun 2026"; blank-safe. */
-fun prettyDate(iso: String?): String {
-    if (iso.isNullOrBlank()) return ""
-    val parts = iso.split("-")
-    if (parts.size != 3) return iso
-    val y = parts[0]; val m = parts[1].toIntOrNull() ?: return iso; val d = parts[2].toIntOrNull() ?: return iso
-    val mon = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec").getOrNull(m - 1) ?: return iso
-    return "$d $mon $y"
-}
+/** "2026-06-25" → "25 Jun 2026"; blank-safe. Delegates to shared DateUtil.formatDate. */
+fun prettyDate(iso: String?): String = com.littlebridge.enrollplus.util.formatDate(iso)
 
-/** "2026-06-25" → "25 Jun" (short). */
-fun prettyDateShort(iso: String?): String {
-    if (iso.isNullOrBlank()) return ""
-    val parts = iso.split("-")
-    if (parts.size != 3) return iso
-    val m = parts[1].toIntOrNull() ?: return iso; val d = parts[2].toIntOrNull() ?: return iso
-    val mon = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec").getOrNull(m - 1) ?: return iso
-    return "$d $mon"
-}
+/** "2026-06-25" → "25 Jun" (short). Delegates to shared DateUtil.formatDateShort. */
+fun prettyDateShort(iso: String?): String = com.littlebridge.enrollplus.util.formatDateShort(iso)
 
 /** Format a float to one decimal place (KMP-safe — no String.format in common). */
 fun fmt1(v: Float): String {

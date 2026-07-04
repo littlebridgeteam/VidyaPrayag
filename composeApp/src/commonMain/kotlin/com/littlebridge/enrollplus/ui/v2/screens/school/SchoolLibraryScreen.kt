@@ -546,9 +546,9 @@ private fun AddBookDialog(
                 VInput(value = author, onValueChange = { author = it }, label = "Author", modifier = Modifier.fillMaxWidth())
                 VInput(value = isbn, onValueChange = { isbn = it }, label = "ISBN", modifier = Modifier.fillMaxWidth())
                 VInput(value = publisher, onValueChange = { publisher = it }, label = "Publisher", modifier = Modifier.fillMaxWidth())
-                VInput(value = totalCopies, onValueChange = { totalCopies = it }, label = "Total Copies", modifier = Modifier.fillMaxWidth())
+                VInput(value = totalCopies, onValueChange = { v -> totalCopies = v.filter { it.isDigit() }.take(5) }, label = "Total Copies", modifier = Modifier.fillMaxWidth())
                 VInput(value = shelfLocation, onValueChange = { shelfLocation = it }, label = "Shelf Location", modifier = Modifier.fillMaxWidth())
-                VInput(value = replacementCost, onValueChange = { replacementCost = it }, label = "Replacement Cost (₹)", modifier = Modifier.fillMaxWidth())
+                VInput(value = replacementCost, onValueChange = { v -> replacementCost = v.filter { it.isDigit() || it == '.' }.take(10) }, label = "Replacement Cost (₹)", modifier = Modifier.fillMaxWidth())
                 VInput(value = language, onValueChange = { language = it }, label = "Language", modifier = Modifier.fillMaxWidth())
                 VInput(value = synopsis, onValueChange = { synopsis = it }, label = "Synopsis", modifier = Modifier.fillMaxWidth())
                 Text("Category", style = VTheme.type.caption.colored(VTheme.colors.ink2))
@@ -578,9 +578,9 @@ private fun AddBookDialog(
                             isbn = isbn.ifBlank { null },
                             publisher = publisher.ifBlank { null },
                             category = category,
-                            totalCopies = totalCopies.toIntOrNull() ?: 1,
+                            totalCopies = (totalCopies.toIntOrNull() ?: 1).coerceAtLeast(1),
                             shelfLocation = shelfLocation.ifBlank { null },
-                            replacementCost = replacementCost.toDoubleOrNull(),
+                            replacementCost = replacementCost.toDoubleOrNull()?.coerceAtLeast(0.0),
                             language = language.ifBlank { "en" },
                             synopsis = synopsis.ifBlank { null },
                         ),
@@ -961,12 +961,12 @@ private fun SettingsTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewM
             onClick = {
                 viewModel.updateSettings(
                     UpdateSettingsRequest(
-                        defaultLoanDays = defaultLoanDays.toIntOrNull(),
-                        finePerDay = finePerDay.toDoubleOrNull(),
-                        maxBooksPerStudent = maxBooksPerStudent.toIntOrNull(),
-                        maxRenewals = maxRenewals.toIntOrNull(),
-                        reservationTimeoutDays = reservationTimeoutDays.toIntOrNull(),
-                        dueReminderDays = dueReminderDays.toIntOrNull(),
+                        defaultLoanDays = defaultLoanDays.toIntOrNull()?.coerceIn(1, 365),
+                        finePerDay = finePerDay.toDoubleOrNull()?.coerceAtLeast(0.0),
+                        maxBooksPerStudent = maxBooksPerStudent.toIntOrNull()?.coerceIn(1, 50),
+                        maxRenewals = maxRenewals.toIntOrNull()?.coerceIn(0, 20),
+                        reservationTimeoutDays = reservationTimeoutDays.toIntOrNull()?.coerceIn(1, 90),
+                        dueReminderDays = dueReminderDays.toIntOrNull()?.coerceIn(0, 30),
                         fineCapEnabled = fineCapEnabled,
                         quickIssueEnabled = quickIssueEnabled,
                         bulkReturnEnabled = bulkReturnEnabled,

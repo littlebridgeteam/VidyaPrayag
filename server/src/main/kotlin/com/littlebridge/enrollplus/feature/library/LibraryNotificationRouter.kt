@@ -16,9 +16,12 @@ import com.littlebridge.enrollplus.db.NotificationPreferencesTable
 import com.littlebridge.enrollplus.feature.notifications.Notify
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.selectAll
+import org.slf4j.LoggerFactory
 import java.util.UUID
 
 object LibraryNotificationRouter {
+
+    private val logger = LoggerFactory.getLogger(LibraryNotificationRouter::class.java)
 
     data class ChannelDecision(
         val push: Boolean,
@@ -100,12 +103,12 @@ object LibraryNotificationRouter {
 
         // Email — stub: log for now, wire to email gateway when available
         if (channels.email) {
-            println("LIBRARY_NOTIFY: email dispatch for user=$userId event=$event title=$title (email gateway not yet configured)")
+            logger.info("LIBRARY_NOTIFY: email dispatch for user={} event={} title={} (email gateway not yet configured)", userId, event, title)
         }
 
         // SMS — stub: log for now, wire to SMS gateway when available
         if (channels.sms) {
-            println("LIBRARY_NOTIFY: sms dispatch for user=$userId event=$event title=$title (sms gateway not yet configured)")
+            logger.info("LIBRARY_NOTIFY: sms dispatch for user={} event={} title={} (sms gateway not yet configured)", userId, event, title)
         }
     }
 
@@ -125,7 +128,7 @@ object LibraryNotificationRouter {
     ) {
         for (uid in userIds.distinct()) {
             runCatching { notify(uid, event, title, body, schoolId, actorId, deepLink, refType, refId) }
-                .onFailure { println("LIBRARY_NOTIFY: failed for user=$uid event=$event: ${it.message}") }
+                .onFailure { logger.warn("LIBRARY_NOTIFY: failed for user={} event={}: {}", uid, event, it.message, it) }
         }
     }
 }

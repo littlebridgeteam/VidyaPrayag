@@ -125,7 +125,7 @@ fun AdminEventRegistrationScreenV2(
                         eventId = selectedEventId!!,
                         startTime = slotStart,
                         endTime = slotEnd,
-                        capacity = slotCapacity.toIntOrNull() ?: 1,
+                        capacity = (slotCapacity.toIntOrNull() ?: 1).coerceAtLeast(1),
                     )
                     slotStart = ""
                     slotEnd = ""
@@ -343,7 +343,7 @@ private fun EventManageContent(
                     Spacer(Modifier.height(4.dp))
                     VInput(
                         value = slotCapacity,
-                        onValueChange = onSlotCapacityChange,
+                        onValueChange = { v -> onSlotCapacityChange(v.filter { it.isDigit() }.take(5)) },
                         label = "Capacity",
                         placeholder = "1",
                         keyboardType = KeyboardType.Number,
@@ -385,7 +385,7 @@ private fun EventManageContent(
                         Spacer(Modifier.height(4.dp))
                         VInput(
                             value = autoDuration,
-                            onValueChange = { autoDuration = it },
+                            onValueChange = { v -> autoDuration = v.filter { it.isDigit() }.take(4) },
                             label = "Slot duration (minutes)",
                             placeholder = "15",
                             keyboardType = KeyboardType.Number,
@@ -394,7 +394,7 @@ private fun EventManageContent(
                         Spacer(Modifier.height(4.dp))
                         VInput(
                             value = autoCapacity,
-                            onValueChange = { autoCapacity = it },
+                            onValueChange = { v -> autoCapacity = v.filter { it.isDigit() }.take(5) },
                             label = "Capacity per slot",
                             placeholder = "1",
                             keyboardType = KeyboardType.Number,
@@ -407,7 +407,7 @@ private fun EventManageContent(
                         ) {
                             VInput(
                                 value = autoBreakAfter,
-                                onValueChange = { autoBreakAfter = it },
+                                onValueChange = { v -> autoBreakAfter = v.filter { it.isDigit() }.take(3) },
                                 label = "Break after N slots",
                                 placeholder = "0",
                                 keyboardType = KeyboardType.Number,
@@ -415,7 +415,7 @@ private fun EventManageContent(
                             )
                             VInput(
                                 value = autoBreakDuration,
-                                onValueChange = { autoBreakDuration = it },
+                                onValueChange = { v -> autoBreakDuration = v.filter { it.isDigit() }.take(3) },
                                 label = "Break (min)",
                                 placeholder = "5",
                                 keyboardType = KeyboardType.Number,
@@ -429,10 +429,10 @@ private fun EventManageContent(
                                 onAutoGenerate(
                                     autoRangeStart,
                                     autoRangeEnd,
-                                    autoDuration.toIntOrNull() ?: 15,
-                                    autoCapacity.toIntOrNull() ?: 1,
-                                    autoBreakAfter.toIntOrNull() ?: 0,
-                                    autoBreakDuration.toIntOrNull() ?: 5,
+                                    (autoDuration.toIntOrNull() ?: 15).coerceIn(1, 480),
+                                    (autoCapacity.toIntOrNull() ?: 1).coerceAtLeast(1),
+                                    (autoBreakAfter.toIntOrNull() ?: 0).coerceAtLeast(0),
+                                    (autoBreakDuration.toIntOrNull() ?: 5).coerceAtLeast(0),
                                 )
                             },
                             variant = VButtonVariant.Primary,

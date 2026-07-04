@@ -31,6 +31,7 @@ import org.jetbrains.exposed.sql.update
 import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
 
 object PewsJobQueue {
     private val log = LoggerFactory.getLogger("PewsJobQueue")
@@ -39,8 +40,7 @@ object PewsJobQueue {
     private const val POLL_INTERVAL_MS = 2000L
     private const val MAX_CONCURRENT_JOBS = 2
 
-    @Volatile
-    private var workerRunning = false
+    private val workerRunning = AtomicBoolean(false)
 
     // ── Job lifecycle ──────────────────────────────────────────────────────
 
@@ -95,11 +95,10 @@ object PewsJobQueue {
      * Should be called once at application startup.
      */
     fun startWorker(scope: CoroutineScope, processor: suspend (UUID) -> Int) {
-        if (workerRunning) {
+        if (!workerRunning.compareAndSet(false, true)) {
             log.info("[$TAG] Worker already running — skipping")
             return
         }
-        workerRunning = true
 
         scope.launch {
             log.info("[$TAG] Worker started — polling every {}ms, max {} concurrent",

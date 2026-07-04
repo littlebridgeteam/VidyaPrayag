@@ -1,4 +1,6 @@
 "use client";
+import { errorMessage } from "@/lib/errorUtils";
+
 
 import { useState, useCallback, useEffect } from "react";
 import { adminApi } from "@/lib/admin/client";
@@ -43,7 +45,7 @@ export function LogViewer() {
       setLogs(res.logs);
       setTotal(res.total);
     } catch (e: unknown) {
-      setError(`Failed to load logs: ${(e as Error).message}`);
+      setError(`Failed to load logs: ${errorMessage(e)}`);
     } finally {
       setLoading(false);
     }

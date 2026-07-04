@@ -5,19 +5,20 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.backhandler.BackHandler
 import com.littlebridge.enrollplus.feature.admin.presentation.MessagesViewModel
-import com.littlebridge.enrollplus.feature.alumni.domain.model.GraduateStudentsRequest
-import com.littlebridge.enrollplus.feature.alumni.domain.repository.AlumniRepository
-import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
+import com.littlebridge.enrollplus.feature.alumni.presentation.AlumniViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VBottomNav
+import com.littlebridge.enrollplus.ui.v2.components.VEmptyState
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VNavItem
 import com.littlebridge.enrollplus.ui.v2.components.VScreenScaffold
@@ -27,10 +28,6 @@ import com.littlebridge.enrollplus.ui.v2.navigation.parseDeepLink
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.screens.discovery.AcademicCalendarScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.notifications.NotificationsScreenV2
-import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.first
-import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 /** Full-screen overlays the admin portal can push above its tab content. */
@@ -77,6 +74,8 @@ private enum class SchoolOverlay {
     EventRegistration,
     ClassesSubjects,
     ClassDetail,
+    Tutor,
+    PaceAlerts,
 }
 
 /**
@@ -101,7 +100,7 @@ fun SchoolPortalV2(
     // UI_FIDELITY_AUDIT §0.5: Admin.tsx renders under `PhoneFrame dark`, but legacy `dark` == the
     // `.warm` scope, which is a WARM-LIGHT theme (lavender bg, dark ink, white cards) — NOT black.
     // Theme is now applied globally at the NavGraphV2 level from user preference.
-    var tab by remember { mutableStateOf("home") }
+    var tab by rememberSaveable { mutableStateOf("home") }
     var overlay by remember { mutableStateOf(SchoolOverlay.None) }
     var localDeepLink by remember { mutableStateOf<DeepLinkTarget?>(null) }
     var deepLinkThreadId by remember { mutableStateOf<String?>(null) }
@@ -109,17 +108,10 @@ fun SchoolPortalV2(
     var selectedPewsStudentCode by remember { mutableStateOf<String?>(null) }
     // Track which screen launched the create-event wizard so onCreated returns there.
     var createEventOrigin by remember { mutableStateOf(SchoolOverlay.AcademicCalendarPlatform) }
+    // BFS-007 — pass initial sub-tab to Records screen (e.g. "Fee" from Settings).
+    var recordsInitialTab by remember { mutableStateOf("Coverage") }
 
-    val scope = rememberCoroutineScope()
-    val alumniRepo = koinInject<AlumniRepository>()
-    val prefs = koinInject<PreferenceRepository>()
-
-    fun graduateStudents(studentIds: List<String>, year: Int) {
-        scope.launch {
-            val token = prefs.getUserToken().first() ?: return@launch
-            alumniRepo.graduateStudents(token, GraduateStudentsRequest(studentIds, year))
-        }
-    }
+    val alumniViewModel: AlumniViewModel = koinViewModel()
 
     // Apply deep-link routing: set tab from the typed target.
     LaunchedEffect(deepLinkTarget, localDeepLink) {
@@ -153,11 +145,21 @@ fun SchoolPortalV2(
                     "messages" -> { tab = "comms"; overlay = SchoolOverlay.Messages }
                     "announcements" -> { tab = "comms"; overlay = SchoolOverlay.None }
                     "calendar" -> overlay = SchoolOverlay.AcademicCalendarPlatform
-                    "fees" -> { tab = "records"; overlay = SchoolOverlay.None }
-                    "tutor" -> { tab = "home"; overlay = SchoolOverlay.None }
+                    "fees" -> { tab = "records"; overlay = SchoolOverlay.None; recordsInitialTab = "Fee" }
+                    "scholarship", "scholarships" -> overlay = SchoolOverlay.ScholarshipManagement
+                    "tutor" -> overlay = SchoolOverlay.Tutor
                     "timetable" -> overlay = SchoolOverlay.ClassesSubjects
                     "timetable-requests" -> overlay = SchoolOverlay.ClassesSubjects
-                    "pace-alerts", "pace" -> { tab = "home"; overlay = SchoolOverlay.None }
+                    "pace-alerts", "pace" -> overlay = SchoolOverlay.PaceAlerts
+                    "alumni" -> overlay = SchoolOverlay.Alumni
+                    "analytics", "intelligence" -> overlay = SchoolOverlay.AnalyticsDashboard
+                    "daily-attendance" -> overlay = SchoolOverlay.DailyAttendance
+                    "class-performance" -> overlay = SchoolOverlay.ClassPerformance
+                    "teacher-performance" -> overlay = SchoolOverlay.TeacherPerformance
+                    "student-roster" -> overlay = SchoolOverlay.StudentRoster
+                    "edit-profile" -> overlay = SchoolOverlay.EditProfile
+                    "staff" -> overlay = SchoolOverlay.Staff
+                    "report-effectiveness" -> overlay = SchoolOverlay.ReportEffectiveness
                     // Valid bottom-nav tabs
                     "home", "people", "records", "comms", "settings" -> tab = target.screen
                     else -> tab = "home"
@@ -186,10 +188,22 @@ fun SchoolPortalV2(
                     pathOnly.startsWith("timetable-requests") -> overlay = SchoolOverlay.ClassesSubjects
                     pathOnly.startsWith("timetable") -> overlay = SchoolOverlay.ClassesSubjects
                     pathOnly.startsWith("report-card") -> overlay = SchoolOverlay.ReportPublish
-                    pathOnly.startsWith("tutor") -> { tab = "home"; overlay = SchoolOverlay.None }
+                    pathOnly.startsWith("tutor") -> overlay = SchoolOverlay.Tutor
                     pathOnly.startsWith("ptm") -> overlay = SchoolOverlay.SchedulePTM
                     pathOnly.startsWith("health-records") -> overlay = SchoolOverlay.HealthRecords
                     pathOnly.startsWith("scheduled-messages") -> overlay = SchoolOverlay.ScheduledMessages
+                    pathOnly.startsWith("alumni") -> overlay = SchoolOverlay.Alumni
+                    pathOnly.startsWith("scholarship") -> overlay = SchoolOverlay.ScholarshipManagement
+                    pathOnly.startsWith("analytics") -> overlay = SchoolOverlay.AnalyticsDashboard
+                    pathOnly.startsWith("intelligence") -> overlay = SchoolOverlay.AnalyticsDashboard
+                    pathOnly.startsWith("daily-attendance") -> overlay = SchoolOverlay.DailyAttendance
+                    pathOnly.startsWith("class-performance") -> overlay = SchoolOverlay.ClassPerformance
+                    pathOnly.startsWith("teacher-performance") -> overlay = SchoolOverlay.TeacherPerformance
+                    pathOnly.startsWith("student-roster") -> overlay = SchoolOverlay.StudentRoster
+                    pathOnly.startsWith("edit-profile") -> overlay = SchoolOverlay.EditProfile
+                    pathOnly.startsWith("staff") -> overlay = SchoolOverlay.Staff
+                    pathOnly.startsWith("report-effectiveness") -> overlay = SchoolOverlay.ReportEffectiveness
+                    pathOnly.startsWith("fee-reminder") -> { tab = "records"; overlay = SchoolOverlay.None; recordsInitialTab = "Fee" }
                     else -> tab = "home"
                 }
             }
@@ -216,13 +230,17 @@ fun SchoolPortalV2(
         // RA-S12 — the Comms badge counts message threads with unread messages
         // (GET /school/messages/threads), not a hardcoded literal.
         val messagesState by messagesViewModel.state.collectAsStateV2()
-        val commsBadge = messagesState.threads.count { it.unreadCount > 0 }
+        val commsBadge by remember {
+            derivedStateOf { messagesState.threads.count { it.unreadCount > 0 } }
+        }
         var peopleRefreshKey by remember { mutableIntStateOf(0) }
         var studentRefreshKey by remember { mutableIntStateOf(0) }
         // §11 cross-platform — Android predictive back / iOS edge-swipe pops
         // the full-screen Notifications/Calendar overlay back to the admin tabs
         // instead of leaving the portal. Mirrors the React `onBack` wiring.
         BackHandler(enabled = overlay != SchoolOverlay.None) {
+            deepLinkThreadId = null
+            selectedPewsStudentCode = null
             when (overlay) {
                 SchoolOverlay.StudentProfile, SchoolOverlay.TeacherProfile -> {
                     val returnTo = profileReturnOverlay
@@ -563,6 +581,22 @@ fun SchoolPortalV2(
                 )
                 return
             }
+            SchoolOverlay.Tutor -> {
+                VEmptyState(
+                    title = "Tutor Management",
+                    body = "The tutor management dashboard will be available here.",
+                    modifier = modifier,
+                )
+                return
+            }
+            SchoolOverlay.PaceAlerts -> {
+                VEmptyState(
+                    title = "Pace Alerts",
+                    body = "Pace alerts and snapshots will be available here.",
+                    modifier = modifier,
+                )
+                return
+            }
             SchoolOverlay.None -> Unit
         }
 
@@ -577,7 +611,14 @@ fun SchoolPortalV2(
         VScreenScaffold(
             modifier = modifier,
             bottomBar = {
-                VBottomNav(items = items, selected = tab, onSelect = { tab = it })
+                VBottomNav(items = items, selected = tab, onSelect = {
+                    if (tab != it) {
+                        createEventOrigin = SchoolOverlay.AcademicCalendarPlatform
+                        profileReturnOverlay = SchoolOverlay.None
+                        if (it != "records") recordsInitialTab = "Coverage"
+                    }
+                    tab = it
+                })
             },
         ) { padding ->
             Box(Modifier.fillMaxSize()) {
@@ -620,16 +661,17 @@ fun SchoolPortalV2(
                         onOpenAlumni = { overlay = SchoolOverlay.Alumni },
                         // Mark students as alumni (graduation bulk action)
                         onGraduateStudents = { studentIds, year ->
-                            graduateStudents(studentIds, year)
+                            alumniViewModel.graduateStudents(studentIds, year)
                         },
                     )
-                    "records" -> SchoolRecordsScreenV2()
+                    "records" -> SchoolRecordsScreenV2(initialTab = recordsInitialTab)
                     "comms" -> SchoolCommsScreenV2(
                         // RA-24 — Messages and PTM open their real backend-backed
                         // screens as overlays instead of Coming-Soon cards.
                         onOpenMessages = { overlay = SchoolOverlay.Messages },
                         onOpenPtm = { overlay = SchoolOverlay.SchedulePTM },
                         onOpenScheduledMessages = { overlay = SchoolOverlay.ScheduledMessages },
+                        onOpenNotifications = { overlay = SchoolOverlay.Notifications },
                         // Unified create-event entry from Announcements tab.
                         onCreateEvent = {
                             createEventOrigin = SchoolOverlay.None
@@ -657,6 +699,13 @@ fun SchoolPortalV2(
                         onOpenLibrary = { overlay = SchoolOverlay.Library },
                         // Classes & Subjects — consolidated management (classes, subjects, bell schedule, timetable).
                         onOpenClassesSubjects = { overlay = SchoolOverlay.ClassesSubjects },
+                        // BFS-037 — Fee structure opens the records tab (fee ledger).
+                        onOpenFees = {
+                            recordsInitialTab = "Fee"
+                            tab = "records"
+                        },
+                        // BFS-036/037 — Notifications opens the notification center overlay.
+                        onOpenNotifications = { overlay = SchoolOverlay.Notifications },
                     )
                 }
             }

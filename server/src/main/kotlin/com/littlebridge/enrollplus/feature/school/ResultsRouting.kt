@@ -57,6 +57,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.jsonPrimitive
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.neq
 import org.jetbrains.exposed.sql.and
@@ -120,6 +121,7 @@ data class PublishResultsRow(
 data class PublishResultsDto(
     val test: String,
     @SerialName("class") val className: String,
+    val section: String = "A",
     val subject: String,
     val results: List<PublishResultsRow>
 )
@@ -243,6 +245,7 @@ fun Route.resultsRouting() {
 
                 val test = call.request.queryParameters["test"].orEmpty()
                 val classFilter = call.request.queryParameters["class"].orEmpty()
+                val sectionFilter = call.request.queryParameters["section"].orEmpty()
                 val subject = call.request.queryParameters["subject"].orEmpty()
 
                 val payload = dbQuery {
@@ -259,6 +262,7 @@ fun Route.resultsRouting() {
                             (ExamResultsTable.schoolId eq schoolId) and
                                 (ExamResultsTable.test eq resolvedTest) and
                                 (ExamResultsTable.className eq resolvedClass) and
+                                (if (sectionFilter.isBlank()) Op.TRUE else ExamResultsTable.section eq sectionFilter) and
                                 (ExamResultsTable.subject eq resolvedSubject)
                         }
                         .orderBy(ExamResultsTable.studentName, SortOrder.ASC)
@@ -325,6 +329,7 @@ fun Route.resultsRouting() {
                 if (req.test.isBlank() || req.className.isBlank() || req.subject.isBlank()) {
                     call.fail("test, class, subject are required"); return@post
                 }
+                val section = req.section.ifBlank { "A" }
                 if (req.results.isEmpty()) {
                     call.fail("results must not be empty"); return@post
                 }
@@ -348,6 +353,7 @@ fun Route.resultsRouting() {
                             (ExamResultsTable.schoolId eq schoolId) and
                                 (ExamResultsTable.test eq req.test) and
                                 (ExamResultsTable.className eq req.className) and
+                                (ExamResultsTable.section eq section) and
                                 (ExamResultsTable.subject eq req.subject) and
                                 (ExamResultsTable.studentId eq row.studentId)
                         }.singleOrNull()
@@ -358,6 +364,7 @@ fun Route.resultsRouting() {
                                 it[ExamResultsTable.schoolId] = schoolId
                                 it[test] = req.test
                                 it[className] = req.className
+                                it[ExamResultsTable.section] = section
                                 it[subject] = req.subject
                                 it[studentId] = row.studentId
                                 it[studentName] = resolvedName

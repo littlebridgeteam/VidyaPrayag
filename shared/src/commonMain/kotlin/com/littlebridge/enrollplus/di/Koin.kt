@@ -304,6 +304,9 @@ val commonModule = module {
     single<com.littlebridge.enrollplus.feature.parent.domain.repository.ParentRepository> {
         com.littlebridge.enrollplus.feature.parent.data.repository.ParentRepositoryImpl(get())
     }
+    single<com.littlebridge.enrollplus.core.notification.NotificationFeedRepository> {
+        get<com.littlebridge.enrollplus.feature.parent.domain.repository.ParentRepository>()
+    }
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.OnboardingRepository> {
         com.littlebridge.enrollplus.feature.admin.data.repository.OnboardingRepositoryImpl(get())
     }
@@ -539,7 +542,7 @@ val viewModelModule = module {
     factory { FeeViewModel(get(), get(), get()) }
     factory { ScholarshipsViewModel(get(), get()) }
     factory { ParentAnnouncementViewModel(get(), get()) }
-    factory { NotificationsViewModel(get(), get()) }
+    factory { NotificationsViewModel(get<com.littlebridge.enrollplus.core.notification.NotificationFeedRepository>(), get()) }
     factory { LinkChildViewModel(get(), get()) }
     factory { ParentHomeViewModel(get(), get(), get()) }
     factory { ParentProfileViewModel(get(), get()) }

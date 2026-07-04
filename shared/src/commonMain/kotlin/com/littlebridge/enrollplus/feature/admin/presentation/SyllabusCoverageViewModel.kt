@@ -163,7 +163,7 @@ class SyllabusCoverageViewModel(
                 instructor       = o["instructor"]?.jsonPrimitive?.contentOrNull ?: "",
                 isCritical       = o["is_critical"]?.jsonPrimitive?.booleanOrNull ?: false
             )
-        } catch (_: Exception) { null }
+        } catch (e: Exception) { AppLogger.e("SyllabusCoverageVM", "parseAlert failed: ${e.message}", e); null }
     }
 
     private fun parseMilestone(el: JsonElement): AcademicMilestone? {
@@ -178,6 +178,6 @@ class SyllabusCoverageViewModel(
                 description = o["description"]?.jsonPrimitive?.contentOrNull ?: "",
                 isVerified  = o["is_verified"]?.jsonPrimitive?.booleanOrNull ?: false
             )
-        } catch (_: Exception) { null }
+        } catch (e: Exception) { AppLogger.e("SyllabusCoverageVM", "parseMilestone failed: ${e.message}", e); null }
     }
 }

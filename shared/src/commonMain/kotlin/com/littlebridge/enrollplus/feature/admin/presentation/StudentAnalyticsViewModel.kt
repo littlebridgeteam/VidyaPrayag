@@ -125,7 +125,7 @@ class StudentAnalyticsViewModel(
                 masteryTrend  = o["mastery_trend"]?.jsonPrimitive?.contentOrNull ?: "",
                 riskLevel     = o["risk_level"]?.jsonPrimitive?.contentOrNull ?: "Low"
             )
-        } catch (_: Exception) { null }
+        } catch (e: Exception) { AppLogger.e("StudentAnalyticsVM", "parseRisk failed: ${e.message}", e); null }
     }
 
     private fun parseEngagement(el: JsonElement): SubjectEngagement? {
@@ -137,6 +137,6 @@ class StudentAnalyticsViewModel(
                 percentage = o["percentage"]?.jsonPrimitive?.floatOrNull ?: 0f,
                 status     = o["status"]?.jsonPrimitive?.contentOrNull
             )
-        } catch (_: Exception) { null }
+        } catch (e: Exception) { AppLogger.e("StudentAnalyticsVM", "parseEngagement failed: ${e.message}", e); null }
     }
 }

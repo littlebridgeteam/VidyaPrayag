@@ -57,11 +57,10 @@ import org.koin.compose.viewmodel.koinViewModel
  * [InstitutionalProfileViewModel] (`UserProfileApi` → `GET /api/v1/user/profile`).
  *
  * The institutional-profile health card (completion %, storage usage, public/private
- * visibility) is rendered from live VM state. The remaining static admin settings rows
- * (academic year, fee structure, notifications, data export) have no dedicated backend
- * endpoint of their own yet, so they keep their descriptive copy and are clearly marked
- * "Coming Soon" rather than fabricating data (LAW 6). No MockV2 in production; the three
- * UI states come from [VStateHost].
+ * visibility) is rendered from live VM state. Fee structure opens the records tab and
+ * Notifications opens the notification center overlay. Data export remains "Coming Soon"
+ * (no backend endpoint yet). No MockV2 in production; the three UI states come from
+ * [VStateHost].
  */
 @Composable
 fun SchoolSettingsScreenV2(
@@ -83,6 +82,8 @@ fun SchoolSettingsScreenV2(
     onOpenLibrary: () -> Unit = {},
     // Classes & Subjects — consolidated management (classes, subjects, bell schedule, timetable).
     onOpenClassesSubjects: () -> Unit = {},
+    onOpenNotifications: () -> Unit = {},
+    onOpenFees: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: InstitutionalProfileViewModel = koinViewModel(),
     preferenceRepository: PreferenceRepository = koinInject(),
@@ -111,6 +112,8 @@ fun SchoolSettingsScreenV2(
         onOpenIdCards = onOpenIdCards,
         onOpenLibrary = onOpenLibrary,
         onOpenClassesSubjects = onOpenClassesSubjects,
+        onOpenNotifications = onOpenNotifications,
+        onOpenFees = onOpenFees,
         onRetry = viewModel::load,
         modifier = modifier.statusBarsPadding()
             .imePadding()
@@ -134,6 +137,8 @@ private fun SchoolSettingsContent(
     onOpenIdCards: () -> Unit,
     onOpenLibrary: () -> Unit,
     onOpenClassesSubjects: () -> Unit,
+    onOpenNotifications: () -> Unit,
+    onOpenFees: () -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -194,8 +199,8 @@ private fun SchoolSettingsContent(
                 SettingRow(VIcons.School, "Branding Kit", "Logo, colors & custom subdomain", false, onClick = onOpenBranding),
                 SettingRow(VIcons.IdCard, "ID Cards", "Templates, generation & PDF export", false, onClick = onOpenIdCards),
                 SettingRow(VIcons.BookOpen, "Library Management", "Catalog, issues, returns & fines", false, onClick = onOpenLibrary),
-                SettingRow(VIcons.Wallet, "Fee structure", "Edit heads & amounts for next cycle ", true),
-                SettingRow(VIcons.Bell, "Notifications", "Channels & quiet hours", true),
+                SettingRow(VIcons.Wallet, "Fee structure", "Edit heads & amounts for next cycle ", false, onClick = onOpenFees),
+                SettingRow(VIcons.Bell, "Notifications", "Channels & quiet hours", false, onClick = onOpenNotifications),
                 SettingRow(VIcons.Download, "Data export", "CSV / PDF / UDISE", true),
                 SettingRow(
                     VIcons.Chat,

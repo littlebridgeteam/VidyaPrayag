@@ -225,7 +225,7 @@ private fun AddAlumniDialog(
     var city by remember { mutableStateOf("") }
     var studentId by remember { mutableStateOf("") }
 
-    val canSubmit = name.isNotBlank() && graduationYear.toIntOrNull() != null
+    val canSubmit = name.isNotBlank() && graduationYear.toIntOrNull()?.let { it in 1900..2100 } == true
 
     Dialog(onDismissRequest = onDismiss) {
         VCard {
@@ -299,7 +299,7 @@ private fun AddAlumniDialog(
                                 CreateAlumniRequest(
                                     studentId = studentId.ifBlank { null },
                                     name = name.trim(),
-                                    graduationYear = graduationYear.toInt(),
+                                    graduationYear = graduationYear.toInt().coerceIn(1900, 2100),
                                     email = email.ifBlank { null },
                                     phone = phone.ifBlank { null },
                                     currentProfession = profession.ifBlank { null },
@@ -386,6 +386,7 @@ private fun parseAlumniCsv(text: String): List<CreateAlumniRequest> {
             val name = parts[0]
             val year = parts[1].toIntOrNull() ?: return@mapNotNull null
             if (name.isBlank()) return@mapNotNull null
+            if (year !in 1900..2100) return@mapNotNull null
             CreateAlumniRequest(
                 name = name,
                 graduationYear = year,

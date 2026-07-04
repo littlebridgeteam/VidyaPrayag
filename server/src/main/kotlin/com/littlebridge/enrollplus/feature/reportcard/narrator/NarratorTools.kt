@@ -348,7 +348,7 @@ object NarratorTools {
             val obj = json.parseToJsonElement(raw) as JsonObject
             obj.toMap()
         } catch (e: Exception) {
-            log.warn("Failed to parse tool arguments: {}", e.message)
+            log.warn("Failed to parse tool arguments: {} | raw: {}", e.message, raw.take(200))
             emptyMap()
         }
     }

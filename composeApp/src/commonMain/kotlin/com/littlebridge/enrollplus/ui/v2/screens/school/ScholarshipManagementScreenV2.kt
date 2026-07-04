@@ -431,7 +431,7 @@ private fun ScholarshipApplicationReviewCard(
                         VButton(
                             text = "Approve",
                             onClick = {
-                                val amount = disbursementAmount.toDoubleOrNull()
+                                val amount = disbursementAmount.toDoubleOrNull()?.coerceAtLeast(0.0)
                                 onApprove(remarks, amount)
                                 showActions = false
                             },
@@ -468,7 +468,7 @@ private fun ScholarshipApplicationReviewCard(
             VButton(
                 text = "Record Disbursement",
                 onClick = {
-                    val amount = disbursementAmount.toDoubleOrNull() ?: application.disbursementAmount ?: 0.0
+                    val amount = (disbursementAmount.toDoubleOrNull() ?: application.disbursementAmount ?: 0.0).coerceAtLeast(0.0)
                     if (disbursementReference.isNotBlank()) {
                         onDisburse(amount, disbursementReference)
                     }
@@ -608,7 +608,7 @@ private fun ScholarshipSchemeForm(
                 Spacer(Modifier.height(8.dp))
                 VInput(value = amount, onValueChange = { amount = it }, label = "Display Amount (e.g. ₹5,000)", modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(8.dp))
-                VInput(value = numericAmount, onValueChange = { numericAmount = it.filter { it.isDigit() || it == '.' } }, label = "Numeric Amount (for fixed type)", modifier = Modifier.fillMaxWidth())
+                VInput(value = numericAmount, onValueChange = { numericAmount = it.filter { it.isDigit() || it == '.' }.take(12) }, label = "Numeric Amount (for fixed type)", modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(12.dp))
 
                 // Scholarship type dropdown
@@ -673,7 +673,7 @@ private fun ScholarshipSchemeForm(
 
                 if (scholarshipType == "partial_waiver") {
                     Spacer(Modifier.height(8.dp))
-                    VInput(value = waiverPercentage, onValueChange = { waiverPercentage = it.filter { it.isDigit() || it == '.' } }, label = "Waiver Percentage (0-100)", modifier = Modifier.fillMaxWidth())
+                    VInput(value = waiverPercentage, onValueChange = { waiverPercentage = it.filter { it.isDigit() || it == '.' }.take(6) }, label = "Waiver Percentage (0-100)", modifier = Modifier.fillMaxWidth())
                 }
 
                 Spacer(Modifier.height(8.dp))
@@ -736,7 +736,7 @@ private fun ScholarshipSchemeForm(
 
                 if (isRenewable) {
                     Spacer(Modifier.height(8.dp))
-                    VInput(value = renewalPeriodMonths, onValueChange = { renewalPeriodMonths = it.filter { ch -> ch.isDigit() } }, label = "Renewal Period (months)", modifier = Modifier.fillMaxWidth())
+                    VInput(value = renewalPeriodMonths, onValueChange = { renewalPeriodMonths = it.filter { ch -> ch.isDigit() }.take(3) }, label = "Renewal Period (months)", modifier = Modifier.fillMaxWidth())
                 }
 
                 Spacer(Modifier.height(16.dp))
@@ -761,15 +761,15 @@ private fun ScholarshipSchemeForm(
                                                 title = title,
                                                 description = description,
                                                 amount = amount,
-                                                numericAmount = numericAmount.toDoubleOrNull(),
+                                                numericAmount = numericAmount.toDoubleOrNull()?.coerceAtLeast(0.0),
                                                 scholarshipType = scholarshipType,
-                                                waiverPercentage = waiverPercentage.toFloatOrNull(),
+                                                waiverPercentage = waiverPercentage.toFloatOrNull()?.coerceIn(0f, 100f),
                                                 eligibilityCriteria = eligibilityCriteria,
                                                 category = category,
                                                 startDate = startDate.ifBlank { null },
                                                 endDate = endDate.ifBlank { null },
                                                 isRenewable = isRenewable,
-                                                renewalPeriodMonths = renewalPeriodMonths.toIntOrNull(),
+                                                renewalPeriodMonths = renewalPeriodMonths.toIntOrNull()?.coerceIn(1, 120),
                                             )
                                         )
                                     } else {
@@ -778,15 +778,15 @@ private fun ScholarshipSchemeForm(
                                                 title = title,
                                                 description = description,
                                                 amount = amount,
-                                                numericAmount = numericAmount.toDoubleOrNull(),
+                                                numericAmount = numericAmount.toDoubleOrNull()?.coerceAtLeast(0.0),
                                                 scholarshipType = scholarshipType,
-                                                waiverPercentage = waiverPercentage.toFloatOrNull(),
+                                                waiverPercentage = waiverPercentage.toFloatOrNull()?.coerceIn(0f, 100f),
                                                 eligibilityCriteria = eligibilityCriteria,
                                                 category = category,
                                                 startDate = startDate.ifBlank { null },
                                                 endDate = endDate.ifBlank { null },
                                                 isRenewable = isRenewable,
-                                                renewalPeriodMonths = renewalPeriodMonths.toIntOrNull(),
+                                                renewalPeriodMonths = renewalPeriodMonths.toIntOrNull()?.coerceIn(1, 120),
                                             )
                                         )
                                     }

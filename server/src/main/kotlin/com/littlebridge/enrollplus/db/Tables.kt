@@ -44,6 +44,7 @@
 package com.littlebridge.enrollplus.db
 
 import org.jetbrains.exposed.dao.id.UUIDTable
+import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.date
 import org.jetbrains.exposed.sql.javatime.time
@@ -81,6 +82,7 @@ object AppUsersTable : UUIDTable("app_users", "id") {
     val orgAdminRole    = varchar("org_admin_role", 16).nullable() // org_admin | null
     val isActive         = bool("is_active").default(true)
     val lastLoginAt      = timestamp("last_login_at").nullable()
+    val passwordChangedAt = timestamp("password_changed_at").nullable()
     val createdAt        = timestamp("created_at")
     val updatedAt        = timestamp("updated_at")
 }
@@ -101,7 +103,7 @@ object AuthOtpsTable : UUIDTable("auth_otps", "id") {
 
     val resendCount       = short("resend_count").default(0.toShort())
     val attemptCount      = short("attempt_count").default(0.toShort())
-    val maxAttempts       = short("max_attempts").default(5.toShort())
+    val maxAttempts       = short("max_attempts").default(3.toShort())
     val maxResends        = short("max_resends").default(5.toShort())
     val resendWindowSecs  = integer("resend_window_secs").default(3600)
 
@@ -167,6 +169,10 @@ object UserSessionsTable : UUIDTable("user_sessions", "id") {
     val revokedAt         = timestamp("revoked_at").nullable()
     val lastUsedAt        = timestamp("last_used_at").nullable()
     val createdAt         = timestamp("created_at")
+
+    init {
+        foreignKey(userId to AppUsersTable.id, onDelete = ReferenceOption.CASCADE, name = "fk_user_sessions_user_id")
+    }
 }
 
 // =====================================================================
@@ -417,6 +423,10 @@ object SchoolMediaTable : UUIDTable("school_media", "id") {
     val sizeBytes  = long("size_bytes").default(0)
     val uploadedBy = uuid("uploaded_by").nullable()
     val createdAt  = timestamp("created_at")
+
+    init {
+        index("idx_school_media_school_id", isUnique = false, schoolId)
+    }
 }
 
 object StorageMetricsTable : Table("storage_metrics") {
@@ -809,6 +819,8 @@ object MessagesTable : UUIDTable("messages", "id") {
     init {
         // Delta sync + pagination: WHERE conversation_id=? AND seq>? ORDER BY seq
         index("idx_messages_conv_seq", isUnique = false, conversationId, seq)
+        foreignKey(threadId to MessageThreadsTable.id, onDelete = ReferenceOption.CASCADE, name = "fk_messages_thread_id")
+        foreignKey(replyToId to MessagesTable.id, onDelete = ReferenceOption.SET_NULL, name = "fk_messages_reply_to")
     }
 }
 
@@ -839,6 +851,7 @@ object MessageStatusTable : UUIDTable("message_status", "id") {
     init {
         uniqueIndex("ux_message_status_msg_user", messageId, userId)
         index("idx_msg_status_conv_user", isUnique = false, conversationId, userId)
+        foreignKey(messageId to MessagesTable.id, onDelete = ReferenceOption.CASCADE, name = "fk_message_status_message_id")
     }
 }
 
@@ -865,6 +878,7 @@ object MessageAttachmentsTable : UUIDTable("message_attachments", "id") {
 
     init {
         index("idx_attachments_message", isUnique = false, messageId)
+        foreignKey(messageId to MessagesTable.id, onDelete = ReferenceOption.CASCADE, name = "fk_message_attachments_message_id")
     }
 }
 
@@ -898,6 +912,7 @@ object ExamResultsTable : UUIDTable("exam_results", "id") {
     val schoolId   = uuid("school_id")
     val test       = text("test")
     val className  = text("class_name")
+    val section    = varchar("section", 8).default("A")
     val subject    = text("subject")
     val studentId  = text("student_id")                                 // matches students.student_code
     val studentName = text("student_name")
@@ -909,7 +924,7 @@ object ExamResultsTable : UUIDTable("exam_results", "id") {
     val createdAt  = timestamp("created_at")
     val updatedAt  = timestamp("updated_at")
     init {
-        uniqueIndex("ux_exam_results_unique", schoolId, test, className, subject, studentId)
+        uniqueIndex("ux_exam_results_unique", schoolId, test, className, section, subject, studentId)
     }
 }
 
@@ -1086,12 +1101,13 @@ object CurriculumUnitsTable : UUIDTable("curriculum_units", "id") {
 object NcertSyllabusReferenceTable : UUIDTable("ncert_syllabus_reference", "id") {
     val classLevel   = varchar("class_level", 8)
     val subjectName  = varchar("subject_name", 64)
+    val medium       = varchar("medium", 16).default("English")
     val chaptersJson = text("chapters_json").default("[]")
     val dataSource   = varchar("source", 32).default("NCERT")
     val createdAt    = timestamp("created_at")
     val updatedAt    = timestamp("updated_at")
     init {
-        uniqueIndex("idx_ncert_ref_class_subject", classLevel, subjectName)
+        uniqueIndex("idx_ncert_ref_class_subject_medium", classLevel, subjectName, medium)
     }
 }
 
@@ -1116,6 +1132,8 @@ object SyllabusProgressTable : UUIDTable("syllabus_progress", "id") {
     val updatedAt    = timestamp("updated_at")
     init {
         uniqueIndex("ux_syllabus_progress_unique", unitId, section, assignmentId)
+        foreignKey(unitId to CurriculumUnitsTable.id, onDelete = ReferenceOption.CASCADE, name = "fk_syllabus_progress_unit_id")
+        foreignKey(assignmentId to TeacherSubjectAssignmentsTable.id, onDelete = ReferenceOption.RESTRICT, name = "fk_syllabus_progress_assignment_id")
     }
 }
 
@@ -2407,6 +2425,9 @@ object TransportAssignmentsTable : UUIDTable("transport_assignments", "id") {
         index("idx_transport_assignments_school", false, schoolId, isActive)
         index("idx_transport_assignments_student", false, studentId, isActive)
         index("idx_transport_assignments_route", false, routeId, isActive)
+        foreignKey(routeId to TransportRoutesTable.id, onDelete = ReferenceOption.RESTRICT, name = "fk_transport_assignments_route_id")
+        foreignKey(stopId to TransportStopsTable.id, onDelete = ReferenceOption.RESTRICT, name = "fk_transport_assignments_stop_id")
+        foreignKey(vehicleId to TransportVehiclesTable.id, onDelete = ReferenceOption.RESTRICT, name = "fk_transport_assignments_vehicle_id")
     }
 }
 
@@ -2420,6 +2441,7 @@ object TransportTrackingTable : UUIDTable("transport_tracking", "id") {
 
     init {
         index("idx_transport_tracking_vehicle", false, vehicleId, recordedAt)
+        foreignKey(vehicleId to TransportVehiclesTable.id, onDelete = ReferenceOption.CASCADE, name = "fk_transport_tracking_vehicle_id")
     }
 }
 
@@ -2675,6 +2697,26 @@ object PewsFeatureFlagsTable : UUIDTable("pews_feature_flags", "id") {
     val updatedBy     = uuid("updated_by").nullable()
     init {
         uniqueIndex("ux_pews_flags_module", moduleName)
+    }
+}
+
+// =====================================================================
+// GAP-019 — General-purpose feature flags (hot-reloadable via polling).
+// Unified table replacing PEWS-only kill switches. Any feature module
+// can register flags here. Keyed by (scope, key) for O(1) lookups.
+// =====================================================================
+
+object FeatureFlagsTable : UUIDTable("feature_flags", "id") {
+    val scope       = varchar("scope", 64)
+    val key         = varchar("key", 64)
+    val value       = text("value").nullable()
+    val isEnabled   = bool("is_enabled").default(false)
+    val description = text("description").nullable()
+    val updatedAt   = timestamp("updated_at")
+    val createdAt   = timestamp("created_at")
+    init {
+        uniqueIndex("ux_feature_flags_scope_key", scope, key)
+        index("idx_feature_flags_scope", false, scope)
     }
 }
 

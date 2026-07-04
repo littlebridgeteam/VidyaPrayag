@@ -40,7 +40,6 @@ import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
-import com.littlebridge.enrollplus.ui.v2.components.VComingSoon
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
@@ -57,9 +56,8 @@ import org.koin.compose.viewmodel.koinViewModel
  *
  * The **Announcements** tab renders real announcements from the server (title, category,
  * date) with category filtering, and a detail leaf. The **Messages**, **PTM** and
- * **Notifications** tabs are dedicated backends/screens that don't exist yet (Phase D/E),
- * so they're shown as `VComingSoon` rather than fabricating data (LAW 6). No MockV2 in
- * production; the three UI states come from [VStateHost].
+ * **Notifications** tabs open their real backend-backed screens as overlays.
+ * No MockV2 in production; the three UI states come from [VStateHost].
  */
 @Composable
 fun SchoolCommsScreenV2(
@@ -67,6 +65,7 @@ fun SchoolCommsScreenV2(
     onOpenMessages: () -> Unit = {},
     onOpenPtm: () -> Unit = {},
     onOpenScheduledMessages: () -> Unit = {},
+    onOpenNotifications: () -> Unit = {},
     onCreateEvent: () -> Unit = {},
     viewModel: SchoolAnnouncementsViewModel = koinViewModel(),
 ) {
@@ -79,6 +78,7 @@ fun SchoolCommsScreenV2(
         onOpenMessages = onOpenMessages,
         onOpenPtm = onOpenPtm,
         onOpenScheduledMessages = onOpenScheduledMessages,
+        onOpenNotifications = onOpenNotifications,
         modifier = modifier.statusBarsPadding()
             .imePadding()
             .navigationBarsPadding(),
@@ -94,6 +94,7 @@ private fun SchoolCommsContent(
     onOpenMessages: () -> Unit,
     onOpenPtm: () -> Unit,
     onOpenScheduledMessages: () -> Unit,
+    onOpenNotifications: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val c = VTheme.colors
@@ -159,9 +160,11 @@ private fun SchoolCommsContent(
                     description = "Schedule PTMs and track slot bookings.",
                     onClick = onOpenPtm,
                 )
-                "Notifications" -> VComingSoon(
-                    title = "Delivery log",
-                    description = "Push/SMS/WhatsApp delivery receipts surface here when the notifications service ships.",
+                "Notifications" -> CommsEntryCard(
+                    icon = VIcons.Bell,
+                    title = "Notification center",
+                    description = "View delivery logs & send push notifications.",
+                    onClick = onOpenNotifications,
                 )
             }
         }

@@ -48,7 +48,10 @@ export default function DashboardPreviewPage() {
   const [seeded, setSeeded] = useState(false);
 
   useEffect(() => {
-    // Seed a fake admin session so useAdminAuth() resolves a name for the greeting.
+    if (process.env.NODE_ENV !== "development") {
+      window.location.replace("/");
+      return;
+    }
     window.localStorage.setItem(
       "enrollplus.admin.v1",
       JSON.stringify({

@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlinJvm)
     alias(libs.plugins.ktor)
     kotlin("plugin.serialization") version libs.versions.kotlin.get()
+    id("io.gitlab.arturbosch.detekt") version "1.23.7"
     application
 }
 
@@ -92,6 +93,7 @@ dependencies {
     // apps, prefer creating a JVM-only sub-module (e.g. `:shared-jvm`) instead
     // of reintroducing the full multiplatform dependency here.
     implementation(libs.logback)
+    implementation("net.logstash.logback:logstash-logback-encoder:7.4")
     implementation(libs.ktor.serverCore)
     implementation(libs.ktor.serverNetty)
     implementation("io.ktor:ktor-server-content-negotiation:3.4.3")
@@ -103,6 +105,10 @@ dependencies {
     implementation("io.ktor:ktor-server-call-logging:3.4.3")
     implementation("io.ktor:ktor-server-auto-head-response:3.4.3")
     implementation("io.ktor:ktor-server-sse:3.4.3")
+
+    // Observability — Micrometer metrics + Prometheus registry (GAP-010)
+    implementation("io.ktor:ktor-server-metrics-micrometer:3.4.3")
+    implementation("io.micrometer:micrometer-registry-prometheus:1.14.3")
 
     // -----------------------------------------------------------------
     // Ktor HTTP CLIENT — used by the OTP delivery layer (Fast2SMS, MSG91,
@@ -140,6 +146,9 @@ dependencies {
     implementation(libs.hikaricp)
     implementation(libs.sqlite)
     implementation(libs.dotenv)
+
+    // Flyway — automated database migration runner (SCH-011)
+    implementation("org.flywaydb:flyway-database-postgresql:11.1.0")
 
     // -----------------------------------------------------------------
     // Notification foundation (feature/setup_notification).
@@ -182,4 +191,20 @@ dependencies {
 
     testImplementation(libs.ktor.serverTestHost)
     testImplementation(libs.kotlin.testJunit)
+}
+
+detekt {
+    buildUponDefaultConfig = true
+    allRules = false
+    config.setFrom("$rootDir/config/detekt.yml")
+    parallel = true
+}
+
+tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
+    reports {
+        html.required.set(true)
+        xml.required.set(false)
+        txt.required.set(false)
+        sarif.required.set(false)
+    }
 }

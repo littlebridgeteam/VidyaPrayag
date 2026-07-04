@@ -1,4 +1,6 @@
 "use client";
+import { errorMessage } from "@/lib/errorUtils";
+
 
 import { useState, useEffect, useCallback } from "react";
 import { authRequest } from "@/lib/admin/client";
@@ -67,7 +69,7 @@ export default function ScheduledMessagesPage() {
       const raw = res as Record<string, unknown>;
       setMessages((Array.isArray(raw) ? raw : (raw.messages as ScheduledMessageDto[]) ?? (raw.scheduledMessages as ScheduledMessageDto[])) ?? []);
     } catch (e) {
-      setError(`Failed to load scheduled messages: ${(e as Error).message}`);
+      setError(`Failed to load scheduled messages: ${errorMessage(e)}`);
     } finally {
       setLoading(false);
     }
@@ -82,7 +84,7 @@ export default function ScheduledMessagesPage() {
       await authRequest(`/api/v1/school/scheduled-messages/${id}`, { method: "DELETE" });
       setMessages(prev => prev.map(m => m.id === id ? { ...m, status: "CANCELLED" } : m));
     } catch (e) {
-      setError(`Failed to cancel: ${(e as Error).message}`);
+      setError(`Failed to cancel: ${errorMessage(e)}`);
     } finally {
       setBusyId(null);
     }
@@ -111,7 +113,7 @@ export default function ScheduledMessagesPage() {
       setCreateForm({ messageType: "ANNOUNCEMENT", title: "", bodyPreview: "", scheduledAt: "", audienceType: "all", audienceLabel: "All school" });
       await load();
     } catch (e) {
-      setCreateError(`Failed to create: ${(e as Error).message}`);
+      setCreateError(`Failed to create: ${errorMessage(e)}`);
     } finally {
       setCreating(false);
     }

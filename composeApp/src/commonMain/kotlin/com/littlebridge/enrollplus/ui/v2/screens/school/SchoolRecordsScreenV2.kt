@@ -42,7 +42,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
-import com.littlebridge.enrollplus.ui.v2.components.VComingSoon
+import com.littlebridge.enrollplus.ui.v2.components.VEmptyState
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VLabel
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
@@ -65,12 +65,13 @@ import kotlin.math.roundToInt
  * [SchoolRecordsViewModel] (`GET /api/v1/school/{attendance/summary,marks/summary,fees/ledger}`)
  * instead of `VComingSoon` placeholders. Each rollup loads lazily on first view of its tab
  * and carries its own loading / error+retry / empty state ([VStateHost], LAW: three states).
- * Only **Documents** stays `VComingSoon` (no media-storage backend yet — LAW 6, no fabrication).
- * No MockV2 in production.
+ * **Documents** shows a [VEmptyState] explaining that media uploads happen via Announcements
+ * and the Academic Calendar (media storage backend is configured). No MockV2 in production.
  */
 @Composable
 fun SchoolRecordsScreenV2(
     modifier: Modifier = Modifier,
+    initialTab: String = "Coverage",
     viewModel: SyllabusCoverageViewModel = koinViewModel(),
     recordsViewModel: SchoolRecordsViewModel = koinViewModel(),
     paceViewModel: PaceAlertsViewModel = koinViewModel(),
@@ -96,6 +97,7 @@ fun SchoolRecordsScreenV2(
         onRetryAttendance = recordsViewModel::loadAttendance,
         onRetryMarks = recordsViewModel::loadMarks,
         onRetryFees = recordsViewModel::loadFees,
+        initialTab = initialTab,
         modifier = modifier,
     )
 }
@@ -113,10 +115,11 @@ private fun SchoolRecordsContent(
     onRetryAttendance: () -> Unit,
     onRetryMarks: () -> Unit,
     onRetryFees: () -> Unit,
+    initialTab: String = "Coverage",
     modifier: Modifier = Modifier,
 ) {
     val c = VTheme.colors
-    var tab by remember { mutableStateOf("Coverage") }
+    var tab by remember { mutableStateOf(initialTab) }
 
     // Lazy-load the rollup behind whichever data tab is currently selected.
     LaunchedEffect(tab) { onTabSelected(tab) }
@@ -145,9 +148,10 @@ private fun SchoolRecordsContent(
                 "Attendance" -> AttendanceTab(ui = records.attendance, onRetry = onRetryAttendance)
                 "Marks" -> MarksTab(ui = records.marks, onRetry = onRetryMarks)
                 "Fee" -> FeeTab(ui = records.fees, onRetry = onRetryFees)
-                "Documents" -> VComingSoon(
+                "Documents" -> VEmptyState(
                     title = "Document library",
-                    description = "Circulars, timetables and holiday lists will be uploadable once media storage is configured.",
+                    body = "Circulars, timetables and holiday lists are uploaded via Announcements and the Academic Calendar. Media storage is configured and ready.",
+                    icon = VIcons.FileText,
                 )
             }
         }

@@ -144,23 +144,29 @@ async function rawRequest<T>(
     Authorization: `Bearer ${token}`,
   };
   if (opts.body !== undefined) headers["Content-Type"] = "application/json";
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    method: opts.method ?? "GET",
-    headers,
-    body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
-    cache: "no-store",
-    signal: opts.signal,
-  });
-  let env: ApiEnvelope<T> | null = null;
-  const text = await res.text();
-  if (text) {
-    try {
-      env = JSON.parse(text) as ApiEnvelope<T>;
-    } catch {
-      env = null;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15_000);
+  try {
+    const res = await fetch(`${API_BASE_URL}${path}`, {
+      method: opts.method ?? "GET",
+      headers,
+      body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+      cache: "no-store",
+      signal: opts.signal ?? controller.signal,
+    });
+    let env: ApiEnvelope<T> | null = null;
+    const text = await res.text();
+    if (text) {
+      try {
+        env = JSON.parse(text) as ApiEnvelope<T>;
+      } catch {
+        env = null;
+      }
     }
+    return { ok: res.ok, status: res.status, env };
+  } finally {
+    clearTimeout(timeoutId);
   }
-  return { ok: res.ok, status: res.status, env };
 }
 
 /** Authed request with transparent single-retry refresh. */

@@ -9,12 +9,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.backhandler.BackHandler
-import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
-import com.littlebridge.enrollplus.feature.parent.presentation.NotificationsViewModel
+import com.littlebridge.enrollplus.core.notification.presentation.NotificationsViewModel
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherObligationsViewModel
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherProfileViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
@@ -26,20 +26,20 @@ import com.littlebridge.enrollplus.ui.v2.navigation.parseDeepLink
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.screens.discovery.AcademicCalendarScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.notifications.NotificationsScreenV2
-import org.koin.compose.koinInject
+import com.littlebridge.enrollplus.ui.v2.screens.parent.ParentLibraryScreenV2
 import org.koin.compose.viewmodel.koinViewModel
 
 /** Full-screen overlays the teacher portal can push above its tab content. */
-private enum class TeacherOverlay { None, Notifications, HealthAlerts, TransportAttendance, Pews, ReportReview, ReportDraftEditor, Heatmap, DigitalIdCard, ScheduledMessages, EventRegistration, Messages, Calendar }
+private enum class TeacherOverlay { None, Notifications, HealthAlerts, TransportAttendance, Pews, ReportReview, ReportDraftEditor, Heatmap, DigitalIdCard, ScheduledMessages, EventRegistration, Messages, Calendar, Library, Announcements }
 
 /**
  * TeacherPortalV2 — the teacher shell, rebuilt FROM SCRATCH on the Parents-Portal
  * design language (lavender canvas, white rounded cards, Canvas rings, floating
  * dock, brand violet reserved for active/brand moments).
  *
- * New 4-tab IA (replacing the old Today/Classes/Gradebook/Planner/Profile):
+ * New 5-tab IA (replacing the old Today/Classes/Gradebook/Planner/Profile):
  *
- *   HOME · UPDATE · CLASSES · PROFILE
+ *   HOME · UPDATE · CLASSES · TIMETABLE · PROFILE
  *
  *   • HOME    — time-sensitive greeting, first-login fingerprint check-in popup,
  *               attendance clubbed into DB-backed summary cards, today's schedule,
@@ -68,12 +68,12 @@ fun TeacherPortalV2(
     profileViewModel: TeacherProfileViewModel = koinViewModel(),
     obligationsViewModel: TeacherObligationsViewModel = koinViewModel(),
     notificationsViewModel: NotificationsViewModel = koinViewModel(),
-    preferenceRepository: PreferenceRepository = koinInject(),
 ) {
-    var tab by remember { mutableStateOf("home") }
+    var tab by rememberSaveable { mutableStateOf("home") }
     var overlay by remember { mutableStateOf(TeacherOverlay.None) }
     var localDeepLink by remember { mutableStateOf<DeepLinkTarget?>(null) }
     var deepLinkThreadId by remember { mutableStateOf<String?>(null) }
+    var selectedRouteId by remember { mutableStateOf("") }
 
     // AI Report Card — review queue parameters (declared before LaunchedEffect
     // so the deep-link handler can write to them).
@@ -88,7 +88,10 @@ fun TeacherPortalV2(
         when (target) {
             is DeepLinkTarget.TeacherScreen -> {
                 when (target.screen) {
-                    "transport" -> overlay = TeacherOverlay.TransportAttendance
+                    "transport" -> {
+                        target.params["routeId"]?.let { selectedRouteId = it }
+                        overlay = TeacherOverlay.TransportAttendance
+                    }
                     "report-card", "report-review" -> {
                         target.params["className"]?.let { reportClassName = it }
                         target.params["section"]?.let { reportSection = it }
@@ -97,12 +100,17 @@ fun TeacherPortalV2(
                     }
                     "tutor" -> overlay = TeacherOverlay.Heatmap
                     "events" -> overlay = TeacherOverlay.EventRegistration
-                    "announcements" -> { tab = "home"; overlay = TeacherOverlay.None }
+                    "announcements" -> overlay = TeacherOverlay.Announcements
                     "leave-requests", "leave" -> { tab = "profile"; overlay = TeacherOverlay.None }
-                    "library" -> { tab = "home"; overlay = TeacherOverlay.None }
+                    "library" -> overlay = TeacherOverlay.Library
+                    "pews" -> overlay = TeacherOverlay.Pews
                     "messages" -> overlay = TeacherOverlay.Messages
                     "timetable-requests" -> { tab = "timetable"; overlay = TeacherOverlay.None }
                     "calendar" -> overlay = TeacherOverlay.Calendar
+                    "broadcast" -> { tab = "home"; overlay = TeacherOverlay.None }
+                    "lesson-plan" -> { tab = "update"; overlay = TeacherOverlay.None }
+                    "syllabus" -> { tab = "update"; overlay = TeacherOverlay.None }
+                    "quizzes" -> { tab = "update"; overlay = TeacherOverlay.None }
                     // Valid bottom-nav tabs
                     "home", "update", "classes", "timetable", "profile" -> tab = target.screen
                     else -> tab = "home"
@@ -116,7 +124,7 @@ fun TeacherPortalV2(
                 val pathOnly = target.path.substringBefore("?").removePrefix("/")
                 when {
                     pathOnly.startsWith("messages") -> overlay = TeacherOverlay.Messages
-                    pathOnly.startsWith("announcements") -> { tab = "home"; overlay = TeacherOverlay.None }
+                    pathOnly.startsWith("announcements") -> overlay = TeacherOverlay.Announcements
                     pathOnly.startsWith("leave") -> { tab = "profile"; overlay = TeacherOverlay.None }
                     pathOnly.startsWith("transport") -> overlay = TeacherOverlay.TransportAttendance
                     pathOnly.startsWith("tutor") -> overlay = TeacherOverlay.Heatmap
@@ -124,6 +132,12 @@ fun TeacherPortalV2(
                     pathOnly.startsWith("calendar") -> overlay = TeacherOverlay.Calendar
                     pathOnly.startsWith("timetable-requests") -> { tab = "timetable"; overlay = TeacherOverlay.None }
                     pathOnly.startsWith("timetable") -> { tab = "timetable"; overlay = TeacherOverlay.None }
+                    pathOnly.startsWith("pews") -> overlay = TeacherOverlay.Pews
+                    pathOnly.startsWith("library") -> overlay = TeacherOverlay.Library
+                    pathOnly.startsWith("broadcast") -> { tab = "home"; overlay = TeacherOverlay.None }
+                    pathOnly.startsWith("lesson-plan") -> { tab = "update"; overlay = TeacherOverlay.None }
+                    pathOnly.startsWith("syllabus") -> { tab = "update"; overlay = TeacherOverlay.None }
+                    pathOnly.startsWith("quizzes") -> { tab = "update"; overlay = TeacherOverlay.None }
                     else -> tab = "home"
                 }
             }
@@ -133,12 +147,11 @@ fun TeacherPortalV2(
     }
 
     // The UPDATE tab can be entered pre-scoped from a HOME CTA. These hold the
-    // pre-authorized scope; a bump on [updateScopeNonce] forces the Update screen
-    // to re-read its initial* values (so a fresh HOME tap re-seeds the gate).
+    // pre-authorized scope. The Update screen is wrapped in `key()` so a change
+    // in any of these values creates a fresh composition (no manual nonce needed).
     var updateAssignmentId by remember { mutableStateOf<String?>(null) }
     var updateScopeLabel by remember { mutableStateOf("") }
     var updateInitialTool by remember { mutableStateOf(UpdateTool.Attendance) }
-    var updateScopeNonce by remember { mutableStateOf(0) }
 
     val profile by profileViewModel.state.collectAsStateV2()
     val obligations by obligationsViewModel.state.collectAsStateV2()
@@ -146,6 +159,11 @@ fun TeacherPortalV2(
 
     BackHandler(enabled = overlay != TeacherOverlay.None) {
         overlay = TeacherOverlay.None
+        deepLinkThreadId = null
+        selectedRouteId = ""
+        reportClassName = ""
+        reportSection = "A"
+        reportTerm = "Term 1"
     }
     // From a non-home tab, Back returns to HOME (familiar app behaviour).
     BackHandler(enabled = overlay == TeacherOverlay.None && tab != "home") {
@@ -171,8 +189,8 @@ fun TeacherPortalV2(
         }
         TeacherOverlay.TransportAttendance -> {
             TransportAttendanceScreenV2(
-                routeId = "",
-                onBack = { overlay = TeacherOverlay.None },
+                routeId = selectedRouteId,
+                onBack = { overlay = TeacherOverlay.None; selectedRouteId = "" },
                 modifier = modifier,
             )
             return
@@ -247,6 +265,24 @@ fun TeacherPortalV2(
             )
             return
         }
+        TeacherOverlay.Library -> {
+            ParentLibraryScreenV2(
+                onBack = { overlay = TeacherOverlay.None },
+                modifier = modifier,
+            )
+            return
+        }
+        TeacherOverlay.Announcements -> {
+            NotificationsScreenV2(
+                onBack = { overlay = TeacherOverlay.None },
+                onDeepLink = { deepLinkString ->
+                    localDeepLink = parseDeepLink(deepLinkString, EntryRole.Teacher)
+                    overlay = TeacherOverlay.None
+                },
+                modifier = modifier,
+            )
+            return
+        }
         TeacherOverlay.None -> Unit
     }
 
@@ -288,7 +324,21 @@ fun TeacherPortalV2(
             }
         },
         bottomBar = {
-            TeacherDock(items = items, selected = tab, onSelect = { tab = it })
+            TeacherDock(items = items, selected = tab, onSelect = { newTab ->
+            if (tab == "update" && newTab != "update") {
+                updateAssignmentId = null
+                updateScopeLabel = ""
+                updateInitialTool = UpdateTool.Attendance
+            }
+            if (overlay == TeacherOverlay.ReportReview || overlay == TeacherOverlay.ReportDraftEditor) {
+                reportClassName = ""
+                reportSection = "A"
+                reportTerm = "Term 1"
+                reportDraftId = ""
+            }
+            overlay = TeacherOverlay.None
+            tab = newTab
+        })
         },
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding())) {
@@ -298,14 +348,12 @@ fun TeacherPortalV2(
                         updateAssignmentId = assignmentId
                         updateScopeLabel = scope
                         updateInitialTool = UpdateTool.Attendance
-                        updateScopeNonce++
                         tab = "update"
                     },
                     onOpenLessonPlanForAssignment = { assignmentId, scope ->
                         updateAssignmentId = assignmentId
                         updateScopeLabel = scope
                         updateInitialTool = UpdateTool.LessonPlan
-                        updateScopeNonce++
                         tab = "update"
                     },
                     onOpenUpdateTab = {
@@ -313,7 +361,6 @@ fun TeacherPortalV2(
                         updateAssignmentId = null
                         updateScopeLabel = ""
                         updateInitialTool = UpdateTool.Attendance
-                        updateScopeNonce++
                         tab = "update"
                     },
                     onOpenClasses = { tab = "classes" },
@@ -328,7 +375,7 @@ fun TeacherPortalV2(
                     onOpenMessages = { overlay = TeacherOverlay.Messages },
                 )
 
-                "update" -> key(updateScopeNonce) {
+                "update" -> key(updateAssignmentId, updateScopeLabel, updateInitialTool) {
                     TeacherUpdateScreenV2(
                         initialAssignmentId = updateAssignmentId,
                         initialScopeLabel = updateScopeLabel,

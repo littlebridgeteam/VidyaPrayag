@@ -197,10 +197,10 @@ private fun ProfileTab(
                 VInput(value = bloodGroup, onValueChange = { bloodGroup = it }, label = "Blood Group", placeholder = "e.g. O+")
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Box(Modifier.weight(1f)) {
-                        VInput(value = heightCm, onValueChange = { heightCm = it }, label = "Height (cm)", placeholder = "e.g. 140")
+                        VInput(value = heightCm, onValueChange = { v -> heightCm = v.filter { it.isDigit() || it == '.' }.take(6) }, label = "Height (cm)", placeholder = "e.g. 140")
                     }
                     Box(Modifier.weight(1f)) {
-                        VInput(value = weightKg, onValueChange = { weightKg = it }, label = "Weight (kg)", placeholder = "e.g. 35")
+                        VInput(value = weightKg, onValueChange = { v -> weightKg = v.filter { it.isDigit() || it == '.' }.take(6) }, label = "Weight (kg)", placeholder = "e.g. 35")
                     }
                 }
             }
@@ -247,8 +247,8 @@ private fun ProfileTab(
                 onSave(
                     UpsertHealthProfileRequest(
                         bloodGroup = bloodGroup.trim().ifBlank { null },
-                        heightCm = heightCm.trim().toDoubleOrNull(),
-                        weightKg = weightKg.trim().toDoubleOrNull(),
+                        heightCm = heightCm.trim().toDoubleOrNull()?.coerceIn(0.0, 300.0),
+                        weightKg = weightKg.trim().toDoubleOrNull()?.coerceIn(0.0, 500.0),
                         allergies = allergies.trim().ifBlank { null },
                         chronicConditions = chronicConditions.trim().ifBlank { null },
                         medications = medications.trim().ifBlank { null },
@@ -308,7 +308,7 @@ private fun ImmunizationsTab(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     VInput(value = vaccineName, onValueChange = { vaccineName = it }, label = "Vaccine Name", placeholder = "e.g. MMR")
-                    VInput(value = doseNumber, onValueChange = { doseNumber = it }, label = "Dose Number", placeholder = "1")
+                    VInput(value = doseNumber, onValueChange = { v -> doseNumber = v.filter { it.isDigit() }.take(3) }, label = "Dose Number", placeholder = "1")
                     VInput(value = dateAdministered, onValueChange = { dateAdministered = it }, label = "Date Administered", placeholder = "YYYY-MM-DD")
                     VInput(value = nextDueDate, onValueChange = { nextDueDate = it }, label = "Next Due Date (optional)", placeholder = "YYYY-MM-DD")
                     VInput(value = administeredBy, onValueChange = { administeredBy = it }, label = "Administered By (optional)", placeholder = "e.g. Dr. Sharma")
@@ -319,7 +319,7 @@ private fun ImmunizationsTab(
                                 AddImmunizationRequest(
                                     studentId = studentId,
                                     vaccineName = vaccineName.trim(),
-                                    doseNumber = doseNumber.trim().toIntOrNull() ?: 1,
+                                    doseNumber = (doseNumber.trim().toIntOrNull() ?: 1).coerceAtLeast(1),
                                     dateAdministered = dateAdministered.trim(),
                                     nextDueDate = nextDueDate.trim().ifBlank { null },
                                     administeredBy = administeredBy.trim().ifBlank { null },

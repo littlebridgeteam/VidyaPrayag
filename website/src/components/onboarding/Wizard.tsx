@@ -220,6 +220,7 @@ export function Wizard() {
         }
       }
     } catch (e) {
+      console.error("Wizard step error:", e);
       const msg =
         e instanceof ApiError
           ? e.message

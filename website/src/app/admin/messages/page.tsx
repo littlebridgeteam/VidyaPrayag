@@ -1,4 +1,6 @@
 "use client";
+import { errorMessage } from "@/lib/errorUtils";
+
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { authRequest } from "@/lib/admin/client";
@@ -145,7 +147,7 @@ export default function MessagesPage() {
       const res = await authRequest<ThreadsResponse>("/api/v1/school/messages/threads");
       setThreads(res.threads ?? []);
     } catch (e) {
-      setError(`Failed to load messages: ${(e as Error).message}`);
+      setError(`Failed to load messages: ${errorMessage(e)}`);
     } finally {
       setLoading(false);
     }
@@ -162,9 +164,11 @@ export default function MessagesPage() {
       const res = await authRequest<ThreadMessagesResponse>(`/api/v1/school/messages/threads/${thread.id}/messages?limit=50`);
       setMessages(res.messages ?? []);
       setThreads(prev => prev.map(t => t.id === thread.id ? { ...t, unread_count: 0 } : t));
-      authRequest(`/api/v1/school/messages/threads/${thread.id}/read`, { method: "POST" }).catch(() => {});
+      authRequest(`/api/v1/school/messages/threads/${thread.id}/read`, { method: "POST" }).catch((e) => {
+        console.error("Failed to mark thread read:", e);
+      });
     } catch (e) {
-      setMsgError(`Failed to load conversation: ${(e as Error).message}`);
+      setMsgError(`Failed to load conversation: ${errorMessage(e)}`);
     } finally {
       setMsgLoading(false);
     }
@@ -191,7 +195,7 @@ export default function MessagesPage() {
         setThreads(prev => prev.map(t => t.id === selectedThread.id ? { ...t, last_message: body, last_message_at: new Date().toISOString() } : t));
       }
     } catch (e) {
-      setMsgError(`Failed to send: ${(e as Error).message}`);
+      setMsgError(`Failed to send: ${errorMessage(e)}`);
       setDraft(draft);
     } finally {
       setSending(false);
@@ -221,7 +225,7 @@ export default function MessagesPage() {
       setSelectedThread(newThread);
       setMessages([{ ...res, is_mine: true }]);
     } catch (e) {
-      setMsgError(`Failed to start conversation: ${(e as Error).message}`);
+      setMsgError(`Failed to start conversation: ${errorMessage(e)}`);
     } finally {
       setMsgLoading(false);
     }
@@ -236,7 +240,7 @@ export default function MessagesPage() {
         const res = await authRequest<RecipientsResponse>("/api/v1/school/messages/recipients");
         setRecipients(res.recipients ?? []);
       } catch (e) {
-        setMsgError(`Failed to load recipients: ${(e as Error).message}`);
+        setMsgError(`Failed to load recipients: ${errorMessage(e)}`);
       } finally {
         setRecipLoading(false);
       }

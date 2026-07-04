@@ -483,6 +483,12 @@ fun Route.authRouting() {
                 call.fail("Password must be at least 8 characters", HttpStatusCode.BadRequest, "PASSWORD_TOO_SHORT")
                 return@post
             }
+            if (!req.password.any { it.isUpperCase() } ||
+                !req.password.any { it.isLowerCase() } ||
+                !req.password.any { it.isDigit() }) {
+                call.fail("Password must contain at least one uppercase letter, one lowercase letter, and one digit", HttpStatusCode.BadRequest, "PASSWORD_TOO_WEAK")
+                return@post
+            }
 
             val existing = dbQuery { lookupUserByIdentifier(id) }
             if (existing != null) {
@@ -784,6 +790,12 @@ fun Route.authRouting() {
                     call.fail("New password must be at least 8 characters", HttpStatusCode.BadRequest, "PASSWORD_TOO_SHORT")
                     return@post
                 }
+                if (!req.newPassword.any { it.isUpperCase() } ||
+                    !req.newPassword.any { it.isLowerCase() } ||
+                    !req.newPassword.any { it.isDigit() }) {
+                    call.fail("Password must contain at least one uppercase letter, one lowercase letter, and one digit", HttpStatusCode.BadRequest, "PASSWORD_TOO_WEAK")
+                    return@post
+                }
 
                 val user = dbQuery {
                     AppUsersTable.selectAll().where { AppUsersTable.id eq uid }.singleOrNull()
@@ -812,10 +824,12 @@ fun Route.authRouting() {
                         it[passwordHash] = newHash
                         it[profileCompleted] = true
                         it[mustChangePassword] = false
+                        it[AppUsersTable.passwordChangedAt] = now
                         it[updatedAt] = now
                     }
-                    // Revoke all sessions; the current client keeps its access
-                    // token until expiry but must re-login for a refresh.
+                    // Revoke all sessions. All existing access tokens (including
+                    // the current client's) are rejected on next request because
+                    // SecurityModule checks issuedAt < passwordChangedAt.
                     UserSessionsTable.update({ UserSessionsTable.userId eq uid }) {
                         it[revokedAt] = now
                     }

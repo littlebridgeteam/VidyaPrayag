@@ -34,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,7 +54,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
-import com.littlebridge.enrollplus.ui.v2.components.VComingSoon
+import com.littlebridge.enrollplus.ui.v2.components.VEmptyState
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VLabel
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
@@ -140,7 +141,7 @@ private fun ParentAcademicsContent(
 ) {
     val c = VTheme.colors
     val d = VTheme.dimens
-    var tab by remember { mutableStateOf("Overview") }
+    var tab by rememberSaveable { mutableStateOf("Overview") }
 
     // Apply deep-link initial tab once.
     LaunchedEffect(initialTab) {
@@ -275,10 +276,9 @@ private fun ParentAcademicsContent(
                             onDraftIdConsumed = onReportDraftIdConsumed,
                         )
                     } else {
-                        VComingSoon(
+                        VEmptyState(
                             title = "AI Report Card",
-                            description = "Link your child to view their AI-generated report cards.",
-                            preview = { AiReportCardPreview() },
+                            body = "Link your child to view their AI-generated report cards.",
                         )
                     }
                 }

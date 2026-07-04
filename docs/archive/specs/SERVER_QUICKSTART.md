@@ -284,3 +284,57 @@ rmdir /S /Q .gradle build server\build
 ```
 
 Happy testing.
+
+---
+
+## Docker Compose — Full Stack Local Development
+
+The repo includes a `docker-compose.yml` that starts Postgres, the Ktor server, and the Next.js website with a single command.
+
+### Quick Start
+
+```bash
+# Start all services (Postgres + server + website)
+docker-compose up
+
+# Start with dev overrides (debug errors, text logs, file watch)
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+# Start in background
+docker-compose up -d
+
+# Stop all services
+docker-compose down
+
+# Stop and remove volumes (fresh database)
+docker-compose down -v
+```
+
+### Services
+
+| Service | Port | Description |
+|---------|------|-------------|
+| `db` | 5432 | PostgreSQL 15 with pgvector extension |
+| `server` | 8080 | Ktor backend (builds from `Dockerfile`) |
+| `website` | 3000 | Next.js website (builds from `website/Dockerfile`) |
+
+### Environment
+
+Default dev values are baked into `docker-compose.yml`. For production, override via `.env` or environment variables:
+
+- `JWT_SECRET` — must be 32+ chars in production
+- `AI_ENCRYPTION_KEY` — must be set in production
+- `CORS_ALLOWED_ORIGINS` — comma-separated allowed origins
+- `DATABASE_URL` — Postgres connection string
+
+### First Run
+
+On first `docker-compose up`:
+1. Postgres starts with a fresh `vidyaprayag` database.
+2. Server boots with `AUTO_CREATE_TABLES=true` — creates all tables.
+3. Server seeds CMS content + demo data (login with `admin@vidyaprayag.demo` / `Demo@1234`).
+4. Website builds and serves at `http://localhost:3000`.
+
+### Database Backup
+
+See `docs/backend/BACKUP_RESTORE.md` for backup and restore procedures.

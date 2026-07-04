@@ -30,12 +30,13 @@
  *   DATABASE_URL       : full JDBC or postgres:// URL
  *   DATABASE_USER      : Postgres user (optional if encoded in URL)
  *   DATABASE_PASSWORD  : Postgres password (optional if encoded in URL)
- *   DB_POOL_SIZE       : HikariCP pool size (default 5)
+ *   DB_POOL_SIZE       : HikariCP pool size (default 10)
  *   APP_SEED_CMS       : "true" to seed/upsert landing+app_config rows
  *                        (default "true" — these are CMS strings, safe to seed)
  */
 package com.littlebridge.enrollplus.db
 
+import com.littlebridge.enrollplus.core.RuntimeEnvironment
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.github.cdimascio.dotenv.dotenv
@@ -44,10 +45,13 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.Properties
 
 object DatabaseFactory {
+
+    private val logger = LoggerFactory.getLogger(DatabaseFactory::class.java)
 
     /**
      * Config resolution order for a given key (first non-blank wins):
@@ -69,13 +73,13 @@ object DatabaseFactory {
         // runs with CWD = repo root, but be forgiving about where it's launched.
         val candidates = listOf(
             File("local.properties"),
-            File("../local.properties"),
+            File(".." + File.separator + "local.properties"),
             File(System.getProperty("user.dir"), "local.properties")
         )
         candidates.firstOrNull { it.isFile }?.let { f ->
             runCatching { f.inputStream().use(props::load) }
-                .onSuccess { println("DB_INIT: Loaded fallback config from ${f.absolutePath}") }
-                .onFailure { System.err.println("DB_INIT: Could not read ${f.absolutePath}: ${it.message}") }
+                .onSuccess { logger.info("DB_INIT: Loaded fallback config from {}", f.absolutePath) }
+                .onFailure { logger.warn("DB_INIT: Could not read {}: {}", f.absolutePath, it.message) }
         }
         props
     }
@@ -251,6 +255,7 @@ object DatabaseFactory {
         PewsConfigTable,
         PewsNudgeSeenTable,
         PewsFeatureFlagsTable,
+        FeatureFlagsTable,
         PewsCaseFilesTable,
         PewsEffectivenessPriorsTable,
         // AI Report Card 2.0 (AI_REPORT_CARD_2.0_AGENTIC_REDESIGN.md)
@@ -331,16 +336,28 @@ object DatabaseFactory {
     )
 
     /** True when DATABASE_URL is set → we're talking to Postgres / Supabase. */
+    @Volatile
     var isPostgres: Boolean = false
+        private set
+
+    /** The HikariCP data source, exposed for metrics registration (GAP-015). */
+    internal var hikariDataSource: HikariDataSource? = null
         private set
 
     // ── Read replica support (spec §17 Connection Pool) ─────────────────────
     // When READ_REPLICA_URL is configured, read-heavy queries (search, analytics,
     // audit log, export) route to the replica via readQuery { }.
+    @Volatile
     private var readReplicaDb: Database? = null
+
+    /** The read-replica HikariDataSource, exposed for shutdown cleanup (P3-AUDIT-014). */
+    @Volatile
+    internal var readReplicaDataSource: HikariDataSource? = null
+        private set
 
     val hasReadReplica: Boolean get() = readReplicaDb != null
 
+    @Synchronized
     fun init() {
         val dotenv = dotenv {
             ignoreIfMalformed = true
@@ -355,10 +372,11 @@ object DatabaseFactory {
                 databaseUrl,
                 user = resolve(dotenv, "DATABASE_USER"),
                 password = resolve(dotenv, "DATABASE_PASSWORD"),
-                poolSize = resolve(dotenv, "DB_POOL_SIZE")?.toIntOrNull() ?: 5
+                poolSize = resolve(dotenv, "DB_POOL_SIZE")?.toIntOrNull() ?: 10,
+                dotenv = dotenv
             )
         } else {
-            System.err.println(
+            logger.warn(
                 "DB_INIT: No DATABASE_URL found in .env, environment, or local.properties — " +
                     "falling back to LOCAL SQLite (data.db). Writes will NOT reach Supabase! " +
                     "Set DATABASE_URL (+ DATABASE_USER / DATABASE_PASSWORD) to use Postgres."
@@ -367,6 +385,37 @@ object DatabaseFactory {
         }
 
         Database.connect(dataSource)
+        hikariDataSource = dataSource
+
+        val autoCreateRaw = resolve(dotenv, "AUTO_CREATE_TABLES")
+        val autoCreate = autoCreateRaw.equals("true", ignoreCase = true)
+
+        logger.info("DB_INIT: isPostgres={}, AUTO_CREATE_TABLES='{}' -> {}", isPostgres, autoCreateRaw, autoCreate)
+
+        // For Postgres with autoCreate: create tables BEFORE Flyway so migrations
+        // can reference them (V2 adds FK constraints, V3 alters columns).
+        // For Postgres without autoCreate: tables must be pre-provisioned.
+        if (isPostgres && autoCreate) {
+            logger.info("DB_INIT: Running SchemaUtils.createMissingTablesAndColumns for {} tables (pre-Flyway)...", allTables.size)
+            try {
+                transaction {
+                    SchemaUtils.createMissingTablesAndColumns(*allTables)
+                }
+                logger.info("DB_INIT: Schema check/creation completed (pre-Flyway).")
+            } catch (e: Exception) {
+                logger.error("DB_INIT_ERROR: Schema creation failed", e)
+                throw IllegalStateException("Schema creation failed. Server cannot start.", e)
+            }
+        }
+
+        if (isPostgres) {
+            try {
+                FlywayMigrationRunner.runMigrations(dataSource as HikariDataSource)
+            } catch (e: Exception) {
+                logger.error("DB_INIT_ERROR: Flyway migration failed", e)
+                throw IllegalStateException("Flyway migration failed. Server cannot start.", e)
+            }
+        }
 
         // ── Read replica (optional, spec §17) ───────────────────────────────
         val replicaUrl = resolve(dotenv, "READ_REPLICA_URL")
@@ -375,32 +424,29 @@ object DatabaseFactory {
                 replicaUrl,
                 user = resolve(dotenv, "READ_REPLICA_USER") ?: resolve(dotenv, "DATABASE_USER"),
                 password = resolve(dotenv, "READ_REPLICA_PASSWORD") ?: resolve(dotenv, "DATABASE_PASSWORD"),
-                poolSize = resolve(dotenv, "READ_REPLICA_POOL_SIZE")?.toIntOrNull() ?: 3
+                poolSize = resolve(dotenv, "READ_REPLICA_POOL_SIZE")?.toIntOrNull() ?: 5,
+                dotenv = dotenv
             )
             readReplicaDb = Database.connect(replicaDs)
-            println("DB_INIT: Read replica configured — read-heavy queries will route to replica.")
+            readReplicaDataSource = replicaDs
+            logger.info("DB_INIT: Read replica configured — read-heavy queries will route to replica.")
         }
 
-        val autoCreateRaw = resolve(dotenv, "AUTO_CREATE_TABLES")
-        val autoCreate = autoCreateRaw.equals("true", ignoreCase = true)
-
-        println("DB_INIT: isPostgres=$isPostgres, AUTO_CREATE_TABLES='$autoCreateRaw' -> $autoCreate")
-
-        // Try to create tables if in SQLite OR if explicitly requested in Postgres
-        if (!isPostgres || autoCreate) {
-            println("DB_INIT: Running SchemaUtils.createMissingTablesAndColumns for ${allTables.size} tables...")
+        // For SQLite: always create tables (Flyway not used).
+        // For Postgres: already done above if autoCreate was true.
+        if (!isPostgres) {
+            logger.info("DB_INIT: Running SchemaUtils.createMissingTablesAndColumns for {} tables...", allTables.size)
             try {
                 transaction {
                     SchemaUtils.createMissingTablesAndColumns(*allTables)
                 }
-                println("DB_INIT: Schema check/creation completed.")
+                logger.info("DB_INIT: Schema check/creation completed.")
             } catch (e: Exception) {
-                System.err.println("DB_INIT_ERROR: Schema creation failed!")
-                e.printStackTrace()
-                // If this fails, we probably can't proceed with seeding either
+                logger.error("DB_INIT_ERROR: Schema creation failed", e)
+                logger.warn("DB_INIT: Schema creation failed in dev mode — continuing. Expect runtime errors.")
             }
-        } else {
-            println("DB_INIT: Skipping auto-creation (AUTO_CREATE_TABLES is not 'true').")
+        } else if (!autoCreate) {
+            logger.info("DB_INIT: Skipping auto-creation (AUTO_CREATE_TABLES is not 'true').")
         }
 
         // Boot-time schema completeness validation (audit finding A). In
@@ -415,19 +461,17 @@ object DatabaseFactory {
             .equals("true", ignoreCase = true)
         
         if (seedCms) {
-            println("DB_INIT: Running CMS seed...")
+            logger.info("DB_INIT: Running CMS seed...")
             try {
-                // We wrap the seed in a check to see if the table exists first to avoid crash loops
                 CmsSeed.ensureLandingAndConfig()
-                println("DB_INIT: CMS seed completed successfully.")
+                logger.info("DB_INIT: CMS seed completed successfully.")
             } catch (e: Exception) {
                 val msg = e.message ?: ""
                 if (msg.contains("relation", ignoreCase = true) && msg.contains("does not exist", ignoreCase = true)) {
-                    System.err.println("DB_INIT_WARNING: CMS Seeding skipped because tables are missing.")
-                    System.err.println("DB_INIT_TIP: Set AUTO_CREATE_TABLES=true on Render to create tables automatically.")
+                    logger.warn("DB_INIT_WARNING: CMS Seeding skipped because tables are missing.")
+                    logger.warn("DB_INIT_TIP: Set AUTO_CREATE_TABLES=true on Render to create tables automatically.")
                 } else {
-                    System.err.println("DB_INIT_ERROR: CMS Seeding failed with unexpected error!")
-                    e.printStackTrace()
+                    logger.error("DB_INIT_ERROR: CMS Seeding failed with unexpected error", e)
                     throw e
                 }
             }
@@ -436,22 +480,30 @@ object DatabaseFactory {
         // Operational demo seed (audit finding B): one working credential per
         // profile type + minimal operational data, so a fresh deploy is
         // immediately loginable instead of empty/unlogin-able. Idempotent.
-        val seedDemo = (resolve(dotenv, "APP_SEED_DEMO") ?: "true")
+        val seedDemoRequested = (resolve(dotenv, "APP_SEED_DEMO") ?: "true")
             .equals("true", ignoreCase = true)
 
+        val seedDemo = if (RuntimeEnvironment.isProduction) {
+            if (seedDemoRequested) {
+                logger.warn("DB_INIT_WARNING: APP_SEED_DEMO=true is set in production — ignoring (demo data is not allowed in production).")
+            }
+            false
+        } else {
+            seedDemoRequested
+        }
+
         if (seedDemo) {
-            println("DB_INIT: Running operational demo seed...")
+            logger.info("DB_INIT: Running operational demo seed...")
             try {
                 DemoSeed.ensureDemoData()
-                println("DB_INIT: Demo seed completed successfully.")
+                logger.info("DB_INIT: Demo seed completed successfully.")
             } catch (e: Exception) {
                 val msg = e.message ?: ""
                 if (msg.contains("relation", ignoreCase = true) && msg.contains("does not exist", ignoreCase = true)) {
-                    System.err.println("DB_INIT_WARNING: Demo seeding skipped because tables are missing.")
-                    System.err.println("DB_INIT_TIP: Set AUTO_CREATE_TABLES=true on Render to create tables automatically.")
+                    logger.warn("DB_INIT_WARNING: Demo seeding skipped because tables are missing.")
+                    logger.warn("DB_INIT_TIP: Set AUTO_CREATE_TABLES=true on Render to create tables automatically.")
                 } else {
-                    System.err.println("DB_INIT_ERROR: Demo seeding failed with unexpected error!")
-                    e.printStackTrace()
+                    logger.error("DB_INIT_ERROR: Demo seeding failed with unexpected error", e)
                     // Non-fatal: CMS + schema are already in place; don't crash-loop.
                 }
             }
@@ -459,7 +511,7 @@ object DatabaseFactory {
     }
 
     /**
-     * Audit finding A: verify every one of the 36 registered tables exists.
+     * Audit finding A: verify every registered table exists (allTables has ~100+ entries).
      * In Postgres without auto-create, any missing table means an incomplete
      * provisioning recipe was used (see docs/db/PROVISION.sql for the only
      * complete one) and dependent routes would 500 at runtime — so we refuse
@@ -476,26 +528,24 @@ object DatabaseFactory {
                 .filter { it !in existing }
 
             if (missing.isEmpty()) {
-                println("DB_INIT: Schema validation OK — all ${allTables.size} tables present.")
+                logger.info("DB_INIT: Schema validation OK — all {} tables present.", allTables.size)
                 return
             }
 
-            val msg = "DB_INIT: Schema validation FOUND ${missing.size} MISSING table(s): ${missing.sorted()}"
             if (isPostgres && !autoCreate) {
-                System.err.println(msg)
-                System.err.println("DB_INIT_TIP: Provision with docs/db/PROVISION.sql (the only complete recipe) " +
-                    "or set AUTO_CREATE_TABLES=true.")
+                logger.error("DB_INIT: Schema validation FOUND {} MISSING table(s): {}", missing.size, missing.sorted())
+                logger.error("DB_INIT_TIP: Provision with docs/db/PROVISION.sql (the only complete recipe) or set AUTO_CREATE_TABLES=true.")
                 throw IllegalStateException(
                     "Refusing to boot: Postgres schema is incomplete (missing ${missing.size} tables). " +
                     "See docs/db/PROVISION.sql."
                 )
             } else {
-                System.err.println("$msg (non-fatal: SQLite/dev or auto-create enabled).")
+                logger.warn("DB_INIT: Schema validation FOUND {} MISSING table(s): {} (non-fatal: SQLite/dev or auto-create enabled).", missing.size, missing.sorted())
             }
         } catch (e: IllegalStateException) {
             throw e
         } catch (e: Exception) {
-            System.err.println("DB_INIT_WARNING: Schema validation could not run: ${e.message}")
+            logger.warn("DB_INIT_WARNING: Schema validation could not run: {}", e.message, e)
         }
     }
 
@@ -503,7 +553,8 @@ object DatabaseFactory {
         databaseUrl: String,
         user: String?,
         password: String?,
-        poolSize: Int
+        poolSize: Int,
+        dotenv: io.github.cdimascio.dotenv.Dotenv
     ): HikariDataSource {
         // Defensively strip any surrounding quotes/whitespace that may have slipped
         // through (e.g. a value read straight from a .properties file). Without this
@@ -523,25 +574,27 @@ object DatabaseFactory {
             else -> "jdbc:postgresql://$cleanUrl"
         }
 
-        // Auto-append SSL mode and PgBouncer threshold if missing
+        val sslMode = resolve(dotenv, "PG_SSLMODE") ?: "require"
+        val usePgBouncer = resolve(dotenv, "PG_PGBOUNCER")?.equals("true", ignoreCase = true) == true
+
         val finalJdbcUrl = buildString {
             append(jdbcUrl)
             val separator = if (jdbcUrl.contains("?")) "&" else "?"
             
             if (!jdbcUrl.contains("sslmode=") && isPostgres) {
-                append(separator).append("sslmode=require")
+                append(separator).append("sslmode=").append(sslMode)
             }
             
-            if (!contains("prepareThreshold=")) {
+            if (usePgBouncer && !contains("prepareThreshold=")) {
                 append(if (contains("?")) "&" else "?").append("prepareThreshold=0")
             }
             
-            if (!contains("currentSchema=")) {
+            if (!contains("currentSchema=") && !jdbcUrl.contains("currentSchema=")) {
                 append(if (contains("?")) "&" else "?").append("currentSchema=public")
             }
         }
 
-        println("DB_INIT: Connecting to $finalJdbcUrl")
+        logger.info("DB_INIT: Connecting to {}", finalJdbcUrl)
 
         val config = HikariConfig().apply {
             driverClassName = "org.postgresql.Driver"
@@ -569,7 +622,7 @@ object DatabaseFactory {
             jdbcUrl = "jdbc:sqlite:data.db"
             maximumPoolSize = 3
             isAutoCommit = false
-            transactionIsolation = "TRANSACTION_SERIALIZABLE"
+            transactionIsolation = "TRANSACTION_READ_COMMITTED"
             validate()
         }
         return HikariDataSource(config)

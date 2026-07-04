@@ -230,7 +230,7 @@ private fun CreateVehicleForm(viewModel: TransportViewModel, routes: List<Transp
             )
             VInput(
                 value = capacity,
-                onValueChange = { capacity = it },
+                onValueChange = { v -> capacity = v.filter { it.isDigit() }.take(4) },
                 label = "Capacity",
                 placeholder = "40",
                 keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
@@ -276,7 +276,7 @@ private fun CreateVehicleForm(viewModel: TransportViewModel, routes: List<Transp
                         viewModel.createVehicle(
                             CreateVehicleRequest(
                                 busNumber = busNumber,
-                                capacity = capacity.toIntOrNull() ?: 40,
+                                capacity = (capacity.toIntOrNull() ?: 40).coerceIn(1, 200),
                                 routeId = selectedRouteId.ifBlank { null },
                                 driverName = driverName.ifBlank { null },
                                 driverPhone = driverPhone.ifBlank { null },
@@ -384,7 +384,7 @@ private fun CreateAssignmentForm(
             }
             VInput(
                 value = feeAmount,
-                onValueChange = { feeAmount = it },
+                onValueChange = { v -> feeAmount = v.filter { it.isDigit() || it == '.' }.take(10) },
                 label = "Transport fee amount (optional)",
                 placeholder = "e.g. 6000",
                 keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
@@ -409,7 +409,7 @@ private fun CreateAssignmentForm(
                             routeId = selectedRouteId,
                             stopId = selectedStopId,
                             vehicleId = selectedVehicleId,
-                            feeAmount = feeAmount.toDoubleOrNull(),
+                            feeAmount = feeAmount.toDoubleOrNull()?.coerceAtLeast(0.0),
                             feeDueDate = feeDueDate.ifBlank { null },
                         )
                     )

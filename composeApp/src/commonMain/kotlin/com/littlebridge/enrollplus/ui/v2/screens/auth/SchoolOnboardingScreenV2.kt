@@ -483,7 +483,11 @@ private fun IdentityStep(
 private fun AcademicYearStep() {
     val c = VTheme.colors
     val d = VTheme.dimens
-    var year by remember { mutableStateOf("2025-26") }
+    var year by remember {
+        val now = java.time.LocalDate.now()
+        val y = now.year
+        mutableStateOf(if (now.monthValue >= 4) "$y-${(y + 1) % 100}" else "${y - 1}-${y % 100}")
+    }
     var workingDays by remember { mutableStateOf("Mon–Sat") }
     var starts by remember { mutableStateOf("") }
     var ends by remember { mutableStateOf("") }
@@ -493,7 +497,8 @@ private fun AcademicYearStep() {
 
     Text("CURRENT ACADEMIC YEAR", style = VTheme.type.labelStrong.colored(c.ink3))
     Row(horizontalArrangement = Arrangement.spacedBy(d.sm)) {
-        listOf("2025-26", "2026-27").forEach { y -> VTag(text = y, active = year == y, onClick = { year = y }) }
+        val cy = java.time.LocalDate.now().year
+        listOf("${cy - 1}-${cy % 100}", "$cy-${(cy + 1) % 100}", "${cy + 1}-${(cy + 2) % 100}").forEach { y -> VTag(text = y, active = year == y, onClick = { year = y }) }
     }
     Row(horizontalArrangement = Arrangement.spacedBy(d.sm)) {
         VDatePicker(starts, { starts = it }, label = "Year starts", placeholder = "Start date", modifier = Modifier.weight(1f))
@@ -503,6 +508,7 @@ private fun AcademicYearStep() {
     Row(horizontalArrangement = Arrangement.spacedBy(d.sm)) {
         VTag(text = "Mon–Fri", active = workingDays == "Mon–Fri", onClick = { workingDays = "Mon–Fri" })
         VTag(text = "Mon–Sat", active = workingDays == "Mon–Sat", onClick = { workingDays = "Mon–Sat" })
+        VTag(text = "Sun–Thu", active = workingDays == "Sun–Thu", onClick = { workingDays = "Sun–Thu" })
     }
     Row(horizontalArrangement = Arrangement.spacedBy(d.sm)) {
         VInput(startTime, { startTime = it }, label = "Start time", placeholder = "08:00 AM", modifier = Modifier.weight(1f))

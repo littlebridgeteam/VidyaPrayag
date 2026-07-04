@@ -31,6 +31,8 @@ import java.time.ZonedDateTime
 import java.time.ZoneOffset
 import java.time.LocalDate
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 
 object LibraryJobScheduler {
     private const val TAG = "LibraryJobScheduler"
@@ -39,14 +41,10 @@ object LibraryJobScheduler {
     private val repo = LibraryRepository()
     private val service = LibraryService()
 
-    @Volatile
-    private var lastDailyRunDate: LocalDate? = null
-    @Volatile
-    private var lastMonthlyRunDate: LocalDate? = null
-    @Volatile
-    private var lastBadgeRunDate: LocalDate? = null
-    @Volatile
-    private var lastTrendingRefreshHour: Int = -1
+    private val lastDailyRunDate = AtomicReference<LocalDate?>(null)
+    private val lastMonthlyRunDate = AtomicReference<LocalDate?>(null)
+    private val lastBadgeRunDate = AtomicReference<LocalDate?>(null)
+    private val lastTrendingRefreshHour = AtomicInteger(-1)
 
     fun start(scope: CoroutineScope) {
         // Daily jobs — hourly check, fires at target hours
@@ -89,12 +87,12 @@ object LibraryJobScheduler {
         val today = now.toLocalDate()
 
         // Guard: don't run twice in the same day
-        if (lastDailyRunDate == today) return
+        if (lastDailyRunDate.get() == today) return
 
         // Fire at either midnight (0) or 8 AM (8) UTC
         if (now.hour != 0 && now.hour != 8) return
 
-        lastDailyRunDate = today
+        if (!lastDailyRunDate.compareAndSet(null, today)) return
         log.info("[$TAG] Running daily jobs for {} (hour {} UTC)", today, now.hour)
 
         val schoolIds = runCatching { repo.listAllActiveSchoolIds() }
@@ -234,8 +232,8 @@ object LibraryJobScheduler {
         val now = ZonedDateTime.now(ZoneOffset.UTC)
         val today = now.toLocalDate()
         if (now.hour != 9) return
-        if (lastBadgeRunDate == today) return
-        lastBadgeRunDate = today
+        if (lastBadgeRunDate.get() == today) return
+        if (!lastBadgeRunDate.compareAndSet(null, today)) return
 
         log.info("[$TAG] Running badge check job for {}", today)
         val schoolIds = runCatching { repo.listAllActiveSchoolIds() }
@@ -257,8 +255,8 @@ object LibraryJobScheduler {
 
     private suspend fun runTrendingRefresh() {
         val now = ZonedDateTime.now(ZoneOffset.UTC)
-        if (now.hour == lastTrendingRefreshHour) return
-        lastTrendingRefreshHour = now.hour
+        if (now.hour == lastTrendingRefreshHour.get()) return
+        if (!lastTrendingRefreshHour.compareAndSet(lastTrendingRefreshHour.get(), now.hour)) return
 
         // Refresh materialized view on Postgres (spec §17)
         runCatching { repo.refreshTrendingMaterializedView() }
@@ -285,8 +283,8 @@ object LibraryJobScheduler {
         // Guard: only on 1st of month at midnight
         if (today.dayOfMonth != 1) return
         if (now.hour != 0) return
-        if (lastMonthlyRunDate == today) return
-        lastMonthlyRunDate = today
+        if (lastMonthlyRunDate.get() == today) return
+        if (!lastMonthlyRunDate.compareAndSet(null, today)) return
 
         log.info("[$TAG] Running monthly retention jobs for {}", today)
 

@@ -157,12 +157,18 @@ fun Route.schoolRecordsRouting() {
                     .orderBy(AssessmentsTable.examDate, SortOrder.DESC)
                     .toList()
 
+                val assessmentIds = assessments.map { it[AssessmentsTable.id].value }
+                val allMarks = if (assessmentIds.isEmpty()) emptyMap<java.util.UUID, List<Double>>() else
+                    AssessmentMarksTable.selectAll().where {
+                        AssessmentMarksTable.assessmentId inList assessmentIds
+                    }.filter { it[AssessmentMarksTable.marks] != null }
+                        .groupBy { it[AssessmentMarksTable.assessmentId] }
+                        .mapValues { (_, rows) -> rows.mapNotNull { it[AssessmentMarksTable.marks] } }
+
                 val rows = assessments.map { a ->
                     val aId = a[AssessmentsTable.id].value
                     val max = a[AssessmentsTable.maxMarks]
-                    val marks = AssessmentMarksTable.selectAll()
-                        .where { AssessmentMarksTable.assessmentId eq aId }
-                        .mapNotNull { it[AssessmentMarksTable.marks] }
+                    val marks = allMarks[aId] ?: emptyList()
                     val avg = if (marks.isNotEmpty()) marks.sum() / marks.size else 0.0
                     MarksAssessmentRow(
                         subject = a[AssessmentsTable.subject],

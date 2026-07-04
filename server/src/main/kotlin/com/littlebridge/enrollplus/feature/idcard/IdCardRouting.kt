@@ -83,17 +83,17 @@ fun Route.idCardRouting() {
             // GET all cards for school (with optional pagination/search)
             get {
                 val ctx = call.requireSchoolAdmin() ?: return@get
-                val page = call.parameters["page"]?.toIntOrNull()
-                val limit = call.parameters["limit"]?.toIntOrNull()
+                val page = call.parameters["page"]?.toIntOrNull()?.coerceAtLeast(1) ?: 1
+                val limit = call.parameters["limit"]?.toIntOrNull()?.coerceIn(1, 100) ?: 50
                 val search = call.parameters["search"]
                 val personType = call.parameters["personType"]
 
-                if (page != null || limit != null || !search.isNullOrBlank() || !personType.isNullOrBlank()) {
+                if (!search.isNullOrBlank() || !personType.isNullOrBlank()) {
                     // Paginated response
                     val cards = service.getCardsBySchoolPaginated(
                         schoolId = ctx.schoolId,
-                        page = page ?: 1,
-                        limit = limit ?: 50,
+                        page = page,
+                        limit = limit,
                         search = search,
                         personType = personType,
                     )
@@ -101,8 +101,8 @@ fun Route.idCardRouting() {
                     call.ok(mapOf(
                         "cards" to cards,
                         "total" to total,
-                        "page" to (page ?: 1),
-                        "limit" to (limit ?: 50),
+                        "page" to page,
+                        "limit" to limit,
                     ))
                 } else {
                     // Backward-compatible: return all cards

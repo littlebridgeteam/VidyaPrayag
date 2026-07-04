@@ -1,4 +1,6 @@
 "use client";
+import { errorMessage } from "@/lib/errorUtils";
+
 
 import { useState, useEffect, useCallback } from "react";
 import { authRequest } from "@/lib/admin/client";
@@ -30,7 +32,7 @@ export default function HealthRecordsPage() {
       const res = await authRequest<{ incidents: HealthIncidentDto[] }>("/api/v1/school/health/incidents");
       setRecords(res.incidents ?? []);
     } catch (e) {
-      setError(`Failed to load health records: ${(e as Error).message}`);
+      setError(`Failed to load health records: ${errorMessage(e)}`);
     } finally {
       setLoading(false);
     }
@@ -45,7 +47,7 @@ export default function HealthRecordsPage() {
       await authRequest(`/api/v1/school/health/incidents/${id}/notify`, { method: "PATCH" });
       setRecords(prev => prev.map(r => r.id === id ? { ...r, parent_notified: true } : r));
     } catch (e) {
-      setError(`Failed to mark notified: ${(e as Error).message}`);
+      setError(`Failed to mark notified: ${errorMessage(e)}`);
     } finally {
       setBusyId(null);
     }

@@ -35,6 +35,7 @@
  */
 package com.littlebridge.enrollplus.feature.devtools
 
+import com.littlebridge.enrollplus.core.RuntimeEnvironment
 import com.littlebridge.enrollplus.core.fail
 import com.littlebridge.enrollplus.core.ok
 import com.littlebridge.enrollplus.core.principalUserUuid
@@ -181,7 +182,12 @@ fun Route.devToolsRouting() {
         route("/api/v1/admin/dev") {
 
         // ----- OTP providers list + current config -----
+        // SEC-007: OTP provider switching is a development-only tool.
         get("/otp-providers") {
+            if (RuntimeEnvironment.isProduction) {
+                call.fail("DevTools endpoints are disabled in production", HttpStatusCode.Forbidden, "DEV_TOOLS_DISABLED")
+                return@get
+            }
             if (call.requireSuperAdmin() == null) return@get
 
             val providers = OtpDeliveryDispatcher.knownProviders.map {
@@ -207,7 +213,12 @@ fun Route.devToolsRouting() {
         }
 
         // ----- Change OTP provider at runtime -----
+        // SEC-007: OTP provider switching is a development-only tool.
         put("/otp-provider") {
+            if (RuntimeEnvironment.isProduction) {
+                call.fail("DevTools endpoints are disabled in production", HttpStatusCode.Forbidden, "DEV_TOOLS_DISABLED")
+                return@put
+            }
             if (call.requireSuperAdmin() == null) return@put
 
             val body = runCatching { call.receive<UpdateOtpProviderRequest>() }.getOrNull()
