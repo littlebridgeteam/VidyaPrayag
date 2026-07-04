@@ -2158,6 +2158,379 @@ The codebase is modelled as a directed graph: nodes = screens, endpoints, tables
 | 11 | NAV-021/022/023: Stale state edge cases | Add state reset on navigation | 2h |
 | 12 | XPL-022: Inconsistent date formatting | Centralize date utils | 2h |
 
+### Phase 5 — Functional Completeness, Architecture & Data Integrity (fix within 3-4 sprints)
+
+*226 issues — covers all remaining BFS, NAV, STM, DFL, API, ERR, CYC, CON, SCH issues not in Phases 0-4.*
+
+| # | Issue(s) | Fix | Effort |
+|---|----------|-----|--------|
+| 1 | BFS-001: Teacher KDoc says 4 tabs but dock has 5 | Update KDoc | 0.5h |
+| 2 | BFS-002: Teacher deep-link "library" drops to home | Add Library overlay | 2h |
+| 3 | BFS-003: Teacher deep-link "leave-requests" routes to profile | Add scroll target/sub-state | 1h |
+| 4 | BFS-004: Teacher deep-link "announcements" has no overlay | Add announcements overlay | 2h |
+| 5 | BFS-005: School portal deep-link "tutor" is a no-op | Add Tutor overlay | 4h |
+| 6 | BFS-006: School portal deep-link "pace-alerts" is a no-op | Add PaceAlerts overlay and screen | 4h |
+| 7 | BFS-007: School portal deep-link "fees" doesn't auto-select sub-tab | Pass sub-tab parameter | 1h |
+| 8 | BFS-008: Transport overlay opened with empty routeId | Add selectedRouteId state | 2h |
+| 9 | BFS-009: Parent "quizzes" deep-link tab may not exist | Verify and wire | 1h |
+| 10 | BFS-010: Parent "syllabus" deep-link tab may not exist | Verify and wire | 1h |
+| 11 | BFS-011: Parent Generic deep-link handler has no else clause | Add else clause defaulting to home | 0.5h |
+| 12 | BFS-012: Alumni role routes to ParentPortalV2 | Create alumni portal or unlinked screen | 8h |
+| 13 | BFS-013: Unknown role defaults to ParentPortalV2 | Show error and force logout | 1h |
+| 14 | BFS-014: School portal has no tutor overlay from any tab | Add Tutor overlay | 2h |
+| 15 | BFS-015: School portal has no pace alerts screen | Create and wire pace alerts screen | 4h |
+| 16 | BFS-016: Parent portal has no standalone announcements overlay | Add quick-access | 2h |
+| 17 | BFS-017: Teacher ScheduledMessages overlay unreachable from tab UI | Add home screen callback | 1h |
+| 18 | BFS-018: Teacher EventRegistration naming mismatch | Clarify naming | 0.5h |
+| 19 | BFS-019: School ReportEffectiveness overlay has no deep-link | Add deep-link path | 1h |
+| 20 | BFS-020: School AnalyticsDashboard overlay has no deep-link | Add "analytics" deep-link | 1h |
+| 21 | BFS-021: School DailyAttendance overlay has no deep-link | Add "daily-attendance" deep-link | 1h |
+| 22 | BFS-022: School ClassPerformance overlay has no deep-link | Add "class-performance" deep-link | 1h |
+| 23 | BFS-023: School TeacherPerformance overlay has no deep-link | Add "teacher-performance" deep-link | 1h |
+| 24 | BFS-024: School StudentRoster overlay has no deep-link | Add "student-roster" deep-link | 1h |
+| 25 | BFS-025: School EditProfile overlay has no deep-link | Add "edit-profile" deep-link | 1h |
+| 26 | BFS-026: School Staff overlay has no deep-link | Add "staff" deep-link | 1h |
+| 27 | BFS-027: School HealthRecords overlay has no direct deep-link | Add "health-records" deep-link with student ID | 1h |
+| 28 | BFS-028: ScholarshipManagement overlay doesn't accept application ID | Add param passing | 1h |
+| 29 | BFS-029: Parent TutorProgress overlay has no deep-link | Add "tutor-progress" path | 1h |
+| 30 | BFS-030: Server has 100+ tables but Room has only ~9 entities | Add Room entities for high-priority features | 16h |
+| 31 | BFS-031: Website admin pages with no mobile equivalents | Add mobile overlays for feature parity | 8h |
+| 32 | BFS-032: No mobile screen for ServerLogs/Log Viewer | Add log viewer overlay | 4h |
+| 33 | BFS-033: No mobile screen for DevTools/AI Token Monitor | Add dev tools overlay | 4h |
+| 34 | BFS-034: ParentFeesScreenV2 "Pay now" is a Coming Soon stub | Implement payment or remove button | 8h |
+| 35 | BFS-038: ParentAcademics VComingSoon for Report Card is unreachable | Show "Link a child" empty state | 1h |
+| 36 | BFS-039: Teacher portal has no library access | Add library overlay | 4h |
+| 37 | BFS-040: No teacher UI for timetable change requests | Add timetable change requests screen | 8h |
+| 38 | BFS-041: School Portal imports admin feature ViewModels directly | Move shared VMs to common module | 4h |
+| 39 | BFS-042: School screens import admin domain models en masse | Move shared models to feature.school.domain | 8h |
+| 40 | BFS-043: Parent screens import parent feature presentation directly | Use Koin DI abstractions | 4h |
+| 41 | BFS-044: School portal "scholarship" deep-link not handled | Add scholarship case in when-block | 1h |
+| 42 | BFS-045: School portal "alumni" deep-link not handled | Add "alumni" case | 1h |
+| 43 | BFS-046: Teacher portal has no deep-link for "syllabus" or "quizzes" | Add syllabus and quizzes deep-link routing | 2h |
+| 44 | BFS-047: Teacher portal "broadcast" deep-link missing | Add broadcast deep-link | 1h |
+| 45 | BFS-048: Parent portal "transport" deep-link not handled | Add "transport" case | 1h |
+| 46 | BFS-049: Parent portal "library" deep-link not handled | Add "library" case | 1h |
+| 47 | BFS-050: Parent portal "fee-reminder" deep-link not handled | Add "fee-reminder" deep-link | 1h |
+| 48 | BFS-052: KtorSchoolApi.fetchSchools() tokenless overload always returns empty | Add error result or remove overload | 1h |
+| 49 | BFS-053: Teacher portal "lesson-plan" deep-link missing | Add "lesson-plan" case | 1h |
+| 50 | BFS-054: School portal "intelligence"/"analytics" deep-link not in when-block | Add "analytics" case | 1h |
+| 51 | BFS-055: School portal "health-records" deep-link not handled | Add "health-records" case with student ID param | 1h |
+| 52 | NAV-001: parseDeepLink doesn't handle trailing slashes | removeSuffix("/") before query extraction | 0.5h |
+| 53 | NAV-002: Deep-link "student" prefix only works for parent role | Add teacher/admin routing | 2h |
+| 54 | NAV-003: Deep-link "announcements" with ID doesn't pass ID to teacher/admin | Use the ID in announcements overlay | 1h |
+| 55 | NAV-004: Deep-link "calendar" for teacher opens legacy screen | Use platform version for teachers | 1h |
+| 56 | NAV-005: School portal Generic deep-link handler duplicates logic | Consolidate into shared function | 2h |
+| 57 | NAV-006: Parent portal Generic deep-link handler duplicates logic | Consolidate into shared function | 2h |
+| 58 | NAV-007: Deep-link "transport" means different features for parent vs teacher | Use distinct deep-link paths | 2h |
+| 59 | NAV-008: Deep-link "report-card" opens different screens per role | Document or standardise | 1h |
+| 60 | NAV-009: NavGraphV2 onDeepLinkNavigated called before portal handles | Call after portal processes target | 2h |
+| 61 | NAV-010: School portal deep-link "announcements" sets tab but no overlay | Pass announcement ID to comms screen | 1h |
+| 62 | NAV-011: Deep-link "announcements" for parent maps to "conversations" tab | Verify overlay name matches | 1h |
+| 63 | NAV-012: Deep-link "calendar" for teacher — verify overlay exists | Verify and wire | 1h |
+| 64 | NAV-013: Deep-link "messages" without threadId for school admin | Verify handler opens messages list | 1h |
+| 65 | NAV-014: parseQueryParams doesn't URL-decode values | Add URLDecoder.decode | 1h |
+| 66 | NAV-015: Teacher portal deep-link "reportcard" sets 3 params but no overlay | Open ReportReviewQueue overlay | 2h |
+| 67 | NAV-016: Teacher portal deep-link "pews" sets studentCode but no overlay | Open Pews overlay | 1h |
+| 68 | NAV-017: School portal deep-link "transport" opens overlay with no routeId | Pass routeId from deep-link params | 1h |
+| 69 | NAV-018: School portal has no back-navigation for overlay stack | Implement overlay stack | 8h |
+| 70 | NAV-019: Teacher portal has no back-navigation for overlay stack | Implement overlay stack | 8h |
+| 71 | NAV-020: Parent portal deep-link "messages" sets threadId but no validation | Validate thread ownership | 2h |
+| 72 | STM-001: AuthedRoute.Resolving renders empty Box with no loading indicator | Add themed loading indicator | 1h |
+| 73 | STM-002: UnauthRoute has no state for "auth in progress" | Add loading state | 1h |
+| 74 | STM-003: Parent unlinked gate has no "link in progress" state | Add loading state | 1h |
+| 75 | STM-005: Teacher portal tab state has no persistence | Use rememberSaveable | 1h |
+| 76 | STM-006: Parent portal tab state has no persistence | Use rememberSaveable | 1h |
+| 77 | STM-007: School portal tab state has no persistence | Use rememberSaveable | 1h |
+| 78 | STM-008: Deep-link state is not cleared after consumption | Clear rawDeepLink in all cases | 1h |
+| 79 | STM-009: Teacher update scope nonce can overflow | Use unique key instead of incrementing counter | 1h |
+| 80 | STM-010: School portal createEventOrigin may point to invalid overlay | Document or prevent None case | 1h |
+| 81 | STM-011: Teacher portal report params not cleared on tab change | Clear on tab change | 1h |
+| 82 | STM-012: Teacher portal updateScopeLabel not reset on tab switch | Reset on tab change | 1h |
+| 83 | STM-013: ParentPortalV2 overlay state not cleared on logout | Clear overlay on logout | 1h |
+| 84 | STM-014: SchoolPortalV2 profileReturnOverlay persists across navigation | Reset on tab change | 1h |
+| 85 | STM-015: ParentAcademicsScreenV2 tab state not persisted | Use rememberSaveable | 1h |
+| 86 | STM-017: Transport form state uses 6 independent remember variables | Use form state data class | 4h |
+| 87 | STM-018: Scholarship form has 10+ independent remember variables | Use form state data class | 4h |
+| 88 | STM-019: Health records form has 10+ independent remember variables | Use form state data class | 4h |
+| 89 | STM-020: Teacher timetable change request dialog has 6 remember variables | Use dialog state class | 2h |
+| 90 | STM-021: Quiz creation form has 5 independent remember variables | Use form state class | 2h |
+| 91 | STM-022: Password change form has 4 independent remember variables | Use form state class with validation | 2h |
+| 92 | STM-023: Leave application form has 3 independent remember variables | Use form state class | 1h |
+| 93 | STM-024: Student add form has 5 independent remember variables | Use form state class | 2h |
+| 94 | DFL-001: Deep-link params not URL-decoded | Add URL decoding | 1h |
+| 95 | DFL-002: Deep-link segments not validated against whitelist | Validate against known values | 2h |
+| 96 | DFL-003: HealthRecords numeric inputs lack range validation | Add range validation (height 0-300, weight 0-500) | 1h |
+| 97 | DFL-004: SchoolOnboarding year options hardcoded | Fetch from backend | 2h |
+| 98 | DFL-005: SchoolOnboarding time inputs are free-text | Use time picker or validate format | 2h |
+| 99 | DFL-006: Timetable paste parsing has no error recovery | Add line-by-line error recovery | 2h |
+| 100 | DFL-007: Exception date input is free-text, no date picker | Use VDatePicker component | 2h |
+| 101 | DFL-008: Exception kind is free-text instead of dropdown | Use dropdown with CANCEL/RESCHEDULE/SUBSTITUTE | 1h |
+| 102 | DFL-009: Graduation year input lacks range validation | Validate year range (currentYear-1 .. currentYear+10) | 1h |
+| 103 | DFL-010: CSV student import has no header validation | Validate CSV headers before parsing | 2h |
+| 104 | DFL-011: Deep-link threadId not UUID-validated | Validate UUID format | 1h |
+| 105 | DFL-012: DigitalIdCardScreen receives nullable childId | Add null guard | 1h |
+| 106 | DFL-013: graduateStudents uses token without expiry check | Add error handling for expired tokens | 1h |
+| 107 | DFL-014: Teacher report deep-link defaults may not match real data | Use empty defaults and show picker | 1h |
+| 108 | DFL-015: SchoolOnboarding working days hardcoded to 2 options | Add more options (Sun-Thu for Middle East) | 1h |
+| 109 | DFL-016: Transport feeAmount uses toDoubleOrNull without range validation | Validate range (0..1_000_000) | 1h |
+| 110 | DFL-017: SchoolLibrary replacementCost uses toDoubleOrNull without validation | Validate non-negative | 1h |
+| 111 | DFL-018: SchoolLibrary finePerDay uses toDoubleOrNull without validation | Validate non-negative | 1h |
+| 112 | DFL-019: ScholarshipManagement waiverPercentage uses toFloatOrNull without validation | Validate 0..100 | 1h |
+| 113 | DFL-020: ScholarshipManagement disbursementAmount uses toDoubleOrNull without validation | Validate >= 0 | 1h |
+| 114 | DFL-021: ScholarshipManagement renewalPeriodMonths has no range validation | Validate 1..120 | 1h |
+| 115 | DFL-022: HealthRecords doseNumber defaults to 1 with no validation | Validate >= 1 or show error | 1h |
+| 116 | DFL-023: Transport capacity defaults to 40 with no validation | Validate 1..200 | 1h |
+| 117 | DFL-024: SchoolLibrary totalCopies defaults to 1 with no validation | Validate >= 1 | 1h |
+| 118 | DFL-025: StudentLibrary goalCount/targetYear have no range validation | Validate ranges | 1h |
+| 119 | DFL-026: AdminEventRegistration capacity defaults to 1 with no validation | Validate >= 1 | 1h |
+| 120 | DFL-027: AdminEventRegistration auto-generate uses 4 toIntOrNull fallbacks | Validate each field | 2h |
+| 121 | DFL-028: TeacherLessonPlan duration defaults to 15 on parse failure | Validate 1..480 | 1h |
+| 122 | DFL-029: TeacherMarks input uses toFloatOrNull without max marks validation | Add client-side max validation | 1h |
+| 123 | DFL-030: Library settings update passes 6 nullable numeric fields with no validation | Validate each field | 2h |
+| 124 | DFL-032: RAG limit parameter not range-validated | Add max cap | 1h |
+| 125 | DFL-033: Pulse weeks parameter coerced server-side but not in UI | Add client-side validation | 1h |
+| 126 | DFL-034: ReportCardConfig reads 7 env vars with silent defaults | Validate config values | 2h |
+| 127 | DFL-035: TeacherProvisioningRouting page/pageSize coerced but not in UI | Add client-side validation | 1h |
+| 128 | DFL-036: School analytics CMS fallback values silently parse to 0 | Log and alert on corrupted CMS data | 2h |
+| 129 | API-001: No payment endpoint despite Pay Now button | Implement payment endpoint or remove button | 8h |
+| 130 | API-002: No mobile API calls to tutor endpoints from school portal | Add tutor API calls to admin client | 4h |
+| 131 | API-003: PaceAlertsViewModel exists but no mobile screen consumes it | Wire ViewModel to a screen | 4h |
+| 132 | API-004: Transport attendance with empty routeId — API behaviour undefined | Pass valid route ID or show route picker | 2h |
+| 133 | API-005: Website hooks reference many endpoints — need verification | Audit each hook path against backend routes | 4h |
+| 134 | API-006: Deep-link "fees" feeId passed as overlay name, not param | Pass in params map | 1h |
+| 135 | API-007: Deep-link "scholarships" produces invalid tab name | Map to valid tab+overlay | 1h |
+| 136 | API-008: Deep-link "link-child" produces invalid tab name | Map to ParentTab(Parent, "profile", "link-child") | 1h |
+| 137 | API-009: Server has 35 routing files — all may not be mounted | Audit routing block against all routing files | 4h |
+| 138 | API-010: Website API base URL defaults to localhost:8080 | Error in production if env var missing | 1h |
+| 139 | API-011: Website session logout duplicates URL resolution | Import shared API_BASE_URL | 1h |
+| 140 | API-012: Website API client has no 401 interceptor | Add 401 handler that clears session | 2h |
+| 141 | API-013: TeacherClasses fallbackRosterByClassNaming does in-memory filtering | Push class/section filter into SQL | 4h |
+| 142 | API-014: StudentAggregationService assignmentsForClass does in-memory filtering | Use SQL-level filtering | 2h |
+| 143 | API-015: TeacherAssignmentRouting studentCountFor does in-memory count | Use SQL COUNT with WHERE | 2h |
+| 144 | API-016: TeacherAssignmentRouting existing assignment check uses firstOrNull with filter | Push ClassNaming logic into SQL | 2h |
+| 145 | API-017: TimetableChangeRequestRouting constructs EntityID manually | Use Op.inList or subquery | 2h |
+| 146 | API-018: fetchImageAsBase64 downloads unbounded remote images | Add Content-Length check and size cap (5MB) | 2h |
+| 147 | API-019: LandingRouting catches Exception, prints stack trace, then rethrows | Remove try-catch | 1h |
+| 148 | API-022: Pace alerts endpoint returns inconsistent shapes | Standardize | 2h |
+| 149 | API-023: Link requests endpoint returns inconsistent shapes | Standardize | 2h |
+| 150 | API-024: School classes endpoint returns inconsistent shapes | Standardize and add types | 2h |
+| 151 | API-025: PEWS student endpoint uses `as string` type assertion | Add null guard | 1h |
+| 152 | API-026: Report card oversight uses `as string` type assertion | Add null guard | 1h |
+| 153 | API-027: Tutor heatmap uses double `as string` assertion | Add null guards | 1h |
+| 154 | API-028: School subjects uses `as string` assertion | Add null guard | 1h |
+| 155 | API-031: BarsChart onClick casts to BarDatum | Add runtime validation | 2h |
+| 156 | ERR-001: graduateStudents silently swallows errors | Add error handling and snackbar | 1h |
+| 157 | ERR-002: Parent unlinked gate doesn't handle dashboard error state | Handle error explicitly | 2h |
+| 158 | ERR-003: Teacher deep-link routing has no error feedback for malformed links | Show toast on unresolved deep links | 1h |
+| 159 | ERR-004: NavGraphV2 deep-link parsing has no error handling | Log and notify | 2h |
+| 160 | ERR-005: School portal overlay null-id guards use early return without user feedback | Show error message | 4h |
+| 161 | ERR-006: Parent portal overlay null-child guards silently dismiss | Show error or loading state | 2h |
+| 162 | ERR-008: Server CMS seed catches "relation does not exist" but continues | Log missing table names at WARN level | 1h |
+| 163 | ERR-009: Server demo seed catches unexpected error but doesn't rethrow | Log at WARN and monitor | 1h |
+| 164 | ERR-010: Website API client catches fetch errors but doesn't surface them | Add user-facing error message | 2h |
+| 165 | ERR-011: Website session logout best-effort but silently fails | Log the failure | 1h |
+| 166 | ERR-012: Server validateSchema catches IllegalStateException but rethrows, others swallowed | Log all exceptions at appropriate levels | 1h |
+| 167 | ERR-013: ParentPortalV2 BackHandler for overlay doesn't clear deep-link state | Clear all deep-link state on back | 1h |
+| 168 | ERR-014: TeacherPortalV2 BackHandler for overlay doesn't clear deep-link state | Clear deepLinkThreadId on back | 1h |
+| 169 | ERR-015: School portal BackHandler doesn't clear deep-link state | Clear deepLinkThreadId and selectedPewsStudentCode | 1h |
+| 170 | ERR-016: Shared module ViewModels silently swallow parse errors | Include parse error detail in log and user-friendly message | 2h |
+| 171 | ERR-017: AnalyticsDashboardViewModel parseCard/parseInsight catch Exception | Show partial error state or retry | 2h |
+| 172 | ERR-018: NetworkResult catch-all loses error context | Include exception class name | 1h |
+| 173 | ERR-019: MessagingCore forUpdate fallback catches Throwable | Catch specific exception types | 1h |
+| 174 | ERR-020: TutorTurn decode catches Exception and returns null | Log raw input and error | 1h |
+| 175 | ERR-021: TutorTools parseToolArguments catches Exception silently | Return error to agent loop | 2h |
+| 176 | ERR-022: CaseworkerTools parseArgs same pattern | Return error to agent loop | 1h |
+| 177 | ERR-023: PewsDailyJob catches Exception in date parsing with default to now | Log and validate | 1h |
+| 178 | ERR-024: TutorTriageService catches intent parse failure with default "doubt" | Surface the ambiguity | 1h |
+| 179 | ERR-025: DatabaseFactory catches CMS seed failure — inconsistent handling | Standardise error handling | 1h |
+| 180 | ERR-026: DatabaseFactory catches demo seed failure — non-fatal | Log at WARN and set health flag | 1h |
+| 181 | ERR-028: ScholarshipService catches fee integration failure with println only | Replace println with log.warn and add alerting | 1h |
+| 182 | ERR-029: TransportService geofence notification failure is best-effort with println | Replace println with log.warn | 1h |
+| 183 | CYC-001: Teacher portal uses parent's NotificationsViewModel | Create TeacherNotificationsViewModel | 4h |
+| 184 | CYC-002: TeacherPortalV2 injects PreferenceRepository directly | Move to ViewModel | 2h |
+| 185 | CYC-003: SchoolPortalV2 injects AlumniRepository directly | Move to SchoolPeopleViewModel | 2h |
+| 186 | CYC-004: SchoolPortalV2 injects PreferenceRepository directly | Encapsulate in ViewModel | 2h |
+| 187 | CYC-005: ParentPortalV2 has 4 direct ViewModel injections | Consider aggregating ParentPortalViewModel | 4h |
+| 188 | CYC-006: Calendar ViewModel qualifier only set for parent | Add named qualifiers for all portals | 1h |
+| 189 | CYC-007: DigitalIdCardScreen cross-package dependency | Move to shared package | 2h |
+| 190 | CYC-008: ScheduledMessagesScreenV2 cross-package dependency | Move to shared package | 2h |
+| 191 | CYC-009: TeacherMessageViewModel naming inconsistency | Standardise naming | 1h |
+| 192 | CYC-010: No student ViewModels in shared module | Create student ViewModels | 4h |
+| 193 | CYC-012: UnifiedCreateEventScreenV2 imports admin ViewModel | Move to shared module | 2h |
+| 194 | CYC-013: SchoolPeopleScreenV2 imports from alumni module | Move to shared or use VM abstraction | 2h |
+| 195 | CYC-014: ParentLibraryScreenV2 imports from both library and parent features | Use DI abstraction | 2h |
+| 196 | CYC-015: ScholarshipWorkflowScreenV2 imports parent presentation | Move to shared scholarship module | 2h |
+| 197 | CYC-016: TransportService instantiated directly in routing files | Use DI | 4h |
+| 198 | CYC-017: LibraryService/LibraryRepository instantiated directly in routing | Use DI | 2h |
+| 199 | CON-001: SchoolPortalV2 graduateStudents launches coroutine without job tracking | Use ViewModel-scoped coroutine | 1h |
+| 200 | CON-002: ParentPortalV2 dashboard reload on onLinked may race with deep-link | Queue deep-link processing until dashboard resolves | 2h |
+| 201 | CON-003: NavGraphV2 deep-link parsing races with role resolution | Keep rawDeepLink until both conditions met | 2h |
+| 202 | CON-004: Teacher portal update scope nonce increment is not atomic | Use single state update | 1h |
+| 203 | CON-005: School portal messagesViewModel state collection causes recompositions | Collect only unread count | 2h |
+| 204 | CON-006: Parent portal messageViewModel state collection at portal level | Collect only openThreadId and composeOpen | 2h |
+| 205 | CON-007: Server DatabaseFactory.init() is not thread-safe | Add @Synchronized or use a lock | 1h |
+| 206 | CON-008: Server readReplicaDb is set without volatile/atomic | Add @Volatile | 0.5h |
+| 207 | CON-009: Server isPostgres flag is not volatile | Add @Volatile | 0.5h |
+| 208 | CON-010: Parent portal deep-link state variables are independent, no atomic update | Use single data class state holder | 2h |
+| 209 | CON-020: LoginThrottle synchronized on MutableList but hits map is not concurrent | Use ConcurrentHashMap.computeIfAbsent | 2h |
+| 210 | CON-021: FirebaseAdminInitializer 6 @Volatile fields with synchronized(this) | Use dedicated lock object | 2h |
+| 211 | CON-022: KeyVault @Volatile bootstrapped with no synchronization | Use AtomicBoolean.compareAndSet or Mutex | 2h |
+| 212 | SCH-001: DatabaseFactory.allTables count mismatch with PROVISION.sql | Audit and add missing tables | 4h |
+| 213 | SCH-002: AppDatabase version 4 but entities may not match version | Verify schema consistency | 2h |
+| 214 | SCH-003: No Room entity for Notifications despite offline mode initiative | Add NotificationEntity | 4h |
+| 215 | SCH-004: No Room entity for Messages despite messaging being a core feature | Add MessageThreadEntity | 4h |
+| 216 | SCH-005: No Room entity for Leave Requests | Add LeaveRequestEntity | 2h |
+| 217 | SCH-006: Server validateSchema says "36 registered tables" but allTables has ~100 | Update comment to reflect actual count | 0.5h |
+| 218 | SCH-007: SQLite fallback uses SERIALIZABLE isolation — may cause deadlocks | Use READ_COMMITTED for SQLite | 1h |
+| 219 | SCH-008: Postgres JDBC URL auto-appends sslmode=require even for non-SSL | Make SSL mode configurable via PG_SSLMODE | 1h |
+| 220 | SCH-009: prepareThreshold=0 is always appended, may impact performance | Only append when using PgBouncer | 1h |
+| 221 | SCH-010: currentSchema=public is always appended, may override user preferences | Only append if not already specified | 1h |
+| 222 | SCH-012: SchemaUtils.createMissingTablesAndColumns used for SQLite but not Postgres | Add Flyway for Postgres | 4h |
+| 223 | SCH-014: AttendanceRecords unique index includes nullable assignmentId | Add partial index or application-level check | 2h |
+| 224 | SCH-017: No index on MessagesTable.conversationId for seq ordering | Add single-column index | 1h |
+| 225 | SCH-018: SchoolMediaTable has no index on schoolId | Add index | 1h |
+| 226 | SCH-019: AppUsers phone and email are nullable with uniqueIndex — multiple NULLs allowed | Add partial unique index for non-null values | 2h |
+
+### Phase 6 — Cross-Platform, Website, Security Hardening & Polish (backlog)
+
+*133 issues — covers all remaining XPL, WEB, SEC, PRF, DFS, FS, GAP, AUTH issues not in Phases 0-4.*
+
+| # | Issue(s) | Fix | Effort |
+|---|----------|-----|--------|
+| 1 | XPL-001: PlatformModule variants may have inconsistent DAO registrations | Verify all 3 modules provide same DAOs | 4h |
+| 2 | XPL-002: WasmJs platform module is missing | Resolve Ktor/Kotlin version conflict | 8h |
+| 3 | XPL-003: BackHandler is ExperimentalComposeUiApi — may change across platforms | Test back navigation on all platforms | 2h |
+| 4 | XPL-004: statusBarsPadding() may not work correctly on all platforms | Test on iOS devices | 2h |
+| 5 | XPL-005: VStatusBarAdapter may have platform-specific issues | Verify on all platforms | 2h |
+| 6 | XPL-006: DropdownMenu may render differently on iOS | Test and use platform-specific alternatives | 2h |
+| 7 | XPL-007: Three different dock implementations across portals | Standardise or document design rationale | 4h |
+| 8 | XPL-008: File paths in DatabaseFactory use forward slashes — may not work on Windows | Use platform-independent path resolution | 1h |
+| 9 | XPL-009: local.properties search paths may not work on all platforms | Use platform-independent path resolution | 1h |
+| 10 | XPL-010: JVM platform module may not provide all required dependencies | Verify all bindings match Android/iOS | 2h |
+| 11 | XPL-011: ClassesSubjectsScreenV2 has 12 @OptIn(ExperimentalLayoutApi) | Track Compose API stabilization | Ongoing |
+| 12 | XPL-012: TeacherPortalV2 and ParentPortalV2 use @OptIn(ExperimentalComposeUiApi) | Track stabilization | Ongoing |
+| 13 | XPL-013: ParentProfileCardScreenV2 uses @OptIn(ExperimentalComposeUiApi) | Track stabilization | Ongoing |
+| 14 | XPL-014: SchoolOnboardingScreenV2 uses @OptIn(ExperimentalLayoutApi) | Track stabilization | Ongoing |
+| 15 | XPL-015: TeacherTimetableScreenV2 uses @OptIn(ExperimentalLayoutApi) | Track stabilization | Ongoing |
+| 16 | XPL-018: Website uses hardcoded "en-IN" locale for number formatting | Make locale configurable | 2h |
+| 17 | XPL-021: Compose app and website have different feature sets | Bridge feature parity gap | Ongoing |
+| 18 | XPL-024: Website admin has partial accessibility — some aria-labels but not all | Add aria attributes to all interactive elements | 8h |
+| 19 | XPL-025: No shared validation logic between client and server | Extract shared validation module | 8h |
+| 20 | WEB-001: Website has no error boundary for API failures | Add React error boundary for API failure scenarios | 2h |
+| 21 | WEB-002: Website SWR hooks have no error retry configuration | Configure retry based on error type with exponential backoff | 2h |
+| 22 | WEB-003: Website admin API functions are not typed against backend DTOs | Generate TypeScript types from backend DTOs | 8h |
+| 23 | WEB-004: Website onboarding success page may not handle edge cases | Verify it handles network errors | 1h |
+| 24 | WEB-005: Website cookies page is static — no backend interaction | Verify cookie consent is stored and respected | 1h |
+| 25 | WEB-006: Website pricing page may have stale pricing data | Fetch pricing from backend or CMS | 2h |
+| 26 | WEB-007: Website support page may not submit to backend | Verify support form submits to backend | 1h |
+| 27 | WEB-008: Website admin dashboard intelligence hook polls every 60s | Use WebSocket or SSE for real-time data | 4h |
+| 28 | WEB-009: Website has no CSRF protection | Add CSRF tokens for state-changing operations | 4h |
+| 29 | WEB-010: Website admin layout may not handle session expiry during navigation | Add session expiry handler that redirects to login | 2h |
+| 30 | WEB-012: JWT tokens stored in localStorage — XSS-vulnerable | Use httpOnly cookies for session tokens | 4h |
+| 31 | WEB-013: Admin API client uses `as unknown` type assertions | Validate response shape with runtime validator (zod) | 4h |
+| 32 | WEB-014: Website API client uses `as unknown` type assertion | Add runtime validation | 2h |
+| 33 | WEB-015: Admin types use `unknown` for dynamic fields | Define proper interfaces | 4h |
+| 34 | WEB-016: Dashboard preview page seeds fake admin session in localStorage | Gate behind NODE_ENV === 'development' | 1h |
+| 35 | WEB-017: Onboarding Wizard catches errors with generic messages | Log the actual error for debugging | 1h |
+| 36 | WEB-018: CalendarSlotPanel catch handler sets state to "error" with no details | Capture and display error message | 1h |
+| 37 | WEB-019: Topbar markNotificationRead uses `.catch(() => {})` | At minimum log the error; consider retry | 1h |
+| 38 | WEB-020: Multiple admin pages use `(e as Error).message` pattern | Use `e instanceof Error ? e.message : String(e)` | 2h |
+| 39 | WEB-021: No Suspense boundaries for lazy-loaded routes | Add Suspense boundaries | 4h |
+| 40 | WEB-022: No SWR cache invalidation on mutations | Add global cache invalidation strategy | 4h |
+| 41 | WEB-023: Admin API client has no request timeout | Add timeout | 2h |
+| 42 | WEB-027: No SRI (Subresource Integrity) for external scripts | Add SRI hashes | 2h |
+| 43 | WEB-028: Website has no automated tests | Add test suite | 16h |
+| 44 | SEC-001: Deep-link params not sanitised against injection | Sanitise all deep-link parameters | 2h |
+| 45 | SEC-002: Server routes don't validate request body size | Configure ContentNegotiation with max body size | 2h |
+| 46 | SEC-003: CORS configuration may be too permissive | Restrict CORS origins (see AUTH-015) | 1h |
+| 47 | SEC-005: Password hashing uses PBKDF2 with non-standard format | Consider using standard PHC format | 4h |
+| 48 | SEC-006: OTP max attempts default is 5 — may be too many for SMS OTP | Consider 3 attempts | 1h |
+| 49 | SEC-007: Server DevTools routes may be accessible in production | Verify DevTools routes are disabled in production | 1h |
+| 50 | SEC-008: File upload size not limited | Add file size limit for uploads | 2h |
+| 51 | SEC-009: SQL injection via Exposed is unlikely but raw SQL should be checked | Audit for raw SQL | 2h |
+| 52 | SEC-010: Website admin session token stored in cookie — verify httpOnly and secure flags | Verify cookie security flags | 1h |
+| 53 | SEC-014: Message body length validated but attachment count not limited | Add attachment count limit | 1h |
+| 54 | SEC-017: No rate limiting on PEWS endpoints | Add rate limiter | 4h |
+| 55 | SEC-021: Gateway token auth uses constant-time comparison but no rate limit | Add rate limit | 2h |
+| 56 | SEC-023: No password strength enforcement on reset | Enforce complexity rules | 2h |
+| 57 | PRF-001: SchoolPortalV2 has 30+ overlay branches in a single when block | Consider using a map or sealed class dispatch | 4h |
+| 58 | PRF-002: ParentPortalV2 collects 4 ViewModel states at portal level | Collect states at the screen level | 4h |
+| 59 | PRF-003: TeacherPortalV2 collects 3 ViewModel states at portal level | Move state collection to screens | 2h |
+| 60 | PRF-004: NavGraphV2 brandingThemeManager.loadBranding() called on every auth state change | Add debounce or check if already loaded | 2h |
+| 61 | PRF-005: Server allTables array spreads 100+ tables in one call | Consider batching for large schemas | 4h |
+| 62 | PRF-006: Server HikariCP pool size defaults to 5 | Increase default to 10 | 1h |
+| 63 | PRF-007: Server read replica pool size defaults to 3 | Increase default to 5 | 1h |
+| 64 | PRF-008: Website SWR LIVE polling at 10s may cause excessive requests | Use WebSocket for truly live data | 4h |
+| 65 | PRF-009: Parent dock visibility check evaluates messageState on every recomposition | Use derivedStateOf | 1h |
+| 66 | PRF-010: School portal commsBadge calculation on every recomposition | Use derivedStateOf or dedicated unread count Flow | 2h |
+| 67 | PRF-011: TeacherClasses fallbackRosterByClassNaming loads ALL students | Push ClassNaming into SQL or use join table | 4h |
+| 68 | PRF-012: StudentAggregationService loads all assignments then filters | Use proper SQL join | 2h |
+| 69 | PRF-013: TeacherAssignmentRouting studentCountFor loads all students | Use SQL COUNT with WHERE | 2h |
+| 70 | PRF-014: SchoolPortalV2 when(tab) + when(overlay) blocks cause heavy conditional composition | Consider registry pattern for overlays | 4h |
+| 71 | PRF-015: SchoolHomeScreenV2 collects 7 StateFlows simultaneously | Combine flows or use derivedStateOf | 4h |
+| 72 | PRF-016: SchoolPeopleScreenV2 collects 4 ViewModels simultaneously | Combine or use derivedStateOf | 2h |
+| 73 | PRF-017: TeacherClassesRouting composite endpoint loads full roster + attendance + marks + homework + timetable | Add pagination or lazy loading | 8h |
+| 74 | PRF-035: LibraryCache locks map grows unbounded | Evict Mutex entries | 2h |
+| 75 | PRF-036: imageHttpClient CIO engine creates threads that are never shut down | Add shutdown hook | 1h |
+| 76 | DFS-001: CommonLandingScreenV2 unused — V3 is used | Delete V2 | 0.5h |
+| 77 | DFS-002: SplashScreenV2 may be unreferenced from NavGraphV2 | Verify App.kt usage; delete if dead | 0.5h |
+| 78 | DFS-003: AuthScaffoldV2 may be unused | Verify and delete if dead | 0.5h |
+| 79 | DFS-004: SriPreview.kt likely development-only | Delete if unused | 0.5h |
+| 80 | DFS-005: ParentActivityScreenV2 may be leftover from old "Activity" tab | Delete or repurpose | 0.5h |
+| 81 | DFS-006: ParentReportScreen may be superseded by AiReportCardPreview | Delete if dead | 0.5h |
+| 82 | DFS-007: Two parent profile screens with overlapping purpose | Consolidate or document clearly | 1h |
+| 83 | DFS-008: ParentAttendanceCalendar/Card may be sub-components or dead | Verify usage; delete if dead | 0.5h |
+| 84 | DFS-009: ParentCoveredCard/CoveredDetailOverlay may be dead | Verify and delete if dead | 0.5h |
+| 85 | DFS-010: Three LibraryUixComponents files with unclear boundaries | Consolidate into one file | 2h |
+| 86 | DFS-011: Skeletons.kt may have unused skeletons | Audit and remove dead skeletons | 1h |
+| 87 | DFS-012: Shared.kt may have unused utilities | Audit and remove dead functions | 1h |
+| 88 | DFS-013: VComingSoon used for shipped features | Remove stale VComingSoon usages | 1h |
+| 89 | DFS-014: Old teacher screen files may exist | Search for and delete old teacher screen files | 1h |
+| 90 | DFS-015: DiscoveryScreenV2 dual-purpose (auth + authenticated) may cause UI issues | Verify both contexts work correctly | 2h |
+| 91 | DFS-016: ParentLinkChildScreenV2 used in both auth and portal | Verify both contexts handle authentication state correctly | 1h |
+| 92 | DFS-017: AcademicCalendarScreenV2 shared by 3 portals with inconsistent qualifiers | Add distinct qualifiers | 1h |
+| 93 | DFS-018: DigitalIdCardScreen in parent package, used by teacher | Move to shared package | 1h |
+| 94 | DFS-019: ScheduledMessagesScreenV2 in school package, used by teacher | Move to shared package or create teacher variant | 1h |
+| 95 | DFS-020: TeacherPewsScreenV2 has no deep-link path | Add "pews" deep-link for teacher | 1h |
+| 96 | DFS-036: OtpHttpClient has no close() or lifecycle management | Add lifecycle management | 2h |
+| 97 | DFS-039: BrandingColorMapper silently returns null on parse failure | Add logging | 1h |
+| 98 | DFS-045: ScholarshipService docUrls parse has mismatched indentation | Fix indentation and add logging | 1h |
+| 99 | FS-001: Multiple audit .md files clutter the repo root | Consolidate or archive old audit files | 1h |
+| 100 | FS-002: Multiple spec .md files clutter the repo root | Move to docs/ directory | 1h |
+| 101 | FS-003: Two brand-assets directories with different naming | Consolidate into one directory | 0.5h |
+| 102 | FS-004: data.db.tmp files in repo root and server | Add to .gitignore and remove from repo | 0.5h |
+| 103 | FS-005: UI.tmp file in repo root | Remove and add to .gitignore | 0.5h |
+| 104 | FS-006: feature_audit.csv in repo root | Move to docs/ or remove | 0.5h |
+| 105 | FS-007: Multiple .artifact.md files in root | Move to docs/specs/ | 0.5h |
+| 106 | FS-009: .env.example exists but .env may be committed | Verify .env is in .gitignore | 0.5h |
+| 107 | FS-010: composeApp/google-services.json is committed | Verify this doesn't contain sensitive keys | 0.5h |
+| 108 | FS-011: AI_FEATURES_COST_SHEET.csv in root | Move to docs/ or remove | 0.5h |
+| 109 | FS-012: newreviewdocs/ has 75+ spec files outside docs/ | Consolidate into docs/specs/ | 1h |
+| 110 | GAP-006: No code coverage reporting | Add JaCoCo/Kover/Istanbul coverage reporting | 4h |
+| 111 | GAP-012: No health check endpoint beyond basic /health | Add readiness probe (DB, AI, Firebase status) | 4h |
+| 112 | GAP-013: No secrets management | Add Vault/AWS Secrets Manager/GCP Secret Manager | 8h |
+| 113 | AUTH-001: Unknown role gets parent portal access | Reject with error screen and force re-auth | 1h |
+| 114 | AUTH-002: Alumni get parent portal — backend may reject or leak data | Create alumni portal or verify backend rejects alumni | 4h |
+| 115 | AUTH-003: SuperAdmin vs SchoolAdmin not differentiated in mobile portal | Add role-based feature gating | 4h |
+| 116 | AUTH-004: Transport attendance no route assignment validation | Validate teacher's route assignment | 2h |
+| 117 | AUTH-005: graduateStudents no client-side role check | Add role check or proper error feedback | 1h |
+| 118 | AUTH-006: Website admin layout may lack server-side auth guard | Add server-side middleware | 2h |
+| 119 | AUTH-007: Deep-link paths not authorised per role | Validate target screen is authorised for role | 4h |
+| 120 | AUTH-008: Website onboarding page publicly accessible | Move to authenticated route or add auth check | 1h |
+| 121 | AUTH-009: Website login page doesn't redirect authenticated users | Add redirect for authenticated users | 1h |
+| 122 | AUTH-010: Backend routes extract UID but don't check role | Add role checking in route handlers or interceptor | 4h |
+| 123 | AUTH-011: Transport parent endpoints don't verify child-parent relationship | Add parent-child relationship check | 2h |
+| 124 | AUTH-012: DevTools routes check requireSuperAdmin with per-request DB read | Cache the role or accept the DB hit for security | 2h |
+| 125 | AUTH-013: OTP admin routing uses separate token-based auth, not JWT | Document clearly; ensure token rotation | 1h |
+| 126 | AUTH-014: Gateway routing uses X-Gateway-Token header | Ensure TLS-only and token rotation | 1h |
+| 127 | AUTH-018: PEWS student endpoint ownership check is parent-only | Add teacher/admin access for students they teach | 2h |
+| 128 | AUTH-019: Pulse endpoint only checks parent ownership | Add admin/teacher access | 2h |
+| 129 | AUTH-020: Dashboard preview seeds fake admin session in localStorage | Gate behind NODE_ENV === 'development' | 1h |
+| 130 | AUTH-023: Silent .catch(() => {}) on markNotificationRead | Log error; consider retry | 1h |
+| 131 | AUTH-024: Silent .catch(() => {}) on markThreadRead | Log error | 1h |
+| 132 | AUTH-026: Library rate limiter is in-memory and resets on restart | Use distributed rate limiting | 4h |
+| 133 | AUTH-027: AI rate limiter is in-memory and resets on restart | Use distributed rate limiting for production | 4h |
+
 ---
 
 ### Estimated Total Effort
@@ -2169,7 +2542,9 @@ The codebase is modelled as a directed graph: nodes = screens, endpoints, tables
 | Phase 2 (High) | 12 | ~148h |
 | Phase 3 (Medium) | 15 | ~45h |
 | Phase 4 (Low/Polish) | 12 | ~44h |
-| **TOTAL** | **63 prioritized** | **~310h** |
+| Phase 5 (Functional/Architecture) | 226 | ~350h |
+| Phase 6 (Cross-Platform/Security/Polish) | 133 | ~250h |
+| **TOTAL** | **478 (all issues)** | **~910h** |
 
 ---
 
