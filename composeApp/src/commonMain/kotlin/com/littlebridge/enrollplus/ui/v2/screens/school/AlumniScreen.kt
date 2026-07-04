@@ -40,9 +40,25 @@ import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
+
+private enum class AlumniTab {
+    Directory, Pending, Campaigns, Donations, Mentorship, Analytics;
+
+    @Composable
+    fun label(): String = when (this) {
+        Directory  -> appString(StringKeys.ALM_TAB_DIRECTORY)
+        Pending    -> appString(StringKeys.ALM_TAB_PENDING)
+        Campaigns  -> appString(StringKeys.ALM_TAB_CAMPAIGNS)
+        Donations  -> appString(StringKeys.ALM_TAB_DONATIONS)
+        Mentorship -> appString(StringKeys.ALM_TAB_MENTORSHIP)
+        Analytics  -> appString(StringKeys.ALM_TAB_ANALYTICS)
+    }
+}
 
 @Composable
 fun AlumniScreen(
@@ -53,7 +69,7 @@ fun AlumniScreen(
     viewModel: AlumniViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
-    var subTab by remember { mutableStateOf("Directory") }
+    var subTab by remember { mutableStateOf(AlumniTab.Directory) }
 
     LaunchedEffect(Unit) {
         viewModel.loadAlumni()
@@ -68,58 +84,59 @@ fun AlumniScreen(
             .verticalScroll(rememberScrollState())
             .padding(bottom = 24.dp),
     ) {
-        VBackHeader(title = "Alumni Management", onBack = onBack)
+        VBackHeader(title = appString(StringKeys.ALM_TITLE), onBack = onBack)
 
+        val subTabLabels = AlumniTab.entries.map { it.label() }
         VTopTabs(
-            tabs = listOf("Directory", "Pending", "Campaigns", "Donations", "Mentorship", "Analytics"),
-            selected = subTab,
-            onSelect = {
-                subTab = it
-                when (it) {
-                    "Directory" -> viewModel.loadAlumni()
-                    "Pending" -> viewModel.loadPendingVerifications()
-                    "Campaigns" -> viewModel.loadCampaigns()
-                    "Donations" -> viewModel.loadDonations()
-                    "Mentorship" -> {
+            tabs = subTabLabels,
+            selected = subTabLabels[subTab.ordinal],
+            onSelect = { label ->
+                subTab = AlumniTab.entries[subTabLabels.indexOf(label)]
+                when (subTab) {
+                    AlumniTab.Directory -> viewModel.loadAlumni()
+                    AlumniTab.Pending -> viewModel.loadPendingVerifications()
+                    AlumniTab.Campaigns -> viewModel.loadCampaigns()
+                    AlumniTab.Donations -> viewModel.loadDonations()
+                    AlumniTab.Mentorship -> {
                         viewModel.loadMentorships()
                         viewModel.loadMentorshipRequests()
                     }
-                    "Analytics" -> viewModel.loadAnalytics()
+                    AlumniTab.Analytics -> viewModel.loadAnalytics()
                 }
             },
         )
 
         when (subTab) {
-            "Directory" -> AlumniDirectoryTab(
+            AlumniTab.Directory -> AlumniDirectoryTab(
                 state = state,
                 onOpenAlumni = onOpenAlumni,
                 onRetry = { viewModel.loadAlumni() },
                 onAddAlumni = { viewModel.createAlumni(it) },
                 onBulkImport = { viewModel.bulkImport(it) },
             )
-            "Pending" -> AlumniPendingTab(
+            AlumniTab.Pending -> AlumniPendingTab(
                 state = state,
                 onApprove = { id -> viewModel.verifyAlumni(id, "approve") },
                 onDecline = { id -> viewModel.verifyAlumni(id, "decline") },
                 onRetry = { viewModel.loadPendingVerifications() },
             )
-            "Campaigns" -> AlumniCampaignsTab(
+            AlumniTab.Campaigns -> AlumniCampaignsTab(
                 state = state,
                 onOpenCampaign = onOpenCampaign,
                 onRetry = { viewModel.loadCampaigns() },
             )
-            "Donations" -> AlumniDonationsTab(
+            AlumniTab.Donations -> AlumniDonationsTab(
                 state = state,
                 onRetry = { viewModel.loadDonations() },
             )
-            "Mentorship" -> AlumniMentorshipTab(
+            AlumniTab.Mentorship -> AlumniMentorshipTab(
                 state = state,
                 onRetry = {
                     viewModel.loadMentorships()
                     viewModel.loadMentorshipRequests()
                 },
             )
-            "Analytics" -> AlumniAnalyticsTab(
+            AlumniTab.Analytics -> AlumniAnalyticsTab(
                 state = state,
                 onRetry = { viewModel.loadAnalytics() },
             )
@@ -144,14 +161,14 @@ private fun AlumniDirectoryTab(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             VButton(
-                text = "Add Alumni",
+                text = appString(StringKeys.ALM_ADD_ALUMNI),
                 onClick = { showAddDialog = true },
                 variant = VButtonVariant.Primary,
                 size = VButtonSize.Sm,
                 leading = { Icon(VIcons.Users, contentDescription = null, modifier = Modifier.size(14.dp)) },
             )
             VButton(
-                text = "Bulk Import",
+                text = appString(StringKeys.ALM_BULK_IMPORT),
                 onClick = { showImportDialog = true },
                 variant = VButtonVariant.Secondary,
                 size = VButtonSize.Sm,
@@ -173,8 +190,8 @@ private fun AlumniDirectoryTab(
         loading = state.isLoading,
         error = state.error,
         isEmpty = state.alumni.isEmpty(),
-        emptyTitle = "No alumni yet",
-        emptyBody = "Add alumni manually or use bulk import",
+        emptyTitle = appString(StringKeys.ALM_NO_ALUMNI),
+        emptyBody = appString(StringKeys.ALM_NO_ALUMNI_BODY),
         onRetry = onRetry,
     ) {
         Column(
@@ -230,70 +247,70 @@ private fun AddAlumniDialog(
     Dialog(onDismissRequest = onDismiss) {
         VCard {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Add Alumni", style = VTheme.type.h3, color = VTheme.colors.ink)
+                Text(appString(StringKeys.ALM_ADD_ALUMNI), style = VTheme.type.h3, color = VTheme.colors.ink)
 
                 VInput(
                     value = name,
                     onValueChange = { name = it },
-                    label = "Full name *",
-                    placeholder = "e.g. Priya Sharma",
+                    label = appString(StringKeys.ALM_FULL_NAME_REQ),
+                    placeholder = appString(StringKeys.ALM_NAME_PH),
                 )
                 VInput(
                     value = graduationYear,
                     onValueChange = { graduationYear = it.filter { ch -> ch.isDigit() }.take(4) },
-                    label = "Graduation year *",
-                    placeholder = "2024",
+                    label = appString(StringKeys.ALM_GRAD_YEAR_REQ),
+                    placeholder = appString(StringKeys.ALM_GRAD_YEAR_PH),
                     keyboardType = KeyboardType.Number,
                 )
                 VInput(
                     value = studentId,
                     onValueChange = { studentId = it },
-                    label = "Student ID (optional)",
-                    placeholder = "ADM-2020-001",
+                    label = appString(StringKeys.ALM_STUDENT_ID_OPT),
+                    placeholder = appString(StringKeys.ALM_STUDENT_ID_PH),
                 )
                 VInput(
                     value = email,
                     onValueChange = { email = it },
-                    label = "Email",
-                    placeholder = "priya@example.com",
+                    label = appString(StringKeys.ALM_EMAIL),
+                    placeholder = appString(StringKeys.ALM_EMAIL_PH),
                     keyboardType = KeyboardType.Email,
                 )
                 VInput(
                     value = phone,
                     onValueChange = { phone = it },
-                    label = "Phone",
-                    placeholder = "+91 98765 43210",
+                    label = appString(StringKeys.ALM_PHONE),
+                    placeholder = appString(StringKeys.ALM_PHONE_PH),
                     keyboardType = KeyboardType.Phone,
                 )
                 VInput(
                     value = profession,
                     onValueChange = { profession = it },
-                    label = "Profession",
-                    placeholder = "Software Engineer",
+                    label = appString(StringKeys.ALM_PROFESSION),
+                    placeholder = appString(StringKeys.ALM_PROFESSION_PH),
                 )
                 VInput(
                     value = company,
                     onValueChange = { company = it },
-                    label = "Company",
-                    placeholder = "Google",
+                    label = appString(StringKeys.ALM_COMPANY),
+                    placeholder = appString(StringKeys.ALM_COMPANY_PH),
                 )
                 VInput(
                     value = city,
                     onValueChange = { city = it },
-                    label = "City",
-                    placeholder = "Bengaluru",
+                    label = appString(StringKeys.ALM_CITY),
+                    placeholder = appString(StringKeys.ALM_CITY_PH),
                 )
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     VButton(
-                        text = "Cancel",
+                        text = appString(StringKeys.COMMON_BUTTON_CANCEL),
                         onClick = onDismiss,
                         variant = VButtonVariant.Ghost,
                         size = VButtonSize.Sm,
                         modifier = Modifier.weight(1f),
                     )
                     VButton(
-                        text = "Add",
+                        text = appString(StringKeys.ALM_ADD),
                         onClick = {
                             onSubmit(
                                 CreateAlumniRequest(
@@ -334,9 +351,9 @@ private fun BulkImportDialog(
     Dialog(onDismissRequest = onDismiss) {
         VCard {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Bulk Import Alumni", style = VTheme.type.h3, color = VTheme.colors.ink)
+                Text(appString(StringKeys.ALM_BULK_IMPORT_TITLE), style = VTheme.type.h3, color = VTheme.colors.ink)
                 Text(
-                    "Paste CSV data. Each line: name,graduationYear,email,phone,profession,company,city",
+                    appString(StringKeys.ALM_BULK_IMPORT_INSTR),
                     style = VTheme.type.caption,
                     color = VTheme.colors.ink3,
                 )
@@ -345,24 +362,24 @@ private fun BulkImportDialog(
                     value = csvText,
                     onValueChange = { csvText = it },
                     modifier = Modifier.fillMaxWidth().height(160.dp),
-                    placeholder = { Text("Priya Sharma,2024,priya@example.com,9876543210,Engineer,Google,Bengaluru\nRahul Verma,2023,...") },
+                    placeholder = { Text(appString(StringKeys.ALM_CSV_PH)) },
                     textStyle = VTheme.type.body,
                 )
 
                 if (rows.isNotEmpty()) {
-                    Text("${rows.size} row(s) ready to import", style = VTheme.type.caption, color = VTheme.colors.accent)
+                    Text(appString(StringKeys.ALM_ROWS_READY, "count" to rows.size), style = VTheme.type.caption, color = VTheme.colors.accent)
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     VButton(
-                        text = "Cancel",
+                        text = appString(StringKeys.COMMON_BUTTON_CANCEL),
                         onClick = onDismiss,
                         variant = VButtonVariant.Ghost,
                         size = VButtonSize.Sm,
                         modifier = Modifier.weight(1f),
                     )
                     VButton(
-                        text = "Import ${if (rows.isNotEmpty()) "(${rows.size})" else ""}",
+                        text = if (rows.isNotEmpty()) appString(StringKeys.ALM_IMPORT_WITH_COUNT, "count" to rows.size) else appString(StringKeys.ALM_IMPORT),
                         onClick = { onSubmit(rows) },
                         variant = VButtonVariant.Primary,
                         size = VButtonSize.Sm,
@@ -411,8 +428,8 @@ private fun AlumniPendingTab(
         loading = state.isLoading,
         error = state.error,
         isEmpty = state.pendingVerifications.isEmpty(),
-        emptyTitle = "No pending verifications",
-        emptyBody = "All alumni registrations have been reviewed",
+        emptyTitle = appString(StringKeys.ALM_NO_PENDING),
+        emptyBody = appString(StringKeys.ALM_NO_PENDING_BODY),
         onRetry = onRetry,
     ) {
         Column(
@@ -423,12 +440,12 @@ private fun AlumniPendingTab(
                 VCard(modifier = Modifier.fillMaxWidth()) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(alumni.name, style = VTheme.type.body, fontWeight = FontWeight.SemiBold, color = VTheme.colors.ink)
-                        Text("Batch ${alumni.graduationYear}", style = VTheme.type.caption, color = VTheme.colors.ink3)
+                        Text(appString(StringKeys.ALM_BATCH, "year" to alumni.graduationYear), style = VTheme.type.caption, color = VTheme.colors.ink3)
                         alumni.email?.let { Text(it, style = VTheme.type.caption, color = VTheme.colors.ink3) }
                         alumni.phone?.let { Text(it, style = VTheme.type.caption, color = VTheme.colors.ink3) }
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
-                            VChipButton(text = "Approve", onClick = { onApprove(alumni.id) })
-                            VChipButton(text = "Decline", onClick = { onDecline(alumni.id) }, isDestructive = true)
+                            VChipButton(text = appString(StringKeys.ALM_APPROVE), onClick = { onApprove(alumni.id) })
+                            VChipButton(text = appString(StringKeys.ALM_DECLINE), onClick = { onDecline(alumni.id) }, isDestructive = true)
                         }
                     }
                 }
@@ -447,8 +464,8 @@ private fun AlumniCampaignsTab(
         loading = state.isLoading,
         error = state.error,
         isEmpty = state.campaigns.isEmpty(),
-        emptyTitle = "No campaigns yet",
-        emptyBody = "Create a donation campaign to engage alumni",
+        emptyTitle = appString(StringKeys.ALM_NO_CAMPAIGNS),
+        emptyBody = appString(StringKeys.ALM_NO_CAMPAIGNS_BODY),
         onRetry = onRetry,
     ) {
         Column(
@@ -469,11 +486,11 @@ private fun AlumniCampaignsTab(
                             (campaign.amountRaised / campaign.targetAmount * 100).toInt()
                         } else 0
                         Text(
-                            "₹${campaign.amountRaised.toInt()} / ₹${campaign.targetAmount.toInt()} ($progress%) • ${campaign.donorCount} donors",
+                            appString(StringKeys.ALM_CAMPAIGN_PROGRESS, "raised" to campaign.amountRaised.toInt(), "target" to campaign.targetAmount.toInt(), "pct" to progress, "donors" to campaign.donorCount),
                             style = VTheme.type.caption,
                             color = VTheme.colors.ink3,
                         )
-                        Text("Status: ${campaign.status}", style = VTheme.type.caption, color = VTheme.colors.ink3)
+                        Text(appString(StringKeys.ALM_STATUS, "status" to campaign.status), style = VTheme.type.caption, color = VTheme.colors.ink3)
                     }
                 }
             }
@@ -490,8 +507,8 @@ private fun AlumniDonationsTab(
         loading = state.isLoading,
         error = state.error,
         isEmpty = state.donations.isEmpty(),
-        emptyTitle = "No donations recorded",
-        emptyBody = "Log donations from the alumni detail screen",
+        emptyTitle = appString(StringKeys.ALM_NO_DONATIONS),
+        emptyBody = appString(StringKeys.ALM_NO_DONATIONS_BODY),
         onRetry = onRetry,
     ) {
         Column(
@@ -503,10 +520,10 @@ private fun AlumniDonationsTab(
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(donation.alumniName, style = VTheme.type.body, fontWeight = FontWeight.SemiBold, color = VTheme.colors.ink)
                         Text("₹${donation.amount.toInt()}", style = VTheme.type.body, color = VTheme.colors.ink)
-                        donation.campaignTitle?.let { Text("Campaign: $it", style = VTheme.type.caption, color = VTheme.colors.ink3) }
-                        Text("Date: ${donation.donationDate}", style = VTheme.type.caption, color = VTheme.colors.ink3)
+                        donation.campaignTitle?.let { Text(appString(StringKeys.ALM_CAMPAIGN_LABEL, "title" to it), style = VTheme.type.caption, color = VTheme.colors.ink3) }
+                        Text(appString(StringKeys.ALM_DATE, "date" to donation.donationDate), style = VTheme.type.caption, color = VTheme.colors.ink3)
                         if (donation.is80gEligible) {
-                            Text("80G eligible • Receipt: ${donation.receiptNumber ?: "Pending"}", style = VTheme.type.caption, color = VTheme.colors.ink3)
+                            Text(appString(StringKeys.ALM_80G_ELIGIBLE, "receipt" to (donation.receiptNumber ?: appString(StringKeys.ALM_RECEIPT_PENDING))), style = VTheme.type.caption, color = VTheme.colors.ink3)
                         }
                     }
                 }
@@ -525,7 +542,7 @@ private fun AlumniAnalyticsTab(
         loading = state.isLoading,
         error = state.error,
         isEmpty = analytics == null,
-        emptyTitle = "No analytics data",
+        emptyTitle = appString(StringKeys.ALM_NO_ANALYTICS),
         onRetry = onRetry,
     ) {
         val a = analytics!!
@@ -533,31 +550,31 @@ private fun AlumniAnalyticsTab(
             Modifier.fillMaxWidth().padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            VSectionHeader("Overview")
-            AnalyticsStatCard(label = "Total Alumni", value = a.totalAlumni.toString())
-            AnalyticsStatCard(label = "Active (90 days)", value = a.activeAlumni.toString())
-            AnalyticsStatCard(label = "Pending Verifications", value = a.pendingVerifications.toString())
-            AnalyticsStatCard(label = "Engagement Rate", value = "${(a.engagementRate * 100).toInt() / 100.0}%")
-            AnalyticsStatCard(label = "Total Donations", value = "₹${a.totalDonations.toInt()}")
-            AnalyticsStatCard(label = "Active Campaigns", value = a.activeCampaigns.toString())
-            AnalyticsStatCard(label = "Active Mentorships", value = a.activeMentorships.toString())
+            VSectionHeader(appString(StringKeys.ALM_OVERVIEW))
+            AnalyticsStatCard(label = appString(StringKeys.ALM_TOTAL_ALUMNI), value = a.totalAlumni.toString())
+            AnalyticsStatCard(label = appString(StringKeys.ALM_ACTIVE_90), value = a.activeAlumni.toString())
+            AnalyticsStatCard(label = appString(StringKeys.ALM_PENDING_VERIFICATIONS), value = a.pendingVerifications.toString())
+            AnalyticsStatCard(label = appString(StringKeys.ALM_ENGAGEMENT_RATE), value = "${(a.engagementRate * 100).toInt() / 100.0}%")
+            AnalyticsStatCard(label = appString(StringKeys.ALM_TOTAL_DONATIONS), value = "₹${a.totalDonations.toInt()}")
+            AnalyticsStatCard(label = appString(StringKeys.ALM_ACTIVE_CAMPAIGNS), value = a.activeCampaigns.toString())
+            AnalyticsStatCard(label = appString(StringKeys.ALM_ACTIVE_MENTORSHIPS), value = a.activeMentorships.toString())
 
             if (a.byGraduationYear.isNotEmpty()) {
-                VSectionHeader("By Graduation Year")
+                VSectionHeader(appString(StringKeys.ALM_BY_GRAD_YEAR))
                 a.byGraduationYear.forEach { (year, count) ->
                     AnalyticsStatCard(label = year, value = count.toString())
                 }
             }
 
             if (a.byProfession.isNotEmpty()) {
-                VSectionHeader("By Profession")
+                VSectionHeader(appString(StringKeys.ALM_BY_PROFESSION))
                 a.byProfession.forEach { (profession, count) ->
                     AnalyticsStatCard(label = profession, value = count.toString())
                 }
             }
 
             if (a.byCity.isNotEmpty()) {
-                VSectionHeader("By City")
+                VSectionHeader(appString(StringKeys.ALM_BY_CITY))
                 a.byCity.forEach { (city, count) ->
                     AnalyticsStatCard(label = city, value = count.toString())
                 }
@@ -577,13 +594,13 @@ private fun AlumniMentorshipTab(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         // Active mentorships
-        VSectionHeader("Active Mentorships")
+        VSectionHeader(appString(StringKeys.ALM_ACTIVE_MENTORSHIPS))
         VStateHost(
             loading = state.isLoading,
             error = state.error,
             isEmpty = state.mentorships.isEmpty(),
-            emptyTitle = "No active mentorships",
-            emptyBody = "Mentorships will appear here once alumni start mentoring students",
+            emptyTitle = appString(StringKeys.ALM_NO_MENTORSHIPS),
+            emptyBody = appString(StringKeys.ALM_NO_MENTORSHIPS_BODY),
             onRetry = onRetry,
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -591,13 +608,13 @@ private fun AlumniMentorshipTab(
                     VCard(modifier = Modifier.fillMaxWidth()) {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(m.alumniName, style = VTheme.type.body, fontWeight = FontWeight.SemiBold, color = c.ink)
-                            Text("Mentoring: ${m.studentName}", style = VTheme.type.caption, color = c.ink3)
-                            Text("Status: ${m.status}", style = VTheme.type.caption, color = c.ink3)
-                            Text("Started: ${m.startDate}", style = VTheme.type.caption, color = c.ink3)
+                            Text(appString(StringKeys.ALM_MENTORING, "name" to m.studentName), style = VTheme.type.caption, color = c.ink3)
+                            Text(appString(StringKeys.ALM_STATUS, "status" to m.status), style = VTheme.type.caption, color = c.ink3)
+                            Text(appString(StringKeys.ALM_STARTED, "date" to m.startDate), style = VTheme.type.caption, color = c.ink3)
                             if (m.sessionCount > 0) {
-                                Text("Sessions: ${m.sessionCount}", style = VTheme.type.caption, color = c.ink3)
+                                Text(appString(StringKeys.ALM_SESSIONS, "count" to m.sessionCount), style = VTheme.type.caption, color = c.ink3)
                             }
-                            m.notes?.let { Text("Notes: $it", style = VTheme.type.caption, color = c.ink3) }
+                            m.notes?.let { Text(appString(StringKeys.ALM_NOTES, "notes" to it), style = VTheme.type.caption, color = c.ink3) }
                         }
                     }
                 }
@@ -605,13 +622,13 @@ private fun AlumniMentorshipTab(
         }
 
         // Pending requests
-        VSectionHeader("Mentorship Requests")
+        VSectionHeader(appString(StringKeys.ALM_MENTORSHIP_REQUESTS))
         VStateHost(
             loading = state.isLoading,
             error = state.error,
             isEmpty = state.mentorshipRequests.isEmpty(),
-            emptyTitle = "No mentorship requests",
-            emptyBody = "Student requests for alumni mentorship will appear here",
+            emptyTitle = appString(StringKeys.ALM_NO_MENTOR_REQUESTS),
+            emptyBody = appString(StringKeys.ALM_NO_MENTOR_REQUESTS_BODY),
             onRetry = onRetry,
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -619,11 +636,11 @@ private fun AlumniMentorshipTab(
                     VCard(modifier = Modifier.fillMaxWidth()) {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(r.alumniName, style = VTheme.type.body, fontWeight = FontWeight.SemiBold, color = c.ink)
-                            Text("From: ${r.studentName}", style = VTheme.type.caption, color = c.ink3)
-                            Text("Requested by: ${r.requestedByName}", style = VTheme.type.caption, color = c.ink3)
-                            r.expertiseArea?.let { Text("Expertise: $it", style = VTheme.type.caption, color = c.ink3) }
-                            r.message?.let { Text("Message: $it", style = VTheme.type.caption, color = c.ink3) }
-                            Text("Status: ${r.status}", style = VTheme.type.caption, color = c.ink3)
+                            Text(appString(StringKeys.ALM_FROM, "name" to r.studentName), style = VTheme.type.caption, color = c.ink3)
+                            Text(appString(StringKeys.ALM_REQUESTED_BY, "name" to r.requestedByName), style = VTheme.type.caption, color = c.ink3)
+                            r.expertiseArea?.let { Text(appString(StringKeys.ALM_EXPERTISE, "area" to it), style = VTheme.type.caption, color = c.ink3) }
+                            r.message?.let { Text(appString(StringKeys.ALM_MESSAGE, "msg" to it), style = VTheme.type.caption, color = c.ink3) }
+                            Text(appString(StringKeys.ALM_STATUS, "status" to r.status), style = VTheme.type.caption, color = c.ink3)
                         }
                     }
                 }
@@ -645,13 +662,13 @@ private fun AlumniRowCard(alumni: Alumni, onClick: () -> Unit) {
                     Text("★", style = VTheme.type.caption, color = VTheme.colors.accent)
                 }
             }
-            Text("Batch ${alumni.graduationYear}", style = VTheme.type.caption, color = VTheme.colors.ink3)
+            Text(appString(StringKeys.ALM_BATCH, "year" to alumni.graduationYear), style = VTheme.type.caption, color = VTheme.colors.ink3)
             alumni.currentProfession?.let {
                 Text("$it${alumni.company?.let { c -> " @ $c" }}", style = VTheme.type.caption, color = VTheme.colors.ink3)
             }
             alumni.city?.let { Text(it, style = VTheme.type.caption, color = VTheme.colors.ink3) }
             if (alumni.isMentor) {
-                Text("Mentor${alumni.mentorExpertise?.let { e -> " — $e" }}", style = VTheme.type.caption, color = VTheme.colors.accent)
+                Text(alumni.mentorExpertise?.let { e -> appString(StringKeys.ALM_MENTOR_EXPERTISE, "area" to e) } ?: appString(StringKeys.ALM_MENTOR), style = VTheme.type.caption, color = VTheme.colors.accent)
             }
         }
     }

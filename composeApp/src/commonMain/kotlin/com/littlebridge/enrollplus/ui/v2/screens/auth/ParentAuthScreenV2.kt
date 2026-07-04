@@ -24,6 +24,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -56,8 +58,8 @@ fun ParentAuthScreenV2(
     LaunchedEffect(state.isAuthSuccessful) { if (state.isAuthSuccessful) onAuthSuccess() }
 
     AuthScaffoldV2(
-        title = "Welcome, parent 👋",
-        subtitle = "Sign in with your mobile number to connect with your child's school.",
+        title = appString(StringKeys.AUTH_PARENT_WELCOME),
+        subtitle = appString(StringKeys.AUTH_PARENT_SUBTITLE),
         error = state.error,
         onBack = onBack,
         modifier = modifier,
@@ -68,7 +70,7 @@ fun ParentAuthScreenV2(
                 VInput(
                     value = state.identifier,
                     onValueChange = viewModel::onIdentifierChanged,
-                    label = "Mobile number",
+                    label = appString(StringKeys.AUTH_MOBILE_NUMBER),
                     placeholder = "+91 98XXX XXXXX",
                     leadingIcon = VIcons.Phone,
                     keyboardType = KeyboardType.Phone,
@@ -80,8 +82,8 @@ fun ParentAuthScreenV2(
                 VInput(
                     value = state.name,
                     onValueChange = viewModel::onNameChanged,
-                    label = "Your name",
-                    placeholder = "Full name",
+                    label = appString(StringKeys.AUTH_YOUR_NAME),
+                    placeholder = appString(StringKeys.AUTH_FULL_NAME_PH),
                     leadingIcon = VIcons.User,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -94,8 +96,8 @@ fun ParentAuthScreenV2(
                     VInput(
                         value = state.name,
                         onValueChange = viewModel::onNameChanged,
-                        label = "Your name",
-                        placeholder = "Full name",
+                        label = appString(StringKeys.AUTH_YOUR_NAME),
+                        placeholder = appString(StringKeys.AUTH_FULL_NAME_PH),
                         leadingIcon = VIcons.User,
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -104,15 +106,15 @@ fun ParentAuthScreenV2(
                 VInput(
                     value = state.otp,
                     onValueChange = viewModel::onOtpChanged,
-                    label = "OTP",
-                    placeholder = "6-digit code",
+                    label = appString(StringKeys.AUTH_OTP),
+                    placeholder = appString(StringKeys.AUTH_OTP_CODE_PH),
                     leadingIcon = VIcons.ShieldCheck,
                     keyboardType = KeyboardType.Number,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "We sent a code to ${state.identifier.ifBlank { "your phone" }}.",
+                    appString(StringKeys.AUTH_OTP_SENT_TO).replace("{phone}", state.identifier.ifBlank { appString(StringKeys.AUTH_YOUR_PHONE) }),
                     style = VTheme.type.caption.colored(c.ink3),
                 )
             }
@@ -121,8 +123,8 @@ fun ParentAuthScreenV2(
                 VInput(
                     value = state.otp,
                     onValueChange = viewModel::onOtpChanged,
-                    label = "OTP",
-                    placeholder = "6-digit code",
+                    label = appString(StringKeys.AUTH_OTP),
+                    placeholder = appString(StringKeys.AUTH_OTP_CODE_PH),
                     leadingIcon = VIcons.ShieldCheck,
                     keyboardType = KeyboardType.Number,
                     modifier = Modifier.fillMaxWidth(),
@@ -133,9 +135,9 @@ fun ParentAuthScreenV2(
         Spacer(Modifier.height(24.dp))
 
         val ctaLabel = when (state.step) {
-            AuthStep.Identifier -> "Send OTP"
-            AuthStep.Otp -> "Verify & Continue"
-            else -> "Continue"
+            AuthStep.Identifier -> appString(StringKeys.AUTH_SEND_OTP)
+            AuthStep.Otp -> appString(StringKeys.AUTH_VERIFY_CONTINUE)
+            else -> appString(StringKeys.COMMON_BUTTON_CONTINUE)
         }
         VButton(
             text = ctaLabel,

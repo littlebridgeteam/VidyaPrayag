@@ -44,6 +44,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VTag
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
@@ -76,7 +78,7 @@ fun DailyAttendanceScreenV2(
     Column(modifier.fillMaxSize().statusBarsPadding()
         .imePadding()
         .navigationBarsPadding()) {
-        VBackHeader(title = "Daily Attendance", onBack = onBack)
+        VBackHeader(title = appString(StringKeys.SCH_DAILY_ATTENDANCE), onBack = onBack)
         DailyAttendanceContent(
             state = state,
             onTypeChange = viewModel::setAttendanceType,
@@ -109,8 +111,8 @@ private fun DailyAttendanceContent(
     ) {
         // Type selector
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            VTag(text = "Students", active = isStudents, onClick = { onTypeChange("Students") })
-            VTag(text = "Faculty", active = !isStudents, onClick = { onTypeChange("Faculty") })
+            VTag(text = appString(StringKeys.SCH_STUDENTS), active = isStudents, onClick = { onTypeChange("Students") })
+            VTag(text = appString(StringKeys.SCH_FACULTY), active = !isStudents, onClick = { onTypeChange("Faculty") })
         }
 
         // Class picker (Students mode only)
@@ -133,11 +135,11 @@ private fun DailyAttendanceContent(
             loading = state.isLoading,
             error = state.errorMessage,
             isEmpty = state.attendees.isEmpty(),
-            emptyTitle = "No roster",
+            emptyTitle = appString(StringKeys.SCH_NO_ROSTER),
             emptyBody = if (isStudents)
-                "There are no students in ${state.selectedClass} yet."
+                appString(StringKeys.SCH_NO_STUDENTS_IN_CLASS, "className" to state.selectedClass)
             else
-                "No faculty roster is available.",
+                appString(StringKeys.SCH_NO_FACULTY_ROSTER),
             emptyIcon = VIcons.Users,
             onRetry = onRetry,
         ) {
@@ -145,7 +147,7 @@ private fun DailyAttendanceContent(
             VCard {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     Column(Modifier.weight(1f)) {
-                        Text("Present today", style = VTheme.type.label.colored(c.ink3))
+                        Text(appString(StringKeys.SCH_PRESENT_TODAY), style = VTheme.type.label.colored(c.ink3))
                         Spacer(Modifier.height(4.dp))
                         Text(
                             "${state.presentCount} / ${state.totalCount}",
@@ -156,7 +158,7 @@ private fun DailyAttendanceContent(
                 }
             }
 
-            VSectionHeader(title = if (isStudents) "STUDENTS" else "FACULTY")
+            VSectionHeader(title = if (isStudents) appString(StringKeys.SCH_STUDENTS_HEADER) else appString(StringKeys.SCH_FACULTY_HEADER))
 
             VCard {
                 state.attendees.forEachIndexed { i, a ->

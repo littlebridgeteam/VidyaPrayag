@@ -57,6 +57,8 @@ import com.littlebridge.enrollplus.ui.v2.theme.VMotion
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import com.littlebridge.enrollplus.ui.v2.theme.vElevation
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -139,7 +141,7 @@ private fun NotificationsContent(
         .imePadding()
         .navigationBarsPadding()) {
         VBackHeader(
-            title = "Notifications",
+            title = appString(StringKeys.NOTIF_TITLE),
             onBack = onBack,
             // React action: `<Check 14/> Mark all` — a text+icon button in teal-deep / 700.
             // Added `Clear` button to remove read notifications.
@@ -157,7 +159,7 @@ private fun NotificationsContent(
                     ) {
                         Icon(VIcons.Check, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(14.dp))
                         Text(
-                            "Mark all",
+                            appString(StringKeys.NOTIF_MARK_ALL),
                             style = VTheme.type.caption.colored(c.tealDeep).copy(fontWeight = FontWeight.Bold),
                             maxLines = 1,
                         )
@@ -237,7 +239,7 @@ private fun NotificationsContent(
                         Column(Modifier.weight(1f)) {
                             // React: 12sp / 0.05em / uppercase / opacity .7 — NOT the 11sp label token.
                             Text(
-                                "INBOX",
+                                appString(StringKeys.NOTIF_INBOX),
                                 style = VTheme.type.body.colored(Color.White.copy(alpha = 0.7f)).copy(
                                     fontSize = 12.sp,
                                     letterSpacing = 0.05.em,
@@ -256,7 +258,7 @@ private fun NotificationsContent(
                                 )
                                 Spacer(Modifier.width(6.dp))
                                 Text(
-                                    "unread",
+                                    appString(StringKeys.NOTIF_UNREAD_LABEL),
                                     style = VTheme.type.body.colored(Color.White.copy(alpha = 0.7f)),
                                     modifier = Modifier.padding(bottom = 3.dp),
                                 )
@@ -272,9 +274,9 @@ private fun NotificationsContent(
                 Modifier.padding(start = 20.dp, end = 20.dp, bottom = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(d.sm),
             ) {
-                FilterPill(label = "All", active = !filterUnread) { filterUnread = false }
+                FilterPill(label = appString(StringKeys.COMMON_ALL), active = !filterUnread) { filterUnread = false }
                 FilterPill(
-                    label = if (unread > 0) "Unread · $unread" else "Unread",
+                    label = if (unread > 0) "${appString(StringKeys.NOTIF_FILTER_UNREAD)} · $unread" else appString(StringKeys.NOTIF_FILTER_UNREAD),
                     active = filterUnread,
                 ) { filterUnread = true }
             }
@@ -290,8 +292,8 @@ private fun NotificationsContent(
                     error = state.error,
                     isEmpty = visible.isEmpty(),
                     emptyIcon = VIcons.Check,
-                    emptyTitle = "You're all caught up",
-                    emptyBody = if (filterUnread) "No unread notifications." else "No notifications yet.",
+                    emptyTitle = appString(StringKeys.NOTIF_ALL_CAUGHT_UP),
+                    emptyBody = if (filterUnread) appString(StringKeys.NOTIF_NO_UNREAD) else appString(StringKeys.NOTIF_NONE_YET),
                     onRetry = onRetry,
                 ) {
                     visible.forEachIndexed { i, n ->
@@ -335,7 +337,7 @@ private fun NotificationsContent(
                     Spacer(Modifier.width(d.sm))
                     // React: 13 / 600 — slightly larger than the 12/500 caption token.
                     Text(
-                        "Notification preferences",
+                        appString(StringKeys.NOTIF_PREFERENCES),
                         style = VTheme.type.bodyStrong.colored(c.ink2).copy(fontSize = 13.sp),
                     )
                 }

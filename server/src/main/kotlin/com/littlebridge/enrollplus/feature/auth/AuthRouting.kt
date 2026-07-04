@@ -145,7 +145,8 @@ data class AuthTokenResponse(
     @SerialName("profile_completed") val profileCompleted: Boolean,
     // RA-54: tells the client whether a forced password change is pending
     // (provisioned teachers on first login). Defaults false for everyone else.
-    @SerialName("must_change_password") val mustChangePassword: Boolean = false
+    @SerialName("must_change_password") val mustChangePassword: Boolean = false,
+    @SerialName("language_pref") val languagePref: String = "en",
 )
 
 @Serializable
@@ -457,7 +458,8 @@ fun Route.authRouting() {
                 AuthTokenResponse(
                     token = token, refreshToken = refresh,
                     userId = newId.toString(), name = req.name,
-                    role = role, profileCompleted = false
+                    role = role, profileCompleted = false,
+                    languagePref = "en"
                 ),
                 message = "Account created successfully"
             )
@@ -558,7 +560,8 @@ fun Route.authRouting() {
                 AuthTokenResponse(
                     token = token, refreshToken = refresh,
                     userId = newUserId.toString(), name = req.name.trim(),
-                    role = "school_admin", profileCompleted = false
+                    role = "school_admin", profileCompleted = false,
+                    languagePref = "en"
                 ),
                 message = "School registered. Continue with onboarding."
             )
@@ -680,7 +683,8 @@ fun Route.authRouting() {
                     token = token, refreshToken = refresh,
                     userId = userId.toString(), name = name, role = role,
                     profileCompleted = row[AppUsersTable.profileCompleted],
-                    mustChangePassword = row[AppUsersTable.mustChangePassword]
+                    mustChangePassword = row[AppUsersTable.mustChangePassword],
+                    languagePref = row[AppUsersTable.languagePref]
                 ),
                 message = "Login successful"
             )
@@ -762,7 +766,8 @@ fun Route.authRouting() {
                     name = user[AppUsersTable.fullName],
                     role = user[AppUsersTable.role],
                     profileCompleted = user[AppUsersTable.profileCompleted],
-                    mustChangePassword = user[AppUsersTable.mustChangePassword]
+                    mustChangePassword = user[AppUsersTable.mustChangePassword],
+                    languagePref = user[AppUsersTable.languagePref]
                 ),
                 message = "Token refreshed"
             )

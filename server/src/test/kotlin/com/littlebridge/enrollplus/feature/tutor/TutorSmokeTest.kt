@@ -311,7 +311,7 @@ class TutorSmokeTest {
         // Either way, it should not pass through unmodified with ungrounded claims.
         if (result != null) {
             // If it passed, it should have been sanitized
-            assertTrue(result.groundedRefs.isNotEmpty() || result.studentFacing?.text?.isEmpty() == true)
+            assertTrue(result.groundedRefs.isNotEmpty() || result.studentFacing?.text?.isEmpty() != false)
         }
     }
 

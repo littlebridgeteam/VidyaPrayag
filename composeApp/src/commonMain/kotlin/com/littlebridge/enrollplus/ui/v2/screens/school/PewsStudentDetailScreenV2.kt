@@ -70,6 +70,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -84,7 +86,7 @@ fun PewsStudentDetailScreenV2(
     LaunchedEffect(studentCode) { viewModel.load(studentCode) }
 
     Column(modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
-        VBackHeader(title = "Student Signal", onBack = onBack)
+        VBackHeader(title = appString(StringKeys.PEWS_STUDENT_SIGNAL), onBack = onBack)
         PewsStudentDetailContent(
             state = state,
             onRetry = { viewModel.load(studentCode) },
@@ -119,8 +121,8 @@ private fun PewsStudentDetailContent(
         error = state.error,
         isEmpty = state.isEmpty,
         emptyIcon = VIcons.ShieldCheck,
-        emptyTitle = "No signal on record",
-        emptyBody = "This student has no early-warning snapshot yet.",
+        emptyTitle = appString(StringKeys.PEWS_NO_SIGNAL),
+        emptyBody = appString(StringKeys.PEWS_NO_SIGNAL_DESC),
         onRetry = onRetry,
         modifier = modifier,
     ) {
@@ -136,7 +138,7 @@ private fun PewsStudentDetailContent(
             AiExplanationCard(cur)
             if (state.interventions.isNotEmpty()) {
                 Text(
-                    "INTERVENTIONS",
+                    appString(StringKeys.PEWS_INTERVENTIONS),
                     style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
                 )
                 state.interventions.forEach { iv ->
@@ -164,9 +166,9 @@ private fun PewsStudentDetailContent(
 private fun HeaderCard(s: PewsStudentDto) {
     val c = VTheme.colors
     val (tone, levelLabel) = when (s.riskLevel) {
-        "high" -> VBadgeTone.Danger to "High risk"
-        "medium" -> VBadgeTone.Warning to "Medium risk"
-        else -> VBadgeTone.Success to "Watch"
+        "high" -> VBadgeTone.Danger to appString(StringKeys.PEWS_HIGH_RISK)
+        "medium" -> VBadgeTone.Warning to appString(StringKeys.PEWS_MEDIUM_RISK)
+        else -> VBadgeTone.Success to appString(StringKeys.PEWS_WATCH)
     }
     VCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -181,12 +183,12 @@ private fun HeaderCard(s: PewsStudentDto) {
             VBadge(text = levelLabel, tone = tone)
             if (s.hasOpenIntervention) {
                 Spacer(Modifier.width(4.dp))
-                VBadge(text = "Under intervention", tone = VBadgeTone.Neutral)
+                VBadge(text = appString(StringKeys.PEWS_UNDER_INTERVENTION), tone = VBadgeTone.Neutral)
             }
         }
         Spacer(Modifier.height(8.dp))
         Text(
-            "Risk score ${s.riskScore} · as of ${s.runDate}",
+            appString(StringKeys.PEWS_RISK_SCORE, "score" to s.riskScore, "date" to s.runDate),
             style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp),
         )
     }
@@ -197,9 +199,9 @@ private fun MetricsCard(s: PewsStudentDto) {
     val c = VTheme.colors
     VCard {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Metric("Attendance", s.attendancePct?.let { "$it%" } ?: "—", s.attendanceSlope, Modifier.weight(1f))
-            Metric("Marks", s.marksPct?.let { "$it%" } ?: "—", s.marksSlope, Modifier.weight(1f))
-            Metric("Leaves", "${s.leaveCount}", null, Modifier.weight(1f))
+            Metric(appString(StringKeys.PEWS_ATTENDANCE), s.attendancePct?.let { "$it%" } ?: "—", s.attendanceSlope, Modifier.weight(1f))
+            Metric(appString(StringKeys.PEWS_MARKS), s.marksPct?.let { "$it%" } ?: "—", s.marksSlope, Modifier.weight(1f))
+            Metric(appString(StringKeys.PEWS_LEAVES), "${s.leaveCount}", null, Modifier.weight(1f))
         }
     }
 }
@@ -222,7 +224,7 @@ private fun Metric(label: String, value: String, slope: Double?, modifier: Modif
                     modifier = Modifier.size(13.dp),
                 )
                 Text(
-                    if (falling) "falling" else "rising",
+                    if (falling) appString(StringKeys.PEWS_FALLING) else appString(StringKeys.PEWS_RISING),
                     style = VTheme.type.caption.colored(if (falling) c.dangerInk else c.successInk).copy(fontSize = 10.sp),
                 )
             }
@@ -234,7 +236,7 @@ private fun Metric(label: String, value: String, slope: Double?, modifier: Modif
 private fun SignalsCard(s: PewsStudentDto) {
     val c = VTheme.colors
     VCard {
-        Text("WHY THIS STUDENT", style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp))
+        Text(appString(StringKeys.PEWS_WHY_STUDENT), style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp))
         Spacer(Modifier.height(10.dp))
         s.signals.forEach { sig ->
             Row(
@@ -265,7 +267,7 @@ private fun AiExplanationCard(s: PewsStudentDto) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Icon(VIcons.Sparkles, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(14.dp))
             Text(
-                "AI EXPLANATION",
+                appString(StringKeys.PEWS_AI_EXPLANATION),
                 style = VTheme.type.label.colored(c.tealDeep).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
             )
         }
@@ -275,17 +277,17 @@ private fun AiExplanationCard(s: PewsStudentDto) {
         }
         if (!cause.isNullOrBlank()) {
             Spacer(Modifier.height(8.dp))
-            Text("Likely cause", style = VTheme.type.caption.colored(c.tealDeep).copy(fontWeight = FontWeight.SemiBold, fontSize = 11.sp))
+            Text(appString(StringKeys.PEWS_LIKELY_CAUSE), style = VTheme.type.caption.colored(c.tealDeep).copy(fontWeight = FontWeight.SemiBold, fontSize = 11.sp))
             Text(cause, style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.sp, lineHeight = 19.sp))
         }
         if (!rec.isNullOrBlank()) {
             Spacer(Modifier.height(8.dp))
-            Text("Suggested action", style = VTheme.type.caption.colored(c.tealDeep).copy(fontWeight = FontWeight.SemiBold, fontSize = 11.sp))
+            Text(appString(StringKeys.PEWS_SUGGESTED_ACTION), style = VTheme.type.caption.colored(c.tealDeep).copy(fontWeight = FontWeight.SemiBold, fontSize = 11.sp))
             Text(rec, style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.sp, lineHeight = 19.sp))
         }
         s.aiProviderUsed?.let {
             Spacer(Modifier.height(8.dp))
-            Text("Generated by $it · review before acting", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp))
+            Text(appString(StringKeys.PEWS_GENERATED_BY, "provider" to it), style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp))
         }
     }
 }
@@ -331,8 +333,8 @@ private fun InterventionCard(
             }
             if (iv.escalationLevel > 0) {
                 val escLabel = when (iv.escalationLevel) {
-                    2 -> "ESCALATED"
-                    else -> "REMINDED"
+                    2 -> appString(StringKeys.PEWS_ESCALATED)
+                    else -> appString(StringKeys.PEWS_REMINDED)
                 }
                 val escTone = if (iv.escalationLevel >= 2) VBadgeTone.Danger else VBadgeTone.Warning
                 VBadge(text = escLabel, tone = escTone)
@@ -346,9 +348,9 @@ private fun InterventionCard(
         iv.slaDays?.let { sla ->
             Spacer(Modifier.height(6.dp))
             val slaText = if (iv.followUpDate != null) {
-                "SLA: $sla days · follow-up ${iv.followUpDate}"
+                appString(StringKeys.PEWS_SLA_FOLLOWUP, "days" to sla, "date" to iv.followUpDate)
             } else {
-                "SLA: $sla days"
+                appString(StringKeys.PEWS_SLA_DAYS, "days" to sla)
             }
             Text(
                 slaText,
@@ -368,7 +370,7 @@ private fun InterventionCard(
             if (steps.isNotEmpty()) {
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "PLAN",
+                    appString(StringKeys.PEWS_PLAN),
                     style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 10.sp),
                 )
                 Spacer(Modifier.height(4.dp))
@@ -406,7 +408,7 @@ private fun InterventionCard(
                         Icon(VIcons.Sparkles, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(12.dp))
                         Spacer(Modifier.size(4.dp))
                         Text(
-                            "PARENT MESSAGE (${draftLang?.uppercase() ?: "EN"})",
+                            appString(StringKeys.PEWS_PARENT_MESSAGE, "lang" to (draftLang?.uppercase() ?: "EN")),
                             style = VTheme.type.label.colored(c.tealDeep).copy(fontWeight = FontWeight.Bold, fontSize = 10.sp),
                             modifier = Modifier.weight(1f),
                         )
@@ -421,7 +423,7 @@ private fun InterventionCard(
         }
 
         Spacer(Modifier.height(4.dp))
-        Text("Opened ${iv.openedAt}", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp))
+        Text(appString(StringKeys.PEWS_OPENED, "date" to iv.openedAt), style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp))
 
         val open = iv.status == "open" || iv.status == "in_progress"
         val outcome = iv.outcome
@@ -431,14 +433,14 @@ private fun InterventionCard(
             if (iv.status == "open") {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     VButton(
-                        text = "Start",
+                        text = appString(StringKeys.PEWS_START),
                         onClick = { onStart(iv.id) },
                         variant = VButtonVariant.Primary,
                         size = VButtonSize.Sm,
                         enabled = !isUpdating,
                     )
                     VButton(
-                        text = "Dismiss",
+                        text = appString(StringKeys.PEWS_DISMISS),
                         onClick = { onDismiss(iv.id) },
                         variant = VButtonVariant.Ghost,
                         size = VButtonSize.Sm,
@@ -449,9 +451,9 @@ private fun InterventionCard(
                 // In-progress: show who initiated it
                 val initiatorLabel = iv.initiatedByName?.let { name ->
                     val role = iv.initiatedByRole?.let { r ->
-                        if (r in listOf("school_admin", "admin")) "Admin" else "Teacher"
+                        if (r in listOf("school_admin", "admin")) appString(StringKeys.PEWS_ADMIN) else appString(StringKeys.PEWS_TEACHER)
                     } ?: ""
-                    "✓ Initiated by $name${if (role.isNotBlank()) " ($role)" else ""}"
+                    appString(StringKeys.PEWS_INITIATED_BY, "name" to name, "role" to role)
                 }
                 if (initiatorLabel != null) {
                     Spacer(Modifier.height(6.dp))
@@ -465,7 +467,7 @@ private fun InterventionCard(
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         if (hasDraft) {
                             VButton(
-                                text = "Send to parent",
+                                text = appString(StringKeys.PEWS_SEND_TO_PARENT),
                                 onClick = { onSendParentMessage(iv.id) },
                                 variant = VButtonVariant.Primary,
                                 size = VButtonSize.Sm,
@@ -479,7 +481,7 @@ private fun InterventionCard(
                                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                             ) {
                                 VButton(
-                                    text = "Draft parent message",
+                                    text = appString(StringKeys.PEWS_DRAFT_PARENT_MSG),
                                     onClick = { onGenerateDraft(iv.id, draftLang) },
                                     variant = VButtonVariant.Secondary,
                                     size = VButtonSize.Sm,
@@ -511,7 +513,7 @@ private fun InterventionCard(
                             }
                         }
                         VButton(
-                            text = "Dismiss",
+                            text = appString(StringKeys.PEWS_DISMISS),
                             onClick = { onDismiss(iv.id) },
                             variant = VButtonVariant.Ghost,
                             size = VButtonSize.Sm,
@@ -521,21 +523,21 @@ private fun InterventionCard(
                 } else {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         VButton(
-                            text = "Mark improved",
+                            text = appString(StringKeys.PEWS_MARK_IMPROVED),
                             onClick = { onMarkDone(iv.id, "improved") },
                             variant = VButtonVariant.Primary,
                             size = VButtonSize.Sm,
                             enabled = !isUpdating,
                         )
                         VButton(
-                            text = "No change",
+                            text = appString(StringKeys.PEWS_NO_CHANGE),
                             onClick = { onMarkDone(iv.id, "unchanged") },
                             variant = VButtonVariant.Secondary,
                             size = VButtonSize.Sm,
                             enabled = !isUpdating,
                         )
                         VButton(
-                            text = "Dismiss",
+                            text = appString(StringKeys.PEWS_DISMISS),
                             onClick = { onDismiss(iv.id) },
                             variant = VButtonVariant.Ghost,
                             size = VButtonSize.Sm,
@@ -546,7 +548,7 @@ private fun InterventionCard(
             }
         } else if (!outcome.isNullOrBlank()) {
             Spacer(Modifier.height(6.dp))
-            Text("Outcome: $outcome", style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp))
+            Text(appString(StringKeys.PEWS_OUTCOME, "outcome" to outcome), style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp))
         }
     }
 }
@@ -574,7 +576,7 @@ private fun parsePlanSteps(planJson: String): List<String> {
 private fun HistoryCard(history: List<PewsStudentDto>) {
     val c = VTheme.colors
     VCard {
-        Text("HISTORY", style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp))
+        Text(appString(StringKeys.PEWS_HISTORY), style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp))
         Spacer(Modifier.height(8.dp))
         history.take(8).forEach { h ->
             Row(

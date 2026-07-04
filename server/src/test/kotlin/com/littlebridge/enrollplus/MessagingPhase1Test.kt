@@ -131,7 +131,7 @@ class MessagingPhase1Test {
     fun messagingCore_hasSeqAssignment() {
         val src = source("feature/school/MessagingCore.kt")
         assertTrue(src.contains("nextSeqForConversation"), "nextSeqForConversation must exist")
-        assertTrue(src.contains("MessagesTable.seq.max()"), "seq must use MAX(seq)+1 pattern")
+        assertTrue(src.contains("ConversationSeqTable"), "seq must use ConversationSeqTable counter pattern")
     }
 
     @Test

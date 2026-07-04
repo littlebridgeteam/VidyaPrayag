@@ -33,6 +33,8 @@ import com.littlebridge.enrollplus.ui.v2.screens.VLoadingState
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -67,7 +69,7 @@ fun ParentProgressScreen(
             Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
-            VBackHeader(title = "Tutor Progress", onBack = onBack)
+            VBackHeader(title = appString(StringKeys.TUT_PROGRESS_TITLE), onBack = onBack)
 
             when {
                 state.isLoading -> VLoadingState()
@@ -76,8 +78,8 @@ fun ParentProgressScreen(
                     onRetry = { viewModel.loadProgress() },
                 )
                 state.progressCard == null -> VEmptyState(
-                    title = "No progress data",
-                    body = "Your child's tutor progress will appear here once they start using the AI tutor.",
+                    title = appString(StringKeys.TUT_NO_PROGRESS),
+                    body = appString(StringKeys.TUT_NO_PROGRESS_DESC),
                     icon = VIcons.BookOpen,
                 )
                 else -> ProgressContent(state.progressCard!!)
@@ -100,9 +102,9 @@ private fun ProgressContent(card: ProgressCardDto) {
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceAround,
                 ) {
-                    StatBlock("Doubts Resolved", card.totalDoubtsResolved.toString())
-                    StatBlock("Answers Given", card.totalAnswersGiven.toString())
-                    StatBlock("Sessions", card.totalSessions.toString())
+                    StatBlock(appString(StringKeys.TUT_DOUBTS_RESOLVED), card.totalDoubtsResolved.toString())
+                    StatBlock(appString(StringKeys.TUT_ANSWERS_GIVEN), card.totalAnswersGiven.toString())
+                    StatBlock(appString(StringKeys.TUT_SESSIONS), card.totalSessions.toString())
                 }
             }
         }
@@ -122,12 +124,12 @@ private fun ProgressContent(card: ProgressCardDto) {
                         }
                         Column(modifier = Modifier.padding(start = 12.dp)) {
                             Text(
-                                "Safety flags: ${card.safetyFlags}",
+                                appString(StringKeys.TUT_SAFETY_FLAGS).replace("{count}", card.safetyFlags.toString()),
                                 style = VTheme.type.body.colored(c.ink),
                                 fontWeight = FontWeight.SemiBold,
                             )
                             Text(
-                                "The school has been notified. Contact the class teacher for details.",
+                                appString(StringKeys.TUT_SAFETY_NOTIFIED),
                                 style = VTheme.type.caption.colored(c.ink3),
                             )
                         }
@@ -139,7 +141,7 @@ private fun ProgressContent(card: ProgressCardDto) {
         if (card.topics.isNotEmpty()) {
             item {
                 Text(
-                    "Topic Mastery (${card.topics.size})",
+                    appString(StringKeys.TUT_TOPIC_MASTERY).replace("{count}", card.topics.size.toString()),
                     style = VTheme.type.h3.colored(c.ink),
                     modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
                 )
@@ -183,7 +185,7 @@ private fun TopicProgressCard(topic: TopicProgressDto) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    "Topic: ${topic.topicId.take(8)}...",
+                    appString(StringKeys.TUT_TOPIC_LABEL).replace("{topic}", topic.topicId.take(8)),
                     style = VTheme.type.body.colored(c.ink),
                     fontWeight = FontWeight.Medium,
                 )
@@ -204,15 +206,15 @@ private fun TopicProgressCard(topic: TopicProgressDto) {
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    "Attempts: ${topic.attempts}",
+                    appString(StringKeys.TUT_ATTEMPTS).replace("{count}", topic.attempts.toString()),
                     style = VTheme.type.caption.colored(c.ink3),
                 )
                 Text(
-                    "Correct: ${topic.correct}",
+                    appString(StringKeys.TUT_CORRECT_COUNT).replace("{count}", topic.correct.toString()),
                     style = VTheme.type.caption.colored(c.ink3),
                 )
                 Text(
-                    "Source: ${topic.source}",
+                    appString(StringKeys.TUT_SOURCE_LABEL).replace("{source}", topic.source),
                     style = VTheme.type.caption.colored(c.ink3),
                 )
             }

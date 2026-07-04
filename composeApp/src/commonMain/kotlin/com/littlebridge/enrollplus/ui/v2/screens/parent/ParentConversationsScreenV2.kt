@@ -40,6 +40,8 @@ import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentMessageViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VMotion
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
@@ -103,7 +105,7 @@ fun ParentConversationsScreenV2(
             .padding(bottom = 130.dp),
     ) {
         Text(
-            "Conversations",
+            appString(StringKeys.PCV_CONVERSATIONS),
             style = VTheme.type.h1.colored(c.ink),
             modifier = Modifier.padding(bottom = 14.dp),
         )
@@ -186,14 +188,14 @@ private fun ConversationsSegmentBar(
         }
         Row(Modifier.fillMaxSize()) {
             SegmentTab(
-                label = "Messages",
+                label = appString(StringKeys.PCV_MESSAGES),
                 active = selected == ConversationsSegment.Messages,
                 badge = messagesBadge,
                 onClick = { onSelect(ConversationsSegment.Messages) },
                 modifier = Modifier.weight(1f),
             )
             SegmentTab(
-                label = "Announcements",
+                label = appString(StringKeys.PCV_ANNOUNCEMENTS),
                 active = selected == ConversationsSegment.Announcements,
                 badge = 0,
                 onClick = { onSelect(ConversationsSegment.Announcements) },

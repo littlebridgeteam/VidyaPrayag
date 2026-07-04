@@ -55,6 +55,8 @@ import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -75,7 +77,7 @@ fun HealthRecordsScreenV2(
             .imePadding()
             .navigationBarsPadding(),
     ) {
-        VBackHeader(title = "Health — $studentName", onBack = onBack)
+        VBackHeader(title = appString(StringKeys.HLTH_TITLE, "name" to studentName), onBack = onBack)
 
         VStateHost(
             loading = state.isLoading,
@@ -108,11 +110,12 @@ private fun HealthRecordsContent(
     onClearMessages: () -> Unit,
 ) {
     val c = VTheme.colors
-    var tab by remember { mutableStateOf("Profile") }
-    val tabs = listOf("Profile", "Immunizations", "Incidents")
+    val tabKeys = listOf(StringKeys.HLTH_TAB_PROFILE, StringKeys.HLTH_TAB_IMMUNIZATIONS, StringKeys.HLTH_TAB_INCIDENTS)
+    var tabIdx by remember { mutableStateOf(0) }
+    val tabLabels = tabKeys.map { appString(it) }
 
     Column(Modifier.fillMaxSize()) {
-        VTopTabs(tabs = tabs, selected = tab, onSelect = { tab = it })
+        VTopTabs(tabs = tabLabels, selected = tabLabels[tabIdx], onSelect = { label -> tabIdx = tabLabels.indexOf(label) })
 
         if (state.infoMessage != null || state.saveError != null) {
             val msg = state.infoMessage ?: state.saveError
@@ -138,19 +141,19 @@ private fun HealthRecordsContent(
             }
         }
 
-        when (tab) {
-            "Profile" -> ProfileTab(
+        when (tabIdx) {
+            0 -> ProfileTab(
                 profile = state.profile,
                 isSaving = state.isSaving,
                 onSave = onSaveProfile,
             )
-            "Immunizations" -> ImmunizationsTab(
+            1 -> ImmunizationsTab(
                 immunizations = state.immunizations,
                 studentId = studentId,
                 isSaving = state.isSaving,
                 onAdd = onAddImmunization,
             )
-            "Incidents" -> IncidentsTab(
+            2 -> IncidentsTab(
                 incidents = state.incidents,
                 studentId = studentId,
                 isSaving = state.isSaving,
@@ -188,61 +191,61 @@ private fun ProfileTab(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        VSectionHeader("Basic Info")
+        VSectionHeader(appString(StringKeys.HLTH_BASIC_INFO))
         VCard {
             Column(
                 Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                VInput(value = bloodGroup, onValueChange = { bloodGroup = it }, label = "Blood Group", placeholder = "e.g. O+")
+                VInput(value = bloodGroup, onValueChange = { bloodGroup = it }, label = appString(StringKeys.HLTH_BLOOD_GROUP), placeholder = "e.g. O+")
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Box(Modifier.weight(1f)) {
-                        VInput(value = heightCm, onValueChange = { v -> heightCm = v.filter { it.isDigit() || it == '.' }.take(6) }, label = "Height (cm)", placeholder = "e.g. 140")
+                        VInput(value = heightCm, onValueChange = { v -> heightCm = v.filter { it.isDigit() || it == '.' }.take(6) }, label = appString(StringKeys.HLTH_HEIGHT), placeholder = "e.g. 140")
                     }
                     Box(Modifier.weight(1f)) {
-                        VInput(value = weightKg, onValueChange = { v -> weightKg = v.filter { it.isDigit() || it == '.' }.take(6) }, label = "Weight (kg)", placeholder = "e.g. 35")
+                        VInput(value = weightKg, onValueChange = { v -> weightKg = v.filter { it.isDigit() || it == '.' }.take(6) }, label = appString(StringKeys.HLTH_WEIGHT), placeholder = "e.g. 35")
                     }
                 }
             }
         }
 
-        VSectionHeader("Medical Info")
+        VSectionHeader(appString(StringKeys.HLTH_MEDICAL_INFO))
         VCard {
             Column(
                 Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                VInput(value = allergies, onValueChange = { allergies = it }, label = "Allergies (JSON array)", placeholder = "[\"Peanuts\"]")
-                VInput(value = chronicConditions, onValueChange = { chronicConditions = it }, label = "Chronic Conditions (JSON array)", placeholder = "[\"Asthma\"]")
-                VInput(value = medications, onValueChange = { medications = it }, label = "Medications (JSON array)", placeholder = "[\"Inhaler\"]")
+                VInput(value = allergies, onValueChange = { allergies = it }, label = appString(StringKeys.HLTH_ALLERGIES), placeholder = "[\"Peanuts\"]")
+                VInput(value = chronicConditions, onValueChange = { chronicConditions = it }, label = appString(StringKeys.HLTH_CHRONIC_CONDITIONS), placeholder = "[\"Asthma\"]")
+                VInput(value = medications, onValueChange = { medications = it }, label = appString(StringKeys.HLTH_MEDICATIONS), placeholder = "[\"Inhaler\"]")
             }
         }
 
-        VSectionHeader("Emergency Contact")
+        VSectionHeader(appString(StringKeys.HLTH_EMERGENCY_CONTACT))
         VCard {
             Column(
                 Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                VInput(value = emergencyContactName, onValueChange = { emergencyContactName = it }, label = "Contact Name", placeholder = "e.g. Raj Patel")
-                VInput(value = emergencyContactPhone, onValueChange = { emergencyContactPhone = it }, label = "Contact Phone", placeholder = "e.g. 9876543210")
+                VInput(value = emergencyContactName, onValueChange = { emergencyContactName = it }, label = appString(StringKeys.HLTH_CONTACT_NAME), placeholder = "e.g. Raj Patel")
+                VInput(value = emergencyContactPhone, onValueChange = { emergencyContactPhone = it }, label = appString(StringKeys.HLTH_CONTACT_PHONE), placeholder = "e.g. 9876543210")
             }
         }
 
-        VSectionHeader("Doctor Info")
+        VSectionHeader(appString(StringKeys.HLTH_DOCTOR_INFO))
         VCard {
             Column(
                 Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                VInput(value = doctorName, onValueChange = { doctorName = it }, label = "Doctor Name", placeholder = "e.g. Dr. Sharma")
-                VInput(value = doctorPhone, onValueChange = { doctorPhone = it }, label = "Doctor Phone", placeholder = "e.g. 9876543210")
+                VInput(value = doctorName, onValueChange = { doctorName = it }, label = appString(StringKeys.HLTH_DOCTOR_NAME), placeholder = "e.g. Dr. Sharma")
+                VInput(value = doctorPhone, onValueChange = { doctorPhone = it }, label = appString(StringKeys.HLTH_DOCTOR_PHONE), placeholder = "e.g. 9876543210")
             }
         }
 
         Spacer(Modifier.height(4.dp))
         VButton(
-            text = "Save Health Profile",
+            text = appString(StringKeys.HLTH_SAVE_PROFILE),
             onClick = {
                 onSave(
                     UpsertHealthProfileRequest(
@@ -291,9 +294,9 @@ private fun ImmunizationsTab(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        VSectionHeader("Immunization Records") {
+        VSectionHeader(appString(StringKeys.HLTH_IMMUNIZATION_RECORDS)) {
             VButton(
-                text = "Add",
+                text = appString(StringKeys.HLTH_ADD),
                 onClick = { showAdd = !showAdd },
                 size = VButtonSize.Sm,
                 variant = VButtonVariant.Secondary,
@@ -307,13 +310,13 @@ private fun ImmunizationsTab(
                     Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    VInput(value = vaccineName, onValueChange = { vaccineName = it }, label = "Vaccine Name", placeholder = "e.g. MMR")
-                    VInput(value = doseNumber, onValueChange = { v -> doseNumber = v.filter { it.isDigit() }.take(3) }, label = "Dose Number", placeholder = "1")
-                    VInput(value = dateAdministered, onValueChange = { dateAdministered = it }, label = "Date Administered", placeholder = "YYYY-MM-DD")
-                    VInput(value = nextDueDate, onValueChange = { nextDueDate = it }, label = "Next Due Date (optional)", placeholder = "YYYY-MM-DD")
-                    VInput(value = administeredBy, onValueChange = { administeredBy = it }, label = "Administered By (optional)", placeholder = "e.g. Dr. Sharma")
+                    VInput(value = vaccineName, onValueChange = { vaccineName = it }, label = appString(StringKeys.HLTH_VACCINE_NAME), placeholder = "e.g. MMR")
+                    VInput(value = doseNumber, onValueChange = { v -> doseNumber = v.filter { it.isDigit() }.take(3) }, label = appString(StringKeys.HLTH_DOSE_NUMBER), placeholder = "1")
+                    VInput(value = dateAdministered, onValueChange = { dateAdministered = it }, label = appString(StringKeys.HLTH_DATE_ADMINISTERED), placeholder = "YYYY-MM-DD")
+                    VInput(value = nextDueDate, onValueChange = { nextDueDate = it }, label = appString(StringKeys.HLTH_NEXT_DUE), placeholder = "YYYY-MM-DD")
+                    VInput(value = administeredBy, onValueChange = { administeredBy = it }, label = appString(StringKeys.HLTH_ADMINISTERED_BY), placeholder = "e.g. Dr. Sharma")
                     VButton(
-                        text = "Save Record",
+                        text = appString(StringKeys.HLTH_SAVE_RECORD),
                         onClick = {
                             onAdd(
                                 AddImmunizationRequest(
@@ -342,7 +345,7 @@ private fun ImmunizationsTab(
         }
 
         if (immunizations.isEmpty()) {
-            VEmptyHealthState(message = "No immunization records yet")
+            VEmptyHealthState(message = appString(StringKeys.HLTH_NO_IMMUNIZATIONS))
         } else {
             immunizations.forEach { imm ->
                 VCard {
@@ -353,12 +356,12 @@ private fun ImmunizationsTab(
                     ) {
                         Column(Modifier.weight(1f)) {
                             Text(imm.vaccineName, style = VTheme.type.bodyStrong.colored(c.ink))
-                            Text("Dose ${imm.doseNumber} · ${imm.dateAdministered}", style = VTheme.type.caption.colored(c.ink2))
+                            Text(appString(StringKeys.HLTH_DOSE, "number" to imm.doseNumber.toString(), "date" to imm.dateAdministered), style = VTheme.type.caption.colored(c.ink2))
                             if (!imm.administeredBy.isNullOrBlank()) {
-                                Text("By ${imm.administeredBy}", style = VTheme.type.caption.colored(c.ink3))
+                                Text(appString(StringKeys.HLTH_BY, "name" to imm.administeredBy), style = VTheme.type.caption.colored(c.ink3))
                             }
                             if (!imm.nextDueDate.isNullOrBlank()) {
-                                Text("Next due: ${imm.nextDueDate}", style = VTheme.type.caption.colored(c.tealDeep))
+                                Text(appString(StringKeys.HLTH_NEXT_DUE_LABEL, "date" to imm.nextDueDate), style = VTheme.type.caption.colored(c.tealDeep))
                             }
                         }
                         Box(
@@ -401,9 +404,9 @@ private fun IncidentsTab(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        VSectionHeader("Health Incidents") {
+        VSectionHeader(appString(StringKeys.HLTH_HEALTH_INCIDENTS)) {
             VButton(
-                text = "Log",
+                text = appString(StringKeys.HLTH_LOG),
                 onClick = { showAdd = !showAdd },
                 size = VButtonSize.Sm,
                 variant = VButtonVariant.Secondary,
@@ -417,14 +420,14 @@ private fun IncidentsTab(
                     Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    VInput(value = date, onValueChange = { date = it }, label = "Date", placeholder = "YYYY-MM-DD")
-                    VInput(value = time, onValueChange = { time = it }, label = "Time (optional)", placeholder = "e.g. 14:30")
-                    VInput(value = description, onValueChange = { description = it }, label = "Description", placeholder = "What happened?")
-                    VInput(value = treatment, onValueChange = { treatment = it }, label = "Treatment (optional)", placeholder = "e.g. Rest + cold compress")
-                    VInput(value = medicationGiven, onValueChange = { medicationGiven = it }, label = "Medication Given (optional)", placeholder = "e.g. Paracetamol 250mg")
-                    VInput(value = severity, onValueChange = { severity = it }, label = "Severity", placeholder = "minor, moderate, or major")
+                    VInput(value = date, onValueChange = { date = it }, label = appString(StringKeys.HLTH_DATE), placeholder = "YYYY-MM-DD")
+                    VInput(value = time, onValueChange = { time = it }, label = appString(StringKeys.HLTH_TIME), placeholder = "e.g. 14:30")
+                    VInput(value = description, onValueChange = { description = it }, label = appString(StringKeys.HLTH_DESCRIPTION), placeholder = "What happened?")
+                    VInput(value = treatment, onValueChange = { treatment = it }, label = appString(StringKeys.HLTH_TREATMENT), placeholder = "e.g. Rest + cold compress")
+                    VInput(value = medicationGiven, onValueChange = { medicationGiven = it }, label = appString(StringKeys.HLTH_MEDICATION_GIVEN), placeholder = "e.g. Paracetamol 250mg")
+                    VInput(value = severity, onValueChange = { severity = it }, label = appString(StringKeys.HLTH_SEVERITY), placeholder = "minor, moderate, or major")
                     VButton(
-                        text = "Log Incident",
+                        text = appString(StringKeys.HLTH_LOG_INCIDENT),
                         onClick = {
                             onLog(
                                 LogIncidentRequest(
@@ -455,7 +458,7 @@ private fun IncidentsTab(
         }
 
         if (incidents.isEmpty()) {
-            VEmptyHealthState(message = "No health incidents logged")
+            VEmptyHealthState(message = appString(StringKeys.HLTH_NO_INCIDENTS))
         } else {
             incidents.forEach { inc ->
                 VCard {
@@ -470,21 +473,21 @@ private fun IncidentsTab(
                         ) {
                             Text(inc.date, style = VTheme.type.bodyStrong.colored(c.ink))
                             val pair = when (inc.severity) {
-                                "major" -> "MAJOR" to VBadgeTone.Danger
-                                "moderate" -> "MODERATE" to VBadgeTone.Warning
-                                else -> "MINOR" to VBadgeTone.Success
+                                "major" -> appString(StringKeys.HLTH_SEVERITY_MAJOR) to VBadgeTone.Danger
+                                "moderate" -> appString(StringKeys.HLTH_SEVERITY_MODERATE) to VBadgeTone.Warning
+                                else -> appString(StringKeys.HLTH_SEVERITY_MINOR) to VBadgeTone.Success
                             }
                             VBadge(text = pair.first, tone = pair.second)
                         }
                         Text(inc.description, style = VTheme.type.body.colored(c.ink))
                         if (!inc.treatment.isNullOrBlank()) {
-                            Text("Treatment: ${inc.treatment}", style = VTheme.type.caption.colored(c.ink2))
+                            Text(appString(StringKeys.HLTH_TREATMENT_LABEL, "treatment" to inc.treatment), style = VTheme.type.caption.colored(c.ink2))
                         }
                         if (!inc.medicationGiven.isNullOrBlank()) {
-                            Text("Medication: ${inc.medicationGiven}", style = VTheme.type.caption.colored(c.ink2))
+                            Text(appString(StringKeys.HLTH_MEDICATION_LABEL, "medication" to inc.medicationGiven), style = VTheme.type.caption.colored(c.ink2))
                         }
                         if (!inc.time.isNullOrBlank()) {
-                            Text("Time: ${inc.time}", style = VTheme.type.caption.colored(c.ink3))
+                            Text(appString(StringKeys.HLTH_TIME_LABEL, "time" to inc.time), style = VTheme.type.caption.colored(c.ink3))
                         }
                         Row(
                             Modifier.fillMaxWidth().padding(top = 4.dp),
@@ -494,11 +497,11 @@ private fun IncidentsTab(
                             if (inc.parentNotified) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                     Icon(VIcons.Check, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(14.dp))
-                                    Text("Parent notified", style = VTheme.type.caption.colored(c.tealDeep))
+                                    Text(appString(StringKeys.HLTH_PARENT_NOTIFIED), style = VTheme.type.caption.colored(c.tealDeep))
                                 }
                             } else {
                                 VButton(
-                                    text = "Mark Notified",
+                                    text = appString(StringKeys.HLTH_MARK_NOTIFIED),
                                     onClick = { onMarkNotified(inc.id) },
                                     size = VButtonSize.Sm,
                                     variant = VButtonVariant.Ghost,

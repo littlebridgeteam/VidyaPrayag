@@ -41,6 +41,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.feature.pews.domain.model.PewsInterventionDto
 import com.littlebridge.enrollplus.feature.pews.domain.model.PewsStudentDto
 import com.littlebridge.enrollplus.feature.pews.presentation.TeacherPewsState
@@ -53,6 +54,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
@@ -79,7 +81,7 @@ fun TeacherPewsScreenV2(
     val state by viewModel.state.collectAsStateV2()
 
     Column(modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
-        VBackHeader(title = "Needs Attention", onBack = onBack)
+        VBackHeader(title = appString(StringKeys.TC_NEEDS_ATTENTION), onBack = onBack)
         TeacherPewsContent(
             state = state,
             onRetry = viewModel::load,
@@ -114,8 +116,8 @@ private fun TeacherPewsContent(
         error = state.error,
         isEmpty = state.isEmpty,
         emptyIcon = VIcons.ShieldCheck,
-        emptyTitle = "Your classes are on track",
-        emptyBody = "No student in your assigned classes needs attention right now.",
+        emptyTitle = appString(StringKeys.TC_CLASSES_ON_TRACK),
+        emptyBody = appString(StringKeys.TC_NO_STUDENTS_NEED_ATTENTION),
         onRetry = onRetry,
         modifier = modifier,
     ) {
@@ -162,9 +164,9 @@ private fun TeacherStudentCard(
 ) {
     val c = VTheme.colors
     val (tone, levelLabel) = when (s.riskLevel) {
-        "high" -> VBadgeTone.Danger to "High"
-        "medium" -> VBadgeTone.Warning to "Medium"
-        else -> VBadgeTone.Success to "Watch"
+        "high" -> VBadgeTone.Danger to appString(StringKeys.TC_RISK_HIGH)
+        "medium" -> VBadgeTone.Warning to appString(StringKeys.TC_RISK_MEDIUM)
+        else -> VBadgeTone.Success to appString(StringKeys.TC_RISK_WATCH)
     }
     VCard {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -182,16 +184,16 @@ private fun TeacherStudentCard(
             VBadge(text = levelLabel, tone = tone)
             if (s.hasOpenIntervention) {
                 Spacer(Modifier.width(4.dp))
-                VBadge(text = "Under intervention", tone = VBadgeTone.Neutral)
+                VBadge(text = appString(StringKeys.TC_UNDER_INTERVENTION), tone = VBadgeTone.Neutral)
             }
         }
 
         // deterministic metrics
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            s.attendancePct?.let { MiniStat("Attendance", "$it%") }
-            s.marksPct?.let { MiniStat("Marks", "$it%") }
-            if (s.leaveCount > 0) MiniStat("Leaves", "${s.leaveCount}")
+            s.attendancePct?.let { MiniStat(appString(StringKeys.TEACHER_ATTENDANCE), "$it%") }
+            s.marksPct?.let { MiniStat(appString(StringKeys.TC_MARKS), "$it%") }
+            if (s.leaveCount > 0) MiniStat(appString(StringKeys.TC_LEAVES), "${s.leaveCount}")
         }
 
         // signals
@@ -226,7 +228,7 @@ private fun TeacherStudentCard(
                         Text(iv.actionType.replace('_', ' '), style = VTheme.type.label.colored(c.ink).copy(fontWeight = FontWeight.SemiBold, fontSize = 12.sp), modifier = Modifier.weight(1f))
                         // Escalation badge
                         if (iv.escalationLevel > 0) {
-                            val escLabel = if (iv.escalationLevel >= 2) "ESCALATED" else "REMINDED"
+                            val escLabel = if (iv.escalationLevel >= 2) appString(StringKeys.TC_ESCALATED) else appString(StringKeys.TC_REMINDED)
                             val escTone = if (iv.escalationLevel >= 2) VBadgeTone.Danger else VBadgeTone.Warning
                             VBadge(text = escLabel, tone = escTone)
                         }
@@ -235,10 +237,10 @@ private fun TeacherStudentCard(
                     iv.urgency?.let { urg ->
                         Spacer(Modifier.height(4.dp))
                         val urgColor = when (urg) { "high" -> c.dangerInk; "medium" -> c.warningInk; else -> c.ink3 }
-                        Text("Urgency: ${urg}", style = VTheme.type.caption.colored(urgColor).copy(fontSize = 11.sp))
+                        Text(appString(StringKeys.TC_URGENCY_COLON, "level" to urg), style = VTheme.type.caption.colored(urgColor).copy(fontSize = 11.sp))
                     }
                     iv.slaDays?.let { sla ->
-                        Text("SLA: $sla days${iv.followUpDate?.let { " · follow-up $it" } ?: ""}", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp))
+                        Text(appString(StringKeys.TC_SLA_DAYS, "days" to sla.toString(), "followup" to (iv.followUpDate ?: "")), style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp))
                     }
                     if (!notes.isNullOrBlank()) {
                         Spacer(Modifier.height(4.dp))
@@ -249,7 +251,7 @@ private fun TeacherStudentCard(
                         val steps = parseTeacherPlanSteps(planJson)
                         if (steps.isNotEmpty()) {
                             Spacer(Modifier.height(6.dp))
-                            Text("PLAN", style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 10.sp))
+                            Text(appString(StringKeys.TC_PLAN), style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 10.sp))
                             Spacer(Modifier.height(4.dp))
                             steps.forEachIndexed { i, step ->
                                 Text("${i + 1}. $step", style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 11.sp, lineHeight = 15.sp))
@@ -270,7 +272,7 @@ private fun TeacherStudentCard(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(VIcons.Sparkles, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(12.dp))
                                     Spacer(Modifier.size(4.dp))
-                                    Text("PARENT MESSAGE (${draftLang?.uppercase() ?: "EN"})", style = VTheme.type.label.colored(c.tealDeep).copy(fontWeight = FontWeight.Bold, fontSize = 10.sp), modifier = Modifier.weight(1f))
+                                    Text(appString(StringKeys.TC_PARENT_MESSAGE, "lang" to (draftLang?.uppercase() ?: "EN")), style = VTheme.type.label.colored(c.tealDeep).copy(fontWeight = FontWeight.Bold, fontSize = 10.sp), modifier = Modifier.weight(1f))
                                     if (parentDrafts[iv.id] != null) {
                                         VButton("✕", { onClearDraft(iv.id) }, variant = VButtonVariant.Ghost, size = VButtonSize.Sm)
                                     }
@@ -289,16 +291,16 @@ private fun TeacherStudentCard(
                     if (iv.status == "open") {
                         // Open: Start + Dismiss
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            VButton("Start", { onStart(iv.id) }, variant = VButtonVariant.Primary, size = VButtonSize.Sm, enabled = !isUpdating)
-                            VButton("Dismiss", { onDismiss(iv.id) }, variant = VButtonVariant.Ghost, size = VButtonSize.Sm, enabled = !isUpdating)
+                            VButton(appString(StringKeys.TC_START), { onStart(iv.id) }, variant = VButtonVariant.Primary, size = VButtonSize.Sm, enabled = !isUpdating)
+                            VButton(appString(StringKeys.TC_DISMISS), { onDismiss(iv.id) }, variant = VButtonVariant.Ghost, size = VButtonSize.Sm, enabled = !isUpdating)
                         }
                     } else if (iv.status == "in_progress") {
                         // In-progress: show who initiated it
                         val initiatorLabel = iv.initiatedByName?.let { name ->
                             val role = iv.initiatedByRole?.let { r ->
-                                if (r in listOf("school_admin", "admin")) "Admin" else "Teacher"
+                                if (r in listOf("school_admin", "admin")) appString(StringKeys.TC_ADMIN) else appString(StringKeys.TEACHER_TITLE)
                             } ?: ""
-                            "✓ Initiated by $name${if (role.isNotBlank()) " ($role)" else ""}"
+                            appString(StringKeys.TC_INITIATED_BY, "name" to name, "role" to role)
                         }
                         if (initiatorLabel != null) {
                             Spacer(Modifier.height(6.dp))
@@ -313,7 +315,7 @@ private fun TeacherStudentCard(
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 if (hasDraft) {
                                     VButton(
-                                        "Send to parent",
+                                        appString(StringKeys.TC_SEND_TO_PARENT),
                                         { onSendParentMessage(iv.id) },
                                         variant = VButtonVariant.Primary,
                                         size = VButtonSize.Sm,
@@ -327,7 +329,7 @@ private fun TeacherStudentCard(
                                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                                     ) {
                                         VButton(
-                                            "Draft parent message",
+                                            appString(StringKeys.TC_DRAFT_PARENT_MESSAGE),
                                             { onGenerateDraft(iv.id, draftLang) },
                                             variant = VButtonVariant.Secondary,
                                             size = VButtonSize.Sm,
@@ -358,17 +360,17 @@ private fun TeacherStudentCard(
                                         }
                                     }
                                 }
-                                VButton("Dismiss", { onDismiss(iv.id) }, variant = VButtonVariant.Ghost, size = VButtonSize.Sm, enabled = !isUpdating)
+                                VButton(appString(StringKeys.TC_DISMISS), { onDismiss(iv.id) }, variant = VButtonVariant.Ghost, size = VButtonSize.Sm, enabled = !isUpdating)
                             }
                         } else {
                             // Non-parent action: mark outcome
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                VButton("Mark improved", { onMarkDone(iv.id, "improved") }, variant = VButtonVariant.Primary, size = VButtonSize.Sm, enabled = !isUpdating)
-                                VButton("No change", { onMarkDone(iv.id, "unchanged") }, variant = VButtonVariant.Secondary, size = VButtonSize.Sm, enabled = !isUpdating)
+                                VButton(appString(StringKeys.TC_MARK_IMPROVED), { onMarkDone(iv.id, "improved") }, variant = VButtonVariant.Primary, size = VButtonSize.Sm, enabled = !isUpdating)
+                                VButton(appString(StringKeys.TC_NO_CHANGE), { onMarkDone(iv.id, "unchanged") }, variant = VButtonVariant.Secondary, size = VButtonSize.Sm, enabled = !isUpdating)
                             }
                             Spacer(Modifier.height(6.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                VButton("Dismiss", { onDismiss(iv.id) }, variant = VButtonVariant.Ghost, size = VButtonSize.Sm, enabled = !isUpdating)
+                                VButton(appString(StringKeys.TC_DISMISS), { onDismiss(iv.id) }, variant = VButtonVariant.Ghost, size = VButtonSize.Sm, enabled = !isUpdating)
                             }
                         }
                     }

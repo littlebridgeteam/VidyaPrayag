@@ -36,6 +36,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import org.koin.compose.viewmodel.koinViewModel
@@ -67,7 +69,7 @@ fun DigitalIdCardScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            VBackHeader(title = "Digital ID Card", onBack = onBack)
+            VBackHeader(title = appString(StringKeys.DID_DIGITAL_ID_CARD), onBack = onBack)
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -85,7 +87,7 @@ fun DigitalIdCardScreen(
                 card.digitalCardUrl?.let { url ->
                     AsyncImage(
                         model = url,
-                        contentDescription = "Digital ID Card",
+                        contentDescription = appString(StringKeys.DID_DIGITAL_ID_CARD),
                         contentScale = ContentScale.Fit,
                         modifier = Modifier
                             .padding(horizontal = 24.dp)
@@ -99,7 +101,7 @@ fun DigitalIdCardScreen(
                 // Only show flip button when using fallback (no server image)
                 if (card.digitalCardUrl == null) {
                     VButton(
-                        text = if (showFront) "Show Back" else "Show Front",
+                        text = if (showFront) appString(StringKeys.DID_SHOW_BACK) else appString(StringKeys.DID_SHOW_FRONT),
                         onClick = { showFront = !showFront },
                         variant = VButtonVariant.Secondary,
                     )
@@ -107,7 +109,7 @@ fun DigitalIdCardScreen(
                 }
 
                 Text(
-                    text = "Scan the QR code on the back to verify profile",
+                    text = appString(StringKeys.DID_SCAN_QR_BACK),
                     style = VTheme.type.caption,
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
@@ -115,17 +117,17 @@ fun DigitalIdCardScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Valid till: ${card.validTill ?: "N/A"}",
+                    text = appString(StringKeys.DID_VALID_TILL, "date" to (card.validTill ?: "N/A")),
                     style = VTheme.type.bodyStrong,
                 )
             } else if (state.isLoading) {
                 Text(
-                    text = "Loading ID card...",
+                    text = appString(StringKeys.DID_LOADING),
                     style = VTheme.type.body,
                 )
             } else if (state.error == null) {
                 Text(
-                    text = "No ID card found. Ask admin to generate.",
+                    text = appString(StringKeys.DID_NO_ID_CARD),
                     style = VTheme.type.body,
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
@@ -171,7 +173,7 @@ private fun DigitalCard(card: IdCardDto, showFront: Boolean) {
                 )
             } else {
                 Text(
-                    text = "QR Code",
+                    text = appString(StringKeys.DID_QR_CODE),
                     style = VTheme.type.bodyStrong,
                 )
                 Spacer(modifier = Modifier.height(12.dp))
@@ -181,12 +183,12 @@ private fun DigitalCard(card: IdCardDto, showFront: Boolean) {
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "Scan to verify profile",
+                    text = appString(StringKeys.DID_SCAN_VERIFY),
                     style = VTheme.type.caption,
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "Valid till: ${card.validTill ?: "N/A"}",
+                    text = appString(StringKeys.DID_VALID_TILL, "date" to (card.validTill ?: "N/A")),
                     style = VTheme.type.caption,
                 )
             }

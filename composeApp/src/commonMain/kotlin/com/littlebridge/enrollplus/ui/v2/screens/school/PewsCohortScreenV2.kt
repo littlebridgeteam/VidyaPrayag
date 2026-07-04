@@ -65,6 +65,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
@@ -86,11 +88,11 @@ fun PewsCohortScreenV2(
 
     Column(modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
         VBackHeader(
-            title = "Early Warning",
+            title = appString(StringKeys.SCH_EARLY_WARNING),
             onBack = onBack,
             action = {
                 VButton(
-                    text = if (state.isRunning) "…" else "Recompute",
+                    text = if (state.isRunning) "…" else appString(StringKeys.SCH_RECOMPUTE),
                     onClick = viewModel::runNow,
                     variant = VButtonVariant.Secondary,
                     size = VButtonSize.Sm,
@@ -133,9 +135,8 @@ private fun PewsCohortContent(
         error = state.error,
         isEmpty = nothingToShow,
         emptyIcon = VIcons.ShieldCheck,
-        emptyTitle = "No students need attention",
-        emptyBody = "Every student in the selected band is on track right now. " +
-            "Tap Recompute to refresh, or widen the band filter.",
+        emptyTitle = appString(StringKeys.SCH_NO_STUDENTS_ATTENTION),
+        emptyBody = appString(StringKeys.SCH_NO_STUDENTS_ATTENTION_DESC),
         onRetry = onRetry,
         modifier = modifier,
     ) {
@@ -203,27 +204,27 @@ private fun EffectivenessCard(eff: PewsEffectivenessDto) {
     val improvedPct = if (outcomeTotal > 0) (eff.improved * 100) / outcomeTotal else 0
     VCard {
         Text(
-            "EFFECTIVENESS",
+            appString(StringKeys.SCH_EFFECTIVENESS_HEADER),
             style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            "What the intervention loop is achieving",
+            appString(StringKeys.SCH_EFFECTIVENESS_LOOP_DESC),
             style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp),
         )
         Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            EffStat("Open", "${eff.open}", c.ink, Modifier.weight(1f))
-            EffStat("Resolved", "$resolved", c.ink, Modifier.weight(1f))
-            EffStat("Improved", if (outcomeTotal > 0) "$improvedPct%" else "—", c.successInk, Modifier.weight(1f))
+            EffStat(appString(StringKeys.SCH_OPEN), "${eff.open}", c.ink, Modifier.weight(1f))
+            EffStat(appString(StringKeys.SCH_RESOLVED), "$resolved", c.ink, Modifier.weight(1f))
+            EffStat(appString(StringKeys.SCH_IMPROVED), if (outcomeTotal > 0) "$improvedPct%" else "—", c.successInk, Modifier.weight(1f))
         }
         if (outcomeTotal > 0) {
             Spacer(Modifier.height(12.dp))
-            OutcomeBar("Improved", eff.improved, eff.total, c.success)
+            OutcomeBar(appString(StringKeys.SCH_IMPROVED), eff.improved, eff.total, c.success)
             Spacer(Modifier.height(6.dp))
-            OutcomeBar("No change", eff.unchanged, eff.total, c.ink3.copy(alpha = 0.5f))
+            OutcomeBar(appString(StringKeys.SCH_NO_CHANGE), eff.unchanged, eff.total, c.ink3.copy(alpha = 0.5f))
             Spacer(Modifier.height(6.dp))
-            OutcomeBar("Worsened", eff.worsened, eff.total, c.danger)
+            OutcomeBar(appString(StringKeys.SCH_WORSENED), eff.worsened, eff.total, c.danger)
         }
     }
 }
@@ -290,18 +291,18 @@ private fun ConfigCard(
         ) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    "CONFIGURATION",
+                    appString(StringKeys.SCH_CONFIGURATION),
                     style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "Thresholds, run frequency & what's shared",
+                    appString(StringKeys.SCH_CONFIGURATION_DESC),
                     style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp),
                 )
             }
             if (dirty) {
                 VButton(
-                    text = if (isSaving) "…" else "Save",
+                    text = if (isSaving) "…" else appString(StringKeys.SCH_SAVE),
                     onClick = { onSave(draft) },
                     variant = VButtonVariant.Primary,
                     size = VButtonSize.Sm,
@@ -312,33 +313,33 @@ private fun ConfigCard(
         Spacer(Modifier.height(12.dp))
 
         ConfigToggle(
-            label = "Relative thresholds",
-            hint = "Use z-scores across the cohort rather than fixed floors",
+            label = appString(StringKeys.SCH_RELATIVE_THRESHOLDS),
+            hint = appString(StringKeys.SCH_RELATIVE_THRESHOLDS_HINT),
             checked = draft.useRelativeThresholds,
             onChange = { draft = draft.copy(useRelativeThresholds = it) },
         )
         ConfigToggle(
-            label = "AI narrative",
-            hint = "Let the AI write a plain-language explanation of the signals",
+            label = appString(StringKeys.SCH_AI_NARRATIVE),
+            hint = appString(StringKeys.SCH_AI_NARRATIVE_HINT),
             checked = draft.aiNarrativeEnabled,
             onChange = { draft = draft.copy(aiNarrativeEnabled = it) },
         )
         ConfigToggle(
-            label = "Share with parents",
-            hint = "When on, parents see a gentle, label-free nudge for their child",
+            label = appString(StringKeys.SCH_SHARE_WITH_PARENTS),
+            hint = appString(StringKeys.SCH_SHARE_WITH_PARENTS_HINT),
             checked = draft.parentShareEnabled,
             onChange = { draft = draft.copy(parentShareEnabled = it) },
         )
         // Run frequency pills
         Spacer(Modifier.height(10.dp))
         Text(
-            "Run frequency",
+            appString(StringKeys.SCH_RUN_FREQUENCY),
             style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
         )
         Spacer(Modifier.height(6.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FreqChip("Daily", "daily", draft.runFrequency, { draft = draft.copy(runFrequency = it) }, Modifier.weight(1f))
-            FreqChip("Weekly", "weekly", draft.runFrequency, { draft = draft.copy(runFrequency = it) }, Modifier.weight(1f))
+            FreqChip(appString(StringKeys.SCH_DAILY), "daily", draft.runFrequency, { draft = draft.copy(runFrequency = it) }, Modifier.weight(1f))
+            FreqChip(appString(StringKeys.SCH_WEEKLY), "weekly", draft.runFrequency, { draft = draft.copy(runFrequency = it) }, Modifier.weight(1f))
         }
     }
 }
@@ -412,19 +413,19 @@ private fun RiskBandSummary(cohort: PewsCohortDto) {
     val c = VTheme.colors
     VCard {
         Text(
-            "RISK BAND",
+            appString(StringKeys.SCH_RISK_BAND),
             style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
         )
         Spacer(Modifier.height(10.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            BandCount("High", cohort.high, c.danger, c.dangerInk, Modifier.weight(1f))
-            BandCount("Medium", cohort.medium, c.warning, c.warningInk, Modifier.weight(1f))
-            BandCount("Watch", cohort.watch, c.success, c.successInk, Modifier.weight(1f))
+            BandCount(appString(StringKeys.SCH_HIGH), cohort.high, c.danger, c.dangerInk, Modifier.weight(1f))
+            BandCount(appString(StringKeys.SCH_MEDIUM), cohort.medium, c.warning, c.warningInk, Modifier.weight(1f))
+            BandCount(appString(StringKeys.SCH_WATCH), cohort.watch, c.success, c.successInk, Modifier.weight(1f))
         }
         cohort.runDate?.let {
             Spacer(Modifier.height(10.dp))
             Text(
-                "As of $it",
+                appString(StringKeys.SCH_AS_OF, "date" to it),
                 style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp),
             )
         }
@@ -453,9 +454,9 @@ private fun BandCount(
 private fun BandFilterRow(selected: String, onSelect: (String) -> Unit) {
     val c = VTheme.colors
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        FilterChip("All", "watch", selected, onSelect, Modifier.weight(1f))
-        FilterChip("Medium+", "medium", selected, onSelect, Modifier.weight(1f))
-        FilterChip("High only", "high", selected, onSelect, Modifier.weight(1f))
+        FilterChip(appString(StringKeys.SCH_ALL), "watch", selected, onSelect, Modifier.weight(1f))
+        FilterChip(appString(StringKeys.SCH_MEDIUM_PLUS), "medium", selected, onSelect, Modifier.weight(1f))
+        FilterChip(appString(StringKeys.SCH_HIGH_ONLY), "high", selected, onSelect, Modifier.weight(1f))
     }
 }
 
@@ -496,7 +497,7 @@ private fun AiDisabledNote() {
     ) {
         Icon(VIcons.AlertCircle, contentDescription = null, tint = c.ink3, modifier = Modifier.size(16.dp))
         Text(
-            "AI explanations are off. Rows still show the real attendance, marks and leave signals.",
+            appString(StringKeys.SCH_AI_DISABLED_NOTE),
             style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp, lineHeight = 17.sp),
         )
     }
@@ -519,7 +520,7 @@ private fun AllOnTrackNote() {
     ) {
         Icon(VIcons.ShieldCheck, contentDescription = null, tint = c.accent, modifier = Modifier.size(18.dp))
         Text(
-            "No students need attention in this band right now. Settings below still apply.",
+            appString(StringKeys.SCH_ALL_ON_TRACK_NOTE),
             style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp, lineHeight = 17.sp),
         )
     }
@@ -530,10 +531,10 @@ private fun AllOnTrackNote() {
 private fun JobStatusCard(status: String, jobId: String?, onPoll: (String) -> Unit) {
     val c = VTheme.colors
     val (label, tone) = when (status) {
-        "queued" -> "Queued…" to c.ink3
-        "processing" -> "Running…" to c.warning
-        "completed" -> "Complete" to c.success
-        "failed" -> "Failed" to c.danger
+        "queued" -> appString(StringKeys.SCH_QUEUED) to c.ink3
+        "processing" -> appString(StringKeys.SCH_RUNNING) to c.warning
+        "completed" -> appString(StringKeys.SCH_COMPLETE) to c.success
+        "failed" -> appString(StringKeys.SCH_FAILED) to c.danger
         else -> status to c.ink3
     }
     VCard {
@@ -548,7 +549,7 @@ private fun JobStatusCard(status: String, jobId: String?, onPoll: (String) -> Un
             )
             if (jobId != null && (status == "queued" || status == "processing")) {
                 VButton(
-                    text = "Refresh",
+                    text = appString(StringKeys.SCH_REFRESH),
                     onClick = { onPoll(jobId) },
                     variant = VButtonVariant.Ghost,
                     size = VButtonSize.Sm,
@@ -565,12 +566,12 @@ private fun TrendCard(points: List<PewsTrendPointDto>) {
     val maxTotal = points.maxOfOrNull { it.total } ?: 0
     VCard {
         Text(
-            "RISK TREND",
+            appString(StringKeys.SCH_RISK_TREND),
             style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            "Cohort risk distribution (last 30 days)",
+            appString(StringKeys.SCH_RISK_TREND_DESC),
             style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp),
         )
         Spacer(Modifier.height(12.dp))
@@ -602,9 +603,9 @@ private fun TrendCard(points: List<PewsTrendPointDto>) {
         }
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            TrendLegend("High", c.danger)
-            TrendLegend("Medium", c.warning)
-            TrendLegend("Watch", c.success)
+            TrendLegend(appString(StringKeys.SCH_HIGH), c.danger)
+            TrendLegend(appString(StringKeys.SCH_MEDIUM), c.warning)
+            TrendLegend(appString(StringKeys.SCH_WATCH), c.success)
         }
     }
 }
@@ -622,9 +623,9 @@ private fun TrendLegend(label: String, color: androidx.compose.ui.graphics.Color
 private fun PewsStudentRow(s: PewsStudentDto, onClick: () -> Unit) {
     val c = VTheme.colors
     val (tone, levelLabel) = when (s.riskLevel) {
-        "high" -> VBadgeTone.Danger to "High"
-        "medium" -> VBadgeTone.Warning to "Medium"
-        else -> VBadgeTone.Success to "Watch"
+        "high" -> VBadgeTone.Danger to appString(StringKeys.SCH_HIGH)
+        "medium" -> VBadgeTone.Warning to appString(StringKeys.SCH_MEDIUM)
+        else -> VBadgeTone.Success to appString(StringKeys.SCH_WATCH)
     }
     VCard(onClick = onClick) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -642,7 +643,7 @@ private fun PewsStudentRow(s: PewsStudentDto, onClick: () -> Unit) {
                 Text(s.name, style = VTheme.type.bodyStrong.colored(c.ink), maxLines = 1)
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    "Class ${s.className}${if (s.section.isNotBlank()) "-${s.section}" else ""}",
+                    appString(StringKeys.SCH_CLASS_SECTION_DASH, "className" to s.className, "section" to if (s.section.isNotBlank()) "-${s.section}" else ""),
                     style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp),
                 )
             }

@@ -1,10 +1,10 @@
 # Vidya Prayag — Implementation Backlog & Dependency Graph
 
 > **Generated:** 2026-06-27
-> **Last Updated:** 2026-07-03 (re-audited against `development_v1.0.1` codebase)
+> **Last Updated:** 2026-07-03 (re-audited against `development_v1.0.1` — post PR #98 merge)
 > **Source documents:** `feature_audit.csv`, `DIFFERENTIATING_FEATURES.md`, `COMPETITIVE_GAP_ANALYSIS.md`
 > **Reference spec:** `MESSAGING_SYSTEM_SPEC.md`
-> **Schema reference:** `server/.../db/Tables.kt` (124 tables, Exposed ORM)
+> **Schema reference:** `server/.../db/Tables.kt` (137 tables, Exposed ORM)
 
 ---
 
@@ -46,7 +46,7 @@ Features requiring implementation specs, deduplicated across all three source do
 | P1-10 | `PAYROLL_MANAGEMENT_SPEC.md` | Staff Payroll + Payslips | Gap #9 | 🔴 Missing | Medium | L | None |
 | P1-11 | `ID_CARD_GENERATION_SPEC.md` | ID Card Generation | Gap #11 | ✅ Implemented (85%) — `IdCardTemplatesTable`, `IdCardsTable`, `IdCardRouting`, `IdCardApi` + `IdCardViewModel`, 2 screens + QR generator + expiry job | Medium | S | None |
 | P1-12 | `HEALTH_RECORDS_SPEC.md` | Student Health & Immunization Records | Audit L120; Gap #47 | ✅ Implemented (90%) — 3 tables, `HealthRouting.kt`, 3 VMs (Admin/Parent/Teacher), 3 screens | High | L | None |
-| P1-13 | `MULTI_BRANCH_SPEC.md` | Multi-Branch / School Chain Support | Gap #13; Audit L156 | 🔴 Missing | Medium | L | None |
+| P1-13 | `MULTI_BRANCH_SPEC.md` | Multi-Branch / School Chain Support | Gap #13; Audit L156 | � Partial (50%) — `SchoolOrganizationsTable`, `StudentTransfersTable`, `OrganizationRouting.kt`, `OrganizationService.kt`, `StudentTransferService.kt`; org CRUD + dashboard + branch compare + transfer workflow implemented; client UI TODO | Medium | L | None |
 | P1-14 | `EXPENSE_MANAGEMENT_SPEC.md` | School Expense Tracking | Audit L136; Gap #10 | 🔴 Missing | Medium | L | None |
 | P1-15 | `INVENTORY_MANAGEMENT_SPEC.md` | School Inventory / Asset Tracking | Audit L139; Gap #49 | 🔴 Missing | Low | L | None |
 | P1-16 | `EMAIL_INTEGRATION_SPEC.md` | Email Notifications (Extend SMTP) | Audit L142 | 🟡 Partial (30%) | Medium | M | None |
@@ -80,13 +80,13 @@ Features requiring implementation specs, deduplicated across all three source do
 | P2-08 | `FORMS_SURVEYS_SPEC.md` | Forms, Surveys, Permission Slips, Polls | Audit L154; Gap #36 | 🔴 Missing | Medium | M | None |
 | P2-09 | `NEWSLETTER_BUILDER_SPEC.md` | Drag-and-Drop Newsletter Builder | Gap #37 | 🔴 Missing | Medium | M | None |
 | P2-10 | `FESTIVAL_CULTURAL_CALENDAR_SPEC.md` | Festival & Cultural Calendar Integration | Diff §8.2; Gap #56 | 🔴 Missing | Low | S | None |
-| P2-11 | `SCHOOL_BRANDING_KIT_SPEC.md` | School Digital Presence + QR Codes | Diff §3.2 | 🟡 Partial (media exists) | Low | M | None |
+| P2-11 | `SCHOOL_BRANDING_KIT_SPEC.md` | School Digital Presence + QR Codes | Diff §3.2 | ✅ Implemented (85%) — `SchoolBrandingTable`, `BrandingService.kt`, `BrandingRouting.kt`, `BrandingThemeManager`, `BrandingSettingsScreen`; logo/color sync to `schools` table; splash/login theme integration; subdomain management; asset upload via Supabase Storage | Low | M | None |
 
 ### Phase 3 — Leapfrog: Blue Ocean Features (8-12 months)
 
 | # | Spec File | Feature | Source | Status | Priority | Effort | Prerequisites |
 |---|---|---|---|---|---|---|---|
-| P3-01 | `VIDYASETU_AI_TUTOR_SPEC.md` | AI Tutor Integrated with School Data | Diff §1.1; Gap #30 | 🔴 Missing | High | L | `AI_INFRASTRUCTURE_SPEC.md`, `STUDENT_APP_SPEC.md` |
+| P3-01 | `VIDYASETU_AI_TUTOR_SPEC.md` | AI Tutor Integrated with School Data | Diff §1.1; Gap #30 | � Partial (65%) — `TutorRouter`, `TutorChatViewModel`, multi-turn chat with LLM; RAG with school data; circuit breaker + guardrails; parent/teacher/admin surfaces; some parse fixes applied | High | L | `AI_INFRASTRUCTURE_SPEC.md`, `STUDENT_APP_SPEC.md` |
 | P3-02 | `TEACHER_COPILOT_SPEC.md` | AI Lesson Plans, Assessment Generation, Auto-Grading | Diff §1.3; Gap #22 | 🔴 Missing | High | L | `AI_INFRASTRUCTURE_SPEC.md` |
 | P3-03 | `VIDYA_PASSPORT_SPEC.md` | Portable Student Digital Identity | Diff §5.1; Gap #51 | 🔴 Missing | Medium | L | `STUDENT_APP_SPEC.md` |
 | P3-04 | `SCHOOL_BENCHMARKING_SPEC.md` | Cross-School Anonymous Analytics | Diff §9.2; Gap #54 | 🔴 Missing | Medium | M | `MULTI_BRANCH_SPEC.md` |
@@ -111,7 +111,7 @@ Features requiring implementation specs, deduplicated across all three source do
 | P4-07 | `APaar_ID_SPEC.md` | APAAR ID Integration | Gap #43 | 🔴 Missing | Medium | M | `NEP_COMPLIANCE_SPEC.md` |
 | P4-08 | `OPEN_API_SPEC.md` | Open API + Webhooks + Zapier Integration | Diff §10.2; Gap #47 | 🔴 Missing | Low | M | None |
 | P4-09 | `AI_SPOKEN_ENGLISH_SPEC.md` | AI Spoken English Practice | Gap #31 | 🔴 Missing | Low | M | `AI_INFRASTRUCTURE_SPEC.md`, `STUDENT_APP_SPEC.md` |
-| P4-10 | `AI_QUESTION_BANK_SPEC.md` | AI Question Bank Generation | Gap #22 | 🔴 Missing | Low | M | `AI_INFRASTRUCTURE_SPEC.md` |
+| P4-10 | `AI_QUESTION_BANK_SPEC.md` | AI Question Bank Generation | Gap #22 | � Partial (40%) — `QuizQuestionsTable`, `QuizAnswersTable`, `SyllabusQuizzesTable`, `SyllabusQuizQuestionsTable`, `SyllabusQuizAnswersTable`, `TeacherQuizRouting.kt`; AI-generated + manual questions; parent quiz UI with leaderboard; not full question bank generation yet | Low | M | `AI_INFRASTRUCTURE_SPEC.md` |
 | P4-11 | `MULTI_SCHOOL_MANAGEMENT_SPEC.md` | Multi-Campus / Franchise Management | Audit L156 | 🔴 Missing | Medium | L | `MULTI_BRANCH_SPEC.md` |
 
 ---
@@ -247,7 +247,7 @@ Features requiring implementation specs, deduplicated across all three source do
 | 23 | `LIBRARY_MANAGEMENT_SPEC.md` | Standard module | ✅ DONE |
 | 24 | `PAYROLL_MANAGEMENT_SPEC.md` | Standard HR module | 🔴 TODO |
 | 25 | `ID_CARD_GENERATION_SPEC.md` | Quick win | ✅ DONE |
-| 26 | `MULTI_BRANCH_SPEC.md` | Scalability; unblocks benchmarking | 🔴 TODO |
+| 26 | `MULTI_BRANCH_SPEC.md` | Scalability; unblocks benchmarking | � 50% |
 | 27 | Remaining modules (hostel, inventory, visitor, alumni) | Lower priority | 🟡 alumni ✅; hostel/inventory/visitor 🔴 |
 
 ### Wave 5: Differentiation (Weeks 12-24)
@@ -270,7 +270,7 @@ Features requiring implementation specs, deduplicated across all three source do
 |---|---|---|---|
 | 37 | `STUDENT_APP_SPEC.md` | Unblocks AI tutor, passport, wellness, goals, portfolio | 🔴 TODO |
 | 38 | `TEACHER_COPILOT_SPEC.md` | High teacher value | 🔴 TODO |
-| 39 | `VIDYASETU_AI_TUTOR_SPEC.md` | Data moat; needs student app | 🟡 60% |
+| 39 | `VIDYASETU_AI_TUTOR_SPEC.md` | Data moat; needs student app | 🟡 65% |
 | 40 | `SOS_SAFETY_SPEC.md` | Safety critical | 🔴 TODO |
 | 41 | `TRANSPARENCY_DASHBOARD_SPEC.md` | Trust building | 🔴 TODO |
 | 42 | `VOICE_PHOTO_CAPTURE_SPEC.md` | Teacher productivity | 🔴 TODO |
@@ -321,9 +321,9 @@ These are shared infrastructure components needed by multiple features:
 | **Networking** | Ktor Client 3.4.3 (OkHttp/Darwin/CIO), NetworkResult<T> | `shared/.../core/network/` |
 | **Design System** | V Design System (VTheme, VColors, VDimens, VType, VAtoms) | `composeApp/.../ui/v2/components/` |
 
-### Existing Tables (124 as of July 2026)
+### Existing Tables (137 as of July 2026)
 
-`AppUsersTable`, `AuthOtpsTable`, `OtpDeliveryAttemptsTable`, `UserSessionsTable`, `LandingContentTable`, `AppConfigTable`, `SchoolsTable`, `OnboardingDraftsTable`, `SchoolClassesTable`, `SchoolSubjectsTable`, `TeacherSubjectAssignmentsTable`, `AnnouncementsTable`, `WhatsappLogsTable`, `AdmissionEnquiriesTable`, `SchoolPhilosophyTable`, `SchoolMediaTable`, `StorageMetricsTable`, `AcademicCalendarTable`, `HolidayListTable` (deprecated), `FacultyTable`, `AttendanceRecordsTable`, `StudentsTable`, `EnrollmentsTable`, `ChildrenTable`, `FeeRecordsTable`, `LeaveRequestsTable`, `PtmEventsTable`, `PtmClassProgressTable`, `MessageThreadsTable`, `MessagesTable`, `ConversationSeqTable`, `MessageStatusTable`, `MessageAttachmentsTable`, `ExamResultsTable` (deprecated), `AssessmentsTable`, `AssessmentMarksTable`, `SyllabusUnitsTable`, `CurriculumUnitsTable`, `SyllabusProgressTable`, `HomeworkTable`, `HomeworkAttachmentsTable`, `HomeworkSubmissionsTable`, `HomeworkExtensionsTable`, `TeacherPeriodsTable`, `PeriodExceptionsTable`, `ScholarshipsTable`, `ScholarshipApplicationsTable`, `NotificationsTable`, `DeviceTokensTable`, `OtpGatewayDevicesTable`, `SmsRequestsTable`, `ParentChildLinksTable`, `NonTeachingStaffTable`, `ParentAchievementsTable`, `CalendarEventsTable`, `AcademicYearsTable`, `TeacherCheckInsTable`, `NotificationPreferencesTable`, `LessonPlansTable`, `LessonPlanTemplatesTable`, `LessonPlanAttachmentsTable`, `StudentHealthProfilesTable`, `StudentImmunizationsTable`, `StudentHealthIncidentsTable`, `ParentPulsesTable`, `AlumniTable`, `AlumniDonationCampaignsTable`, `AlumniDonationsTable`, `AlumniMentorshipRequestsTable`, `AlumniMentorshipsTable`, `AlumniCareerHistoryTable`, `AlumniMentorshipSettingsTable`, **+60 more** (PEWS, Transport, Library, ID Card, Report Card, Tutor, Branding, Scheduled Messages, etc. — see `Tables.kt`)
+`AppUsersTable`, `AuthOtpsTable`, `OtpDeliveryAttemptsTable`, `UserSessionsTable`, `LandingContentTable`, `AppConfigTable`, `SchoolsTable`, `OnboardingDraftsTable`, `SchoolClassesTable`, `SchoolSubjectsTable`, `TeacherSubjectAssignmentsTable`, `AnnouncementsTable`, `WhatsappLogsTable`, `AdmissionEnquiriesTable`, `SchoolPhilosophyTable`, `SchoolMediaTable`, `StorageMetricsTable`, `AcademicCalendarTable`, `HolidayListTable` (deprecated), `FacultyTable`, `AttendanceRecordsTable`, `StudentsTable`, `EnrollmentsTable`, `ChildrenTable`, `FeeRecordsTable`, `LeaveRequestsTable`, `PtmEventsTable`, `PtmClassProgressTable`, `MessageThreadsTable`, `MessagesTable`, `ConversationSeqTable`, `MessageStatusTable`, `MessageAttachmentsTable`, `ExamResultsTable` (deprecated), `AssessmentsTable`, `AssessmentMarksTable`, `SyllabusUnitsTable`, `CurriculumUnitsTable`, `SyllabusProgressTable`, `HomeworkTable`, `HomeworkAttachmentsTable`, `HomeworkSubmissionsTable`, `HomeworkExtensionsTable`, `TeacherPeriodsTable`, `PeriodExceptionsTable`, `ScholarshipsTable`, `ScholarshipApplicationsTable`, `NotificationsTable`, `DeviceTokensTable`, `OtpGatewayDevicesTable`, `SmsRequestsTable`, `ParentChildLinksTable`, `NonTeachingStaffTable`, `ParentAchievementsTable`, `CalendarEventsTable`, `AcademicYearsTable`, `TeacherCheckInsTable`, `NotificationPreferencesTable`, `LessonPlansTable`, `LessonPlanTemplatesTable`, `LessonPlanAttachmentsTable`, `StudentHealthProfilesTable`, `StudentImmunizationsTable`, `StudentHealthIncidentsTable`, `ParentPulsesTable`, `AlumniTable`, `AlumniDonationCampaignsTable`, `AlumniDonationsTable`, `AlumniMentorshipRequestsTable`, `AlumniMentorshipsTable`, `AlumniCareerHistoryTable`, `AlumniMentorshipSettingsTable`, **+73 more** (PEWS, Transport, Library, ID Card, Report Card, Tutor, Branding, Scheduled Messages, School Organizations, Student Transfers, Syllabus Sources, Daily Class Log, Syllabus Pace Plan, Syllabus Popup Prefs, Syllabus Pace Alerts, Quiz Questions, Quiz Answers, Syllabus Quizzes, Syllabus Quiz Questions, Syllabus Quiz Answers, NCERT Syllabus Reference, etc. — see `Tables.kt`)
 
 ---
 
@@ -332,8 +332,8 @@ These are shared infrastructure components needed by multiple features:
 | Phase | Spec Count | Effort Distribution | Implemented | Partial | TODO |
 |---|---|---|---|---|---|
 | Phase 0 — Infrastructure | 13 | 7L, 4M, 2S | 2 (AI infra, dark mode) | 4 (WhatsApp, NEP, offline, web) | 6 | 1 deferred (iOS push) |
-| Phase 1 — Catch-Up | 31 | 12L, 14M, 2S | 8 (transport, library, ID card, health, lesson planning, scholarship, scheduled announcements, alumni) + notifications, event registration | 3 (report card, email, broadcast) | 19 | 1 deferred (iOS biometric) |
-| Phase 2 — Differentiate | 11 | 1L, 8M, 2S | 2 (parent pulse, branding) | 3 (family circle, smart notifications, marketplace) | 6 | 0 |
-| Phase 3 — Leapfrog | 11 | 3L, 7M, 1S | 0 | 1 (AI tutor 60%) | 10 | 0 |
-| Phase 4 — Future | 11 | 4L, 6M, 1S | 0 | 0 | 11 | 0 |
-| **Total** | **77** | | **12 implemented** | **11 partial** | **52 TODO** | **2 deferred (iOS)** |
+| Phase 1 — Catch-Up | 31 | 12L, 14M, 2S | 8 (transport, library, ID card, health, lesson planning, scholarship, scheduled announcements, alumni) + notifications, event registration | 4 (report card, email, broadcast, **multi-branch**) | 18 | 1 deferred (iOS biometric) |
+| Phase 2 — Differentiate | 11 | 1L, 8M, 2S | 3 (parent pulse, **branding kit**, notifications deeplink) | 3 (family circle, smart notifications, marketplace) | 5 | 0 |
+| Phase 3 — Leapfrog | 11 | 3L, 7M, 1S | 0 | 1 (AI tutor 65%) | 10 | 0 |
+| Phase 4 — Future | 11 | 4L, 6M, 1S | 0 | 1 (AI question bank 40%) | 10 | 0 |
+| **Total** | **77** | | **13 implemented** | **13 partial** | **49 TODO** | **2 deferred (iOS)** |

@@ -99,6 +99,8 @@ import com.littlebridge.enrollplus.ui.v2.theme.VElevationLevel
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import com.littlebridge.enrollplus.ui.v2.theme.vElevation
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.math.min
 
@@ -174,12 +176,12 @@ fun SchoolHomeScreenV2(
     )
     VConfirmDialog(
         visible = showRationale,
-        title = "Stay Informed",
-        message = "Enable notifications to receive important updates about school events, attendance, and institutional alerts.",
-        confirmLabel = "Enable",
+        title = appString(StringKeys.HOME_NOTIF_RATIONALE_TITLE),
+        message = appString(StringKeys.HOME_NOTIF_RATIONALE_MSG),
+        confirmLabel = appString(StringKeys.HOME_NOTIF_ENABLE),
         onConfirm = permissionVm::requestNotificationPermission,
         onDismiss = permissionVm::declineNotifications,
-        cancelLabel = "Not Now",
+        cancelLabel = appString(StringKeys.HOME_NOTIF_NOT_NOW),
         icon = VIcons.Bell,
     )
 
@@ -380,8 +382,8 @@ private fun DashboardHeader(
     val c = VTheme.colors
     val header = overview?.header
     val name = header?.adminName?.takeIf { it.isNotBlank() } ?: fallbackName
-    val greeting = header?.greeting?.takeIf { it.isNotBlank() } ?: "Welcome"
-    val schoolName = header?.schoolName?.takeIf { it.isNotBlank() } ?: "Your School"
+    val greeting = header?.greeting?.takeIf { it.isNotBlank() } ?: appString(StringKeys.HOME_WELCOME)
+    val schoolName = header?.schoolName?.takeIf { it.isNotBlank() } ?: appString(StringKeys.HOME_YOUR_SCHOOL)
     val session = buildString {
         header?.academicYear?.takeIf { it.isNotBlank() }?.let { append(it) }
         header?.currentTerm?.takeIf { it.isNotBlank() }?.let {
@@ -439,7 +441,7 @@ private fun NotificationButton(count: Int, onClick: () -> Unit) {
     ) {
         Icon(
             imageVector = VIcons.Bell,
-            contentDescription = "Notifications",
+            contentDescription = appString(StringKeys.HOME_NOTIFICATIONS),
             tint = c.ink,
             modifier = Modifier.size(20.dp),
         )
@@ -469,11 +471,11 @@ private fun QuickActionsRow(
         modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        QuickActionChip("Announcement", VIcons.Megaphone, onAnnouncement)
-        QuickActionChip("Create Event", VIcons.Calendar, onEvent)
-        QuickActionChip("Send Notice", VIcons.Send, onNotice)
-        QuickActionChip("Reports", VIcons.TrendingUp, onReports)
-        QuickActionChip("Transport", VIcons.MapPin, onTransport)
+        QuickActionChip(appString(StringKeys.HOME_QA_ANNOUNCEMENT), VIcons.Megaphone, onAnnouncement)
+        QuickActionChip(appString(StringKeys.HOME_QA_CREATE_EVENT), VIcons.Calendar, onEvent)
+        QuickActionChip(appString(StringKeys.HOME_QA_SEND_NOTICE), VIcons.Send, onNotice)
+        QuickActionChip(appString(StringKeys.HOME_QA_REPORTS), VIcons.TrendingUp, onReports)
+        QuickActionChip(appString(StringKeys.HOME_QA_TRANSPORT), VIcons.MapPin, onTransport)
     }
 }
 
@@ -505,7 +507,7 @@ private fun SmartInsightsCarousel(insights: List<OverviewInsight>) {
     // Most urgent first.
     val ordered = insights.sortedBy { severityRank(it.severity) }
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("Smart Insights", style = VTheme.type.h3.colored(c.ink))
+        Text(appString(StringKeys.HOME_SMART_INSIGHTS), style = VTheme.type.h3.colored(c.ink))
         Row(
             modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -586,7 +588,7 @@ private fun SchoolPulseCard(pulse: OverviewSchoolPulse) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("School Pulse", style = VTheme.type.h3.colored(Color.White))
+                        Text(appString(StringKeys.HOME_SCHOOL_PULSE), style = VTheme.type.h3.colored(Color.White))
                         Text(
                             pulse.message,
                             style = VTheme.type.caption.colored(Color.White.copy(alpha = .8f)),
@@ -609,7 +611,7 @@ private fun SchoolPulseCard(pulse: OverviewSchoolPulse) {
                         }
                         if (pulse.categories.none { it.available }) {
                             Text(
-                                "Metrics appear as your school records data.",
+                                appString(StringKeys.HOME_PULSE_METRICS_EMPTY),
                                 style = VTheme.type.caption.colored(Color.White.copy(alpha = .75f)),
                             )
                         }
@@ -679,7 +681,7 @@ private fun PulseGauge(progress: Float, score: Int) {
                 score.toString(),
                 style = VTheme.type.h1.colored(Color.White),
             )
-            Text("/ 100", style = VTheme.type.caption.colored(Color.White.copy(alpha = .75f)))
+            Text(appString(StringKeys.HOME_PULSE_OUT_OF), style = VTheme.type.caption.colored(Color.White.copy(alpha = .75f)))
         }
     }
 
@@ -730,7 +732,7 @@ private fun PulseCategoryRow(label: String, score: Int) {
 private fun KpiGrid(kpis: List<OverviewKpi>, onClick: () -> Unit) {
     val c = VTheme.colors
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Key Metrics", style = VTheme.type.h3.colored(c.ink))
+        Text(appString(StringKeys.HOME_KEY_METRICS), style = VTheme.type.h3.colored(c.ink))
         // 2-up rows.
         kpis.chunked(2).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -830,10 +832,10 @@ private fun CampusHealthCard(analytics: AdminDashboardAnalytics?, onClick: () ->
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column {
-                    Text("Campus Health", style = VTheme.type.h3.colored(c.ink))
+                    Text(appString(StringKeys.HOME_CAMPUS_HEALTH), style = VTheme.type.h3.colored(c.ink))
                     Text(
-                        if (hasData) "Attendance over ${values.size} ${trend?.period.orEmpty().ifEmpty { "periods" }}"
-                        else "No attendance data yet",
+                        if (hasData) appString(StringKeys.HOME_ATTENDANCE_OVER, "count" to values.size, "period" to (trend?.period.orEmpty().ifEmpty { "periods" }))
+                        else appString(StringKeys.HOME_NO_ATTENDANCE_DATA),
                         style = VTheme.type.caption.colored(c.ink2),
                     )
                 }
@@ -846,7 +848,7 @@ private fun CampusHealthCard(analytics: AdminDashboardAnalytics?, onClick: () ->
                 }
             } else {
                 Text(
-                    "Attendance trends appear once daily records are captured.",
+                    appString(StringKeys.HOME_ATTENDANCE_TRENDS_EMPTY),
                     style = VTheme.type.caption.colored(c.ink2),
                 )
             }
@@ -924,8 +926,8 @@ private fun FeeAnalyticsCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column {
-                    Text("Fee Collection", style = VTheme.type.h3.colored(c.ink))
-                    Text("Collection rate ${fee.collectionRate}%", style = VTheme.type.caption.colored(c.ink2))
+                    Text(appString(StringKeys.HOME_FEE_COLLECTION), style = VTheme.type.h3.colored(c.ink))
+                    Text(appString(StringKeys.HOME_COLLECTION_RATE, "pct" to fee.collectionRate), style = VTheme.type.caption.colored(c.ink2))
                 }
                 Box(
                     modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(c.teal.copy(alpha = .14f)),
@@ -937,13 +939,13 @@ private fun FeeAnalyticsCard(
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 FeeStat(
                     modifier = Modifier.weight(1f),
-                    label = "Collected",
+                    label = appString(StringKeys.HOME_COLLECTED),
                     value = formatMoney(fee.totalCollected, fee.currency),
                     positive = true,
                 )
                 FeeStat(
                     modifier = Modifier.weight(1f),
-                    label = "Pending",
+                    label = appString(StringKeys.HOME_PENDING),
                     value = formatMoney(fee.pending, fee.currency),
                     positive = false,
                 )
@@ -1041,9 +1043,9 @@ private fun ParentEngagementCard(
                     Icon(VIcons.Heart, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(22.dp))
                 }
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Parent Engagement", style = VTheme.type.h3.colored(c.ink))
+                    Text(appString(StringKeys.HOME_PARENT_ENGAGEMENT), style = VTheme.type.h3.colored(c.ink))
                     Text(
-                        "${engagement.activeParentsPct}% active · ${engagement.activeParents}/${engagement.totalParents} parents",
+                        appString(StringKeys.HOME_PARENT_ENGAGEMENT_SUB, "pct" to engagement.activeParentsPct, "active" to engagement.activeParents, "total" to engagement.totalParents),
                         style = VTheme.type.caption.colored(c.ink2),
                     )
                 }
@@ -1056,11 +1058,11 @@ private fun ParentEngagementCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Icon(VIcons.Star, contentDescription = null, tint = c.successInk, modifier = Modifier.size(18.dp))
-                    Text("Most engaged: ${engagement.mostEngagedClass}", style = VTheme.type.bodyStrong.colored(c.ink))
+                    Text(appString(StringKeys.HOME_MOST_ENGAGED, "class" to engagement.mostEngagedClass), style = VTheme.type.bodyStrong.colored(c.ink))
                 }
             }
             if (engagement.leaderboard.isNotEmpty()) {
-                Text("Class Leaderboard", style = VTheme.type.label.colored(c.ink3))
+                Text(appString(StringKeys.HOME_CLASS_LEADERBOARD), style = VTheme.type.label.colored(c.ink3))
                 engagement.leaderboard.forEachIndexed { idx, lc ->
                     LeaderboardRow(rank = idx + 1, item = lc)
                 }
@@ -1113,14 +1115,14 @@ private fun CommunicationCenterCard(
 ) {
     val c = VTheme.colors
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Communication", style = VTheme.type.h3.colored(c.ink))
+        Text(appString(StringKeys.HOME_COMMUNICATION), style = VTheme.type.h3.colored(c.ink))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            CommTile(Modifier.weight(1f), "Unread", unread.toString(), VIcons.Chat, onOpenComms)
-            CommTile(Modifier.weight(1f), "Queries", pending.toString(), VIcons.AlertCircle, onOpenComms)
+            CommTile(Modifier.weight(1f), appString(StringKeys.HOME_UNREAD), unread.toString(), VIcons.Chat, onOpenComms)
+            CommTile(Modifier.weight(1f), appString(StringKeys.HOME_QUERIES), pending.toString(), VIcons.AlertCircle, onOpenComms)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            CommTile(Modifier.weight(1f), "Announcements", announcements.toString(), VIcons.Megaphone, onOpenComms)
-            CommTile(Modifier.weight(1f), "Acknowledgements", acks.toString(), VIcons.Check, onOpenComms)
+            CommTile(Modifier.weight(1f), appString(StringKeys.HOME_ANNOUNCEMENTS), announcements.toString(), VIcons.Megaphone, onOpenComms)
+            CommTile(Modifier.weight(1f), appString(StringKeys.HOME_ACKNOWLEDGEMENTS), acks.toString(), VIcons.Check, onOpenComms)
         }
     }
 
@@ -1163,8 +1165,8 @@ private fun EventDashboardCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Events", style = VTheme.type.h3.colored(c.ink))
-            Text("View calendar →", style = VTheme.type.caption.colored(c.tealDeep), modifier = Modifier.clickable { onOpenCalendar() })
+            Text(appString(StringKeys.HOME_EVENTS), style = VTheme.type.h3.colored(c.ink))
+            Text(appString(StringKeys.HOME_VIEW_CALENDAR), style = VTheme.type.caption.colored(c.tealDeep), modifier = Modifier.clickable { onOpenCalendar() })
         }
         if (upcoming.isNotEmpty()) {
             Row(
@@ -1175,7 +1177,7 @@ private fun EventDashboardCard(
             }
         }
         if (completed.isNotEmpty()) {
-            Text("Recently completed", style = VTheme.type.label.colored(c.ink3))
+            Text(appString(StringKeys.HOME_RECENTLY_COMPLETED), style = VTheme.type.label.colored(c.ink3))
             completed.forEach { CompletedEventRow(it) }
         }
     }
@@ -1202,9 +1204,9 @@ private fun EventCountdownCard(event: OverviewEvent) {
         ) {
             Text(
                 when {
-                    event.daysAway == 0 -> "Today"
-                    event.daysAway == 1 -> "Tomorrow"
-                    else -> "In ${event.daysAway} days"
+                    event.daysAway == 0 -> appString(StringKeys.HOME_TODAY)
+                    event.daysAway == 1 -> appString(StringKeys.HOME_TOMORROW)
+                    else -> appString(StringKeys.HOME_IN_DAYS, "days" to event.daysAway)
                 },
                 style = VTheme.type.label.colored(accent),
             )
@@ -1274,9 +1276,9 @@ private fun CalendarQuickInsights(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Calendar at a glance", style = VTheme.type.h3.colored(c.ink))
+            Text(appString(StringKeys.HOME_CAL_AT_GLANCE), style = VTheme.type.h3.colored(c.ink))
             Text(
-                "Open calendar →",
+                appString(StringKeys.HOME_OPEN_CALENDAR),
                 style = VTheme.type.caption.colored(c.tealDeep),
                 modifier = Modifier.clickable { onOpenCalendar() },
             )
@@ -1285,7 +1287,7 @@ private fun CalendarQuickInsights(
             CalendarInsightTile(
                 modifier = Modifier.weight(1f),
                 value = eventsThisWeek.toString(),
-                label = "This week",
+                label = appString(StringKeys.HOME_THIS_WEEK),
                 icon = VIcons.Calendar,
                 accent = c.tealDeep,
                 onClick = onOpenCalendar,
@@ -1293,7 +1295,7 @@ private fun CalendarQuickInsights(
             CalendarInsightTile(
                 modifier = Modifier.weight(1f),
                 value = draftCount.toString(),
-                label = "Drafts",
+                label = appString(StringKeys.HOME_DRAFTS),
                 icon = VIcons.FileText,
                 accent = c.warningInk,
                 onClick = onOpenCalendar,
@@ -1301,7 +1303,7 @@ private fun CalendarQuickInsights(
             CalendarInsightTile(
                 modifier = Modifier.weight(1f),
                 value = nextHolidayLabel,
-                label = "Next holiday",
+                label = appString(StringKeys.HOME_NEXT_HOLIDAY),
                 icon = VIcons.Sparkles,
                 accent = c.successInk,
                 onClick = onOpenCalendar,
@@ -1357,9 +1359,9 @@ private fun CalendarUpcomingCarousel(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Upcoming Events", style = VTheme.type.h3.colored(c.ink))
+            Text(appString(StringKeys.HOME_UPCOMING_EVENTS), style = VTheme.type.h3.colored(c.ink))
             Text(
-                "See all →",
+                appString(StringKeys.HOME_SEE_ALL),
                 style = VTheme.type.caption.colored(c.tealDeep),
                 modifier = Modifier.clickable { onOpenCalendar() },
             )
@@ -1412,12 +1414,12 @@ private fun CalendarUpcomingCard(event: AcademicCalendarEventDto, onClick: () ->
             style = VTheme.type.dataSm.colored(c.ink3),
         )
         if (event.status.equals(CalEventStatus.DRAFT, ignoreCase = true)) {
-            Text("Draft", style = VTheme.type.label.colored(c.warningInk))
+            Text(appString(StringKeys.HOME_DRAFT), style = VTheme.type.label.colored(c.warningInk))
         }
         if (event.hasConflicts) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 Icon(VIcons.AlertTriangle, contentDescription = null, tint = c.dangerInk, modifier = Modifier.size(13.dp))
-                Text("Conflict", style = VTheme.type.label.colored(c.dangerInk))
+                Text(appString(StringKeys.HOME_CONFLICT), style = VTheme.type.label.colored(c.dangerInk))
             }
         }
     }
@@ -1452,7 +1454,7 @@ private fun TeacherSpotlightCard(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 VAvatar(name = name, size = 56.dp, src = avatarUrl, ring = true)
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text("⭐ Teacher Spotlight", style = VTheme.type.label.colored(Color.White.copy(alpha = .85f)))
+                    Text(appString(StringKeys.HOME_TEACHER_SPOTLIGHT), style = VTheme.type.label.colored(Color.White.copy(alpha = .85f)))
                     Text(name, style = VTheme.type.h3.colored(Color.White))
                     if (department.isNotBlank()) {
                         Text(department, style = VTheme.type.caption.colored(Color.White.copy(alpha = .85f)))
@@ -1463,7 +1465,7 @@ private fun TeacherSpotlightCard(
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("$score", style = VTheme.type.h2.colored(Color.White))
-                    Text("score", style = VTheme.type.caption.colored(Color.White.copy(alpha = .8f)))
+                    Text(appString(StringKeys.HOME_SCORE), style = VTheme.type.caption.colored(Color.White.copy(alpha = .8f)))
                 }
             }
         }
@@ -1480,7 +1482,7 @@ private fun TeacherSpotlightCard(
 private fun AchievementShowcase(items: List<OverviewAchievement>) {
     val c = VTheme.colors
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Student Achievements", style = VTheme.type.h3.colored(c.ink))
+        Text(appString(StringKeys.HOME_STUDENT_ACHIEVEMENTS), style = VTheme.type.h3.colored(c.ink))
         Row(
             modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -1535,14 +1537,14 @@ private fun BirthdayWidget(today: List<OverviewBirthday>, upcoming: List<Overvie
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("🎂", style = VTheme.type.h3.colored(c.ink))
-                Text("Celebrations", style = VTheme.type.h3.colored(c.ink))
+                Text(appString(StringKeys.HOME_CELEBRATIONS), style = VTheme.type.h3.colored(c.ink))
             }
             if (today.isNotEmpty()) {
-                Text("Today", style = VTheme.type.label.colored(c.ink3))
+                Text(appString(StringKeys.HOME_TODAY_LABEL), style = VTheme.type.label.colored(c.ink3))
                 today.forEach { BirthdayRow(it, isToday = true) }
             }
             if (upcoming.isNotEmpty()) {
-                Text("Upcoming", style = VTheme.type.label.colored(c.ink3))
+                Text(appString(StringKeys.HOME_UPCOMING_LABEL), style = VTheme.type.label.colored(c.ink3))
                 upcoming.forEach { BirthdayRow(it, isToday = false) }
             }
         }
@@ -1562,10 +1564,10 @@ private fun BirthdayRow(b: OverviewBirthday, isToday: Boolean) {
         VAvatar(name = b.name, size = 38.dp, src = b.avatarUrl)
         Column(modifier = Modifier.weight(1f)) {
             Text(b.name, style = VTheme.type.bodyStrong.colored(c.ink), maxLines = 1)
-            Text(if (b.role == "TEACHER") "Teacher" else "Student", style = VTheme.type.caption.colored(c.ink2))
+            Text(if (b.role == "TEACHER") appString(StringKeys.HOME_TEACHER) else appString(StringKeys.HOME_STUDENT), style = VTheme.type.caption.colored(c.ink2))
         }
         Text(
-            if (isToday) "🎉 Today" else "in ${b.daysAway}d",
+            if (isToday) appString(StringKeys.HOME_BIRTHDAY_TODAY) else appString(StringKeys.HOME_BIRTHDAY_IN_DAYS, "days" to b.daysAway),
             style = VTheme.type.caption.colored(if (isToday) c.successInk else c.ink3),
         )
     }
@@ -1584,7 +1586,7 @@ private fun ActivityFeedCard(activities: List<ActivityItem>, onClick: () -> Unit
     val c = VTheme.colors
     VCard(modifier = Modifier.fillMaxWidth().clickable { onClick() }) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text("Live Activity", style = VTheme.type.h3.colored(c.ink))
+            Text(appString(StringKeys.HOME_LIVE_ACTIVITY), style = VTheme.type.h3.colored(c.ink))
             activities.take(6).forEachIndexed { index, item ->
                 TimelineItem(item, isLast = index == activities.take(6).lastIndex)
             }
@@ -1623,10 +1625,10 @@ private fun TimelineItem(activity: ActivityItem, isLast: Boolean) {
 @Composable
 private fun AnalyticsEntryCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
     FeatureCard(
-        title = "School Analytics",
-        description = "Attendance, academics & growth insights",
+        title = appString(StringKeys.HOME_SCHOOL_ANALYTICS),
+        description = appString(StringKeys.HOME_ANALYTICS_DESC),
         icon = VIcons.TrendingUp,
-        button = "Explore Analytics",
+        button = appString(StringKeys.HOME_EXPLORE_ANALYTICS),
         onClick = onClick,
         modifier = modifier,
     )
@@ -1635,10 +1637,10 @@ private fun AnalyticsEntryCard(onClick: () -> Unit, modifier: Modifier = Modifie
 @Composable
 private fun PewsEntryCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
     FeatureCard(
-        title = "Student Risk Monitor",
-        description = "Identify students needing attention early",
+        title = appString(StringKeys.HOME_RISK_MONITOR),
+        description = appString(StringKeys.HOME_RISK_MONITOR_DESC),
         icon = VIcons.AlertCircle,
-        button = "Open Monitor",
+        button = appString(StringKeys.HOME_OPEN_MONITOR),
         onClick = onClick,
         modifier = modifier,
     )
@@ -1647,10 +1649,10 @@ private fun PewsEntryCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
 @Composable
 private fun ReportCardPublishEntryCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
     FeatureCard(
-        title = "Report Card Publishing",
-        description = "Review oversight & publish approved AI report card drafts",
+        title = appString(StringKeys.HOME_REPORT_PUBLISH),
+        description = appString(StringKeys.HOME_REPORT_PUBLISH_DESC),
         icon = VIcons.FileText,
-        button = "Open Publishing",
+        button = appString(StringKeys.HOME_OPEN_PUBLISHING),
         onClick = onClick,
         modifier = modifier,
     )
@@ -1659,10 +1661,10 @@ private fun ReportCardPublishEntryCard(onClick: () -> Unit, modifier: Modifier =
 @Composable
 private fun ReportCardEffectivenessEntryCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
     FeatureCard(
-        title = "Report Card Effectiveness",
-        description = "Run the learning flywheel & view effectiveness priors",
+        title = appString(StringKeys.HOME_REPORT_EFFECTIVENESS),
+        description = appString(StringKeys.HOME_REPORT_EFFECTIVENESS_DESC),
         icon = VIcons.TrendingUp,
-        button = "Open Effectiveness",
+        button = appString(StringKeys.HOME_OPEN_EFFECTIVENESS),
         onClick = onClick,
         modifier = modifier,
     )
@@ -1723,11 +1725,11 @@ private fun AdminEventEntryButton(onOpenEvents: () -> Unit) {
                     Icon(VIcons.Calendar, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(22.dp))
                 }
                 Column {
-                    Text("Event Registration", style = VTheme.type.h4.colored(c.ink))
-                    Text("Manage PTM slots, event capacity & registrations", style = VTheme.type.caption.colored(c.ink2))
+                    Text(appString(StringKeys.HOME_EVENT_REGISTRATION), style = VTheme.type.h4.colored(c.ink))
+                    Text(appString(StringKeys.HOME_EVENT_REG_DESC), style = VTheme.type.caption.colored(c.ink2))
                 }
             }
-            Text("Manage →", style = VTheme.type.bodyStrong.colored(c.tealDeep))
+            Text(appString(StringKeys.HOME_MANAGE), style = VTheme.type.bodyStrong.colored(c.tealDeep))
         }
     }
 }

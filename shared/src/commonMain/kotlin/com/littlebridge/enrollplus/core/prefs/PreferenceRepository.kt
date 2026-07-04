@@ -66,5 +66,11 @@ interface PreferenceRepository {
     fun getCachedBranding(): Flow<String?>
     suspend fun setCachedBranding(brandingJson: String?)
 
+    // --- multi-language (MULTI_LANGUAGE_SPEC.md) ---
+    // The user's UI language preference, persisted locally for instant
+    // language switch on app launch. Synced to server via PATCH /api/v1/user/language-pref.
+    fun getLanguagePref(): Flow<String>
+    suspend fun setLanguagePref(lang: String)
+
     suspend fun clearSession()
 }

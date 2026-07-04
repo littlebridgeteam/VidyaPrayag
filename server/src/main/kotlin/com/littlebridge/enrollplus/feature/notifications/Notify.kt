@@ -18,6 +18,8 @@ package com.littlebridge.enrollplus.feature.notifications
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.NotificationPreferencesTable
 import com.littlebridge.enrollplus.db.NotificationsTable
+import com.littlebridge.enrollplus.feature.i18n.ServerStrings
+import com.littlebridge.enrollplus.feature.i18n.UserLanguageResolver
 import com.littlebridge.enrollplus.feature.notification.dto.SendNotificationRequest
 import com.littlebridge.enrollplus.feature.notification.repository.DeviceTokenRepository
 import com.littlebridge.enrollplus.feature.notification.service.NotificationService
@@ -194,4 +196,85 @@ object Notify {
         refType: String? = null,
         refId: String? = null,
     ) = toUsers(listOf(userId), category, title, body, schoolId, actorId, deepLink, refType, refId)
+
+    // ------------------------------------------------------------------
+    // Multi-Language: translated notification dispatch
+    // ------------------------------------------------------------------
+
+    /**
+     * Send a notification with server-side translation per recipient.
+     *
+     * If [notificationType] has a pre-translated template in ServerStrings,
+     * the title and body are resolved per-recipient using their languagePref.
+     * If [dynamicBody] is non-null (custom content not covered by templates),
+     * it is used as-is (English in initial release — AI translation is F-14).
+     *
+     * @param notificationType e.g. "fee_reminder", "attendance_alert", "link_approved"
+     * @param titleParams placeholder values for the title template (e.g. mapOf("student_name" to "Arya"))
+     * @param bodyParams placeholder values for the body template
+     * @param dynamicBody if content is dynamic (not templated) — stays English in initial release
+     */
+    suspend fun toUsersTranslated(
+        userIds: Collection<UUID>,
+        category: String,
+        notificationType: String,
+        titleParams: Map<String, String> = emptyMap(),
+        bodyParams: Map<String, String> = emptyMap(),
+        dynamicBody: String? = null,
+        schoolId: UUID? = null,
+        actorId: UUID? = null,
+        deepLink: String? = null,
+        refType: String? = null,
+        refId: String? = null,
+    ) {
+        val recipients = userIds.distinct()
+        if (recipients.isEmpty()) return
+
+        // Group recipients by language to batch the notification insert
+        val langGroups = mutableMapOf<String, MutableList<UUID>>()
+        for (uid in recipients) {
+            val lang = UserLanguageResolver.resolve(uid)
+            langGroups.getOrPut(lang) { mutableListOf() }.add(uid)
+        }
+
+        for ((lang, uids) in langGroups) {
+            val hasTemplate = ServerStrings.hasTemplate(notificationType, "body")
+
+            val title = if (hasTemplate || ServerStrings.hasTemplate(notificationType, "title")) {
+                ServerStrings.fill("notification.${notificationType}.title", lang, titleParams)
+            } else {
+                // No template — use notificationType as-is (English fallback)
+                notificationType.replace("_", " ").replaceFirstChar { it.titlecase() }
+            }
+
+            val body = if (dynamicBody != null) {
+                // Dynamic content stays English in initial release (F-14 future)
+                dynamicBody
+            } else if (hasTemplate) {
+                ServerStrings.fill("notification.${notificationType}.body", lang, bodyParams)
+            } else {
+                ""
+            }
+
+            toUsers(uids, category, title, body, schoolId, actorId, deepLink, refType, refId)
+        }
+    }
+
+    /** Convenience for a single translated recipient. */
+    suspend fun toUserTranslated(
+        userId: UUID,
+        category: String,
+        notificationType: String,
+        titleParams: Map<String, String> = emptyMap(),
+        bodyParams: Map<String, String> = emptyMap(),
+        dynamicBody: String? = null,
+        schoolId: UUID? = null,
+        actorId: UUID? = null,
+        deepLink: String? = null,
+        refType: String? = null,
+        refId: String? = null,
+    ) = toUsersTranslated(
+        listOf(userId), category, notificationType, titleParams, bodyParams,
+        dynamicBody, schoolId, actorId, deepLink, refType, refId
+    )
 }

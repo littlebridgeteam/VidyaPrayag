@@ -34,21 +34,23 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.feature.teacher.domain.model.TeacherClassSummaryDto
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherClassesViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
 
 /** The five scoped tools the Update tab fronts. */
-enum class UpdateTool(val label: String, val icon: ImageVector) {
-    Attendance("Attendance", VIcons.ListChecks),
-    Marks("Marks", VIcons.GraduationCap),
-    Syllabus("Syllabus", VIcons.BookOpen),
-    Homework("Homework", VIcons.FileText),
-    LessonPlan("Lesson", VIcons.ClipboardList),
+enum class UpdateTool(val labelKey: String, val icon: ImageVector) {
+    Attendance(StringKeys.TEACHER_ATTENDANCE, VIcons.ListChecks),
+    Marks(StringKeys.TC_MARKS, VIcons.GraduationCap),
+    Syllabus(StringKeys.TEACHER_SYLLABUS, VIcons.BookOpen),
+    Homework(StringKeys.TEACHER_HOMEWORK, VIcons.FileText),
+    LessonPlan(StringKeys.TC_LESSON, VIcons.ClipboardList),
 }
 
 /**
@@ -103,10 +105,10 @@ fun TeacherUpdateScreenV2(
                 when {
                     classesState.isLoading && classesState.classes.isEmpty() -> TeacherCenterState { TeacherSpinner() }
                     classesState.error != null && classesState.classes.isEmpty() -> TeacherCenterState {
-                        Text(classesState.error ?: "Couldn't load your classes", style = VTheme.type.body.colored(c.ink2))
+                        Text(classesState.error ?: appString(StringKeys.TC_COULDNT_LOAD_CLASSES), style = VTheme.type.body.colored(c.ink2))
                     }
                     classesState.classes.isEmpty() -> TeacherCenterState {
-                        Text("You have no class allocations yet.", style = VTheme.type.body.colored(c.ink2))
+                        Text(appString(StringKeys.TC_NO_ALLOCATIONS), style = VTheme.type.body.colored(c.ink2))
                     }
                     else -> ScopeGate(tool, classesState.classes) { cls ->
                         pickedAssignment = cls.assignmentId
@@ -154,9 +156,9 @@ private fun ToolChip(tool: UpdateTool, active: Boolean, modifier: Modifier = Mod
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Icon(tool.icon, contentDescription = tool.label, tint = if (active) c.accentDeep else c.ink3, modifier = Modifier.size(18.dp))
+        Icon(tool.icon, contentDescription = appString(tool.labelKey), tint = if (active) c.accentDeep else c.ink3, modifier = Modifier.size(18.dp))
         Text(
-            tool.label,
+            appString(tool.labelKey),
             style = VTheme.type.label.colored(if (active) c.accentDeep else c.ink3).copy(fontSize = 9.5.sp, fontWeight = FontWeight.Bold),
             maxLines = 1,
         )
@@ -169,8 +171,8 @@ private fun ScopeGate(tool: UpdateTool, classes: List<TeacherClassSummaryDto>, o
         TeacherScopeSelector(
             classes = classes,
             onPick = onPick,
-            title = "Which class?",
-            caption = "Pick a class to ${tool.label.lowercase()} for.",
+            title = appString(StringKeys.TC_WHICH_CLASS),
+            caption = appString(StringKeys.TC_PICK_CLASS_FOR, "tool" to appString(tool.labelKey).lowercase()),
         )
     }
 }
@@ -209,7 +211,7 @@ private fun ScopeBar(label: String, onChange: () -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Icon(VIcons.ArrowLeft, contentDescription = null, tint = c.ink2, modifier = Modifier.size(13.dp))
-            Text("Change", style = VTheme.type.label.colored(c.ink2).copy(fontSize = 10.sp, fontWeight = FontWeight.Bold))
+            Text(appString(StringKeys.TC_CHANGE), style = VTheme.type.label.colored(c.ink2).copy(fontSize = 10.sp, fontWeight = FontWeight.Bold))
         }
     }
 }

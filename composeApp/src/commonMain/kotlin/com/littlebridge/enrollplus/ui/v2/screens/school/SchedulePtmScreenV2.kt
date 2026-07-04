@@ -47,6 +47,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
@@ -76,7 +78,7 @@ fun SchedulePtmScreenV2(
     Column(modifier.fillMaxSize().statusBarsPadding()
         .imePadding()
         .navigationBarsPadding()) {
-        VBackHeader(title = "Schedule PTM", onBack = onBack)
+        VBackHeader(title = appString(StringKeys.SCH_SCHEDULE_PTM), onBack = onBack)
         SchedulePtmContent(
             state = state,
             onCreate = { title, date, slot, onDone -> viewModel.createPtm(title, date, slot, onDone) },
@@ -115,21 +117,21 @@ private fun SchedulePtmContent(
                 state.history.isEmpty() &&
                 state.classProgress.isEmpty() &&
                 !composerOpen,
-            emptyTitle = "No PTMs yet",
-            emptyBody = "Schedule your first parent-teacher meeting to get started.",
+            emptyTitle = appString(StringKeys.SCH_NO_PTMS_YET),
+            emptyBody = appString(StringKeys.SCH_NO_PTMS_DESC),
             emptyIcon = VIcons.Calendar,
             onRetry = onRetry,
         ) {
             // Schedule new PTM CTA / composer
             if (composerOpen) {
                 VCard {
-                    Text("New PTM", style = VTheme.type.h3.colored(c.ink))
+                    Text(appString(StringKeys.SCH_NEW_PTM), style = VTheme.type.h3.colored(c.ink))
                     Spacer(Modifier.height(12.dp))
-                    VInput(value = title, onValueChange = { title = it }, label = "Title", placeholder = "e.g. Term 1 PTM")
+                    VInput(value = title, onValueChange = { title = it }, label = appString(StringKeys.SCH_TITLE), placeholder = appString(StringKeys.SCH_TITLE_PH))
                     Spacer(Modifier.height(8.dp))
-                    VDatePicker(value = date, onValueChange = { date = it }, label = "Date", placeholder = "Select PTM date")
+                    VDatePicker(value = date, onValueChange = { date = it }, label = appString(StringKeys.SCH_DATE), placeholder = appString(StringKeys.SCH_PTM_DATE_PH))
                     Spacer(Modifier.height(8.dp))
-                    VInput(value = slot, onValueChange = { slot = it }, label = "Slot", placeholder = "10:00 AM - 1:00 PM")
+                    VInput(value = slot, onValueChange = { slot = it }, label = appString(StringKeys.SCH_SLOT), placeholder = appString(StringKeys.SCH_SLOT_PH))
                     val info = state.infoMessage
                     if (info != null) {
                         Spacer(Modifier.height(8.dp))
@@ -139,7 +141,7 @@ private fun SchedulePtmContent(
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Box(Modifier.weight(1f)) {
                             VButton(
-                                text = "Cancel",
+                                text = appString(StringKeys.SCH_CLOSE),
                                 onClick = {
                                     composerOpen = false
                                     title = ""; date = ""; slot = ""
@@ -152,7 +154,7 @@ private fun SchedulePtmContent(
                         }
                         Box(Modifier.weight(1f)) {
                             VButton(
-                                text = "Create",
+                                text = appString(StringKeys.SCH_CREATE),
                                 onClick = {
                                     onCreate(title, date, slot) {
                                         composerOpen = false
@@ -170,7 +172,7 @@ private fun SchedulePtmContent(
                 }
             } else {
                 VButton(
-                    text = "Schedule new PTM",
+                    text = appString(StringKeys.SCH_SCHEDULE_NEW_PTM),
                     onClick = { composerOpen = true },
                     full = true,
                     variant = VButtonVariant.Primary,
@@ -182,7 +184,7 @@ private fun SchedulePtmContent(
             if (state.activeEventTitle.isNotBlank()) {
                 VCard {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        VBadge(text = "ACTIVE", tone = VBadgeTone.Success)
+                        VBadge(text = appString(StringKeys.SCH_ACTIVE), tone = VBadgeTone.Success)
                         Text(state.activeEventTitle, style = VTheme.type.h3.colored(c.ink))
                     }
                     Spacer(Modifier.height(4.dp))
@@ -193,19 +195,19 @@ private fun SchedulePtmContent(
                     Spacer(Modifier.height(12.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Box(Modifier.weight(1f)) {
-                            KpiTile(label = "Expected", value = state.expectedParents.toString())
+                            KpiTile(label = appString(StringKeys.SCH_EXPECTED), value = state.expectedParents.toString())
                         }
                         Box(Modifier.weight(1f)) {
-                            KpiTile(label = "Checked-in", value = state.checkedInParents.toString())
+                            KpiTile(label = appString(StringKeys.SCH_CHECKED_IN), value = state.checkedInParents.toString())
                         }
                     }
                     Spacer(Modifier.height(8.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Box(Modifier.weight(1f)) {
-                            KpiTile(label = "Invites sent", value = state.invitesDelivered.toString())
+                            KpiTile(label = appString(StringKeys.SCH_INVITES_SENT), value = state.invitesDelivered.toString())
                         }
                         Box(Modifier.weight(1f)) {
-                            KpiTile(label = "Read", value = state.readReceipts.toString())
+                            KpiTile(label = appString(StringKeys.SCH_READ), value = state.readReceipts.toString())
                         }
                     }
                 }
@@ -213,7 +215,7 @@ private fun SchedulePtmContent(
 
             // History
             if (state.history.isNotEmpty()) {
-                VSectionHeader(title = "HISTORY")
+                VSectionHeader(title = appString(StringKeys.SCH_HISTORY))
                 VCard {
                     state.history.forEachIndexed { i, h ->
                         if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(c.border1))
@@ -224,7 +226,7 @@ private fun SchedulePtmContent(
 
             // Per-class progress
             if (state.classProgress.isNotEmpty()) {
-                VSectionHeader(title = "CLASS PROGRESS")
+                VSectionHeader(title = appString(StringKeys.SCH_CLASS_PROGRESS))
                 state.classProgress.forEach { cp -> ClassProgressCard(cp) }
             }
         }

@@ -51,6 +51,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.components.VLabel
 import com.littlebridge.enrollplus.ui.v2.components.VTag
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
@@ -124,6 +126,8 @@ private fun ParentLinkChildContent(
     val c = VTheme.colors
     val d = VTheme.dimens
     val total = 3
+    val theSchoolStr = appString(StringKeys.LINK_THE_SCHOOL)
+    val yourSchoolStr = appString(StringKeys.LINK_YOUR_SCHOOL)
 
     var step by remember { mutableIntStateOf(1) }
     val fullName = state.fullName
@@ -144,7 +148,7 @@ private fun ParentLinkChildContent(
     ) {
         Spacer(Modifier.height(40.dp))
         // §5: React `Label` component = labelStrong (uppercase 11/700/0.10em).
-        VLabel("Step $step of $total")
+        VLabel(appString(StringKeys.LINK_STEP_OF).replace("{step}", step.toString()).replace("{total}", total.toString()))
         Spacer(Modifier.height(d.sm))
         StepBars(current = step, total = total)
 
@@ -156,21 +160,21 @@ private fun ParentLinkChildContent(
         when (current) {
             1 -> {
                 Spacer(Modifier.height(d.lg))
-                Text("Tell us about you", style = VTheme.type.h1.colored(c.ink))
+                Text(appString(StringKeys.LINK_STEP1_TITLE), style = VTheme.type.h1.colored(c.ink))
                 Text(
-                    "So your child's school knows who to send updates to.",
+                    appString(StringKeys.LINK_STEP1_SUB),
                     style = VTheme.type.body.colored(c.ink2),
                 )
                 Spacer(Modifier.height(d.lg))
                 VInput(
                     value = fullName,
                     onValueChange = onFullNameChange,
-                    label = "Your full name",
-                    placeholder = "e.g. Sneha Sharma",
+                    label = appString(StringKeys.LINK_FULL_NAME),
+                    placeholder = appString(StringKeys.LINK_FULL_NAME_PH),
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(d.md))
-                VLabel("Preferred language")
+                VLabel(appString(StringKeys.LINK_PREF_LANG))
                 Spacer(Modifier.height(d.sm))
                 Row(horizontalArrangement = Arrangement.spacedBy(d.sm)) {
                     VTag(text = "English", active = language == "English", onClick = { onLanguageChange("English") })
@@ -180,23 +184,23 @@ private fun ParentLinkChildContent(
 
             2 -> {
                 Spacer(Modifier.height(d.lg))
-                Text("Find your child's school", style = VTheme.type.h1.colored(c.ink))
+                Text(appString(StringKeys.LINK_STEP2_TITLE), style = VTheme.type.h1.colored(c.ink))
                 Text(
-                    "Type the school name. We'll match it against schools using VidyaSetu.",
+                    appString(StringKeys.LINK_STEP2_SUB),
                     style = VTheme.type.body.colored(c.ink2),
                 )
                 Spacer(Modifier.height(d.lg))
                 VInput(
                     value = schoolQuery,
                     onValueChange = onSchoolQueryChange,
-                    placeholder = "Search by school name",
+                    placeholder = appString(StringKeys.LINK_SEARCH_PH),
                     leadingIcon = VIcons.Search,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(d.sm))
                 // §5: search action — runs the real GET /schools/search.
                 VButton(
-                    text = if (state.isSearching) "Searching…" else "Search",
+                    text = if (state.isSearching) appString(StringKeys.LINK_SEARCHING) else appString(StringKeys.LINK_SEARCH),
                     onClick = onSearch,
                     full = true,
                     size = VButtonSize.Md,
@@ -208,13 +212,13 @@ private fun ParentLinkChildContent(
                 when {
                     state.searchError != null -> {
                         Text(
-                            state.searchError ?: "Something went wrong",
+                            state.searchError ?: appString(StringKeys.LINK_SEARCH_ERR),
                             style = VTheme.type.caption.colored(Color(0xFF7A1C18)),
                         )
                     }
                     state.matches.isEmpty() -> {
                         Text(
-                            "Search for your child's school to see matches.",
+                            appString(StringKeys.LINK_SEARCH_PROMPT),
                             style = VTheme.type.caption.colored(c.ink2),
                         )
                     }
@@ -224,7 +228,7 @@ private fun ParentLinkChildContent(
                         // only happens for a single result (see LinkChildViewModel).
                         if (state.matches.size > 1) {
                             Text(
-                                "Tap your child's school to select it.",
+                                appString(StringKeys.LINK_TAP_SELECT),
                                 style = VTheme.type.caption.colored(c.ink2),
                             )
                             Spacer(Modifier.height(d.sm))
@@ -252,7 +256,7 @@ private fun ParentLinkChildContent(
                                         Text("${match.city} • ${match.board}", style = VTheme.type.caption.colored(c.ink2))
                                     }
                                     if (selected) {
-                                        VBadge(text = "Match", tone = VBadgeTone.Arctic)
+                                        VBadge(text = appString(StringKeys.LINK_MATCH), tone = VBadgeTone.Arctic)
                                     }
                                 }
                             }
@@ -264,10 +268,9 @@ private fun ParentLinkChildContent(
 
             else -> {
                 Spacer(Modifier.height(d.lg))
-                Text("Link your child", style = VTheme.type.h1.colored(c.ink))
+                Text(appString(StringKeys.LINK_STEP3_TITLE), style = VTheme.type.h1.colored(c.ink))
                 Text(
-                    "Tell us about your child at ${state.selectedSchool?.name ?: "the school"} " +
-                        "so we can match them precisely.",
+                    appString(StringKeys.LINK_STEP3_SUB).replace("{school}", state.selectedSchool?.name ?: theSchoolStr),
                     style = VTheme.type.body.colored(c.ink2),
                 )
                 Spacer(Modifier.height(d.lg))
@@ -276,8 +279,8 @@ private fun ParentLinkChildContent(
                 VInput(
                     value = state.childName,
                     onValueChange = onChildNameChange,
-                    label = "Child's full name",
-                    placeholder = "e.g. Aarav Sharma",
+                    label = appString(StringKeys.LINK_CHILD_NAME),
+                    placeholder = appString(StringKeys.LINK_CHILD_NAME_PH),
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(d.md))
@@ -287,15 +290,15 @@ private fun ParentLinkChildContent(
                     VInput(
                         value = state.className,
                         onValueChange = onClassNameChange,
-                        label = "Class",
-                        placeholder = "e.g. 4",
+                        label = appString(StringKeys.LINK_CLASS),
+                        placeholder = appString(StringKeys.LINK_CLASS_PH),
                         modifier = Modifier.weight(2f),
                     )
                     VInput(
                         value = state.section,
                         onValueChange = onSectionChange,
-                        label = "Section",
-                        placeholder = "e.g. A",
+                        label = appString(StringKeys.LINK_SECTION),
+                        placeholder = appString(StringKeys.LINK_SECTION_PH),
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -304,8 +307,8 @@ private fun ParentLinkChildContent(
                 VInput(
                     value = rollNo,
                     onValueChange = onRollNumberChange,
-                    label = "Roll / admission number",
-                    placeholder = "e.g. 02",
+                    label = appString(StringKeys.LINK_ROLL),
+                    placeholder = appString(StringKeys.LINK_ROLL_PH),
                     keyboardType = KeyboardType.Number,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -316,8 +319,8 @@ private fun ParentLinkChildContent(
                 VInput(
                     value = state.parentPhone,
                     onValueChange = onParentPhoneChange,
-                    label = "Your phone number (optional)",
-                    placeholder = "e.g. 98765 43210",
+                    label = appString(StringKeys.LINK_PHONE_OPT),
+                    placeholder = appString(StringKeys.LINK_PHONE_PH),
                     keyboardType = KeyboardType.Phone,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -326,7 +329,7 @@ private fun ParentLinkChildContent(
                 when {
                     state.linkError != null -> {
                         Text(
-                            state.linkError ?: "Could not link your child",
+                            state.linkError ?: appString(StringKeys.LINK_ERR),
                             style = VTheme.type.caption.colored(Color(0xFF7A1C18)),
                         )
                     }
@@ -348,12 +351,11 @@ private fun ParentLinkChildContent(
                                     // student's REAL school, so this name is authoritative
                                     // over the one the parent tapped in step 2.
                                     val matchedSchool = linked.schoolName.takeIf { it.isNotBlank() }
-                                        ?: state.selectedSchool?.name ?: "the school"
+                                        ?: state.selectedSchool?.name ?: theSchoolStr
                                     val msg = if (state.linkNeedsReview) {
-                                        "We found your child but the phone number didn't match — " +
-                                            "$matchedSchool will review and confirm."
+                                        appString(StringKeys.LINK_REVIEW_MSG).replace("{school}", matchedSchool)
                                     } else {
-                                        "Request sent — awaiting $matchedSchool approval"
+                                        appString(StringKeys.LINK_PENDING_MSG).replace("{school}", matchedSchool)
                                     }
                                     Text(msg, style = VTheme.type.caption.colored(c.ink2))
                                 }
@@ -370,7 +372,7 @@ private fun ParentLinkChildContent(
                                 Column(Modifier.weight(1f)) {
                                     Text(linked.childName, style = VTheme.type.bodyStrong.colored(c.ink))
                                     Text(
-                                        "Class ${linked.className} • Roll ${linked.roll}",
+                                        appString(StringKeys.LINK_CLASS_ROLL).replace("{class}", linked.className).replace("{roll}", linked.roll),
                                         style = VTheme.type.caption.colored(c.ink2),
                                     )
                                 }
@@ -381,7 +383,7 @@ private fun ParentLinkChildContent(
                     }
                     else -> {
                         Text(
-                            "We'll match this against ${state.selectedSchool?.name ?: "your school"}'s records when you tap Finish.",
+                            appString(StringKeys.LINK_MATCH_PROMPT).replace("{school}", state.selectedSchool?.name ?: yourSchoolStr),
                             style = VTheme.type.caption.colored(c.ink2),
                         )
                     }
@@ -396,12 +398,12 @@ private fun ParentLinkChildContent(
         // Step 2 requires a selected school before advancing; step 3 links via the backend and only
         // calls onDone() once the link is confirmed (handled in the VM's onSuccess callback).
         val ctaText = when {
-            step < total -> "Continue"
-            state.isLinking -> "Linking…"
+            step < total -> appString(StringKeys.LINK_CONTINUE)
+            state.isLinking -> appString(StringKeys.LINK_LINKING)
             // RA-48: once a request is pending approval the only forward action is
             // to leave the wizard; a fresh roll cannot be re-submitted from here.
-            state.linkPending -> "Done"
-            else -> "Finish & open dashboard"
+            state.linkPending -> appString(StringKeys.LINK_DONE)
+            else -> appString(StringKeys.LINK_FINISH)
         }
         val ctaEnabled = when {
             step == 2 -> state.selectedSchool != null

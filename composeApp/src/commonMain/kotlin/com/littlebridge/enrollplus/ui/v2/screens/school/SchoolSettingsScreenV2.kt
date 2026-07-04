@@ -44,6 +44,10 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.components.VProgressRing
 import com.littlebridge.enrollplus.ui.v2.components.VThemePicker
+import com.littlebridge.enrollplus.ui.v2.components.VLanguagePicker
+import com.littlebridge.enrollplus.core.locale.LocaleManager
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
@@ -91,11 +95,15 @@ fun SchoolSettingsScreenV2(
     val state by viewModel.state.collectAsStateV2()
     val themeMode by preferenceRepository.getThemeMode().collectAsState(initial = "system")
     val customThemeId by preferenceRepository.getCustomThemeId().collectAsState(initial = null)
+    val localeManager = koinInject<LocaleManager>()
+    val currentLocale by localeManager.currentLocale.collectAsState()
     val scope = rememberCoroutineScope()
     SchoolSettingsContent(
         state = state,
         themeMode = themeMode,
         customThemeId = customThemeId,
+        currentLocale = currentLocale,
+        onLanguageSelect = { lang -> localeManager.setLocale(lang) },
         onThemeSelect = { mode, customId ->
             scope.launch {
                 preferenceRepository.setThemeMode(mode)
@@ -126,6 +134,8 @@ private fun SchoolSettingsContent(
     state: InstitutionalProfileState,
     themeMode: String,
     customThemeId: String?,
+    currentLocale: String,
+    onLanguageSelect: (String) -> Unit,
     onThemeSelect: (String, String?) -> Unit,
     onLogout: () -> Unit,
     onOpenTeachers: () -> Unit,
@@ -149,9 +159,9 @@ private fun SchoolSettingsContent(
 
     VConfirmDialog(
         visible = showLogoutConfirm,
-        title = "Log out?",
+        title = appString(StringKeys.AUTH_LOGOUT),
         message = "You'll be signed out of the admin console and need to sign in again.",
-        confirmLabel = "Log out",
+        confirmLabel = appString(StringKeys.AUTH_LOGOUT),
         onConfirm = {
             showLogoutConfirm = false
             onLogout()
@@ -171,7 +181,7 @@ private fun SchoolSettingsContent(
             .padding(top = 24.dp, bottom = 140.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("Settings", style = VTheme.type.h1.colored(c.ink))
+        Text(appString(StringKeys.SETTINGS_TITLE), style = VTheme.type.h1.colored(c.ink))
 
         VStateHost(
             loading = state.isLoading,
@@ -216,7 +226,7 @@ private fun SchoolSettingsContent(
                         }
                     },
                 ),
-                SettingRow(VIcons.Settings, "Logout", "Sign out of the admin console",false, onClick = { showLogoutConfirm = true }),
+                SettingRow(VIcons.Settings, appString(StringKeys.AUTH_LOGOUT), "Sign out of the admin console",false, onClick = { showLogoutConfirm = true }),
             )
             Spacer(Modifier.height(0.dp))
             rows.forEach { row ->
@@ -290,6 +300,18 @@ private fun SchoolSettingsContent(
                             )
                         }
                     }
+                }
+            }
+
+            // ── Language picker ────────────────────────────────────────────────
+            VCard {
+                Column {
+                    Text(appString(StringKeys.SETTINGS_LANGUAGE), style = VTheme.type.bodyStrong.colored(c.ink))
+                    Spacer(Modifier.height(10.dp))
+                    VLanguagePicker(
+                        currentLang = currentLocale,
+                        onSelect = onLanguageSelect,
+                    )
                 }
             }
 

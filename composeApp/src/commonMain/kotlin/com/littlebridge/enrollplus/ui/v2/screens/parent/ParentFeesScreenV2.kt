@@ -32,6 +32,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VLabel
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
@@ -110,7 +112,7 @@ private fun ParentFeesContent(
                     .padding(bottom = 130.dp),
                 verticalArrangement = Arrangement.spacedBy(d.sm + 4.dp),
             ) {
-            Text("Fees", style = VTheme.type.h1.colored(c.ink))
+            Text(appString(StringKeys.PF_FEES), style = VTheme.type.h1.colored(c.ink))
             // ── Hero: outstanding balance + collection progress ─────────────────
             VCard(padding = 0.dp) {
                 Box(

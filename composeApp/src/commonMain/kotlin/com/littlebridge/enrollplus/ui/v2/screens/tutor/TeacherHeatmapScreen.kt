@@ -34,6 +34,8 @@ import com.littlebridge.enrollplus.ui.v2.screens.VLoadingState
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -63,7 +65,7 @@ fun TeacherHeatmapScreen(
             Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
-            VBackHeader(title = "Class Heatmap", onBack = onBack)
+            VBackHeader(title = appString(StringKeys.TH_TITLE), onBack = onBack)
 
             when {
                 state.isLoading && state.heatmap == null -> VLoadingState()
@@ -72,8 +74,8 @@ fun TeacherHeatmapScreen(
                     onRetry = { viewModel.loadScope() },
                 )
                 state.scope.isEmpty() -> VEmptyState(
-                    title = "No assignments",
-                    body = "You have no class-subject assignments yet.",
+                    title = appString(StringKeys.TH_NO_ASSIGNMENTS),
+                    body = appString(StringKeys.TH_NO_ASSIGNMENTS_DESC),
                     icon = VIcons.BookOpen,
                 )
                 else -> {
@@ -89,8 +91,8 @@ fun TeacherHeatmapScreen(
                         HeatmapContent(state.heatmap!!)
                     } else if (!state.isLoading) {
                         VEmptyState(
-                            title = "No data",
-                            body = "No misconceptions recorded for this class yet.",
+                            title = appString(StringKeys.TH_NO_DATA),
+                            body = appString(StringKeys.TH_NO_DATA_DESC),
                             icon = VIcons.BookOpen,
                         )
                     }
@@ -144,7 +146,7 @@ private fun ScopeSelector(
                                 .padding(horizontal = 8.dp, vertical = 2.dp),
                         ) {
                             Text(
-                                "SELECTED",
+                                appString(StringKeys.TH_SELECTED),
                                 style = VTheme.type.caption.colored(c.accent),
                                 fontWeight = FontWeight.Bold,
                             )
@@ -170,9 +172,9 @@ private fun HeatmapContent(heatmap: HeatmapDto) {
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceAround,
                 ) {
-                    StatBlock("Children", heatmap.totalChildren.toString())
-                    StatBlock("Misconceptions", heatmap.totalMisconceptions.toString())
-                    StatBlock("Topics", heatmap.cells.size.toString())
+                    StatBlock(appString(StringKeys.TH_CHILDREN), heatmap.totalChildren.toString())
+                    StatBlock(appString(StringKeys.TH_MISCONCEPTIONS), heatmap.totalMisconceptions.toString())
+                    StatBlock(appString(StringKeys.TH_TOPICS), heatmap.cells.size.toString())
                 }
             }
         }
@@ -233,12 +235,12 @@ private fun HeatmapCellCard(cell: HeatmapCellDto) {
                 }
             }
             Text(
-                "${cell.affectedChildren} children affected",
+                appString(StringKeys.TH_CHILDREN_AFFECTED).replace("{count}", cell.affectedChildren.toString()),
                 style = VTheme.type.caption.colored(c.ink3),
             )
             if (cell.evidence.isNotEmpty()) {
                 Text(
-                    "Evidence:",
+                    appString(StringKeys.TH_EVIDENCE),
                     style = VTheme.type.caption.colored(c.ink3),
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.padding(top = 4.dp),

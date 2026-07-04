@@ -68,11 +68,26 @@ import com.littlebridge.enrollplus.ui.v2.components.VStatusDot
 import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.core.locale.AppStrings
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.math.roundToInt
+
+private enum class PeopleSubTab {
+    Teachers, Students, Staff, Alumni;
+
+    @Composable
+    fun label(): String = when (this) {
+        Teachers -> appString(StringKeys.PPL_TAB_TEACHERS)
+        Students -> appString(StringKeys.PPL_TAB_STUDENTS)
+        Staff    -> appString(StringKeys.PPL_TAB_STAFF)
+        Alumni   -> appString(StringKeys.PPL_TAB_ALUMNI)
+    }
+}
 
 /**
  * SchoolPeopleScreenV2 — RA-S17 rebuild.
@@ -176,7 +191,7 @@ private fun SchoolPeopleContent(
 ) {
     val c = VTheme.colors
 
-    var subTab by remember { mutableStateOf("Teachers") }
+    var subTab by remember { mutableStateOf(PeopleSubTab.Teachers) }
     var showAddTeacher by remember { mutableStateOf(false) }
     var showAddStaff by remember { mutableStateOf(false) }
     var showAddStudent by remember { mutableStateOf(false) }
@@ -202,21 +217,22 @@ private fun SchoolPeopleContent(
             .padding(top = 24.dp, bottom = 140.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text("People", style = VTheme.type.h1.colored(c.ink), modifier = Modifier.padding(horizontal = 20.dp))
+        Text(appString(StringKeys.PPL_TITLE), style = VTheme.type.h1.colored(c.ink), modifier = Modifier.padding(horizontal = 20.dp))
 
         VActionCard(
             modifier = Modifier.padding(horizontal = 16.dp),
-            title = "Child link requests",
-            subtitle = "Review parents requesting access to student records",
+            title = appString(StringKeys.PPL_LINK_REQUESTS_TITLE),
+            subtitle = appString(StringKeys.PPL_LINK_REQUESTS_SUB),
             icon = VIcons.Plus,
             onClick = onOpenLinkRequests,
         )
 
         // ── RA-S17: sub-tabs ─────────────────────────────────────────────────
+        val subTabLabels = PeopleSubTab.entries.map { it.label() }
         VTopTabs(
-            tabs = listOf("Teachers", "Students", "Non-teaching staff", "Alumni"),
-            selected = subTab,
-            onSelect = { subTab = it },
+            tabs = subTabLabels,
+            selected = subTabLabels[subTab.ordinal],
+            onSelect = { label -> subTab = PeopleSubTab.entries[subTabLabels.indexOf(label)] },
         )
 
         Column(
@@ -224,7 +240,7 @@ private fun SchoolPeopleContent(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             when (subTab) {
-                "Teachers" -> TeachersSubTab(
+                PeopleSubTab.Teachers -> TeachersSubTab(
                     state = teachersState,
                     onRetry = onTeachersRetry,
                     onAddClick = { showAddTeacher = true },
@@ -235,7 +251,7 @@ private fun SchoolPeopleContent(
                     // Assignment Management module (one of its 3 entry points).
                     onAssignClass = onAssignClasses,
                 )
-                "Students" -> StudentsSubTab(
+                PeopleSubTab.Students -> StudentsSubTab(
                     state = studentsState,
                     onRetry = onStudentsRetry,
                     onOpenStudent = onOpenStudent,
@@ -245,18 +261,18 @@ private fun SchoolPeopleContent(
                     analyticsState = analyticsState,
                     onAnalyticsRetry = onAnalyticsRetry,
                 )
-                "Non-teaching staff" -> StaffSubTab(
+                PeopleSubTab.Staff -> StaffSubTab(
                     state = staffState,
                     onRetry = onStaffRetry,
                     onSearch = onStaffSearch,
                     onAddClick = { showAddStaff = true },
                     onOpenStaff = onOpenStaff,
                 )
-                "Alumni" -> {
+                PeopleSubTab.Alumni -> {
                     VActionCard(
                         modifier = Modifier.fillMaxWidth(),
-                        title = "Alumni Management",
-                        subtitle = "View alumni directory, donations, mentorship, and analytics",
+                        title = appString(StringKeys.PPL_ALUMNI_MGMT_TITLE),
+                        subtitle = appString(StringKeys.PPL_ALUMNI_MGMT_SUB),
                         icon = VIcons.Users,
                         onClick = onOpenAlumni,
                     )
@@ -329,9 +345,9 @@ private fun TeachersSubTab(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text("Teachers", style = VTheme.type.h3.colored(c.ink))
+        Text(appString(StringKeys.PPL_TAB_TEACHERS), style = VTheme.type.h3.colored(c.ink))
         VButton(
-            text = "Add teacher",
+            text = appString(StringKeys.PPL_ADD_TEACHER),
             onClick = onAddClick,
             variant = VButtonVariant.Secondary,
             size = VButtonSize.Sm,
@@ -343,7 +359,7 @@ private fun TeachersSubTab(
         value = query,
         onValueChange = { query = it },
         label = "",
-        placeholder = "Search by name, role or subject",
+        placeholder = appString(StringKeys.PPL_SEARCH_TEACHERS),
         leadingIcon = VIcons.Search,
         modifier = Modifier.fillMaxWidth(),
     )
@@ -362,10 +378,10 @@ private fun TeachersSubTab(
         loading = state.isLoading,
         error = state.errorMessage,
         isEmpty = filtered.isEmpty(),
-        emptyTitle = if (state.teachers.isEmpty()) "No teachers yet" else "No matches",
+        emptyTitle = if (state.teachers.isEmpty()) appString(StringKeys.PPL_NO_TEACHERS) else appString(StringKeys.PPL_NO_MATCHES),
         emptyBody = if (state.teachers.isEmpty())
-            "Add your first teacher so they can sign in and manage their classes."
-        else "No teacher matches \"$query\".",
+            appString(StringKeys.PPL_NO_TEACHERS_BODY)
+        else appString(StringKeys.PPL_NO_TEACHER_MATCHES, "query" to query),
         emptyIcon = VIcons.Users,
         onRetry = onRetry,
         skeleton = { com.littlebridge.enrollplus.ui.v2.screens.SkeletonList(rows = 5) },
@@ -388,7 +404,7 @@ private fun TeachersSubTab(
             // search filters just the loaded page; loading more would surprise).
             if (query.isBlank() && state.hasNext) {
                 VButton(
-                    text = if (state.isLoadingMore) "Loading…" else "Load more",
+                    text = if (state.isLoadingMore) appString(StringKeys.PPL_LOADING) else appString(StringKeys.PPL_LOAD_MORE),
                     onClick = onLoadMore,
                     variant = VButtonVariant.Ghost,
                     size = VButtonSize.Sm,
@@ -440,7 +456,7 @@ private fun TeacherCard(
                 )
                 Column(Modifier.weight(1f)) {
                     Text(
-                        teacher.profile.name.ifBlank { "Unnamed teacher" },
+                        teacher.profile.name.ifBlank { appString(StringKeys.PPL_UNNAMED_TEACHER) },
                         style = VTheme.type.bodyStrong.colored(c.ink),
                     )
                     if (teacher.profile.role.isNotBlank()) {
@@ -448,7 +464,7 @@ private fun TeacherCard(
                     }
                 }
                 VBadge(
-                    text = if (isActive) "Active" else "Inactive",
+                    text = if (isActive) appString(StringKeys.PPL_ACTIVE) else appString(StringKeys.PPL_INACTIVE),
                     tone = if (isActive) VBadgeTone.Success else VBadgeTone.Neutral,
                 )
             }
@@ -458,14 +474,14 @@ private fun TeacherCard(
             // ── Academic assignment: grades + subjects ─────────────────────
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 LabeledChipsRow(
-                    label = "Grades",
+                    label = appString(StringKeys.PPL_GRADES),
                     values = teacher.academicAssignment.grades,
-                    emptyText = "No grades assigned",
+                    emptyText = appString(StringKeys.PPL_NO_GRADES),
                 )
                 LabeledChipsRow(
-                    label = "Subjects",
+                    label = appString(StringKeys.PPL_SUBJECTS),
                     values = teacher.academicAssignment.subjects,
-                    emptyText = "No subjects assigned",
+                    emptyText = appString(StringKeys.PPL_NO_SUBJECTS),
                 )
             }
 
@@ -474,13 +490,13 @@ private fun TeacherCard(
             // ── Workload: classes + students (side by side) ────────────────
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 WorkloadStat(
-                    label = "Classes",
+                    label = appString(StringKeys.PPL_CLASSES),
                     value = teacher.workload.totalClasses.toString(),
                     icon = VIcons.BookOpen,
                     modifier = Modifier.weight(1f),
                 )
                 WorkloadStat(
-                    label = "Students",
+                    label = appString(StringKeys.PPL_STUDENTS_LABEL),
                     value = teacher.workload.totalStudents.toString(),
                     icon = VIcons.Users,
                     modifier = Modifier.weight(1f),
@@ -499,8 +515,8 @@ private fun TeacherCard(
                     Icon(VIcons.TrendingUp, contentDescription = null, tint = c.ink3, modifier = Modifier.size(14.dp))
                     Text(
                         teacher.activity.attendancePercentage
-                            ?.let { "Attendance $it%" }
-                            ?: "Attendance —",
+                            ?.let { appString(StringKeys.PPL_ATTENDANCE_PCT, "pct" to it) }
+                            ?: appString(StringKeys.PPL_ATTENDANCE_NONE),
                         style = VTheme.type.caption.colored(c.ink2),
                     )
                 }
@@ -521,7 +537,7 @@ private fun TeacherCard(
             ) {
                 if (teacher.actions.canViewProfile) {
                     VButton(
-                        text = "View Profile",
+                        text = appString(StringKeys.PPL_VIEW_PROFILE),
                         onClick = onViewProfile,
                         variant = VButtonVariant.Secondary,
                         size = VButtonSize.Sm,
@@ -542,7 +558,7 @@ private fun TeacherCard(
                                 .clickable(enabled = !isMutating) { menuOpen = true },
                             contentAlignment = Alignment.Center,
                         ) {
-                            Icon(VIcons.More, contentDescription = "More actions", tint = c.ink2, modifier = Modifier.size(18.dp))
+                            Icon(VIcons.More, contentDescription = appString(StringKeys.PPL_MORE_ACTIONS), tint = c.ink2, modifier = Modifier.size(18.dp))
                         }
                         // Overflow items are strictly backend-driven by the
                         // `actions` flags — nothing here is hardcoded. Both map to
@@ -551,14 +567,14 @@ private fun TeacherCard(
                         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                             if (teacher.actions.canAssignClass) {
                                 DropdownMenuItem(
-                                    text = { Text("Assign classes") },
+                                    text = { Text(appString(StringKeys.PPL_ASSIGN_CLASSES)) },
                                     onClick = { menuOpen = false; onAssignClass() },
                                     leadingIcon = { Icon(VIcons.GraduationCap, contentDescription = null, modifier = Modifier.size(16.dp)) },
                                 )
                             }
                             if (teacher.actions.canDeactivate) {
                                 DropdownMenuItem(
-                                    text = { Text("Deactivate", style = VTheme.type.body.colored(c.dangerInk)) },
+                                    text = { Text(appString(StringKeys.PPL_DEACTIVATE), style = VTheme.type.body.colored(c.dangerInk)) },
                                     onClick = { menuOpen = false; onDeactivate() },
                                     leadingIcon = { Icon(VIcons.Close, contentDescription = null, tint = c.dangerInk, modifier = Modifier.size(16.dp)) },
                                 )
@@ -636,10 +652,10 @@ private fun WorkloadStat(
  * back to the raw value if it is not in the expected shape.
  */
 private fun lastActiveLabel(iso: String?): String {
-    if (iso.isNullOrBlank()) return "Never active"
+    if (iso.isNullOrBlank()) return AppStrings.get(StringKeys.PPL_NEVER_ACTIVE, "en")
     // ISO-8601 UTC like "2026-06-16T09:30:00Z" → "Active 2026-06-16".
     val datePart = iso.substringBefore('T').takeIf { it.length == 10 && it.count { ch -> ch == '-' } == 2 }
-    return datePart?.let { "Active $it" } ?: "Active"
+    return datePart?.let { AppStrings.get(StringKeys.PPL_ACTIVE_DATE, "en").replace("{date}", it) } ?: AppStrings.get(StringKeys.PPL_ACTIVE_DATE, "en").replace("{date}", "")
 }
 
 // ───────────────────────── Students sub-tab ─────────────────────────
@@ -661,14 +677,14 @@ private fun StudentsSubTab(
     var showGraduate by remember { mutableStateOf(false) }
 
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Students", style = VTheme.type.h3.colored(c.ink))
+        Text(appString(StringKeys.PPL_TAB_STUDENTS), style = VTheme.type.h3.colored(c.ink))
         FlowRow(
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             VButton(
-                text = "Add student",
+                text = appString(StringKeys.PPL_ADD_STUDENT),
                 onClick = onAddClick,
                 variant = VButtonVariant.Secondary,
                 size = VButtonSize.Sm,
@@ -676,7 +692,7 @@ private fun StudentsSubTab(
                 enabled = !state.isSaving && !state.isImporting,
             )
             VButton(
-                text = "Import CSV",
+                text = appString(StringKeys.PPL_IMPORT_CSV),
                 onClick = onImportClick,
                 variant = VButtonVariant.Ghost,
                 size = VButtonSize.Sm,
@@ -684,7 +700,7 @@ private fun StudentsSubTab(
                 enabled = !state.isImporting && !state.isSaving,
             )
             VButton(
-                text = "Graduate",
+                text = appString(StringKeys.PPL_GRADUATE),
                 onClick = { showGraduate = true },
                 variant = VButtonVariant.Ghost,
                 size = VButtonSize.Sm,
@@ -697,7 +713,7 @@ private fun StudentsSubTab(
         value = query,
         onValueChange = { query = it },
         label = "",
-        placeholder = "Search by name, roll no. or code",
+        placeholder = appString(StringKeys.PPL_SEARCH_STUDENTS),
         leadingIcon = VIcons.Search,
         modifier = Modifier.fillMaxWidth(),
     )
@@ -714,10 +730,10 @@ private fun StudentsSubTab(
         loading = state.isLoading,
         error = state.error,
         isEmpty = filtered.isEmpty(),
-        emptyTitle = if (state.students.isEmpty()) "No students yet" else "No matches",
+        emptyTitle = if (state.students.isEmpty()) appString(StringKeys.PPL_NO_STUDENTS) else appString(StringKeys.PPL_NO_MATCHES),
         emptyBody = if (state.students.isEmpty())
-            "Students appear here once they are enrolled in your school."
-        else "No student matches \"$query\".",
+            appString(StringKeys.PPL_NO_STUDENTS_BODY)
+        else appString(StringKeys.PPL_NO_STUDENT_MATCHES, "query" to query),
         emptyIcon = VIcons.Users,
         onRetry = onRetry,
         skeleton = { com.littlebridge.enrollplus.ui.v2.screens.SkeletonList(rows = 6) },
@@ -739,7 +755,7 @@ private fun StudentsSubTab(
 
     // ── Cohort analytics (kept under Students) ──────────────────────────────
     Spacer(Modifier.height(8.dp))
-    Text("Cohort analytics", style = VTheme.type.h3.colored(c.ink))
+    Text(appString(StringKeys.PPL_COHORT_ANALYTICS), style = VTheme.type.h3.colored(c.ink))
     VStateHost(
         loading = analyticsState.isLoading,
         error = analyticsState.errorMessage,
@@ -748,25 +764,25 @@ private fun StudentsSubTab(
             analyticsState.criticalRiskCount == 0 &&
             analyticsState.mediumRiskCount == 0 &&
             analyticsState.lowRiskCount == 0,
-        emptyTitle = "No cohort data yet",
-        emptyBody = "Student risk and engagement analytics appear here once attendance and marks start flowing in.",
+        emptyTitle = appString(StringKeys.PPL_NO_COHORT_DATA),
+        emptyBody = appString(StringKeys.PPL_NO_COHORT_BODY),
         emptyIcon = VIcons.Users,
         onRetry = onAnalyticsRetry,
         skeleton = { com.littlebridge.enrollplus.ui.v2.screens.SkeletonList(rows = 4) },
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             VCard {
-                VLabel("Student risk distribution")
+                VLabel(appString(StringKeys.PPL_RISK_DISTRIBUTION))
                 Spacer(Modifier.height(12.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    RiskTile("Critical", analyticsState.criticalRiskCount, c.dangerInk, Modifier.weight(1f))
-                    RiskTile("Medium", analyticsState.mediumRiskCount, c.warningInk, Modifier.weight(1f))
-                    RiskTile("Low", analyticsState.lowRiskCount, c.successInk, Modifier.weight(1f))
+                    RiskTile(appString(StringKeys.PPL_CRITICAL), analyticsState.criticalRiskCount, c.dangerInk, Modifier.weight(1f))
+                    RiskTile(appString(StringKeys.PPL_MEDIUM), analyticsState.mediumRiskCount, c.warningInk, Modifier.weight(1f))
+                    RiskTile(appString(StringKeys.PPL_LOW), analyticsState.lowRiskCount, c.successInk, Modifier.weight(1f))
                 }
             }
             if (analyticsState.atRiskStudents.isNotEmpty()) {
                 Column {
-                    Text("At-risk students", style = VTheme.type.h3.colored(c.ink), modifier = Modifier.padding(bottom = 8.dp))
+                    Text(appString(StringKeys.PPL_AT_RISK_STUDENTS), style = VTheme.type.h3.colored(c.ink), modifier = Modifier.padding(bottom = 8.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         analyticsState.atRiskStudents.forEach { RiskStudentRow(it) }
                     }
@@ -774,7 +790,7 @@ private fun StudentsSubTab(
             }
             if (analyticsState.subjectEngagements.isNotEmpty()) {
                 VCard {
-                    Text("Subject engagement", style = VTheme.type.h3.colored(c.ink))
+                    Text(appString(StringKeys.PPL_SUBJECT_ENGAGEMENT), style = VTheme.type.h3.colored(c.ink))
                     Spacer(Modifier.height(12.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         analyticsState.subjectEngagements.forEach { e ->
@@ -799,11 +815,11 @@ private fun StudentsSubTab(
             }
             if (analyticsState.cohortComparison.isNotEmpty()) {
                 VCard {
-                    Text("Cohort comparison", style = VTheme.type.h3.colored(c.ink))
+                    Text(appString(StringKeys.PPL_COHORT_COMPARISON), style = VTheme.type.h3.colored(c.ink))
                     Spacer(Modifier.height(12.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         analyticsState.cohortComparison.forEachIndexed { i, v ->
-                            val label = analyticsState.cohortLabels.getOrNull(i) ?: "Grade ${i + 1}"
+                            val label = analyticsState.cohortLabels.getOrNull(i) ?: appString(StringKeys.PPL_GRADE_N, "n" to (i + 1))
                             Column {
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                     Text(label, style = VTheme.type.body.colored(c.ink))
@@ -825,31 +841,31 @@ private fun StudentsSubTab(
         val currentYear = 2026
         Dialog(onDismissRequest = { showGraduate = false }) {
             VCard {
-                Text("Mark students as alumni", style = VTheme.type.h3.colored(c.ink))
+                Text(appString(StringKeys.PPL_MARK_ALUMNI), style = VTheme.type.h3.colored(c.ink))
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "This will mark ${filtered.size} filtered student(s) as graduated and create alumni records for them.",
+                    appString(StringKeys.PPL_MARK_ALUMNI_BODY, "count" to filtered.size),
                     style = VTheme.type.body.colored(c.ink2),
                 )
                 Spacer(Modifier.height(16.dp))
                 VInput(
                     value = gradYear,
                     onValueChange = { gradYear = it.filter { ch -> ch.isDigit() }.take(4) },
-                    label = "Graduation year",
+                    label = appString(StringKeys.PPL_GRADUATION_YEAR),
                     placeholder = currentYear.toString(),
                     keyboardType = KeyboardType.Number,
                 )
                 Spacer(Modifier.height(16.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     VButton(
-                        text = "Cancel",
+                        text = appString(StringKeys.COMMON_BUTTON_CANCEL),
                         onClick = { showGraduate = false },
                         variant = VButtonVariant.Ghost,
                         size = VButtonSize.Sm,
                         modifier = Modifier.weight(1f),
                     )
                     VButton(
-                        text = "Graduate",
+                        text = appString(StringKeys.PPL_GRADUATE),
                         onClick = {
                             val year = (gradYear.toIntOrNull() ?: currentYear).coerceIn(currentYear - 1, currentYear + 10)
                             onGraduateClick(filtered.map { it.id }, year)
@@ -883,9 +899,9 @@ private fun StaffSubTab(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text("Non-teaching staff", style = VTheme.type.h3.colored(c.ink))
+        Text(appString(StringKeys.PPL_TAB_STAFF), style = VTheme.type.h3.colored(c.ink))
         VButton(
-            text = "Add staff",
+            text = appString(StringKeys.PPL_ADD_STAFF),
             onClick = onAddClick,
             variant = VButtonVariant.Secondary,
             size = VButtonSize.Sm,
@@ -897,7 +913,7 @@ private fun StaffSubTab(
         value = state.query,
         onValueChange = onSearch,
         label = "",
-        placeholder = "Search by name, role or department",
+        placeholder = appString(StringKeys.PPL_SEARCH_STAFF),
         leadingIcon = VIcons.Search,
         modifier = Modifier.fillMaxWidth(),
     )
@@ -906,10 +922,10 @@ private fun StaffSubTab(
         loading = state.isLoading,
         error = state.error,
         isEmpty = state.staff.isEmpty(),
-        emptyTitle = if (state.query.isBlank()) "No staff yet" else "No matches",
+        emptyTitle = if (state.query.isBlank()) appString(StringKeys.PPL_NO_STAFF) else appString(StringKeys.PPL_NO_MATCHES),
         emptyBody = if (state.query.isBlank())
-            "Add office, accounts, library, transport or support staff so they appear here."
-        else "No staff matches \"${state.query}\".",
+            appString(StringKeys.PPL_NO_STAFF_BODY)
+        else appString(StringKeys.PPL_NO_STAFF_MATCHES, "query" to state.query),
         emptyIcon = VIcons.Users,
         onRetry = onRetry,
         skeleton = { com.littlebridge.enrollplus.ui.v2.screens.SkeletonList(rows = 5) },
@@ -990,19 +1006,19 @@ private fun AddTeacherDialog(
                 Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text("Add teacher", style = VTheme.type.h3.colored(c.ink))
+                Text(appString(StringKeys.PPL_ADD_TEACHER), style = VTheme.type.h3.colored(c.ink))
                 VInput(
                     value = name,
                     onValueChange = { name = it },
-                    label = "Full name",
-                    placeholder = "e.g. Asha Verma",
+                    label = appString(StringKeys.PPL_FULL_NAME),
+                    placeholder = appString(StringKeys.PPL_NAME_PH_TEACHER),
                     leadingIcon = VIcons.User,
                 )
                 VInput(
                     value = identifier,
                     onValueChange = { identifier = it },
-                    label = "Email or phone",
-                    placeholder = "teacher@school.edu or 98765 43210",
+                    label = appString(StringKeys.PPL_EMAIL_OR_PHONE),
+                    placeholder = appString(StringKeys.PPL_EMAIL_PHONE_PH),
                     leadingIcon = if (isEmail) VIcons.Mail else VIcons.Phone,
                     keyboardType = if (isEmail) KeyboardType.Email else KeyboardType.Text,
                 )
@@ -1010,20 +1026,20 @@ private fun AddTeacherDialog(
                     VInput(
                         value = password,
                         onValueChange = { password = it },
-                        label = "Initial password",
-                        placeholder = "Shared with the teacher to sign in",
+                        label = appString(StringKeys.PPL_INITIAL_PASSWORD),
+                        placeholder = appString(StringKeys.PPL_PASSWORD_PH),
                         leadingIcon = VIcons.Lock,
                         isPassword = true,
                     )
                 } else {
                     Text(
-                        "This teacher will sign in with a one-time code sent to their phone.",
+                        appString(StringKeys.PPL_OTP_HINT),
                         style = VTheme.type.caption.colored(c.ink2),
                     )
                 }
                 Spacer(Modifier.height(4.dp))
                 VButton(
-                    text = "Add teacher",
+                    text = appString(StringKeys.PPL_ADD_TEACHER),
                     onClick = {
                         onSubmit(name, identifier, password.takeIf { isEmail && it.isNotBlank() })
                     },
@@ -1033,7 +1049,7 @@ private fun AddTeacherDialog(
                     loading = isSubmitting,
                 )
                 VButton(
-                    text = "Cancel",
+                    text = appString(StringKeys.COMMON_BUTTON_CANCEL),
                     onClick = onDismiss,
                     variant = VButtonVariant.Ghost,
                     full = true,
@@ -1069,47 +1085,47 @@ private fun AddStaffDialog(
                 Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text("Add staff member", style = VTheme.type.h3.colored(c.ink))
+                Text(appString(StringKeys.PPL_ADD_STAFF_MEMBER), style = VTheme.type.h3.colored(c.ink))
                 VInput(
                     value = name,
                     onValueChange = { name = it },
-                    label = "Full name",
-                    placeholder = "e.g. Ramesh Kumar",
+                    label = appString(StringKeys.PPL_FULL_NAME),
+                    placeholder = appString(StringKeys.PPL_NAME_PH_STAFF),
                     leadingIcon = VIcons.User,
                 )
                 VInput(
                     value = role,
                     onValueChange = { role = it },
-                    label = "Role",
-                    placeholder = "e.g. Accountant, Librarian, Security",
+                    label = appString(StringKeys.PPL_ROLE),
+                    placeholder = appString(StringKeys.PPL_ROLE_PH),
                     leadingIcon = VIcons.User,
                 )
                 VInput(
                     value = department,
                     onValueChange = { department = it },
-                    label = "Department (optional)",
-                    placeholder = "e.g. Office, Transport",
+                    label = appString(StringKeys.PPL_DEPT_OPTIONAL),
+                    placeholder = appString(StringKeys.PPL_DEPT_PH),
                     leadingIcon = VIcons.Bookmark,
                 )
                 VInput(
                     value = phone,
                     onValueChange = { phone = it },
-                    label = "Phone (optional)",
-                    placeholder = "98765 43210",
+                    label = appString(StringKeys.PPL_PHONE_OPTIONAL),
+                    placeholder = appString(StringKeys.PPL_PHONE_PH),
                     leadingIcon = VIcons.Phone,
                     keyboardType = KeyboardType.Phone,
                 )
                 VInput(
                     value = email,
                     onValueChange = { email = it },
-                    label = "Email (optional)",
-                    placeholder = "staff@school.edu",
+                    label = appString(StringKeys.PPL_EMAIL_OPTIONAL),
+                    placeholder = appString(StringKeys.PPL_EMAIL_PH),
                     leadingIcon = VIcons.Mail,
                     keyboardType = KeyboardType.Email,
                 )
                 Spacer(Modifier.height(4.dp))
                 VButton(
-                    text = "Add staff",
+                    text = appString(StringKeys.PPL_ADD_STAFF),
                     onClick = { onSubmit(name, role, department, phone, email) },
                     variant = VButtonVariant.Primary,
                     full = true,
@@ -1117,7 +1133,7 @@ private fun AddStaffDialog(
                     loading = isSubmitting,
                 )
                 VButton(
-                    text = "Cancel",
+                    text = appString(StringKeys.COMMON_BUTTON_CANCEL),
                     onClick = onDismiss,
                     variant = VButtonVariant.Ghost,
                     full = true,
@@ -1154,16 +1170,16 @@ private fun AddStudentPeopleDialog(
     Dialog(onDismissRequest = onDismiss) {
         VCard(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Add student", style = VTheme.type.h3.colored(c.ink))
-                VInput(name, { name = it }, label = "Full name", placeholder = "e.g. Aarav Sharma", leadingIcon = VIcons.User)
-                VInput(className, { className = it }, label = "Class", placeholder = "e.g. Grade 4")
-                VInput(section, { section = it }, label = "Section", placeholder = "A")
-                VInput(roll, { roll = it }, label = "Roll number", placeholder = "e.g. 12", keyboardType = KeyboardType.Number)
+                Text(appString(StringKeys.PPL_ADD_STUDENT), style = VTheme.type.h3.colored(c.ink))
+                VInput(name, { name = it }, label = appString(StringKeys.PPL_FULL_NAME), placeholder = appString(StringKeys.PPL_NAME_PH_STUDENT), leadingIcon = VIcons.User)
+                VInput(className, { className = it }, label = appString(StringKeys.PPL_CLASS), placeholder = appString(StringKeys.PPL_CLASS_PH))
+                VInput(section, { section = it }, label = appString(StringKeys.PPL_SECTION), placeholder = appString(StringKeys.PPL_SECTION_PH))
+                VInput(roll, { roll = it }, label = appString(StringKeys.PPL_ROLL_NUMBER), placeholder = appString(StringKeys.PPL_ROLL_PH), keyboardType = KeyboardType.Number)
                 VInput(
                     parentPhone,
                     { parentPhone = it },
-                    label = "Parent/guardian phone (optional)",
-                    placeholder = "e.g. 9876543210",
+                    label = appString(StringKeys.PPL_PARENT_PHONE),
+                    placeholder = appString(StringKeys.PPL_PARENT_PHONE_PH),
                     keyboardType = KeyboardType.Phone,
                 )
                 if (error != null) {
@@ -1171,7 +1187,7 @@ private fun AddStudentPeopleDialog(
                 }
                 Spacer(Modifier.height(2.dp))
                 VButton(
-                    text = "Add student",
+                    text = appString(StringKeys.PPL_ADD_STUDENT),
                     onClick = { onSubmit(name, className, section, roll, parentPhone) },
                     variant = VButtonVariant.Primary,
                     full = true,
@@ -1179,7 +1195,7 @@ private fun AddStudentPeopleDialog(
                     loading = isSubmitting,
                 )
                 VButton(
-                    text = "Cancel",
+                    text = appString(StringKeys.COMMON_BUTTON_CANCEL),
                     onClick = onDismiss,
                     variant = VButtonVariant.Ghost,
                     full = true,
@@ -1216,17 +1232,16 @@ private fun ImportStudentsDialog(
     Dialog(onDismissRequest = onDismiss) {
         VCard(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Import students (CSV)", style = VTheme.type.h3.colored(c.ink))
+                Text(appString(StringKeys.PPL_IMPORT_STUDENTS_CSV), style = VTheme.type.h3.colored(c.ink))
                 Text(
-                    "First row must be the header. Columns: full_name, class_name, " +
-                        "roll_number (required); section, student_code (optional).",
+                    appString(StringKeys.PPL_IMPORT_INSTRUCTIONS),
                     style = VTheme.type.caption.colored(c.ink2),
                 )
                 VInput(
                     value = csv,
                     onValueChange = { csv = it },
-                    label = "CSV content",
-                    placeholder = "full_name,class_name,section,roll_number\nAarav Sharma,Grade 4,A,12",
+                    label = appString(StringKeys.PPL_CSV_CONTENT),
+                    placeholder = appString(StringKeys.PPL_CSV_PH),
                     singleLine = false,
                     modifier = Modifier.fillMaxWidth().height(180.dp),
                 )
@@ -1235,7 +1250,7 @@ private fun ImportStudentsDialog(
                 }
                 Spacer(Modifier.height(2.dp))
                 VButton(
-                    text = "Import",
+                    text = appString(StringKeys.PPL_IMPORT),
                     onClick = { onSubmit(csv) },
                     variant = VButtonVariant.Primary,
                     full = true,
@@ -1243,7 +1258,7 @@ private fun ImportStudentsDialog(
                     loading = isSubmitting,
                 )
                 VButton(
-                    text = "Cancel",
+                    text = appString(StringKeys.COMMON_BUTTON_CANCEL),
                     onClick = onDismiss,
                     variant = VButtonVariant.Ghost,
                     full = true,
@@ -1290,12 +1305,12 @@ private fun RiskStudentRow(s: RiskStudent) {
                     Text(s.name, style = VTheme.type.bodyStrong.colored(c.ink))
                 }
                 if (s.masteryTrend.isNotBlank()) {
-                    Text("Mastery: ${s.masteryTrend}", style = VTheme.type.caption.colored(c.ink2))
+                    Text(appString(StringKeys.PPL_MASTERY, "trend" to s.masteryTrend), style = VTheme.type.caption.colored(c.ink2))
                 }
             }
             Column(horizontalAlignment = Alignment.End) {
                 VBadge(text = s.riskLevel, tone = badgeTone)
-                Text("${s.retentionRisk}% risk", style = VTheme.type.label.colored(c.ink3).copy(fontSize = 10.sp))
+                Text(appString(StringKeys.PPL_RISK_PCT, "risk" to s.retentionRisk), style = VTheme.type.label.colored(c.ink3).copy(fontSize = 10.sp))
             }
         }
     }

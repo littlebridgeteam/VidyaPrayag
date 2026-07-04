@@ -30,6 +30,7 @@ import com.littlebridge.enrollplus.feature.admin.presentation.OnboardingGateView
 import com.littlebridge.enrollplus.feature.auth.domain.repository.AuthRepository
 import com.littlebridge.enrollplus.ui.v2.screens.auth.AdminAuthScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.auth.CommonLandingScreenV3
+import com.littlebridge.enrollplus.ui.v2.screens.auth.LanguageSelectionScreen
 import com.littlebridge.enrollplus.ui.v2.screens.auth.LegalDoc
 import com.littlebridge.enrollplus.ui.v2.screens.auth.LegalInfoScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.auth.ParentAuthScreenV2
@@ -519,14 +520,28 @@ enum class EntryRole {
 // Unauthenticated funnel:  CommonLanding → Parent/Admin auth (+ discovery/link/onboard branches)
 // ─────────────────────────────────────────────────────────────────────────────
 
-private enum class UnauthRoute { Landing, ParentAuth, AdminAuth, Discovery, ParentLinkChild, SchoolOnboarding, Legal }
+private enum class UnauthRoute { LanguageSelection, Landing, ParentAuth, AdminAuth, Discovery, ParentLinkChild, SchoolOnboarding, Legal }
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun UnauthFlow(modifier: Modifier = Modifier) {
+    val preferenceRepository = koinInject<PreferenceRepository>()
+    val hasLanguagePref by preferenceRepository.getLanguagePref()
+        .collectAsState(initial = "")
+
     var route by remember { mutableStateOf(UnauthRoute.Landing) }
     // Which legal/info document the Legal route opens on (Privacy / Terms / Help Desk).
     var legalDoc by remember { mutableStateOf(LegalDoc.Privacy) }
+
+    // First-launch gate: if no language preference is set, show the language
+    // selection screen before the landing page.
+    LaunchedEffect(hasLanguagePref) {
+        if (hasLanguagePref.isBlank() && route == UnauthRoute.Landing) {
+            route = UnauthRoute.LanguageSelection
+        } else if (hasLanguagePref.isNotBlank() && route == UnauthRoute.LanguageSelection) {
+            route = UnauthRoute.Landing
+        }
+    }
 
     // System back: collapse the funnel toward the landing screen (never exit from a leaf).
     BackHandler(enabled = route != UnauthRoute.Landing) {
@@ -538,6 +553,7 @@ private fun UnauthFlow(modifier: Modifier = Modifier) {
             UnauthRoute.SchoolOnboarding -> UnauthRoute.AdminAuth
             // Legal/Support is a leaf reachable from the landing footer — back returns there.
             UnauthRoute.Legal -> UnauthRoute.Landing
+            UnauthRoute.LanguageSelection -> UnauthRoute.Landing
             UnauthRoute.Landing -> UnauthRoute.Landing
         }
     }
@@ -550,6 +566,10 @@ private fun UnauthFlow(modifier: Modifier = Modifier) {
         modifier = modifier,
     ) { current ->
         when (current) {
+            UnauthRoute.LanguageSelection -> LanguageSelectionScreen(
+                onLanguageSelected = { route = UnauthRoute.Landing },
+                modifier = modifier,
+            )
             // The single landing surface for BOTH roles (PHASE 7). Its two role-entry cards are the
             // only auth CTAs: "I'm a Parent" → [onParent] → OTP funnel; "School / Administration" →
             // [onAdmin] → credential funnel (teachers sign in via the Admin path). A tap on any

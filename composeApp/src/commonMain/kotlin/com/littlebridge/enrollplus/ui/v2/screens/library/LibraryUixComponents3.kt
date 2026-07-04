@@ -40,6 +40,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 
@@ -133,7 +135,7 @@ fun FeaturedBookCard(
 ) {
     val c = VTheme.colors
     val haptics = rememberLibraryHaptics()
-    val typeLabel = if (featured.type == "MONTH") "Book of the Month" else "Book of the Week"
+    val typeLabel = if (featured.type == "MONTH") appString(StringKeys.LIB_UIX_BOOK_OF_MONTH) else appString(StringKeys.LIB_UIX_BOOK_OF_WEEK)
 
     VCard(modifier.fillMaxWidth().clickable { haptics.tap(); onClick() }, elevated = true) {
         Column {
@@ -187,7 +189,7 @@ fun VoiceSearchBar(
     isListening: Boolean,
     onToggleListening: () -> Unit,
     modifier: Modifier = Modifier,
-    placeholder: String = "Search books, authors...",
+    placeholder: String = appString(StringKeys.LIB_UIX_SEARCH_PLACEHOLDER),
 ) {
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.weight(1f)) {
@@ -219,8 +221,8 @@ fun GuidedQuickIssueDialog(
         modifier = modifier,
         title = {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Quick Issue", style = VTheme.type.bodyStrong.colored(c.ink))
-                VBadge(text = "Step $step/3", tone = VBadgeTone.Accent)
+                Text(appString(StringKeys.LIB_UIX_QUICK_ISSUE), style = VTheme.type.bodyStrong.colored(c.ink))
+                VBadge(text = appString(StringKeys.LIB_UIX_STEP, "step" to step), tone = VBadgeTone.Accent)
             }
         },
         text = {
@@ -236,7 +238,7 @@ fun GuidedQuickIssueDialog(
                 }
                 when (step) {
                     1 -> {
-                        Text("Confirm Book", style = VTheme.type.caption.colored(c.ink2))
+                        Text(appString(StringKeys.LIB_UIX_CONFIRM_BOOK), style = VTheme.type.caption.colored(c.ink2))
                         if (book != null) VCard {
                             Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 BookCover(book.title, book.author, book.coverUrl, Modifier.size(48.dp, 72.dp))
@@ -246,22 +248,22 @@ fun GuidedQuickIssueDialog(
                                     AvailabilityBadge(book.availableCopies, book.totalCopies)
                                 }
                             }
-                        } else Text("No book selected. Search and select a book first.", style = VTheme.type.caption.colored(c.ink3))
+                        } else Text(appString(StringKeys.LIB_UIX_NO_BOOK_SELECTED), style = VTheme.type.caption.colored(c.ink3))
                     }
                     2 -> {
-                        Text("Borrower Details", style = VTheme.type.caption.colored(c.ink2))
-                        VInput(value = borrowerName, onValueChange = onBorrowerNameChange, label = "Borrower name", placeholder = "Enter name", singleLine = true)
+                        Text(appString(StringKeys.LIB_UIX_BORROWER_DETAILS), style = VTheme.type.caption.colored(c.ink2))
+                        VInput(value = borrowerName, onValueChange = onBorrowerNameChange, label = appString(StringKeys.LIB_UIX_BORROWER_NAME), placeholder = appString(StringKeys.LIB_UIX_ENTER_NAME), singleLine = true)
                     }
                     3 -> {
-                        Text("Review & Confirm", style = VTheme.type.caption.colored(c.ink2))
+                        Text(appString(StringKeys.LIB_UIX_REVIEW_CONFIRM), style = VTheme.type.caption.colored(c.ink2))
                         VCard {
                             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 book?.let {
-                                    Text("Book: ${it.title}", style = VTheme.type.body.colored(c.ink))
-                                    Text("Author: ${it.author ?: "Unknown"}", style = VTheme.type.caption.colored(c.ink2))
+                                    Text(appString(StringKeys.LIB_UIX_BOOK_LABEL, "title" to it.title), style = VTheme.type.body.colored(c.ink))
+                                    Text(appString(StringKeys.LIB_UIX_AUTHOR_LABEL, "name" to (it.author ?: appString(StringKeys.LIB_UIX_UNKNOWN))), style = VTheme.type.caption.colored(c.ink2))
                                 }
-                                Text("Borrower: $borrowerName", style = VTheme.type.body.colored(c.ink))
-                                Text("Due date: 14 days from today", style = VTheme.type.caption.colored(c.ink3))
+                                Text(appString(StringKeys.LIB_UIX_BORROWER_LABEL, "name" to borrowerName), style = VTheme.type.body.colored(c.ink))
+                                Text(appString(StringKeys.LIB_UIX_DUE_DATE_14), style = VTheme.type.caption.colored(c.ink3))
                             }
                         }
                     }
@@ -274,13 +276,13 @@ fun GuidedQuickIssueDialog(
                     if (step == 1 && book == null) return@TextButton
                     if (step == 2 && borrowerName.isBlank()) return@TextButton
                     haptics.confirm(); step++
-                }) { Text("Next") }
+                }) { Text(appString(StringKeys.COMMON_BUTTON_NEXT)) }
             } else {
-                TextButton({ haptics.confirm(); onIssue(); step = 1 }) { Text("Issue Book") }
+                TextButton({ haptics.confirm(); onIssue(); step = 1 }) { Text(appString(StringKeys.LIB_UIX_ISSUE_BOOK)) }
             }
         },
         dismissButton = {
-            TextButton({ step = 1; onDismiss() }) { Text("Cancel") }
+            TextButton({ step = 1; onDismiss() }) { Text(appString(StringKeys.COMMON_BUTTON_CANCEL)) }
         },
     )
 }

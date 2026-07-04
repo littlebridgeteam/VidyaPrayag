@@ -44,6 +44,8 @@ import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -78,7 +80,7 @@ fun TransportManagementScreenV2(
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
-        VBackHeader(title = "Transport Management", onBack = onBack)
+        VBackHeader(title = appString(StringKeys.TRANS_TITLE), onBack = onBack)
 
         VStateHost(
             loading = state.isLoading,
@@ -95,10 +97,10 @@ fun TransportManagementScreenV2(
                 // ── Routes section ──────────────────────────────────────────
                 item {
                     VSectionHeader(
-                        title = "Routes (${state.routes.size})",
+                        title = appString(StringKeys.TRANS_ROUTES).replace("{count}", state.routes.size.toString()),
                         action = {
                             VButton(
-                                text = "+ Add Route",
+                                text = appString(StringKeys.TRANS_ADD_ROUTE),
                                 variant = VButtonVariant.Primary,
                                 size = VButtonSize.Sm,
                                 onClick = { showRouteForm = !showRouteForm },
@@ -120,10 +122,10 @@ fun TransportManagementScreenV2(
                 item {
                     Spacer(Modifier.height(8.dp))
                     VSectionHeader(
-                        title = "Vehicles (${state.vehicles.size})",
+                        title = appString(StringKeys.TRANS_VEHICLES).replace("{count}", state.vehicles.size.toString()),
                         action = {
                             VButton(
-                                text = "+ Add Vehicle",
+                                text = appString(StringKeys.TRANS_ADD_VEHICLE),
                                 variant = VButtonVariant.Primary,
                                 size = VButtonSize.Sm,
                                 onClick = { showVehicleForm = !showVehicleForm },
@@ -145,10 +147,10 @@ fun TransportManagementScreenV2(
                 item {
                     Spacer(Modifier.height(8.dp))
                     VSectionHeader(
-                        title = "Student Assignments (${state.assignments.size})",
+                        title = appString(StringKeys.TRANS_ASSIGNMENTS).replace("{count}", state.assignments.size.toString()),
                         action = {
                             VButton(
-                                text = "+ Assign",
+                                text = appString(StringKeys.TRANS_ASSIGN),
                                 variant = VButtonVariant.Primary,
                                 size = VButtonSize.Sm,
                                 onClick = { showAssignmentForm = !showAssignmentForm },
@@ -180,23 +182,23 @@ private fun CreateRouteForm(viewModel: TransportViewModel) {
 
     VCard(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("New Route", style = VTheme.type.h3, color = c.ink)
+            Text(appString(StringKeys.TRANS_NEW_ROUTE), style = VTheme.type.h3, color = c.ink)
             VInput(
                 value = name,
                 onValueChange = { name = it },
-                label = "Route name",
-                placeholder = "e.g. Route A — North Sector",
+                label = appString(StringKeys.TRANS_ROUTE_NAME),
+                placeholder = appString(StringKeys.TRANS_ROUTE_PLACE),
                 modifier = Modifier.fillMaxWidth(),
             )
             VInput(
                 value = description,
                 onValueChange = { description = it },
-                label = "Description (optional)",
-                placeholder = "Covers northern residential areas",
+                label = appString(StringKeys.TRANS_DESC_OPTIONAL),
+                placeholder = appString(StringKeys.TRANS_DESC_PLACE),
                 modifier = Modifier.fillMaxWidth(),
             )
             VButton(
-                text = "Create Route",
+                text = appString(StringKeys.TRANS_CREATE_ROUTE),
                 variant = VButtonVariant.Primary,
                 size = VButtonSize.Sm,
                 onClick = {
@@ -220,18 +222,18 @@ private fun CreateVehicleForm(viewModel: TransportViewModel, routes: List<Transp
 
     VCard(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("New Vehicle", style = VTheme.type.h3, color = c.ink)
+            Text(appString(StringKeys.TRANS_NEW_VEHICLE), style = VTheme.type.h3, color = c.ink)
             VInput(
                 value = busNumber,
                 onValueChange = { busNumber = it },
-                label = "Bus number",
-                placeholder = "e.g. KA-01-AB-1234",
+                label = appString(StringKeys.TRANS_BUS_NUMBER),
+                placeholder = appString(StringKeys.TRANS_BUS_PLACE),
                 modifier = Modifier.fillMaxWidth(),
             )
             VInput(
                 value = capacity,
                 onValueChange = { v -> capacity = v.filter { it.isDigit() }.take(4) },
-                label = "Capacity",
+                label = appString(StringKeys.TRANS_CAPACITY),
                 placeholder = "40",
                 keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
                 modifier = Modifier.fillMaxWidth(),
@@ -239,17 +241,17 @@ private fun CreateVehicleForm(viewModel: TransportViewModel, routes: List<Transp
             VInput(
                 value = driverName,
                 onValueChange = { driverName = it },
-                label = "Driver name (optional)",
+                label = appString(StringKeys.TRANS_DRIVER_NAME),
                 modifier = Modifier.fillMaxWidth(),
             )
             VInput(
                 value = driverPhone,
                 onValueChange = { driverPhone = it },
-                label = "Driver phone (optional)",
+                label = appString(StringKeys.TRANS_DRIVER_PHONE),
                 modifier = Modifier.fillMaxWidth(),
             )
             if (routes.isNotEmpty()) {
-                Text("Assign to route (optional):", style = VTheme.type.caption, color = c.ink2)
+                Text(appString(StringKeys.TRANS_ASSIGN_ROUTE), style = VTheme.type.caption, color = c.ink2)
                 routes.forEach { route ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -268,7 +270,7 @@ private fun CreateVehicleForm(viewModel: TransportViewModel, routes: List<Transp
                 }
             }
             VButton(
-                text = "Create Vehicle",
+                text = appString(StringKeys.TRANS_CREATE_VEHICLE),
                 variant = VButtonVariant.Primary,
                 size = VButtonSize.Sm,
                 onClick = {
@@ -307,16 +309,16 @@ private fun CreateAssignmentForm(
 
     VCard(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Assign Student to Route", style = VTheme.type.h3, color = c.ink)
+            Text(appString(StringKeys.TRANS_ASSIGN_STUDENT), style = VTheme.type.h3, color = c.ink)
             VInput(
                 value = studentId,
                 onValueChange = { studentId = it },
-                label = "Student ID",
-                placeholder = "Paste student UUID",
+                label = appString(StringKeys.TRANS_STUDENT_ID),
+                placeholder = appString(StringKeys.TRANS_STUDENT_ID_PLACE),
                 modifier = Modifier.fillMaxWidth(),
             )
             if (routes.isNotEmpty()) {
-                Text("Select route:", style = VTheme.type.caption, color = c.ink2)
+                Text(appString(StringKeys.TRANS_SELECT_ROUTE), style = VTheme.type.caption, color = c.ink2)
                 routes.forEach { route ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -341,7 +343,7 @@ private fun CreateAssignmentForm(
                 }
             }
             if (selectedRoute != null && selectedRoute.stops.isNotEmpty()) {
-                Text("Select stop:", style = VTheme.type.caption, color = c.ink2)
+                Text(appString(StringKeys.TRANS_SELECT_STOP), style = VTheme.type.caption, color = c.ink2)
                 selectedRoute.stops.forEach { stop ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -362,7 +364,7 @@ private fun CreateAssignmentForm(
                 }
             }
             if (vehicles.isNotEmpty()) {
-                Text("Select vehicle:", style = VTheme.type.caption, color = c.ink2)
+                Text(appString(StringKeys.TRANS_SELECT_VEHICLE), style = VTheme.type.caption, color = c.ink2)
                 vehicles.forEach { vehicle ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -385,20 +387,20 @@ private fun CreateAssignmentForm(
             VInput(
                 value = feeAmount,
                 onValueChange = { v -> feeAmount = v.filter { it.isDigit() || it == '.' }.take(10) },
-                label = "Transport fee amount (optional)",
-                placeholder = "e.g. 6000",
+                label = appString(StringKeys.TRANS_FEE_AMOUNT),
+                placeholder = appString(StringKeys.TRANS_FEE_PLACE),
                 keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
                 modifier = Modifier.fillMaxWidth(),
             )
             VInput(
                 value = feeDueDate,
                 onValueChange = { feeDueDate = it },
-                label = "Fee due date (optional)",
+                label = appString(StringKeys.TRANS_FEE_DUE_DATE),
                 placeholder = "YYYY-MM-DD",
                 modifier = Modifier.fillMaxWidth(),
             )
             VButton(
-                text = "Assign Student",
+                text = appString(StringKeys.TRANS_ASSIGN_BTN),
                 variant = VButtonVariant.Primary,
                 size = VButtonSize.Sm,
                 enabled = studentId.isNotBlank() && selectedRouteId.isNotBlank() && selectedStopId.isNotBlank() && selectedVehicleId.isNotBlank(),
@@ -437,20 +439,20 @@ private fun RouteCard(
                     Text(it, style = VTheme.type.caption, color = c.ink2)
                 }
                 Text(
-                    "${route.stops.size} stops",
+                    appString(StringKeys.TRANS_STOPS).replace("{count}", route.stops.size.toString()),
                     style = VTheme.type.caption,
                     color = c.ink2,
                 )
             }
             VBadge(
-                text = if (route.isActive) "Active" else "Inactive",
+                text = if (route.isActive) appString(StringKeys.TRANS_ACTIVE) else appString(StringKeys.TRANS_INACTIVE),
                 tone = if (route.isActive) VBadgeTone.Success else VBadgeTone.Neutral,
             )
         }
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             VButton(
-                text = "Delete",
+                text = appString(StringKeys.COMMON_BUTTON_DELETE),
                 variant = VButtonVariant.Destructive,
                 size = VButtonSize.Sm,
                 onClick = onDelete,
@@ -474,22 +476,22 @@ private fun VehicleCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(vehicle.busNumber, style = VTheme.type.h3, color = c.ink)
                 Text(
-                    "Capacity: ${vehicle.capacity}",
+                    appString(StringKeys.TRANS_CAPACITY_LABEL).replace("{count}", vehicle.capacity.toString()),
                     style = VTheme.type.caption,
                     color = c.ink2,
                 )
                 vehicle.driverName?.let {
-                    Text("Driver: $it", style = VTheme.type.caption, color = c.ink2)
+                    Text(appString(StringKeys.TRANS_DRIVER_LABEL).replace("{name}", it), style = VTheme.type.caption, color = c.ink2)
                 }
             }
             VBadge(
-                text = if (vehicle.isActive) "Active" else "Inactive",
+                text = if (vehicle.isActive) appString(StringKeys.TRANS_ACTIVE) else appString(StringKeys.TRANS_INACTIVE),
                 tone = if (vehicle.isActive) VBadgeTone.Success else VBadgeTone.Neutral,
             )
         }
         Spacer(Modifier.height(8.dp))
         VButton(
-            text = "Delete",
+            text = appString(StringKeys.COMMON_BUTTON_DELETE),
             variant = VButtonVariant.Destructive,
             size = VButtonSize.Sm,
             onClick = onDelete,
@@ -511,23 +513,23 @@ private fun AssignmentCard(
                 color = c.ink,
             )
             Text(
-                "Route: ${assignment.routeName ?: assignment.routeId}",
+                appString(StringKeys.TRANS_ROUTE_LABEL).replace("{name}", assignment.routeName ?: assignment.routeId),
                 style = VTheme.type.body,
                 color = c.ink2,
             )
             Text(
-                "Stop: ${assignment.stopName ?: assignment.stopId}",
+                appString(StringKeys.TRANS_STOP_LABEL).replace("{name}", assignment.stopName ?: assignment.stopId),
                 style = VTheme.type.caption,
                 color = c.ink2,
             )
             Text(
-                "Bus: ${assignment.busNumber ?: assignment.vehicleId}",
+                appString(StringKeys.TRANS_BUS_LABEL).replace("{name}", assignment.busNumber ?: assignment.vehicleId),
                 style = VTheme.type.caption,
                 color = c.ink2,
             )
             Spacer(Modifier.height(8.dp))
             VButton(
-                text = "Deactivate",
+                text = appString(StringKeys.TRANS_DEACTIVATE),
                 variant = VButtonVariant.Destructive,
                 size = VButtonSize.Sm,
                 onClick = onDeactivate,

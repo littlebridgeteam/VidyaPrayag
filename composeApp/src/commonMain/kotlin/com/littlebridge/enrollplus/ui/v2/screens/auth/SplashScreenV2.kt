@@ -48,6 +48,8 @@ import com.littlebridge.enrollplus.ui.v2.theme.VMotion
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.VThemeRegistry
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -203,7 +205,7 @@ fun SplashScreenV2(modifier: Modifier = Modifier) = VTheme(themeDef = VThemeRegi
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "Bridging gaps for a glorious future",
+                appString(StringKeys.SPLASH_TAGLINE),
                 style = VTheme.type.body.colored(Color.White.copy(alpha = 0.92f)).copy(fontSize = 14.sp),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.graphicsLayer { alpha = taglineAlpha.value },

@@ -1,5 +1,6 @@
 package com.littlebridge.enrollplus.feature.auth.data.repository
 
+import com.littlebridge.enrollplus.core.locale.LocaleManager
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.core.network.SessionManager
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
@@ -17,6 +18,9 @@ class AuthRepositoryImpl(
     // RA-S05: reset the shared selected-child on logout so a re-login as a
     // different parent does not inherit the previous parent's child selection.
     private val selectedChildHolder: SelectedChildHolder,
+    // MULTI_LANGUAGE_SPEC.md §9.1: sync server-returned languagePref to LocaleManager
+    // on login/refresh so the client picks up the user's language without a separate API call.
+    private val localeManager: LocaleManager,
 ) : AuthRepository {
     // RA-29: there is NO in-memory session cache. `prefs` is the single source
     // of truth — the same store the Ktor `Auth` plugin's `refreshTokens` writes
@@ -110,6 +114,9 @@ class AuthRepositoryImpl(
         // the real user instead of hardcoding "Parent". Refreshed by getUserDetails.
         preferenceRepository.setUserName(response.name)
         preferenceRepository.setUserToken(response.token)
+        // MULTI_LANGUAGE_SPEC.md §9.1: sync the server-returned language preference
+        // to LocaleManager so the UI adopts the user's language on login/refresh.
+        localeManager.setLocaleFromServer(response.languagePref)
     }
 
     override suspend fun getSession(): AuthResponse? {
@@ -123,13 +130,15 @@ class AuthRepositoryImpl(
         val profileCompleted = preferenceRepository.getProfileCompleted().first() ?: false
         // RA-S03: surface the persisted display name (empty string if never set).
         val name = preferenceRepository.getUserName().first() ?: ""
+        val languagePref = preferenceRepository.getLanguagePref().first().ifBlank { "en" }
         return AuthResponse(
             token = token,
             refreshToken = refreshToken,
             userId = userId,
             name = name,
             role = role,
-            profileCompleted = profileCompleted
+            profileCompleted = profileCompleted,
+            languagePref = languagePref
         )
     }
 

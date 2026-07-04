@@ -17,6 +17,7 @@ import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.io.File
 import java.util.UUID
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -44,10 +45,13 @@ class LibrarySecurityTest {
     private val studentB = UUID.randomUUID()
     private lateinit var repo: LibraryRepository
     private lateinit var service: LibraryService
+    private val dbFile = File("build/test-library-security.db")
 
     @BeforeTest
     fun setup() {
-        Database.connect("jdbc:sqlite::memory:", "org.sqlite.JDBC")
+        dbFile.parentFile?.mkdirs()
+        if (dbFile.exists()) dbFile.delete()
+        Database.connect("jdbc:sqlite:${dbFile.absolutePath}", "org.sqlite.JDBC")
         transaction {
             SchemaUtils.createMissingTablesAndColumns(
                 LibraryBooksTable,
@@ -88,6 +92,7 @@ class LibrarySecurityTest {
                 LibraryBooksTable,
             )
         }
+        dbFile.delete()
     }
 
     // ── School-scoped isolation ──────────────────────────────────────────────
@@ -134,6 +139,7 @@ class LibrarySecurityTest {
                 "Admin A",
             )
         }
+        Unit
     }
 
     @Test
@@ -246,5 +252,6 @@ class LibrarySecurityTest {
         assertFailsWith<LibraryValidationException> {
             service.waiveFine(schoolA, issueId, "", adminA, "Admin A")
         }
+        Unit
     }
 }
