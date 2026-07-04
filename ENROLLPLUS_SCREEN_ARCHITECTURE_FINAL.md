@@ -1,6 +1,6 @@
 # Enroll+ — Complete Screen Architecture (Final, Post-Restructuring)
 
-> **Iterations run:** 8. Iteration 8 = God-Mode Audit Pass. Found and fixed: 2 unreachable dead overlay enum values (SchoolOverlay.Calendar, SchoolOverlay.Results), 1 orphaned screen not in D-6 (ParentPewsScreenV2.kt), 6 "future" entry labels that are actually LIVE from Home tab. Website section removed — this document covers the Compose Multiplatform application only.
+> **Iterations run:** 9. Iteration 9 = Re-Audit Pass. Found and fixed: 1 missing orphaned screen (StudentLibraryScreen.kt, 1019 lines), 1 missing FOO (TeacherConfirmDialog), 3 admin overlays incorrectly labeled as wired from UI but actually deep-link only (A-6.12/13/14), 4 admin overlays with missing/incorrect Home entry points (A-6.19/28/36), 7 teacher overlays incorrectly labeled "future" but actually LIVE from Home (B-6.03/04/08/09/10/11/12), ID Cards sub-tab composables named, Event Registration corrected to 3 separate composables.
 
 > **Source of truth:** Compose Multiplatform codebase at `composeApp/src/commonMain/kotlin/com/littlebridge/enrollplus/ui/v2/`. Navigation graph: `NavGraphV2.kt`. Portals: `SchoolPortalV2.kt`, `TeacherPortalV2.kt`, `ParentPortalV2.kt`.
 
@@ -483,7 +483,7 @@ All overlays render via `AnimatedContent` above the tab content. Each has a `VBa
 ### A-6.07 — Leave Requests Overlay
 
 - **Type:** Full screen overlay
-- **Entry:** People tab (future direct link). Settings (future).
+- **Entry:** Deep link only. No UI button wires this overlay yet — not wired from People tab or Settings.
 - **Layout:** `VBackHeader` ("Leave Requests") → filter tabs (Pending / Approved / Rejected) → list of leave request cards. Each: student avatar, name, class, leave dates, reason, status badge. "Approve"/"Reject" buttons for pending.
 - **Interactions:** Tap "Approve" → updates status + snackbar. Tap "Reject" → reject reason dialog → updates + snackbar. Filter tabs switch list.
 - **States:** Default, Loading, Empty ("No leave requests"), Error.
@@ -501,7 +501,7 @@ All overlays render via `AnimatedContent` above the tab content. Each has a `VBa
 ### A-6.09 — Admissions CRM Overlay
 
 - **Type:** Full screen overlay
-- **Entry:** Home tab (future widget). Settings (future).
+- **Entry:** Deep link `/school/admissions` only. No UI button wires this overlay yet — not wired from Home or Settings.
 - **Layout:** `VBackHeader` ("Admissions") → pipeline view: inquiry → application → assessment → enrolled. Cards in each stage. Drag-to-move (future). Add inquiry button.
 - **States:** Default, Loading, Empty ("No admissions inquiries yet"), Error.
 - **Data:** Applicant name, stage, contact, class applied for.
@@ -510,7 +510,7 @@ All overlays render via `AnimatedContent` above the tab content. Each has a `VBa
 
 - **Type:** Full screen overlay
 - **Entry:** NONE — **DEAD CODE.** `SchoolOverlay.Results` exists in the enum and has a `when` branch that renders `ResultsPublishScreenV2`, but NO code ever sets `overlay = SchoolOverlay.Results`. Deep links for `/school/report-card` map to `SchoolOverlay.ReportPublish` (A-6.29) instead. This enum value is a dead remnant.
-- **Resolution:** Remove `SchoolOverlay.Results` from enum + remove its `when` branch. Either delete `ResultsPublishScreenV2.kt` or merge its functionality into `AdminReportPublishScreen` (A-6.29). See FILE 2 #22.
+- **Resolution:** Remove `SchoolOverlay.Results` from enum + remove its `when` branch. Either delete `ResultsPublishScreenV2.kt` or merge its functionality into `AdminReportPublishScreen` (A-6.29). See FILE 2 #20.
 - **Layout:** `VBackHeader` ("Publish Results") → class selector → assessment selector → results table (student name, marks, grade). "Publish" button → confirmation → sends results to parents.
 - **States:** Default, Loading, Empty, Error, Publishing.
 - **Data:** Class, assessment, student marks, grades.
@@ -527,7 +527,7 @@ All overlays render via `AnimatedContent` above the tab content. Each has a `VBa
 ### A-6.12 — Daily Attendance Overlay
 
 - **Type:** Full screen overlay
-- **Entry:** Records → Attendance sub-tab → class row.
+- **Entry:** Deep link `/school/daily-attendance` only. No UI button wires this overlay yet — Records → Attendance sub-tab does NOT open this overlay.
 - **Layout:** `VBackHeader` ("Daily Attendance") → class selector → date selector → student list with present/absent/late toggle per student. Summary bar at top (present count, absent count, %). "Save" button.
 - **States:** Default, Loading, Empty, Error, Saving.
 - **Data:** Student names, attendance status, date, class.
@@ -535,7 +535,7 @@ All overlays render via `AnimatedContent` above the tab content. Each has a `VBa
 ### A-6.13 — Class Performance Overlay
 
 - **Type:** Full screen overlay
-- **Entry:** Records → Marks sub-tab → class row.
+- **Entry:** Deep link `/school/class-performance` only. No UI button wires this overlay yet — Records → Marks sub-tab does NOT open this overlay.
 - **Layout:** `VBackHeader` ("Class Performance") → class name header → performance metrics (avg marks, attendance %, syllabus coverage) → subject-wise breakdown chart → student ranking list.
 - **States:** Default, Loading, Empty, Error.
 - **Data:** Class avg, subject averages, student rankings.
@@ -543,7 +543,7 @@ All overlays render via `AnimatedContent` above the tab content. Each has a `VBa
 ### A-6.14 — Teacher Performance Overlay
 
 - **Type:** Full screen overlay
-- **Entry:** People → teacher card (future). Home tab (future).
+- **Entry:** Deep link `/school/teacher-performance` only. No UI button wires this overlay yet.
 - **Layout:** `VBackHeader` ("Teacher Performance") → teacher name + avatar → metrics (classes taught, syllabus coverage, avg class performance, attendance marking rate) → class-wise breakdown.
 - **States:** Default, Loading, Empty, Error.
 - **Data:** Teacher metrics, class breakdown.
@@ -583,7 +583,7 @@ All overlays render via `AnimatedContent` above the tab content. Each has a `VBa
 ### A-6.19 — PEWS Cohort Overlay
 
 - **Type:** Full screen overlay
-- **Entry:** Home tab (future widget). Records (future).
+- **Entry:** Home tab → PEWS spotlight card. Home tab → PEWS entry card. Deep link `/school/pews`.
 - **Layout:** `VBackHeader` ("Early Warning System") → cohort overview (at-risk count, trend) → risk distribution chart → student list sorted by risk score. Each: avatar, name, risk level badge (High/Medium/Low), primary risk factor. Tap → PewsStudentDetail.
 - **States:** Default, Loading, Empty ("No students at risk"), Error, Feature-disabled (KillSwitchGuard).
 - **Data:** Risk scores, risk factors, student list.
@@ -624,7 +624,7 @@ All overlays render via `AnimatedContent` above the tab content. Each has a `VBa
 ### A-6.24 — Health Records Overlay
 
 - **Type:** Full screen overlay
-- **Entry:** Settings (future). Student Profile → Health tab.
+- **Entry:** Student Profile → Health tab. Deep link `/school/health-records`.
 - **Layout:** `VBackHeader` ("Health Records") → student selector → health profile (blood group, allergies, conditions, immunizations, emergency contact) → incident log (date, type, treatment, notes). "Add Incident" button.
 - **States:** Default, Loading, Empty, Error.
 - **Data:** Health profile, immunizations, incidents.
@@ -656,7 +656,7 @@ All overlays render via `AnimatedContent` above the tab content. Each has a `VBa
 ### A-6.28 — Transport Management Overlay
 
 - **Type:** Full screen overlay
-- **Entry:** Settings → "Transport Management" row.
+- **Entry:** Settings → "Transport Management" row. Home tab → Transport card. Deep link `/school/transport`.
 - **Layout:** `VBackHeader` ("Transport") → tabs: Routes · Vehicles · Students. Route list (name, stops, timing, assigned vehicle). Vehicle list (number, capacity, driver). Student assignments (student, route, stop).
 - **States:** Default, Loading, Empty, Error.
 - **Data:** Routes, vehicles, drivers, student assignments.
@@ -697,7 +697,7 @@ All overlays render via `AnimatedContent` above the tab content. Each has a `VBa
 
 - **Type:** Full screen overlay
 - **Entry:** Settings → "ID Cards" row.
-- **Layout:** `VBackHeader` ("ID Cards") → 3 sub-tabs: Templates · Generate · Cards. Templates: template gallery with design options. Generate: select class/template → generate PDF. Cards: individual student ID card preview + print.
+- **Layout:** `VBackHeader` ("ID Cards") → `VTopTabs`: Templates · Generate · Cards. Templates (`IdCardTemplatesTab.kt`): template gallery with design options. Generate (`IdCardGenerateTab.kt`): select class/template → generate PDF. Cards (`IdCardCardsTab.kt`): individual student ID card preview + print.
 - **States:** Default, Loading, Empty, Generating (progress), Error.
 - **Data:** Templates, student data, generated cards.
 
@@ -723,7 +723,7 @@ All overlays render via `AnimatedContent` above the tab content. Each has a `VBa
 ### A-6.36 — Event Registration Overlay (Admin)
 
 - **Type:** Full screen overlay
-- **Entry:** Calendar → event with registration. Home (future).
+- **Entry:** Home tab → Events card. Calendar → event with registration. Deep link `/school/events`.
 - **Layout:** `VBackHeader` ("Event Registration") → event details → registration list (parent name, student name, status). Export list button. Capacity indicator.
 - **States:** Default, Loading, Empty, Error.
 - **Data:** Event details, registrations, capacity.
@@ -1012,7 +1012,7 @@ All overlays render via `AnimatedContent` above the tab content. Each has a `VBa
 ### B-6.03 — Transport Attendance Overlay
 
 - **Type:** Full screen overlay
-- **Entry:** Notification deep link. Home (future).
+- **Entry:** Home tab → Transport Attendance card. Deep link `/teacher/transport`.
 - **Layout:** `VBackHeader` ("Transport Attendance") → route selector → student list (assigned to route) with boarding status toggle (Boarded/Not Boarded). Stop-wise grouping. "Save" button.
 - **States:** Default, Loading, Empty ("No students on this route"), Saving, Error.
 - **Data:** Route, stops, students, boarding status.
@@ -1021,7 +1021,7 @@ All overlays render via `AnimatedContent` above the tab content. Each has a `VBa
 ### B-6.04 — PEWS Overlay (Teacher)
 
 - **Type:** Full screen overlay
-- **Entry:** Home (future). Notification deep link.
+- **Entry:** Home tab → "Needs Attention" card. Deep link `/teacher/pews`.
 - **Layout:** `VBackHeader` ("Early Warning") → at-risk students in teacher's classes. Each: student name, class, risk level badge, primary factor. Tap → student detail (limited to teacher's subject scope).
 - **States:** Default, Loading, Empty, Error, Feature-disabled (KillSwitchGuard).
 - **Data:** At-risk students, risk levels, factors.
@@ -1054,7 +1054,7 @@ All overlays render via `AnimatedContent` above the tab content. Each has a `VBa
 ### B-6.08 — Digital ID Card Overlay
 
 - **Type:** Full screen overlay
-- **Entry:** Profile tab (future). Home (future).
+- **Entry:** Home tab → ID Card card. Deep link.
 - **Layout:** `VBackHeader` ("Digital ID") → teacher ID card display (photo, name, employee ID, department, school name, valid dates). QR code for verification. "Download" button.
 - **States:** Default, Loading, Error.
 - **Data:** Teacher ID info, QR code.
@@ -1063,7 +1063,7 @@ All overlays render via `AnimatedContent` above the tab content. Each has a `VBa
 ### B-6.09 — Scheduled Messages Overlay
 
 - **Type:** Full screen overlay
-- **Entry:** Home (future). Messages (future).
+- **Entry:** Home tab → Scheduled Messages card. Deep link.
 - **Layout:** Same as Admin A-6.35 but teacher-scoped.
 - **States:** Default, Loading, Empty, Error.
 - **Data:** Teacher's scheduled messages.
@@ -1072,7 +1072,7 @@ All overlays render via `AnimatedContent` above the tab content. Each has a `VBa
 ### B-6.10 — Event Registration Overlay (Teacher)
 
 - **Type:** Full screen overlay
-- **Entry:** Calendar → PTM event. Notification deep link.
+- **Entry:** Home tab → Events card. Deep link `/teacher/events`.
 - **Layout:** `VBackHeader` ("PTM Event") → event details → slot booking list (parent name, student name, booked time). Manage slots. "Start Session" button per slot.
 - **States:** Default, Loading, Empty, Error.
 - **Data:** PTM event, slots, bookings.
@@ -1080,7 +1080,7 @@ All overlays render via `AnimatedContent` above the tab content. Each has a `VBa
 ### B-6.11 — Messages Overlay (Teacher)
 
 - **Type:** Full screen overlay
-- **Entry:** Notification deep link. Home (future).
+- **Entry:** Home tab → Messages card. Deep link `/teacher/messages`.
 - **Layout:** `VBackHeader` ("Messages") → inbox of parent-teacher conversation threads. Each: parent avatar, name, last message, timestamp, unread badge. Tap → conversation view. Compose bar.
 - **States:** Default, Loading, Empty, Error, Sending, Offline.
 - **Data:** Thread list, messages, parent info.
@@ -1089,7 +1089,7 @@ All overlays render via `AnimatedContent` above the tab content. Each has a `VBa
 ### B-6.12 — Calendar Overlay
 
 - **Type:** Full screen overlay
-- **Entry:** Calendar icon in header (if present). Notification deep link.
+- **Entry:** Deep link `/teacher/calendar`.
 - **Layout:** Same as Admin A-6.02 — shared `AcademicCalendarScreenV2` (view-only for teacher).
 - **States:** Default, Loading, Empty, Error.
 - **Data:** Calendar events.
@@ -1393,7 +1393,7 @@ All overlays render via `AnimatedContent` above the tab content. Each has a `VBa
 ### C-6.05 — Leave Overlay
 
 - **Type:** Full screen overlay
-- **Entry:** Academics → "Apply for Leave" action card. Home (future).
+- **Entry:** Academics tab → "Apply for Leave" action card. Deep link `/parent/leave`.
 - **Layout:** `ParentLeaveScreenV2` — leave application form (child selector if multiple, from date, to date, reason, type — Sick/Casual/Other, supporting document upload optional). Leave history list below.
 - **States:** Default, Loading, Submitting, Success, Error.
 - **Data:** Children, leave history, form fields.
@@ -1401,7 +1401,7 @@ All overlays render via `AnimatedContent` above the tab content. Each has a `VBa
 ### C-6.06 — Messages Overlay
 
 - **Type:** Full screen overlay
-- **Entry:** Deep link from notification. Home (future).
+- **Entry:** Header → Messages icon. Deep link from notification.
 - **Layout:** `ParentMessagesScreenV2` — same WhatsApp-style inbox as Conversations Messages segment but as full overlay.
 - **States:** Default, Loading, Empty, Error, Sending, Offline.
 - **Data:** Thread list, messages.
@@ -1469,7 +1469,7 @@ All overlays render via `AnimatedContent` above the tab content. Each has a `VBa
 ### C-6.14 — Digital ID Card Overlay
 
 - **Type:** Full screen overlay
-- **Entry:** Home → ID Card feature card. Profile (future).
+- **Entry:** Home → ID Card feature card. Deep link `/parent/id-card`.
 - **Layout:** `DigitalIdCardScreen` — student ID card display (photo, name, class, roll, school name, valid dates). QR code for verification. "Download" button.
 - **States:** Default, Loading, Error.
 - **Data:** Student ID info, QR code.
@@ -1681,12 +1681,12 @@ These screens are used by 2+ portals with role-specific data scoping. They are N
 
 ### Shared → Event Registration Screen (2 Variants)
 
-- **Type:** Full screen overlay (2 separate composables)
-- **Composables:** Admin event registration, `ParentEventRegistrationScreenV2`
+- **Type:** Full screen overlay (3 separate composables)
+- **Composables:** `AdminEventRegistrationScreenV2` (admin), `TeacherPtmEventRegistrationScreenV2` (teacher), `ParentEventRegistrationScreenV2` (parent)
 - **Used by:** Admin (A-6.36), Teacher (B-6.10), Parent (C-6.16)
 - **Layout:** Event list → event detail → registration. Admin/teacher view = manage registrations. Parent view = register for events.
 - **States:** Default, Loading, Empty, Error, Registered.
-- **Consolidation note:** Admin/teacher share a composable; parent has separate. See FILE 2 #15.
+- **Consolidation note:** 3 separate composables with similar UI pattern. Teacher composable is PTM-specific (slot booking). See FILE 2 #15.
 
 ### Shared → Discovery Screen
 
@@ -1730,6 +1730,15 @@ These are FOOs (Further-Opening Options) that appear across multiple portals wit
 - **States:** Visible, Hidden (animating out).
 - **Data:** Message, tone, action label.
 - **Accessibility:** Large text. Clear icon. Not blocking — user can continue interacting.
+
+### Teacher → TeacherConfirmDialog (Teacher-Specific Confirmation)
+
+- **Type:** Modal (dialog)
+- **Composable:** `TeacherDialogs.kt` → `TeacherConfirmDialog`
+- **Used by:** Teacher portal — confirm destructive actions (delete homework, cancel leave, etc.).
+- **Layout:** `Dialog` + `VCard`: title → message → "Confirm" (Destructive) + "Cancel" (Ghost).
+- **States:** Visible, Hidden.
+- **Data:** Title, message, confirm/cancel actions.
 
 ### Shared → VEmptyState (Empty/No-Data Placeholder)
 
@@ -1851,14 +1860,15 @@ These screens exist in the codebase but are NOT wired into any navigation path:
 | `ScholarshipsScreenV2.kt` (parent) | Not referenced by any overlay enum | Wire into ParentOverlay.Scholarships or remove. See FILE 2 #10. |
 | `SchoolDayConfigScreenV2.kt` | Not referenced by any overlay or settings row | Wire into Settings → Academic Year or Classes & Subjects. See FILE 2 #18. |
 | `PewsEffectivenessScreenV2.kt` | Not referenced by any overlay | Delete or merge into `AdminReportingEffectivenessScreen` (already wired). See FILE 2 #19. |
-| `ParentPewsScreenV2.kt` | Not referenced by any overlay enum — only referenced within itself | Delete. `ParentOverlay.Pulse` maps to `ParentPulseScreen` (different file). See FILE 2 #23. |
-| `ResultsPublishScreenV2.kt` | `SchoolOverlay.Results` enum exists but NO code ever sets it — dead `when` branch | Delete or merge into `AdminReportPublishScreen` (A-6.29). See FILE 2 #22. |
-| `SchoolOverlay.Calendar` (enum value) | `SchoolOverlay.Calendar` enum exists but NO code ever sets it — dead `when` branch | Remove enum value + `when` branch. See FILE 2 #21. |
+| `ParentPewsScreenV2.kt` | Not referenced by any overlay enum — only referenced within itself | Delete. `ParentOverlay.Pulse` maps to `ParentPulseScreen` (different file). See FILE 2 #21. |
+| `StudentLibraryScreen.kt` | Not referenced by any overlay enum — only referenced within itself (1019-line file) | Wire into Parent Library overlay (C-6.15) as student-scoped view, or delete if `ParentLibraryScreenV2` covers same functionality. See FILE 2 #22. |
+| `ResultsPublishScreenV2.kt` | `SchoolOverlay.Results` enum exists but NO code ever sets it — dead `when` branch | Delete or merge into `AdminReportPublishScreen` (A-6.29). See FILE 2 #20. |
+| `SchoolOverlay.Calendar` (enum value) | `SchoolOverlay.Calendar` enum exists but NO code ever sets it — dead `when` branch | Remove enum value + `when` branch. See FILE 2 #19. |
 | `PewsPreview.kt` | Preview/demo file | Keep for dev preview only. No production wiring needed. |
 | `SriPreview.kt` | Preview/demo file (discovery) | Keep for dev preview only. No production wiring needed. |
 | `AiReportCardPreview.kt` | Referenced by ParentAcademics + ParentReport | Not orphaned — wired correctly. |
-| `TutorPlanScreen.kt` | Not referenced by any overlay | Wire into TutorChat or TutorProgress. See FILE 2 #20. |
-| `TutorPracticeScreen.kt` | Not referenced by any overlay | Wire into TutorChat or TutorProgress. See FILE 2 #20. |
+| `TutorPlanScreen.kt` | Not referenced by any overlay | Wire into TutorChat or TutorProgress. See FILE 2 #18. |
+| `TutorPracticeScreen.kt` | Not referenced by any overlay | Wire into TutorChat or TutorProgress. See FILE 2 #18. |
 
 ---
 

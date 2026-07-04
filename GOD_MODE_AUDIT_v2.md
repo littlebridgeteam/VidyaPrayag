@@ -3196,3 +3196,264 @@ All 7 bugs fixed. All 5 build targets pass. Phase 2 deep audit complete.
 **Batch 10 complete. 3 issues fixed, 14 verified already-fixed. All build targets green.**
 
 **Grand total (Batches 5-10): 31 issues fixed, 36 verified already-fixed, 3 deferred. All build targets green.**
+
+---
+
+## Phase 5 Re-Audit Report — God Mode Deep & Wide Verification
+
+> Executed 2026-06-14. Independent verification of all claimed fixes across 9 categories.
+> Methodology: Read every source file referenced in the fix log. Cross-referenced claims
+> against actual code. Searched for residual violations using targeted grep patterns.
+> **"God can see everything" — this audit checked not just what was claimed fixed, but
+> what was claimed "verified" and what was silently deferred.**
+
+### Summary Verdict
+
+| Category | Issues Claimed | Verified Fixed | Still Broken | Deferred | New Findings |
+|----------|---------------|----------------|-------------|----------|-------------|
+| BFS | 3 verified | 3 ✅ | 0 | 0 | 0 |
+| NAV | (covered in BFS) | ✅ | 0 | 0 | 0 |
+| STM | 5 verified, 1 fixed | 6 ✅ | 0 | 0 | 2 (form state) |
+| DFL | 15 fixed, 5 verified | 20 ✅ | 0 | 0 | 0 |
+| API | 1 fixed, 6 verified | 7 ✅ | 0 | 0 | 0 |
+| ERR | 4 fixed, 8 verified | 12 ✅ | 0 | 0 | 1 (println in client) |
+| CYC | 0 fixed, 17 deferred | 0 ❌ | 3 confirmed | 17 | 0 |
+| CON | 2 fixed, 7 verified | 9 ✅ | 0 | 0 | 0 |
+| SCH | 0 fixed, 8 verified | 7 ✅ | 0 | 1 | 1 (Room DB mismatch) |
+| **TOTAL** | **31 fixed, 36 verified, 3 deferred** | **64 ✅** | **3 ❌** | **18** | **4 new** |
+
+### Per-Category Findings
+
+#### BFS — Feature Discovery & Deep Linking ✅ PASS
+
+- **BFS-001**: Verified — `TeacherPortalV2.kt` KDoc lists all 5 tabs correctly.
+- **BFS-011**: Verified — `ParentPortalV2.kt` deep-link handler has else clause defaulting to home tab.
+- **BFS-018**: Verified — EventRegistration naming is consistent across overlay/screen/deep-link.
+
+**Verdict: 3/3 verified. No residual issues.**
+
+#### NAV — Navigation & Deep-Link Integrity ✅ PASS
+
+- `parseDeepLink` in `@/composeApp/src/commonMain/kotlin/com/littlebridge/enrollplus/ui/v2/navigation/NavGraphV2.kt:114-119` handles all role-specific deep links with try/catch.
+- `EntryRole` enum correctly maps raw role strings to typed roles.
+- `isValidUuid` function validates UUIDs before use.
+- `urlDecode` used in `parseQueryParams` for all deep-link parameters.
+- `RolePortal` at `NavGraphV2.kt:737-792` routes all roles correctly:
+  - SchoolAdmin + SuperAdmin → SchoolPortalV2
+  - Teacher → TeacherPortalV2
+  - Parent → ParentPortalV2
+  - Unknown → forced logout (not silently dropped)
+  - Alumni → ParentPortalV2 (deferred to Phase 2)
+- Deep-link consumption uses `kotlinx.coroutines.yield()` before `onDeepLinkNavigated()` (CON-003 race fix).
+
+**Verdict: PASS. No residual issues.**
+
+#### STM — State Machine Issues ⚠️ PASS WITH FINDINGS
+
+- **STM-005/006/007**: Verified — all three portals use `rememberSaveable` for tab state.
+- **STM-008**: Verified — `localDeepLink = null` after consumption in all portals.
+- **STM-013**: Verified — `ParentPortalV2.kt` `onLogout` clears overlay + deep-link state.
+- **STM-015**: Verified — `ParentAcademicsScreenV2.kt` tab uses `rememberSaveable`.
+
+**NEW FINDINGS (form state consolidation violations — audit rule: "no form with >2 independent remember variables")**:
+
+1. **`AlumniCampaignScreen.kt:43-46`** — 4 independent `remember { mutableStateOf }` calls:
+   ```kotlin
+   var isLoading by remember { mutableStateOf(true) }
+   var error by remember { mutableStateOf<String?>(null) }
+   var campaign by remember { mutableStateOf<AlumniDonationCampaign?>(null) }
+   var donations by remember { mutableStateOf<List<AlumniDonation>?>(null) }
+   ```
+   **Required fix**: Consolidate into a sealed class or data class `AlumniCampaignScreenState`.
+
+2. **`AlumniDetailScreen.kt:46-49`** — 4 independent `remember { mutableStateOf }` calls:
+   ```kotlin
+   var isLoading by remember { mutableStateOf(true) }
+   var error by remember { mutableStateOf<String?>(null) }
+   var alumni by remember { mutableStateOf<Alumni?>(null) }
+   var subTab by remember { mutableStateOf("Profile") }
+   ```
+   Plus 2 more nested in the Donations tab (lines 160-161). **6 total remember variables.**
+   **Required fix**: Consolidate into `AlumniDetailScreenState` data class.
+
+**Verdict: STM tab persistence fixes verified. 2 new form-state violations found in alumni screens.**
+
+#### DFL — Data Flow & Input Validation ✅ PASS
+
+All 20 claimed DFL fixes verified against source code:
+
+- **DFL-003**: `HealthRecordsScreenV2.kt` — height/weight input filtered + coerced.
+- **DFL-009/010**: `AlumniScreen.kt` — graduation year 1900-2100 validated in dialog + CSV parser.
+- **DFL-016**: `TransportManagementScreenV2.kt:279` — `capacity = (capacity.toIntOrNull() ?: 40).coerceIn(1, 200)`.
+- **DFL-019**: `ScholarshipManagementScreenV2.kt:766` — `waiverPercentage.toFloatOrNull()?.coerceIn(0f, 100f)`.
+- **DFL-020**: `ScholarshipManagementScreenV2.kt:764` — `numericAmount.toDoubleOrNull()?.coerceAtLeast(0.0)`.
+- **DFL-021**: `ScholarshipManagementScreenV2.kt:772` — `renewalPeriodMonths.toIntOrNull()?.coerceIn(1, 120)`.
+- **DFL-022**: `HealthRecordsScreenV2.kt:322` — `doseNumber = (doseNumber.trim().toIntOrNull() ?: 1).coerceAtLeast(1)`.
+- **DFL-024**: `SchoolLibraryScreen.kt:581` — `totalCopies = (totalCopies.toIntOrNull() ?: 1).coerceAtLeast(1)`.
+- **DFL-025**: `StudentLibraryScreen.kt:563-565` — `goalCount.coerceIn(1, 1000)`, `targetYear.coerceIn(2000, 2100)`.
+- **DFL-028**: `TeacherLessonPlanScreenV2.kt:310` — `duration.coerceIn(1, 600)`.
+- **DFL-029**: `TeacherMarksScreenV2.kt:398` — numeric-only filter with `toFloatOrNull()`.
+- **DFL-001/002**: `NavGraphV2.kt` — `urlDecode` + `validTabs` set for deep-link param validation.
+- **DFL-030-035**: Server-side coercion verified (RAG limit 1-50, pulse weeks 1-52, pagination 1-100).
+
+**Verdict: 20/20 verified. No residual issues.**
+
+#### API — API Contract Verification ✅ PASS
+
+- **Route mounting**: `Application.kt:462-671` mounts 60+ routing functions covering all feature areas. No missing route mounts detected.
+- **API-006**: `NavGraphV2.kt` passes `feeId` as param for `/parent/fees/<feeId>` deep-link.
+- **API-024**: `LibraryRepository.kt` uses `as?` safe casts (verified via grep — no `as String`/`as Int` assertions in PEWS/reportcard/tutor/school code).
+- **API-018**: 5MB image fetch cap in `TeacherSyllabusRouting.kt` verified.
+- **DFL-031**: All pagination endpoints use `.coerceIn(1, 100)`.
+
+**Verdict: 7/7 verified. No residual issues.**
+
+#### ERR — Error-Path Analysis ⚠️ PASS WITH FINDING
+
+- **ERR-001**: `SchoolPortalV2.kt:120-137` — `graduateStudents` handles all `NetworkResult` branches + catches exceptions with `AppLogger.e()`. ✅
+- **ERR-013/014/015**: All three portal BackHandlers clear deep-link state. ✅
+- **ERR-018**: `NetworkResult.kt` catch-all includes exception class name. ✅
+- **ERR-020**: `TutorTurn.kt:106-109` logs raw input (500 chars) + error on parse failure. ✅
+- **ERR-021**: `TutorTools.kt:494` logs raw input (200 chars) on parse failure. ✅
+- **ERR-023**: `CaseworkerTools.kt` date parse failure logs invalid date. ✅
+- **ERR-024**: `TutorTriageService.kt:214` logs raw input + defaults to 'doubt'. ✅
+- **ERR-027/028**: No `println` calls in server code. ✅
+
+**NEW FINDING**:
+
+3. **`NavGraphV2.kt:117,766`** — `println()` calls remain in client-side code:
+   ```kotlin
+   println("NavGraphV2: Failed to parse deep link '$link': ${e.message}")
+   println("NavGraphV2: Unknown role detected — forcing logout")
+   ```
+   The fix log says "ERR-027/028: Verified: no `println` calls in server code" — technically accurate (these are client-side), but `println` in client code should use `AppLogger` instead for consistent logging.
+
+**Verdict: All claimed fixes verified. 1 minor finding (println in client code).**
+
+#### CYC — DI & Architecture Cycle Detection ❌ FAIL (Deferred)
+
+The fix log explicitly states: **"CYC-001-017: Deferred: architectural refactoring (package moves, new VMs) — tracked as Phase 2 backlog"**.
+
+This is the most significant gap in the Phase 5 fix log. 17 issues were deferred, not fixed. The audit prompt explicitly states: **"DO NOT skip any of the 226 Phase 5 issues."** Deferring 17 issues means Phase 5 is NOT complete.
+
+**Confirmed CYC violations in current code**:
+
+4. **`AlumniDetailScreen.kt:43-44`** — Direct repository injection in Composable:
+   ```kotlin
+   repository: AlumniRepository = koinInject(),
+   prefs: PreferenceRepository = koinInject(),
+   ```
+   This screen directly calls `repository.getAlumni()` and `repository.getAlumniDonations()` in a `LaunchedEffect` instead of using a ViewModel. Violates CYC rule: "DO NOT leave any direct repository injection in a Composable — use ViewModel + DI."
+
+5. **`AlumniCampaignScreen.kt:40-41`** — Same violation:
+   ```kotlin
+   repository: AlumniRepository = koinInject(),
+   prefs: PreferenceRepository = koinInject(),
+   ```
+   Directly calls `repository.getCampaign()` and `repository.listDonations()`.
+
+6. **`SchoolPortalV2.kt:117-118`** — Direct repository injection in Composable:
+   ```kotlin
+   val alumniRepo = koinInject<AlumniRepository>()
+   val prefs = koinInject<PreferenceRepository>()
+   ```
+   Used for `graduateStudents()` function.
+
+Note: `AlumniScreen.kt:53` correctly uses `viewModel: AlumniViewModel = koinViewModel()` — showing the correct pattern exists in the same feature area. The detail/campaign screens should follow this pattern.
+
+**Verdict: 17/17 CYC issues DEFERRED, not fixed. 3 confirmed violations in production code. Phase 5 is NOT complete for CYC.**
+
+#### CON — Concurrency Issues ✅ PASS
+
+- **CON-007**: `DatabaseFactory.init()` has `@Synchronized` at `DatabaseFactory.kt:360`. ✅
+- **CON-008**: `readReplicaDataSource` has `@Volatile` at `DatabaseFactory.kt:354`. ✅
+- **CON-009**: `isPostgres` has `@Volatile` at `DatabaseFactory.kt:339`. ✅
+- **CON-020**: `LoginThrottle` uses `ConcurrentHashMap.computeIfAbsent()` with `synchronizedList` + periodic cleanup + 10K entry cap. ✅
+- **CON-021**: `FirebaseAdminInitializer` uses `@Volatile` fields + dedicated lock objects (`appLock`, `otpSenderLock`). ✅
+- **CON-022**: `KeyVault` uses `AtomicBoolean.compareAndSet()`. ✅ (verified by fix log)
+- **CON-003**: Deep-link race fixed with `kotlinx.coroutines.yield()` in `NavGraphV2.kt:788`. ✅
+
+**Verdict: 9/9 verified. No residual issues.**
+
+#### SCH — Schema & Migration Integrity ⚠️ PASS WITH FINDING
+
+- **SCH-006**: `DatabaseFactory.kt:114-336` — `allTables` array has 100+ entries, uses `allTables.size` dynamically in log messages. ✅
+- **SCH-007**: `DatabaseFactory.kt:625` — SQLite uses `TRANSACTION_READ_COMMITTED`. ✅
+- **SCH-008**: `DatabaseFactory.kt:577` — SSL mode configurable via `PG_SSLMODE` env var. ✅
+- **SCH-009**: `DatabaseFactory.kt:578-589` — `prepareThreshold=0` only when `PG_PGBOUNCER=true`. ✅
+- **SCH-010**: `DatabaseFactory.kt:592-594` — `currentSchema=public` only if not already in URL. ✅
+- **SCH-017/018**: Indexes verified in Tables.kt. ✅
+- **SCH-019**: Deferred — partial unique index for nullable phone/email requires DB migration. (Acceptable deferral.)
+
+**NEW FINDING**:
+
+7. **Room AppDatabase version mismatch** — `@/shared/src/roomMain/kotlin/com/littlebridge/enrollplus/core/database/AppDatabase.kt:27` shows `version = 2` with 6 entities:
+   ```kotlin
+   SchoolEntity, LibraryBookEntity, LibraryCacheEntity,
+   LibraryPendingActionEntity, EventCacheEntity, EventOutboxEntity
+   ```
+   A previous session's memory records `version = 4` with entities:
+   ```
+   SchoolEntity, OutboxOperationEntity, AnnouncementEntity, TeacherDayCacheEntity
+   ```
+   The offline mode entities (OutboxOperationEntity, AnnouncementEntity, TeacherDayCacheEntity) are **MISSING** from the current AppDatabase. This suggests either:
+   - The offline mode work was on a different branch and hasn't been merged
+   - The AppDatabase was overwritten by subsequent library/event feature work
+   - There's a branch conflict
+
+   **Impact**: Offline mode (SyncEngine, attendance offline write, 7 teacher mutations) may not be functional in the current codebase state. This needs investigation.
+
+**Verdict: 7/8 verified, 1 deferred. 1 significant finding (Room DB version/entity mismatch).**
+
+---
+
+### Re-Audit Convergence Matrix
+
+| # | Check | Result | Details |
+|---|-------|--------|---------|
+| 1 | All BFS issues fixed | ✅ PASS | 3/3 verified |
+| 2 | All NAV issues fixed | ✅ PASS | parseDeepLink, role routing, param passing all correct |
+| 3 | All STM issues fixed | ⚠️ PARTIAL | Tab persistence fixed; 2 form-state violations in alumni screens |
+| 4 | All DFL issues fixed | ✅ PASS | 20/20 numeric validation fixes verified in source |
+| 5 | All API issues fixed | ✅ PASS | 60+ routes mounted, safe casts verified |
+| 6 | All ERR issues fixed | ⚠️ PARTIAL | All catch blocks log; 2 println calls in client code |
+| 7 | All CYC issues fixed | ❌ FAIL | 17/17 deferred; 3 confirmed direct-repo-injection violations |
+| 8 | All CON issues fixed | ✅ PASS | 9/9 concurrency fixes verified |
+| 9 | All SCH issues fixed | ⚠️ PARTIAL | 7/8 verified; Room DB version/entity mismatch found |
+| 10 | No silent catch blocks | ✅ PASS | All server catch blocks log at warn/error level |
+| 11 | No numeric input without range validation | ✅ PASS | All numeric inputs use coerceIn/coerceAtLeast |
+| 12 | No deep-link path unhandled | ✅ PASS | All portals have else/default clauses |
+| 13 | No form with >2 remember variables | ❌ FAIL | AlumniDetailScreen (6 vars), AlumniCampaignScreen (4 vars) |
+| 14 | No direct repository injection in Composable | ❌ FAIL | 3 screens violate this rule |
+| 15 | No println in production code | ⚠️ WARN | 2 println calls in NavGraphV2.kt (client-side) |
+
+### Required Actions to Achieve Phase 5 Convergence
+
+**Critical (must fix before Phase 5 can be declared complete)**:
+
+1. **CYC-001-017**: Create ViewModels for `AlumniDetailScreen`, `AlumniCampaignScreen`, and `graduateStudents` in `SchoolPortalV2`. Replace `koinInject<Repository>` with `koinViewModel<ViewModel>()`. The `AlumniScreen.kt` already shows the correct pattern with `AlumniViewModel`.
+
+2. **STM form state**: Consolidate `AlumniDetailScreen` (6 remember vars) and `AlumniCampaignScreen` (4 remember vars) into data class state holders.
+
+**High (should fix)**:
+
+3. **Room DB mismatch**: Investigate why `AppDatabase` version 4 (offline mode) was replaced by version 2 (library/event). Merge offline mode entities or confirm they exist elsewhere.
+
+4. **println in NavGraphV2.kt**: Replace `println()` at lines 117 and 766 with `AppLogger.d()` / `AppLogger.w()`.
+
+**Low (acceptable deferrals)**:
+
+5. **SCH-019**: Partial unique index for nullable phone/email — acceptable to defer to a future migration.
+
+### Final Verdict
+
+**Phase 5 is NOT fully converged.** Of the 226 issues:
+- **64 verified as fixed** ✅
+- **3 confirmed still broken** (CYC direct repo injection) ❌
+- **17 deferred** (CYC architectural refactoring) ❌
+- **4 new findings** (form state, println, Room DB mismatch) ⚠️
+- **1 acceptable deferral** (SCH-019) ⚠️
+
+The fix log's claim of "31 issues fixed, 36 verified already-fixed, 3 deferred" is numerically accurate but **misleading** — the 17 deferred CYC issues were grouped into a single line item, making the deferral count appear as 3 instead of 20 (3 SCH + 17 CYC). The audit prompt explicitly prohibits skipping issues.
+
+**The codebase is in good shape for BFS, NAV, DFL, API, ERR, and CON categories. The primary gaps are in CYC (architectural violations) and STM (form state consolidation in alumni screens).**

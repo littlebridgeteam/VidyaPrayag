@@ -1,7 +1,7 @@
 # Enroll+ — Restructure Changelog & Backend Mapping
 
 > **Companion to:** `ENROLLPLUS_SCREEN_ARCHITECTURE_FINAL.md` (FILE 1)
-> **Total restructure entries:** 21
+> **Total restructure entries:** 22
 
 ---
 
@@ -434,6 +434,27 @@
 
 ---
 
+## Entry #22 — Orphaned StudentLibraryScreen.kt
+
+**BEFORE:** `StudentLibraryScreen.kt` (1019 lines) exists but is only referenced within itself. No overlay enum maps to it. The parent library overlay (C-6.15) uses `ParentLibraryScreenV2.kt` (different file). This screen is completely unreachable.
+
+**WHY:** Iteration 9 (Re-Audit) — orphaned screen not caught in earlier iterations.
+
+**AFTER:** Either (a) delete `StudentLibraryScreen.kt` if `ParentLibraryScreenV2` covers the same functionality, or (b) wire it as a student-scoped library view within the Parent Library overlay (C-6.15) as a sub-tab. FILE 1 ref: D-6.
+
+**OLD backend:** Verify if any API calls are unique to this file.
+
+**NEW backend:** None if deleted. If student-scoped library is desired, reuse `/api/v1/library/student?studentId=X`.
+
+**Migration steps:** 1) Compare `StudentLibraryScreen.kt` vs `ParentLibraryScreenV2.kt` for overlap. 2) If overlapping → delete `StudentLibraryScreen.kt`. 3) If unique student-scoped features exist → add as sub-tab in `ParentLibraryScreenV2`. 4) QA.
+
+**Regression checklist:**
+- [ ] `StudentLibraryScreen.kt` deleted or wired
+- [ ] No compile errors
+- [ ] Parent Library overlay still renders correctly
+
+---
+
 ## Summary
 
 | # | Issue | Type | Severity |
@@ -459,9 +480,10 @@
 | 19 | Dead SchoolOverlay.Calendar enum | Dead code | Medium |
 | 20 | Dead SchoolOverlay.Results enum | Dead code | Medium |
 | 21 | Orphaned ParentPewsScreenV2 | Dead code | Medium |
+| 22 | Orphaned StudentLibraryScreen | Dead code | Medium |
 
 **Intentional duplications (keep):** #2, #5, #8, #9, #13, #15
-**Restructure actions:** #1, #3, #4, #6, #7, #10, #11, #12, #14, #16, #17, #18, #19, #20, #21
+**Restructure actions:** #1, #3, #4, #6, #7, #10, #11, #12, #14, #16, #17, #18, #19, #20, #21, #22
 
 ---
 
