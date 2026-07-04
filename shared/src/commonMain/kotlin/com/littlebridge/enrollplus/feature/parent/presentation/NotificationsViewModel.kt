@@ -123,4 +123,30 @@ class NotificationsViewModel(
             }
         }
     }
+
+    /** Mark a notification read by refType+refId (used for push tap auto-read). */
+    fun markByRef(refType: String?, refId: String?) {
+        if (refType.isNullOrBlank() || refId.isNullOrBlank()) return
+        _state.update { s ->
+            val updated = s.notifications.map {
+                if (it.refType == refType && it.refId == refId) it.copy(unread = false) else it
+            }
+            s.copy(notifications = updated, unreadCount = updated.count { it.unread })
+        }
+        viewModelScope.launch {
+            val token = preferenceRepository.getUserToken().first() ?: return@launch
+            repository.markNotificationByRef(token, refType, refId)
+        }
+    }
+
+    /** Clear all read notifications (optimistic UI first, then server). */
+    fun clearAll() {
+        _state.update { s ->
+            s.copy(notifications = s.notifications.filter { it.unread }, unreadCount = s.notifications.count { it.unread })
+        }
+        viewModelScope.launch {
+            val token = preferenceRepository.getUserToken().first() ?: return@launch
+            repository.clearReadNotifications(token)
+        }
+    }
 }

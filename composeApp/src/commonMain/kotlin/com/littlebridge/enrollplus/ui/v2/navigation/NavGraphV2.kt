@@ -248,6 +248,7 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
                     "report-card" -> "academics" to "report-card"
                     "tutor" -> "academics" to "tutor"
                     "timetable" -> "academics" to "timetable"
+                    "link-child" -> "profile" to "link-child"
                     else -> "home" to null
                 }
                 DeepLinkTarget.ParentTab(EntryRole.Parent, mappedTab, mappedOverlay)

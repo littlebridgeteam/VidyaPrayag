@@ -20,6 +20,8 @@ import com.littlebridge.enrollplus.notification.NotificationManagerHelper
 class MainActivity : ComponentActivity() {
     private val contentReady = mutableStateOf(false)
     private val deepLink = mutableStateOf<String?>(null)
+    private val pushRefType = mutableStateOf<String?>(null)
+    private val pushRefId = mutableStateOf<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -74,14 +76,22 @@ class MainActivity : ComponentActivity() {
             scaleY.start()
         }
 
-        // Read deep link from notification intent (if launched from a push tap).
+        // Read deep link + ref info from notification intent (if launched from a push tap).
         deepLink.value = extractDeepLink(intent)
+        pushRefType.value = extractRefExtra(intent, "refType")
+        pushRefId.value = extractRefExtra(intent, "refId")
 
         setContent {
             App(
                 onContentRendered = { contentReady.value = true },
                 deepLink = deepLink.value,
                 onDeepLinkConsumed = { deepLink.value = null },
+                pushRefType = pushRefType.value,
+                pushRefId = pushRefId.value,
+                onPushRefConsumed = {
+                    pushRefType.value = null
+                    pushRefId.value = null
+                },
             )
         }
     }
@@ -89,6 +99,8 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         deepLink.value = extractDeepLink(intent)
+        pushRefType.value = extractRefExtra(intent, "refType")
+        pushRefId.value = extractRefExtra(intent, "refId")
     }
 
     private fun extractDeepLink(intent: Intent): String? {
@@ -119,5 +131,16 @@ class MainActivity : ComponentActivity() {
         }
         android.util.Log.d("MainActivity/DeepLink", "No deep link found in intent")
         return null
+    }
+
+    private fun extractRefExtra(intent: Intent, key: String): String? {
+        // From our local NotificationManagerHelper PendingIntent.
+        if (intent.getBooleanExtra(NotificationManagerHelper.EXTRA_FROM_PUSH, false)) {
+            val v = intent.getStringExtra(key)
+            if (!v.isNullOrBlank()) return v
+        }
+        // From FCM auto-rendered notification: data payload delivered as intent extras.
+        val fcmVal = intent.getStringExtra(key)
+        return fcmVal?.takeIf { it.isNotBlank() }
     }
 }

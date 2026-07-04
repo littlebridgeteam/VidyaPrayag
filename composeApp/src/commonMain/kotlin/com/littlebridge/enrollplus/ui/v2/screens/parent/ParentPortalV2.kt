@@ -118,6 +118,7 @@ fun ParentPortalV2(
                     "health" -> overlay = ParentOverlay.Health
                     "pulse" -> overlay = ParentOverlay.Pulse
                     "id-card", "digital-id" -> overlay = ParentOverlay.DigitalIdCard
+                    "link-child" -> overlay = ParentOverlay.LinkChild
                     else -> overlay = ParentOverlay.None
                 }
             }
@@ -144,6 +145,7 @@ fun ParentPortalV2(
                     pathOnly.startsWith("marks") || pathOnly.startsWith("attendance") || pathOnly.startsWith("homework") -> {
                         tab = "academics"; overlay = ParentOverlay.None
                     }
+                    pathOnly.startsWith("link-child") -> { tab = "profile"; overlay = ParentOverlay.LinkChild }
                 }
             }
             else -> Unit

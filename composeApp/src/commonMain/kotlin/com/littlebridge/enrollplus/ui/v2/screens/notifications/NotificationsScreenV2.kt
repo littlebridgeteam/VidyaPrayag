@@ -93,6 +93,7 @@ fun NotificationsScreenV2(
         onBack = onBack,
         onMarkAll = viewModel::markAllRead,
         onMarkRead = viewModel::markRead,
+        onClearAll = viewModel::clearAll,
         onDeepLink = onDeepLink,
         onRetry = viewModel::load,
         modifier = modifier.statusBarsPadding()
@@ -110,6 +111,7 @@ private fun NotificationsContent(
     onBack: () -> Unit,
     onMarkAll: () -> Unit,
     onMarkRead: (String) -> Unit,
+    onClearAll: () -> Unit,
     onDeepLink: (String) -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
@@ -140,20 +142,42 @@ private fun NotificationsContent(
             title = "Notifications",
             onBack = onBack,
             // React action: `<Check 14/> Mark all` — a text+icon button in teal-deep / 700.
+            // Added `Clear` button to remove read notifications.
             action = {
                 Row(
-                    Modifier
-                        .clip(RoundedCornerShape(999.dp))
-                        .clickable { onMarkAll() },
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Icon(VIcons.Check, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(14.dp))
-                    Text(
-                        "Mark all",
-                        style = VTheme.type.caption.colored(c.tealDeep).copy(fontWeight = FontWeight.Bold),
-                        maxLines = 1,
-                    )
+                    Row(
+                        Modifier
+                            .clip(RoundedCornerShape(999.dp))
+                            .clickable { onMarkAll() },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Icon(VIcons.Check, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(14.dp))
+                        Text(
+                            "Mark all",
+                            style = VTheme.type.caption.colored(c.tealDeep).copy(fontWeight = FontWeight.Bold),
+                            maxLines = 1,
+                        )
+                    }
+                    if (items.any { !it.unread }) {
+                        Row(
+                            Modifier
+                                .clip(RoundedCornerShape(999.dp))
+                                .clickable { onClearAll() },
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Icon(VIcons.Close, contentDescription = null, tint = c.ink3, modifier = Modifier.size(14.dp))
+                            Text(
+                                "Clear",
+                                style = VTheme.type.caption.colored(c.ink3).copy(fontWeight = FontWeight.Bold),
+                                maxLines = 1,
+                            )
+                        }
+                    }
                 }
             },
         )
