@@ -198,8 +198,8 @@ fun Route.alumniRouting() {
                 val profession = call.parameters["profession"]
                 val city = call.parameters["city"]
                 val q = call.parameters["q"]
-                val page = call.parameters["page"]?.toIntOrNull() ?: 1
-                val limit = call.parameters["limit"]?.toIntOrNull() ?: 20
+                val page = (call.parameters["page"]?.toIntOrNull() ?: 1).coerceAtLeast(1)
+                val limit = (call.parameters["limit"]?.toIntOrNull() ?: 20).coerceIn(1, 100)
                 val results = alumniService.searchDirectory(ctx.userId, year, profession, city, q, page, limit)
                 call.ok(results)
             }
@@ -217,7 +217,8 @@ fun Route.alumniRouting() {
                             val original = part.originalFileName ?: "photo.jpg"
                             contentType = part.contentType?.toString() ?: contentType
                             if (original.endsWith(".png", ignoreCase = true)) contentType = "image/png"
-                            fileBytes = part.streamProvider().readBytes()
+                            @Suppress("DEPRECATION")
+                            fileBytes = part.streamProvider().use { it.readBytes() }
                         }
                         else -> {}
                     }
@@ -260,8 +261,8 @@ fun Route.alumniRouting() {
                 val company = call.parameters["company"]
                 val industry = call.parameters["industry"]
                 val q = call.parameters["q"]
-                val page = call.parameters["page"]?.toIntOrNull() ?: 1
-                val limit = call.parameters["limit"]?.toIntOrNull() ?: 20
+                val page = (call.parameters["page"]?.toIntOrNull() ?: 1).coerceAtLeast(1)
+                val limit = (call.parameters["limit"]?.toIntOrNull() ?: 20).coerceIn(1, 100)
                 val results = alumniService.listAlumni(ctx.schoolId, year, profession, city, company, industry, q, page, limit)
                 call.ok(results)
             }

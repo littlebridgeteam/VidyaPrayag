@@ -85,19 +85,19 @@ fun StatusPagesConfig.configureErrorHandling() {
     exception<BadRequestException> { call, cause ->
         call.respond(
             HttpStatusCode.BadRequest,
-            ApiError(message = "Invalid request: ${cause.message ?: "malformed body"}")
+            ApiError(message = "Invalid request: ${cause.message ?: "malformed body"}", requestId = call.requestIdSafe())
         )
     }
     exception<IllegalArgumentException> { call, cause ->
         call.respond(
             HttpStatusCode.BadRequest,
-            ApiError(message = cause.message ?: "Bad request")
+            ApiError(message = cause.message ?: "Bad request", requestId = call.requestIdSafe())
         )
     }
     exception<NotFoundException> { call, cause ->
         call.respond(
             HttpStatusCode.NotFound,
-            ApiError(message = cause.message ?: "Resource not found")
+            ApiError(message = cause.message ?: "Resource not found", requestId = call.requestIdSafe())
         )
     }
     exception<Throwable> { call, cause ->
@@ -121,7 +121,7 @@ fun StatusPagesConfig.configureErrorHandling() {
 
         call.respond(
             HttpStatusCode.InternalServerError,
-            ApiError(message = message)
+            ApiError(message = message, requestId = call.requestIdSafe())
         )
     }
 
@@ -147,6 +147,7 @@ fun StatusPagesConfig.configureErrorHandling() {
         val hasBearer = call.request.header(HttpHeaders.Authorization)?.startsWith("Bearer ") == true
         val isGateway = uri.startsWith("/api/v1/gateway")
 
+        val rid = call.requestIdSafe()
         if (uri.startsWith("/api/v1/") && !hasBearer && !isGateway)  {
             call.respond(
                 HttpStatusCode.Unauthorized,
@@ -154,13 +155,14 @@ fun StatusPagesConfig.configureErrorHandling() {
                     message = "Missing or invalid Authorization header. " +
                               "Send 'Authorization: Bearer <jwt>' (login first to get one). " +
                               "If the endpoint really is public, double-check the path: $uri",
-                    errorCode = "UNAUTHORIZED"
+                    errorCode = "UNAUTHORIZED",
+                    requestId = rid
                 )
             )
         } else {
             call.respond(
                 HttpStatusCode.NotFound,
-                ApiError(message = "Endpoint not found: $uri")
+                ApiError(message = "Endpoint not found: $uri", requestId = rid)
             )
         }
     }

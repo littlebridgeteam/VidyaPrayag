@@ -333,14 +333,18 @@ private fun buildClassDetailInTxn(
             hw[HomeworkTable.subject] == a.subject
     }
     val rosterSize = roster.size
+    val hwIds = homeworkRows.map { it[HomeworkTable.id].value }
+    val allSubmissions = if (hwIds.isEmpty()) emptyList() else
+        HomeworkSubmissionsTable.selectAll().where {
+            (HomeworkSubmissionsTable.homeworkId inList hwIds) and
+                (HomeworkSubmissionsTable.status neq "not_submitted")
+        }.toList()
+    val submissionsByHw = allSubmissions.groupBy { it[HomeworkSubmissionsTable.homeworkId] }
     val activeHomework = homeworkRows
         .sortedBy { it[HomeworkTable.dueDate] }
         .map { hw ->
             val hwId = hw[HomeworkTable.id].value
-            val submitted = HomeworkSubmissionsTable.selectAll().where {
-                (HomeworkSubmissionsTable.homeworkId eq hwId) and
-                    (HomeworkSubmissionsTable.status neq "not_submitted")
-            }.count().toInt()
+            val submitted = (submissionsByHw[hwId] ?: emptyList()).size
             ClassHomeworkDto(
                 homeworkId = hwId.toString(),
                 title = hw[HomeworkTable.title],

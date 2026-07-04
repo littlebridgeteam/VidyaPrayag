@@ -57,9 +57,9 @@ suspend fun ApplicationCall.fail(
     status: HttpStatusCode = HttpStatusCode.BadRequest,
     errorCode: String? = null
 ) {
-    // Mark this call as route-handled BEFORE responding so the StatusPages
-    // status(NotFound) catch-all does not clobber our explicit error body
-    // with "Endpoint not found: <uri>" (see ErrorHandling.kt).
     attributes.put(RouteHandledResponseKey, Unit)
-    respond(status, ApiError(success = false, message = message, errorCode = errorCode))
+    respond(status, ApiError(success = false, message = message, errorCode = errorCode, requestId = requestIdSafe()))
 }
+
+fun ApplicationCall.requestIdSafe(): String =
+    if (attributes.contains(RequestIdKey)) attributes[RequestIdKey] else "unknown"

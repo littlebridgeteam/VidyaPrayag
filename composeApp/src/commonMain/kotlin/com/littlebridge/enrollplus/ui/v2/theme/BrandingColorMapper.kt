@@ -57,7 +57,8 @@ object BrandingColorMapper {
             } else {
                 null
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            com.littlebridge.enrollplus.util.AppLogger.e("BrandingColorMapper", "parseHex failed for '${hex}': ${e.message}")
             null
         }
     }

@@ -37,9 +37,11 @@ import io.ktor.server.routing.*
 import com.littlebridge.enrollplus.feature.branding.BrandingService.Companion.SUBDOMAIN_REGEX
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.selectAll
+import org.slf4j.LoggerFactory
 import java.util.UUID
 
 private val subdomainRegex = SUBDOMAIN_REGEX
+private val brandingLogger = LoggerFactory.getLogger("BrandingRouting")
 
 private fun guessContentType(fileName: String): String? {
     val ext = fileName.substringAfterLast('.', "").lowercase()
@@ -286,6 +288,6 @@ private suspend fun notifyBrandingChanged(schoolId: UUID, actorId: UUID, message
             )
         }
     } catch (e: Exception) {
-        System.err.println("[BrandingRouting] notifyBrandingChanged failed: ${e.message}")
+        brandingLogger.warn("[BrandingRouting] notifyBrandingChanged failed: {}", e.message, e)
     }
 }

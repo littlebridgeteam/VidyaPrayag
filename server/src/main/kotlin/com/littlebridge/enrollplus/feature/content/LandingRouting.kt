@@ -30,6 +30,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.jsonArray
 import org.jetbrains.exposed.sql.selectAll
+import org.slf4j.LoggerFactory
 
 @Serializable
 data class LandingSection(
@@ -61,6 +62,7 @@ data class LandingResponse(
 )
 
 private val lenientJson = Json { ignoreUnknownKeys = true; isLenient = true }
+private val landingLogger = LoggerFactory.getLogger("LandingRouting")
 
 fun Route.landingRouting() {
     route("/api/v1/content") {
@@ -93,9 +95,8 @@ fun Route.landingRouting() {
                 )
                 call.ok(response, message = "Landing page content fetched successfully")
             } catch (e: Exception) {
-                System.err.println("API_ERROR: Failed to fetch landing content!")
-                e.printStackTrace()
-                throw e // Let the global exception handler return 500
+                landingLogger.error("API_ERROR: Failed to fetch landing content", e)
+                throw e
             }
         }
     }

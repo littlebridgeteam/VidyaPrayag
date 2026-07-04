@@ -185,7 +185,6 @@ object OtpService {
         // needing OTP_DEV_RETURN_CODE=true in the API response.
        // if (!isProduction) {
             log.info("[TESTING] Generated OTP for {}: {}", identifier, code)
-            println(">>> [TESTING] OTP for $identifier: $code")
        // }
 
         // RA-38: the resend-limit check and the UPSERT now run inside ONE

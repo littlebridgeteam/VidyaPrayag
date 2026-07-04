@@ -723,12 +723,15 @@ private fun Route.syllabusToggleProgress() {
                         (CurriculumUnitsTable.isActive eq true)
                 }.map { it[CurriculumUnitsTable.id].value }
 
-                childIds.forEach { childId ->
-                    val childProg = SyllabusProgressTable.selectAll().where {
-                        (SyllabusProgressTable.unitId eq childId) and
+                val existingProg = if (childIds.isEmpty()) emptyMap() else
+                    SyllabusProgressTable.selectAll().where {
+                        (SyllabusProgressTable.unitId inList childIds) and
                             (SyllabusProgressTable.section eq section) and
                             (SyllabusProgressTable.assignmentId eq asg.assignmentId)
-                    }.singleOrNull()
+                    }.associateBy { it[SyllabusProgressTable.unitId] }
+
+                childIds.forEach { childId ->
+                    val childProg = existingProg[childId]
 
                     if (childProg != null) {
                         SyllabusProgressTable.update({
@@ -1642,7 +1645,9 @@ private fun Route.syllabusPopupPrefsGet() {
 // Helpers for the agentic endpoints.
 // ─────────────────────────────────────────────────────────────────────────────
 
-private val imageHttpClient by lazy { HttpClient(CIO) }
+private val imageHttpClient by lazy {
+    HttpClient(CIO).also { com.littlebridge.enrollplus.core.HttpClientRegistry.register(it) }
+}
 private val log = LoggerFactory.getLogger("TeacherSyllabusRouting")
 
 private suspend fun fetchImageAsBase64(url: String): String? = try {
@@ -1650,6 +1655,7 @@ private suspend fun fetchImageAsBase64(url: String): String? = try {
     val bytes = resp.readRawBytes()
     java.util.Base64.getEncoder().encodeToString(bytes)
 } catch (e: Exception) {
+    log.warn("fetchImageAsBase64: failed to fetch {}", url, e)
     null
 }
 
@@ -1668,6 +1674,7 @@ private fun parseTopicIdsJson(jsonStr: String): List<String> {
         val arr = kotlinx.serialization.json.Json.parseToJsonElement(jsonStr).jsonArray
         arr.map { it.jsonPrimitive.content }
     } catch (e: Exception) {
+        log.warn("parseTopicIdsJson: failed to parse JSON: {}", jsonStr.take(200), e)
         emptyList()
     }
 }

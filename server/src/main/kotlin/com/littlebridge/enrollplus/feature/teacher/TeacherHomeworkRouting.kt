@@ -423,13 +423,17 @@ private fun Route.homeworkListAndAssign() {
         }
 
         val rosterCount = enrollmentsFor(asg).size
+        val hwIds = rows.map { it[HomeworkTable.id].value }
+        val allSubmissions = if (hwIds.isEmpty()) emptyList() else dbQuery {
+            HomeworkSubmissionsTable.selectAll().where {
+                HomeworkSubmissionsTable.homeworkId inList hwIds
+            }.toList()
+        }
+        val submissionsByHw = allSubmissions.groupBy { it[HomeworkSubmissionsTable.homeworkId] }
+
         val items = rows.map { hw ->
             val hwId = hw[HomeworkTable.id].value
-            val counts = dbQuery {
-                HomeworkSubmissionsTable.selectAll().where {
-                    HomeworkSubmissionsTable.homeworkId eq hwId
-                }.toList()
-            }
+            val counts = submissionsByHw[hwId] ?: emptyList()
             var submitted = 0; var late = 0; var graded = 0
             counts.forEach {
                 when (it[HomeworkSubmissionsTable.status]) {

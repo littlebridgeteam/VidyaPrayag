@@ -256,8 +256,8 @@ fun Route.teacherMessagesRouting() {
                     ?: run { call.fail("Invalid id"); return@get }
 
                 // Phase 1 (§9.2): pagination via offset/limit query params.
-                val offset = call.parameters["offset"]?.toIntOrNull() ?: 0
-                val limit = call.parameters["limit"]?.toIntOrNull() ?: 50
+                val offset = (call.parameters["offset"]?.toIntOrNull() ?: 0).coerceAtLeast(0)
+                val limit = (call.parameters["limit"]?.toIntOrNull() ?: 50).coerceIn(1, 100)
 
                 val payload = dbQuery {
                     val thread = MessageThreadsTable.selectAll()
@@ -540,15 +540,19 @@ fun Route.teacherMessagesRouting() {
                 }
                 // Per-parent notification with the correct recipient thread ID
                 // so the deep link opens the specific chat, not just the message list.
+                val senderThreadIds = if (parents.isEmpty()) emptyMap() else dbQuery {
+                    com.littlebridge.enrollplus.db.MessageThreadsTable.selectAll()
+                        .where {
+                            (com.littlebridge.enrollplus.db.MessageThreadsTable.ownerUserId eq ctx.userId) and
+                                (com.littlebridge.enrollplus.db.MessageThreadsTable.peerUserId inList parents)
+                        }.associate {
+                            it[com.littlebridge.enrollplus.db.MessageThreadsTable.peerUserId] to
+                                it[com.littlebridge.enrollplus.db.MessageThreadsTable.id].value
+                        }
+                }
                 parents.forEach { parentId ->
                     runCatching {
-                        val senderThreadId = dbQuery {
-                            com.littlebridge.enrollplus.db.MessageThreadsTable.selectAll()
-                                .where {
-                                    (com.littlebridge.enrollplus.db.MessageThreadsTable.ownerUserId eq ctx.userId) and
-                                        (com.littlebridge.enrollplus.db.MessageThreadsTable.peerUserId eq parentId)
-                                }.firstOrNull()?.get(com.littlebridge.enrollplus.db.MessageThreadsTable.id)?.value
-                        }
+                        val senderThreadId = senderThreadIds[parentId]
                         if (senderThreadId != null) {
                             notifyMessageRecipient(
                                 recipientId = parentId,

@@ -37,6 +37,7 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.update
+import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
@@ -209,6 +210,8 @@ class ScholarshipService(
     private val notificationService: NotificationService? = null,
 ) {
 
+    private val logger = LoggerFactory.getLogger(ScholarshipService::class.java)
+
     private val json = Json { ignoreUnknownKeys = true }
 
     // ── Admin: Scheme Management ─────────────────────────────────────────
@@ -364,7 +367,7 @@ class ScholarshipService(
                 feeService.applyScholarship(studentId, scholarshipId, schoolId)
             } catch (e: Exception) {
                 // Log error but don't fail the approval — fee integration is best-effort
-                println("SCHOLARSHIP: Fee integration failed for application $applicationId: ${e.message}")
+                logger.warn("SCHOLARSHIP: Fee integration failed for application {}: {}", applicationId, e.message, e)
             }
         }
 
@@ -534,7 +537,7 @@ class ScholarshipService(
         try {
             feeService.applyScholarship(studentId, scholarshipId, schoolId)
         } catch (e: Exception) {
-            println("SCHOLARSHIP: Fee integration failed for renewal $renewalId: ${e.message}")
+            logger.warn("SCHOLARSHIP: Fee integration failed for renewal {}: {}", renewalId, e.message, e)
         }
 
         // Find parent to notify

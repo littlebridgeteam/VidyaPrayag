@@ -152,9 +152,14 @@ object StudentAggregationService {
                 (ParentChildLinksTable.status eq "approved")
         }.toList()
 
+        val parentIds = links.map { it[ParentChildLinksTable.parentId] }.distinct()
+        val userRows = if (parentIds.isEmpty()) emptyMap() else
+            AppUsersTable.selectAll().where { AppUsersTable.id inList parentIds.map { org.jetbrains.exposed.dao.id.EntityID(it, AppUsersTable) } }
+                .associate { it[AppUsersTable.id].value to it }
+
         return links.map { link ->
             val pid = link[ParentChildLinksTable.parentId]
-            val userRow = AppUsersTable.selectAll().where { AppUsersTable.id eq pid }.firstOrNull()
+            val userRow = userRows[pid]
             val name = userRow?.get(AppUsersTable.fullName)
                 ?: link[ParentChildLinksTable.childName] // last-resort display
                 ?: "Parent"
@@ -236,16 +241,20 @@ object StudentAggregationService {
      * has no graded marks yet so the UI can hide the metric honestly.
      */
     fun academicScoreForStudent(schoolId: UUID, studentCode: String): Float? {
-        val ratios = mutableListOf<Float>()
-        AssessmentsTable.selectAll().where {
+        val assessments = AssessmentsTable.selectAll().where {
             (AssessmentsTable.schoolId eq schoolId) and (AssessmentsTable.isActive eq true)
-        }.forEach { a ->
+        }.filter { it[AssessmentsTable.maxMarks] > 0 }.toList()
+        if (assessments.isEmpty()) return null
+        val assessmentIds = assessments.map { it[AssessmentsTable.id].value }
+        val marks = AssessmentMarksTable.selectAll().where {
+            (AssessmentMarksTable.assessmentId inList assessmentIds) and
+                (AssessmentMarksTable.studentId eq studentCode)
+        }.associateBy { it[AssessmentMarksTable.assessmentId] }
+
+        val ratios = mutableListOf<Float>()
+        assessments.forEach { a ->
             val maxMarks = a[AssessmentsTable.maxMarks]
-            if (maxMarks <= 0) return@forEach
-            val mark = AssessmentMarksTable.selectAll().where {
-                (AssessmentMarksTable.assessmentId eq a[AssessmentsTable.id].value) and
-                    (AssessmentMarksTable.studentId eq studentCode)
-            }.firstOrNull()?.get(AssessmentMarksTable.marks)
+            val mark = marks[a[AssessmentsTable.id].value]?.get(AssessmentMarksTable.marks)
             if (mark != null) ratios += (mark.toFloat() / maxMarks * 100f).coerceIn(0f, 100f)
         }
         return if (ratios.isEmpty()) null else ratios.average().toFloat()
@@ -487,13 +496,18 @@ object StudentAggregationService {
         }
 
         // Graded marks become "results updated" entries.
-        AssessmentsTable.selectAll().where {
+        val assessments = AssessmentsTable.selectAll().where {
             (AssessmentsTable.schoolId eq schoolId) and (AssessmentsTable.isActive eq true)
-        }.orderBy(AssessmentsTable.createdAt, SortOrder.DESC).limit(limit).forEach { a ->
-            val graded = AssessmentMarksTable.selectAll().where {
-                (AssessmentMarksTable.assessmentId eq a[AssessmentsTable.id].value) and
+        }.orderBy(AssessmentsTable.createdAt, SortOrder.DESC).limit(limit).toList()
+        val assessmentIds = assessments.map { it[AssessmentsTable.id].value }
+        val gradedMarks = if (assessmentIds.isEmpty()) emptyMap() else
+            AssessmentMarksTable.selectAll().where {
+                (AssessmentMarksTable.assessmentId inList assessmentIds) and
                     (AssessmentMarksTable.studentId eq studentCode)
-            }.firstOrNull()
+            }.associateBy { it[AssessmentMarksTable.assessmentId] }
+
+        assessments.forEach { a ->
+            val graded = gradedMarks[a[AssessmentsTable.id].value]
             if (graded?.get(AssessmentMarksTable.marks) != null) {
                 val ts = graded[AssessmentMarksTable.updatedAt]
                 items += ts to StudentActivityDto(

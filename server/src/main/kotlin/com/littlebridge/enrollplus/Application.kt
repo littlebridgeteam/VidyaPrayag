@@ -51,8 +51,11 @@
  */
 package com.littlebridge.enrollplus
 
+import com.littlebridge.enrollplus.core.REQUEST_ID_HEADER
+import com.littlebridge.enrollplus.core.RequestIdPlugin
 import com.littlebridge.enrollplus.core.configureErrorHandling
 import com.littlebridge.enrollplus.core.configureJwt
+import com.littlebridge.enrollplus.core.requestIdSafe
 import com.littlebridge.enrollplus.db.DatabaseFactory
 import com.littlebridge.enrollplus.feature.admissions.admissionRouting
 import com.littlebridge.enrollplus.feature.announcements.announcementRouting
@@ -165,6 +168,9 @@ import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.server.metrics.micrometer.MicrometerMetrics
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
+import io.micrometer.prometheusmetrics.PrometheusConfig
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.util.Properties
@@ -263,6 +269,8 @@ fun main() {
 fun Application.module() {
     install(IgnoreTrailingSlash)
 
+    install(RequestIdPlugin)
+
     // Load persisted logging toggle state from app_config so it survives restarts.
     runBlocking { ServerLogWriter.initFromConfig() }
 
@@ -293,6 +301,7 @@ fun Application.module() {
         val method = call.request.httpMethod.value
         val uri = call.request.uri
         val actorId = call.principal<io.ktor.server.auth.jwt.JWTPrincipal>()?.payload?.subject
+        val rid = call.requestIdSafe()
 
         proceed()
 
@@ -317,6 +326,7 @@ fun Application.module() {
                     "uri" to uri,
                     "status" to status,
                     "duration_ms" to durationMs,
+                    "request_id" to rid,
                 ),
             )
         }
@@ -352,6 +362,7 @@ fun Application.module() {
         allowHeader("Platform")
         allowHeader("Device-Id")
         allowHeader("Accept-Language")
+        allowHeader(REQUEST_ID_HEADER)
         allowMethod(HttpMethod.Get)
         allowMethod(HttpMethod.Post)
         allowMethod(HttpMethod.Put)
@@ -396,6 +407,13 @@ fun Application.module() {
 
     install(StatusPages) { configureErrorHandling() }
 
+    // GAP-010: Observability — Micrometer metrics with Prometheus registry.
+    // Exposes /metrics for Prometheus scraping and /api/v1/health for liveness.
+    val prometheusRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
+    install(MicrometerMetrics) {
+        registry = prometheusRegistry
+    }
+
     routing {
         // Global CORS preflight handler — must be before any authenticate{} block
         // so OPTIONS requests don't get 403'd by the JWT auth plugin.
@@ -406,6 +424,11 @@ fun Application.module() {
 
         get("/") {
             call.respondText("Ktor: ${Greeting().greet()} — VidyaPrayag API v1 is live")
+        }
+
+        // Prometheus metrics endpoint — scrape target for Prometheus/Grafana
+        get("/metrics") {
+            call.respondText(prometheusRegistry.scrape(), ContentType.Text.Plain)
         }
 
         // Public

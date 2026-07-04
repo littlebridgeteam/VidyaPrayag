@@ -52,11 +52,13 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
+import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.UUID
 
 object MessageDispatchScheduler {
     private const val TAG = "MessageDispatchScheduler"
+    private val logger = LoggerFactory.getLogger(MessageDispatchScheduler::class.java)
     private const val POLL_INTERVAL_MS = 60_000L
     private const val BATCH_SIZE = 50
 
@@ -67,7 +69,7 @@ object MessageDispatchScheduler {
             while (true) {
                 delay(POLL_INTERVAL_MS)
                 runCatching { checkAndDispatch() }
-                    .onFailure { println("[$TAG] failed: ${it.message}") }
+                    .onFailure { logger.error("[$TAG] failed", it) }
             }
         }
     }
@@ -85,7 +87,7 @@ object MessageDispatchScheduler {
                 .toList()
         }
         if (dueMessages.isEmpty()) return
-        println("[$TAG] Found ${dueMessages.size} due message(s) to dispatch")
+        logger.info("[$TAG] Found {} due message(s) to dispatch", dueMessages.size)
 
         var successCount = 0
         var failCount = 0
@@ -111,7 +113,7 @@ object MessageDispatchScheduler {
                             it[ScheduledMessagesTable.updatedAt] = Instant.now()
                         }
                     }
-                    println("[$TAG] Dispatched $id (${row[ScheduledMessagesTable.messageType]})")
+                    logger.info("[$TAG] Dispatched {} ({})", id, row[ScheduledMessagesTable.messageType])
                     successCount++
                 }
                 .onFailure { e ->
@@ -125,7 +127,7 @@ object MessageDispatchScheduler {
                                 it[ScheduledMessagesTable.lastError] = e.message?.take(500)
                                 it[ScheduledMessagesTable.updatedAt] = Instant.now()
                             }
-                            println("[$TAG] FAILED $id after $retryCount retries: ${e.message}")
+                            logger.error("[$TAG] FAILED {} after {} retries: {}", id, retryCount, e.message, e)
                         } else {
                             ScheduledMessagesTable.update({ ScheduledMessagesTable.id eq id }) {
                                 it[ScheduledMessagesTable.status] = ScheduledMessageStatus.SCHEDULED
@@ -133,13 +135,13 @@ object MessageDispatchScheduler {
                                 it[ScheduledMessagesTable.lastError] = e.message?.take(500)
                                 it[ScheduledMessagesTable.updatedAt] = Instant.now()
                             }
-                            println("[$TAG] Retry $id (attempt $retryCount/$maxRetries): ${e.message}")
+                            logger.warn("[$TAG] Retry {} (attempt {}/{}): {}", id, retryCount, maxRetries, e.message, e)
                         }
                     }
                     failCount++
                 }
         }
-        println("[$TAG] Tick complete: $successCount dispatched, $failCount failed")
+        logger.info("[$TAG] Tick complete: {} dispatched, {} failed", successCount, failCount)
     }
 
     private suspend fun dispatchMessage(row: org.jetbrains.exposed.sql.ResultRow) {

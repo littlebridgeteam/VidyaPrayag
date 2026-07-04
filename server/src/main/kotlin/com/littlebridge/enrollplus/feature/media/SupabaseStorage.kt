@@ -51,6 +51,7 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import org.slf4j.LoggerFactory
 import java.util.UUID
 
 /** Result of a successful upload: the public URL + the storage object path. */
@@ -61,6 +62,8 @@ data class UploadResult(
 )
 
 object SupabaseStorage {
+
+    private val logger = LoggerFactory.getLogger(SupabaseStorage::class.java)
 
     // -- env (resolved lazily so a missing var doesn't break class-load) --
     private val baseUrl: String? get() = EnvConfig.get("SUPABASE_URL")?.trimEnd('/')
@@ -165,13 +168,11 @@ object SupabaseStorage {
                 )
             } else {
                 // Surface the gateway message to server logs (never the key).
-                System.err.println(
-                    "[SupabaseStorage] upload failed ${resp.status.value}: ${resp.bodyAsText().take(300)}"
-                )
+                logger.warn("[SupabaseStorage] upload failed {}: {}", resp.status.value, resp.bodyAsText().take(300))
                 null
             }
         } catch (e: Exception) {
-            System.err.println("[SupabaseStorage] upload exception: ${e.message}")
+            logger.warn("[SupabaseStorage] upload exception: {}", e.message, e)
             null
         }
     }
@@ -190,7 +191,7 @@ object SupabaseStorage {
             }
             resp.status.isSuccess()
         } catch (e: Exception) {
-            System.err.println("[SupabaseStorage] delete exception: ${e.message}")
+            logger.warn("[SupabaseStorage] delete exception: {}", e.message, e)
             false
         }
     }

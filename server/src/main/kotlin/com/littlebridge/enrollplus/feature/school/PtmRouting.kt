@@ -50,6 +50,7 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
+import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
@@ -120,6 +121,8 @@ data class UpsertClassProgressDto(
 )
 
 // ---------------- helpers ----------------
+
+private val ptmLogger = LoggerFactory.getLogger("PtmRouting")
 
 /** Confirms [eventId] belongs to [schoolId]. Must run inside dbQuery {}. */
 private fun ptmOwnedBySchool(eventId: UUID, schoolId: UUID): Boolean =
@@ -266,7 +269,7 @@ fun Route.ptmRouting() {
                         }
                     }
                 }.onFailure {
-                    println("PTM bridge: failed to create calendar event: ${it.message}")
+                    ptmLogger.warn("PTM bridge: failed to create calendar event: {}", it.message, it)
                 }
                 call.created(
                     PtmActiveEventDto(

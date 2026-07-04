@@ -104,6 +104,10 @@ dependencies {
     implementation("io.ktor:ktor-server-auto-head-response:3.4.3")
     implementation("io.ktor:ktor-server-sse:3.4.3")
 
+    // Observability — Micrometer metrics + Prometheus registry (GAP-010)
+    implementation("io.ktor:ktor-server-metrics-micrometer:3.4.3")
+    implementation("io.micrometer:micrometer-registry-prometheus:1.14.3")
+
     // -----------------------------------------------------------------
     // Ktor HTTP CLIENT — used by the OTP delivery layer (Fast2SMS, MSG91,
     // Twilio, WhatsApp Cloud API, generic webhook). Kept on the server
@@ -140,6 +144,9 @@ dependencies {
     implementation(libs.hikaricp)
     implementation(libs.sqlite)
     implementation(libs.dotenv)
+
+    // Flyway — automated database migration runner (SCH-011)
+    implementation("org.flywaydb:flyway-database-postgresql:11.1.0")
 
     // -----------------------------------------------------------------
     // Notification foundation (feature/setup_notification).

@@ -29,6 +29,7 @@ import org.jetbrains.exposed.sql.selectAll
 import org.slf4j.LoggerFactory
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.util.concurrent.atomic.AtomicReference
 
 object PulseWeeklyJob {
     private const val TAG = "PulseWeeklyJob"
@@ -40,8 +41,7 @@ object PulseWeeklyJob {
 
     private val pulseService = ParentPulseService()
 
-    @Volatile
-    private var lastRunDate: LocalDate? = null
+    private val lastRunDate = AtomicReference<LocalDate?>(null)
 
     fun start(scope: CoroutineScope) {
         scope.launch {
@@ -63,8 +63,8 @@ object PulseWeeklyJob {
         if (now.hour != TARGET_HOUR_UTC) return
 
         // Guard: don't run twice in the same day
-        if (lastRunDate == today) return
-        lastRunDate = today
+        if (lastRunDate.get() == today) return
+        if (!lastRunDate.compareAndSet(null, today)) return
 
         val weekStart = ParentPulseService.currentWeekStart(today)
         log.info("[$TAG] Triggering batch generation for week starting {}", weekStart)

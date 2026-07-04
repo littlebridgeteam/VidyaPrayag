@@ -44,6 +44,7 @@
 package com.littlebridge.enrollplus.db
 
 import org.jetbrains.exposed.dao.id.UUIDTable
+import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.date
 import org.jetbrains.exposed.sql.javatime.time
@@ -167,6 +168,10 @@ object UserSessionsTable : UUIDTable("user_sessions", "id") {
     val revokedAt         = timestamp("revoked_at").nullable()
     val lastUsedAt        = timestamp("last_used_at").nullable()
     val createdAt         = timestamp("created_at")
+
+    init {
+        foreignKey(userId to AppUsersTable.id, onDelete = ReferenceOption.CASCADE, name = "fk_user_sessions_user_id")
+    }
 }
 
 // =====================================================================
@@ -809,6 +814,8 @@ object MessagesTable : UUIDTable("messages", "id") {
     init {
         // Delta sync + pagination: WHERE conversation_id=? AND seq>? ORDER BY seq
         index("idx_messages_conv_seq", isUnique = false, conversationId, seq)
+        foreignKey(threadId to MessageThreadsTable.id, onDelete = ReferenceOption.CASCADE, name = "fk_messages_thread_id")
+        foreignKey(replyToId to MessagesTable.id, onDelete = ReferenceOption.SET_NULL, name = "fk_messages_reply_to")
     }
 }
 
@@ -839,6 +846,7 @@ object MessageStatusTable : UUIDTable("message_status", "id") {
     init {
         uniqueIndex("ux_message_status_msg_user", messageId, userId)
         index("idx_msg_status_conv_user", isUnique = false, conversationId, userId)
+        foreignKey(messageId to MessagesTable.id, onDelete = ReferenceOption.CASCADE, name = "fk_message_status_message_id")
     }
 }
 
@@ -865,6 +873,7 @@ object MessageAttachmentsTable : UUIDTable("message_attachments", "id") {
 
     init {
         index("idx_attachments_message", isUnique = false, messageId)
+        foreignKey(messageId to MessagesTable.id, onDelete = ReferenceOption.CASCADE, name = "fk_message_attachments_message_id")
     }
 }
 
@@ -1116,6 +1125,8 @@ object SyllabusProgressTable : UUIDTable("syllabus_progress", "id") {
     val updatedAt    = timestamp("updated_at")
     init {
         uniqueIndex("ux_syllabus_progress_unique", unitId, section, assignmentId)
+        foreignKey(unitId to CurriculumUnitsTable.id, onDelete = ReferenceOption.CASCADE, name = "fk_syllabus_progress_unit_id")
+        foreignKey(assignmentId to TeacherSubjectAssignmentsTable.id, onDelete = ReferenceOption.RESTRICT, name = "fk_syllabus_progress_assignment_id")
     }
 }
 
@@ -2407,6 +2418,9 @@ object TransportAssignmentsTable : UUIDTable("transport_assignments", "id") {
         index("idx_transport_assignments_school", false, schoolId, isActive)
         index("idx_transport_assignments_student", false, studentId, isActive)
         index("idx_transport_assignments_route", false, routeId, isActive)
+        foreignKey(routeId to TransportRoutesTable.id, onDelete = ReferenceOption.RESTRICT, name = "fk_transport_assignments_route_id")
+        foreignKey(stopId to TransportStopsTable.id, onDelete = ReferenceOption.RESTRICT, name = "fk_transport_assignments_stop_id")
+        foreignKey(vehicleId to TransportVehiclesTable.id, onDelete = ReferenceOption.RESTRICT, name = "fk_transport_assignments_vehicle_id")
     }
 }
 
@@ -2420,6 +2434,7 @@ object TransportTrackingTable : UUIDTable("transport_tracking", "id") {
 
     init {
         index("idx_transport_tracking_vehicle", false, vehicleId, recordedAt)
+        foreignKey(vehicleId to TransportVehiclesTable.id, onDelete = ReferenceOption.CASCADE, name = "fk_transport_tracking_vehicle_id")
     }
 }
 
