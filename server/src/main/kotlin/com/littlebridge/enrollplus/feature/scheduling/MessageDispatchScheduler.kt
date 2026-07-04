@@ -34,6 +34,8 @@ import com.littlebridge.enrollplus.feature.calendar.EventStatus
 import com.littlebridge.enrollplus.feature.calendar.EventSource
 import com.littlebridge.enrollplus.feature.notifications.Notify
 import com.littlebridge.enrollplus.feature.notifications.NotifyRecipients
+import com.littlebridge.enrollplus.feature.school.notifyMessageRecipient
+import com.littlebridge.enrollplus.feature.school.resolveMessagingUser
 import com.littlebridge.enrollplus.feature.school.sendInConversation
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -228,17 +230,36 @@ object MessageDispatchScheduler {
             audienceParents.distinct()
         }
         if (recipients.isNotEmpty()) {
-            Notify.toUsers(
-                userIds = recipients,
-                category = "announcement",
-                title = title,
-                body = subTitle ?: description.take(140),
-                schoolId = schoolId,
-                actorId = createdBy,
-                deepLink = "/announcements/$eventId",
-                refType = "announcement",
-                refId = eventId,
-            )
+            val parentRecipients = recipients.filter { rid ->
+                runCatching { dbQuery { resolveMessagingUser(rid)?.role } }.getOrNull()?.lowercase() == "parent"
+            }
+            val teacherRecipients = recipients.filter { it !in parentRecipients }
+            if (parentRecipients.isNotEmpty()) {
+                Notify.toUsers(
+                    userIds = parentRecipients,
+                    category = "announcement",
+                    title = title,
+                    body = subTitle ?: description.take(140),
+                    schoolId = schoolId,
+                    actorId = createdBy,
+                    deepLink = "/parent/announcements/$eventId",
+                    refType = "announcement",
+                    refId = eventId,
+                )
+            }
+            if (teacherRecipients.isNotEmpty()) {
+                Notify.toUsers(
+                    userIds = teacherRecipients,
+                    category = "announcement",
+                    title = title,
+                    body = subTitle ?: description.take(140),
+                    schoolId = schoolId,
+                    actorId = createdBy,
+                    deepLink = "/teacher/announcements?id=$eventId",
+                    refType = "announcement",
+                    refId = eventId,
+                )
+            }
         }
         }
 
@@ -308,18 +329,28 @@ object MessageDispatchScheduler {
                 )
             }
         }
-        if (parentIds.isNotEmpty()) {
-            Notify.toUsers(
-                userIds = parentIds,
-                category = "message",
-                title = "Message from $teacherName",
-                body = body.take(120),
-                schoolId = schoolId,
-                actorId = teacherId,
-                deepLink = "/parent/messages",
-                refType = "scheduled_message",
-                refId = "teacher_broadcast",
-            )
+        // Per-parent notification with the correct recipient thread ID
+        // so the deep link opens the specific chat, not just the message list.
+        for (parentId in parentIds) {
+            runCatching {
+                val senderThreadId = dbQuery {
+                    com.littlebridge.enrollplus.db.MessageThreadsTable.selectAll()
+                        .where {
+                            (com.littlebridge.enrollplus.db.MessageThreadsTable.ownerUserId eq teacherId) and
+                                (com.littlebridge.enrollplus.db.MessageThreadsTable.peerUserId eq parentId)
+                        }.firstOrNull()?.get(com.littlebridge.enrollplus.db.MessageThreadsTable.id)?.value
+                }
+                if (senderThreadId != null) {
+                    notifyMessageRecipient(
+                        recipientId = parentId,
+                        schoolId = schoolId,
+                        actorId = teacherId,
+                        actorName = teacherName,
+                        threadId = senderThreadId,
+                        body = body,
+                    )
+                }
+            }
         }
     }
 
@@ -360,18 +391,28 @@ object MessageDispatchScheduler {
                 )
             }
         }
-        if (recipients.isNotEmpty()) {
-            Notify.toUsers(
-                userIds = recipients,
-                category = "announcement",
-                title = title,
-                body = body.take(140),
-                schoolId = schoolId,
-                actorId = adminId,
-                deepLink = "/announcements",
-                refType = "scheduled_message",
-                refId = "admin_broadcast",
-            )
+        // Per-parent notification with the correct recipient thread ID
+        // so the deep link opens the specific chat, not just the message list.
+        for (parentId in recipients) {
+            runCatching {
+                val senderThreadId = dbQuery {
+                    com.littlebridge.enrollplus.db.MessageThreadsTable.selectAll()
+                        .where {
+                            (com.littlebridge.enrollplus.db.MessageThreadsTable.ownerUserId eq adminId) and
+                                (com.littlebridge.enrollplus.db.MessageThreadsTable.peerUserId eq parentId)
+                        }.firstOrNull()?.get(com.littlebridge.enrollplus.db.MessageThreadsTable.id)?.value
+                }
+                if (senderThreadId != null) {
+                    notifyMessageRecipient(
+                        recipientId = parentId,
+                        schoolId = schoolId,
+                        actorId = adminId,
+                        actorName = adminName,
+                        threadId = senderThreadId,
+                        body = body,
+                    )
+                }
+            }
         }
     }
 

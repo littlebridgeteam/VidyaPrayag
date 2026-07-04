@@ -51,6 +51,7 @@ import com.littlebridge.enrollplus.ui.v2.screens.discovery.AcademicCalendarScree
 import com.littlebridge.enrollplus.ui.v2.screens.discovery.DiscoveryScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.notifications.NotificationsScreenV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
+import org.koin.core.qualifier.named
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -113,7 +114,7 @@ fun ParentPortalV2(
                     "library" -> overlay = ParentOverlay.Library
                     "events" -> overlay = ParentOverlay.EventRegistration
                     "announcements" -> overlay = ParentOverlay.Notifications
-                    "report-card", "tutor", "timetable", "marks", "attendance", "homework" -> { tab = "academics"; overlay = ParentOverlay.None }
+                    "report-card", "tutor", "timetable", "marks", "attendance", "homework", "quizzes" -> { tab = "academics"; overlay = ParentOverlay.None }
                     "scholarships" -> overlay = ParentOverlay.Scholarships
                     "health" -> overlay = ParentOverlay.Health
                     "pulse" -> overlay = ParentOverlay.Pulse
@@ -193,7 +194,7 @@ fun ParentPortalV2(
             return
         }
         ParentOverlay.Calendar -> {
-            AcademicCalendarScreenV2(onBack = { overlay = ParentOverlay.None }, modifier = modifier)
+            AcademicCalendarScreenV2(onBack = { overlay = ParentOverlay.None }, modifier = modifier, viewModelQualifier = named("parentCalendar"))
             return
         }
         ParentOverlay.Scholarships -> {

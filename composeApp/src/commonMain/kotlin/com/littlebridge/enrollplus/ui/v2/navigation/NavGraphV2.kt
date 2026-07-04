@@ -226,6 +226,7 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
                     "marks" -> "marks"
                     "attendance" -> "attendance"
                     "homework" -> "homework"
+                    "quizzes" -> "quizzes"
                     else -> null
                 }
                 DeepLinkTarget.ParentTab(EntryRole.Parent, secondSeg, overlay)
@@ -401,6 +402,15 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
                     DeepLinkTarget.SchoolScreen(currentRole, "events")
                 else ->
                     DeepLinkTarget.Generic(currentRole, path)
+            }
+        }
+        "student" -> {
+            // Students access the app through the parent portal.
+            // /student/library → parent library overlay
+            val screen = segments.getOrNull(1) ?: "library"
+            when (currentRole) {
+                EntryRole.Parent -> DeepLinkTarget.ParentTab(EntryRole.Parent, "home", screen)
+                else -> DeepLinkTarget.Generic(currentRole, path)
             }
         }
         else -> DeepLinkTarget.Generic(currentRole, path)
