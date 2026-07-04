@@ -169,7 +169,7 @@ sealed class DeepLinkTarget {
     data class TeacherScreen(override val role: EntryRole, val screen: String, val params: Map<String, String> = emptyMap()) : DeepLinkTarget()
     data class SchoolScreen(override val role: EntryRole, val screen: String, val params: Map<String, String> = emptyMap()) : DeepLinkTarget()
     data class AlumniScreen(override val role: EntryRole, val screen: String, val alumniId: String? = null) : DeepLinkTarget()
-    data class Messages(override val role: EntryRole) : DeepLinkTarget()
+    data class Messages(override val role: EntryRole, val threadId: String? = null) : DeepLinkTarget()
     data class Generic(override val role: EntryRole, val path: String) : DeepLinkTarget()
 }
 
@@ -187,6 +187,10 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
         "parent" -> {
             val secondSeg = segments.getOrNull(1) ?: "home"
             val thirdSeg = segments.getOrNull(2)
+            // Messages deep link with thread ID: /parent/messages/<threadId>
+            if (secondSeg == "messages" && thirdSeg != null) {
+                return DeepLinkTarget.Messages(EntryRole.Parent, threadId = thirdSeg)
+            }
             // Valid bottom-nav tabs in ParentPortalV2.
             val validTabs = setOf("home", "academics", "fees", "conversations", "profile")
             if (secondSeg in validTabs) {
@@ -208,6 +212,9 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
                     "timetable" -> "timetable"
                     "fees" -> "fees"
                     "announcements" -> "announcements"
+                    "marks" -> "marks"
+                    "attendance" -> "attendance"
+                    "homework" -> "homework"
                     else -> null
                 }
                 DeepLinkTarget.ParentTab(EntryRole.Parent, secondSeg, overlay)
@@ -237,14 +244,24 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
         }
         "teacher" -> {
             val screen = segments.getOrNull(1) ?: "home"
-            // Parse query params for report-review deep links (className, section, term)
-            val params = parseQueryParams(queryStr)
-            DeepLinkTarget.TeacherScreen(EntryRole.Teacher, screen, params)
+            // Messages deep link with thread ID: /teacher/messages/<threadId>
+            if (screen == "messages" && segments.size > 2) {
+                DeepLinkTarget.Messages(EntryRole.Teacher, threadId = segments.getOrNull(2))
+            } else {
+                // Parse query params for report-review deep links (className, section, term)
+                val params = parseQueryParams(queryStr)
+                DeepLinkTarget.TeacherScreen(EntryRole.Teacher, screen, params)
+            }
         }
         "school", "admin" -> {
             val screen = segments.getOrNull(1) ?: "home"
-            val params = parseQueryParams(queryStr)
-            DeepLinkTarget.SchoolScreen(EntryRole.SchoolAdmin, screen, params)
+            // Messages deep link with thread ID: /school/messages/<threadId>
+            if (screen == "messages" && segments.size > 2) {
+                DeepLinkTarget.Messages(EntryRole.SchoolAdmin, threadId = segments.getOrNull(2))
+            } else {
+                val params = parseQueryParams(queryStr)
+                DeepLinkTarget.SchoolScreen(EntryRole.SchoolAdmin, screen, params)
+            }
         }
         "alumni" -> {
             val screen = segments.getOrNull(1) ?: "directory"
@@ -263,10 +280,11 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
         }
         "calendar" -> DeepLinkTarget.Generic(currentRole, path)
         "messages" -> {
+            val threadId = segments.getOrNull(1)
             when (currentRole) {
-                EntryRole.Parent -> DeepLinkTarget.Messages(EntryRole.Parent)
-                EntryRole.Teacher -> DeepLinkTarget.Messages(EntryRole.Teacher)
-                EntryRole.SchoolAdmin, EntryRole.SuperAdmin -> DeepLinkTarget.Messages(currentRole)
+                EntryRole.Parent -> DeepLinkTarget.Messages(EntryRole.Parent, threadId)
+                EntryRole.Teacher -> DeepLinkTarget.Messages(EntryRole.Teacher, threadId)
+                EntryRole.SchoolAdmin, EntryRole.SuperAdmin -> DeepLinkTarget.Messages(currentRole, threadId)
                 else -> DeepLinkTarget.Generic(currentRole, path)
             }
         }

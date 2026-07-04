@@ -72,6 +72,7 @@ fun TeacherPortalV2(
     var tab by remember { mutableStateOf("home") }
     var overlay by remember { mutableStateOf(TeacherOverlay.None) }
     var localDeepLink by remember { mutableStateOf<DeepLinkTarget?>(null) }
+    var deepLinkThreadId by remember { mutableStateOf<String?>(null) }
 
     // AI Report Card — review queue parameters (declared before LaunchedEffect
     // so the deep-link handler can write to them).
@@ -99,12 +100,14 @@ fun TeacherPortalV2(
                     "leave-requests", "leave" -> { tab = "home"; overlay = TeacherOverlay.None }
                     "library" -> { tab = "home"; overlay = TeacherOverlay.None }
                     "messages" -> overlay = TeacherOverlay.Messages
+                    "timetable-requests" -> { tab = "home"; overlay = TeacherOverlay.None }
                     // Valid bottom-nav tabs
                     "home", "update", "classes", "timetable", "profile" -> tab = target.screen
                     else -> tab = "home"
                 }
             }
             is DeepLinkTarget.Messages -> {
+                deepLinkThreadId = target.threadId
                 overlay = TeacherOverlay.Messages
             }
             is DeepLinkTarget.Generic -> {
@@ -113,6 +116,11 @@ fun TeacherPortalV2(
                     pathOnly.startsWith("messages") -> overlay = TeacherOverlay.Messages
                     pathOnly.startsWith("announcements") -> { tab = "home"; overlay = TeacherOverlay.None }
                     pathOnly.startsWith("leave") -> { tab = "home"; overlay = TeacherOverlay.None }
+                    pathOnly.startsWith("transport") -> overlay = TeacherOverlay.TransportAttendance
+                    pathOnly.startsWith("tutor") -> overlay = TeacherOverlay.Heatmap
+                    pathOnly.startsWith("events") -> overlay = TeacherOverlay.EventRegistration
+                    pathOnly.startsWith("timetable-requests") -> { tab = "home"; overlay = TeacherOverlay.None }
+                    pathOnly.startsWith("timetable") -> { tab = "timetable"; overlay = TeacherOverlay.None }
                     else -> tab = "home"
                 }
             }
@@ -223,8 +231,9 @@ fun TeacherPortalV2(
         }
         TeacherOverlay.Messages -> {
             TeacherMessagesScreenV2(
-                onBack = { overlay = TeacherOverlay.None },
+                onBack = { overlay = TeacherOverlay.None; deepLinkThreadId = null },
                 modifier = modifier,
+                initialThreadId = deepLinkThreadId,
             )
             return
         }

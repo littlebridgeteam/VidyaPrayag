@@ -559,9 +559,9 @@ internal suspend fun notifyMessageRecipient(
     if (recipientId == null || recipientId == actorId) return
     val recipient = dbQuery { resolveMessagingUser(recipientId) }
     val deepLink = when (recipient?.role) {
-        "parent" -> "/parent/messages"
-        "teacher" -> "/teacher/messages"
-        "admin", "school_admin", "super_admin" -> "/school/messages"
+        "parent" -> "/parent/messages/$threadId"
+        "teacher" -> "/teacher/messages/$threadId"
+        "admin", "school_admin", "super_admin" -> "/school/messages/$threadId"
         else -> "messages"
     }
     runCatching {

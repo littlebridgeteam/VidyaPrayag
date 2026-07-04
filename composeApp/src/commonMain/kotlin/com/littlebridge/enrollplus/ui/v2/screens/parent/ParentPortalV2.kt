@@ -87,6 +87,7 @@ fun ParentPortalV2(
     var tab by remember { mutableStateOf("home") }
     var overlay by remember { mutableStateOf(ParentOverlay.None) }
     var localDeepLink by remember { mutableStateOf<DeepLinkTarget?>(null) }
+    var deepLinkThreadId by remember { mutableStateOf<String?>(null) }
 
     // Apply deep-link routing: set tab + overlay from the typed target.
     LaunchedEffect(deepLinkTarget, localDeepLink) {
@@ -112,8 +113,7 @@ fun ParentPortalV2(
                     "library" -> overlay = ParentOverlay.Library
                     "events" -> overlay = ParentOverlay.EventRegistration
                     "announcements" -> overlay = ParentOverlay.Notifications
-                    "report-card", "tutor", "timetable" -> { tab = "academics"; overlay = ParentOverlay.None }
-                    "fees" -> { tab = "fees"; overlay = ParentOverlay.None }
+                    "report-card", "tutor", "timetable", "marks", "attendance", "homework" -> { tab = "academics"; overlay = ParentOverlay.None }
                     "scholarships" -> overlay = ParentOverlay.Scholarships
                     "health" -> overlay = ParentOverlay.Health
                     "pulse" -> overlay = ParentOverlay.Pulse
@@ -122,6 +122,7 @@ fun ParentPortalV2(
                 }
             }
             is DeepLinkTarget.Messages -> {
+                deepLinkThreadId = target.threadId
                 overlay = ParentOverlay.Messages
             }
             is DeepLinkTarget.Generic -> {
@@ -138,7 +139,9 @@ fun ParentPortalV2(
                     pathOnly.startsWith("messages") -> { overlay = ParentOverlay.Messages }
                     pathOnly.startsWith("health") -> { tab = "home"; overlay = ParentOverlay.Health }
                     pathOnly.startsWith("pulse") -> { tab = "home"; overlay = ParentOverlay.Pulse }
-                    pathOnly.startsWith("report-card") || pathOnly.startsWith("tutor") || pathOnly.startsWith("timetable") -> {
+                    pathOnly.startsWith("calendar") -> { tab = "home"; overlay = ParentOverlay.Calendar }
+                    pathOnly.startsWith("report-card") || pathOnly.startsWith("tutor") || pathOnly.startsWith("timetable") ||
+                    pathOnly.startsWith("marks") || pathOnly.startsWith("attendance") || pathOnly.startsWith("homework") -> {
                         tab = "academics"; overlay = ParentOverlay.None
                     }
                 }
@@ -227,7 +230,11 @@ fun ParentPortalV2(
         }
         ParentOverlay.Messages -> {
             // RA-51: parent ↔ teacher/admin messaging.
-            ParentMessagesScreenV2(onBack = { overlay = ParentOverlay.None }, modifier = modifier)
+            ParentMessagesScreenV2(
+                onBack = { overlay = ParentOverlay.None; deepLinkThreadId = null },
+                modifier = modifier,
+                initialThreadId = deepLinkThreadId,
+            )
             return
         }
         ParentOverlay.Discovery -> {

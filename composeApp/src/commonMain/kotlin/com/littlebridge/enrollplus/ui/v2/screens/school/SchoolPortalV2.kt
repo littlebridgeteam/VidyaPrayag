@@ -104,6 +104,7 @@ fun SchoolPortalV2(
     var tab by remember { mutableStateOf("home") }
     var overlay by remember { mutableStateOf(SchoolOverlay.None) }
     var localDeepLink by remember { mutableStateOf<DeepLinkTarget?>(null) }
+    var deepLinkThreadId by remember { mutableStateOf<String?>(null) }
     // Track which screen launched the create-event wizard so onCreated returns there.
     var createEventOrigin by remember { mutableStateOf(SchoolOverlay.AcademicCalendarPlatform) }
 
@@ -144,6 +145,7 @@ fun SchoolPortalV2(
                     "fees" -> { tab = "records"; overlay = SchoolOverlay.None }
                     "tutor" -> { tab = "home"; overlay = SchoolOverlay.None }
                     "timetable" -> { tab = "home"; overlay = SchoolOverlay.None }
+                    "timetable-requests" -> { tab = "home"; overlay = SchoolOverlay.None }
                     "pace-alerts", "pace" -> { tab = "home"; overlay = SchoolOverlay.None }
                     // Valid bottom-nav tabs
                     "home", "people", "records", "comms", "settings" -> tab = target.screen
@@ -151,6 +153,7 @@ fun SchoolPortalV2(
                 }
             }
             is DeepLinkTarget.Messages -> {
+                deepLinkThreadId = target.threadId
                 tab = "comms"
                 overlay = SchoolOverlay.Messages
             }
@@ -168,6 +171,12 @@ fun SchoolPortalV2(
                     pathOnly.startsWith("link-requests") -> overlay = SchoolOverlay.LinkRequests
                     pathOnly.startsWith("admissions") -> overlay = SchoolOverlay.AdmissionsCRM
                     pathOnly.startsWith("calendar") -> overlay = SchoolOverlay.AcademicCalendarPlatform
+                    pathOnly.startsWith("timetable-requests") -> { tab = "home"; overlay = SchoolOverlay.None }
+                    pathOnly.startsWith("report-card") -> overlay = SchoolOverlay.ReportPublish
+                    pathOnly.startsWith("tutor") -> { tab = "home"; overlay = SchoolOverlay.None }
+                    pathOnly.startsWith("ptm") -> overlay = SchoolOverlay.SchedulePTM
+                    pathOnly.startsWith("health-records") -> overlay = SchoolOverlay.HealthRecords
+                    pathOnly.startsWith("scheduled-messages") -> overlay = SchoolOverlay.ScheduledMessages
                     else -> tab = "home"
                 }
             }
@@ -262,7 +271,11 @@ fun SchoolPortalV2(
                 return
             }
             SchoolOverlay.Messages -> {
-                MessagesScreenV2(onBack = { overlay = SchoolOverlay.None }, modifier = modifier)
+                MessagesScreenV2(
+                    onBack = { overlay = SchoolOverlay.None; deepLinkThreadId = null },
+                    modifier = modifier,
+                    initialThreadId = deepLinkThreadId,
+                )
                 return
             }
             SchoolOverlay.LeaveRequests -> {
