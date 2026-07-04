@@ -75,6 +75,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.greaterEq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.like
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.neq
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.and
@@ -486,8 +487,10 @@ internal fun rosterForInTxn(a: OwnedAssignment): List<EnrolledStudent> {
 
 /** Look up classId from SchoolClassesTable by school + class name (case-insensitive). */
 private fun resolveClassIdByName(a: OwnedAssignment): java.util.UUID? {
+    val pattern = "%${a.className.trim()}%"
     return SchoolClassesTable.selectAll().where {
-        (SchoolClassesTable.schoolId eq a.schoolId)
+        (SchoolClassesTable.schoolId eq a.schoolId) and
+        (SchoolClassesTable.name like pattern)
     }.firstOrNull {
         com.littlebridge.enrollplus.core.ClassNaming.classKey(it[SchoolClassesTable.name]) ==
             com.littlebridge.enrollplus.core.ClassNaming.classKey(a.className)
@@ -496,8 +499,10 @@ private fun resolveClassIdByName(a: OwnedAssignment): java.util.UUID? {
 
 /** Fallback: match students by ClassNaming on className + section (no enrollments needed). */
 private fun fallbackRosterByClassNaming(a: OwnedAssignment): List<EnrolledStudent> {
+    val pattern = "%${a.className.trim()}%"
     return StudentsTable.selectAll().where {
-        (StudentsTable.schoolId eq a.schoolId) and (StudentsTable.isActive eq true)
+        (StudentsTable.schoolId eq a.schoolId) and (StudentsTable.isActive eq true) and
+        (StudentsTable.className like pattern)
     }.filter {
         com.littlebridge.enrollplus.core.ClassNaming.sameClassSection(
             it[StudentsTable.className], it[StudentsTable.section], a.className, a.section

@@ -103,7 +103,7 @@ object AuthOtpsTable : UUIDTable("auth_otps", "id") {
 
     val resendCount       = short("resend_count").default(0.toShort())
     val attemptCount      = short("attempt_count").default(0.toShort())
-    val maxAttempts       = short("max_attempts").default(5.toShort())
+    val maxAttempts       = short("max_attempts").default(3.toShort())
     val maxResends        = short("max_resends").default(5.toShort())
     val resendWindowSecs  = integer("resend_window_secs").default(3600)
 

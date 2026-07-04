@@ -1,4 +1,6 @@
 "use client";
+import { errorMessage } from "@/lib/errorUtils";
+
 
 import { useState, useCallback } from "react";
 import { adminApi } from "@/lib/admin/client";
@@ -85,7 +87,7 @@ function OtpProviderCard() {
       setData(res);
       setSelected(res.runtimeOverride ?? res.envPinnedProvider ?? "auto");
     } catch (e: unknown) {
-      setMsg({ text: `Failed to load: ${(e as Error).message}`, ok: false });
+      setMsg({ text: `Failed to load: ${errorMessage(e)}`, ok: false });
     } finally {
       setLoading(false);
     }
@@ -107,7 +109,7 @@ function OtpProviderCard() {
       });
       await load();
     } catch (e: unknown) {
-      setMsg({ text: `Failed: ${(e as Error).message}`, ok: false });
+      setMsg({ text: `Failed: ${errorMessage(e)}`, ok: false });
     } finally {
       setSaving(false);
     }
@@ -219,7 +221,7 @@ function PulseTriggerCard() {
       const res = await adminApi.triggerPulse();
       setResult(res);
     } catch (e: unknown) {
-      setError((e as Error).message);
+      setError(errorMessage(e));
     } finally {
       setTriggering(false);
     }
@@ -287,7 +289,7 @@ function SendNotificationCard() {
       setBody("");
       setDeepLink("");
     } catch (e: unknown) {
-      setError((e as Error).message);
+      setError(errorMessage(e));
     } finally {
       setSending(false);
     }
@@ -394,7 +396,7 @@ function PewsTriggerCard() {
       const res = await adminApi.triggerPews();
       setResult(res);
     } catch (e: unknown) {
-      setError((e as Error).message);
+      setError(errorMessage(e));
     } finally {
       setTriggering(false);
     }

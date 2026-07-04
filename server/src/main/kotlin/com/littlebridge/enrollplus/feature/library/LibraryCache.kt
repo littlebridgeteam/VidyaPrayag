@@ -67,7 +67,13 @@ object LibraryCache {
      * simultaneously, only one executes the loader; others wait for the result.
      * Spec §17: "Cache stampede prevention: single-flight pattern"
      */
+    private val cleanupCounter = AtomicLong(0)
+    private const val CLEANUP_INTERVAL = 500
+
     suspend fun <T> getOrPut(key: String, ttlMinutes: Int, loader: suspend () -> T): T {
+        if (cleanupCounter.incrementAndGet() % CLEANUP_INTERVAL == 0L) {
+            evictStaleLocks()
+        }
         @Suppress("UNCHECKED_CAST")
         val cached = get(key) as? T
         if (cached != null) return cached

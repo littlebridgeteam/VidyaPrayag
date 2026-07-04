@@ -1,4 +1,6 @@
 "use client";
+import { errorMessage } from "@/lib/errorUtils";
+
 
 import { useState, useEffect, useCallback } from "react";
 import { authRequest } from "@/lib/admin/client";
@@ -50,7 +52,7 @@ export default function LinkRequestsPage() {
       const raw = res as Record<string, unknown>;
       setRequests((Array.isArray(raw) ? raw : (raw.requests as LinkRequestDto[])) ?? []);
     } catch (e) {
-      setError(`Failed to load link requests: ${(e as Error).message}`);
+      setError(`Failed to load link requests: ${errorMessage(e)}`);
     } finally {
       setLoading(false);
     }
@@ -65,7 +67,7 @@ export default function LinkRequestsPage() {
       await authRequest(`/api/v1/school/link-requests/${id}/approve`, { method: "POST" });
       setRequests(prev => prev.filter(r => r.id !== id));
     } catch (e) {
-      setError(`Failed to approve: ${(e as Error).message}`);
+      setError(`Failed to approve: ${errorMessage(e)}`);
     } finally {
       setBusyId(null);
     }
@@ -78,7 +80,7 @@ export default function LinkRequestsPage() {
       await authRequest(`/api/v1/school/link-requests/${id}/reject`, { method: "POST" });
       setRequests(prev => prev.filter(r => r.id !== id));
     } catch (e) {
-      setError(`Failed to reject: ${(e as Error).message}`);
+      setError(`Failed to reject: ${errorMessage(e)}`);
     } finally {
       setBusyId(null);
     }

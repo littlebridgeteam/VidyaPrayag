@@ -961,12 +961,12 @@ private fun SettingsTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewM
             onClick = {
                 viewModel.updateSettings(
                     UpdateSettingsRequest(
-                        defaultLoanDays = defaultLoanDays.toIntOrNull(),
-                        finePerDay = finePerDay.toDoubleOrNull(),
-                        maxBooksPerStudent = maxBooksPerStudent.toIntOrNull(),
-                        maxRenewals = maxRenewals.toIntOrNull(),
-                        reservationTimeoutDays = reservationTimeoutDays.toIntOrNull(),
-                        dueReminderDays = dueReminderDays.toIntOrNull(),
+                        defaultLoanDays = defaultLoanDays.toIntOrNull()?.coerceIn(1, 365),
+                        finePerDay = finePerDay.toDoubleOrNull()?.coerceAtLeast(0.0),
+                        maxBooksPerStudent = maxBooksPerStudent.toIntOrNull()?.coerceIn(1, 50),
+                        maxRenewals = maxRenewals.toIntOrNull()?.coerceIn(0, 20),
+                        reservationTimeoutDays = reservationTimeoutDays.toIntOrNull()?.coerceIn(1, 90),
+                        dueReminderDays = dueReminderDays.toIntOrNull()?.coerceIn(0, 30),
                         fineCapEnabled = fineCapEnabled,
                         quickIssueEnabled = quickIssueEnabled,
                         bulkReturnEnabled = bulkReturnEnabled,

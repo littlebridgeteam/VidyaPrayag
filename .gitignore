@@ -30,3 +30,9 @@ server_*.txt
 
 # Seed credentials — must never be committed (FS-008)
 seed-credentials-*.md
+
+# Temp files (FS-004, FS-005, FS-006)
+data.db.tmp
+*.tmp
+UI.tmp
+feature_audit.csv

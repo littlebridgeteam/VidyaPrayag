@@ -30,7 +30,7 @@
  *   DATABASE_URL       : full JDBC or postgres:// URL
  *   DATABASE_USER      : Postgres user (optional if encoded in URL)
  *   DATABASE_PASSWORD  : Postgres password (optional if encoded in URL)
- *   DB_POOL_SIZE       : HikariCP pool size (default 5)
+ *   DB_POOL_SIZE       : HikariCP pool size (default 10)
  *   APP_SEED_CMS       : "true" to seed/upsert landing+app_config rows
  *                        (default "true" — these are CMS strings, safe to seed)
  */
@@ -73,7 +73,7 @@ object DatabaseFactory {
         // runs with CWD = repo root, but be forgiving about where it's launched.
         val candidates = listOf(
             File("local.properties"),
-            File("../local.properties"),
+            File(".." + File.separator + "local.properties"),
             File(System.getProperty("user.dir"), "local.properties")
         )
         candidates.firstOrNull { it.isFile }?.let { f ->
@@ -372,7 +372,7 @@ object DatabaseFactory {
                 databaseUrl,
                 user = resolve(dotenv, "DATABASE_USER"),
                 password = resolve(dotenv, "DATABASE_PASSWORD"),
-                poolSize = resolve(dotenv, "DB_POOL_SIZE")?.toIntOrNull() ?: 5,
+                poolSize = resolve(dotenv, "DB_POOL_SIZE")?.toIntOrNull() ?: 10,
                 dotenv = dotenv
             )
         } else {
@@ -424,7 +424,7 @@ object DatabaseFactory {
                 replicaUrl,
                 user = resolve(dotenv, "READ_REPLICA_USER") ?: resolve(dotenv, "DATABASE_USER"),
                 password = resolve(dotenv, "READ_REPLICA_PASSWORD") ?: resolve(dotenv, "DATABASE_PASSWORD"),
-                poolSize = resolve(dotenv, "READ_REPLICA_POOL_SIZE")?.toIntOrNull() ?: 3,
+                poolSize = resolve(dotenv, "READ_REPLICA_POOL_SIZE")?.toIntOrNull() ?: 5,
                 dotenv = dotenv
             )
             readReplicaDb = Database.connect(replicaDs)

@@ -1,4 +1,6 @@
 "use client";
+import { errorMessage } from "@/lib/errorUtils";
+
 
 import { useState, useEffect, useCallback } from "react";
 import { adminApi } from "@/lib/admin/client";
@@ -16,7 +18,7 @@ export default function ClassesPage() {
       const raw = res as unknown as Record<string, unknown>;
       setData(Array.isArray(raw) ? raw : (raw.classes as Record<string, unknown>[]) ?? []);
     } catch (e) {
-      setError(`Failed to load classes: ${(e as Error).message}`);
+      setError(`Failed to load classes: ${errorMessage(e)}`);
     } finally {
       setLoading(false);
     }

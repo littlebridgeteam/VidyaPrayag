@@ -189,7 +189,9 @@ export function Topbar({ title }: { title: string }) {
                       setOpen(false);
                       router.push(route);
                       if (n.unread) {
-                        adminApi.markNotificationRead(n.id).catch(() => {});
+                        adminApi.markNotificationRead(n.id).catch((e) => {
+                          console.error("Failed to mark notification read:", e);
+                        });
                       }
                     }
                   };

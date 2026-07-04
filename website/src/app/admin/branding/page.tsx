@@ -1,4 +1,6 @@
 "use client";
+import { errorMessage } from "@/lib/errorUtils";
+
 
 import { useState, useEffect, useCallback } from "react";
 import { authRequest } from "@/lib/admin/client";
@@ -32,7 +34,7 @@ export default function BrandingPage() {
       setData(res);
       setEditForm({ primaryColor: res.primaryColor ?? "", logoUrl: res.logoUrl ?? "" });
     } catch (e) {
-      setError(`Failed to load branding: ${(e as Error).message}`);
+      setError(`Failed to load branding: ${errorMessage(e)}`);
     } finally {
       setLoading(false);
     }
@@ -51,7 +53,7 @@ export default function BrandingPage() {
       setData(res);
       setShowEdit(false);
     } catch (e) {
-      setError(`Failed to update branding: ${(e as Error).message}`);
+      setError(`Failed to update branding: ${errorMessage(e)}`);
     } finally {
       setSaving(false);
     }
@@ -65,7 +67,7 @@ export default function BrandingPage() {
       setData(res);
       setEditForm({ primaryColor: res.primaryColor ?? "", logoUrl: res.logoUrl ?? "" });
     } catch (e) {
-      setError(`Failed to reset branding: ${(e as Error).message}`);
+      setError(`Failed to reset branding: ${errorMessage(e)}`);
     } finally {
       setSaving(false);
     }

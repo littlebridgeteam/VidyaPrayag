@@ -395,7 +395,8 @@ private fun MarkInput(value: Float?, maxMarks: Int, enabled: Boolean, onChange: 
                 value = display,
                 onValueChange = { raw ->
                     val cleaned = raw.filter { it.isDigit() || it == '.' }
-                    onChange(cleaned.toFloatOrNull())
+                    val parsed = cleaned.toFloatOrNull()
+                    onChange(parsed?.coerceIn(0f, maxMarks.toFloat()))
                 },
                 singleLine = true,
                 enabled = enabled,

@@ -431,7 +431,7 @@ private fun ScholarshipApplicationReviewCard(
                         VButton(
                             text = "Approve",
                             onClick = {
-                                val amount = disbursementAmount.toDoubleOrNull()
+                                val amount = disbursementAmount.toDoubleOrNull()?.coerceAtLeast(0.0)
                                 onApprove(remarks, amount)
                                 showActions = false
                             },
@@ -468,7 +468,7 @@ private fun ScholarshipApplicationReviewCard(
             VButton(
                 text = "Record Disbursement",
                 onClick = {
-                    val amount = disbursementAmount.toDoubleOrNull() ?: application.disbursementAmount ?: 0.0
+                    val amount = (disbursementAmount.toDoubleOrNull() ?: application.disbursementAmount ?: 0.0).coerceAtLeast(0.0)
                     if (disbursementReference.isNotBlank()) {
                         onDisburse(amount, disbursementReference)
                     }

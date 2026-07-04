@@ -21,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -427,8 +428,12 @@ fun ParentPortalV2(
             // HIDDEN when the Conversations tab has an open thread or compose-new active —
             // the conversation/compose surface needs the full screen height for its compose bar
             // (WhatsApp pattern: no bottom nav inside a chat).
-            val hideDock = tab == "conversations" &&
-                (messageState.openThreadId != null || messageState.composeOpen)
+            val hideDock by remember {
+                derivedStateOf {
+                    tab == "conversations" &&
+                        (messageState.openThreadId != null || messageState.composeOpen)
+                }
+            }
             if (!hideDock) {
                 ParentDock(
                     items = items,

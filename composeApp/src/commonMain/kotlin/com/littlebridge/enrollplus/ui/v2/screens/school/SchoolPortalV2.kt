@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -229,7 +230,9 @@ fun SchoolPortalV2(
         // RA-S12 — the Comms badge counts message threads with unread messages
         // (GET /school/messages/threads), not a hardcoded literal.
         val messagesState by messagesViewModel.state.collectAsStateV2()
-        val commsBadge = messagesState.threads.count { it.unreadCount > 0 }
+        val commsBadge by remember {
+            derivedStateOf { messagesState.threads.count { it.unreadCount > 0 } }
+        }
         var peopleRefreshKey by remember { mutableIntStateOf(0) }
         var studentRefreshKey by remember { mutableIntStateOf(0) }
         // §11 cross-platform — Android predictive back / iOS edge-swipe pops

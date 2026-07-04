@@ -90,6 +90,8 @@ class RagService {
         limit: Int,
         query: String,
     ): RetrievalResult {
+        val safeLimit = limit.coerceIn(1, 50)
+        val safeVector = vectorLiteral.filter { it.isDigit() || it in ".,-[]eE+" }
         val sql = StringBuilder(
             "SELECT id, source, board, class_label, subject, topic_id, chunk_text " +
                 "FROM tutor_knowledge_chunks " +
@@ -101,7 +103,7 @@ class RagService {
         if (topicId != null) {
             sql.append("AND topic_id = '$topicId' ")
         }
-        sql.append("ORDER BY embedding <=> '$vectorLiteral'::vector LIMIT $limit")
+        sql.append("ORDER BY embedding <=> '$safeVector'::vector LIMIT $safeLimit")
 
         val chunks = DatabaseFactory.dbQuery {
             TransactionManager.current().exec(sql.toString()) { rs ->

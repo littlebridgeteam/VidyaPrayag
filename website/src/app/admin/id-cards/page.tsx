@@ -1,4 +1,6 @@
 "use client";
+import { errorMessage } from "@/lib/errorUtils";
+
 
 import { useState, useEffect, useCallback } from "react";
 import { authRequest } from "@/lib/admin/client";
@@ -24,7 +26,7 @@ export default function IdCardsPage() {
       const res = await authRequest<TemplateDto[]>("/api/v1/school/id-cards/templates");
       setTemplates(Array.isArray(res) ? res : []);
     } catch (e) {
-      setError(`Failed to load ID card templates: ${(e as Error).message}`);
+      setError(`Failed to load ID card templates: ${errorMessage(e)}`);
     } finally {
       setLoading(false);
     }

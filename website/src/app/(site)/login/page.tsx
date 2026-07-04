@@ -1,11 +1,11 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { loginAdmin, ApiError } from "@/lib/api";
-import { saveAuth } from "@/lib/auth";
-import { writeSession } from "@/lib/admin/session";
+import { saveAuth, loadAuth } from "@/lib/auth";
+import { writeSession, readSession } from "@/lib/admin/session";
 import { TextField } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import { Photo } from "@/components/ui/Photo";
@@ -32,6 +32,14 @@ function LoginInner() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const adminSession = readSession();
+    const siteAuth = loadAuth();
+    if (adminSession?.token || siteAuth?.token) {
+      router.replace("/admin/dashboard");
+    }
+  }, [router]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();

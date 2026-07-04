@@ -122,16 +122,19 @@ object StudentAggregationService {
         schoolId: UUID,
         className: String,
         section: String
-    ): List<org.jetbrains.exposed.sql.ResultRow> =
-        TeacherSubjectAssignmentsTable.selectAll().where {
+    ): List<org.jetbrains.exposed.sql.ResultRow> {
+        val pattern = "%${className.trim()}%"
+        return TeacherSubjectAssignmentsTable.selectAll().where {
             (TeacherSubjectAssignmentsTable.schoolId eq schoolId) and
-                (TeacherSubjectAssignmentsTable.isActive eq true)
+                (TeacherSubjectAssignmentsTable.isActive eq true) and
+                (TeacherSubjectAssignmentsTable.className like pattern)
         }.filter {
             ClassNaming.sameClassSection(
                 it[TeacherSubjectAssignmentsTable.className], it[TeacherSubjectAssignmentsTable.section],
                 className, section
             )
         }
+    }
 
     private fun resolveTeacherName(schoolId: UUID, teacherId: UUID): String? =
         AppUsersTable.selectAll().where {

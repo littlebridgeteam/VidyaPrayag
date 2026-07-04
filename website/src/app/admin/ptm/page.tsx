@@ -1,4 +1,6 @@
 "use client";
+import { errorMessage } from "@/lib/errorUtils";
+
 
 import { useState, useEffect, useCallback } from "react";
 import { authRequest } from "@/lib/admin/client";
@@ -27,7 +29,7 @@ export default function PtmPage() {
       const res = await authRequest<{ events: PtmEventDto[]; total: number }>("/api/admin/calendar/events?type=PTM");
       setEvents(res.events ?? []);
     } catch (e) {
-      setError(`Failed to load PTM events: ${(e as Error).message}`);
+      setError(`Failed to load PTM events: ${errorMessage(e)}`);
     } finally {
       setLoading(false);
     }

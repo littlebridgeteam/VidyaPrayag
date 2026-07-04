@@ -56,6 +56,29 @@ import io.ktor.server.routing.route
 private val gatewayDeviceRepository = OtpGatewayDeviceRepository()
 private val smsRequestRepository = SmsRequestRepository()
 
+private val authFailures = java.util.concurrent.ConcurrentHashMap<String, java.util.concurrent.atomic.AtomicLong>()
+private const val RATE_LIMIT_WINDOW_MS = 60_000L
+private const val RATE_LIMIT_MAX_FAILURES = 10
+
+private fun isRateLimited(ip: String): Boolean {
+    val now = System.currentTimeMillis()
+    val count = authFailures.compute(ip) { _, v ->
+        val c = v ?: java.util.concurrent.atomic.AtomicLong(0)
+        if (now - c.get() > RATE_LIMIT_WINDOW_MS) java.util.concurrent.atomic.AtomicLong(now)
+        else c
+    }
+    return count != null && (now - count.get()) <= RATE_LIMIT_WINDOW_MS && count.get() > 0
+}
+
+private fun recordAuthFailure(ip: String) {
+    authFailures.computeIfAbsent(ip) { java.util.concurrent.atomic.AtomicLong(System.currentTimeMillis()) }
+        .incrementAndGet()
+}
+
+private fun clearAuthFailures(ip: String) {
+    authFailures.remove(ip)
+}
+
 private fun gatewayToken(): String? =
     System.getenv("OTP_GATEWAY_TOKEN")?.takeIf { it.isNotBlank() }?:localProperty("OTP_GATEWAY_TOKEN").takeIf { it?.isNotBlank() == true }
 
@@ -75,12 +98,19 @@ private fun ctEq(a: String, b: String): Boolean {
  * at mount time in [gatewayRouting].)
  */
 private suspend fun ApplicationCall.authorizeGateway(): Boolean {
+    val ip = request.local.remoteHost
+    if (isRateLimited(ip)) {
+        fail("rate_limited", HttpStatusCode.TooManyRequests, "GATEWAY_RATE_LIMITED")
+        return false
+    }
     val tok = request.headers["X-Gateway-Token"]
     val expected = gatewayToken()
     if (expected == null || tok.isNullOrBlank() || !ctEq(tok, expected)) {
+        recordAuthFailure(ip)
         fail("forbidden", HttpStatusCode.Forbidden, "GATEWAY_FORBIDDEN")
         return false
     }
+    clearAuthFailures(ip)
     return true
 }
 

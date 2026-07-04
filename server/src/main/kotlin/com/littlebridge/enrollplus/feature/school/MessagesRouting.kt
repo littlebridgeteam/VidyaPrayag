@@ -463,6 +463,10 @@ fun Route.messagesRouting() {
                 val actorName = req.senderName ?: dbQuery { resolveMessagingUser(uid)?.fullName } ?: "Admin Desk"
 
                 // Phase 1: map attachment DTOs to core AttachmentInput.
+                if (req.attachments.size > 10) {
+                    call.fail("Maximum 10 attachments per message", HttpStatusCode.BadRequest, "TOO_MANY_ATTACHMENTS")
+                    return@post
+                }
                 val attachmentInputs = req.attachments.map { att ->
                     AttachmentInput(
                         fileName = att.fileName,

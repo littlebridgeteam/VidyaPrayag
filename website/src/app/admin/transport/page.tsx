@@ -1,4 +1,6 @@
 "use client";
+import { errorMessage } from "@/lib/errorUtils";
+
 
 import { useState, useEffect, useCallback } from "react";
 import { authRequest } from "@/lib/admin/client";
@@ -39,7 +41,7 @@ export default function TransportPage() {
       setRoutes(Array.isArray(r) ? r : []);
       setVehicles(Array.isArray(v) ? v : []);
     } catch (e) {
-      setError(`Failed to load transport data: ${(e as Error).message}`);
+      setError(`Failed to load transport data: ${errorMessage(e)}`);
     } finally {
       setLoading(false);
     }

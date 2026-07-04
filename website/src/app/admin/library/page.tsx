@@ -1,4 +1,6 @@
 "use client";
+import { errorMessage } from "@/lib/errorUtils";
+
 
 import { useState, useEffect, useCallback } from "react";
 import { authRequest } from "@/lib/admin/client";
@@ -27,7 +29,7 @@ export default function LibraryPage() {
       const res = await authRequest<BookDto[] | { data: BookDto[] }>("/api/v1/school/library/books?limit=100");
       setBooks(Array.isArray(res) ? res : (res as { data: BookDto[] }).data ?? []);
     } catch (e) {
-      setError(`Failed to load library: ${(e as Error).message}`);
+      setError(`Failed to load library: ${errorMessage(e)}`);
     } finally {
       setLoading(false);
     }

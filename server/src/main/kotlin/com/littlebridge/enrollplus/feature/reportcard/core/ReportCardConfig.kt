@@ -54,22 +54,22 @@ object ReportCardConfig {
         get() = snapshot.get().enabledOverride ?: EnvConfig.get("REPORTCARD_ENABLED", "true").equals("true", ignoreCase = true)
 
     val batchConcurrency: Int
-        get() = EnvConfig.get("AI_BATCH_CONCURRENCY")?.toIntOrNull() ?: 5
+        get() = (EnvConfig.get("AI_BATCH_CONCURRENCY")?.toIntOrNull() ?: 5).coerceIn(1, 20)
 
     val narratorMaxSteps: Int
-        get() = EnvConfig.get("NARRATOR_MAX_STEPS")?.toIntOrNull() ?: 6
+        get() = (EnvConfig.get("NARRATOR_MAX_STEPS")?.toIntOrNull() ?: 6).coerceIn(1, 20)
 
     val narratorTemperature: Double
-        get() = EnvConfig.get("NARRATOR_TEMPERATURE")?.toDoubleOrNull() ?: 0.3
+        get() = (EnvConfig.get("NARRATOR_TEMPERATURE")?.toDoubleOrNull() ?: 0.3).coerceIn(0.0, 2.0)
 
     val narratorMaxTokens: Int
-        get() = EnvConfig.get("NARRATOR_MAX_TOKENS")?.toIntOrNull() ?: 2048
+        get() = (EnvConfig.get("NARRATOR_MAX_TOKENS")?.toIntOrNull() ?: 2048).coerceIn(256, 8192)
 
     val triageClassifyModel: String?
         get() = EnvConfig.get("TRIAGE_CLASSIFY_MODEL")
 
     val cacheTtlMinutes: Long
-        get() = EnvConfig.get("CACHE_TTL_MINUTES")?.toLongOrNull() ?: 1440L
+        get() = (EnvConfig.get("CACHE_TTL_MINUTES")?.toLongOrNull() ?: 1440L).coerceIn(1L, 10080L)
 
     val fallbackOnAiFail: Boolean
         get() = snapshot.get().fallbackOverride ?: EnvConfig.get("REPORTCARD_FALLBACK_ON_AI_FAIL", "true").equals("true", ignoreCase = true)
@@ -80,7 +80,7 @@ object ReportCardConfig {
 
     /** Days before term end to start auto-generation (default 7). */
     val termWindowDays: Int
-        get() = snapshot.get().termWindowDaysOverride ?: (EnvConfig.get("REPORTCARD_TERM_WINDOW_DAYS")?.toIntOrNull() ?: 7)
+        get() = (snapshot.get().termWindowDaysOverride ?: (EnvConfig.get("REPORTCARD_TERM_WINDOW_DAYS")?.toIntOrNull() ?: 7)).coerceIn(1, 90)
 
     /** Retry backoff delays in milliseconds for AI provider failures. */
     val retryBackoffMs: List<Long>

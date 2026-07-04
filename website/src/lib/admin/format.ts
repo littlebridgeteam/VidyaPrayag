@@ -16,10 +16,12 @@ const CURRENCY_SYMBOL: Record<string, string> = {
   GBP: "£",
 };
 
+const LOCALE = typeof navigator !== "undefined" ? navigator.language || "en-IN" : "en-IN";
+
 export function money(amount: number | undefined | null, currency = "INR"): string {
   const n = amount ?? 0;
   const sym = CURRENCY_SYMBOL[currency] ?? `${currency} `;
-  return `${sym}${n.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+  return `${sym}${n.toLocaleString(LOCALE, { maximumFractionDigits: 0 })}`;
 }
 
 export function compactMoney(amount: number | undefined | null, currency = "INR"): string {
@@ -28,7 +30,7 @@ export function compactMoney(amount: number | undefined | null, currency = "INR"
   if (n >= 1_00_00_000) return `${sym}${(n / 1_00_00_000).toFixed(2)} Cr`;
   if (n >= 1_00_000) return `${sym}${(n / 1_00_000).toFixed(2)} L`;
   if (n >= 1_000) return `${sym}${(n / 1_000).toFixed(1)}k`;
-  return `${sym}${n.toLocaleString("en-IN")}`;
+  return `${sym}${n.toLocaleString(LOCALE)}`;
 }
 
 export function pct(n: number): string {

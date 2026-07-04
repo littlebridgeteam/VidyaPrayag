@@ -8,6 +8,8 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -21,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.backhandler.BackHandler
+import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.feature.admin.presentation.OnboardingGate
 import com.littlebridge.enrollplus.feature.admin.presentation.OnboardingGateViewModel
@@ -457,8 +460,9 @@ private fun parseQueryParams(queryStr: String): Map<String, String> {
         val idx = pair.indexOf("=")
         if (idx > 0) {
             val key = pair.substring(0, idx)
-            val value = urlDecode(pair.substring(idx + 1))
-            key to value
+            val rawValue = urlDecode(pair.substring(idx + 1))
+            val sanitizedValue = rawValue.filter { it.isLetterOrDigit() || it.isWhitespace() || it in ".,-_/" }.take(200)
+            key to sanitizedValue
         } else null
     }.toMap()
 }
@@ -769,14 +773,38 @@ private fun RolePortal(
                 modifier = modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                    androidx.compose.material3.Text(
+                        "Unrecognised account role. Please log in again.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
             }
         }
-        EntryRole.Alumni -> ParentPortalV2(
-            onLogout = onLogout,
-            modifier = modifier,
-            deepLinkTarget = deepLinkTarget,
-        )
+        EntryRole.Alumni -> {
+            LaunchedEffect(Unit) { onLogout() }
+            Box(
+                modifier = modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                    androidx.compose.material3.Text(
+                        "Alumni portal is not yet available. Please log in again.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
+        }
     }
 
     // Consume the deep link once the portal is composed. The yield ensures

@@ -1,4 +1,6 @@
 "use client";
+import { errorMessage } from "@/lib/errorUtils";
+
 
 import { useState, useEffect, useCallback } from "react";
 import { authRequest } from "@/lib/admin/client";
@@ -43,7 +45,7 @@ export default function ScholarshipsPage() {
       setSchemes(Array.isArray(s) ? s : []);
       setApplications(Array.isArray(a) ? a : []);
     } catch (e) {
-      setError(`Failed to load scholarships: ${(e as Error).message}`);
+      setError(`Failed to load scholarships: ${errorMessage(e)}`);
     } finally {
       setLoading(false);
     }
@@ -58,7 +60,7 @@ export default function ScholarshipsPage() {
       await authRequest(`/api/v1/school/scholarship-applications/${id}/approve`, { method: "POST", body: {} });
       setApplications(prev => prev.map(a => a.id === id ? { ...a, status: "APPROVED" } : a));
     } catch (e) {
-      setError(`Failed to approve: ${(e as Error).message}`);
+      setError(`Failed to approve: ${errorMessage(e)}`);
     } finally {
       setBusyId(null);
     }
@@ -71,7 +73,7 @@ export default function ScholarshipsPage() {
       await authRequest(`/api/v1/school/scholarship-applications/${id}/reject`, { method: "POST", body: {} });
       setApplications(prev => prev.map(a => a.id === id ? { ...a, status: "REJECTED" } : a));
     } catch (e) {
-      setError(`Failed to reject: ${(e as Error).message}`);
+      setError(`Failed to reject: ${errorMessage(e)}`);
     } finally {
       setBusyId(null);
     }

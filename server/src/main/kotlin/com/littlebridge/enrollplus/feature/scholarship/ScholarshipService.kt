@@ -826,9 +826,10 @@ class ScholarshipService(
             if (docUrlsText != null && docUrlsText.isNotBlank()) {
                 json.decodeFromString<List<String>>(docUrlsText)
             } else emptyList()
-            } catch (e: Exception) {
-                emptyList()
-            }
+        } catch (e: Exception) {
+            logger.warn("Failed to parse document_urls for scholarship application: {}", e.message)
+            emptyList()
+        }
 
         val scholarshipTitle = row.getOrNull(ScholarshipsTable.title)
         val studentName = row.getOrNull(ScholarshipApplicationsTable.studentId)?.let { sid ->
@@ -868,6 +869,7 @@ class ScholarshipService(
                 json.decodeFromString<List<String>>(docUrlsText)
             } else emptyList()
         } catch (e: Exception) {
+            logger.warn("Failed to parse document_urls for scholarship renewal: {}", e.message)
             emptyList()
         }
 

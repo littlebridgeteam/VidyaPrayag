@@ -851,7 +851,7 @@ private fun StudentsSubTab(
                     VButton(
                         text = "Graduate",
                         onClick = {
-                            val year = gradYear.toIntOrNull() ?: currentYear
+                            val year = (gradYear.toIntOrNull() ?: currentYear).coerceIn(currentYear - 1, currentYear + 10)
                             onGraduateClick(filtered.map { it.id }, year)
                             showGraduate = false
                         },
@@ -1208,7 +1208,10 @@ private fun ImportStudentsDialog(
     var csv by remember {
         mutableStateOf("full_name,class_name,section,roll_number\n")
     }
-    val canSubmit = csv.lineSequence().drop(1).any { it.isNotBlank() } && !isSubmitting
+    val headerLine = csv.lineSequence().firstOrNull() ?: ""
+    val requiredCols = listOf("full_name", "class_name", "roll_number")
+    val headerValid = requiredCols.all { col -> headerLine.split(",").any { it.trim() == col } }
+    val canSubmit = headerValid && csv.lineSequence().drop(1).any { it.isNotBlank() } && !isSubmitting
 
     Dialog(onDismissRequest = onDismiss) {
         VCard(modifier = Modifier.fillMaxWidth()) {

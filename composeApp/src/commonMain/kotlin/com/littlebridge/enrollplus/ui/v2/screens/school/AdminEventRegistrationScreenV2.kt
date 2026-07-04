@@ -125,7 +125,7 @@ fun AdminEventRegistrationScreenV2(
                         eventId = selectedEventId!!,
                         startTime = slotStart,
                         endTime = slotEnd,
-                        capacity = slotCapacity.toIntOrNull() ?: 1,
+                        capacity = (slotCapacity.toIntOrNull() ?: 1).coerceAtLeast(1),
                     )
                     slotStart = ""
                     slotEnd = ""

@@ -1,4 +1,6 @@
 "use client";
+import { errorMessage } from "@/lib/errorUtils";
+
 
 import { useState, useMemo } from "react";
 import {
@@ -149,7 +151,7 @@ export function ReportCardWorkspace() {
       });
       setPublishMsg(`Published ${result.published} report(s) for ${row.className} ${row.section}`);
     } catch (e) {
-      setPublishMsg(`Failed to publish: ${(e as Error).message}`);
+      setPublishMsg(`Failed to publish: ${errorMessage(e)}`);
     } finally {
       setPublishing(null);
     }

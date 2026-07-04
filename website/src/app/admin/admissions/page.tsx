@@ -1,4 +1,6 @@
 "use client";
+import { errorMessage } from "@/lib/errorUtils";
+
 
 import { useState, useEffect, useCallback } from "react";
 import { authRequest } from "@/lib/admin/client";
@@ -28,7 +30,7 @@ export default function AdmissionsPage() {
       const res = await authRequest<{ enquiries: InquiryDto[] }>("/api/v1/admissions/enquiries?limit=100");
       setInquiries(res.enquiries ?? []);
     } catch (e) {
-      setError(`Failed to load admissions: ${(e as Error).message}`);
+      setError(`Failed to load admissions: ${errorMessage(e)}`);
     } finally {
       setLoading(false);
     }
@@ -43,7 +45,7 @@ export default function AdmissionsPage() {
       await authRequest(`/api/v1/admissions/enquiries/${id}/status`, { method: "PATCH", body: { status } });
       setInquiries(prev => prev.map(i => i.id === id ? { ...i, status } : i));
     } catch (e) {
-      setError(`Failed to update status: ${(e as Error).message}`);
+      setError(`Failed to update status: ${errorMessage(e)}`);
     } finally {
       setBusyId(null);
     }

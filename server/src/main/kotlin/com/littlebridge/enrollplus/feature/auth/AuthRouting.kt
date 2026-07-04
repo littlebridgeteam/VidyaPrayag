@@ -483,6 +483,12 @@ fun Route.authRouting() {
                 call.fail("Password must be at least 8 characters", HttpStatusCode.BadRequest, "PASSWORD_TOO_SHORT")
                 return@post
             }
+            if (!req.password.any { it.isUpperCase() } ||
+                !req.password.any { it.isLowerCase() } ||
+                !req.password.any { it.isDigit() }) {
+                call.fail("Password must contain at least one uppercase letter, one lowercase letter, and one digit", HttpStatusCode.BadRequest, "PASSWORD_TOO_WEAK")
+                return@post
+            }
 
             val existing = dbQuery { lookupUserByIdentifier(id) }
             if (existing != null) {
@@ -782,6 +788,12 @@ fun Route.authRouting() {
                     ?: run { call.fail("Invalid body: expected { new_password, old_password? }"); return@post }
                 if (req.newPassword.length < 8) {
                     call.fail("New password must be at least 8 characters", HttpStatusCode.BadRequest, "PASSWORD_TOO_SHORT")
+                    return@post
+                }
+                if (!req.newPassword.any { it.isUpperCase() } ||
+                    !req.newPassword.any { it.isLowerCase() } ||
+                    !req.newPassword.any { it.isDigit() }) {
+                    call.fail("Password must contain at least one uppercase letter, one lowercase letter, and one digit", HttpStatusCode.BadRequest, "PASSWORD_TOO_WEAK")
                     return@post
                 }
 

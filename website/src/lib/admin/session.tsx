@@ -21,6 +21,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import type { AuthTokenResponse } from "./types";
+import { API_BASE_URL } from "../api";
 
 const ADMIN_KEY = "enrollplus.admin.v1";
 
@@ -110,7 +111,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     if (s) {
       try {
         await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "http://localhost:8080"}/api/v1/auth/logout`,
+          `${API_BASE_URL}/api/v1/auth/logout`,
           {
             method: "POST",
             headers: {
@@ -121,8 +122,8 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
             body: JSON.stringify({ refresh_token: s.refreshToken }),
           }
         );
-      } catch {
-        /* ignore */
+      } catch (e) {
+        console.error("Logout: server-side revocation failed", e);
       }
     }
     eraseSession();
