@@ -24,12 +24,13 @@ import com.littlebridge.enrollplus.ui.v2.navigation.DeepLinkTarget
 import com.littlebridge.enrollplus.ui.v2.navigation.EntryRole
 import com.littlebridge.enrollplus.ui.v2.navigation.parseDeepLink
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.screens.discovery.AcademicCalendarScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.notifications.NotificationsScreenV2
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 /** Full-screen overlays the teacher portal can push above its tab content. */
-private enum class TeacherOverlay { None, Notifications, HealthAlerts, TransportAttendance, Pews, ReportReview, ReportDraftEditor, Heatmap, DigitalIdCard, ScheduledMessages, EventRegistration, Messages }
+private enum class TeacherOverlay { None, Notifications, HealthAlerts, TransportAttendance, Pews, ReportReview, ReportDraftEditor, Heatmap, DigitalIdCard, ScheduledMessages, EventRegistration, Messages, Calendar }
 
 /**
  * TeacherPortalV2 — the teacher shell, rebuilt FROM SCRATCH on the Parents-Portal
@@ -101,7 +102,7 @@ fun TeacherPortalV2(
                     "library" -> { tab = "home"; overlay = TeacherOverlay.None }
                     "messages" -> overlay = TeacherOverlay.Messages
                     "timetable-requests" -> { tab = "timetable"; overlay = TeacherOverlay.None }
-                    "calendar" -> { tab = "home"; overlay = TeacherOverlay.None }
+                    "calendar" -> overlay = TeacherOverlay.Calendar
                     // Valid bottom-nav tabs
                     "home", "update", "classes", "timetable", "profile" -> tab = target.screen
                     else -> tab = "home"
@@ -120,6 +121,7 @@ fun TeacherPortalV2(
                     pathOnly.startsWith("transport") -> overlay = TeacherOverlay.TransportAttendance
                     pathOnly.startsWith("tutor") -> overlay = TeacherOverlay.Heatmap
                     pathOnly.startsWith("events") -> overlay = TeacherOverlay.EventRegistration
+                    pathOnly.startsWith("calendar") -> overlay = TeacherOverlay.Calendar
                     pathOnly.startsWith("timetable-requests") -> { tab = "timetable"; overlay = TeacherOverlay.None }
                     pathOnly.startsWith("timetable") -> { tab = "timetable"; overlay = TeacherOverlay.None }
                     else -> tab = "home"
@@ -235,6 +237,13 @@ fun TeacherPortalV2(
                 onBack = { overlay = TeacherOverlay.None; deepLinkThreadId = null },
                 modifier = modifier,
                 initialThreadId = deepLinkThreadId,
+            )
+            return
+        }
+        TeacherOverlay.Calendar -> {
+            AcademicCalendarScreenV2(
+                onBack = { overlay = TeacherOverlay.None },
+                modifier = modifier,
             )
             return
         }

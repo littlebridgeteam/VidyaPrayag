@@ -50,6 +50,8 @@ import com.littlebridge.enrollplus.ui.v2.theme.colored
 fun ParentReportScreen(
     childId: String,
     onBack: () -> Unit,
+    initialDraftId: String? = null,
+    onDraftIdConsumed: () -> Unit = {},
     viewModel: ParentReportViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -58,6 +60,16 @@ fun ParentReportScreen(
     LaunchedEffect(childId) {
         viewModel.loadReports(childId)
         viewModel.loadConferencePack(childId)
+    }
+
+    // Auto-select the report matching the deep-link draftId once loaded.
+    LaunchedEffect(initialDraftId, state.reports) {
+        if (initialDraftId != null && state.reports.isNotEmpty()) {
+            state.reports.firstOrNull { it.id == initialDraftId }?.let {
+                viewModel.selectReport(it)
+                onDraftIdConsumed()
+            }
+        }
     }
 
     Column(

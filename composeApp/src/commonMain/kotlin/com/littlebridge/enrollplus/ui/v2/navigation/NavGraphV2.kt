@@ -176,7 +176,7 @@ private fun resolveThemeDef(
 sealed class DeepLinkTarget {
     abstract val role: EntryRole
 
-    data class ParentTab(override val role: EntryRole, val tab: String, val overlay: String? = null) : DeepLinkTarget()
+    data class ParentTab(override val role: EntryRole, val tab: String, val overlay: String? = null, val params: Map<String, String> = emptyMap()) : DeepLinkTarget()
     data class TeacherScreen(override val role: EntryRole, val screen: String, val params: Map<String, String> = emptyMap()) : DeepLinkTarget()
     data class SchoolScreen(override val role: EntryRole, val screen: String, val params: Map<String, String> = emptyMap()) : DeepLinkTarget()
     data class AlumniScreen(override val role: EntryRole, val screen: String, val alumniId: String? = null) : DeepLinkTarget()
@@ -227,14 +227,16 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
                     "attendance" -> "attendance"
                     "homework" -> "homework"
                     "quizzes" -> "quizzes"
+                    "syllabus" -> "syllabus"
                     else -> null
                 }
-                DeepLinkTarget.ParentTab(EntryRole.Parent, secondSeg, overlay)
+                val reportDraftId = if (thirdSeg == "report-card") segments.getOrNull(3) else null
+                DeepLinkTarget.ParentTab(EntryRole.Parent, secondSeg, overlay, if (reportDraftId != null) mapOf("draftId" to reportDraftId) else emptyMap())
             } else {
                 // Second segment is an overlay/screen name, not a bottom-nav tab.
                 // Map it to the correct tab + overlay so the LaunchedEffect can navigate.
                 val (mappedTab, mappedOverlay) = when (secondSeg) {
-                    "announcements" -> "home" to "announcements"
+                    "announcements" -> "conversations" to "announcements"
                     "transport" -> "home" to "transport"
                     "leave" -> "home" to "leave"
                     "messages" -> "home" to "messages"
@@ -252,7 +254,8 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
                     "link-child" -> "profile" to "link-child"
                     else -> "home" to null
                 }
-                DeepLinkTarget.ParentTab(EntryRole.Parent, mappedTab, mappedOverlay)
+                val reportDraftId = segments.getOrNull(2)
+                DeepLinkTarget.ParentTab(EntryRole.Parent, mappedTab, mappedOverlay, if (secondSeg == "report-card" && reportDraftId != null) mapOf("draftId" to reportDraftId) else emptyMap())
             }
         }
         "teacher" -> {
@@ -289,7 +292,7 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
         "announcements" -> {
             val annId = segments.getOrNull(1)
             when (currentRole) {
-                EntryRole.Parent -> DeepLinkTarget.ParentTab(EntryRole.Parent, "home", "announcements")
+                EntryRole.Parent -> DeepLinkTarget.ParentTab(EntryRole.Parent, "conversations", "announcements")
                 EntryRole.Teacher -> DeepLinkTarget.TeacherScreen(EntryRole.Teacher, "announcements", if (annId != null) mapOf("id" to annId) else emptyMap())
                 EntryRole.SchoolAdmin, EntryRole.SuperAdmin ->
                     DeepLinkTarget.SchoolScreen(currentRole, "announcements", if (annId != null) mapOf("id" to annId) else emptyMap())
@@ -353,7 +356,8 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
                 EntryRole.Teacher -> DeepLinkTarget.TeacherScreen(EntryRole.Teacher, "timetable")
                 EntryRole.SchoolAdmin, EntryRole.SuperAdmin ->
                     DeepLinkTarget.SchoolScreen(currentRole, "timetable")
-                EntryRole.Parent -> DeepLinkTarget.ParentTab(EntryRole.Parent, "academics", "timetable")
+                EntryRole.Parent ->
+                    DeepLinkTarget.ParentTab(EntryRole.Parent, "home", "timetable")
                 else -> DeepLinkTarget.Generic(currentRole, path)
             }
         }
@@ -373,8 +377,10 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
                     DeepLinkTarget.SchoolScreen(currentRole, "report-card")
                 EntryRole.Teacher ->
                     DeepLinkTarget.TeacherScreen(currentRole, "report-card")
-                else ->
-                    DeepLinkTarget.ParentTab(EntryRole.Parent, "academics", "report-card")
+                else -> {
+                    val draftId = segments.getOrNull(1)
+                    DeepLinkTarget.ParentTab(EntryRole.Parent, "academics", "report-card", if (draftId != null) mapOf("draftId" to draftId) else emptyMap())
+                }
             }
         }
         "tutor" -> {

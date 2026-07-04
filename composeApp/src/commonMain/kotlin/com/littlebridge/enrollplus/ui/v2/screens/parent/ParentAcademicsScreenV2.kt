@@ -81,6 +81,10 @@ fun ParentAcademicsScreenV2(
     modifier: Modifier = Modifier,
     onOpenLeave: () -> Unit = {},
     onOpenHealth: () -> Unit = {},
+    initialTab: String? = null,
+    onTabConsumed: () -> Unit = {},
+    initialReportDraftId: String? = null,
+    onReportDraftIdConsumed: () -> Unit = {},
     viewModel: TrackProgressViewModel = koinViewModel(),
     academicsViewModel: ParentAcademicsViewModel = koinViewModel(),
 ) {
@@ -102,6 +106,10 @@ fun ParentAcademicsScreenV2(
         onLoadLeaderboard = { quizId -> academicsViewModel.loadLeaderboard(quizId) },
         onOpenLeave = onOpenLeave,
         onOpenHealth = onOpenHealth,
+        initialTab = initialTab,
+        onTabConsumed = onTabConsumed,
+        initialReportDraftId = initialReportDraftId,
+        onReportDraftIdConsumed = onReportDraftIdConsumed,
         modifier = modifier,
     )
 }
@@ -124,11 +132,23 @@ private fun ParentAcademicsContent(
     onLoadLeaderboard: (String) -> Unit,
     onOpenLeave: () -> Unit = {},
     onOpenHealth: () -> Unit = {},
+    initialTab: String? = null,
+    onTabConsumed: () -> Unit = {},
+    initialReportDraftId: String? = null,
+    onReportDraftIdConsumed: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val c = VTheme.colors
     val d = VTheme.dimens
     var tab by remember { mutableStateOf("Overview") }
+
+    // Apply deep-link initial tab once.
+    LaunchedEffect(initialTab) {
+        if (initialTab != null) {
+            tab = initialTab
+            onTabConsumed()
+        }
+    }
 
     // RA-56: each tab pulls fresh data for the selected child the first time it's
     // opened (and whenever the child changes — the VM clears stale data on switch).
@@ -141,6 +161,7 @@ private fun ParentAcademicsContent(
                 if (academics.syllabusV2 == null && !academics.syllabusV2Loading) onLoadSyllabusV2()
             }
             "Quizzes" -> if (academics.quizzes.isEmpty() && !academics.quizzesLoading) onLoadQuizzes()
+            "Homework" -> if (academics.dailySummary == null && !academics.dailySummaryLoading) onLoadDailySummary()
         }
     }
 
@@ -219,7 +240,7 @@ private fun ParentAcademicsContent(
         // is deliberately NO second switcher here anymore.
 
         VTopTabs(
-            tabs = listOf("Overview", "Attendance", "Marks", "Syllabus", "Quizzes", "Report"),
+            tabs = listOf("Overview", "Attendance", "Marks", "Syllabus", "Quizzes", "Homework", "Report"),
             selected = tab,
             onSelect = { tab = it },
             // RA-PP-THEME: Parents Portal tabs are violet, not the legacy teal.
@@ -243,12 +264,15 @@ private fun ParentAcademicsContent(
                     onBackToList = onClearQuizResult,
                     onLoadLeaderboard = onLoadLeaderboard,
                 )
+                "Homework" -> DailySummaryTab(academics, onLoadDailySummary)
                 "Report" -> {
                     val childId = academics.selectedChildId
                     if (childId != null) {
                         ParentReportScreen(
                             childId = childId,
                             onBack = { tab = "Overview" },
+                            initialDraftId = initialReportDraftId,
+                            onDraftIdConsumed = onReportDraftIdConsumed,
                         )
                     } else {
                         VComingSoon(

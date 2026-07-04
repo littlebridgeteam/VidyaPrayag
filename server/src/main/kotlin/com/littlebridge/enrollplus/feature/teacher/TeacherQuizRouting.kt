@@ -404,7 +404,7 @@ fun Route.teacherQuizRouting() {
                         body = "A new quiz has been published for $subjectName${if (className.isNotBlank()) " - Class $className" else ""}. Check Academics > Quizzes to attempt it.",
                         schoolId = ctx.schoolId,
                         actorId = ctx.userId,
-                        deepLink = "/parent/academics",
+                        deepLink = "/parent/academics/quizzes",
                         refType = "quiz",
                         refId = quizId.toString(),
                     )
