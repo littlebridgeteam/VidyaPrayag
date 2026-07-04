@@ -2,6 +2,7 @@
 package com.littlebridge.enrollplus.feature.reportcard.core
 
 import com.littlebridge.enrollplus.core.EnvConfig
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Centralized configuration for the AI Report Card 2.0 feature.
@@ -24,11 +25,14 @@ import com.littlebridge.enrollplus.core.EnvConfig
  */
 object ReportCardConfig {
 
-    // ── Runtime overrides (set via PUT /report-card/term-config) ────────
-    @Volatile private var currentTermOverride: String? = null
-    @Volatile private var termWindowDaysOverride: Int? = null
-    @Volatile private var enabledOverride: Boolean? = null
-    @Volatile private var fallbackOverride: Boolean? = null
+    private data class ConfigSnapshot(
+        val currentTermOverride: String? = null,
+        val termWindowDaysOverride: Int? = null,
+        val enabledOverride: Boolean? = null,
+        val fallbackOverride: Boolean? = null,
+    )
+
+    private val snapshot = AtomicReference(ConfigSnapshot())
 
     fun updateConfig(
         currentTerm: String? = null,
@@ -36,14 +40,18 @@ object ReportCardConfig {
         enabled: Boolean? = null,
         fallbackOnAiFail: Boolean? = null,
     ) {
-        currentTermOverride = currentTerm
-        termWindowDaysOverride = termWindowDays
-        enabledOverride = enabled
-        fallbackOverride = fallbackOnAiFail
+        snapshot.getAndUpdate { current ->
+            ConfigSnapshot(
+                currentTermOverride = currentTerm ?: current.currentTermOverride,
+                termWindowDaysOverride = termWindowDays ?: current.termWindowDaysOverride,
+                enabledOverride = enabled ?: current.enabledOverride,
+                fallbackOverride = fallbackOnAiFail ?: current.fallbackOverride,
+            )
+        }
     }
 
     val enabled: Boolean
-        get() = enabledOverride ?: EnvConfig.get("REPORTCARD_ENABLED", "true").equals("true", ignoreCase = true)
+        get() = snapshot.get().enabledOverride ?: EnvConfig.get("REPORTCARD_ENABLED", "true").equals("true", ignoreCase = true)
 
     val batchConcurrency: Int
         get() = EnvConfig.get("AI_BATCH_CONCURRENCY")?.toIntOrNull() ?: 5
@@ -64,15 +72,15 @@ object ReportCardConfig {
         get() = EnvConfig.get("CACHE_TTL_MINUTES")?.toLongOrNull() ?: 1440L
 
     val fallbackOnAiFail: Boolean
-        get() = fallbackOverride ?: EnvConfig.get("REPORTCARD_FALLBACK_ON_AI_FAIL", "true").equals("true", ignoreCase = true)
+        get() = snapshot.get().fallbackOverride ?: EnvConfig.get("REPORTCARD_FALLBACK_ON_AI_FAIL", "true").equals("true", ignoreCase = true)
 
     /** Current term label for scheduled auto-generation (e.g. "Term 1"). Null disables auto-trigger. */
     val currentTerm: String?
-        get() = currentTermOverride ?: EnvConfig.get("REPORTCARD_CURRENT_TERM")
+        get() = snapshot.get().currentTermOverride ?: EnvConfig.get("REPORTCARD_CURRENT_TERM")
 
     /** Days before term end to start auto-generation (default 7). */
     val termWindowDays: Int
-        get() = termWindowDaysOverride ?: (EnvConfig.get("REPORTCARD_TERM_WINDOW_DAYS")?.toIntOrNull() ?: 7)
+        get() = snapshot.get().termWindowDaysOverride ?: (EnvConfig.get("REPORTCARD_TERM_WINDOW_DAYS")?.toIntOrNull() ?: 7)
 
     /** Retry backoff delays in milliseconds for AI provider failures. */
     val retryBackoffMs: List<Long>

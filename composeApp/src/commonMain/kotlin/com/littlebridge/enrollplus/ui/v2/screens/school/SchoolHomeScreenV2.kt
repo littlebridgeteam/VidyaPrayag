@@ -124,13 +124,8 @@ fun SchoolHomeScreenV2(
     calendarViewModel: AcademicCalendarPlatformViewModel = koinViewModel(),
     permissionVm: PermissionViewModel = koinViewModel(),
 ) {
-    val adminName by viewModel.adminName.collectAsStateV2()
-    val loading by viewModel.isLoading.collectAsStateV2()
-    val error by viewModel.errorMessage.collectAsStateV2()
+    val dashState by viewModel.state.collectAsStateV2()
     val notifications by notificationsViewModel.state.collectAsStateV2()
-    val overview by viewModel.overview.collectAsStateV2()
-    val analytics by viewModel.analytics.collectAsStateV2()
-    val activity by viewModel.activity.collectAsStateV2()
     val calendarState by calendarViewModel.state.collectAsStateV2()
 
     val showRationale by permissionVm.showNotificationRationale.collectAsStateV2()
@@ -154,13 +149,13 @@ fun SchoolHomeScreenV2(
 
     SchoolDashboardContent(
         modifier = modifier,
-        adminName = adminName,
+        adminName = dashState.adminName,
         unreadCount = notifications.unreadCount,
-        loading = loading,
-        error = error,
-        overview = overview,
-        analytics = analytics,
-        activity = activity,
+        loading = dashState.isLoading,
+        error = dashState.errorMessage,
+        overview = dashState.overview,
+        analytics = dashState.analytics,
+        activity = dashState.activity,
         calendarDashboard = calendarState.dashboard,
         onRetry = {
             viewModel.refresh()

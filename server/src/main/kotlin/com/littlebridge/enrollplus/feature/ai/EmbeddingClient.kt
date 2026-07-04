@@ -38,7 +38,7 @@ class EmbeddingClient(
         HttpClient(CIO) {
             install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
             install(HttpTimeout) { requestTimeoutMillis = 15_000 }
-        }
+        }.also { com.littlebridge.enrollplus.core.HttpClientRegistry.register(it) }
     }
 
     @Serializable

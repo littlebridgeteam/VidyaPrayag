@@ -338,10 +338,18 @@ object DatabaseFactory {
     var isPostgres: Boolean = false
         private set
 
+    /** The HikariCP data source, exposed for metrics registration (GAP-015). */
+    internal var hikariDataSource: HikariDataSource? = null
+        private set
+
     // ── Read replica support (spec §17 Connection Pool) ─────────────────────
     // When READ_REPLICA_URL is configured, read-heavy queries (search, analytics,
     // audit log, export) route to the replica via readQuery { }.
     private var readReplicaDb: Database? = null
+
+    /** The read-replica HikariDataSource, exposed for shutdown cleanup (P3-AUDIT-014). */
+    internal var readReplicaDataSource: HikariDataSource? = null
+        private set
 
     val hasReadReplica: Boolean get() = readReplicaDb != null
 
@@ -371,6 +379,7 @@ object DatabaseFactory {
         }
 
         Database.connect(dataSource)
+        hikariDataSource = dataSource
 
         val autoCreateRaw = resolve(dotenv, "AUTO_CREATE_TABLES")
         val autoCreate = autoCreateRaw.equals("true", ignoreCase = true)
@@ -412,6 +421,7 @@ object DatabaseFactory {
                 poolSize = resolve(dotenv, "READ_REPLICA_POOL_SIZE")?.toIntOrNull() ?: 3
             )
             readReplicaDb = Database.connect(replicaDs)
+            readReplicaDataSource = replicaDs
             logger.info("DB_INIT: Read replica configured — read-heavy queries will route to replica.")
         }
 

@@ -812,10 +812,12 @@ fun Route.authRouting() {
                         it[passwordHash] = newHash
                         it[profileCompleted] = true
                         it[mustChangePassword] = false
+                        it[AppUsersTable.passwordChangedAt] = now
                         it[updatedAt] = now
                     }
-                    // Revoke all sessions; the current client keeps its access
-                    // token until expiry but must re-login for a refresh.
+                    // Revoke all sessions. All existing access tokens (including
+                    // the current client's) are rejected on next request because
+                    // SecurityModule checks issuedAt < passwordChangedAt.
                     UserSessionsTable.update({ UserSessionsTable.userId eq uid }) {
                         it[revokedAt] = now
                     }

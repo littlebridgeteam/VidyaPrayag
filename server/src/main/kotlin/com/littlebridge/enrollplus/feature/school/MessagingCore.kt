@@ -285,7 +285,7 @@ private fun insertMessage(
         it[MessagesTable.threadId] = threadId
         it[MessagesTable.conversationId] = conversationId
         it[MessagesTable.senderId] = senderId
-        it[MessagesTable.body] = body
+        it[MessagesTable.body] = com.littlebridge.enrollplus.core.HtmlSanitizer.sanitize(body)
         it[MessagesTable.createdAt] = now
         it[MessagesTable.seq] = seq
         if (clientMsgId != null) it[MessagesTable.clientMsgId] = clientMsgId
@@ -640,12 +640,13 @@ internal fun editMessage(
 
     val convId = row[MessagesTable.conversationId] ?: return null
 
+    val sanitizedBody = com.littlebridge.enrollplus.core.HtmlSanitizer.sanitize(newBody)
     MessagesTable.update({ MessagesTable.id eq messageId }) {
-        it[MessagesTable.body] = newBody
+        it[MessagesTable.body] = sanitizedBody
         it[MessagesTable.editedAt] = now
     }
 
-    return EditMessageResult(messageId, convId, newBody, now)
+    return EditMessageResult(messageId, convId, sanitizedBody, now)
 }
 
 /** Result of [deleteMessage]. */

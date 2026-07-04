@@ -55,6 +55,8 @@ import com.littlebridge.enrollplus.core.REQUEST_ID_HEADER
 import com.littlebridge.enrollplus.core.RequestIdPlugin
 import com.littlebridge.enrollplus.core.configureErrorHandling
 import com.littlebridge.enrollplus.core.configureJwt
+import com.littlebridge.enrollplus.core.CsrfProtection
+import com.littlebridge.enrollplus.core.HttpClientRegistry
 import com.littlebridge.enrollplus.core.requestIdSafe
 import com.littlebridge.enrollplus.db.DatabaseFactory
 import com.littlebridge.enrollplus.feature.admissions.admissionRouting
@@ -258,12 +260,28 @@ fun main() {
     // Register event-driven cache invalidation for library (spec §17).
     com.littlebridge.enrollplus.feature.library.LibraryCacheInit.register()
 
-    embeddedServer(
+    // GAP-017: Graceful shutdown — on JVM SIGTERM/SIGINT, stop accepting new
+    // requests, close all registered HttpClients, and close the HikariCP pool
+    // so in-flight connections are returned cleanly instead of leaked.
+    val server = embeddedServer(
         Netty,
         port = port,
         host = host,
         module = Application::module
-    ).start(wait = true)
+    )
+
+    Runtime.getRuntime().addShutdownHook(Thread {
+        appLog.info("Shutdown hook triggered — gracefully stopping server...")
+        runBlocking {
+            runCatching { server.stop(gracePeriodMillis = 5_000, timeoutMillis = 10_000) }
+        }
+        runCatching { HttpClientRegistry.closeAll() }
+        runCatching { DatabaseFactory.readReplicaDataSource?.close() }
+        runCatching { DatabaseFactory.hikariDataSource?.close() }
+        appLog.info("Shutdown complete")
+    })
+
+    server.start(wait = true)
 }
 
 fun Application.module() {
@@ -383,6 +401,11 @@ fun Application.module() {
         }
     }
 
+    // SEC-020: CSRF protection — validate Origin header on state-changing
+    // requests in production. JWT bearer tokens are inherently CSRF-resistant
+    // (browsers don't auto-attach them cross-origin), but this adds defense-in-depth.
+    CsrfProtection.run { installCsrfProtection() }
+
     install(AutoHeadResponse)
 
     install(io.ktor.server.sse.SSE)
@@ -412,6 +435,16 @@ fun Application.module() {
     val prometheusRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
     install(MicrometerMetrics) {
         registry = prometheusRegistry
+    }
+
+    // GAP-015: HikariCP pool metrics — expose connection pool stats via Prometheus.
+    val hikariDs = DatabaseFactory.hikariDataSource
+    if (hikariDs != null) {
+        hikariDs.metricRegistry = prometheusRegistry
+        hikariDs.healthCheckRegistry = prometheusRegistry
+        appLog.info("HikariCP metrics and health checks registered with Prometheus")
+    } else {
+        appLog.warn("HikariCP metrics NOT registered — hikariDataSource is null (DatabaseFactory.init may have failed)")
     }
 
     routing {

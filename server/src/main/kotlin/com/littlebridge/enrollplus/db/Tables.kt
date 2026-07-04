@@ -82,6 +82,7 @@ object AppUsersTable : UUIDTable("app_users", "id") {
     val orgAdminRole    = varchar("org_admin_role", 16).nullable() // org_admin | null
     val isActive         = bool("is_active").default(true)
     val lastLoginAt      = timestamp("last_login_at").nullable()
+    val passwordChangedAt = timestamp("password_changed_at").nullable()
     val createdAt        = timestamp("created_at")
     val updatedAt        = timestamp("updated_at")
 }
@@ -907,6 +908,7 @@ object ExamResultsTable : UUIDTable("exam_results", "id") {
     val schoolId   = uuid("school_id")
     val test       = text("test")
     val className  = text("class_name")
+    val section    = varchar("section", 8).default("A")
     val subject    = text("subject")
     val studentId  = text("student_id")                                 // matches students.student_code
     val studentName = text("student_name")
@@ -918,7 +920,7 @@ object ExamResultsTable : UUIDTable("exam_results", "id") {
     val createdAt  = timestamp("created_at")
     val updatedAt  = timestamp("updated_at")
     init {
-        uniqueIndex("ux_exam_results_unique", schoolId, test, className, subject, studentId)
+        uniqueIndex("ux_exam_results_unique", schoolId, test, className, section, subject, studentId)
     }
 }
 
@@ -1095,12 +1097,13 @@ object CurriculumUnitsTable : UUIDTable("curriculum_units", "id") {
 object NcertSyllabusReferenceTable : UUIDTable("ncert_syllabus_reference", "id") {
     val classLevel   = varchar("class_level", 8)
     val subjectName  = varchar("subject_name", 64)
+    val medium       = varchar("medium", 16).default("English")
     val chaptersJson = text("chapters_json").default("[]")
     val dataSource   = varchar("source", 32).default("NCERT")
     val createdAt    = timestamp("created_at")
     val updatedAt    = timestamp("updated_at")
     init {
-        uniqueIndex("idx_ncert_ref_class_subject", classLevel, subjectName)
+        uniqueIndex("idx_ncert_ref_class_subject_medium", classLevel, subjectName, medium)
     }
 }
 

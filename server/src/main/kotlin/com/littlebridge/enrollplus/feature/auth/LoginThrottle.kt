@@ -28,6 +28,7 @@
 package com.littlebridge.enrollplus.feature.auth
 
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicLong
 
 object LoginThrottle {
 
@@ -39,6 +40,9 @@ object LoginThrottle {
 
     // key -> recent FAILED-attempt timestamps (epoch millis), newest last.
     private val hits = ConcurrentHashMap<String, MutableList<Long>>()
+    private val lastCleanup = AtomicLong(0)
+    private const val CLEANUP_INTERVAL_MS = 300_000L
+    private const val MAX_HITS_ENTRIES = 10_000
 
     private fun ipKey(ip: String?) = "ip:" + (ip?.takeIf { it.isNotBlank() } ?: "unknown")
     private fun idKey(identifier: String) = "id:" + identifier.lowercase()
@@ -60,6 +64,7 @@ object LoginThrottle {
      */
     fun isThrottled(ip: String?, identifier: String): Boolean {
         val now = System.currentTimeMillis()
+        maybeCleanup(now)
         return pruneAndCount(ipKey(ip), now) >= maxAttempts ||
             pruneAndCount(idKey(identifier), now) >= maxAttempts
     }
@@ -67,6 +72,7 @@ object LoginThrottle {
     /** Record a FAILED login attempt against both the IP and identifier windows. */
     fun recordFailure(ip: String?, identifier: String) {
         val now = System.currentTimeMillis()
+        maybeCleanup(now)
         for (key in listOf(ipKey(ip), idKey(identifier))) {
             val list = hits.getOrPut(key) { mutableListOf() }
             synchronized(list) {
@@ -84,5 +90,24 @@ object LoginThrottle {
      */
     fun recordSuccess(identifier: String) {
         hits.remove(idKey(identifier))
+    }
+
+    private fun maybeCleanup(now: Long) {
+        val last = lastCleanup.get()
+        if (now - last < CLEANUP_INTERVAL_MS) return
+        if (!lastCleanup.compareAndSet(last, now)) return
+        val cutoff = now - windowMillis
+        hits.entries.removeIf { (_, list) ->
+            synchronized(list) {
+                list.removeAll { it < cutoff }
+                list.isEmpty()
+            }
+        }
+        if (hits.size > MAX_HITS_ENTRIES) {
+            hits.entries
+                .sortedBy { it.value.minOrNull() ?: Long.MAX_VALUE }
+                .take(hits.size - MAX_HITS_ENTRIES)
+                .forEach { hits.remove(it.key) }
+        }
     }
 }

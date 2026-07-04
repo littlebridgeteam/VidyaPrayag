@@ -214,9 +214,9 @@ fun Route.announcementRouting() {
                         it[AnnouncementsTable.schoolId] = schoolId
                         it[AnnouncementsTable.eventId] = eventId
                         it[type] = req.type
-                        it[title] = req.title
-                        it[subTitle] = req.subTitle
-                        it[description] = req.description
+                        it[title] = com.littlebridge.enrollplus.core.HtmlSanitizer.sanitize(req.title)
+                        it[subTitle] = req.subTitle?.let { com.littlebridge.enrollplus.core.HtmlSanitizer.sanitize(it) }
+                        it[description] = com.littlebridge.enrollplus.core.HtmlSanitizer.sanitize(req.description)
                         it[eventImage] = req.eventImage
                         it[date] = req.date
                         it[AnnouncementsTable.audienceType] = audienceType

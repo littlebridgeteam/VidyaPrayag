@@ -82,7 +82,7 @@ object SupabaseStorage {
                 requestTimeoutMillis = 60_000   // a 5 MB gallery image on a slow link
                 socketTimeoutMillis = 60_000
             }
-        }
+        }.also { com.littlebridge.enrollplus.core.HttpClientRegistry.register(it) }
     }
 
     /** Allowed content types → file extension. Anything else is rejected. */

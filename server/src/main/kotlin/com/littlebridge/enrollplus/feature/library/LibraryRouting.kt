@@ -66,6 +66,7 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.selectAll
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicLong
 
 // Module-level singleton — no DI container (see NotificationRouting pattern)
 private val libraryService = LibraryService()
@@ -79,10 +80,14 @@ private data class RateBucket(
 )
 
 private val rateBuckets = ConcurrentHashMap<String, RateBucket>()
+private val rateBucketCleanup = AtomicLong(0)
+private const val RATE_CLEANUP_INTERVAL_MS = 300_000L
+private const val MAX_RATE_BUCKETS = 10_000
 
 private fun checkRateLimit(key: String, maxRequests: Int, windowMs: Long): Boolean {
-    val bucket = rateBuckets.computeIfAbsent(key) { RateBucket() }
     val now = System.currentTimeMillis()
+    maybeCleanupRateBuckets(now)
+    val bucket = rateBuckets.computeIfAbsent(key) { RateBucket() }
     val windowStart = now - windowMs
     synchronized(bucket) {
         bucket.timestamps.removeAll { it < windowStart }
@@ -99,6 +104,25 @@ private fun ApplicationCall.applyRateLimit(scope: String, maxRequests: Int, wind
 
 private const val WINDOW_MINUTE = 60_000L
 private const val WINDOW_HOUR = 3_600_000L
+
+private fun maybeCleanupRateBuckets(now: Long) {
+    val last = rateBucketCleanup.get()
+    if (now - last < RATE_CLEANUP_INTERVAL_MS) return
+    if (!rateBucketCleanup.compareAndSet(last, now)) return
+    val windowStart = now - WINDOW_HOUR
+    rateBuckets.entries.removeIf { (_, bucket) ->
+        synchronized(bucket) {
+            bucket.timestamps.removeAll { it < windowStart }
+            bucket.timestamps.isEmpty()
+        }
+    }
+    if (rateBuckets.size > MAX_RATE_BUCKETS) {
+        rateBuckets.entries
+            .sortedBy { entry -> entry.value.timestamps.minOfOrNull { it } ?: Long.MAX_VALUE }
+            .take(rateBuckets.size - MAX_RATE_BUCKETS)
+            .forEach { rateBuckets.remove(it.key) }
+    }
+}
 
 // ── Own-data check: verify parent-child relationship ──────────────────────────
 // Spec §16 Data Isolation: "Parent queries filtered by child_id (verified parent-child

@@ -31,6 +31,9 @@ jobs:
       - name: Compile server
         run: ./gradlew :server:compileKotlin -Pserver-only=true --no-daemon
 
+      - name: Run Detekt (Kotlin static analysis)
+        run: ./gradlew :server:detekt -Pserver-only=true --no-daemon
+
       - name: Run server tests
         run: ./gradlew :server:test -Pserver-only=true --no-daemon
 
@@ -87,3 +90,25 @@ jobs:
 
       - name: Compile composeApp (Android)
         run: ./gradlew :composeApp:compileDevDebugKotlinAndroid --no-daemon
+
+  website-lint:
+    name: Website ESLint Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: website
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npx eslint src/ --max-warnings 0

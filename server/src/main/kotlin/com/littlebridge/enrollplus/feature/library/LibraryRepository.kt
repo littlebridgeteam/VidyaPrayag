@@ -924,8 +924,8 @@ class LibraryRepository {
         LibraryAnnouncementsTable.update({
             (LibraryAnnouncementsTable.id eq announcementId) and (LibraryAnnouncementsTable.schoolId eq schoolId)
         }) {
-            if (title != null) it[LibraryAnnouncementsTable.title] = title
-            if (message != null) it[LibraryAnnouncementsTable.message] = message
+            if (title != null) it[LibraryAnnouncementsTable.title] = com.littlebridge.enrollplus.core.HtmlSanitizer.sanitize(title)
+            if (message != null) it[LibraryAnnouncementsTable.message] = com.littlebridge.enrollplus.core.HtmlSanitizer.sanitize(message)
             if (audience != null) it[LibraryAnnouncementsTable.audience] = audience
             if (expiresAt != null) it[LibraryAnnouncementsTable.expiresAt] = expiresAt
             if (isActive != null) it[LibraryAnnouncementsTable.isActive] = isActive
