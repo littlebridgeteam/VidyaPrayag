@@ -147,6 +147,8 @@ import com.littlebridge.enrollplus.feature.user.parentMessagesRouting
 import com.littlebridge.enrollplus.feature.user.userDetailsRouting
 import com.littlebridge.enrollplus.feature.user.userProfileRouting
 import com.littlebridge.enrollplus.core.ApiError
+import com.littlebridge.enrollplus.core.EnvConfig
+import com.littlebridge.enrollplus.core.RuntimeEnvironment
 import com.littlebridge.enrollplus.feature.logging.ServerLogWriter
 import kotlinx.coroutines.runBlocking
 import io.ktor.http.*
@@ -174,6 +176,8 @@ import java.util.Properties
  * upload route enforces its own 25 MB multipart cap, so we exempt multipart here.
  */
 private const val MAX_JSON_BODY_BYTES = 1L * 1024 * 1024 // 1 MB
+
+private val appLog = org.slf4j.LoggerFactory.getLogger("Application")
 
 private fun loadRootLocalProperties(): Properties {
     val file = File("local.properties")
@@ -208,8 +212,10 @@ fun main() {
     // traffic, and a missing key simply leaves that provider unconfigured.
     kotlinx.coroutines.runBlocking {
         runCatching { KeyVault.bootstrapFromEnv() }
-            .onFailure { org.slf4j.LoggerFactory.getLogger("Application")
-                .warn("KeyVault bootstrap failed (AI will degrade gracefully): {}", it.message) }
+            .onFailure {
+                if (it is IllegalStateException) throw it
+                appLog.warn("KeyVault bootstrap failed (AI will degrade gracefully): {}", it.message)
+            }
     }
 
     // Start the PEWS daily job (Sense → Reason → Act pipeline; hourly tick).
@@ -317,29 +323,27 @@ fun Application.module() {
     }
 
     install(CORS) {
-        // RA-37: open CORS (anyHost) is fine in dev but in production lets any
-        // origin script authenticated cross-origin calls with a captured bearer
-        // token. In prod (DATABASE_URL present) we lock to an explicit allow-list
-        // from CORS_ALLOWED_ORIGINS (comma-separated host[:port], optionally with
-        // scheme). Only dev/local falls back to anyHost().
-        val isProduction = System.getenv("DATABASE_URL")?.isNotBlank() == true
-        val configuredOrigins = System.getenv("CORS_ALLOWED_ORIGINS")
+        val isProduction = RuntimeEnvironment.isProduction
+        val configuredOrigins = EnvConfig.get("CORS_ALLOWED_ORIGINS")
             ?.split(",")
             ?.map { it.trim() }
             ?.filter { it.isNotBlank() }
             .orEmpty()
-        if (isProduction && configuredOrigins.isNotEmpty()) {
-            configuredOrigins.forEach { origin ->
-                // Accept "https://app.example.com", "app.example.com" or with a port.
-                val withoutScheme = origin.substringAfter("://", origin)
-                val scheme = if (origin.contains("://")) origin.substringBefore("://") else null
-                val host = withoutScheme.substringBefore(":")
-                val schemes = scheme?.let { listOf(it) } ?: listOf("https", "http")
-                allowHost(host, schemes = schemes)
+        if (isProduction) {
+            if (configuredOrigins.isNotEmpty()) {
+                configuredOrigins.forEach { origin ->
+                    val withoutScheme = origin.substringAfter("://", origin)
+                    val scheme = if (origin.contains("://")) origin.substringBefore("://") else null
+                    val host = withoutScheme.substringBefore(":")
+                    val schemes = scheme?.let { listOf(it) } ?: listOf("https", "http")
+                    allowHost(host, schemes = schemes)
+                }
+                appLog.info("CORS: Allowed origins: {}", configuredOrigins)
+            } else {
+                appLog.warn("CORS: No allowed origins configured. All cross-origin requests will be rejected.")
             }
         } else {
-            // Dev/local (no DATABASE_URL) or prod without an explicit allow-list:
-            // keep the permissive default so local web + device testing still work.
+            appLog.warn("WARNING: CORS is configured to allow any host in dev mode. This MUST NOT be used in production.")
             anyHost()
         }
         allowHeader(HttpHeaders.ContentType)

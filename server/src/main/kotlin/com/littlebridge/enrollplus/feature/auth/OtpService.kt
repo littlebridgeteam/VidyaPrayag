@@ -60,6 +60,7 @@
  */
 package com.littlebridge.enrollplus.feature.auth
 
+import com.littlebridge.enrollplus.core.RuntimeEnvironment
 import com.littlebridge.enrollplus.db.AuthOtpsTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.OtpDeliveryAttemptsTable
@@ -139,10 +140,10 @@ object OtpService {
      *   1) the default is now "false" (opt-in, not opt-out); and
      *   2) it is hard-gated to non-production — even if OTP_DEV_RETURN_CODE=true
      *      is set on a prod dyno, the echo is suppressed whenever DATABASE_URL is
-     *      configured (the same prod signal JwtConfig.isProduction uses).
+     *      configured (the same prod signal RuntimeEnvironment.isProduction uses).
      */
     private val isProduction: Boolean
-        get() = System.getenv("DATABASE_URL")?.takeIf { it.isNotBlank() } != null
+        get() = RuntimeEnvironment.isProduction
     private val devReturnCode: Boolean by lazy {
         !isProduction && env("OTP_DEV_RETURN_CODE", "false").equals("true", true)
     }

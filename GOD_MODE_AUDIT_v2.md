@@ -2549,3 +2549,157 @@ The codebase is modelled as a directed graph: nodes = screens, endpoints, tables
 ---
 
 *End of GOD MODE AUDIT v3.0*
+
+---
+
+## PHASE 0 FIX LOG — Layer 0 Security Fixes (Implemented)
+
+> **Date:** 2026-07-04
+> **Scope:** FS-008, SEC-044, SEC-019, AUTH-015 + hardening from 20-iteration deep audit
+> **Build status:** `:server:compileKotlin` + `:server:compileTestKotlin` = **BUILD SUCCESSFUL**
+
+### Fix 1 — FS-008: Seed credentials in repo root
+
+**Audit citation:** `seed-credentials-2026-06-07.md` — "Remove or move to secure location."
+
+**Changes:**
+- `git rm --cached seed-credentials-2026-06-07.md` — file untracked from git index, kept on disk locally
+- `.gitignore:31-32` — added `seed-credentials-*.md` pattern to prevent future commits
+- **Known debt:** File remains in git history (commits `705a109`, `eb9365b`). Purge with `git filter-repo` or BFG before public repo exposure.
+
+**Files touched:** `.gitignore`
+
+---
+
+### Fix 2 — SEC-044 / SEC-004: JWT dev fallback secret hardcoded
+
+**Audit citation:** `JwtConfig.kt:37,60-67` — `DEV_SECRET_FALLBACK = "vidyaprayag-dev-secret-change-me"` — if `isProduction` check fails, dev secret is used.
+
+**Changes:**
+- Removed `DEV_SECRET_FALLBACK` constant entirely
+- Created `RuntimeEnvironment.kt` — centralized environment detection via `APP_ENV` → `DATABASE_URL` → default dev
+- `JwtConfig.secret` now uses `RuntimeEnvironment.isProduction`:
+  - **Production:** `JWT_SECRET` env var required. Throws `IllegalStateException` if missing/blank. Throws if < 32 characters (min strength check).
+  - **Development:** If `JWT_SECRET` unset, generates ephemeral 512-bit `SecureRandom` secret (Base64). Logs warning. If set, uses configured value.
+- Switched env reading from `System.getenv()` to `EnvConfig.get()` for `.env`/`local.properties` consistency
+- Migrated `OtpService.kt` and `ErrorHandling.kt` from their own `System.getenv("DATABASE_URL")` checks to `RuntimeEnvironment.isProduction`
+
+**Files touched:** `core/JwtConfig.kt`, `core/RuntimeEnvironment.kt` (new), `feature/auth/OtpService.kt`, `core/ErrorHandling.kt`
+
+---
+
+### Fix 3 — SEC-019: AI encryption key not set in dev mode — keys stored as plaintext
+
+**Audit citation:** `EncryptionService.kt:44-47` — Dev mode stores API keys as `plain:<text>`. If dev config leaks to production, keys are exposed.
+
+**Changes:**
+- `EncryptionService.init` block:
+  - **Production:** Throws `IllegalStateException` if `AI_ENCRYPTION_KEY` is unset. Refuses to boot.
+  - **Development:** Allows plaintext passthrough with prominent SLF4J warning.
+- `KeyVault.bootstrapFromEnv()`:
+  - **Production:** Scans `ai_provider_config` table for any active keys with `plain:` prefix. Throws `IllegalStateException` if found. Prevents booting with unencrypted keys in DB.
+  - **Development:** Seeds keys in DEV passthrough mode with warning.
+- `Application.kt:213-218`: `IllegalStateException` from `KeyVault.bootstrapFromEnv()` is re-thrown (not swallowed) to crash the server on security violations.
+
+**Files touched:** `feature/ai/EncryptionService.kt`, `feature/ai/KeyVault.kt`, `Application.kt`
+
+---
+
+### Fix 4 — AUTH-015: CORS anyHost fallback in production
+
+**Audit citation:** `Application.kt:339-342` — If `DATABASE_URL` is set but `CORS_ALLOWED_ORIGINS` is NOT set, falls through to `anyHost()`. Security hole.
+
+**Changes:**
+- CORS configuration now uses `RuntimeEnvironment.isProduction`:
+  - **Production + origins set:** Only configured origins allowed (parsed for host + scheme). Logs info.
+  - **Production + no origins:** No `anyHost()`, no allowed hosts → all cross-origin requests rejected (fail-closed). Logs warning.
+  - **Development:** `anyHost()` with warning log.
+- Renamed file-level logger to `appLog` to avoid conflict with Ktor's `Application.log` extension property
+
+**Files touched:** `Application.kt`
+
+---
+
+### Fix 5 — H-1: RuntimeEnvironment default to dev (from 20-iteration audit)
+
+**Issue:** `RuntimeEnvironment` defaulted to `true` (production) when neither `APP_ENV` nor `DATABASE_URL` was set. Fresh clone → production mode → crash on boot (no JWT_SECRET, no AI_ENCRYPTION_KEY, no CORS_ALLOWED_ORIGINS).
+
+**Fix:** Changed `else -> true` to `else -> false` in `RuntimeEnvironment.kt:16`. A fresh clone with zero env vars is now development mode.
+
+**Files touched:** `core/RuntimeEnvironment.kt`
+
+---
+
+### Fix 6 — L-1: Minimum JWT_SECRET strength validation (from 20-iteration audit)
+
+**Issue:** A 1-character `JWT_SECRET` would pass the null/blank check in production.
+
+**Fix:** Added `if (configured.length < 32)` check in `JwtConfig.kt:57-62`. Throws `IllegalStateException` with guidance to use `openssl rand -hex 64`.
+
+**Files touched:** `core/JwtConfig.kt`
+
+---
+
+### Fix 7 — L-2: Consolidate isProduction across codebase (from 20-iteration audit)
+
+**Issue:** `OtpService.kt:144-145` and `ErrorHandling.kt:50-51` had their own `System.getenv("DATABASE_URL")` checks, inconsistent with `RuntimeEnvironment`.
+
+**Fix:** Both now delegate to `RuntimeEnvironment.isProduction`. Comments updated to reference `RuntimeEnvironment` instead of the removed `JwtConfig.isProduction`.
+
+**Files touched:** `feature/auth/OtpService.kt`, `core/ErrorHandling.kt`
+
+---
+
+### Fix 8 — M-2: .env.example documentation update (from 20-iteration audit)
+
+**Issue:** 4 stale comments in `.env.example` contradicted the new behavior:
+1. "hardcoded fallback is used (insecure)" — no longer exists
+2. `JWT_SECRET=change-me-to-a-long-random-string` — misleading placeholder
+3. "falls back to anyHost()" — no longer true (fail-closed)
+4. No `APP_ENV` entry documented
+
+**Fix:** Updated all 3 stale comment blocks, cleared `JWT_SECRET=` placeholder, added `APP_ENV=development` section with documentation.
+
+**Files touched:** `.env.example`
+
+---
+
+### Fix 9 — L-3: MANUAL_STEPS.md stale reference (from 20-iteration audit)
+
+**Issue:** `docs/backend/MANUAL_STEPS.md:46` referenced `vidyaprayag-dev-secret-change-me` as current behavior.
+
+**Fix:** Updated to document that the dev fallback has been removed, production requires JWT_SECRET (min 32 chars), and dev generates ephemeral secrets.
+
+**Files touched:** `docs/backend/MANUAL_STEPS.md`
+
+---
+
+### Fix 10 — L-4: Pre-existing TutorSmokeTest compilation errors (from 20-iteration audit)
+
+**Issue:** `TutorSmokeTest.kt:200,238,239,314` — 5 nullable receiver errors on `StudentFacing?` type. Pre-existing, not caused by Phase 0 changes.
+
+**Fix:** Changed `.` to `?.` with `== true` checks for all nullable `studentFacing` accesses.
+
+**Files touched:** `server/src/test/kotlin/.../feature/tutor/TutorSmokeTest.kt`
+
+---
+
+### Known Debt Items (not blocking Phase 0 closure)
+
+| # | Issue | Severity | Recommendation |
+|---|---|---|---|
+| D-1 | Seed credentials remain in git history | MEDIUM | Purge with `git filter-repo` or BFG before public exposure |
+| D-2 | `DatabaseFactory.kt` uses its own `resolve(dotenv, "DATABASE_URL")` instead of `RuntimeEnvironment` | LOW | Migrate in a follow-up for full consistency |
+
+### Environment Variables Summary
+
+| Variable | Required in Prod | Dev Default | Purpose |
+|---|---|---|---|
+| `APP_ENV` | Optional | `development` (implicit) | Explicit env mode override |
+| `JWT_SECRET` | Yes (min 32 chars) | Ephemeral SecureRandom | JWT token signing |
+| `AI_ENCRYPTION_KEY` | Yes | Plaintext passthrough | AES-256-GCM encryption of provider keys |
+| `CORS_ALLOWED_ORIGINS` | Yes (comma-separated) | `anyHost()` | CORS allowlist |
+
+### Phase 0 Status: ✅ COMPLETE
+
+All 4 audit issues (FS-008, SEC-044, SEC-019, AUTH-015) fixed and verified via 20-iteration deep audit. 6 additional hardening fixes applied. Build passes. Ready for Phase 1.
