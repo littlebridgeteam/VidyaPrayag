@@ -105,6 +105,8 @@ fun SchoolPortalV2(
     var overlay by remember { mutableStateOf(SchoolOverlay.None) }
     var localDeepLink by remember { mutableStateOf<DeepLinkTarget?>(null) }
     var deepLinkThreadId by remember { mutableStateOf<String?>(null) }
+    // PEWS — student code carried into the early-warning detail overlay.
+    var selectedPewsStudentCode by remember { mutableStateOf<String?>(null) }
     // Track which screen launched the create-event wizard so onCreated returns there.
     var createEventOrigin by remember { mutableStateOf(SchoolOverlay.AcademicCalendarPlatform) }
 
@@ -139,6 +141,15 @@ fun SchoolPortalV2(
                     "admissions" -> overlay = SchoolOverlay.AdmissionsCRM
                     "health-records" -> overlay = SchoolOverlay.HealthRecords
                     "leave-requests", "leave" -> overlay = SchoolOverlay.LeaveRequests
+                    "pews" -> {
+                        val code = target.params["studentCode"]
+                        if (code != null) {
+                            selectedPewsStudentCode = code
+                            overlay = SchoolOverlay.PewsStudentDetail
+                        } else {
+                            overlay = SchoolOverlay.PewsCohort
+                        }
+                    }
                     "messages" -> { tab = "comms"; overlay = SchoolOverlay.Messages }
                     "announcements" -> { tab = "comms"; overlay = SchoolOverlay.None }
                     "calendar" -> overlay = SchoolOverlay.AcademicCalendarPlatform
@@ -168,6 +179,7 @@ fun SchoolPortalV2(
                     pathOnly.startsWith("scholarships") -> overlay = SchoolOverlay.ScholarshipManagement
                     pathOnly.startsWith("events") -> overlay = SchoolOverlay.EventRegistration
                     pathOnly.startsWith("leave") -> overlay = SchoolOverlay.LeaveRequests
+                    pathOnly.startsWith("pews") -> overlay = SchoolOverlay.PewsCohort
                     pathOnly.startsWith("link-requests") -> overlay = SchoolOverlay.LinkRequests
                     pathOnly.startsWith("admissions") -> overlay = SchoolOverlay.AdmissionsCRM
                     pathOnly.startsWith("calendar") -> overlay = SchoolOverlay.AcademicCalendarPlatform
@@ -188,8 +200,6 @@ fun SchoolPortalV2(
     // RA-45 — id carried into the student/teacher profile overlays.
     var selectedStudentId by remember { mutableStateOf<String?>(null) }
     var selectedTeacherId by remember { mutableStateOf<String?>(null) }
-    // PEWS — student code carried into the early-warning detail overlay.
-    var selectedPewsStudentCode by remember { mutableStateOf<String?>(null) }
     // RA-S17 — id carried into the non-teaching-staff profile overlay.
     var selectedStaffId by remember { mutableStateOf<String?>(null) }
     // Health Records — student id + name carried into the health records overlay.

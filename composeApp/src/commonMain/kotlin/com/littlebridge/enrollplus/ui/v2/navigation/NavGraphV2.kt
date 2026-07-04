@@ -272,7 +272,12 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
             if (screen == "messages" && segments.size > 2) {
                 DeepLinkTarget.Messages(EntryRole.SchoolAdmin, threadId = segments.getOrNull(2))
             } else {
-                val params = parseQueryParams(queryStr)
+                var params = parseQueryParams(queryStr)
+                // Capture extra path segments as params for specific screens.
+                // /school/pews/student/<code> → params["studentCode"] = <code>
+                if (screen == "pews" && segments.size > 3) {
+                    params = params + ("studentCode" to segments[3])
+                }
                 DeepLinkTarget.SchoolScreen(EntryRole.SchoolAdmin, screen, params)
             }
         }
