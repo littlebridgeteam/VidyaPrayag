@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
 import useSWR from "swr";
 import { useAdminAuth } from "@/lib/admin/session";
 import { adminApi } from "@/lib/admin/client";
@@ -39,7 +39,7 @@ export default function ServerLogsPage() {
               </p>
             </div>
           </div>
-          <HttpLoggingToggle />
+          <LoggingToggle />
         </div>
       </FadeIn>
 
@@ -50,40 +50,66 @@ export default function ServerLogsPage() {
   );
 }
 
-function HttpLoggingToggle() {
-  const { data, mutate } = useSWR("http-logging-toggle", () => adminApi.serverLogHttpToggleGet());
+function LoggingToggle() {
+  const { data, mutate } = useSWR<{ enabled: boolean }>(
+    "logging-toggle",
+    () => adminApi.serverLogToggleGet(),
+    { revalidateOnFocus: false, dedupingInterval: 5000 }
+  );
   const [busy, setBusy] = useState(false);
-
-  async function toggle() {
-    const current = data?.enabled ?? true;
-    setBusy(true);
-    try {
-      await adminApi.serverLogHttpToggleSet(!current);
-      await mutate();
-    } catch {
-      // non-fatal
-    } finally {
-      setBusy(false);
-    }
-  }
+  const [error, setError] = useState<string | null>(null);
 
   const enabled = data?.enabled ?? true;
 
+  const toggle = useCallback(async () => {
+    if (busy) return;
+    setError(null);
+    setBusy(true);
+    try {
+      const newValue = !enabled;
+      const res = await adminApi.serverLogToggleSet(newValue);
+      // Optimistically update SWR cache with the server response
+      await mutate({ enabled: res.enabled }, { revalidate: false });
+      // Then revalidate to confirm
+      await mutate();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to toggle logging");
+      // Revalidate to get the true server state
+      await mutate();
+    } finally {
+      setBusy(false);
+    }
+  }, [busy, enabled, mutate]);
+
   return (
-    <button
-      type="button"
-      onClick={toggle}
-      disabled={busy}
-      className={`flex items-center gap-2.5 rounded-full px-4 py-2.5 text-[13px] font-semibold transition-colors ${
-        enabled
-          ? "bg-green-100 text-green-700 hover:bg-green-200"
-          : "bg-red-100 text-red-700 hover:bg-red-200"
-      } disabled:opacity-60`}
-      title={enabled ? "HTTP request logging is ON — click to disable" : "HTTP request logging is OFF — click to enable"}
-    >
-      <span className={`h-2 w-2 rounded-full ${enabled ? "bg-green-500" : "bg-red-500"}`} />
-      {busy ? "Updating…" : enabled ? "HTTP Logging: ON" : "HTTP Logging: OFF"}
-    </button>
+    <div className="flex flex-col items-end gap-1">
+      <button
+        type="button"
+        onClick={toggle}
+        disabled={busy || !data}
+        className={`flex items-center gap-2.5 rounded-full px-4 py-2.5 text-[13px] font-semibold transition-colors ${
+          enabled
+            ? "bg-green-100 text-green-700 hover:bg-green-200"
+            : "bg-red-100 text-red-700 hover:bg-red-200"
+        } disabled:opacity-60`}
+        title={
+          !data
+            ? "Loading logging status…"
+            : enabled
+            ? "Logging is ON — click to disable all server logging"
+            : "Logging is OFF — click to enable all server logging"
+        }
+      >
+        <span
+          className={`h-2 w-2 rounded-full ${
+            busy ? "bg-gray-400 animate-pulse" : enabled ? "bg-green-500" : "bg-red-500"
+          }`}
+        />
+        {busy ? "Updating…" : !data ? "Loading…" : enabled ? "Logging: ON" : "Logging: OFF"}
+      </button>
+      {error && (
+        <span className="text-[11px] text-red-600">{error}</span>
+      )}
+    </div>
   );
 }
-

@@ -12,6 +12,7 @@
  */
 package com.littlebridge.enrollplus.feature.logging
 
+import com.littlebridge.enrollplus.db.AppConfigTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.ServerLogsTable
 import kotlinx.coroutines.CoroutineScope
@@ -20,10 +21,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.update
 import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.UUID
@@ -44,12 +47,57 @@ object ServerLogWriter {
     private var windowStartMs = System.currentTimeMillis()
     private val rateSemaphore = Semaphore(1)
 
-    /** Runtime toggle: when false, "http" category logs are skipped entirely
-     *  (both SLF4J and DB). Toggled via the super-admin Log Viewer UI. */
-    private val httpLoggingEnabled = AtomicBoolean(true)
+    /** Runtime toggle: when false, ALL log categories are skipped entirely
+     *  (both SLF4J and DB). Toggled via the super-admin Log Viewer UI.
+     *  Persisted in app_config so it survives server restarts. */
+    private val loggingEnabled = AtomicBoolean(true)
 
-    fun isHttpLoggingEnabled(): Boolean = httpLoggingEnabled.get()
-    fun setHttpLoggingEnabled(enabled: Boolean) { httpLoggingEnabled.set(enabled) }
+    fun isLoggingEnabled(): Boolean = loggingEnabled.get()
+
+    /** Load persisted toggle state from app_config on server startup. */
+    suspend fun initFromConfig() {
+        runCatching {
+            dbQuery {
+                AppConfigTable.selectAll()
+                    .where { AppConfigTable.key eq "server_logging_enabled" }
+                    .singleOrNull()?.get(AppConfigTable.value)
+            }
+        }.getOrNull()?.let {
+            loggingEnabled.set(it.toBooleanStrictOrNull() ?: true)
+        }
+        logger.info("ServerLogWriter initialized: loggingEnabled={}", loggingEnabled.get())
+    }
+
+    /** Persist toggle state to app_config so it survives restarts. */
+    private suspend fun persistEnabled(enabled: Boolean) {
+        runCatching {
+            dbQuery {
+                val existing = AppConfigTable.selectAll()
+                    .where { AppConfigTable.key eq "server_logging_enabled" }
+                    .singleOrNull()
+                if (existing != null) {
+                    AppConfigTable.update({ AppConfigTable.key eq "server_logging_enabled" }) {
+                        it[value] = enabled.toString()
+                        it[updatedAt] = Instant.now()
+                    }
+                } else {
+                    AppConfigTable.insert {
+                        it[key] = "server_logging_enabled"
+                        it[value] = enabled.toString()
+                        it[updatedAt] = Instant.now()
+                    }
+                }
+            }
+        }.onFailure { e ->
+            logger.error("Failed to persist logging toggle: {}", e.message)
+        }
+    }
+
+    suspend fun setLoggingEnabled(enabled: Boolean) {
+        loggingEnabled.set(enabled)
+        persistEnabled(enabled)
+        logger.info("ServerLogWriter toggle set: loggingEnabled={}", enabled)
+    }
 
     suspend fun write(
         level: String,
@@ -62,8 +110,8 @@ object ServerLogWriter {
         durationMs: Long? = null,
         details: Map<String, Any?> = emptyMap(),
     ) {
-        // Runtime toggle: skip "http" category entirely when disabled
-        if (category == "http" && !httpLoggingEnabled.get()) return
+        // Runtime toggle: skip ALL categories when disabled
+        if (!loggingEnabled.get()) return
 
         // Rate limiting: max 1000 rows/minute
         val now = System.currentTimeMillis()

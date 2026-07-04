@@ -147,6 +147,7 @@ import com.littlebridge.enrollplus.feature.user.userDetailsRouting
 import com.littlebridge.enrollplus.feature.user.userProfileRouting
 import com.littlebridge.enrollplus.core.ApiError
 import com.littlebridge.enrollplus.feature.logging.ServerLogWriter
+import kotlinx.coroutines.runBlocking
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
@@ -254,6 +255,9 @@ fun main() {
 
 fun Application.module() {
     install(IgnoreTrailingSlash)
+
+    // Load persisted logging toggle state from app_config so it survives restarts.
+    runBlocking { ServerLogWriter.initFromConfig() }
 
     // RA-36: reject oversized JSON bodies before they are buffered into memory.
     // Multipart uploads (media route) are exempt — they enforce their own 25 MB
