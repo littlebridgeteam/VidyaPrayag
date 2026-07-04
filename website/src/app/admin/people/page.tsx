@@ -7,7 +7,7 @@ import { adminApi } from "@/lib/admin/client";
 import { mutate } from "swr";
 import { ApiError } from "@/lib/api";
 import type { StudentDto, TeacherAccountDto } from "@/lib/admin/types";
-import { Card, EmptyState, FadeIn, Avatar, Badge } from "@/components/admin/Primitives";
+import { Card, EmptyState, FadeIn, Avatar, Badge, Skeleton } from "@/components/admin/Primitives";
 import { DataTable, type Column } from "@/components/admin/DataTable";
 import { Toolbar, Modal, AdminButton } from "@/components/admin/Toolbar";
 import { IconPlus, IconTrash, IconPeople, IconKey } from "@/components/admin/icons";
@@ -16,7 +16,7 @@ type Tab = "students" | "teachers";
 
 export default function PeoplePage() {
   return (
-    <Suspense fallback={<div className="h-40 animate-pulse rounded-2xl bg-navy/5" />}>
+    <Suspense fallback={<Skeleton className="h-40" />}>
       <PeopleInner />
     </Suspense>
   );

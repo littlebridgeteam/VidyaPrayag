@@ -109,6 +109,8 @@ fun SchoolPortalV2(
     var selectedPewsStudentCode by remember { mutableStateOf<String?>(null) }
     // Track which screen launched the create-event wizard so onCreated returns there.
     var createEventOrigin by remember { mutableStateOf(SchoolOverlay.AcademicCalendarPlatform) }
+    // BFS-007 — pass initial sub-tab to Records screen (e.g. "Fee" from Settings).
+    var recordsInitialTab by remember { mutableStateOf("Coverage") }
 
     val scope = rememberCoroutineScope()
     val alumniRepo = koinInject<AlumniRepository>()
@@ -577,7 +579,14 @@ fun SchoolPortalV2(
         VScreenScaffold(
             modifier = modifier,
             bottomBar = {
-                VBottomNav(items = items, selected = tab, onSelect = { tab = it })
+                VBottomNav(items = items, selected = tab, onSelect = {
+                    if (tab != it) {
+                        createEventOrigin = SchoolOverlay.AcademicCalendarPlatform
+                        profileReturnOverlay = SchoolOverlay.None
+                        if (it != "records") recordsInitialTab = "Coverage"
+                    }
+                    tab = it
+                })
             },
         ) { padding ->
             Box(Modifier.fillMaxSize()) {
@@ -623,13 +632,14 @@ fun SchoolPortalV2(
                             graduateStudents(studentIds, year)
                         },
                     )
-                    "records" -> SchoolRecordsScreenV2()
+                    "records" -> SchoolRecordsScreenV2(initialTab = recordsInitialTab)
                     "comms" -> SchoolCommsScreenV2(
                         // RA-24 — Messages and PTM open their real backend-backed
                         // screens as overlays instead of Coming-Soon cards.
                         onOpenMessages = { overlay = SchoolOverlay.Messages },
                         onOpenPtm = { overlay = SchoolOverlay.SchedulePTM },
                         onOpenScheduledMessages = { overlay = SchoolOverlay.ScheduledMessages },
+                        onOpenNotifications = { overlay = SchoolOverlay.Notifications },
                         // Unified create-event entry from Announcements tab.
                         onCreateEvent = {
                             createEventOrigin = SchoolOverlay.None
@@ -657,6 +667,13 @@ fun SchoolPortalV2(
                         onOpenLibrary = { overlay = SchoolOverlay.Library },
                         // Classes & Subjects — consolidated management (classes, subjects, bell schedule, timetable).
                         onOpenClassesSubjects = { overlay = SchoolOverlay.ClassesSubjects },
+                        // BFS-037 — Fee structure opens the records tab (fee ledger).
+                        onOpenFees = {
+                            recordsInitialTab = "Fee"
+                            tab = "records"
+                        },
+                        // BFS-036/037 — Notifications opens the notification center overlay.
+                        onOpenNotifications = { overlay = SchoolOverlay.Notifications },
                     )
                 }
             }

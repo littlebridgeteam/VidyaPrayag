@@ -1427,16 +1427,7 @@ private fun CalendarUpcomingCard(event: AcademicCalendarEventDto, onClick: () ->
 
 // ── tiny date helper for the home calendar widgets (ISO yyyy-MM-dd) ─────────
 
-private fun homeFormatShortDate(iso: String): String {
-    // iso = yyyy-MM-dd → "DD MON"
-    val parts = iso.split("-")
-    if (parts.size != 3) return iso
-    val month = parts[1].toIntOrNull() ?: return iso
-    val day = parts[2].toIntOrNull() ?: return iso
-    val months = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
-    val mon = months.getOrElse(month - 1) { parts[1] }
-    return "$day $mon"
-}
+private fun homeFormatShortDate(iso: String): String = com.littlebridge.enrollplus.util.formatDateShort(iso)
 
 // =====================================================================
 // 10. Teacher spotlight

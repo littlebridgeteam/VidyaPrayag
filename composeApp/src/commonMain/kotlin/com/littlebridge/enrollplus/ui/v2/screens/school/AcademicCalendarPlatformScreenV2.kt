@@ -536,8 +536,4 @@ private fun formatRange(start: String, end: String): String {
     return "${formatShort(start)} – ${formatShort(end)}"
 }
 
-private fun formatShort(iso: String): String {
-    val p = parseIso3(iso) ?: return iso
-    val m = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
-    return "${m[p.second - 1]} ${p.third}, ${p.first}"
-}
+private fun formatShort(iso: String): String = com.littlebridge.enrollplus.util.formatDateDisplay(iso)

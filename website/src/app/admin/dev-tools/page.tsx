@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { adminApi } from "@/lib/admin/client";
 import { useAdminAuth } from "@/lib/admin/session";
-import { Card, CardHeader, Badge, FadeIn, EmptyState } from "@/components/admin/Primitives";
+import { Card, CardHeader, Badge, FadeIn, EmptyState, Skeleton } from "@/components/admin/Primitives";
 import { AdminButton } from "@/components/admin/Toolbar";
 import { IconBolt, IconCheck, IconPulse, IconMessage, IconWarning } from "@/components/admin/icons";
 import { AiTokenMonitor } from "@/components/admin/devtools/AiTokenMonitor";
@@ -128,7 +128,10 @@ function OtpProviderCard() {
       />
       <div className="px-6 pb-6 pt-4">
         {loading ? (
-          <p className="text-[13px] text-ink-3">Loading providers…</p>
+          <div className="space-y-3">
+            <Skeleton className="h-12" />
+            <Skeleton className="h-10" />
+          </div>
         ) : data ? (
           <div className="space-y-4">
             {/* Provider dropdown */}

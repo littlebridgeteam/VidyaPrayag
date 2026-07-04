@@ -133,12 +133,11 @@ fun TeacherPortalV2(
     }
 
     // The UPDATE tab can be entered pre-scoped from a HOME CTA. These hold the
-    // pre-authorized scope; a bump on [updateScopeNonce] forces the Update screen
-    // to re-read its initial* values (so a fresh HOME tap re-seeds the gate).
+    // pre-authorized scope. The Update screen is wrapped in `key()` so a change
+    // in any of these values creates a fresh composition (no manual nonce needed).
     var updateAssignmentId by remember { mutableStateOf<String?>(null) }
     var updateScopeLabel by remember { mutableStateOf("") }
     var updateInitialTool by remember { mutableStateOf(UpdateTool.Attendance) }
-    var updateScopeNonce by remember { mutableStateOf(0) }
 
     val profile by profileViewModel.state.collectAsStateV2()
     val obligations by obligationsViewModel.state.collectAsStateV2()
@@ -298,14 +297,12 @@ fun TeacherPortalV2(
                         updateAssignmentId = assignmentId
                         updateScopeLabel = scope
                         updateInitialTool = UpdateTool.Attendance
-                        updateScopeNonce++
                         tab = "update"
                     },
                     onOpenLessonPlanForAssignment = { assignmentId, scope ->
                         updateAssignmentId = assignmentId
                         updateScopeLabel = scope
                         updateInitialTool = UpdateTool.LessonPlan
-                        updateScopeNonce++
                         tab = "update"
                     },
                     onOpenUpdateTab = {
@@ -313,7 +310,6 @@ fun TeacherPortalV2(
                         updateAssignmentId = null
                         updateScopeLabel = ""
                         updateInitialTool = UpdateTool.Attendance
-                        updateScopeNonce++
                         tab = "update"
                     },
                     onOpenClasses = { tab = "classes" },
@@ -328,7 +324,7 @@ fun TeacherPortalV2(
                     onOpenMessages = { overlay = TeacherOverlay.Messages },
                 )
 
-                "update" -> key(updateScopeNonce) {
+                "update" -> key(updateAssignmentId, updateScopeLabel, updateInitialTool) {
                     TeacherUpdateScreenV2(
                         initialAssignmentId = updateAssignmentId,
                         initialScopeLabel = updateScopeLabel,

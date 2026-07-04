@@ -255,6 +255,7 @@ object DatabaseFactory {
         PewsConfigTable,
         PewsNudgeSeenTable,
         PewsFeatureFlagsTable,
+        FeatureFlagsTable,
         PewsCaseFilesTable,
         PewsEffectivenessPriorsTable,
         // AI Report Card 2.0 (AI_REPORT_CARD_2.0_AGENTIC_REDESIGN.md)

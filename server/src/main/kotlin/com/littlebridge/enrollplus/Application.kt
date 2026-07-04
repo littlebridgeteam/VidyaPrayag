@@ -152,8 +152,12 @@ import com.littlebridge.enrollplus.feature.user.parentMessagesRouting
 import com.littlebridge.enrollplus.feature.user.userDetailsRouting
 import com.littlebridge.enrollplus.feature.user.userProfileRouting
 import com.littlebridge.enrollplus.core.ApiError
+import com.littlebridge.enrollplus.core.applyApiVersionHeaders
 import com.littlebridge.enrollplus.core.EnvConfig
 import com.littlebridge.enrollplus.core.RuntimeEnvironment
+import com.littlebridge.enrollplus.core.openApiRouting
+import com.littlebridge.enrollplus.core.FeatureFlagService
+import com.littlebridge.enrollplus.core.featureFlagRouting
 import com.littlebridge.enrollplus.feature.logging.ServerLogWriter
 import kotlinx.coroutines.runBlocking
 import io.ktor.http.*
@@ -240,6 +244,10 @@ fun main() {
     // PEWS 2.0 — load kill-switch flags from DB and start hot-reload polling.
     kotlinx.coroutines.runBlocking { runCatching { KillSwitchConfig.reload() } }
     KillSwitchConfig.startPolling(kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default))
+
+    // GAP-019 — general-purpose feature flags (hot-reloadable).
+    kotlinx.coroutines.runBlocking { runCatching { FeatureFlagService.reload() } }
+    FeatureFlagService.startPolling(kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default))
 
     // Start the Transport job scheduler (GPS staleness check + daily attendance finalization).
     com.littlebridge.enrollplus.feature.transport.TransportJobScheduler.start(
@@ -430,6 +438,10 @@ fun Application.module() {
 
     install(StatusPages) { configureErrorHandling() }
 
+    intercept(ApplicationCallPipeline.Plugins) {
+        call.applyApiVersionHeaders()
+    }
+
     // GAP-010: Observability — Micrometer metrics with Prometheus registry.
     // Exposes /metrics for Prometheus scraping and /api/v1/health for liveness.
     val prometheusRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
@@ -468,6 +480,7 @@ fun Application.module() {
         landingRouting()
         appStatusRouting()
         versionRouting()             // /api/v1/config/version — backend-target visibility
+        openApiRouting()             // /api/v1/docs + /api/v1/openapi.yaml — Swagger UI
         authRouting()
         supportRouting()
 
@@ -515,6 +528,7 @@ fun Application.module() {
 
         // AI gateway + PEWS (AI_FEATURES_PLAN.md feature #1)
         aiRouting()                  // /api/v1/school/ai/usage (school-admin) + /api/v1/admin/ai/{providers,health,rotate} (platform-admin)
+        featureFlagRouting()         // /api/v1/admin/flags — GAP-019 general-purpose feature flag management
         pewsRouting()                // /api/v1/{school,teacher,parent}/pews/… — v1 PEWS endpoints (still in use)
         registerPewsModules()        // PEWS 2.0: register all modules with ModuleRegistry
         pewsModuleRouting()          // PEWS 2.0: mount module routes (act, learn, insights, …)

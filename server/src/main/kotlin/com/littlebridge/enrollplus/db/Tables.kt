@@ -2697,6 +2697,26 @@ object PewsFeatureFlagsTable : UUIDTable("pews_feature_flags", "id") {
 }
 
 // =====================================================================
+// GAP-019 — General-purpose feature flags (hot-reloadable via polling).
+// Unified table replacing PEWS-only kill switches. Any feature module
+// can register flags here. Keyed by (scope, key) for O(1) lookups.
+// =====================================================================
+
+object FeatureFlagsTable : UUIDTable("feature_flags", "id") {
+    val scope       = varchar("scope", 64)
+    val key         = varchar("key", 64)
+    val value       = text("value").nullable()
+    val isEnabled   = bool("is_enabled").default(false)
+    val description = text("description").nullable()
+    val updatedAt   = timestamp("updated_at")
+    val createdAt   = timestamp("created_at")
+    init {
+        uniqueIndex("ux_feature_flags_scope_key", scope, key)
+        index("idx_feature_flags_scope", false, scope)
+    }
+}
+
+// =====================================================================
 // PEWS 2.0 — Case files (structured output from the Caseworker Agent).
 // One row per caseworker run. Stores the full structured JSON plus
 // extracted fields for querying (urgency, narrative, parent draft).
