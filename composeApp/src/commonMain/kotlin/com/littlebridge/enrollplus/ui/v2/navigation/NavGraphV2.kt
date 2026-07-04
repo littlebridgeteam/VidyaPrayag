@@ -114,7 +114,7 @@ fun NavGraphV2(
             pendingNavigation = try {
                 parseDeepLink(link, entryRole)
             } catch (e: Exception) {
-                println("NavGraphV2: Failed to parse deep link '$link': ${e.message}")
+                com.littlebridge.enrollplus.util.AppLogger.e("NavGraphV2", "Failed to parse deep link '$link': ${e.message}", e)
                 null
             }
             rawDeepLink = null
@@ -763,7 +763,7 @@ private fun RolePortal(
         // Authenticated but role unknown → safest default is the parent surface.
         // Alumni also use the parent portal surface until Phase 2 self-service UI ships.
         EntryRole.Unknown -> {
-            println("NavGraphV2: Unknown role detected — forcing logout")
+            com.littlebridge.enrollplus.util.AppLogger.e("NavGraphV2", "Unknown role detected — forcing logout")
             LaunchedEffect(Unit) { onLogout() }
             Box(
                 modifier = modifier.fillMaxSize(),

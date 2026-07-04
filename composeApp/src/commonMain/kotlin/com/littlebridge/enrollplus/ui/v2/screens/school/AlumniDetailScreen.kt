@@ -17,10 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.littlebridge.enrollplus.core.network.NetworkResult
-import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
-import com.littlebridge.enrollplus.feature.alumni.domain.model.Alumni
-import com.littlebridge.enrollplus.feature.alumni.domain.repository.AlumniRepository
+import com.littlebridge.enrollplus.feature.alumni.presentation.AlumniViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
@@ -30,35 +27,21 @@ import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
-import androidx.compose.runtime.rememberCoroutineScope
-import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun AlumniDetailScreen(
     alumniId: String,
     onBack: () -> Unit = {},
     modifier: Modifier = Modifier,
-    repository: AlumniRepository = koinInject(),
-    prefs: PreferenceRepository = koinInject(),
+    viewModel: AlumniViewModel = koinViewModel(),
 ) {
-    var isLoading by remember { mutableStateOf(true) }
-    var error by remember { mutableStateOf<String?>(null) }
-    var alumni by remember { mutableStateOf<Alumni?>(null) }
+    val state by viewModel.state.collectAsStateV2()
     var subTab by remember { mutableStateOf("Profile") }
-    val scope = rememberCoroutineScope()
 
     LaunchedEffect(alumniId) {
-        scope.launch {
-            val token = prefs.getUserToken().first()
-            if (token.isNullOrBlank()) { error = "Not signed in"; isLoading = false; return@launch }
-            when (val result = repository.getAlumni(token, alumniId)) {
-                is NetworkResult.Success -> { alumni = result.data.data; isLoading = false }
-                is NetworkResult.Error -> { error = result.message; isLoading = false }
-                is NetworkResult.ConnectionError -> { error = "Connection error"; isLoading = false }
-            }
-        }
+        viewModel.loadAlumniDetail(alumniId)
+        viewModel.loadAlumniDonations(alumniId)
     }
 
     Column(
@@ -69,13 +52,13 @@ fun AlumniDetailScreen(
     ) {
         VBackHeader(title = "Alumni Detail", onBack = onBack)
 
-        val a = alumni
+        val a = state.selectedAlumni
         VStateHost(
-            loading = isLoading,
-            error = error,
+            loading = state.isDetailLoading,
+            error = state.error,
             isEmpty = a == null,
             emptyTitle = "Alumni not found",
-            onRetry = { isLoading = true; error = null },
+            onRetry = { viewModel.loadAlumniDetail(alumniId) },
         ) {
             val data = a!!
             VTopTabs(
@@ -157,26 +140,14 @@ fun AlumniDetailScreen(
                         Modifier.fillMaxWidth().padding(horizontal = 20.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        var donations by remember { mutableStateOf<List<com.littlebridge.enrollplus.feature.alumni.domain.model.AlumniDonation>?>(null) }
-                        var donationsLoading by remember { mutableStateOf(true) }
-                        LaunchedEffect(alumniId) {
-                            scope.launch {
-                                val token = prefs.getUserToken().first()
-                                if (token.isNullOrBlank()) { donationsLoading = false; return@launch }
-                                when (val result = repository.getAlumniDonations(token, alumniId)) {
-                                    is NetworkResult.Success -> { donations = result.data.data ?: emptyList(); donationsLoading = false }
-                                    is NetworkResult.Error -> { donationsLoading = false }
-                                    is NetworkResult.ConnectionError -> { donationsLoading = false }
-                                }
-                            }
-                        }
+                        val donations = state.selectedAlumniDonations
                         VStateHost(
-                            loading = donationsLoading,
+                            loading = state.areDonationsLoading,
                             error = null,
                             isEmpty = donations.isNullOrEmpty(),
                             emptyTitle = "No donations recorded",
                         ) {
-                            donations!!.forEach { donation ->
+                            donations.forEach { donation ->
                                 VCard(modifier = Modifier.fillMaxWidth()) {
                                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                         Text("₹${donation.amount.toInt()}", style = VTheme.type.body, fontWeight = FontWeight.SemiBold, color = VTheme.colors.ink)

@@ -15,9 +15,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.backhandler.BackHandler
 import com.littlebridge.enrollplus.feature.admin.presentation.MessagesViewModel
-import com.littlebridge.enrollplus.feature.alumni.domain.model.GraduateStudentsRequest
-import com.littlebridge.enrollplus.feature.alumni.domain.repository.AlumniRepository
-import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
+import com.littlebridge.enrollplus.feature.alumni.presentation.AlumniViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VBottomNav
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VNavItem
@@ -28,10 +26,6 @@ import com.littlebridge.enrollplus.ui.v2.navigation.parseDeepLink
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.screens.discovery.AcademicCalendarScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.notifications.NotificationsScreenV2
-import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.first
-import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 /** Full-screen overlays the admin portal can push above its tab content. */
@@ -113,30 +107,7 @@ fun SchoolPortalV2(
     // BFS-007 — pass initial sub-tab to Records screen (e.g. "Fee" from Settings).
     var recordsInitialTab by remember { mutableStateOf("Coverage") }
 
-    val scope = rememberCoroutineScope()
-    val alumniRepo = koinInject<AlumniRepository>()
-    val prefs = koinInject<PreferenceRepository>()
-
-    fun graduateStudents(studentIds: List<String>, year: Int) {
-        scope.launch {
-            val token = prefs.getUserToken().first() ?: return@launch
-            try {
-                when (val result = alumniRepo.graduateStudents(token, GraduateStudentsRequest(studentIds, year))) {
-                    is com.littlebridge.enrollplus.core.network.NetworkResult.Success -> {
-                        com.littlebridge.enrollplus.util.AppLogger.d("SchoolPortal", "graduateStudents succeeded: ${result.data.message}")
-                    }
-                    is com.littlebridge.enrollplus.core.network.NetworkResult.Error -> {
-                        com.littlebridge.enrollplus.util.AppLogger.e("SchoolPortal", "graduateStudents failed: ${result.message}")
-                    }
-                    is com.littlebridge.enrollplus.core.network.NetworkResult.ConnectionError -> {
-                        com.littlebridge.enrollplus.util.AppLogger.e("SchoolPortal", "graduateStudents: connection error")
-                    }
-                }
-            } catch (e: Exception) {
-                com.littlebridge.enrollplus.util.AppLogger.e("SchoolPortal", "graduateStudents error: ${e.message}", e)
-            }
-        }
-    }
+    val alumniViewModel: AlumniViewModel = koinViewModel()
 
     // Apply deep-link routing: set tab from the typed target.
     LaunchedEffect(deepLinkTarget, localDeepLink) {
@@ -668,7 +639,7 @@ fun SchoolPortalV2(
                         onOpenAlumni = { overlay = SchoolOverlay.Alumni },
                         // Mark students as alumni (graduation bulk action)
                         onGraduateStudents = { studentIds, year ->
-                            graduateStudents(studentIds, year)
+                            alumniViewModel.graduateStudents(studentIds, year)
                         },
                     )
                     "records" -> SchoolRecordsScreenV2(initialTab = recordsInitialTab)
