@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,9 +63,19 @@ import org.koin.compose.viewmodel.koinViewModel
 fun ParentConversationsScreenV2(
     modifier: Modifier = Modifier,
     messageViewModel: ParentMessageViewModel = koinViewModel(),
+    initialSegment: ConversationsSegment? = null,
+    onSegmentConsumed: () -> Unit = {},
 ) {
     val c = VTheme.colors
     var segment by remember { mutableStateOf(ConversationsSegment.Messages) }
+
+    // Apply deep-link initial segment once.
+    LaunchedEffect(initialSegment) {
+        if (initialSegment != null) {
+            segment = initialSegment
+            onSegmentConsumed()
+        }
+    }
 
     val messageState by messageViewModel.state.collectAsStateV2()
     val unreadThreads = messageState.threads.count { it.unreadCount > 0 }

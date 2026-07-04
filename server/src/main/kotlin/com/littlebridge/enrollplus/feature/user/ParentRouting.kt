@@ -2,6 +2,7 @@ package com.littlebridge.enrollplus.feature.user
 
 import com.littlebridge.enrollplus.core.ok
 import com.littlebridge.enrollplus.core.principalUserUuid
+import com.littlebridge.enrollplus.db.AcademicCalendarTable
 import com.littlebridge.enrollplus.db.AnnouncementsTable
 import com.littlebridge.enrollplus.db.AppConfigTable
 import com.littlebridge.enrollplus.db.ChildrenTable
@@ -18,6 +19,8 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.jetbrains.exposed.sql.SortOrder
+import java.time.LocalDate
+import java.time.YearMonth
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.or
@@ -106,7 +109,10 @@ data class ParentNotificationDto(
     val title: String,
     val body: String,
     val time: String,
-    val unread: Boolean = true
+    val unread: Boolean = true,
+    @SerialName("deep_link") val deepLink: String? = null,
+    @SerialName("ref_type") val refType: String? = null,
+    @SerialName("ref_id") val refId: String? = null,
 )
 
 @Serializable
@@ -233,6 +239,9 @@ fun Route.parentRouting() {
                                     body = row[AnnouncementsTable.description],
                                     time = row[AnnouncementsTable.date],
                                     unread = true,
+                                    deepLink = "/parent/announcements/" + row[AnnouncementsTable.id].value.toString(),
+                                    refType = "announcement",
+                                    refId = row[AnnouncementsTable.id].value.toString(),
                                 )
                             }
                     }
@@ -264,6 +273,9 @@ fun Route.parentRouting() {
                                 },
                                 time = due ?: "",
                                 unread = true,
+                                deepLink = "/parent/fees/" + row[FeeRecordsTable.id].value.toString(),
+                                refType = "fee_record",
+                                refId = row[FeeRecordsTable.id].value.toString(),
                             )
                         }
 
@@ -277,6 +289,86 @@ fun Route.parentRouting() {
                     )
                 }
                 call.ok(data, message = "Notifications fetched")
+            }
+
+            // -------- CALENDAR (parent-accessible academic calendar) --------
+            // Parents get 403 on /api/v1/school/calendar because they don't have
+            // school role. This endpoint resolves schoolId from their children
+            // and returns the same AcademicCalendarTable data.
+            get("/calendar") {
+                val uid = call.principalUserUuid() ?: run {
+                    call.respond(HttpStatusCode.Unauthorized); return@get
+                }
+                val dateStr = call.request.queryParameters["date"]
+                    ?: LocalDate.now().toString()
+                val viewType = call.request.queryParameters["view_type"]?.lowercase() ?: "month"
+
+                val schoolIds = dbQuery {
+                    ChildrenTable.selectAll()
+                        .where { (ChildrenTable.parentId eq uid) and (ChildrenTable.isActive eq true) }
+                        .mapNotNull { it[ChildrenTable.schoolId] }
+                        .distinct()
+                }
+                if (schoolIds.isEmpty()) {
+                    call.ok(com.littlebridge.enrollplus.feature.school.CalendarResponse(
+                        calendarEvents = emptyList(),
+                        summary = com.littlebridge.enrollplus.feature.school.CalendarSummary(
+                            workingDays = 0, totalWorkingDays = 0, publicHolidays = 0, schoolHolidays = 0
+                        )
+                    ), message = "No school linked")
+                    return@get
+                }
+
+                val (rangeStart, rangeEnd) = when (viewType) {
+                    "week" -> {
+                        val anchor = runCatching { LocalDate.parse(dateStr) }.getOrDefault(LocalDate.now())
+                        anchor.minusDays(3) to anchor.plusDays(3)
+                    }
+                    else -> {
+                        val month = runCatching { YearMonth.parse(dateStr.take(7)) }.getOrDefault(YearMonth.now())
+                        month.atDay(1) to month.atEndOfMonth()
+                    }
+                }
+
+                val events = dbQuery {
+                    AcademicCalendarTable.selectAll()
+                        .where { AcademicCalendarTable.schoolId inList schoolIds }
+                        .filter { row ->
+                            val d = runCatching { LocalDate.parse(row[AcademicCalendarTable.date]) }.getOrNull()
+                                ?: return@filter false
+                            !d.isBefore(rangeStart) && !d.isAfter(rangeEnd)
+                        }
+                        .map {
+                            com.littlebridge.enrollplus.feature.school.CalendarEventDto(
+                                date = it[AcademicCalendarTable.date],
+                                day = it[AcademicCalendarTable.day],
+                                eventId = it[AcademicCalendarTable.eventId],
+                                eventTitle = it[AcademicCalendarTable.eventTitle],
+                                eventDescription = it[AcademicCalendarTable.eventDescription] ?: ""
+                            )
+                        }
+                }
+
+                val holidaysInRange = events.filter { it.eventTitle.contains("holiday", ignoreCase = true) }
+                val pubHolidays = holidaysInRange.count { it.eventTitle.contains("Public", ignoreCase = true) }
+                val schoolHolidays = holidaysInRange.count { it.eventTitle.contains("School", ignoreCase = true) }
+                val workingDays = events.count {
+                    !it.eventTitle.contains("holiday", ignoreCase = true) &&
+                    !it.eventTitle.contains("break", ignoreCase = true)
+                }
+
+                call.ok(
+                    com.littlebridge.enrollplus.feature.school.CalendarResponse(
+                        calendarEvents = events,
+                        summary = com.littlebridge.enrollplus.feature.school.CalendarSummary(
+                            workingDays = workingDays,
+                            totalWorkingDays = workingDays,
+                            publicHolidays = pubHolidays,
+                            schoolHolidays = schoolHolidays
+                        )
+                    ),
+                    message = "Academic calendar fetched successfully"
+                )
             }
         }
     }

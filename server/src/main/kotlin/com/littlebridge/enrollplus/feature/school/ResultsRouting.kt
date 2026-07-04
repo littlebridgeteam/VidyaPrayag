@@ -398,7 +398,7 @@ fun Route.resultsRouting() {
                             body = "Marks for \"${req.test}\" (${req.subject}) have been published.",
                             schoolId = schoolId,
                             actorId = ctx.userId,
-                            deepLink = "parent/academics/marks",
+                            deepLink = "/parent/academics/marks",
                             refType = "assessment",
                             refId = req.test,
                         )

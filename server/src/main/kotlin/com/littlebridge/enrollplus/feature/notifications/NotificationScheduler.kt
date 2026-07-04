@@ -67,7 +67,7 @@ object NotificationScheduler {
                 title = notifTitle,
                 body = notifBody,
                 schoolId = row[FeeRecordsTable.schoolId],
-                deepLink = "/parent/fees",
+                deepLink = "/parent/fees/$feeId",
                 refType = "fee_record",
                 refId = feeId.toString(),
             )
@@ -162,7 +162,7 @@ object NotificationScheduler {
                     title = "Event tomorrow: $eventTitle",
                     body = "Don't forget! $eventTitle is tomorrow on $eventDate",
                     schoolId = schoolId,
-                    deepLink = "/parent/home",
+                    deepLink = "/parent/events",
                     refType = "calendar_event",
                     refId = eventId.toString(),
                 )

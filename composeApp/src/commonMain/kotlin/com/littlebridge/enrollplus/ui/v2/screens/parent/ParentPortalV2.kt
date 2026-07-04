@@ -43,12 +43,15 @@ import com.littlebridge.enrollplus.ui.v2.components.VNavItem
 import com.littlebridge.enrollplus.ui.v2.components.VScreenScaffold
 import com.littlebridge.enrollplus.ui.v2.components.VStatusDot
 import com.littlebridge.enrollplus.ui.v2.navigation.DeepLinkTarget
+import com.littlebridge.enrollplus.ui.v2.navigation.EntryRole
+import com.littlebridge.enrollplus.ui.v2.navigation.parseDeepLink
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.screens.auth.ParentLinkChildScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.discovery.AcademicCalendarScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.discovery.DiscoveryScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.notifications.NotificationsScreenV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
+import org.koin.core.qualifier.named
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -84,13 +87,28 @@ fun ParentPortalV2(
 ) {
     var tab by remember { mutableStateOf("home") }
     var overlay by remember { mutableStateOf(ParentOverlay.None) }
+    var localDeepLink by remember { mutableStateOf<DeepLinkTarget?>(null) }
+    var deepLinkThreadId by remember { mutableStateOf<String?>(null) }
+    var deepLinkAcademicsTab by remember { mutableStateOf<String?>(null) }
+    var deepLinkSegment by remember { mutableStateOf<ConversationsSegment?>(null) }
+    var deepLinkReportDraftId by remember { mutableStateOf<String?>(null) }
 
     // Apply deep-link routing: set tab + overlay from the typed target.
-    LaunchedEffect(deepLinkTarget) {
-        when (deepLinkTarget) {
+    LaunchedEffect(deepLinkTarget, localDeepLink) {
+        val target = localDeepLink ?: deepLinkTarget ?: return@LaunchedEffect
+        when (target) {
             is DeepLinkTarget.ParentTab -> {
-                tab = deepLinkTarget.tab
-                when (deepLinkTarget.overlay) {
+                // Map deep link tab to a valid bottom-nav tab.
+                // Tabs that don't exist as bottom-nav items are redirected to
+                // the closest valid tab, with an overlay if applicable.
+                tab = when (target.tab) {
+                    "home", "academics", "fees", "conversations", "profile" -> target.tab
+                    "scholarships" -> { overlay = ParentOverlay.Scholarships; "home" }
+                    "link-child" -> { overlay = ParentOverlay.LinkChild; "profile" }
+                    else -> "home"
+                }
+                // Map overlay string to ParentOverlay enum.
+                when (target.overlay) {
                     "leave" -> overlay = ParentOverlay.Leave
                     "messages" -> overlay = ParentOverlay.Messages
                     "notifications" -> overlay = ParentOverlay.Notifications
@@ -98,11 +116,55 @@ fun ParentPortalV2(
                     "transport" -> overlay = ParentOverlay.Transport
                     "library" -> overlay = ParentOverlay.Library
                     "events" -> overlay = ParentOverlay.EventRegistration
+                    "announcements" -> { tab = "conversations"; overlay = ParentOverlay.None; deepLinkSegment = ConversationsSegment.Announcements }
+                    "report-card" -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Report"; target.params["draftId"]?.let { deepLinkReportDraftId = it } }
+                    "tutor" -> { overlay = ParentOverlay.TutorChat }
+                    "timetable" -> { overlay = ParentOverlay.Calendar }
+                    "marks" -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Marks" }
+                    "attendance" -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Attendance" }
+                    "homework" -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Homework" }
+                    "quizzes" -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Quizzes" }
+                    "syllabus" -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Syllabus" }
+                    "scholarships" -> overlay = ParentOverlay.Scholarships
+                    "health" -> overlay = ParentOverlay.Health
+                    "pulse" -> overlay = ParentOverlay.Pulse
+                    "id-card", "digital-id" -> overlay = ParentOverlay.DigitalIdCard
+                    "link-child" -> overlay = ParentOverlay.LinkChild
                     else -> overlay = ParentOverlay.None
+                }
+            }
+            is DeepLinkTarget.Messages -> {
+                deepLinkThreadId = target.threadId
+                overlay = ParentOverlay.Messages
+            }
+            is DeepLinkTarget.Generic -> {
+                // Try to extract a meaningful overlay from the path.
+                val pathOnly = target.path.substringBefore("?").removePrefix("/")
+                when {
+                    pathOnly.startsWith("announcements") -> { tab = "conversations"; overlay = ParentOverlay.None; deepLinkSegment = ConversationsSegment.Announcements }
+                    pathOnly.startsWith("fees") -> { tab = "fees"; overlay = ParentOverlay.None }
+                    pathOnly.startsWith("scholarships") -> { tab = "home"; overlay = ParentOverlay.Scholarships }
+                    pathOnly.startsWith("transport") -> { tab = "home"; overlay = ParentOverlay.Transport }
+                    pathOnly.startsWith("library") -> { tab = "home"; overlay = ParentOverlay.Library }
+                    pathOnly.startsWith("events") -> { tab = "home"; overlay = ParentOverlay.EventRegistration }
+                    pathOnly.startsWith("leave") -> { tab = "home"; overlay = ParentOverlay.Leave }
+                    pathOnly.startsWith("messages") -> { overlay = ParentOverlay.Messages }
+                    pathOnly.startsWith("health") -> { tab = "home"; overlay = ParentOverlay.Health }
+                    pathOnly.startsWith("pulse") -> { tab = "home"; overlay = ParentOverlay.Pulse }
+                    pathOnly.startsWith("calendar") -> { tab = "home"; overlay = ParentOverlay.Calendar }
+                    pathOnly.startsWith("report-card") -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Report" }
+                    pathOnly.startsWith("tutor") -> { overlay = ParentOverlay.TutorChat }
+                    pathOnly.startsWith("timetable") -> { overlay = ParentOverlay.Calendar }
+                    pathOnly.startsWith("marks") -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Marks" }
+                    pathOnly.startsWith("attendance") -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Attendance" }
+                    pathOnly.startsWith("homework") -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Homework" }
+                    pathOnly.startsWith("syllabus") -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Syllabus" }
+                    pathOnly.startsWith("link-child") -> { tab = "profile"; overlay = ParentOverlay.LinkChild }
                 }
             }
             else -> Unit
         }
+        localDeepLink = null
     }
     val dashboard by dashboardViewModel.state.collectAsStateV2()
     val progress by headerViewModel.state.collectAsStateV2()
@@ -134,11 +196,18 @@ fun ParentPortalV2(
 
     when (overlay) {
         ParentOverlay.Notifications -> {
-            NotificationsScreenV2(onBack = { overlay = ParentOverlay.None }, modifier = modifier)
+            NotificationsScreenV2(
+                onBack = { overlay = ParentOverlay.None },
+                onDeepLink = { deepLinkString ->
+                    localDeepLink = parseDeepLink(deepLinkString, EntryRole.Parent)
+                    overlay = ParentOverlay.None
+                },
+                modifier = modifier,
+            )
             return
         }
         ParentOverlay.Calendar -> {
-            AcademicCalendarScreenV2(onBack = { overlay = ParentOverlay.None }, modifier = modifier)
+            AcademicCalendarScreenV2(onBack = { overlay = ParentOverlay.None }, modifier = modifier, viewModelQualifier = named("parentCalendar"))
             return
         }
         ParentOverlay.Scholarships -> {
@@ -177,7 +246,11 @@ fun ParentPortalV2(
         }
         ParentOverlay.Messages -> {
             // RA-51: parent ↔ teacher/admin messaging.
-            ParentMessagesScreenV2(onBack = { overlay = ParentOverlay.None }, modifier = modifier)
+            ParentMessagesScreenV2(
+                onBack = { overlay = ParentOverlay.None; deepLinkThreadId = null },
+                modifier = modifier,
+                initialThreadId = deepLinkThreadId,
+            )
             return
         }
         ParentOverlay.Discovery -> {
@@ -341,10 +414,21 @@ fun ParentPortalV2(
                     onOpenLibrary = { overlay = ParentOverlay.Library },
                     onOpenEvents = { overlay = ParentOverlay.EventRegistration },
                 )
-                "academics" -> ParentAcademicsScreenV2(onOpenLeave = { overlay = ParentOverlay.Leave }, onOpenHealth = { overlay = ParentOverlay.Health })
+                "academics" -> ParentAcademicsScreenV2(
+                    onOpenLeave = { overlay = ParentOverlay.Leave },
+                    onOpenHealth = { overlay = ParentOverlay.Health },
+                    initialTab = deepLinkAcademicsTab,
+                    onTabConsumed = { deepLinkAcademicsTab = null },
+                    initialReportDraftId = deepLinkReportDraftId,
+                    onReportDraftIdConsumed = { deepLinkReportDraftId = null },
+                )
                 "fees" -> ParentFeesScreenV2()
                 // Phase 3 (commit 9): the Conversations hub — messaging-first, announcements second.
-                "conversations" -> ParentConversationsScreenV2(messageViewModel = messageViewModel)
+                "conversations" -> ParentConversationsScreenV2(
+                    messageViewModel = messageViewModel,
+                    initialSegment = deepLinkSegment,
+                    onSegmentConsumed = { deepLinkSegment = null },
+                )
                 // Phase 4 (commits 10–11): the flagship collectible player card, with a
                 // swipe-down account-options reveal (logout / link child / discover schools).
                 "profile" -> ParentProfileCardScreenV2(

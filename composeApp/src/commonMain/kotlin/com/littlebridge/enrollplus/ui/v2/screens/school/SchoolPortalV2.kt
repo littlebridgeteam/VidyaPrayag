@@ -22,6 +22,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VNavItem
 import com.littlebridge.enrollplus.ui.v2.components.VScreenScaffold
 import com.littlebridge.enrollplus.ui.v2.navigation.DeepLinkTarget
+import com.littlebridge.enrollplus.ui.v2.navigation.EntryRole
+import com.littlebridge.enrollplus.ui.v2.navigation.parseDeepLink
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.screens.discovery.AcademicCalendarScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.notifications.NotificationsScreenV2
@@ -101,6 +103,10 @@ fun SchoolPortalV2(
     // Theme is now applied globally at the NavGraphV2 level from user preference.
     var tab by remember { mutableStateOf("home") }
     var overlay by remember { mutableStateOf(SchoolOverlay.None) }
+    var localDeepLink by remember { mutableStateOf<DeepLinkTarget?>(null) }
+    var deepLinkThreadId by remember { mutableStateOf<String?>(null) }
+    // PEWS — student code carried into the early-warning detail overlay.
+    var selectedPewsStudentCode by remember { mutableStateOf<String?>(null) }
     // Track which screen launched the create-event wizard so onCreated returns there.
     var createEventOrigin by remember { mutableStateOf(SchoolOverlay.AcademicCalendarPlatform) }
 
@@ -116,29 +122,84 @@ fun SchoolPortalV2(
     }
 
     // Apply deep-link routing: set tab from the typed target.
-    LaunchedEffect(deepLinkTarget) {
-        when (deepLinkTarget) {
+    LaunchedEffect(deepLinkTarget, localDeepLink) {
+        val target = localDeepLink ?: deepLinkTarget ?: return@LaunchedEffect
+        when (target) {
             is DeepLinkTarget.SchoolScreen -> {
-                if (deepLinkTarget.screen == "transport") {
-                    overlay = SchoolOverlay.TransportManagement
-                } else if (deepLinkTarget.screen == "report-card" || deepLinkTarget.screen == "report-review") {
-                    overlay = SchoolOverlay.ReportPublish
-                } else if (deepLinkTarget.screen == "library") {
-                    overlay = SchoolOverlay.Library
-                } else if (deepLinkTarget.screen == "events") {
-                    overlay = SchoolOverlay.EventRegistration
-                } else {
-                    tab = deepLinkTarget.screen
+                when (target.screen) {
+                    "transport" -> overlay = SchoolOverlay.TransportManagement
+                    "report-card", "report-review" -> overlay = SchoolOverlay.ReportPublish
+                    "library" -> overlay = SchoolOverlay.Library
+                    "events" -> overlay = SchoolOverlay.EventRegistration
+                    "scholarships" -> overlay = SchoolOverlay.ScholarshipManagement
+                    "branding" -> overlay = SchoolOverlay.BrandingKit
+                    "id-cards" -> overlay = SchoolOverlay.IdCards
+                    "classes", "classes-subjects" -> overlay = SchoolOverlay.ClassesSubjects
+                    "scheduled-messages" -> overlay = SchoolOverlay.ScheduledMessages
+                    "ptm" -> overlay = SchoolOverlay.SchedulePTM
+                    "link-requests" -> overlay = SchoolOverlay.LinkRequests
+                    "admissions" -> overlay = SchoolOverlay.AdmissionsCRM
+                    "health-records" -> overlay = SchoolOverlay.HealthRecords
+                    "leave-requests", "leave" -> overlay = SchoolOverlay.LeaveRequests
+                    "pews" -> {
+                        val code = target.params["studentCode"]
+                        if (code != null) {
+                            selectedPewsStudentCode = code
+                            overlay = SchoolOverlay.PewsStudentDetail
+                        } else {
+                            overlay = SchoolOverlay.PewsCohort
+                        }
+                    }
+                    "messages" -> { tab = "comms"; overlay = SchoolOverlay.Messages }
+                    "announcements" -> { tab = "comms"; overlay = SchoolOverlay.None }
+                    "calendar" -> overlay = SchoolOverlay.AcademicCalendarPlatform
+                    "fees" -> { tab = "records"; overlay = SchoolOverlay.None }
+                    "tutor" -> { tab = "home"; overlay = SchoolOverlay.None }
+                    "timetable" -> overlay = SchoolOverlay.ClassesSubjects
+                    "timetable-requests" -> overlay = SchoolOverlay.ClassesSubjects
+                    "pace-alerts", "pace" -> { tab = "home"; overlay = SchoolOverlay.None }
+                    // Valid bottom-nav tabs
+                    "home", "people", "records", "comms", "settings" -> tab = target.screen
+                    else -> tab = "home"
+                }
+            }
+            is DeepLinkTarget.Messages -> {
+                deepLinkThreadId = target.threadId
+                tab = "comms"
+                overlay = SchoolOverlay.Messages
+            }
+            is DeepLinkTarget.Generic -> {
+                val pathOnly = target.path.substringBefore("?").removePrefix("/")
+                when {
+                    pathOnly.startsWith("messages") -> { tab = "comms"; overlay = SchoolOverlay.Messages }
+                    pathOnly.startsWith("announcements") -> { tab = "comms"; overlay = SchoolOverlay.None }
+                    pathOnly.startsWith("fees") -> { tab = "records"; overlay = SchoolOverlay.None }
+                    pathOnly.startsWith("transport") -> overlay = SchoolOverlay.TransportManagement
+                    pathOnly.startsWith("library") -> overlay = SchoolOverlay.Library
+                    pathOnly.startsWith("scholarships") -> overlay = SchoolOverlay.ScholarshipManagement
+                    pathOnly.startsWith("events") -> overlay = SchoolOverlay.EventRegistration
+                    pathOnly.startsWith("leave") -> overlay = SchoolOverlay.LeaveRequests
+                    pathOnly.startsWith("pews") -> overlay = SchoolOverlay.PewsCohort
+                    pathOnly.startsWith("link-requests") -> overlay = SchoolOverlay.LinkRequests
+                    pathOnly.startsWith("admissions") -> overlay = SchoolOverlay.AdmissionsCRM
+                    pathOnly.startsWith("calendar") -> overlay = SchoolOverlay.AcademicCalendarPlatform
+                    pathOnly.startsWith("timetable-requests") -> overlay = SchoolOverlay.ClassesSubjects
+                    pathOnly.startsWith("timetable") -> overlay = SchoolOverlay.ClassesSubjects
+                    pathOnly.startsWith("report-card") -> overlay = SchoolOverlay.ReportPublish
+                    pathOnly.startsWith("tutor") -> { tab = "home"; overlay = SchoolOverlay.None }
+                    pathOnly.startsWith("ptm") -> overlay = SchoolOverlay.SchedulePTM
+                    pathOnly.startsWith("health-records") -> overlay = SchoolOverlay.HealthRecords
+                    pathOnly.startsWith("scheduled-messages") -> overlay = SchoolOverlay.ScheduledMessages
+                    else -> tab = "home"
                 }
             }
             else -> Unit
         }
+        localDeepLink = null
     }
     // RA-45 — id carried into the student/teacher profile overlays.
     var selectedStudentId by remember { mutableStateOf<String?>(null) }
     var selectedTeacherId by remember { mutableStateOf<String?>(null) }
-    // PEWS — student code carried into the early-warning detail overlay.
-    var selectedPewsStudentCode by remember { mutableStateOf<String?>(null) }
     // RA-S17 — id carried into the non-teaching-staff profile overlay.
     var selectedStaffId by remember { mutableStateOf<String?>(null) }
     // Health Records — student id + name carried into the health records overlay.
@@ -179,7 +240,14 @@ fun SchoolPortalV2(
 
         when (overlay) {
             SchoolOverlay.Notifications -> {
-                NotificationsScreenV2(onBack = { overlay = SchoolOverlay.None }, modifier = modifier)
+                NotificationsScreenV2(
+                onBack = { overlay = SchoolOverlay.None },
+                onDeepLink = { deepLinkString ->
+                    localDeepLink = parseDeepLink(deepLinkString, EntryRole.SchoolAdmin)
+                    overlay = SchoolOverlay.None
+                },
+                modifier = modifier,
+            )
                 return
             }
             SchoolOverlay.Calendar -> {
@@ -214,7 +282,11 @@ fun SchoolPortalV2(
                 return
             }
             SchoolOverlay.Messages -> {
-                MessagesScreenV2(onBack = { overlay = SchoolOverlay.None }, modifier = modifier)
+                MessagesScreenV2(
+                    onBack = { overlay = SchoolOverlay.None; deepLinkThreadId = null },
+                    modifier = modifier,
+                    initialThreadId = deepLinkThreadId,
+                )
                 return
             }
             SchoolOverlay.LeaveRequests -> {

@@ -45,6 +45,7 @@ import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.TeacherSubjectAssignmentsTable
 import com.littlebridge.enrollplus.db.WhatsappLogsTable
 import com.littlebridge.enrollplus.feature.calendar.syncAnnouncementToCalendar
+import com.littlebridge.enrollplus.feature.school.resolveMessagingUser
 import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
@@ -255,17 +256,38 @@ fun Route.announcementRouting() {
                     audienceParents.distinct()
                 }
                 if (recipients.isNotEmpty()) {
-                    Notify.toUsers(
-                        userIds = recipients,
-                        category = "announcement",
-                        title = req.title,
-                        body = req.subTitle ?: req.description.take(140),
-                        schoolId = schoolId,
-                        actorId = uid,
-                        deepLink = "announcements/$eventId",
-                        refType = "announcement",
-                        refId = eventId,
-                    )
+                    // Send role-appropriate deep links: parents get /parent/announcements/<id>,
+                    // teachers get /teacher/announcements?id=<id>.
+                    val parentRecipients = recipients.filter { rid ->
+                        runCatching { dbQuery { resolveMessagingUser(rid)?.role } }.getOrNull()?.lowercase() == "parent"
+                    }
+                    val teacherRecipients = recipients.filter { it !in parentRecipients }
+                    if (parentRecipients.isNotEmpty()) {
+                        Notify.toUsers(
+                            userIds = parentRecipients,
+                            category = "announcement",
+                            title = req.title,
+                            body = req.subTitle ?: req.description.take(140),
+                            schoolId = schoolId,
+                            actorId = uid,
+                            deepLink = "/parent/announcements/$eventId",
+                            refType = "announcement",
+                            refId = eventId,
+                        )
+                    }
+                    if (teacherRecipients.isNotEmpty()) {
+                        Notify.toUsers(
+                            userIds = teacherRecipients,
+                            category = "announcement",
+                            title = req.title,
+                            body = req.subTitle ?: req.description.take(140),
+                            schoolId = schoolId,
+                            actorId = uid,
+                            deepLink = "/teacher/announcements?id=$eventId",
+                            refType = "announcement",
+                            refId = eventId,
+                        )
+                    }
                 }
                 }
                 // VP-CAL: mirror Holiday/PTM/Event announcements into the Academic

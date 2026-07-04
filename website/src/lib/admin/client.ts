@@ -46,6 +46,8 @@ import type {
   TriggerPulseResponse,
   DevSendNotificationResponse,
   TriggerPewsResponse,
+  ServerLogsPageDto,
+  ServerLogStatsDto,
   AlumniDto,
   AlumniListResponse,
   AlumniCampaignDto,
@@ -306,6 +308,24 @@ export const adminApi = {
     authRequest<DevSendNotificationResponse>("/api/v1/admin/dev/send-notification", { method: "POST", body }),
   triggerPews: () =>
     authRequest<TriggerPewsResponse>("/api/v1/admin/dev/trigger-pews", { method: "POST" }),
+
+  // server logs
+  serverLogs: (params?: { level?: string; category?: string; search?: string; limit?: number; offset?: number }) => {
+    const qs = new URLSearchParams();
+    if (params?.level) qs.set("level", params.level);
+    if (params?.category) qs.set("category", params.category);
+    if (params?.search) qs.set("search", params.search);
+    if (params?.limit) qs.set("limit", String(params.limit));
+    if (params?.offset) qs.set("offset", String(params.offset));
+    const q = qs.toString();
+    return authRequest<ServerLogsPageDto>(`/api/v1/admin/dev/logs${q ? `?${q}` : ""}`);
+  },
+  serverLogStats: () =>
+    authRequest<ServerLogStatsDto>("/api/v1/admin/dev/logs/stats"),
+  serverLogToggleGet: () =>
+    authRequest<{ enabled: boolean }>("/api/v1/admin/dev/logs/logging-toggle"),
+  serverLogToggleSet: (enabled: boolean) =>
+    authRequest<{ enabled: boolean }>(`/api/v1/admin/dev/logs/logging-toggle?enabled=${enabled}`, { method: "POST" }),
 
   // alumni management
   alumniList: (params?: { year?: number; profession?: string; city?: string; q?: string; page?: number; limit?: number }) => {

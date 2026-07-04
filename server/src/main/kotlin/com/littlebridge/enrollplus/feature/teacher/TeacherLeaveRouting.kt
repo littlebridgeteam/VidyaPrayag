@@ -218,7 +218,7 @@ fun Route.teacherLeaveRouting() {
                                 body = "${decided.requesterName}'s leave request was $verb by ${ctx.fullName}.",
                                 schoolId = ctx.schoolId,
                                 actorId = ctx.userId,
-                                deepLink = "parent/leave",
+                                deepLink = "/parent/leave",
                                 refType = "leave_request",
                                 refId = id.toString(),
                             )
