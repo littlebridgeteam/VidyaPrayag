@@ -84,6 +84,7 @@ import com.littlebridge.enrollplus.feature.notifications.NotificationScheduler
 import com.littlebridge.enrollplus.feature.notifications.notificationPreferencesRouting
 import com.littlebridge.enrollplus.feature.onboarding.onboardingRouting
 import com.littlebridge.enrollplus.feature.organization.organizationRouting
+import com.littlebridge.enrollplus.feature.platform.platformRouting
 import com.littlebridge.enrollplus.feature.parent.parentDashboardRouting
 import com.littlebridge.enrollplus.feature.parent.parentFeesRouting
 import com.littlebridge.enrollplus.feature.parent.parentLeaveRouting
@@ -606,5 +607,17 @@ fun Application.module() {
         //   /api/v1/school/{language-distribution, users-language-pref}  — school admin
         //   /api/admin/{language-adoption, users-by-language, server-strings[…]}  — super admin
         i18nRouting()
+
+        // Feature & QA Management Platform (feature-qa-management-platform spec)
+        //   /api/admin/platform/dashboard/*   — health, charts, risk, activity (super_admin + qa)
+        //   /api/admin/platform/features[…]   — feature registry CRUD + tree + flows
+        //   /api/admin/platform/screens[…]    — screen registry CRUD
+        //   /api/admin/platform/features/{id}/apis[…] — API mapping CRUD
+        //   /api/admin/platform/test-cases[…] — test case CRUD + status + attachments
+        //   /api/admin/platform/bugs[…]       — bug CRUD + kanban + comments + activity + SLA
+        //   /api/admin/platform/audit[…]      — audit log viewer (super_admin)
+        //   /api/admin/platform/notifications  — platform notification bell (super_admin + qa)
+        //   /api/admin/platform/users          — platform user list (super_admin + qa)
+        platformRouting()
     }
 }

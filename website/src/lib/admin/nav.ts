@@ -29,6 +29,7 @@ import {
   IconPtm,
   IconPace,
   IconMessage,
+  IconPlatform,
 } from "@/components/admin/icons";
 
 export interface NavItem {
@@ -36,6 +37,7 @@ export interface NavItem {
   label: string;
   icon: (p: { className?: string }) => JSX.Element;
   superAdminOnly?: boolean;
+  external?: boolean;
 }
 
 /** Single source of truth for the admin sidebar + route map. */
@@ -66,6 +68,7 @@ export const ADMIN_NAV: NavItem[] = [
   { href: "/admin/link-requests", label: "Link Requests", icon: IconLink },
   { href: "/admin/branding", label: "Branding Kit", icon: IconBranding },
   { href: "/admin/pace-alerts", label: "Pace Alerts", icon: IconPace },
+  { href: "/platform", label: "Platform QA", icon: IconPlatform, superAdminOnly: true, external: true },
   { href: "/admin/settings", label: "Settings", icon: IconSettings },
   { href: "/admin/language", label: "Language", icon: IconLanguage, superAdminOnly: true },
   { href: "/admin/academics", label: "Academics", icon: IconBook },

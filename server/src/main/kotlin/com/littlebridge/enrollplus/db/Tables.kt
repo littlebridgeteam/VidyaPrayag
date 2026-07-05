@@ -3753,4 +3753,306 @@ object ServerLogsTable : UUIDTable("server_logs", "id") {
     }
 }
 
+// =====================================================================
+// Platform Feature & QA Management (feature-qa-management-platform spec §3)
+//   Platform-level tables (no school_id), UUID PKs, timestamps.
+//   11 registry tables + 4 auto-discovery tables = 15 total.
+//   Applied by docs/db/migration_071_platform_feature_qa.sql (must run
+//   before deploy; AUTO_CREATE_TABLES is OFF in prod).
+// =====================================================================
+
+object PlatformFeaturesTable : UUIDTable("platform_features", "id") {
+    val featureId       = varchar("feature_id", 128).uniqueIndex()  // e.g. "AUTH-LOGIN-OTP"
+    val name            = varchar("name", 200)
+    val description     = text("description").nullable()
+    val businessGoal    = text("business_goal").nullable()
+    val productArea     = varchar("product_area", 64).nullable()
+    val category        = varchar("category", 64).nullable()
+    val module          = varchar("module", 64).nullable()
+    val parentId        = uuid("parent_id").nullable()  // self-FK (declared via ref in migration)
+    val status          = varchar("status", 32).default("planned")
+    val completionPct   = integer("completion_pct").default(0)
+    val priority        = varchar("priority", 16).default("medium")
+    val severity        = varchar("severity", 16).nullable()
+    val businessImpact  = varchar("business_impact", 64).nullable()
+    val techComplexity  = varchar("tech_complexity", 64).nullable()
+    val riskLevel       = varchar("risk_level", 32).nullable()
+    val dependencies    = text("dependencies").default("[]")   // JSONB array of feature_ids
+    val blockers        = text("blockers").nullable()
+    val estimatedEffort = varchar("estimated_effort", 4).nullable()  // XS|S|M|L|XL
+    val ownerId         = uuid("owner_id").nullable()  // FK app_users.id
+    val team            = varchar("team", 64).nullable()
+    val sprint          = varchar("sprint", 64).nullable()
+    val versionIntro    = varchar("version_intro", 32).nullable()
+    val targetRelease   = varchar("target_release", 64).nullable()
+    val releaseStatus   = varchar("release_status", 32).nullable()
+    val tags            = text("tags").default("[]")      // JSONB array
+    val metadata        = text("metadata").default("{}")  // JSONB object
+    val legacyImported  = bool("legacy_imported").default(false)
+    val isArchived      = bool("is_archived").default(false)
+    val createdAt       = timestamp("created_at")
+    val updatedAt       = timestamp("updated_at")
+    val createdBy       = uuid("created_by").nullable()
+    val updatedBy       = uuid("updated_by").nullable()
+
+    init {
+        index("ix_pf_status", isUnique = false, status)
+        index("ix_pf_priority", isUnique = false, priority)
+        index("ix_pf_product_area", isUnique = false, productArea)
+        index("ix_pf_owner", isUnique = false, ownerId)
+        index("ix_pf_parent", isUnique = false, parentId)
+    }
+}
+
+object PlatformFeatureFlowsTable : UUIDTable("platform_feature_flows", "id") {
+    val featureId       = uuid("feature_id")  // FK platform_features.id ON DELETE CASCADE
+    val flowName        = varchar("flow_name", 200)
+    val flowDescription = text("flow_description").nullable()
+    val flowSteps       = text("flow_steps").default("[]")  // JSONB: [{step, action, screen_id, entry_point, exit_point}]
+    val entryPoints     = text("entry_points").default("[]")  // JSONB
+    val exitPoints      = text("exit_points").default("[]")   // JSONB
+    val deepLinks       = text("deep_links").default("[]")    // JSONB
+    val edgeCases       = text("edge_cases").default("[]")    // JSONB
+    val sortOrder       = integer("sort_order").default(0)
+    val createdAt       = timestamp("created_at")
+    val updatedAt       = timestamp("updated_at")
+}
+
+object PlatformScreensTable : UUIDTable("platform_screens", "id") {
+    val screenId        = varchar("screen_id", 128).uniqueIndex()  // e.g. "parent.HomeScreenV2"
+    val name            = varchar("name", 200)
+    val route           = text("route").nullable()
+    val module          = varchar("module", 64).nullable()  // composeApp|website|shared|server
+    val purpose         = text("purpose").nullable()
+    val screenshotUrl   = text("screenshot_url").nullable()
+    val permissions     = text("permissions").default("[]")  // JSONB role array
+    val userActions     = text("user_actions").default("[]")  // JSONB: [{action, navigates_to}]
+    val connectedScreens = text("connected_screens").default("[]")  // JSONB
+    val emptyState      = text("empty_state").nullable()
+    val loadingState    = text("loading_state").nullable()
+    val errorState      = text("error_state").nullable()
+    val featureId       = uuid("feature_id").nullable()  // FK platform_features.id ON DELETE SET NULL
+    val sortOrder       = integer("sort_order").default(0)
+    val metadata        = text("metadata").default("{}")
+    val createdAt       = timestamp("created_at")
+    val updatedAt       = timestamp("updated_at")
+}
+
+object PlatformFeatureApisTable : UUIDTable("platform_feature_apis", "id") {
+    val featureId       = uuid("feature_id")  // FK platform_features.id ON DELETE CASCADE
+    val endpoint        = text("endpoint")
+    val method          = varchar("method", 8)  // GET|POST|PUT|PATCH|DELETE
+    val description     = text("description").nullable()
+    val dbEntities      = text("db_entities").default("[]")  // JSONB
+    val caching         = varchar("caching", 64).nullable()
+    val featureFlag     = varchar("feature_flag", 64).nullable()
+    val analyticsEvents = text("analytics_events").default("[]")  // JSONB
+    val notifications   = text("notifications").default("[]")     // JSONB
+    val isDocumented    = bool("is_documented").default(false)
+    val sortOrder       = integer("sort_order").default(0)
+    val createdAt       = timestamp("created_at")
+    val updatedAt       = timestamp("updated_at")
+}
+
+object PlatformTestCasesTable : UUIDTable("platform_test_cases", "id") {
+    val caseId          = varchar("case_id", 128).uniqueIndex()  // e.g. "TC-AUTH-001"
+    val featureId       = uuid("feature_id")  // FK platform_features.id ON DELETE CASCADE
+    val screenId        = uuid("screen_id").nullable()  // FK platform_screens.id ON DELETE SET NULL
+    val apiId           = uuid("api_id").nullable()     // FK platform_feature_apis.id ON DELETE SET NULL
+    val title           = varchar("title", 200)
+    val description     = text("description").nullable()
+    val preconditions   = text("preconditions").nullable()
+    val testSteps       = text("test_steps").default("[]")  // JSONB: [{step, action, expected}]
+    val expectedResult  = text("expected_result").nullable()
+    val priority        = varchar("priority", 16).default("medium")
+    val testType        = varchar("test_type", 32).default("functional")
+    val status          = varchar("status", 16).default("not_run")
+    val assignedTo      = uuid("assigned_to").nullable()  // FK app_users.id
+    val buildVersion    = varchar("build_version", 64).nullable()
+    val environment     = varchar("environment", 16).nullable()  // dev|staging|production
+    val devices         = text("devices").default("[]")    // JSONB
+    val osVersions      = text("os_versions").default("[]") // JSONB
+    val platform        = varchar("platform", 16).default("all")  // all|android|ios|web|desktop
+    val lastTestedAt    = timestamp("last_tested_at").nullable()
+    val lastTestedBy    = uuid("last_tested_by").nullable()
+    val failureReason   = text("failure_reason").nullable()
+    val metadata        = text("metadata").default("{}")
+    val createdAt       = timestamp("created_at")
+    val updatedAt       = timestamp("updated_at")
+    val createdBy       = uuid("created_by").nullable()
+}
+
+object PlatformTestAttachmentsTable : UUIDTable("platform_test_attachments", "id") {
+    val testCaseId      = uuid("test_case_id").nullable()  // FK platform_test_cases.id ON DELETE CASCADE
+    val bugId           = uuid("bug_id").nullable()         // FK platform_bugs.id ON DELETE CASCADE
+    val fileName        = varchar("file_name", 255)
+    val fileUrl         = text("file_url")
+    val fileType        = varchar("file_type", 32)  // screenshot|video|log|crash_log|network_log
+    val mimeType        = varchar("mime_type", 128).nullable()
+    val fileSizeBytes   = long("file_size_bytes").nullable()
+    val uploadedBy      = uuid("uploaded_by").nullable()
+    val createdAt       = timestamp("created_at")
+}
+
+object PlatformBugsTable : UUIDTable("platform_bugs", "id") {
+    val bugId           = varchar("bug_id", 16).uniqueIndex()  // e.g. "BUG-00001"
+    val title           = varchar("title", 200)
+    val description     = text("description").nullable()
+    val featureId       = uuid("feature_id").nullable()  // FK platform_features.id ON DELETE SET NULL
+    val screenId        = uuid("screen_id").nullable()   // FK platform_screens.id ON DELETE SET NULL
+    val apiId           = uuid("api_id").nullable()      // FK platform_feature_apis.id ON DELETE SET NULL
+    val testCaseId      = uuid("test_case_id").nullable() // FK platform_test_cases.id ON DELETE SET NULL
+    val status          = varchar("status", 32).default("reported")
+    val priority        = varchar("priority", 16).default("medium")
+    val severity        = varchar("severity", 16).nullable()
+    val reproducibility = varchar("reproducibility", 32).nullable()
+    val environment     = varchar("environment", 16).nullable()
+    val buildVersion    = varchar("build_version", 64).nullable()
+    val platform        = varchar("platform", 16).nullable()
+    val device          = varchar("device", 128).nullable()
+    val osVersion       = varchar("os_version", 64).nullable()
+    val stepsToReproduce = text("steps_to_reproduce").default("[]")  // JSONB
+    val expectedResult  = text("expected_result").nullable()
+    val actualResult    = text("actual_result").nullable()
+    val reportedBy      = uuid("reported_by").nullable()  // FK app_users.id
+    val assignedTo      = uuid("assigned_to").nullable()  // FK app_users.id
+    val triagedBy       = uuid("triaged_by").nullable()   // FK app_users.id
+    val fixedBy         = uuid("fixed_by").nullable()     // FK app_users.id
+    val verifiedBy      = uuid("verified_by").nullable()  // FK app_users.id
+    val slaDueAt        = timestamp("sla_due_at").nullable()
+    val resolvedAt      = timestamp("resolved_at").nullable()
+    val closedAt        = timestamp("closed_at").nullable()
+    val tags            = text("tags").default("[]")
+    val metadata        = text("metadata").default("{}")
+    val createdAt       = timestamp("created_at")
+    val updatedAt       = timestamp("updated_at")
+
+    init {
+        index("ix_pb_status", isUnique = false, status)
+        index("ix_pb_priority", isUnique = false, priority)
+        index("ix_pb_severity", isUnique = false, severity)
+        index("ix_pb_feature", isUnique = false, featureId)
+        index("ix_pb_assigned", isUnique = false, assignedTo)
+    }
+}
+
+object PlatformBugCommentsTable : UUIDTable("platform_bug_comments", "id") {
+    val bugId           = uuid("bug_id")  // FK platform_bugs.id ON DELETE CASCADE
+    val authorId        = uuid("author_id").nullable()  // FK app_users.id
+    val body            = text("body")
+    val mentions        = text("mentions").default("[]")  // JSONB user_id array
+    val isInternal      = bool("is_internal").default(false)
+    val createdAt       = timestamp("created_at")
+    val updatedAt       = timestamp("updated_at")
+}
+
+object PlatformBugActivityTable : UUIDTable("platform_bug_activity", "id") {
+    val bugId           = uuid("bug_id")  // FK platform_bugs.id ON DELETE CASCADE
+    val actorId         = uuid("actor_id").nullable()  // FK app_users.id
+    val action          = varchar("action", 64)
+    val field           = varchar("field", 64).nullable()
+    val oldValue        = text("old_value").nullable()
+    val newValue        = text("new_value").nullable()
+    val createdAt       = timestamp("created_at")
+}
+
+object PlatformAuditLogTable : UUIDTable("platform_audit_log", "id") {
+    val actorId         = uuid("actor_id").nullable()  // FK app_users.id
+    val action          = varchar("action", 64)
+    val entityType      = varchar("entity_type", 32)
+    val entityId        = uuid("entity_id").nullable()
+    val oldSnapshot     = text("old_snapshot").nullable()  // JSONB
+    val newSnapshot     = text("new_snapshot").nullable()  // JSONB
+    val ipAddress       = text("ip_address").nullable()
+    val userAgent       = text("user_agent").nullable()
+    val createdAt       = timestamp("created_at")
+
+    init {
+        index("ix_pal_actor", isUnique = false, actorId)
+        index("ix_pal_entity_type", isUnique = false, entityType)
+        index("ix_pal_action", isUnique = false, action)
+        index("ix_pal_created", isUnique = false, createdAt)
+    }
+}
+
+object PlatformNotificationsTable : UUIDTable("platform_notifications", "id") {
+    val userId          = uuid("user_id")  // FK app_users.id ON DELETE CASCADE
+    val category        = varchar("category", 32).default("general")
+    val title           = text("title")
+    val body            = text("body").default("")
+    val entityType      = varchar("entity_type", 32).nullable()
+    val entityId        = uuid("entity_id").nullable()
+    val deepLink        = text("deep_link").nullable()
+    val isRead          = bool("is_read").default(false)
+    val createdAt       = timestamp("created_at")
+
+    init {
+        index("ix_pn_user_unread", isUnique = false, userId, isRead)
+    }
+}
+
+// ── Auto-discovery tables (spec §19.1) ──────────────────────────────────
+
+object PlatformDiscoveredScreensTable : UUIDTable("platform_discovered_screens", "id") {
+    val screenId        = varchar("screen_id", 128)  // "parent.HomeScreenV2" or "admin-web.fees"
+    val name            = text("name")
+    val module          = varchar("module", 64)  // composeApp | website
+    val filePath        = text("file_path")
+    val portal          = varchar("portal", 32).nullable()  // parent|school|teacher|auth|discovery|admin-web
+    val overlayEnum     = varchar("overlay_enum", 64).nullable()
+    val deepLinkPath    = text("deep_link_path").nullable()
+    val isMapped        = bool("is_mapped").default(false)
+    val mappedScreenId  = uuid("mapped_screen_id").nullable()  // FK platform_screens.id ON DELETE SET NULL
+    val discoveredAt    = timestamp("discovered_at")
+    val lastSeenAt      = timestamp("last_seen_at")
+    val fileModifiedAt  = timestamp("file_modified_at").nullable()
+
+    init {
+        uniqueIndex("ux_pds_screen_id", screenId)
+    }
+}
+
+object PlatformDiscoveredApisTable : UUIDTable("platform_discovered_apis", "id") {
+    val method          = varchar("method", 8)  // GET|POST|PUT|PATCH|DELETE
+    val path            = text("path")
+    val filePath        = text("file_path")
+    val featurePackage  = varchar("feature_package", 64).nullable()
+    val description     = text("description").nullable()
+    val isMapped        = bool("is_mapped").default(false)
+    val mappedApiId     = uuid("mapped_api_id").nullable()  // FK platform_feature_apis.id ON DELETE SET NULL
+    val isAlive         = bool("is_alive").nullable()
+    val lastCheckedAt   = timestamp("last_checked_at").nullable()
+    val responseMs      = integer("response_ms").nullable()
+    val statusCode      = integer("status_code").nullable()
+    val discoveredAt    = timestamp("discovered_at")
+    val lastSeenAt      = timestamp("last_seen_at")
+
+    init {
+        uniqueIndex("ux_pda_method_path", method, path)
+    }
+}
+
+object PlatformFeatureFilesTable : UUIDTable("platform_feature_files", "id") {
+    val featureId       = uuid("feature_id")  // FK platform_features.id ON DELETE CASCADE
+    val filePath        = text("file_path")
+    val fileType        = varchar("file_type", 16)  // screen|api|viewmodel|repository|table|service
+    val lastModifiedAt  = timestamp("last_modified_at").nullable()
+    val lastCommitSha   = varchar("last_commit_sha", 40).nullable()
+    val lastCommitMsg   = text("last_commit_msg").nullable()
+    val lastCommitAuthor = varchar("last_commit_author", 128).nullable()
+
+    init {
+        uniqueIndex("ux_pff_feature_file", featureId, filePath)
+    }
+}
+
+object PlatformApiHealthChecksTable : UUIDTable("platform_api_health_checks", "id") {
+    val discoveredApiId = uuid("discovered_api_id")  // FK platform_discovered_apis.id ON DELETE CASCADE
+    val checkedAt       = timestamp("checked_at")
+    val statusCode      = integer("status_code").nullable()
+    val responseMs      = integer("response_ms").nullable()
+    val isAlive         = bool("is_alive").nullable()
+    val errorMessage    = text("error_message").nullable()
+}
+
 val SYSTEM_SCHOOL_ID: UUID = UUID(0, 0)
