@@ -1,10 +1,5 @@
 package com.littlebridge.enrollplus.ui.v2.screens.premium.parent
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -29,7 +24,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.HealthAndSafety
 import androidx.compose.material.icons.filled.LocalLibrary
@@ -53,7 +47,6 @@ import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.feature.parent.presentation.AttendanceDayState
 import com.littlebridge.enrollplus.feature.parent.presentation.LivePeriod
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentDashboardViewModel
-import com.littlebridge.enrollplus.ui.v2.components.misc.VShimmerBoxPremium
 import com.littlebridge.enrollplus.ui.v2.components.misc.VStateHostPremium
 import com.littlebridge.enrollplus.ui.v2.modifiers.pressScale
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
@@ -81,7 +74,6 @@ fun ParentHomeScreen(
         emptyBody = "Link your child's school to see their attendance, marks, fees, and updates.",
         emptyIcon = Icons.Filled.School,
         onRetry = { viewModel.load() },
-        skeleton = { BriefingSkeleton() },
     ) {
         BriefingContent(
             state = state,
@@ -103,7 +95,7 @@ private fun BriefingContent(
 ) {
     Column(
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxWidth()
             .verticalScroll(rememberScrollState())
             .padding(bottom = 140.dp),
     ) {
@@ -517,21 +509,5 @@ private fun QuickAccessRow(
             tint = VColors.Outline,
             modifier = Modifier.size(20.dp),
         )
-    }
-}
-
-@Composable
-private fun BriefingSkeleton() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        VShimmerBoxPremium(height = 48.dp, shape = VShapes.Lg)
-        VShimmerBoxPremium(height = 120.dp, shape = VShapes.Xl)
-        VShimmerBoxPremium(height = 100.dp, shape = VShapes.Lg)
-        VShimmerBoxPremium(height = 60.dp, shape = VShapes.Lg)
-        VShimmerBoxPremium(height = 60.dp, shape = VShapes.Lg)
     }
 }
