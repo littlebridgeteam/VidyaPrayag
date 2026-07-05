@@ -28,20 +28,19 @@ import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.feature.admin.presentation.OnboardingGate
 import com.littlebridge.enrollplus.feature.admin.presentation.OnboardingGateViewModel
 import com.littlebridge.enrollplus.feature.auth.domain.repository.AuthRepository
-import com.littlebridge.enrollplus.ui.v2.screens.auth.AdminAuthScreenV2
-import com.littlebridge.enrollplus.ui.v2.screens.auth.CommonLandingScreenV3
-import com.littlebridge.enrollplus.ui.v2.screens.auth.LanguageSelectionScreen
-import com.littlebridge.enrollplus.ui.v2.screens.auth.LegalDoc
-import com.littlebridge.enrollplus.ui.v2.screens.auth.LegalInfoScreenV2
-import com.littlebridge.enrollplus.ui.v2.screens.auth.ParentAuthScreenV2
-import com.littlebridge.enrollplus.ui.v2.screens.auth.ParentLinkChildScreenV2
-import com.littlebridge.enrollplus.ui.v2.screens.auth.SchoolOnboardingScreenV2
-import com.littlebridge.enrollplus.ui.v2.screens.auth.TeacherFirstLoginScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.screens.discovery.DiscoveryScreenV2
-import com.littlebridge.enrollplus.ui.v2.screens.parent.ParentPortalV2
-import com.littlebridge.enrollplus.ui.v2.screens.school.SchoolPortalV2
-import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherPortalV2
+import com.littlebridge.enrollplus.ui.v2.screens.premium.auth.AdminAuthScreen
+import com.littlebridge.enrollplus.ui.v2.screens.premium.auth.CommonLandingScreen
+import com.littlebridge.enrollplus.ui.v2.screens.premium.auth.LanguageSelectionScreen
+import com.littlebridge.enrollplus.ui.v2.screens.premium.auth.LegalInfoScreen
+import com.littlebridge.enrollplus.ui.v2.screens.premium.auth.ParentAuthScreen
+import com.littlebridge.enrollplus.ui.v2.screens.premium.auth.ParentLinkChildScreen
+import com.littlebridge.enrollplus.ui.v2.screens.premium.auth.SchoolOnboardingScreen
+import com.littlebridge.enrollplus.ui.v2.screens.premium.auth.TeacherFirstLoginScreen
+import com.littlebridge.enrollplus.ui.v2.screens.premium.parent.ParentDiscoveryScreen
+import com.littlebridge.enrollplus.ui.v2.screens.premium.parent.ParentPortalShell
+import com.littlebridge.enrollplus.ui.v2.screens.premium.school.SchoolPortalPremium
+import com.littlebridge.enrollplus.ui.v2.screens.premium.teacher.TeacherPortalShell
 import com.littlebridge.enrollplus.feature.branding.presentation.BrandingThemeManager
 import com.littlebridge.enrollplus.ui.v2.theme.BrandingColorMapper
 import com.littlebridge.enrollplus.ui.v2.theme.VMotion
@@ -231,7 +230,7 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
                 if (!isValidUuid(thirdSeg)) return DeepLinkTarget.Generic(currentRole, path)
                 return DeepLinkTarget.Messages(EntryRole.Parent, threadId = thirdSeg)
             }
-            // Valid bottom-nav tabs in ParentPortalV2.
+            // Valid bottom-nav tabs in ParentPortalShell.
             val validTabs = setOf("home", "academics", "fees", "conversations", "profile")
             if (secondSeg in validTabs) {
                 // Second segment is a tab name; third segment (if any) is an overlay.
@@ -545,7 +544,7 @@ private fun UnauthFlow(modifier: Modifier = Modifier) {
 
     var route by remember { mutableStateOf(UnauthRoute.Landing) }
     // Which legal/info document the Legal route opens on (Privacy / Terms / Help Desk).
-    var legalDoc by remember { mutableStateOf(LegalDoc.Privacy) }
+    var legalDoc by remember { mutableStateOf("Privacy") }
 
     // First-launch gate: if no language preference is set, show the language
     // selection screen before the landing page.
@@ -592,42 +591,35 @@ private fun UnauthFlow(modifier: Modifier = Modifier) {
             // featured schools, offerings, portals) is CMS-driven inside the screen itself via
             // LandingViewModel + MainViewModel — both fetch in `init`, so no extra wiring is needed
             // here; this site only supplies the navigation callbacks.
-            UnauthRoute.Landing -> CommonLandingScreenV3(
+            UnauthRoute.Landing -> CommonLandingScreen(
                 onParent = { route = UnauthRoute.ParentAuth },
                 onAdmin = { route = UnauthRoute.AdminAuth },
-                // Footer "Privacy Policy / Terms of Service / Help Desk" + the continue-footnote
-                // open the public Legal & Support surface on the requested document.
                 onLegal = { doc ->
                     legalDoc = doc
                     route = UnauthRoute.Legal
                 },
             )
-            UnauthRoute.ParentAuth -> ParentAuthScreenV2(
-                // On success the persisted session flips isAuthenticated=true and NavGraphV2
-                // recomposes into AuthedFlow, which runs the child-link gate (PHASE 6).
+            UnauthRoute.ParentAuth -> ParentAuthScreen(
                 onAuthSuccess = {},
                 onBack = { route = UnauthRoute.Landing },
             )
-            UnauthRoute.AdminAuth -> AdminAuthScreenV2(
-                // On success the session flips and AuthedFlow runs the onboard / first-login gate.
+            UnauthRoute.AdminAuth -> AdminAuthScreen(
                 onAuthSuccess = {},
                 onBack = { route = UnauthRoute.Landing },
             )
-            // Browse-first marketplace, reachable from the parent path for new families.
-            UnauthRoute.Discovery -> DiscoveryScreenV2(
+            UnauthRoute.Discovery -> ParentDiscoveryScreen(
+                onExit = { route = UnauthRoute.ParentAuth },
                 onOpenSchool = { _ -> route = UnauthRoute.ParentLinkChild },
             )
-            UnauthRoute.ParentLinkChild -> ParentLinkChildScreenV2(
+            UnauthRoute.ParentLinkChild -> ParentLinkChildScreen(
                 onDone = { route = UnauthRoute.ParentAuth },
                 onBack = { route = UnauthRoute.Discovery },
             )
-            UnauthRoute.SchoolOnboarding -> SchoolOnboardingScreenV2(
+            UnauthRoute.SchoolOnboarding -> SchoolOnboardingScreen(
                 onComplete = { route = UnauthRoute.AdminAuth },
                 onBack = { route = UnauthRoute.AdminAuth },
             )
-            // Public Privacy Policy / Terms of Service / Help Desk surface (minimal, honest copy +
-            // live support email). Opens on the document the footer link requested.
-            UnauthRoute.Legal -> LegalInfoScreenV2(
+            UnauthRoute.Legal -> LegalInfoScreen(
                 onBack = { route = UnauthRoute.Landing },
                 initial = legalDoc,
             )
@@ -747,16 +739,16 @@ private fun AuthedFlow(
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
 
-            AuthedRoute.ParentLinkChild -> ParentLinkChildScreenV2(
+            AuthedRoute.ParentLinkChild -> ParentLinkChildScreen(
                 onDone = { route = AuthedRoute.Portal },
                 onBack = { route = AuthedRoute.Portal },
             )
-            AuthedRoute.SchoolOnboarding -> SchoolOnboardingScreenV2(
+            AuthedRoute.SchoolOnboarding -> SchoolOnboardingScreen(
                 resumeStep = onboardingResumeStep,
                 onComplete = { route = AuthedRoute.Portal },
                 onBack = { route = AuthedRoute.Portal },
             )
-            AuthedRoute.TeacherFirstLogin -> TeacherFirstLoginScreenV2(
+            AuthedRoute.TeacherFirstLogin -> TeacherFirstLoginScreen(
                 onDone = { route = AuthedRoute.Portal },
             )
             AuthedRoute.Portal -> RolePortal(
@@ -783,17 +775,18 @@ private fun RolePortal(
         // super_admin currently shares the school-admin operator surface (no
         // dedicated super-admin portal exists yet) — but it is no longer
         // silently dropped into the parent UI (audit §3.5).
-        EntryRole.SchoolAdmin, EntryRole.SuperAdmin -> SchoolPortalV2(
+        EntryRole.SchoolAdmin, EntryRole.SuperAdmin -> SchoolPortalPremium(
+            onLogout = onLogout,
+            modifier = modifier,
+            deepLinkTarget = deepLinkTarget,
+            isDark = isSystemInDarkTheme(),
+        )
+        EntryRole.Teacher -> TeacherPortalShell(
             onLogout = onLogout,
             modifier = modifier,
             deepLinkTarget = deepLinkTarget,
         )
-        EntryRole.Teacher -> TeacherPortalV2(
-            onLogout = onLogout,
-            modifier = modifier,
-            deepLinkTarget = deepLinkTarget,
-        )
-        EntryRole.Parent -> ParentPortalV2(
+        EntryRole.Parent -> ParentPortalShell(
             onLogout = onLogout,
             modifier = modifier,
             deepLinkTarget = deepLinkTarget,
