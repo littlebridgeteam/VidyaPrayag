@@ -94,6 +94,7 @@ dependencies {
     // of reintroducing the full multiplatform dependency here.
     implementation(libs.logback)
     implementation("net.logstash.logback:logstash-logback-encoder:7.4")
+    implementation("org.codehaus.janino:janino:3.1.12")
     implementation(libs.ktor.serverCore)
     implementation(libs.ktor.serverNetty)
     implementation("io.ktor:ktor-server-content-negotiation:3.4.3")
