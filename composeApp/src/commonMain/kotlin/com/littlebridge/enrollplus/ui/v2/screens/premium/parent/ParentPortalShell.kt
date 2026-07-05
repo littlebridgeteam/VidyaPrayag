@@ -2,6 +2,7 @@ package com.littlebridge.enrollplus.ui.v2.screens.premium.parent
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -28,11 +29,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Notifications
@@ -56,6 +57,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
@@ -80,7 +82,7 @@ import org.koin.compose.viewmodel.koinViewModel
 private enum class ParentOverlay {
     None, Notifications, Calendar, Scholarships, Leave, Messages,
     LinkChild, Discovery, Health, Pulse, Transport, TutorChat,
-    TutorProgress, DigitalIdCard, Library, EventRegistration,
+    TutorProgress, DigitalIdCard, Library, EventRegistration, AccountSettings,
 }
 
 /**
@@ -311,6 +313,13 @@ fun ParentPortalShell(
             )
             return@PremiumTheme
         }
+        ParentOverlay.AccountSettings -> {
+            ParentAccountSettingsScreen(
+                onBack = { overlay = ParentOverlay.None },
+                modifier = modifier,
+            )
+            return@PremiumTheme
+        }
         ParentOverlay.None -> Unit
     }
 
@@ -327,24 +336,34 @@ fun ParentPortalShell(
     var fabExpanded by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
 
+    val tabTitles = remember {
+        listOf("VidyaSetu", "Academics", "Fees", "Conversations", "Profile")
+    }
+
     Column(
         modifier = modifier.fillMaxSize().background(VColors.Surface),
     ) {
-        // Top bar
+        // Per-tab top bar
         ParentTopBar(
-            title = "VidyaSetu",
+            title = tabTitles.getOrElse(tab) { "VidyaSetu" },
+            showMenuIcon = tab == 0,
+            showSearchIcon = true,
+            showBellIcon = tab == 0,
             unreadCount = notifState.unreadCount,
             onMenuClick = { },
+            onBackClick = { if (tab != 0) tab = 0 },
             onSearchClick = { },
             onBellClick = { overlay = ParentOverlay.Notifications },
         )
 
-        // Search field
-        ParentSearchField(
-            query = searchQuery,
-            onQueryChange = { searchQuery = it },
-            childInitial = state.selectedChild?.name?.firstOrNull()?.toString() ?: "P",
-        )
+        // Search field only on Home tab
+        if (tab == 0) {
+            ParentSearchField(
+                query = searchQuery,
+                onQueryChange = { searchQuery = it },
+                childInitial = state.selectedChild?.name?.firstOrNull()?.toString() ?: "P",
+            )
+        }
 
         // Tab content
         Box(
@@ -382,7 +401,16 @@ fun ParentPortalShell(
                         },
                         onLinkChild = { overlay = ParentOverlay.LinkChild },
                         onDiscoverSchools = { overlay = ParentOverlay.Discovery },
-                        onAccountSettings = { },
+                        onAccountSettings = { overlay = ParentOverlay.AccountSettings },
+                        childName = state.selectedChild?.name,
+                        childLevel = state.selectedChild?.currentLevel,
+                        childAttendanceRate = state.attendance?.attendanceRate,
+                        childAvgMarks = state.latestMark?.let { mark ->
+                            val score = mark.marks
+                            val max = mark.maxMarks.toDouble()
+                            if (max > 0 && score != null) (score / max * 100).toInt() else null
+                        },
+                        childClassName = state.timetable?.className,
                     )
                 }
             }
@@ -401,7 +429,7 @@ fun ParentPortalShell(
         VBottomNav(
             items = tabs,
             activeIndex = tab,
-            onItemClick = { tab = it },
+            onItemClick = { tab = it; fabExpanded = false },
             modifier = Modifier.fillMaxWidth(),
         )
     }
@@ -410,8 +438,12 @@ fun ParentPortalShell(
 @Composable
 private fun ParentTopBar(
     title: String,
+    showMenuIcon: Boolean,
+    showSearchIcon: Boolean,
+    showBellIcon: Boolean,
     unreadCount: Int,
     onMenuClick: () -> Unit,
+    onBackClick: () -> Unit,
     onSearchClick: () -> Unit,
     onBellClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -425,26 +457,36 @@ private fun ParentTopBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // Menu icon button
-        IconButton44(onClick = onMenuClick) {
-            Icon(Icons.Filled.Menu, contentDescription = "Menu", tint = VColors.OnSurfaceVariant, modifier = Modifier.size(24.dp))
+        // Menu icon (Home) or Back arrow (other tabs)
+        if (showMenuIcon) {
+            IconButton44(onClick = onMenuClick) {
+                Icon(Icons.Filled.Menu, contentDescription = "Menu", tint = VColors.OnSurfaceVariant, modifier = Modifier.size(24.dp))
+            }
+        } else {
+            IconButton44(onClick = onBackClick) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = VColors.OnSurfaceVariant, modifier = Modifier.size(24.dp))
+            }
         }
         // Title
         Text(title, style = VTypography.TopBarTitle.copy(color = VColors.OnSurface), modifier = Modifier.weight(1f))
         // Search icon button
-        IconButton44(onClick = onSearchClick) {
-            Icon(Icons.Filled.Search, contentDescription = "Search", tint = VColors.OnSurfaceVariant, modifier = Modifier.size(24.dp))
+        if (showSearchIcon) {
+            IconButton44(onClick = onSearchClick) {
+                Icon(Icons.Filled.Search, contentDescription = "Search", tint = VColors.OnSurfaceVariant, modifier = Modifier.size(24.dp))
+            }
         }
-        // Notification bell
-        IconButton44(onClick = onBellClick) {
-            Icon(Icons.Filled.Notifications, contentDescription = "Notifications", tint = VColors.OnSurfaceVariant, modifier = Modifier.size(24.dp))
-            if (unreadCount > 0) {
-                Box(
-                    Modifier.align(Alignment.TopEnd).offset(x = 2.dp, y = 2.dp)
-                        .size(10.dp).clip(CircleShape)
-                        .background(VColors.Error)
-                        .border(2.dp, VColors.Surface, CircleShape),
-                )
+        // Notification bell (Home only)
+        if (showBellIcon) {
+            IconButton44(onClick = onBellClick) {
+                Icon(Icons.Filled.Notifications, contentDescription = "Notifications", tint = VColors.OnSurfaceVariant, modifier = Modifier.size(24.dp))
+                if (unreadCount > 0) {
+                    Box(
+                        Modifier.align(Alignment.TopEnd).offset(x = 2.dp, y = 2.dp)
+                            .size(10.dp).clip(CircleShape)
+                            .background(VColors.Error)
+                            .border(2.dp, VColors.Surface, CircleShape),
+                    )
+                }
             }
         }
     }
@@ -529,7 +571,7 @@ private fun androidx.compose.foundation.layout.BoxScope.FabMenu(
             horizontalAlignment = Alignment.End,
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            // Menu items
+            // Menu items — staggered entrance
             AnimatedVisibility(
                 visible = expanded,
                 enter = fadeIn(tween(VMotion.DurMedium2)) + slideInVertically(tween(VMotion.DurMedium2)) { it / 2 },
@@ -539,13 +581,18 @@ private fun androidx.compose.foundation.layout.BoxScope.FabMenu(
                     horizontalAlignment = Alignment.End,
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    FabMenuItem(icon = Icons.Filled.School, label = "AI Tutor", onClick = onAiTutor)
-                    FabMenuItem(icon = Icons.AutoMirrored.Filled.Message, label = "Message Teacher", onClick = onMessageTeacher)
-                    FabMenuItem(icon = Icons.Filled.CalendarToday, label = "Apply Leave", onClick = onApplyLeave)
+                    FabMenuItem(icon = Icons.Filled.School, label = "AI Tutor", onClick = onAiTutor, delayMs = 0)
+                    FabMenuItem(icon = Icons.AutoMirrored.Filled.Message, label = "Message Teacher", onClick = onMessageTeacher, delayMs = 50)
+                    FabMenuItem(icon = Icons.Filled.CalendarToday, label = "Apply Leave", onClick = onApplyLeave, delayMs = 100)
                 }
             }
-            // FAB button
+            // FAB button — icon rotates 135deg when expanded
             val fabInteraction = remember { MutableInteractionSource() }
+            val rotation by animateFloatAsState(
+                targetValue = if (expanded) 135f else 0f,
+                animationSpec = tween(VMotion.DurMedium2, easing = VMotion.EaseEmphasized),
+                label = "fabRotation",
+            )
             Box(
                 modifier = Modifier
                     .size(60.dp)
@@ -557,10 +604,10 @@ private fun androidx.compose.foundation.layout.BoxScope.FabMenu(
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    if (expanded) Icons.Filled.Close else Icons.Filled.Add,
+                    Icons.Filled.Add,
                     contentDescription = "FAB",
                     tint = VColors.OnPrimary,
-                    modifier = Modifier.size(26.dp),
+                    modifier = Modifier.size(26.dp).graphicsLayer { rotationZ = rotation },
                 )
             }
         }
@@ -572,6 +619,7 @@ private fun FabMenuItem(
     icon: ImageVector,
     label: String,
     onClick: () -> Unit,
+    delayMs: Int = 0,
 ) {
     val interaction = remember { MutableInteractionSource() }
     Row(
