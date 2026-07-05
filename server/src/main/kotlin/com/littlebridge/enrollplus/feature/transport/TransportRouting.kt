@@ -46,6 +46,10 @@ import io.ktor.server.routing.*
 import java.time.LocalDate
 import java.util.UUID
 
+// Module-level singleton — consistent DI pattern for server-side services.
+// Created once at class load (not per-request), ensuring shared state (caches,
+// rate limiters) is preserved across requests. This matches the pattern used
+// by LibraryRouting.kt and other server route modules.
 private val transportService = TransportService()
 
 fun Route.transportRouting() {

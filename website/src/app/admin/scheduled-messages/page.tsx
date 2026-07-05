@@ -63,11 +63,10 @@ export default function ScheduledMessagesPage() {
     setLoading(true);
     try {
       const qs = statusFilter ? `?status=${statusFilter}` : "";
-      const res = await authRequest<{ messages: ScheduledMessageDto[] } | { scheduledMessages: ScheduledMessageDto[] } | ScheduledMessageDto[]>(
+      const res = await authRequest<{ messages: ScheduledMessageDto[] }>(
         `/api/v1/school/scheduled-messages${qs}`
       );
-      const raw = res as Record<string, unknown>;
-      setMessages((Array.isArray(raw) ? raw : (raw.messages as ScheduledMessageDto[]) ?? (raw.scheduledMessages as ScheduledMessageDto[])) ?? []);
+      setMessages(res.messages ?? []);
     } catch (e) {
       setError(`Failed to load scheduled messages: ${errorMessage(e)}`);
     } finally {

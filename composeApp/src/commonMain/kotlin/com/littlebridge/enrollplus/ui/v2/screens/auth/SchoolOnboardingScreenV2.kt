@@ -503,6 +503,7 @@ private fun AcademicYearStep() {
     var startTime by remember { mutableStateOf("") }
     var endTime by remember { mutableStateOf("") }
     var periods by remember { mutableStateOf("") }
+    var timeError by remember { mutableStateOf<String?>(null) }
 
     Text(appString(StringKeys.OB_AY_CURRENT), style = VTheme.type.labelStrong.colored(c.ink3))
     Row(horizontalArrangement = Arrangement.spacedBy(d.sm)) {
@@ -520,10 +521,20 @@ private fun AcademicYearStep() {
         VTag(text = "Sun–Thu", active = workingDays == "Sun–Thu", onClick = { workingDays = "Sun–Thu" })
     }
     Row(horizontalArrangement = Arrangement.spacedBy(d.sm)) {
-        VInput(startTime, { startTime = it }, label = appString(StringKeys.OB_AY_START_TIME), placeholder = "08:00 AM", modifier = Modifier.weight(1f))
-        VInput(endTime, { endTime = it }, label = appString(StringKeys.OB_AY_END_TIME), placeholder = "02:00 PM", modifier = Modifier.weight(1f))
+        VInput(startTime, { startTime = it; timeError = if (it.isNotBlank() && !isValidTimeFormat(it)) "Use format like 08:00 AM" else null }, label = appString(StringKeys.OB_AY_START_TIME), placeholder = "08:00 AM", modifier = Modifier.weight(1f))
+        VInput(endTime, { endTime = it; timeError = if (it.isNotBlank() && !isValidTimeFormat(it)) "Use format like 02:00 PM" else null }, label = appString(StringKeys.OB_AY_END_TIME), placeholder = "02:00 PM", modifier = Modifier.weight(1f))
+    }
+    timeError?.let {
+        Text(it, style = VTheme.type.caption.colored(VTheme.colors.dangerInk))
     }
     VInput(periods, { periods = it }, label = appString(StringKeys.OB_AY_PERIODS), placeholder = appString(StringKeys.OB_AY_PERIODS_PH), modifier = Modifier.fillMaxWidth())
+}
+
+private val TIME_FORMAT_REGEX = Regex("^\\d{1,2}:\\d{2}\\s*(AM|PM|am|pm)?$")
+
+private fun isValidTimeFormat(time: String): Boolean {
+    if (time.isBlank()) return true
+    return TIME_FORMAT_REGEX.matches(time.trim())
 }
 
 // ═══ Step 3 — Classes & sections ════════════════════════════════════════════════

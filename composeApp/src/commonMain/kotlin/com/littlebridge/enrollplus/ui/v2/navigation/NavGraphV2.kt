@@ -22,7 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.backhandler.BackHandler
+import com.littlebridge.enrollplus.ui.v2.components.VBackHandler
 import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.feature.admin.presentation.OnboardingGate
@@ -95,9 +95,11 @@ fun NavGraphV2(
     }
 
     // Fetch school branding when authenticated; clear on logout
+    // PRF-004: Guard against auth state flutter — only load if branding is empty.
     LaunchedEffect(isAuthenticated) {
-        if (isAuthenticated) brandingThemeManager.loadBranding()
-        else brandingThemeManager.clear()
+        if (isAuthenticated) {
+            if (schoolBranding == null) brandingThemeManager.loadBranding()
+        } else brandingThemeManager.clear()
     }
 
     // Parse the deep link once when it arrives — but only if we know the user's role.
@@ -116,7 +118,19 @@ fun NavGraphV2(
         val link = rawDeepLink
         if (link != null && entryRole != EntryRole.Unknown) {
             pendingNavigation = try {
-                parseDeepLink(link, entryRole)
+                val target = parseDeepLink(link, entryRole)
+                val targetRole = target.role
+                val roleMatches = when {
+                    entryRole == targetRole -> true
+                    entryRole == EntryRole.SuperAdmin && targetRole == EntryRole.SchoolAdmin -> true
+                    else -> false
+                }
+                if (!roleMatches) {
+                    com.littlebridge.enrollplus.util.AppLogger.e("NavGraphV2", "Deep link role mismatch: user=$entryRole target=$targetRole for path '$link' — ignoring")
+                    null
+                } else {
+                    target
+                }
             } catch (e: Exception) {
                 com.littlebridge.enrollplus.util.AppLogger.e("NavGraphV2", "Failed to parse deep link '$link': ${e.message}", e)
                 null
@@ -544,7 +558,7 @@ private fun UnauthFlow(modifier: Modifier = Modifier) {
     }
 
     // System back: collapse the funnel toward the landing screen (never exit from a leaf).
-    BackHandler(enabled = route != UnauthRoute.Landing) {
+    VBackHandler(enabled = route != UnauthRoute.Landing) {
         route = when (route) {
             UnauthRoute.ParentAuth -> UnauthRoute.Landing
             UnauthRoute.AdminAuth -> UnauthRoute.Landing

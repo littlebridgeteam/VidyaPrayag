@@ -13,6 +13,7 @@ data class HealthResponse(
     val timestamp: String,
     val uptimeSeconds: Long,
     val db: String,
+    val seedWarning: String? = null,
 )
 
 private val startTime = System.currentTimeMillis()
@@ -30,6 +31,7 @@ fun Route.healthCheckRouting() {
                     timestamp = Instant.now().toString(),
                     uptimeSeconds = (System.currentTimeMillis() - startTime) / 1000,
                     db = if (dbStatus) "up" else "down",
+                    seedWarning = DatabaseFactory.seedFailure,
                 )
             )
         }

@@ -14,11 +14,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.backhandler.BackHandler
+import com.littlebridge.enrollplus.ui.v2.components.VBackHandler
 import com.littlebridge.enrollplus.feature.admin.presentation.MessagesViewModel
 import com.littlebridge.enrollplus.feature.alumni.presentation.AlumniViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VBottomNav
-import com.littlebridge.enrollplus.ui.v2.components.VEmptyState
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VNavItem
 import com.littlebridge.enrollplus.ui.v2.components.VScreenScaffold
@@ -238,9 +237,7 @@ fun SchoolPortalV2(
         // §11 cross-platform — Android predictive back / iOS edge-swipe pops
         // the full-screen Notifications/Calendar overlay back to the admin tabs
         // instead of leaving the portal. Mirrors the React `onBack` wiring.
-        BackHandler(enabled = overlay != SchoolOverlay.None) {
-            deepLinkThreadId = null
-            selectedPewsStudentCode = null
+        VBackHandler(enabled = overlay != SchoolOverlay.None) {
             when (overlay) {
                 SchoolOverlay.StudentProfile, SchoolOverlay.TeacherProfile -> {
                     val returnTo = profileReturnOverlay
@@ -250,7 +247,21 @@ fun SchoolPortalV2(
                 SchoolOverlay.ClassDetail -> {
                     overlay = SchoolOverlay.ClassesSubjects
                 }
+                SchoolOverlay.PewsStudentDetail -> {
+                    selectedPewsStudentCode = null
+                    overlay = SchoolOverlay.PewsCohort
+                }
+                SchoolOverlay.AlumniDetail, SchoolOverlay.AlumniCampaign -> {
+                    selectedAlumniId = null
+                    selectedCampaignId = null
+                    overlay = SchoolOverlay.Alumni
+                }
+                SchoolOverlay.CreateEvent -> {
+                    overlay = createEventOrigin
+                }
                 else -> {
+                    deepLinkThreadId = null
+                    selectedPewsStudentCode = null
                     overlay = SchoolOverlay.None
                 }
             }
@@ -270,7 +281,7 @@ fun SchoolPortalV2(
             }
             SchoolOverlay.Calendar -> {
                 // Legacy read-only month grid (kept for back-compat / deep-links).
-                AcademicCalendarScreenV2(onBack = { overlay = SchoolOverlay.None }, modifier = modifier)
+                AcademicCalendarScreenV2(onBack = { overlay = SchoolOverlay.None }, modifier = modifier, viewModelQualifier = org.koin.core.qualifier.named("schoolCalendar"))
                 return
             }
             SchoolOverlay.AcademicCalendarPlatform -> {
@@ -363,7 +374,7 @@ fun SchoolPortalV2(
                 // RA-S17 — reached from the People→Students sub-tab; back pops to
                 // the People tab. `onRemoved` also pops back so the roster refreshes.
                 val id = selectedStudentId
-                if (id == null) { overlay = SchoolOverlay.None; return }
+                if (id == null) { com.littlebridge.enrollplus.util.AppLogger.e("SchoolPortal", "StudentProfile overlay opened with null id"); overlay = SchoolOverlay.None; return }
                 val returnTo = profileReturnOverlay
                 StudentProfileScreenV2(
                     studentId = id,
@@ -395,7 +406,7 @@ fun SchoolPortalV2(
             SchoolOverlay.PewsStudentDetail -> {
                 // PEWS — one student's deterministic signal bundle + AI explanation.
                 val code = selectedPewsStudentCode
-                if (code == null) { overlay = SchoolOverlay.PewsCohort; return }
+                if (code == null) { com.littlebridge.enrollplus.util.AppLogger.e("SchoolPortal", "PewsStudentDetail overlay opened with null code"); overlay = SchoolOverlay.PewsCohort; return }
                 PewsStudentDetailScreenV2(
                     studentCode = code,
                     onBack = { overlay = SchoolOverlay.PewsCohort },
@@ -406,7 +417,7 @@ fun SchoolPortalV2(
             SchoolOverlay.TeacherProfile -> {
                 // RA-45 — single teacher detail (assignments/coverage).
                 val id = selectedTeacherId
-                if (id == null) { overlay = SchoolOverlay.None; return }
+                if (id == null) { com.littlebridge.enrollplus.util.AppLogger.e("SchoolPortal", "TeacherProfile overlay opened with null id"); overlay = SchoolOverlay.None; return }
                 val returnTo = profileReturnOverlay
                 TeacherProfileScreenV2(
                     teacherId = id,
@@ -423,7 +434,7 @@ fun SchoolPortalV2(
                 // RA-TAM — the single reusable Teacher Assignment Management
                 // screen, reached from Teacher Listing and Teacher Profile.
                 val id = selectedTeacherId
-                if (id == null) { overlay = SchoolOverlay.None; return }
+                if (id == null) { com.littlebridge.enrollplus.util.AppLogger.e("SchoolPortal", "TeacherAssignments overlay opened with null id"); overlay = SchoolOverlay.None; return }
                 TeacherAssignmentManagementScreen(
                     teacherId = id,
                     onBack = { overlay = SchoolOverlay.None },
@@ -434,7 +445,7 @@ fun SchoolPortalV2(
             SchoolOverlay.Staff -> {
                 // RA-S17 — single non-teaching-staff record; delete-in-profile.
                 val id = selectedStaffId
-                if (id == null) { overlay = SchoolOverlay.None; return }
+                if (id == null) { com.littlebridge.enrollplus.util.AppLogger.e("SchoolPortal", "Staff overlay opened with null id"); overlay = SchoolOverlay.None; return }
                 StaffProfileScreenV2(
                     staffId = id,
                     onBack = { overlay = SchoolOverlay.None },
@@ -446,7 +457,7 @@ fun SchoolPortalV2(
             SchoolOverlay.HealthRecords -> {
                 val id = healthStudentId
                 val name = healthStudentName ?: "Student"
-                if (id == null) { overlay = SchoolOverlay.None; return }
+                if (id == null) { com.littlebridge.enrollplus.util.AppLogger.e("SchoolPortal", "HealthRecords overlay opened with null id"); overlay = SchoolOverlay.None; return }
                 HealthRecordsScreenV2(
                     studentId = id,
                     studentName = name,
@@ -466,7 +477,7 @@ fun SchoolPortalV2(
             }
             SchoolOverlay.AlumniDetail -> {
                 val id = selectedAlumniId
-                if (id == null) { overlay = SchoolOverlay.None; return }
+                if (id == null) { com.littlebridge.enrollplus.util.AppLogger.e("SchoolPortal", "AlumniDetail overlay opened with null id"); overlay = SchoolOverlay.None; return }
                 AlumniDetailScreen(
                     alumniId = id,
                     onBack = { overlay = SchoolOverlay.Alumni },
@@ -476,7 +487,7 @@ fun SchoolPortalV2(
             }
             SchoolOverlay.AlumniCampaign -> {
                 val id = selectedCampaignId
-                if (id == null) { overlay = SchoolOverlay.None; return }
+                if (id == null) { com.littlebridge.enrollplus.util.AppLogger.e("SchoolPortal", "AlumniCampaign overlay opened with null id"); overlay = SchoolOverlay.None; return }
                 AlumniCampaignScreen(
                     campaignId = id,
                     onBack = { overlay = SchoolOverlay.Alumni },
@@ -582,17 +593,15 @@ fun SchoolPortalV2(
                 return
             }
             SchoolOverlay.Tutor -> {
-                VEmptyState(
-                    title = "Tutor Management",
-                    body = "The tutor management dashboard will be available here.",
+                TutorManagementScreenV2(
+                    onBack = { overlay = SchoolOverlay.None },
                     modifier = modifier,
                 )
                 return
             }
             SchoolOverlay.PaceAlerts -> {
-                VEmptyState(
-                    title = "Pace Alerts",
-                    body = "Pace alerts and snapshots will be available here.",
+                PaceAlertsScreenV2(
+                    onBack = { overlay = SchoolOverlay.None },
                     modifier = modifier,
                 )
                 return

@@ -591,6 +591,10 @@ val viewModelModule = module {
     factory { MessagesViewModel(get(), get(), get()) }
     factory { SchedulePTMViewModel(get(), get()) }
     factory { AcademicCalendarViewModel(get(), get()) }
+    // CYC-006: Named qualifiers for all portal calendar VMs.
+    // School and teacher share the default (school endpoint). Parent uses a separate endpoint.
+    factory(qualifier = org.koin.core.qualifier.named("schoolCalendar")) { AcademicCalendarViewModel(get(), get(), "api/v1/school/calendar") }
+    factory(qualifier = org.koin.core.qualifier.named("teacherCalendar")) { AcademicCalendarViewModel(get(), get(), "api/v1/school/calendar") }
     // Parent-specific calendar VM uses the parent endpoint (school endpoint returns 403)
     factory(qualifier = org.koin.core.qualifier.named("parentCalendar")) { AcademicCalendarViewModel(get(), get(), "api/v1/parent/calendar") }
     // VP-CAL: premium Academic Calendar platform + unified create-event + Academic Year mgmt

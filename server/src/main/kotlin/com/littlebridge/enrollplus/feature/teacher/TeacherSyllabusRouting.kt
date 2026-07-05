@@ -1652,8 +1652,36 @@ private val log = LoggerFactory.getLogger("TeacherSyllabusRouting")
 
 private const val MAX_IMAGE_BYTES = 5 * 1024 * 1024L // 5 MB cap
 
+private val ALLOWED_IMAGE_SCHEMES = setOf("http", "https")
+
+private fun isInternalOrBlockedHost(host: String): Boolean {
+    return try {
+        val addr = java.net.InetAddress.getByName(host)
+        addr.isLoopbackAddress ||
+            addr.isAnyLocalAddress ||
+            addr.isLinkLocalAddress ||
+            addr.isSiteLocalAddress ||
+            addr.isMulticastAddress ||
+            // Cloud metadata endpoints (169.254.169.254 etc.) — isSiteLocal covers 10.x/172.16-31.x/192.168.x
+            // but 169.254.x is link-local (covered by isLinkLocalAddress). Double-check the AWS/GCP metadata IP:
+            host == "169.254.169.254" ||
+            host == "metadata.google.internal"
+    } catch (e: Exception) {
+        true
+    }
+}
+
 private suspend fun fetchImageAsBase64(url: String): String? {
     return try {
+        val parsed = io.ktor.http.URLBuilder(url).build()
+        if (parsed.protocol.name !in ALLOWED_IMAGE_SCHEMES) {
+            log.warn("fetchImageAsBase64: refusing URL {} — unsupported scheme '{}'", url, parsed.protocol.name)
+            return null
+        }
+        if (isInternalOrBlockedHost(parsed.host)) {
+            log.warn("fetchImageAsBase64: refusing URL {} — host '{}' resolves to internal/blocked address", url, parsed.host)
+            return null
+        }
         val resp = imageHttpClient.get(url)
         val contentLength = resp.headers[io.ktor.http.HttpHeaders.ContentLength]?.toLongOrNull()
         if (contentLength != null && contentLength > MAX_IMAGE_BYTES) {

@@ -21,6 +21,13 @@
  *   when set, every request must present a matching token (constant-time
  *   compared) or it is 403'd.
  *
+ * AUTH-014 SECURITY NOTE: OTP_GATEWAY_TOKEN is a machine-to-machine shared
+ * secret. Operators MUST ensure:
+ *   - TLS is enforced end-to-end (the token must never travel over plaintext)
+ *   - Rotate the token periodically (at least every 90 days)
+ *   - Use a high-entropy value (32+ characters)
+ *   - Never commit it to version control
+ *
  * COLLABORATORS (no DI on the server — see Notify.kt / NotificationRouting.kt)
  *   Module-level singletons hold the two repositories. They are stateless
  *   beyond their DB handles.

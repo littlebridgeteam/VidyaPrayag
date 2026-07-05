@@ -9,6 +9,11 @@
  * All endpoints require the authenticated user's role (read from the DB, not
  * the JWT claim) to be "super_admin". Any other role gets 403.
  *
+ * AUTH-012 NOTE: The per-request DB read in requireSuperAdmin() is intentional.
+ * JWT claims can be stale after a role change or token refresh; reading the DB
+ * on every call ensures the role check is always current. The performance cost
+ * is acceptable for admin-only endpoints with low traffic volume.
+ *
  * Endpoints
  * ---------
  *   GET  /api/v1/admin/dev/otp-providers

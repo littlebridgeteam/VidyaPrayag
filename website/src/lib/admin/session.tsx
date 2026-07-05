@@ -8,6 +8,16 @@
  * (server rotates the refresh token on every use, see AuthRouting.kt §refresh).
  *
  * Logout revokes the refresh session server-side and clears local state.
+ *
+ * SEC-010 SECURITY NOTE: Tokens are stored in localStorage (not cookies).
+ * This is vulnerable to XSS exfiltration. Moving to httpOnly + Secure +
+ * SameSite=Strict cookies requires server-side cookie support (tracked as
+ * WEB-012, deferred). Until then, mitigate via:
+ *   - CSP headers (WEB-026) to restrict script sources
+ *   - Input sanitization (SEC-018) to prevent stored XSS
+ *   - Short token lifetimes with refresh rotation
+ * If cookies are introduced in the future, they MUST use:
+ *   httpOnly=true; secure=true; sameSite="strict"; maxAge=<short>
  */
 
 import {

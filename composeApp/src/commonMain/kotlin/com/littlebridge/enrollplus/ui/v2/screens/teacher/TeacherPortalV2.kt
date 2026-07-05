@@ -13,7 +13,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.backhandler.BackHandler
+import com.littlebridge.enrollplus.ui.v2.components.VBackHandler
 import com.littlebridge.enrollplus.core.notification.presentation.NotificationsViewModel
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherObligationsViewModel
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherProfileViewModel
@@ -78,8 +78,8 @@ fun TeacherPortalV2(
     // AI Report Card — review queue parameters (declared before LaunchedEffect
     // so the deep-link handler can write to them).
     var reportClassName by remember { mutableStateOf("") }
-    var reportSection by remember { mutableStateOf("A") }
-    var reportTerm by remember { mutableStateOf("Term 1") }
+    var reportSection by remember { mutableStateOf("") }
+    var reportTerm by remember { mutableStateOf("") }
     var reportDraftId by remember { mutableStateOf("") }
 
     // Apply deep-link routing: set tab from the typed target.
@@ -113,7 +113,7 @@ fun TeacherPortalV2(
                     "quizzes" -> { tab = "update"; overlay = TeacherOverlay.None }
                     // Valid bottom-nav tabs
                     "home", "update", "classes", "timetable", "profile" -> tab = target.screen
-                    else -> tab = "home"
+                    else -> { com.littlebridge.enrollplus.util.AppLogger.e("TeacherPortal", "Unmatched deep-link screen: ${target.screen}"); tab = "home" }
                 }
             }
             is DeepLinkTarget.Messages -> {
@@ -138,7 +138,7 @@ fun TeacherPortalV2(
                     pathOnly.startsWith("lesson-plan") -> { tab = "update"; overlay = TeacherOverlay.None }
                     pathOnly.startsWith("syllabus") -> { tab = "update"; overlay = TeacherOverlay.None }
                     pathOnly.startsWith("quizzes") -> { tab = "update"; overlay = TeacherOverlay.None }
-                    else -> tab = "home"
+                    else -> { com.littlebridge.enrollplus.util.AppLogger.e("TeacherPortal", "Unmatched deep-link path: $pathOnly"); tab = "home" }
                 }
             }
             else -> Unit
@@ -157,16 +157,23 @@ fun TeacherPortalV2(
     val obligations by obligationsViewModel.state.collectAsStateV2()
     val notifications by notificationsViewModel.state.collectAsStateV2()
 
-    BackHandler(enabled = overlay != TeacherOverlay.None) {
-        overlay = TeacherOverlay.None
-        deepLinkThreadId = null
-        selectedRouteId = ""
-        reportClassName = ""
-        reportSection = "A"
-        reportTerm = "Term 1"
+    VBackHandler(enabled = overlay != TeacherOverlay.None) {
+        when (overlay) {
+            TeacherOverlay.ReportDraftEditor -> {
+                overlay = TeacherOverlay.ReportReview
+            }
+            else -> {
+                overlay = TeacherOverlay.None
+                deepLinkThreadId = null
+                selectedRouteId = ""
+                reportClassName = ""
+                reportSection = ""
+                reportTerm = ""
+            }
+        }
     }
     // From a non-home tab, Back returns to HOME (familiar app behaviour).
-    BackHandler(enabled = overlay == TeacherOverlay.None && tab != "home") {
+    VBackHandler(enabled = overlay == TeacherOverlay.None && tab != "home") {
         tab = "home"
     }
 
@@ -188,6 +195,11 @@ fun TeacherPortalV2(
             return
         }
         TeacherOverlay.TransportAttendance -> {
+            if (selectedRouteId.isBlank()) {
+                com.littlebridge.enrollplus.util.AppLogger.e("TeacherPortal", "TransportAttendance overlay opened with blank routeId")
+                overlay = TeacherOverlay.None
+                return
+            }
             TransportAttendanceScreenV2(
                 routeId = selectedRouteId,
                 onBack = { overlay = TeacherOverlay.None; selectedRouteId = "" },
@@ -262,6 +274,7 @@ fun TeacherPortalV2(
             AcademicCalendarScreenV2(
                 onBack = { overlay = TeacherOverlay.None },
                 modifier = modifier,
+                viewModelQualifier = org.koin.core.qualifier.named("teacherCalendar"),
             )
             return
         }

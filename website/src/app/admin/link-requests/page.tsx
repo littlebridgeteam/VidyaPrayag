@@ -46,11 +46,10 @@ export default function LinkRequestsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await authRequest<{ requests: LinkRequestDto[] } | LinkRequestDto[]>(
+      const res = await authRequest<{ requests: LinkRequestDto[] }>(
         `/api/v1/school/link-requests?status=${statusFilter}`
       );
-      const raw = res as Record<string, unknown>;
-      setRequests((Array.isArray(raw) ? raw : (raw.requests as LinkRequestDto[])) ?? []);
+      setRequests(res.requests ?? []);
     } catch (e) {
       setError(`Failed to load link requests: ${errorMessage(e)}`);
     } finally {

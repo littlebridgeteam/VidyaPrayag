@@ -145,8 +145,8 @@ class SyllabusCoverageViewModel(
                 overallTrend       = overall?.get("trend")?.jsonPrimitive?.contentOrNull ?: ""
             )
         } catch (e: Exception) {
-            AppLogger.e("SyllabusCoverageVM", "parseSyllabus failed: ${e.message}")
-            SyllabusCoverageState(errorMessage = "Could not parse server response")
+            AppLogger.e("SyllabusCoverageVM", "parseSyllabus failed: ${e.message}", e)
+            SyllabusCoverageState(errorMessage = "Could not parse server response: ${e.message ?: "unknown error"}")
         }
     }
 

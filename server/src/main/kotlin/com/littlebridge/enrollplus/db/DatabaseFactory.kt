@@ -52,6 +52,8 @@ import java.util.Properties
 object DatabaseFactory {
 
     private val logger = LoggerFactory.getLogger(DatabaseFactory::class.java)
+    @Volatile var seedFailure: String? = null
+        private set
 
     /**
      * Config resolution order for a given key (first non-blank wins):
@@ -508,7 +510,7 @@ object DatabaseFactory {
                     logger.warn("DB_INIT_TIP: Set AUTO_CREATE_TABLES=true on Render to create tables automatically.")
                 } else {
                     logger.error("DB_INIT_ERROR: Demo seeding failed with unexpected error", e)
-                    // Non-fatal: CMS + schema are already in place; don't crash-loop.
+                    seedFailure = "Demo seed failed: ${e.message}"
                 }
             }
         }

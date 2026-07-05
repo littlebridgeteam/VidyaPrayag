@@ -26,6 +26,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -69,6 +70,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VEmptyState
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
+import com.littlebridge.enrollplus.ui.v2.components.VTag
 import com.littlebridge.enrollplus.ui.v2.components.VDatePicker
 import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
@@ -994,11 +996,14 @@ private fun ImportDialog(
                             text = appString(StringKeys.CS_PARSE_FILL),
                             onClick = {
                                 parseError = null
-                                val result = parseTimetableText(pastedText)
-                                if (result.first.isEmpty()) {
+                                val (parsedSlots, parsedName, skippedCount) = parseTimetableText(pastedText)
+                                if (parsedSlots.isEmpty()) {
                                     parseError = parseErrorMsg
                                 } else {
-                                    onParsed(result.first, result.second)
+                                    if (skippedCount > 0) {
+                                        parseError = "$skippedCount line(s) skipped (unrecognized format)"
+                                    }
+                                    onParsed(parsedSlots, parsedName)
                                 }
                             },
                             variant = VButtonVariant.Secondary,
@@ -1039,10 +1044,11 @@ private fun ImportDialog(
 private val TIME_REGEX = Regex("(\\d{1,2}[:.]\\d{2})\\s*[-–to ]+\\s*(\\d{1,2}[:.]\\d{2})")
 private val BREAK_KEYWORDS = setOf("break", "recess", "lunch", "interval", "assembly", "prayer")
 
-private fun parseTimetableText(text: String): Pair<List<SchoolDaySlotDto>, String> {
+private fun parseTimetableText(text: String): Triple<List<SchoolDaySlotDto>, String, Int> {
     val lines = text.lines().map { it.trim() }.filter { it.isNotBlank() }
     val slots = mutableListOf<SchoolDaySlotDto>()
     var name = ""
+    var skipped = 0
 
     for ((idx, line) in lines.withIndex()) {
         val match = TIME_REGEX.find(line)
@@ -1077,6 +1083,8 @@ private fun parseTimetableText(text: String): Pair<List<SchoolDaySlotDto>, Strin
             }
 
             slots.add(SchoolDaySlotDto(idx, slotType, label, startTime, endTime))
+        } else {
+            skipped++
         }
     }
 
@@ -1088,7 +1096,7 @@ private fun parseTimetableText(text: String): Pair<List<SchoolDaySlotDto>, Strin
         }
     }
 
-    return slots to name
+    return Triple(slots, name, skipped)
 }
 
 private fun normalizeTime(time: String): String {
@@ -1829,7 +1837,7 @@ private fun ManualPeriodEditorDialog(
                         readOnly = true,
                         label = { Text(appString(StringKeys.CS_SELECT_TEACHER)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = teacherMenuExpanded) },
-                        modifier = Modifier.fillMaxWidth().menuAnchor(),
+                        modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
                     )
                     ExposedDropdownMenu(
                         expanded = teacherMenuExpanded,
@@ -1874,7 +1882,7 @@ private fun ManualPeriodEditorDialog(
                         readOnly = true,
                         label = { Text(appString(StringKeys.CS_SELECT_SUBJECT)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = subjectMenuExpanded) },
-                        modifier = Modifier.fillMaxWidth().menuAnchor(),
+                        modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
                     )
                     ExposedDropdownMenu(
                         expanded = subjectMenuExpanded,
@@ -2019,7 +2027,7 @@ private fun SlotAssignmentEditorDialog(
                         readOnly = true,
                         label = { Text(appString(StringKeys.CS_SELECT_TEACHER)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = teacherMenuExpanded) },
-                        modifier = Modifier.fillMaxWidth().menuAnchor(),
+                        modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
                     )
                     ExposedDropdownMenu(
                         expanded = teacherMenuExpanded,
@@ -2064,7 +2072,7 @@ private fun SlotAssignmentEditorDialog(
                         readOnly = true,
                         label = { Text(appString(StringKeys.CS_SELECT_SUBJECT)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = subjectMenuExpanded) },
-                        modifier = Modifier.fillMaxWidth().menuAnchor(),
+                        modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
                     )
                     ExposedDropdownMenu(
                         expanded = subjectMenuExpanded,
@@ -2622,7 +2630,12 @@ private fun AddExceptionDialog(
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(appString(StringKeys.CS_ADD_EXCEPTION_TITLE), style = VTheme.type.h3, fontWeight = FontWeight.Bold, color = VTheme.colors.ink)
                 VDatePicker(value = date, onValueChange = { date = it }, label = appString(StringKeys.CS_DATE))
-                VInput(value = kind, onValueChange = { kind = it }, label = appString(StringKeys.CS_KIND), hint = "CANCEL, RESCHEDULE, SUBSTITUTE", placeholder = "CANCEL")
+                Text(appString(StringKeys.CS_KIND), style = VTheme.type.labelStrong.colored(VTheme.colors.ink3))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("CANCEL", "RESCHEDULE", "SUBSTITUTE").forEach { k ->
+                        VTag(text = k, active = kind == k, onClick = { kind = k })
+                    }
+                }
                 VInput(value = note, onValueChange = { note = it }, label = appString(StringKeys.CS_NOTE), hint = "Optional note", placeholder = "Holiday")
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     VButton(text = appString(StringKeys.CS_CANCEL), onClick = onDismiss, variant = VButtonVariant.Ghost)

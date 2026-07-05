@@ -49,7 +49,8 @@ data class AnalyticsDashboardState(
     val cards: List<AnalyticsCardData> = emptyList(),
     val insights: List<InsightItem> = emptyList(),
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val parseWarning: String? = null
 )
 
 // ---------------------------------------------------------------------------
@@ -77,13 +78,23 @@ class AnalyticsDashboardViewModel(
             when (val result = analyticsRepository.getOverview(token)) {
                 is NetworkResult.Success -> {
                     val data = result.data.data
+                    val rawCards = data?.cards ?: emptyList()
+                    val rawInsights = data?.insights ?: emptyList()
+                    val parsedCards = rawCards.mapNotNull { parseCard(it) }
+                    val parsedInsights = rawInsights.mapNotNull { parseInsight(it) }
+                    val cardFailures = rawCards.size - parsedCards.size
+                    val insightFailures = rawInsights.size - parsedInsights.size
+                    val warning = if (cardFailures > 0 || insightFailures > 0) {
+                        "Some data could not be displayed ($cardFailures card(s), $insightFailures insight(s) failed to parse)"
+                    } else null
                     _state.value = _state.value.copy(
                         performanceTrend = data?.performanceTrend?.map { it.toFloat() } ?: emptyList(),
                         trendLabels      = data?.trendLabels ?: emptyList(),
                         currentGrowth    = data?.currentGrowth ?: "0%",
-                        cards            = data?.cards?.mapNotNull { parseCard(it) } ?: emptyList(),
-                        insights         = data?.insights?.mapNotNull { parseInsight(it) } ?: emptyList(),
-                        isLoading        = false
+                        cards            = parsedCards,
+                        insights         = parsedInsights,
+                        isLoading        = false,
+                        parseWarning     = warning
                     )
                 }
                 is NetworkResult.Error -> {

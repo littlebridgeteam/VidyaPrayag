@@ -31,7 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.backhandler.BackHandler
+import com.littlebridge.enrollplus.ui.v2.components.VBackHandler
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
@@ -86,7 +86,7 @@ fun ParentConversationsScreenV2(
     // (compose-new → open conversation) before the portal lets back exit the tab. On the
     // Announcements segment there is nothing to peel, so back falls through to the shell.
     val onMessages = segment == ConversationsSegment.Messages
-    BackHandler(enabled = onMessages && (messageState.composeOpen || messageState.openThreadId != null)) {
+    VBackHandler(enabled = onMessages && (messageState.composeOpen || messageState.openThreadId != null)) {
         when {
             messageState.composeOpen -> messageViewModel.closeCompose()
             messageState.openThreadId != null -> messageViewModel.closeThread()

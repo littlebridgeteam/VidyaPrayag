@@ -400,7 +400,7 @@ private fun InterventionCard(
         val isParentAction = iv.actionType.contains("parent") || iv.actionType.contains("message") || iv.actionType.contains("call") || iv.actionType.contains("visit")
         val hasDraft = !draftBody.isNullOrBlank()
 
-        if (hasDraft && draftBody != null) {
+        if (hasDraft) {
             Spacer(Modifier.height(8.dp))
             Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(c.teal.copy(alpha = 0.1f)).padding(8.dp)) {
                 Column {

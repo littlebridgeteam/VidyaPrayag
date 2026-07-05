@@ -36,3 +36,9 @@ data.db.tmp
 *.tmp
 UI.tmp
 feature_audit.csv
+
+# Firebase config — contains API key, must not be committed (FS-010)
+composeApp/google-services.json
+
+# Review/audit artifacts — moved to docs/archive/ (FS-012)
+newreviewdocs/

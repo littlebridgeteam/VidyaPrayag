@@ -30,7 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.backhandler.BackHandler
+import com.littlebridge.enrollplus.ui.v2.components.VBackHandler
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -226,7 +226,7 @@ fun ParentPortalV2(
 
     // §11 cross-platform — predictive back / edge-swipe dismisses the full-screen overlay back to
     // the tabs, not the portal.
-    BackHandler(enabled = overlay != ParentOverlay.None) {
+    VBackHandler(enabled = overlay != ParentOverlay.None) {
         overlay = ParentOverlay.None
         deepLinkThreadId = null
         deepLinkSegment = null
@@ -309,7 +309,7 @@ fun ParentPortalV2(
         }
         ParentOverlay.Health -> {
             val child = dashboard.selectedChild
-            if (child == null) { overlay = ParentOverlay.None; return }
+            if (child == null) { com.littlebridge.enrollplus.util.AppLogger.e("ParentPortal", "Health overlay opened with null child"); overlay = ParentOverlay.None; return }
             ParentHealthScreenV2(
                 childId = child.id,
                 onBack = { overlay = ParentOverlay.None },
@@ -323,7 +323,7 @@ fun ParentPortalV2(
         }
         ParentOverlay.Transport -> {
             val child = dashboard.selectedChild
-            if (child == null) { overlay = ParentOverlay.None; return }
+            if (child == null) { com.littlebridge.enrollplus.util.AppLogger.e("ParentPortal", "Transport overlay opened with null child"); overlay = ParentOverlay.None; return }
             BusTrackingScreenV2(
                 childId = child.id,
                 onBack = { overlay = ParentOverlay.None },
@@ -347,7 +347,7 @@ fun ParentPortalV2(
         }
         ParentOverlay.DigitalIdCard -> {
             val child = dashboard.selectedChild
-            if (child == null) { overlay = ParentOverlay.None; return }
+            if (child == null) { com.littlebridge.enrollplus.util.AppLogger.e("ParentPortal", "DigitalIdCard overlay opened with null child"); overlay = ParentOverlay.None; return }
             DigitalIdCardScreen(
                 childId = child.id,
                 isTeacher = false,

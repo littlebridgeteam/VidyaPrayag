@@ -307,7 +307,7 @@ private fun AttendanceTab(academics: ParentAcademicsState, onRetry: () -> Unit) 
         onRetry = onRetry,
     ) {
         val hasData = data != null && data.totalDays > 0
-        if (hasData && data != null) {
+        if (hasData) {
             // Summary card — only when there is real marked attendance to summarise.
             // COLOR IS SEMANTIC: the rate bar reads GREEN (a healthy attendance figure), and the
             // present/late/absent breakdown is colour-coded green/amber/red — not flattened to one

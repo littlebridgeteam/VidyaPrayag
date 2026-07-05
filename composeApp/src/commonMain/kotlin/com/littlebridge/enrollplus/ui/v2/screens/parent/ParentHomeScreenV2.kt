@@ -33,7 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.backhandler.BackHandler
+import com.littlebridge.enrollplus.ui.v2.components.VBackHandler
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -210,7 +210,7 @@ private fun ParentDashboardContent(
     val d = VTheme.dimens
 
     var coveredDetailOpen by remember { mutableStateOf(false) }
-    BackHandler(enabled = coveredDetailOpen) { coveredDetailOpen = false }
+    VBackHandler(enabled = coveredDetailOpen) { coveredDetailOpen = false }
 
     Box(
         modifier
