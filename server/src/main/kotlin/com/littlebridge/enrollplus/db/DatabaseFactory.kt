@@ -332,6 +332,24 @@ object DatabaseFactory {
         // Server Logs (Notification Deep-Linking & Backend Log Viewer Plan §3.1)
         // Structured server-side log table for the super-admin Log Viewer.
         ServerLogsTable,
+        // Platform Feature & QA Management (feature-qa-management-platform spec §3)
+        // Applied by docs/db/migration_071_platform_feature_qa.sql (must run before
+        // deploy; AUTO_CREATE_TABLES is OFF in prod). 15 tables: 11 registry + 4 discovery.
+        PlatformFeaturesTable,
+        PlatformFeatureFlowsTable,
+        PlatformScreensTable,
+        PlatformFeatureApisTable,
+        PlatformTestCasesTable,
+        PlatformTestAttachmentsTable,
+        PlatformBugsTable,
+        PlatformBugCommentsTable,
+        PlatformBugActivityTable,
+        PlatformAuditLogTable,
+        PlatformNotificationsTable,
+        PlatformDiscoveredScreensTable,
+        PlatformDiscoveredApisTable,
+        PlatformFeatureFilesTable,
+        PlatformApiHealthChecksTable,
     )
 
     /** True when DATABASE_URL is set → we're talking to Postgres / Supabase. */
