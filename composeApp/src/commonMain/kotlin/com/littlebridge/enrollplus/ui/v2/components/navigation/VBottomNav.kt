@@ -1,6 +1,10 @@
 package com.littlebridge.enrollplus.ui.v2.components.navigation
 
-import androidx.compose.foundation.border
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -8,13 +12,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,21 +29,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.littlebridge.enrollplus.ui.v2.modifiers.pressScale
 import com.littlebridge.enrollplus.ui.v2.tokens.VColors
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.material3.Icon
 import com.littlebridge.enrollplus.ui.v2.tokens.VShapes
 import com.littlebridge.enrollplus.ui.v2.tokens.VTypography
 
-/**
- * Bottom navigation bar — 5 items, icon+label, active pill bg, badge count, 84dp height.
- *
- * HTML: .nav-bar
- *   height: 84px; background: var(--surface-container-lowest);
- *   display: flex; justify-content: space-around;
- *   .nav-item.active { background: var(--primary-container); }
- *   .nav-item:active { transform: scale(0.93); }
- *   .nav-badge { background: var(--error); color: #fff; font-size: 10px; font-weight: 800; }
- */
 @Composable
 fun VBottomNav(
     items: List<NavItem>,
@@ -49,58 +45,57 @@ fun VBottomNav(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(84.dp)
-            .background(VColors.SurfaceContainerLowest)
-            .padding(horizontal = 12.dp),
-        horizontalArrangement = Arrangement.SpaceAround,
+            .background(VColors.SurfaceContainer)
+            .padding(horizontal = 8.dp)
+            .navigationBarsPadding()
+            .height(72.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         items.forEachIndexed { index, item ->
             val isActive = index == activeIndex
             val interaction = remember { MutableInteractionSource() }
-            val bg = if (isActive) VColors.PrimaryContainer else Color.Transparent
-            val iconColor = if (isActive) VColors.Primary else VColors.OnSurfaceVariant
-            val labelColor = if (isActive) VColors.OnPrimaryContainer else VColors.OnSurfaceVariant
-            val labelStyle = if (isActive) VTypography.NavLabelActive else VTypography.NavLabel
 
-            Box(
+            Column(
                 modifier = Modifier
-                    .weight(1f)
                     .clip(VShapes.Lg)
-                    .background(bg)
-                    .pressScale(interaction, pressedScale = 0.93f)
-                    .clickable(interactionSource = interaction, indication = null) { onItemClick(index) }
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                    .clickable(
+                        interactionSource = interaction,
+                        indication = null,
+                    ) { onItemClick(index) }
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                Box(
+                    modifier = Modifier
+                        .clip(VShapes.Full)
+                        .background(if (isActive) VColors.SecondaryContainer else Color.Transparent)
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Box(contentAlignment = Alignment.TopEnd) {
+                    if (item.iconVector != null) {
+                        Icon(
+                            imageVector = item.iconVector,
+                            contentDescription = item.label,
+                            tint = if (isActive) VColors.OnSecondaryContainer else VColors.OnSurfaceVariant,
+                            modifier = Modifier.size(24.dp),
+                        )
+                    } else {
                         item.icon?.invoke()
-                        if (item.badgeCount > 0) {
-                            Box(
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .offset(x = 12.dp, y = (-6).dp)
-                                    .height(18.dp)
-                                    .widthIn(min = 18.dp)
-                                    .clip(CircleShape)
-                                    .background(VColors.Error)
-                                    .border(2.dp, VColors.SurfaceContainerLowest, CircleShape)
-                                    .padding(horizontal = 4.dp),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(
-                                    text = item.badgeCount.toString(),
-                                    style = VTypography.NavBadge.copy(color = Color.White),
-                                )
-                            }
-                        }
                     }
+                }
+
+                AnimatedVisibility(
+                    visible = isActive,
+                    enter = fadeIn() + scaleIn(initialScale = 0.8f),
+                    exit = fadeOut() + scaleOut(targetScale = 0.8f),
+                ) {
                     Text(
                         text = item.label,
-                        style = labelStyle.copy(color = labelColor),
+                        style = VTypography.NavLabelActive.copy(
+                            color = VColors.OnSecondaryContainer,
+                        ),
                     )
                 }
             }
@@ -111,5 +106,6 @@ fun VBottomNav(
 data class NavItem(
     val label: String,
     val badgeCount: Int = 0,
+    val iconVector: ImageVector? = null,
     val icon: (@Composable () -> Unit)? = null,
 )

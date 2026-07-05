@@ -40,7 +40,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.core.notification.presentation.NotificationsViewModel
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentDashboardViewModel
@@ -283,11 +282,11 @@ fun ParentPortalShell(
     // ── Tab content ─────────────────────────────────────────────────────────
     val tabs = remember {
         listOf(
-            NavItem("Home", icon = { TabIcon(Icons.Filled.Home) }),
-            NavItem("Academics", icon = { TabIcon(Icons.Filled.School) }),
-            NavItem("Fees", icon = { TabIcon(Icons.Filled.Payments) }),
-            NavItem("Messages", icon = { TabIcon(Icons.AutoMirrored.Filled.Chat) }),
-            NavItem("Profile", icon = { TabIcon(Icons.Filled.Person) }),
+            NavItem("Home", iconVector = Icons.Filled.Home),
+            NavItem("Academics", iconVector = Icons.Filled.School),
+            NavItem("Fees", iconVector = Icons.Filled.Payments),
+            NavItem("Messages", iconVector = Icons.AutoMirrored.Filled.Chat),
+            NavItem("Profile", iconVector = Icons.Filled.Person),
         )
     }
 
@@ -297,7 +296,6 @@ fun ParentPortalShell(
             childName = state.selectedChild?.name ?: "",
             unreadCount = notifState.unreadCount,
             onBellClick = { overlay = ParentOverlay.Notifications },
-            onMessagesClick = { tab = 3 },
             modifier = Modifier.fillMaxWidth(),
         )
 
@@ -312,6 +310,7 @@ fun ParentPortalShell(
                     0 -> ParentHomeScreen(
                         onOpenOverlay = { overlay = it },
                         onSwitchTab = { tab = it },
+                        onLinkChild = { overlay = ParentOverlay.LinkChild },
                     )
                     1 -> ParentAcademicsScreen(
                         onOpenOverlay = { overlay = it },
@@ -349,7 +348,6 @@ private fun ParentHeader(
     childName: String,
     unreadCount: Int,
     onBellClick: () -> Unit,
-    onMessagesClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -367,27 +365,10 @@ private fun ParentHeader(
             )
             Text(
                 text = childName.ifBlank { "Parent" },
-                style = VTypography.GreetingTitle.copy(color = VColors.OnSurface),
+                style = VTypography.TopBarTitle.copy(color = VColors.OnSurface),
             )
         }
 
-        // Messages icon
-        val msgInteraction = remember { MutableInteractionSource() }
-        Box(
-            Modifier.size(40.dp).clip(CircleShape).background(VColors.SurfaceContainerHigh)
-                .pressScale(msgInteraction, pressedScale = 0.9f)
-                .clickable(interactionSource = msgInteraction, indication = null, onClick = onMessagesClick),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                Icons.AutoMirrored.Filled.Chat,
-                contentDescription = "Messages",
-                tint = VColors.OnSurfaceVariant,
-                modifier = Modifier.size(22.dp),
-            )
-        }
-
-        // Notification bell
         val bellInteraction = remember { MutableInteractionSource() }
         Box(
             Modifier.size(40.dp).clip(CircleShape).background(VColors.SurfaceContainerHigh)
@@ -411,9 +392,4 @@ private fun ParentHeader(
             }
         }
     }
-}
-
-@Composable
-private fun TabIcon(icon: ImageVector) {
-    Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
 }
