@@ -159,7 +159,7 @@ fun ParentProfileScreen(
                     xpText = "${displayLevel * 300} / ${(displayLevel + 1) * 500} XP",
                     xpProgress = (displayLevel * 300f) / ((displayLevel + 1) * 500f),
                     badge = "Level $displayLevel",
-                    onClick = { /* TODO: open player card detail */ },
+                    onClick = {},
                     modifier = Modifier.padding(horizontal = 20.dp),
                 )
             }
@@ -194,7 +194,7 @@ fun ParentProfileScreen(
 
             // ── Badges — horizontal scroll ──
             VStaggeredItem(delayMs = 150) {
-                VSectionHeader("Badges", linkText = "All", onLinkClick = { /* TODO: view all badges */ })
+                VSectionHeader("Badges")
             }
             val badges = listOf(
                 BadgeData("Math Champ", "Score 90%+ in 5 consecutive math tests", Icons.Filled.CheckCircle, earned = true, earnedDate = "Feb 12"),
@@ -258,14 +258,10 @@ fun ParentProfileScreen(
 
 @Composable
 private fun StatCard(stat: StatData, modifier: Modifier = Modifier) {
-    val interaction = remember { MutableInteractionSource() }
     Column(
         modifier
             .clip(VShapes.Xl)
             .background(VColors.SurfaceContainerLowest)
-            .pressScale(interaction, pressedScale = 0.96f)
-            .shapeMorph(interaction, VShapes.XlDp, VShapes.TwoXlDp, VMotion.DurShort2)
-            .clickable(interactionSource = interaction, indication = null) { /* TODO: view stat detail */ }
             .padding(20.dp),
     ) {
         Text(stat.value, style = VTypography.StatValue.copy(color = VColors.OnSurface))
@@ -278,7 +274,6 @@ private fun StatCard(stat: StatData, modifier: Modifier = Modifier) {
 
 @Composable
 private fun BadgeCard(badge: BadgeData) {
-    val interaction = remember { MutableInteractionSource() }
     val bg = if (badge.earned) VColors.SurfaceContainerLowest else VColors.SurfaceContainerLow
     val iconRingBg = if (badge.earned) {
         Brush.linearGradient(listOf(VColors.Primary, VColors.Tertiary, VColors.Primary))
@@ -292,10 +287,7 @@ private fun BadgeCard(badge: BadgeData) {
         Modifier
             .width(168.dp)
             .clip(VShapes.Xl)
-            .background(bg)
-            .pressScale(interaction, pressedScale = 0.96f)
-            .shapeMorph(interaction, VShapes.XlDp, VShapes.TwoXlDp, VMotion.DurShort2)
-            .clickable(interactionSource = interaction, indication = null) { /* TODO: view badge detail */ },
+            .background(bg),
     ) {
         // Badge top — gradient bg for earned
         Box(

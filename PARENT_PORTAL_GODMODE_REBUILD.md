@@ -34,11 +34,25 @@
 #   ✗ Drop shadows on every card (that's Material 2, we're past that)
 #   ✗ Animations on every element (that's distracting, not delightful)
 #   ✗ "Beautiful" empty states with illustrations nobody looks at
+#   ✗ HARDCODED FAKE DATA — dummy lists, placeholder strings, mock models
+#     stuffed inline. That's a prototype, not a product. Every single piece
+#     of data flows from a ViewModel → API → backend. No exceptions.
+#   ✗ AI SLOP — generic-looking cards with no personality, copy-pasted
+#     layouts, same spacing everywhere, no thought put into information
+#     hierarchy. If it looks like ChatGPT generated it in 10 seconds,
+#     it IS slop. Burn it down and rebuild with intention.
 #
 # Premium IS:
+#   ✓ PREMIUM GREY BASE — the app's surface is a sophisticated grey, not
+#     white, not off-white. VColors.Surface is the base. Cards use
+#     SurfaceContainerLowest (lighter than surface) to lift above the base.
+#     This creates a premium, muted, confident feel — like a high-end
+#     dashboard, not a cheap white-page app. Grey is the foundation.
+#     Accent colors (Primary, Tertiary, WarmOrange) pop against it.
 #   ✓ TONAL SURFACES — M3 surface container elevation creates depth
 #     without shadows. SurfaceContainerLowest > SurfaceContainerLow >
 #     SurfaceContainer > SurfaceContainerHigh. Use this hierarchy.
+#     The grey base makes this hierarchy VISIBLE and BEAUTIFUL.
 #   ✓ PURPOSEFUL COLOR — VColors.Primary for ONE primary action per screen.
 #     VColors.Tertiary for secondary. VColors.WarmOrange for warnings.
 #     Don't rainbow-blast. One accent per screen section.
@@ -113,8 +127,16 @@
 #   │     fillMaxHeight with nested scroll. NEVER assume the screen is      │
 #   │     tall enough. God sees every screen size — so should you.          │
 #   │                                                                       │
+#   │ 12. IS THERE LITERALLY ZERO HARDCODED DATA ON THIS SCREEN?            │
+#   │     No inline lists. No fake badges. No mock payment history.         │
+#   │     No placeholder quiz data. Every single piece of data comes        │
+#   │     from a ViewModel → Repository → API → Server → Database.          │
+#   │     If you wrote `listOf(BadgeData("Math Champ", ...))` inline,       │
+#   │     that's hardcoded. Move it to the backend. Wire the API.           │
+#   │     If the endpoint doesn't exist, BUILD IT. You are God.             │
+#   │                                                                       │
 #   │ If ANY answer is "no" or "maybe," DO NOT move to the next screen.     │
-#   │ Fix it. Recompile. Re-review. Only proceed when ALL 11 answers are    │
+#   │ Fix it. Recompile. Re-review. Only proceed when ALL 12 answers are    │
 #   │ a confident "YES."                                                    │
 #   └───────────────────────────────────────────────────────────────────────┘
 #
@@ -235,6 +257,35 @@
 # 18. ALWAYS test layout mentally on smallest common device: 360x640dp.
 #     If a button is at y=620dp and bottom nav starts at y=640dp, it's INVISIBLE.
 #     The 140dp bottom padding exists for this reason — USE IT.
+# 19. ZERO HARDCODED DATA — literally ZERO. No inline lists of fake schools,
+#     no hardcoded badge names, no mock quiz data, no placeholder payment
+#     history. EVERY piece of data comes from a ViewModel backed by a real
+#     API endpoint. If the API doesn't exist yet, create the endpoint in the
+#     server module AND wire the ViewModel to call it. Do NOT stuff fake data
+#     in the UI layer as a "temporary" workaround — it never gets removed.
+# 20. ALL FEATURES CONNECTED TO BACKEND — every screen, every button, every
+#     form submission hits a real API endpoint. No "TODO: wire to API"
+#     comments left behind. If the endpoint doesn't exist, build it in the
+#     server module (Ktor routes under server/src/main/). The flow is:
+#     UI → ViewModel → Repository → API → Server → Database.
+#     If any link in that chain is missing, you build it. You are God.
+# 21. FULL RESTRUCTURE ALLOWED — the current screen implementations are
+#     broken. They were translated from HTML and look like it. You have
+#     FULL PERMISSION to delete and rewrite any screen from scratch.
+#     Do not patch around bad architecture. Tear it down. Build it right.
+#     The old code is NOT a constraint — it's a warning of what NOT to do.
+# 22. PREMIUM GREY AS BASE — VColors.Surface is the foundation. NOT white.
+#     NOT Color.White. The app uses a sophisticated grey surface palette.
+#     Cards lift above it with SurfaceContainerLowest. Sections separate
+#     with SurfaceContainerLow. This is the premium look — muted, confident,
+#     expensive. White-on-white is cheap. Grey-with-depth is premium.
+# 23. NO AI SLOP — if you write a composable and it looks like every other
+#     generic Compose tutorial, delete it and rethink. Every screen should
+#     have a distinct visual identity. Information hierarchy should be
+#     OBVIOUS — the parent's eye should flow from hero → section → card →
+#     action without thinking. If the layout is a flat list of identical
+#     cards, that's slop. Vary card sizes, use hero cards, use accent colors
+#     strategically. Make it look DESIGNED, not GENERATED.
 #
 # ═══════════════════════════════════════════════════════════════════════════
 # GAP ANALYSIS — WHAT'S BROKEN, MISSING, OR LOW QUALITY
@@ -789,13 +840,17 @@ After each iteration, verify:
 - [ ] NO content overflow or clipping — all buttons/options visible on 360x640dp
 - [ ] NO fixed heights on growing content — use weight + scroll
 - [ ] 140dp bottom padding on all scrollable screens (buttons not hidden behind nav)
+- [ ] ZERO hardcoded data — all data from ViewModel → API → backend
+- [ ] All features wired to real API endpoints (no TODO: wire to API)
+- [ ] Premium grey base (VColors.Surface) — no white-on-white
+- [ ] No AI slop — distinct visual identity, clear info hierarchy
 
 ---
 
 ## SECTION 8: THE FINAL QUESTION
 
 Before marking ANY iteration complete, after all checks pass,
-after the self-review ritual's 11 questions are all "YES," ask yourself
+after the self-review ritual's 12 questions are all "YES," ask yourself
 ONE more question — the only question that ultimately matters:
 
     ┌─────────────────────────────────────────────────────────────────────┐

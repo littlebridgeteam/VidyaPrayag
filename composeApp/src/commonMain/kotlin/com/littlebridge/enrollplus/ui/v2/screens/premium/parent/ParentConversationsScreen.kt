@@ -17,6 +17,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -33,16 +34,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.feature.parent.presentation.ParentAnnouncementViewModel
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentMessageViewModel
 import com.littlebridge.enrollplus.ui.v2.components.cards.VUpdateCard
-import com.littlebridge.enrollplus.ui.v2.components.cards.UpdateAction
 import com.littlebridge.enrollplus.ui.v2.components.carousel.VStaggeredItem
 import com.littlebridge.enrollplus.ui.v2.components.misc.VPullRefreshPremium
 import com.littlebridge.enrollplus.ui.v2.components.navigation.VFilterChip
 import com.littlebridge.enrollplus.ui.v2.components.typography.VSectionHeader
+import com.littlebridge.enrollplus.ui.v2.modifiers.pressScale
+import com.littlebridge.enrollplus.ui.v2.modifiers.shapeMorph
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.tokens.PremiumTheme
 import com.littlebridge.enrollplus.ui.v2.tokens.VColors
+import com.littlebridge.enrollplus.ui.v2.tokens.VMotion
 import com.littlebridge.enrollplus.ui.v2.tokens.VShapes
 import com.littlebridge.enrollplus.ui.v2.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
@@ -55,9 +59,11 @@ import org.koin.compose.viewmodel.koinViewModel
 fun ParentConversationsScreen(
     modifier: Modifier = Modifier,
     viewModel: ParentMessageViewModel = koinViewModel(),
+    announcementViewModel: ParentAnnouncementViewModel = koinViewModel(),
     onOpenThread: (String) -> Unit = {},
 ) = PremiumTheme(isDark = false) {
     val state by viewModel.state.collectAsStateV2()
+    val annState by announcementViewModel.state.collectAsStateV2()
     var segment by remember { mutableStateOf(0) }
 
     VPullRefreshPremium(
@@ -142,31 +148,59 @@ fun ParentConversationsScreen(
                     VStaggeredItem(delayMs = 60) {
                         VSectionHeader("School Announcements")
                     }
-                    VStaggeredItem(delayMs = 100) {
-                        Column(Modifier.padding(horizontal = 20.dp)) {
-                            VUpdateCard(
-                                source = "Principal",
-                                timestamp = "2h ago",
-                                title = "Annual Sports Day",
-                                text = "Sports Day will be held on January 20th. All parents are invited to attend.",
-                                avatarIcon = { Icon(Icons.Filled.Info, contentDescription = null, tint = VColors.Primary, modifier = Modifier.size(20.dp)) },
-                                actions = listOf(
-                                    UpdateAction("Read more", isPrimary = true, onClick = { /* TODO: open announcement detail */ }),
-                                ),
-                                onClick = { /* TODO: open announcement detail */ },
+                    if (annState.isLoading) {
+                        VStaggeredItem(delayMs = 100) {
+                            SkeletonCard(variant = "list", modifier = Modifier.padding(horizontal = 20.dp))
+                        }
+                        VStaggeredItem(delayMs = 160) {
+                            SkeletonCard(variant = "list", modifier = Modifier.padding(horizontal = 20.dp))
+                        }
+                    } else if (annState.error != null) {
+                        VStaggeredItem(delayMs = 100) {
+                            ErrorStateCard(
+                                message = annState.error ?: "Unknown error",
+                                onRetry = null,
+                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 24.dp),
                             )
-                            Spacer(Modifier.height(10.dp))
-                            VUpdateCard(
-                                source = "School Office",
-                                timestamp = "1d ago",
-                                title = "Parent-Teacher Meeting",
-                                text = "PTM scheduled for January 15th, 10:00 AM to 1:00 PM. Please confirm your attendance.",
-                                avatarIcon = { Icon(Icons.Filled.Info, contentDescription = null, tint = VColors.Tertiary, modifier = Modifier.size(20.dp)) },
-                                actions = listOf(
-                                    UpdateAction("Confirm", isPrimary = true, onClick = { /* TODO: confirm PTM attendance */ }),
-                                ),
-                                onClick = { /* TODO: open announcement detail */ },
+                        }
+                    } else if (annState.announcements.isEmpty()) {
+                        VStaggeredItem(delayMs = 100) {
+                            EmptyStateCard(
+                                title = "No Announcements",
+                                body = "School announcements will appear here.",
+                                icon = Icons.AutoMirrored.Filled.MenuBook,
+                                modifier = Modifier.padding(vertical = 24.dp),
                             )
+                        }
+                    } else {
+                        VStaggeredItem(delayMs = 100) {
+                            Column(Modifier.padding(horizontal = 20.dp)) {
+                                annState.announcements.forEach { ann ->
+                                    val typeColor = when (ann.category) {
+                                        "Holidays" -> VColors.WarmOrange
+                                        "PTM" -> VColors.Tertiary
+                                        "Events" -> VColors.Primary
+                                        else -> VColors.Primary
+                                    }
+                                    VUpdateCard(
+                                        source = ann.category,
+                                        timestamp = ann.date,
+                                        title = ann.title,
+                                        text = ann.description,
+                                        avatarIcon = {
+                                            Icon(
+                                                Icons.Filled.Info,
+                                                contentDescription = null,
+                                                tint = typeColor,
+                                                modifier = Modifier.size(20.dp),
+                                            )
+                                        },
+                                        actions = emptyList(),
+                                        onClick = {},
+                                    )
+                                    Spacer(Modifier.height(10.dp))
+                                }
+                            }
                         }
                     }
                 }
@@ -203,7 +237,10 @@ private fun ThreadRow(
     Row(
         Modifier
             .fillMaxWidth()
+            .clip(VShapes.Xl)
             .background(VColors.Surface)
+            .pressScale(interaction, pressedScale = 0.98f)
+            .shapeMorph(interaction, VShapes.XlDp, VShapes.TwoXlDp, VMotion.DurShort2)
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
             .padding(horizontal = 20.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,

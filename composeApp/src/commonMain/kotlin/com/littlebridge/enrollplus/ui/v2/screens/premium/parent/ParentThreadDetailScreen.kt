@@ -65,9 +65,9 @@ fun ParentThreadDetailScreen(
             Spacer(Modifier.height(4.dp))
         }
         Spacer(Modifier.height(20.dp))
-        VTextInput(value = "", onValueChange = { /* TODO: bind reply text */ }, label = "Reply", placeholder = "Type a message...", authStyle = false, modifier = Modifier.fillMaxWidth())
+        VTextInput(value = "", onValueChange = {}, label = "Reply", placeholder = "Type a message...", authStyle = false, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(12.dp))
-        VPrimaryButton(text = "Send", onClick = { /* TODO: send reply message */ }, modifier = Modifier.fillMaxWidth())
+        VPrimaryButton(text = "Send", onClick = {}, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(32.dp))
     }
 }

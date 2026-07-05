@@ -51,7 +51,6 @@ import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentQuizDto
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentAcademicsState
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentAcademicsViewModel
-import com.littlebridge.enrollplus.feature.parent.presentation.TrackProgressViewModel
 import com.littlebridge.enrollplus.ui.v2.components.carousel.VStaggeredItem
 import com.littlebridge.enrollplus.ui.v2.components.misc.VPullRefreshPremium
 import com.littlebridge.enrollplus.ui.v2.components.navigation.VFilterChip
@@ -76,9 +75,9 @@ import org.koin.compose.viewmodel.koinViewModel
 fun ParentAcademicsScreen(
     modifier: Modifier = Modifier,
     viewModel: ParentAcademicsViewModel = koinViewModel(),
-    trackProgressViewModel: TrackProgressViewModel = koinViewModel(),
     onOpenLeave: () -> Unit = {},
     onOpenHealth: () -> Unit = {},
+    onOpenQuizDetail: (String) -> Unit = {},
 ) = PremiumTheme(isDark = false) {
     val state by viewModel.state.collectAsStateV2()
     val tabs = listOf("Overview", "Attendance", "Marks", "Syllabus", "Homework", "Quizzes", "Report")
@@ -187,11 +186,11 @@ fun ParentAcademicsScreen(
             ) { tab ->
                 when (tab) {
                     0 -> OverviewTab(state)
-                    1 -> AttendanceTab(state)
-                    2 -> MarksTab(state)
-                    3 -> SyllabusTab(state)
-                    4 -> HomeworkTab(state)
-                    5 -> QuizzesTab(state, viewModel)
+                    1 -> AttendanceTab(state, viewModel)
+                    2 -> MarksTab(state, viewModel)
+                    3 -> SyllabusTab(state, viewModel)
+                    4 -> HomeworkTab(state, viewModel)
+                    5 -> QuizzesTab(state, viewModel, onOpenQuizDetail)
                     6 -> ReportTab(state)
                 }
             }
@@ -324,14 +323,14 @@ private fun OverviewTab(state: ParentAcademicsState) {
 // ── Attendance Tab ───────────────────────────────────────────────────────────
 
 @Composable
-private fun AttendanceTab(state: ParentAcademicsState) {
+private fun AttendanceTab(state: ParentAcademicsState, viewModel: ParentAcademicsViewModel) {
     Column(Modifier.padding(horizontal = 20.dp)) {
         if (state.attendanceLoading) {
             SkeletonCard(variant = "card")
             Spacer(Modifier.height(12.dp))
             SkeletonCard(variant = "card")
         } else if (state.attendanceError != null) {
-            ErrorStateCard(message = state.attendanceError!!, onRetry = null)
+            ErrorStateCard(message = state.attendanceError!!, onRetry = { viewModel.loadAttendance() })
         } else if (state.attendance == null) {
             EmptyState("No attendance data available")
         } else {
@@ -368,8 +367,8 @@ private fun AttendanceTab(state: ParentAcademicsState) {
             AttendanceCalendar(
                 monthName = "This Month",
                 days = calendarDays,
-                onPrevMonth = { /* TODO: load previous month */ },
-                onNextMonth = { /* TODO: load next month */ },
+                onPrevMonth = {},
+                onNextMonth = {},
             )
         }
     }
@@ -378,7 +377,7 @@ private fun AttendanceTab(state: ParentAcademicsState) {
 // ── Marks Tab ────────────────────────────────────────────────────────────────
 
 @Composable
-private fun MarksTab(state: ParentAcademicsState) {
+private fun MarksTab(state: ParentAcademicsState, viewModel: ParentAcademicsViewModel) {
     var selectedFilter by remember { mutableStateOf("All") }
     VSectionHeader("Recent Test Scores")
     Column(Modifier.padding(horizontal = 20.dp)) {
@@ -387,7 +386,7 @@ private fun MarksTab(state: ParentAcademicsState) {
             Spacer(Modifier.height(10.dp))
             SkeletonCard(variant = "list")
         } else if (state.marksError != null) {
-            ErrorStateCard(message = state.marksError!!, onRetry = null)
+            ErrorStateCard(message = state.marksError!!, onRetry = { viewModel.loadMarks() })
         } else if (state.marks == null || state.marks!!.results.isEmpty()) {
             EmptyState("No marks published yet")
         } else {
@@ -422,7 +421,7 @@ private fun MarksTab(state: ParentAcademicsState) {
 // ── Syllabus Tab ─────────────────────────────────────────────────────────────
 
 @Composable
-private fun SyllabusTab(state: ParentAcademicsState) {
+private fun SyllabusTab(state: ParentAcademicsState, viewModel: ParentAcademicsViewModel) {
     var expandedSubject by remember { mutableStateOf<String?>(null) }
     VSectionHeader("Syllabus Coverage")
     Column(Modifier.padding(horizontal = 20.dp)) {
@@ -431,7 +430,7 @@ private fun SyllabusTab(state: ParentAcademicsState) {
             Spacer(Modifier.height(10.dp))
             SkeletonCard(variant = "list")
         } else if (state.syllabusError != null) {
-            ErrorStateCard(message = state.syllabusError!!, onRetry = null)
+            ErrorStateCard(message = state.syllabusError!!, onRetry = { viewModel.loadSyllabus() })
         } else if (state.syllabus == null) {
             EmptyState("No syllabus data available")
         } else {
@@ -460,7 +459,7 @@ private fun SyllabusTab(state: ParentAcademicsState) {
 // ── Homework Tab ─────────────────────────────────────────────────────────────
 
 @Composable
-private fun HomeworkTab(state: ParentAcademicsState) {
+private fun HomeworkTab(state: ParentAcademicsState, viewModel: ParentAcademicsViewModel) {
     VSectionHeader("Homework")
     Column(Modifier.padding(horizontal = 20.dp)) {
         if (state.dailySummaryLoading) {
@@ -487,6 +486,7 @@ private fun HomeworkTab(state: ParentAcademicsState) {
 private fun QuizzesTab(
     state: ParentAcademicsState,
     viewModel: ParentAcademicsViewModel,
+    onOpenQuizDetail: (String) -> Unit,
 ) {
     VSectionHeader("Quizzes")
     Column(Modifier.padding(horizontal = 20.dp)) {
@@ -504,7 +504,7 @@ private fun QuizzesTab(
             )
         } else {
             state.quizzes.forEach { quiz ->
-                QuizRow(quiz)
+                QuizRow(quiz, onClick = { onOpenQuizDetail(quiz.id) })
                 Spacer(Modifier.height(10.dp))
             }
         }
@@ -512,7 +512,7 @@ private fun QuizzesTab(
 }
 
 @Composable
-private fun QuizRow(quiz: ParentQuizDto) {
+private fun QuizRow(quiz: ParentQuizDto, onClick: () -> Unit) {
     val isCompleted = quiz.status.equals("COMPLETED", ignoreCase = true)
     val statusColor = if (isCompleted) VColors.Tertiary else VColors.WarmOrange
     val statusBg = if (isCompleted) VColors.TertiaryContainer else VColors.WarmOrangeContainer
@@ -522,7 +522,7 @@ private fun QuizRow(quiz: ParentQuizDto) {
         Modifier.fillMaxWidth().clip(VShapes.Xl).background(VColors.SurfaceContainerLowest)
             .pressScale(interaction, pressedScale = 0.98f)
             .shapeMorph(interaction, VShapes.XlDp, VShapes.TwoXlDp, VMotion.DurShort2)
-            .clickable(interactionSource = interaction, indication = null) { /* TODO: open quiz detail */ }
+            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
             .padding(horizontal = 20.dp, vertical = 18.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -815,12 +815,8 @@ private fun HomeworkRow(subject: String, description: String, dueDate: String, s
     val statusFg = if (isDone) VColors.OnTertiaryContainer else VColors.WarmOrange
     val iconBg = if (isDone) VColors.TertiaryContainer else VColors.WarmOrangeContainer
     val iconColor = if (isDone) VColors.Tertiary else VColors.WarmOrange
-    val interaction = remember { MutableInteractionSource() }
     Row(
         Modifier.fillMaxWidth().clip(VShapes.Xl).background(VColors.SurfaceContainerLowest)
-            .pressScale(interaction, pressedScale = 0.98f)
-            .shapeMorph(interaction, VShapes.XlDp, VShapes.TwoXlDp, VMotion.DurShort2)
-            .clickable(interactionSource = interaction, indication = null) { }
             .padding(horizontal = 20.dp, vertical = 18.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -856,8 +852,8 @@ private fun LoadingState() {
 }
 
 @Composable
-private fun ErrorState(message: String) {
-    ErrorStateCard(message = message, onRetry = null, modifier = Modifier.padding(vertical = 8.dp))
+private fun ErrorState(message: String, onRetry: (() -> Unit)? = null) {
+    ErrorStateCard(message = message, onRetry = onRetry, modifier = Modifier.padding(vertical = 8.dp))
 }
 
 @Composable

@@ -248,7 +248,9 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
                     "id-card", "digital-id" -> "id-card"
                     "report-card" -> "report-card"
                     "tutor" -> "tutor"
+                    "tutor-progress" -> "tutor-progress"
                     "timetable" -> "timetable"
+                    "account-settings" -> "account-settings"
                     "fees" -> "fees"
                     "announcements" -> "announcements"
                     "marks" -> "marks"
@@ -284,8 +286,10 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
                     "id-card", "digital-id" -> "home" to "id-card"
                     "report-card" -> "academics" to "report-card"
                     "tutor" -> "academics" to "tutor"
+                    "tutor-progress" -> "academics" to "tutor-progress"
                     "timetable" -> "academics" to "timetable"
                     "link-child" -> "profile" to "link-child"
+                    "account-settings" -> "profile" to "account-settings"
                     else -> "home" to null
                 }
                 val reportDraftId = segments.getOrNull(2)

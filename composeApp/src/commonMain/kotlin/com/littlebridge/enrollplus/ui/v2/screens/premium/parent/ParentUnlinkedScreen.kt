@@ -34,6 +34,7 @@ import com.littlebridge.enrollplus.ui.v2.tokens.VTypography
 @Composable
 fun ParentUnlinkedScreen(
     onLinked: () -> Unit,
+    onDiscover: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) = PremiumTheme(isDark = false) {
     Column(
@@ -58,7 +59,7 @@ fun ParentUnlinkedScreen(
         Spacer(Modifier.height(32.dp))
         VPrimaryButton(text = "Link Your Child", onClick = onLinked, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(12.dp))
-        VSecondaryButton(text = "Explore Schools", onClick = { /* TODO: open school discovery */ }, modifier = Modifier.fillMaxWidth())
+        VSecondaryButton(text = "Explore Schools", onClick = onDiscover, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(32.dp))
     }
 }

@@ -83,6 +83,7 @@ private enum class ParentOverlay {
     None, Notifications, Calendar, Scholarships, Leave, Messages,
     LinkChild, Discovery, SchoolDetail, Health, Pulse, Transport, TutorChat,
     TutorProgress, DigitalIdCard, Library, EventRegistration, AccountSettings,
+    QuizDetail,
 }
 
 /**
@@ -108,6 +109,7 @@ fun ParentPortalShell(
     var localDeepLink by remember { mutableStateOf<DeepLinkTarget?>(null) }
     var deepLinkThreadId by remember { mutableStateOf<String?>(null) }
     var selectedSchoolId by remember { mutableStateOf<String?>(null) }
+    var selectedQuizId by remember { mutableStateOf("") }
 
     val state by dashboardViewModel.state.collectAsStateV2()
     val notifState by notificationsViewModel.state.collectAsStateV2()
@@ -181,6 +183,7 @@ fun ParentPortalShell(
     if (hasResolved && state.children.isEmpty()) {
         ParentUnlinkedScreen(
             onLinked = { dashboardViewModel.load() },
+            onDiscover = { overlay = ParentOverlay.Discovery },
             modifier = modifier,
         )
         return@PremiumTheme
@@ -311,6 +314,7 @@ fun ParentPortalShell(
             if (child == null) { overlay = ParentOverlay.None } else {
                 ParentDigitalIdCardScreen(
                     childId = child.id,
+                    childName = child.name,
                     onBack = { overlay = ParentOverlay.None },
                     modifier = modifier,
                 )
@@ -335,6 +339,14 @@ fun ParentPortalShell(
             ParentAccountSettingsScreen(
                 onBack = { overlay = ParentOverlay.None },
                 modifier = modifier,
+            )
+            return@PremiumTheme
+        }
+        ParentOverlay.QuizDetail -> {
+            ParentQuizDetailScreen(
+                onBack = { overlay = ParentOverlay.None },
+                modifier = modifier,
+                quizId = selectedQuizId,
             )
             return@PremiumTheme
         }
@@ -368,9 +380,9 @@ fun ParentPortalShell(
             showSearchIcon = true,
             showBellIcon = tab == 0,
             unreadCount = notifState.unreadCount,
-            onMenuClick = { /* TODO: open drawer / settings menu */ },
+            onMenuClick = { overlay = ParentOverlay.AccountSettings },
             onBackClick = { if (tab != 0) tab = 0 },
-            onSearchClick = { /* TODO: open search overlay */ },
+            onSearchClick = {},
             onBellClick = { overlay = ParentOverlay.Notifications },
         )
 
@@ -409,11 +421,16 @@ fun ParentPortalShell(
                         onOpenScholarships = { overlay = ParentOverlay.Scholarships },
                         onOpenDigitalId = { overlay = ParentOverlay.DigitalIdCard },
                         onOpenEvents = { overlay = ParentOverlay.EventRegistration },
+                        onLinkChild = { overlay = ParentOverlay.LinkChild },
                         onSwitchTab = { tab = it },
                     )
                     1 -> ParentAcademicsScreen(
                         onOpenLeave = { overlay = ParentOverlay.Leave },
                         onOpenHealth = { overlay = ParentOverlay.Health },
+                        onOpenQuizDetail = { quizId ->
+                            selectedQuizId = quizId
+                            overlay = ParentOverlay.QuizDetail
+                        },
                     )
                     2 -> ParentFeesScreen()
                     3 -> ParentConversationsScreen(

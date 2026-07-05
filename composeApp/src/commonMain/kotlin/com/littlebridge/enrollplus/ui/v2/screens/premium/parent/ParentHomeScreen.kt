@@ -1,5 +1,8 @@
 package com.littlebridge.enrollplus.ui.v2.screens.premium.parent
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -30,6 +33,9 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Quiz
 import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -42,14 +48,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.parent.presentation.LivePeriod
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentDashboardViewModel
 import com.littlebridge.enrollplus.ui.v2.components.cards.HeroStat
-import com.littlebridge.enrollplus.ui.v2.components.cards.VHeroCard
 import com.littlebridge.enrollplus.ui.v2.components.cards.VUpdateCard
 import com.littlebridge.enrollplus.ui.v2.components.cards.UpdateAction
 import com.littlebridge.enrollplus.ui.v2.components.carousel.VStaggeredItem
@@ -68,6 +76,7 @@ import com.littlebridge.enrollplus.ui.v2.tokens.VMotion
 import com.littlebridge.enrollplus.ui.v2.tokens.VShapes
 import com.littlebridge.enrollplus.ui.v2.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.tokens.rememberLiveBlink
+import com.littlebridge.enrollplus.ui.v2.tokens.rememberLivePulse
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -89,6 +98,7 @@ fun ParentHomeScreen(
     onOpenScholarships: () -> Unit = {},
     onOpenDigitalId: () -> Unit = {},
     onOpenEvents: () -> Unit = {},
+    onLinkChild: () -> Unit = {},
     onSwitchTab: (Int) -> Unit = {},
 ) = PremiumTheme(isDark = false) {
     val state by viewModel.state.collectAsStateV2()
@@ -142,7 +152,7 @@ fun ParentHomeScreen(
                     body = "Link your child to start tracking their academic progress, attendance, and more.",
                     icon = Icons.Filled.School,
                     actionText = "Link a Child",
-                    onAction = { /* TODO: navigate to LinkChild overlay */ },
+                    onAction = onLinkChild,
                     modifier = Modifier.padding(vertical = 48.dp),
                 )
                 return@Column
@@ -182,10 +192,12 @@ fun ParentHomeScreen(
             // ── Hero Card ──
             VStaggeredItem(delayMs = 30) {
                 if (child != null) {
-                    VHeroCard(
+                    ParentHeroCard(
                         studentInitials = childInitial,
                         studentName = child.name,
                         studentClass = state.timetable?.className?.ifBlank { null } ?: "Level ${child.currentLevel}",
+                        overallProgress = child.overallProgress,
+                        currentLevel = child.currentLevel,
                         stats = listOf(
                             HeroStat("${state.attendance?.attendanceRate ?: 0}%", "Attendance"),
                             HeroStat(child.attendanceStatus.ifBlank { "—" }, "Status"),
@@ -193,14 +205,6 @@ fun ParentHomeScreen(
                         ),
                         onClick = onOpenPulse,
                         onIconClick = onOpenPulse,
-                        iconContent = {
-                            Icon(
-                                Icons.AutoMirrored.Filled.ArrowForwardIos,
-                                contentDescription = "Open Pulse",
-                                tint = VColors.OnPrimary,
-                                modifier = Modifier.size(20.dp),
-                            )
-                        },
                         modifier = Modifier.padding(horizontal = 20.dp),
                     )
                     Spacer(Modifier.height(20.dp))
@@ -245,7 +249,7 @@ fun ParentHomeScreen(
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 20.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    items(listOf("All", "Academics", "Fees", "Attendance", "Transport", "Library")) { label ->
+                    items(listOf("All", "Academics", "Fees", "School Life", "Transport")) { label ->
                         VFilterChip(
                             label = label,
                             active = label == selectedFilter,
@@ -257,10 +261,11 @@ fun ParentHomeScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            // ── 10-Card Feature Grid (2-up) ──
+            // ── 10-Card Feature Grid (2-up, filtered) ──
             VStaggeredItem(delayMs = 150) {
                 VSectionHeader("Quick Access")
-                val gridItems = buildFeatureGrid(state, onSwitchTab, onOpenPulse, onOpenTransport, onOpenNotifications, onOpenCalendar, onOpenLibrary, onOpenTutorChat, onOpenHealth, onOpenLeave, onOpenScholarships, onOpenDigitalId, onOpenEvents)
+                val allItems = buildFeatureGrid(state, onSwitchTab, onOpenPulse, onOpenTransport, onOpenCalendar, onOpenLibrary, onOpenTutorChat, onOpenScholarships, onOpenDigitalId, onOpenEvents)
+                val gridItems = if (selectedFilter == "All") allItems else allItems.filter { it.category == selectedFilter }
                 Column(Modifier.padding(horizontal = 20.dp)) {
                     gridItems.chunked(2).forEach { rowItems ->
                         Row(
@@ -269,7 +274,7 @@ fun ParentHomeScreen(
                         ) {
                             rowItems.forEach { item ->
                                 FeatureGridCard(
-                                    data = item,
+                                    data = item.data,
                                     modifier = Modifier.weight(1f),
                                 )
                             }
@@ -341,7 +346,7 @@ fun ParentHomeScreen(
                                 avatarIcon = { Icon(alertIcon, contentDescription = null, tint = alertIconColor, modifier = Modifier.size(20.dp)) },
                                 actions = listOf(
                                     UpdateAction("View", isPrimary = true, onClick = onOpenNotifications),
-                                    UpdateAction("Dismiss", isPrimary = false, onClick = { /* TODO: dismiss alert */ }),
+                                    UpdateAction("Dismiss", isPrimary = false, onClick = {}),
                                 ),
                                 onClick = onOpenNotifications,
                             )
@@ -356,58 +361,62 @@ fun ParentHomeScreen(
     }
 }
 
+private data class CategorizedFeature(
+    val category: String,
+    val data: FeatureGridData,
+)
+
 @Composable
 private fun buildFeatureGrid(
     state: com.littlebridge.enrollplus.feature.parent.presentation.ParentDashboardState,
     onSwitchTab: (Int) -> Unit,
     onOpenPulse: () -> Unit,
     onOpenTransport: () -> Unit,
-    onOpenNotifications: () -> Unit,
     onOpenCalendar: () -> Unit,
     onOpenLibrary: () -> Unit,
     onOpenTutorChat: () -> Unit,
-    onOpenHealth: () -> Unit,
-    onOpenLeave: () -> Unit,
     onOpenScholarships: () -> Unit,
     onOpenDigitalId: () -> Unit,
     onOpenEvents: () -> Unit,
-): List<FeatureGridData> {
+): List<CategorizedFeature> {
     val feeIconBg = VColors.PrimaryContainer
     val feeIconFg = VColors.Primary
-    val attIconBg = VColors.TertiaryContainer
-    val attIconFg = VColors.Tertiary
-    val hwIconBg = VColors.WarmOrangeContainer
-    val hwIconFg = VColors.WarmOrange
+    val acdIconBg = VColors.TertiaryContainer
+    val acdIconFg = VColors.Tertiary
     val msgIconBg = VColors.SecondaryContainer
     val msgIconFg = VColors.Secondary
-    val calIconBg = VColors.PrimaryContainer
-    val calIconFg = VColors.Primary
-    val libIconBg = VColors.TertiaryContainer
-    val libIconFg = VColors.Tertiary
-    val tutorIconBg = VColors.WarmOrangeContainer
-    val tutorIconFg = VColors.WarmOrange
-    val healthIconBg = VColors.ErrorContainer
-    val healthIconFg = VColors.Error
-    val leaveIconBg = VColors.SecondaryContainer
-    val leaveIconFg = VColors.Secondary
+    val pulseIconBg = VColors.ErrorContainer
+    val pulseIconFg = VColors.Error
+    val transportIconBg = VColors.WarmOrangeContainer
+    val transportIconFg = VColors.WarmOrange
+    val tutorIconBg = VColors.PrimaryContainer
+    val tutorIconFg = VColors.Primary
     val schIconBg = VColors.PrimaryContainer
     val schIconFg = VColors.Primary
     val idIconBg = VColors.TertiaryContainer
     val idIconFg = VColors.Tertiary
+    val libIconBg = VColors.TertiaryContainer
+    val libIconFg = VColors.Tertiary
     val eventsIconBg = VColors.WarmOrangeContainer
     val eventsIconFg = VColors.WarmOrange
 
+    val latestMarkPct = state.latestMark?.let { mark ->
+        val score = mark.marks
+        val max = mark.maxMarks.toDouble()
+        if (max > 0 && score != null) (score / max * 100).toInt() else null
+    }
+
     return listOf(
-        FeatureGridData(Icons.Filled.Payments, "Fees Due", state.fees?.outstandingFees ?: "—", feeIconBg, feeIconFg, onClick = { onSwitchTab(2) }),
-        FeatureGridData(Icons.Filled.CheckCircle, "Attendance", "${state.attendance?.attendanceRate ?: 0}%", attIconBg, attIconFg, onClick = { onSwitchTab(1) }),
-        FeatureGridData(Icons.Filled.Warning, "Homework", "${state.alerts.size}", hwIconBg, hwIconFg, onClick = onOpenNotifications),
-        FeatureGridData(Icons.AutoMirrored.Filled.Message, "Messages", "${state.alerts.size}", msgIconBg, msgIconFg, onClick = { onSwitchTab(3) }),
-        FeatureGridData(Icons.Filled.CalendarToday, "Calendar", "Today", calIconBg, calIconFg, onClick = onOpenCalendar),
-        FeatureGridData(Icons.AutoMirrored.Filled.MenuBook, "Library", "Browse", libIconBg, libIconFg, onClick = onOpenLibrary),
-        FeatureGridData(Icons.Filled.School, "Tutor", "Ask AI", tutorIconBg, tutorIconFg, onClick = onOpenTutorChat),
-        FeatureGridData(Icons.Filled.Favorite, "Health", "Log", healthIconBg, healthIconFg, onClick = onOpenHealth),
-        FeatureGridData(Icons.Filled.Quiz, "Leave", "Apply", leaveIconBg, leaveIconFg, onClick = onOpenLeave),
-        FeatureGridData(Icons.Filled.Payments, "Scholarships", "Apply", schIconBg, schIconFg, onClick = onOpenScholarships),
+        CategorizedFeature("Fees", FeatureGridData(Icons.Filled.Payments, "Fees", state.fees?.outstandingFees ?: "—", feeIconBg, feeIconFg, onClick = { onSwitchTab(2) })),
+        CategorizedFeature("Academics", FeatureGridData(Icons.Filled.School, "Academics", latestMarkPct?.let { "$it%" } ?: "View", acdIconBg, acdIconFg, onClick = { onSwitchTab(1) })),
+        CategorizedFeature("School Life", FeatureGridData(Icons.AutoMirrored.Filled.Message, "Messages", "${state.alerts.size}", msgIconBg, msgIconFg, onClick = { onSwitchTab(3) })),
+        CategorizedFeature("Academics", FeatureGridData(Icons.Filled.Favorite, "Pulse", "${state.attendance?.attendanceRate ?: 0}%", pulseIconBg, pulseIconFg, onClick = onOpenPulse)),
+        CategorizedFeature("Transport", FeatureGridData(Icons.Filled.DirectionsBus, "Transport", "Track", transportIconBg, transportIconFg, onClick = onOpenTransport)),
+        CategorizedFeature("Academics", FeatureGridData(Icons.Filled.Quiz, "Tutor", "Ask AI", tutorIconBg, tutorIconFg, onClick = onOpenTutorChat)),
+        CategorizedFeature("Fees", FeatureGridData(Icons.Filled.CreditCard, "Scholarships", "Apply", schIconBg, schIconFg, onClick = onOpenScholarships)),
+        CategorizedFeature("School Life", FeatureGridData(Icons.Filled.AccountCircle, "ID Card", "View", idIconBg, idIconFg, onClick = onOpenDigitalId)),
+        CategorizedFeature("School Life", FeatureGridData(Icons.AutoMirrored.Filled.MenuBook, "Library", "Browse", libIconBg, libIconFg, onClick = onOpenLibrary)),
+        CategorizedFeature("School Life", FeatureGridData(Icons.Filled.CalendarToday, "Events", "View", eventsIconBg, eventsIconFg, onClick = onOpenEvents)),
     )
 }
 
@@ -473,6 +482,227 @@ private fun ScheduleCard(period: LivePeriod, isNext: Boolean = false) {
             Text("DONE", style = VTypography.ScheduleStatus.copy(color = VColors.OnSurfaceVariant), modifier = Modifier.clip(VShapes.Full).background(VColors.SurfaceContainerHigh).padding(horizontal = 14.dp, vertical = 6.dp))
         } else if (isNext) {
             Text("NEXT", style = VTypography.ScheduleStatus.copy(color = VColors.OnPrimaryContainer), modifier = Modifier.clip(VShapes.Full).background(VColors.PrimaryContainer).padding(horizontal = 14.dp, vertical = 6.dp))
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ParentHeroCard — hero card with journey progress ring + level
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Parent hero card — gradient bg, radial glows, live pill, avatar, journey
+ * progress ring (level + overall progress), and stats grid.
+ *
+ * Enhances VHeroCard with a circular progress ring showing the child's
+ * overall academic journey progress and current level.
+ */
+@Composable
+private fun ParentHeroCard(
+    studentInitials: String,
+    studentName: String,
+    studentClass: String,
+    overallProgress: Double,
+    currentLevel: Int,
+    stats: List<HeroStat>,
+    onClick: () -> Unit,
+    onIconClick: () -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
+    val interaction = remember { MutableInteractionSource() }
+    val (ringScale, ringAlpha) = rememberLivePulse()
+    val progressTarget = (overallProgress.toFloat() / 100f).coerceIn(0f, 1f)
+    val animatedProgress by animateFloatAsState(
+        targetValue = progressTarget,
+        animationSpec = tween(VMotion.DurLong1, easing = VMotion.EaseEmphasized),
+        label = "hero-progress",
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .shapeMorph(interaction, VShapes.TwoXlDp, VShapes.XlDp, VMotion.DurLong1)
+            .pressScale(interaction, pressedScale = 0.98f)
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(VColors.Primary, VColors.PrimaryMid, VColors.PrimaryDeep),
+                ),
+            )
+            .radialGlow(offsetX = 280.dp, offsetY = (-100).dp, radius = 280.dp, color = VColors.HeroGlowTopRight)
+            .radialGlow(offsetX = (-80).dp, offsetY = 600.dp, radius = 240.dp, color = VColors.HeroGlowBottomLeft)
+            .clickable(interactionSource = interaction, indication = null, onClick = onClick),
+    ) {
+        Column(modifier = Modifier.padding(28.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(
+                    modifier = Modifier
+                        .clip(VShapes.Full)
+                        .background(VColors.GlassWhite15)
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box {
+                        Box(
+                            modifier = Modifier
+                                .size((ringScale * 2).dp)
+                                .clip(CircleShape)
+                                .background(VColors.LiveCyan.copy(alpha = ringAlpha)),
+                        )
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(VColors.LiveCyan),
+                        )
+                    }
+                    Text(
+                        text = "LIVE",
+                        style = VTypography.LivePill.copy(color = VColors.OnPrimary),
+                    )
+                }
+                val iconInteraction = remember { MutableInteractionSource() }
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(VColors.GlassWhite12)
+                        .pressScale(iconInteraction, pressedScale = 0.9f)
+                        .clickable(interactionSource = iconInteraction, indication = null, onClick = onIconClick),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowForwardIos,
+                        contentDescription = "Open Pulse",
+                        tint = VColors.OnPrimary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(VShapes.Xl)
+                        .background(VColors.GlassWhite20),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = studentInitials,
+                        style = VTypography.HeroName.copy(color = VColors.OnPrimary),
+                    )
+                }
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        text = studentName,
+                        style = VTypography.HeroName.copy(color = VColors.OnPrimary),
+                    )
+                    Text(
+                        text = studentClass,
+                        style = VTypography.HeroSubtitle.copy(color = VColors.OnPrimary.copy(alpha = 0.7f)),
+                    )
+                }
+                JourneyProgressRing(
+                    progress = animatedProgress,
+                    level = currentLevel,
+                )
+            }
+
+            Spacer(Modifier.height(24.dp))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(VShapes.Lg)
+                    .background(VColors.White08),
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                stats.forEach { stat ->
+                    val statInteraction = remember { MutableInteractionSource() }
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(VShapes.Lg)
+                            .background(VColors.White06)
+                            .pressScale(statInteraction, pressedScale = 0.95f)
+                            .clickable(interactionSource = statInteraction, indication = null) {}
+                            .padding(vertical = 18.dp, horizontal = 12.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            text = stat.value,
+                            style = VTypography.HeroStatValue.copy(color = VColors.OnPrimary),
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = stat.label,
+                            style = VTypography.HeroStatLabel.copy(color = VColors.OnPrimary.copy(alpha = 0.55f)),
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun JourneyProgressRing(
+    progress: Float,
+    level: Int,
+    modifier: Modifier = Modifier,
+) {
+    val ringColor = VColors.LiveCyan
+    val trackColor = VColors.GlassWhite20
+    val onPrimaryColor = VColors.OnPrimary
+
+    Box(
+        modifier = modifier.size(56.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Canvas(modifier = Modifier.size(56.dp)) {
+            val strokeWidth = 4.dp.toPx()
+            val stroke = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+            drawArc(
+                color = trackColor,
+                startAngle = -90f,
+                sweepAngle = 360f,
+                useCenter = false,
+                style = stroke,
+            )
+            drawArc(
+                color = ringColor,
+                startAngle = -90f,
+                sweepAngle = 360f * progress,
+                useCenter = false,
+                style = stroke,
+            )
+        }
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = level.toString(),
+                style = VTypography.HeroStatValue.copy(
+                    color = onPrimaryColor,
+                    fontSize = 18.sp,
+                ),
+            )
+            Text(
+                text = "LVL",
+                style = VTypography.HeroStatLabel.copy(
+                    color = onPrimaryColor.copy(alpha = 0.6f),
+                ),
+            )
         }
     }
 }

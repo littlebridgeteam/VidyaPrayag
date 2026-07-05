@@ -86,7 +86,7 @@ private fun CalendarEventRow(date: String, title: String, color: androidx.compos
     Row(
         Modifier.fillMaxWidth().clip(VShapes.Lg).background(VColors.SurfaceContainerLow)
             .pressScale(interaction, pressedScale = 0.98f)
-            .clickable(interactionSource = interaction, indication = null) { /* TODO: view calendar event detail */ }
+            .clickable(interactionSource = interaction, indication = null) { }
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),

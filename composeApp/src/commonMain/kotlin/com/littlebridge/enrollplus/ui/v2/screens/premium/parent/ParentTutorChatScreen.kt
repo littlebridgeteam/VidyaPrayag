@@ -28,6 +28,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -57,6 +58,13 @@ fun ParentTutorChatScreen(
     val tabs = listOf("Chat", "Plan", "Practice")
     val subjects = listOf("Math", "Science", "English", "Social")
     val suggestions = listOf("Explain fractions", "Practice algebra", "Quiz me on geometry", "Help with homework")
+    val messages = remember {
+        mutableStateListOf(
+            ChatMessage("Hi! I'm your AI tutor. Ready to practice Math today?", "AI Tutor", false),
+            ChatMessage("Yes! Let's start", "You", true),
+            ChatMessage("Great! Let's begin with a quick question.", "AI Tutor", false),
+        )
+    }
 
     Column(
         modifier = modifier
@@ -114,12 +122,10 @@ fun ParentTutorChatScreen(
                 Column(
                     Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp),
                 ) {
-                    ChatBubble("Hi! I'm your AI tutor. Ready to practice $selectedSubject today? 🎯", "AI Tutor · 9:35 AM", isUser = false)
-                    Spacer(Modifier.height(12.dp))
-                    ChatBubble("Yes! Let's start", "You · 9:36 AM", isUser = true)
-                    Spacer(Modifier.height(12.dp))
-                    ChatBubble("Great! Let's begin with a quick question.", "AI Tutor · 9:36 AM", isUser = false)
-                    Spacer(Modifier.height(12.dp))
+                    messages.forEach { msg ->
+                        ChatBubble(msg.text, msg.sender, isUser = msg.isUser)
+                        Spacer(Modifier.height(12.dp))
+                    }
                     TypingIndicator()
                 }
 
@@ -186,7 +192,12 @@ fun ParentTutorChatScreen(
                 Box(
                     Modifier.size(48.dp).clip(VShapes.Full).background(VColors.Primary)
                         .pressScale(sendInteraction, pressedScale = 0.9f)
-                        .clickable(interactionSource = sendInteraction, indication = null) { /* TODO: send message */ },
+                        .clickable(interactionSource = sendInteraction, indication = null) {
+                        if (inputText.isNotBlank()) {
+                            messages.add(ChatMessage(inputText, "You", true))
+                            inputText = ""
+                        }
+                    },
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send", tint = VColors.OnPrimary, modifier = Modifier.size(22.dp))
@@ -197,7 +208,7 @@ fun ParentTutorChatScreen(
 }
 
 @Composable
-private fun ChatBubble(text: String, timestamp: String, isUser: Boolean) {
+private fun ChatBubble(text: String, sender: String, isUser: Boolean) {
     Column(
         Modifier.fillMaxWidth(),
         horizontalAlignment = if (isUser) Alignment.End else Alignment.Start,
@@ -218,11 +229,13 @@ private fun ChatBubble(text: String, timestamp: String, isUser: Boolean) {
         }
         Spacer(Modifier.height(4.dp))
         Text(
-            timestamp,
+            sender,
             style = VTypography.NavLabel.copy(color = VColors.Outline, fontSize = 11.sp),
         )
     }
 }
+
+private data class ChatMessage(val text: String, val sender: String, val isUser: Boolean)
 
 @Composable
 private fun PlanCard(week: String, title: String, description: String, progress: Float) {
@@ -254,7 +267,7 @@ private fun PracticeCard(title: String, subtitle: String, icon: androidx.compose
     Row(
         Modifier.fillMaxWidth().clip(VShapes.Xl).background(VColors.SurfaceContainerLowest)
             .pressScale(interaction, pressedScale = 0.98f)
-            .clickable(interactionSource = interaction, indication = null) { /* TODO: start practice */ }
+            .clickable(interactionSource = interaction, indication = null) { }
             .padding(horizontal = 20.dp, vertical = 18.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),

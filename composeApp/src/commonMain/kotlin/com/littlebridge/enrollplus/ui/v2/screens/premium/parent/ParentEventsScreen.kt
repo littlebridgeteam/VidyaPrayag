@@ -4,13 +4,17 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -38,11 +42,13 @@ fun ParentEventsScreen(
             Text("Upcoming events at your child's school.", style = VTypography.UpdateText.copy(color = VColors.OnSurfaceVariant))
         }
         Spacer(Modifier.height(20.dp))
-        VStaggeredItem(delayMs = 60) { EventCard("Annual Sports Day", "Feb 14, 2026", "School Grounds", "9:00 AM - 4:00 PM") }
-        Spacer(Modifier.height(12.dp))
-        VStaggeredItem(delayMs = 120) { EventCard("Parent-Teacher Meeting", "Feb 20, 2026", "School Auditorium", "10:00 AM - 1:00 PM") }
-        Spacer(Modifier.height(12.dp))
-        VStaggeredItem(delayMs = 180) { EventCard("Science Exhibition", "Mar 5, 2026", "Science Block", "11:00 AM - 3:00 PM") }
+        VStaggeredItem(delayMs = 60) {
+            EmptyStateCard(
+                title = "No Upcoming Events",
+                body = "School events will appear here when scheduled.",
+                icon = Icons.AutoMirrored.Filled.MenuBook,
+            )
+        }
     }
 }
 
@@ -53,7 +59,7 @@ private fun EventCard(title: String, date: String, venue: String, time: String) 
         Modifier.fillMaxWidth().clip(VShapes.Lg).background(VColors.SurfaceContainerLow)
             .pressScale(interaction, pressedScale = 0.98f)
             .shapeMorph(interaction, VShapes.LgDp, VShapes.XlDp, VMotion.DurShort2)
-            .clickable(interactionSource = interaction, indication = null) { /* TODO: view event detail */ }
+            .clickable(interactionSource = interaction, indication = null) { }
             .padding(20.dp),
     ) {
         Text(title, style = VTypography.UpdateTitle.copy(color = VColors.OnSurface, fontWeight = FontWeight.SemiBold))
@@ -65,6 +71,6 @@ private fun EventCard(title: String, date: String, venue: String, time: String) 
         Spacer(Modifier.height(8.dp))
         Text("Venue: $venue", style = VTypography.UpdateText.copy(color = VColors.OnSurfaceVariant))
         Spacer(Modifier.height(16.dp))
-        VPrimaryButton(text = "Register", onClick = { /* TODO: register for event */ }, modifier = Modifier.fillMaxWidth())
+        VPrimaryButton(text = "Register", onClick = {}, modifier = Modifier.fillMaxWidth())
     }
 }

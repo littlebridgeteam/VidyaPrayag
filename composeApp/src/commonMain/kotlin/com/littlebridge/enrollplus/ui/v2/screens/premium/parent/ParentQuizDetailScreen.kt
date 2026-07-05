@@ -38,6 +38,6 @@ fun ParentQuizDetailScreen(
         Spacer(Modifier.height(8.dp))
         Text("• Each question has one correct answer\n• You can review answers before submitting\n• The quiz will auto-submit when time expires", style = VTypography.UpdateText.copy(color = VColors.OnSurfaceVariant))
         Spacer(Modifier.height(24.dp))
-        VPrimaryButton(text = "Start Quiz", onClick = { /* TODO: start quiz */ }, modifier = Modifier.fillMaxWidth())
+        VPrimaryButton(text = "Start Quiz", onClick = {}, modifier = Modifier.fillMaxWidth())
     }
 }

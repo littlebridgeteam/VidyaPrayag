@@ -42,11 +42,13 @@ fun ParentLibraryScreen(
             Text("Books borrowed by your child.", style = VTypography.UpdateText.copy(color = VColors.OnSurfaceVariant))
         }
         Spacer(Modifier.height(20.dp))
-        VStaggeredItem(delayMs = 60) { LibraryBookRow("Mathematics Textbook", "Borrowed: Jan 10", "Due: Feb 10") }
-        Spacer(Modifier.height(8.dp))
-        VStaggeredItem(delayMs = 120) { LibraryBookRow("Science Explorer", "Borrowed: Jan 15", "Due: Feb 15") }
-        Spacer(Modifier.height(8.dp))
-        VStaggeredItem(delayMs = 180) { LibraryBookRow("English Literature", "Borrowed: Jan 20", "Due: Feb 20") }
+        VStaggeredItem(delayMs = 60) {
+            EmptyStateCard(
+                title = "No Books Borrowed",
+                body = "Library books borrowed by your child will appear here.",
+                icon = Icons.AutoMirrored.Filled.MenuBook,
+            )
+        }
     }
 }
 
@@ -57,7 +59,7 @@ private fun LibraryBookRow(title: String, borrowed: String, due: String) {
         Modifier.fillMaxWidth().clip(VShapes.Lg).background(VColors.SurfaceContainerLow)
             .pressScale(interaction, pressedScale = 0.98f)
             .shapeMorph(interaction, VShapes.LgDp, VShapes.XlDp, VMotion.DurShort2)
-            .clickable(interactionSource = interaction, indication = null) { /* TODO: view book detail */ }
+            .clickable(interactionSource = interaction, indication = null) { }
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),

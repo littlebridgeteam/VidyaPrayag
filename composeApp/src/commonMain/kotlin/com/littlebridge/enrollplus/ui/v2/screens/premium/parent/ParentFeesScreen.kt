@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Icon
@@ -30,7 +31,6 @@ import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.feature.parent.presentation.FeeViewModel
 import com.littlebridge.enrollplus.ui.v2.components.cards.VFeesHeroCard
 import com.littlebridge.enrollplus.ui.v2.components.cards.VUpdateCard
-import com.littlebridge.enrollplus.ui.v2.components.cards.UpdateAction
 import com.littlebridge.enrollplus.ui.v2.components.carousel.VStaggeredItem
 import com.littlebridge.enrollplus.ui.v2.components.misc.VPullRefreshPremium
 import com.littlebridge.enrollplus.ui.v2.components.typography.VSectionHeader
@@ -52,12 +52,13 @@ import org.koin.compose.viewmodel.koinViewModel
 fun ParentFeesScreen(
     modifier: Modifier = Modifier,
     viewModel: FeeViewModel = koinViewModel(),
+    onPayClick: () -> Unit = {},
 ) = PremiumTheme(isDark = false) {
     val state by viewModel.state.collectAsStateV2()
 
     VPullRefreshPremium(
         isRefreshing = state.isLoading,
-        onRefresh = { /* FeeViewModel auto-loads via selectedChildHolder; re-trigger not available */ },
+        onRefresh = { viewModel.reload() },
         modifier = modifier.fillMaxSize().background(VColors.Surface),
     ) {
         Column(
@@ -89,7 +90,7 @@ fun ParentFeesScreen(
             if (state.error != null) {
                 ErrorStateCard(
                     message = state.error ?: "Unknown error",
-                    onRetry = null,
+                    onRetry = { viewModel.reload() },
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 48.dp),
                 )
                 return@Column
@@ -101,7 +102,7 @@ fun ParentFeesScreen(
                     label = "Outstanding Balance",
                     amount = state.outstandingFees,
                     dueDate = if (state.overdueCount > 0) "${state.overdueCount} overdue" else "No overdue fees",
-                    onPayClick = { /* TODO: open payment flow overlay */ },
+                    onPayClick = onPayClick,
                     modifier = Modifier.padding(horizontal = 20.dp),
                 )
             }
@@ -111,7 +112,7 @@ fun ParentFeesScreen(
             // ── Fee Announcements ──
             if (state.announcements.isNotEmpty()) {
                 VStaggeredItem(delayMs = 60) {
-                    VSectionHeader("Fee Announcements", linkText = "All", onLinkClick = { /* TODO: view all announcements */ })
+                    VSectionHeader("Fee Announcements")
                 }
                 VStaggeredItem(delayMs = 100) {
                     Column(Modifier.padding(horizontal = 20.dp)) {
@@ -134,11 +135,8 @@ fun ParentFeesScreen(
                                         modifier = Modifier.size(20.dp),
                                     )
                                 },
-                                actions = listOf(
-                                    UpdateAction("View Invoice", isPrimary = true, onClick = { /* TODO: view invoice */ }),
-                                    UpdateAction("Download", isPrimary = false, onClick = { /* TODO: download receipt */ }),
-                                ),
-                                onClick = { /* TODO: view invoice */ },
+                                actions = emptyList(),
+                                onClick = {},
                             )
                             Spacer(Modifier.height(10.dp))
                         }
@@ -153,45 +151,15 @@ fun ParentFeesScreen(
             }
             VStaggeredItem(delayMs = 200) {
                 Column(Modifier.padding(horizontal = 20.dp)) {
-                    PaymentItem("Q3 Tuition Fee", "Paid Dec 10, 2025 · Receipt #R4521", "₹12,500")
-                    Spacer(Modifier.height(10.dp))
-                    PaymentItem("Q2 Tuition Fee", "Paid Sep 8, 2025 · Receipt #R3892", "₹12,500")
-                    Spacer(Modifier.height(10.dp))
-                    PaymentItem("Q1 Tuition Fee", "Paid Jun 12, 2025 · Receipt #R3105", "₹12,500")
+                    EmptyStateCard(
+                        title = "No Payment History",
+                        body = "Payment records will appear here once fees are paid.",
+                        icon = Icons.AutoMirrored.Filled.MenuBook,
+                    )
                 }
             }
 
             Spacer(Modifier.height(24.dp))
         }
-    }
-}
-
-@Composable
-private fun PaymentItem(title: String, date: String, amount: String) {
-    val interaction = remember { MutableInteractionSource() }
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clip(VShapes.Xl)
-            .background(VColors.SurfaceContainerLowest)
-            .pressScale(interaction, pressedScale = 0.98f)
-            .shapeMorph(interaction, VShapes.XlDp, VShapes.TwoXlDp, VMotion.DurShort2)
-            .clickable(interactionSource = interaction, indication = null) { /* TODO: download receipt */ }
-            .padding(horizontal = 20.dp, vertical = 18.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Box(
-            Modifier.size(44.dp).clip(VShapes.Md).background(VColors.TertiaryContainer),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = VColors.Tertiary, modifier = Modifier.size(22.dp))
-        }
-        Column(Modifier.weight(1f)) {
-            Text(title, style = VTypography.PayTitle.copy(color = VColors.OnSurface))
-            Spacer(Modifier.height(2.dp))
-            Text(date, style = VTypography.PayDate.copy(color = VColors.OnSurfaceVariant))
-        }
-        Text(amount, style = VTypography.PayAmount.copy(color = VColors.OnSurface))
     }
 }

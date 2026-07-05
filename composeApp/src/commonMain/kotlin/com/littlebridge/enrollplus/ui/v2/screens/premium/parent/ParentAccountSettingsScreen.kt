@@ -77,7 +77,7 @@ fun ParentAccountSettingsScreen(
 
         VPrimaryButton(
             text = "Save Changes",
-            onClick = { /* TODO: save profile changes via viewModel */ },
+            onClick = {},
             modifier = Modifier.fillMaxWidth(),
         )
     }

@@ -28,6 +28,7 @@ fun ParentDigitalIdCardScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     childId: String = "",
+    childName: String = "Student",
     isTeacher: Boolean = false,
 ) {
     ParentOverlayScaffold(title = "Digital ID Card", onBack = onBack, modifier = modifier) {
@@ -47,14 +48,14 @@ fun ParentDigitalIdCardScreen(
                 Modifier.size(80.dp).clip(CircleShape).background(VColors.GlassWhite15),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("S", style = VTypography.LandingStatValue.copy(color = VColors.OnPrimary))
+                Text(childName.firstOrNull()?.toString() ?: "S", style = VTypography.LandingStatValue.copy(color = VColors.OnPrimary))
             }
             Spacer(Modifier.height(12.dp))
             Text("Student ID Card", style = VTypography.Eyebrow.copy(color = VColors.OnPrimary.copy(alpha = 0.7f)))
-            Text("Student Name", style = VTypography.GreetingTitle.copy(color = VColors.OnPrimary), textAlign = TextAlign.Center)
+            Text(childName, style = VTypography.GreetingTitle.copy(color = VColors.OnPrimary), textAlign = TextAlign.Center)
             Text("Grade 5 · Section A", style = VTypography.UpdateText.copy(color = VColors.OnPrimary.copy(alpha = 0.7f)))
             Spacer(Modifier.height(16.dp))
-            Text("ID: SVM2025001", style = VTypography.NavLabel.copy(color = VColors.OnPrimary.copy(alpha = 0.7f)))
+            Text("ID: $childId", style = VTypography.NavLabel.copy(color = VColors.OnPrimary.copy(alpha = 0.7f)))
             Text("Valid: 2025-2026", style = VTypography.NavLabel.copy(color = VColors.OnPrimary.copy(alpha = 0.7f)))
         }
         }
