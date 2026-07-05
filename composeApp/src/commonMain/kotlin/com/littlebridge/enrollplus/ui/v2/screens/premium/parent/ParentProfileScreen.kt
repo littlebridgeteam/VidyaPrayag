@@ -268,7 +268,7 @@ private fun BadgeCard(badge: BadgeData) {
                         Brush.linearGradient(
                             colors = listOf(VColors.PrimaryContainer, VColors.SurfaceContainerLowest),
                             start = androidx.compose.ui.geometry.Offset(0f, 0f),
-                            end = androidx.compose.ui.geometry.Offset(Float.MAX_VALUE, Float.MAX_VALUE),
+                            end = androidx.compose.ui.geometry.Offset(10000f, 10000f),
                         ),
                     ) else Modifier.background(VColors.SurfaceContainerLow)
                 )

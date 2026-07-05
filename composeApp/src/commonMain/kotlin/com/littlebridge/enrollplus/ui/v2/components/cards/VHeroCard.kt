@@ -67,7 +67,7 @@ fun VHeroCard(
                 Brush.linearGradient(
                     colors = listOf(VColors.Primary, VColors.PrimaryMid, VColors.PrimaryDeep),
                     start = androidx.compose.ui.geometry.Offset(0f, 0f),
-                    end = androidx.compose.ui.geometry.Offset(Float.MAX_VALUE, Float.MAX_VALUE),
+                    end = androidx.compose.ui.geometry.Offset(10000f, 10000f),
                 ),
             )
             .radialGlow(offsetX = 280.dp, offsetY = (-100).dp, radius = 280.dp, color = VColors.HeroGlowTopRight)

@@ -49,7 +49,7 @@ fun VFeesHeroCard(
                 Brush.linearGradient(
                     colors = listOf(VColors.Primary, VColors.PrimaryMid, VColors.PrimaryDeep),
                     start = androidx.compose.ui.geometry.Offset(0f, 0f),
-                    end = androidx.compose.ui.geometry.Offset(Float.MAX_VALUE, Float.MAX_VALUE),
+                    end = androidx.compose.ui.geometry.Offset(10000f, 10000f),
                 ),
             )
             .radialGlow(offsetX = 220.dp, offsetY = (-80).dp, radius = 220.dp, color = VColors.FeesGlowTopRight)
