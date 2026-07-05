@@ -17,7 +17,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -82,16 +84,20 @@ fun ParentAcademicsScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             ActionCard(
-                icon = { Icon(Icons.Filled.CalendarToday, contentDescription = null, tint = VColors.Primary, modifier = Modifier.size(22.dp)) },
+                icon = { Icon(Icons.Filled.CalendarToday, contentDescription = null, tint = VColors.OnError, modifier = Modifier.size(20.dp)) },
                 title = "Apply Leave",
                 subtitle = "Submit a leave request",
+                bgColor = VColors.ErrorContainer,
+                iconBg = VColors.Error,
                 onClick = onOpenLeave,
                 modifier = Modifier.weight(1f),
             )
             ActionCard(
-                icon = { Icon(Icons.Filled.Favorite, contentDescription = null, tint = VColors.Error, modifier = Modifier.size(22.dp)) },
+                icon = { Icon(Icons.Filled.Favorite, contentDescription = null, tint = VColors.OnTertiary, modifier = Modifier.size(20.dp)) },
                 title = "Health",
                 subtitle = "View health records",
+                bgColor = VColors.TertiaryContainer,
+                iconBg = VColors.Tertiary,
                 onClick = onOpenHealth,
                 modifier = Modifier.weight(1f),
             )
@@ -99,13 +105,21 @@ fun ParentAcademicsScreen(
 
         Spacer(Modifier.height(24.dp))
 
-        // ── Sub-tab selector ──
+        // ── Sub-tab selector (primary-container active style) ──
         Row(
             Modifier.padding(horizontal = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             tabs.forEachIndexed { index, label ->
-                VFilterChip(label = label, active = selectedTab == index, onClick = { selectedTab = index })
+                VFilterChip(
+                    label = label,
+                    active = selectedTab == index,
+                    onClick = { selectedTab = index },
+                    activeBg = VColors.PrimaryContainer,
+                    activeFg = VColors.OnPrimaryContainer,
+                    activeFontWeight = FontWeight.Bold,
+                    fontSize = 13,
+                )
             }
         }
 
@@ -151,6 +165,8 @@ private fun ActionCard(
     subtitle: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    bgColor: Color = VColors.SurfaceContainerLow,
+    iconBg: Color = VColors.Primary,
 ) {
     val interaction = remember { MutableInteractionSource() }
     Column(
@@ -158,17 +174,17 @@ private fun ActionCard(
             .pressScale(interaction, pressedScale = 0.96f)
             .shapeMorph(interaction, VShapes.LgDp, VShapes.XlDp, VMotion.DurShort2)
             .clip(VShapes.Lg)
-            .background(VColors.SurfaceContainerLow)
+            .background(bgColor)
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Box(
-            Modifier.size(40.dp).clip(VShapes.Md).background(VColors.PrimaryContainer),
+            Modifier.size(36.dp).clip(VShapes.Md).background(iconBg),
             contentAlignment = Alignment.Center,
         ) { icon() }
-        Text(title, style = VTypography.UpdateTitle.copy(color = VColors.OnSurface, fontWeight = FontWeight.Bold))
-        Text(subtitle, style = VTypography.NavLabel.copy(color = VColors.OnSurfaceVariant))
+        Text(title, style = VTypography.UpdateTitle.copy(color = VColors.OnSurface, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp))
+        Text(subtitle, style = VTypography.NavLabel.copy(color = VColors.OnSurfaceVariant, fontSize = 11.sp))
     }
 }
 
@@ -187,7 +203,9 @@ private fun ProgressRingCard(
         score >= 60 -> VColors.Primary
         else -> VColors.WarmOrange
     }
-    val trackColor = VColors.SurfaceContainerHigh
+    val trackColor = VColors.TertiaryContainer
+    val trackColorResolved = trackColor
+    val ringColorResolved = ringColor
     val sweep = (score.toFloat() / maxScore.toFloat()) * 360f
 
     Column(
@@ -198,21 +216,18 @@ private fun ProgressRingCard(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
-            Modifier.size(120.dp),
+            Modifier.size(80.dp),
             contentAlignment = Alignment.Center,
         ) {
             Box(
                 Modifier
-                    .size(120.dp)
+                    .size(80.dp)
                     .drawBehind {
-                        drawCircle(trackColor, style = Stroke(width = 10.dp.toPx(), cap = StrokeCap.Round))
-                        drawArc(ringColor, startAngle = -90f, sweepAngle = sweep, useCenter = false, style = Stroke(width = 10.dp.toPx(), cap = StrokeCap.Round))
+                        drawCircle(trackColorResolved, style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round))
+                        drawArc(ringColorResolved, startAngle = -90f, sweepAngle = sweep, useCenter = false, style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round))
                     },
             )
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("$score", style = VTypography.StatValue.copy(color = VColors.OnSurface, fontSize = 32.sp))
-                Text("/ $maxScore", style = VTypography.NavLabel.copy(color = VColors.OnSurfaceVariant))
-            }
+            Text("$score", style = VTypography.StatValue.copy(color = ringColorResolved, fontSize = 22.sp))
         }
         Spacer(Modifier.height(16.dp))
         Text(title, style = VTypography.UpdateTitle.copy(color = VColors.OnSurface, fontWeight = FontWeight.Bold))
@@ -484,26 +499,43 @@ private fun SyllabusRow(subject: String, topic: String, coverage: Double) {
 
 @Composable
 private fun HomeworkRow(subject: String, description: String, dueDate: String, status: String) {
-    val statusColor = when (status.lowercase()) {
-        "done", "completed", "submitted" -> VColors.Tertiary
-        "pending", "overdue" -> VColors.WarmOrange
-        else -> VColors.Primary
-    }
+    val isDone = status.lowercase() in listOf("done", "completed", "submitted")
+    val statusColor = if (isDone) VColors.Tertiary else VColors.WarmOrange
+    val statusBg = if (isDone) VColors.TertiaryContainer else VColors.WarmOrangeContainer
+    val statusFg = if (isDone) VColors.OnTertiaryContainer else VColors.WarmOrange
+    val iconBg = if (isDone) VColors.TertiaryContainer else VColors.WarmOrangeContainer
+    val iconColor = if (isDone) VColors.Tertiary else VColors.WarmOrange
+    val interaction = remember { MutableInteractionSource() }
     Row(
-        Modifier.fillMaxWidth().clip(VShapes.Xl).background(VColors.SurfaceContainerLowest).padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        Modifier.fillMaxWidth().clip(VShapes.Xl).background(VColors.SurfaceContainerLowest)
+            .pressScale(interaction, pressedScale = 0.98f)
+            .shapeMorph(interaction, VShapes.XlDp, VShapes.TwoXlDp, VMotion.DurShort2)
+            .clickable(interactionSource = interaction, indication = null) { }
+            .padding(horizontal = 20.dp, vertical = 18.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        Box(
+            Modifier.size(44.dp).clip(VShapes.Md).background(iconBg),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                if (isDone) Icons.Filled.CheckCircle else Icons.Filled.Warning,
+                contentDescription = null,
+                tint = iconColor,
+                modifier = Modifier.size(22.dp),
+            )
+        }
         Column(Modifier.weight(1f)) {
             Text(subject, style = VTypography.HwTitle.copy(color = VColors.OnSurface))
             Text(description, style = VTypography.HwSub.copy(color = VColors.OnSurfaceVariant))
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(2.dp))
             Text("Due: $dueDate", style = VTypography.HwSub.copy(color = VColors.OnSurfaceVariant))
         }
         Text(
             status.uppercase(),
-            style = VTypography.HwStatus.copy(color = statusColor),
-            modifier = Modifier.clip(VShapes.Full).background(statusColor.copy(alpha = 0.12f)).padding(horizontal = 12.dp, vertical = 6.dp),
+            style = VTypography.HwStatus.copy(color = statusFg),
+            modifier = Modifier.clip(VShapes.Full).background(statusBg).padding(horizontal = 12.dp, vertical = 6.dp),
         )
     }
 }

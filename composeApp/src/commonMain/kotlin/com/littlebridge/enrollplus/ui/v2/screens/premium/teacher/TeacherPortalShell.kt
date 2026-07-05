@@ -23,7 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
@@ -205,7 +205,7 @@ fun TeacherPortalShell(
     val tabs = remember {
         listOf(
             NavItem("Home", icon = { TabIcon(Icons.Filled.Home) }),
-            NavItem("Classes", icon = { TabIcon(Icons.Filled.MenuBook) }),
+            NavItem("Classes", icon = { TabIcon(Icons.AutoMirrored.Filled.MenuBook) }),
             NavItem("Schedule", icon = { TabIcon(Icons.Filled.CalendarMonth) }),
             NavItem("Profile", icon = { TabIcon(Icons.Filled.Person) }),
         )

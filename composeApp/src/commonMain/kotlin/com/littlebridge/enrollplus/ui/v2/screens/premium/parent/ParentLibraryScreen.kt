@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -52,7 +52,7 @@ private fun LibraryBookRow(title: String, borrowed: String, due: String) {
             Modifier.size(44.dp).clip(VShapes.Lg).background(VColors.TertiaryContainer),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Filled.MenuBook, contentDescription = null, tint = VColors.OnTertiaryContainer, modifier = Modifier.size(22.dp))
+            Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = null, tint = VColors.OnTertiaryContainer, modifier = Modifier.size(22.dp))
         }
         Column(Modifier.weight(1f)) {
             Text(title, style = VTypography.UpdateTitle.copy(color = VColors.OnSurface, fontWeight = FontWeight.SemiBold))

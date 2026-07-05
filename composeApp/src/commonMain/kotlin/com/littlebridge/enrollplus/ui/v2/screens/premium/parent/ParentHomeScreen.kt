@@ -62,6 +62,7 @@ import com.littlebridge.enrollplus.ui.v2.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.tokens.VMotion
 import com.littlebridge.enrollplus.ui.v2.tokens.VShapes
 import com.littlebridge.enrollplus.ui.v2.tokens.VTypography
+import com.littlebridge.enrollplus.ui.v2.tokens.rememberLiveBlink
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -494,12 +495,14 @@ private fun ScheduleCard(period: LivePeriod) {
         }
         // Status badge
         if (isLive) {
+            val blinkAlpha = rememberLiveBlink()
+            val liveColor = VColors.LiveCyan
             Row(
                 Modifier.clip(VShapes.Full).background(VColors.GlassWhite20).padding(horizontal = 14.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Box(Modifier.size(7.dp).clip(CircleShape).background(VColors.LiveCyan))
+                Box(Modifier.size(7.dp).clip(CircleShape).background(liveColor.copy(alpha = blinkAlpha)))
                 Text("LIVE", style = VTypography.ScheduleStatus.copy(color = onColor))
             }
         } else if (isPast) {

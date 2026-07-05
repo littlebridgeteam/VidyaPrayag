@@ -21,7 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.PrivacyTip
@@ -240,7 +240,7 @@ private fun TermsContent() {
 @Composable
 private fun HelpContent() {
     val uriHandler = LocalUriHandler.current
-    DocHeader(Icons.Filled.Chat, "SUPPORT", "Help Desk")
+    DocHeader(Icons.AutoMirrored.Filled.Chat, "SUPPORT", "Help Desk")
     Para("We're here to help. Reach out and we'll get back to you within 24 hours.")
     Spacer(Modifier.height(16.dp))
 

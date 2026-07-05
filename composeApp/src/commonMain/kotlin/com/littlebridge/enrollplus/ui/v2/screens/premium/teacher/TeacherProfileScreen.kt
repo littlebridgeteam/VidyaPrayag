@@ -18,7 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Mail
 import androidx.compose.material.icons.filled.Password
 import androidx.compose.material.icons.filled.School
@@ -122,14 +122,14 @@ fun TeacherProfileScreen(
 
         val logoutInteraction = remember { MutableInteractionSource() }
         Row(
-            Modifier.fillMaxWidth().clip(VShapes.Lg).background(VColors.ErrorContainer)
+            Modifier.fillMaxWidth().clip(VShapes.Xl).background(VColors.ErrorContainer)
                 .pressScale(logoutInteraction, pressedScale = 0.97f)
                 .clickable(interactionSource = logoutInteraction, indication = null, onClick = onLogout)
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
         ) {
-            Icon(Icons.Filled.Logout, contentDescription = null, tint = VColors.OnErrorContainer, modifier = Modifier.size(20.dp))
+            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, tint = VColors.OnErrorContainer, modifier = Modifier.size(20.dp))
             Spacer(Modifier.size(8.dp))
             Text("Log Out", style = VTypography.ButtonText.copy(color = VColors.OnErrorContainer, fontWeight = FontWeight.SemiBold))
         }
@@ -141,7 +141,7 @@ fun TeacherProfileScreen(
 @Composable
 private fun InfoRow(label: String, value: String) {
     Row(
-        Modifier.fillMaxWidth().clip(VShapes.Lg).background(VColors.SurfaceContainerLow).padding(16.dp),
+        Modifier.fillMaxWidth().clip(VShapes.Xl).background(VColors.SurfaceContainerLowest).padding(16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -154,14 +154,14 @@ private fun InfoRow(label: String, value: String) {
 private fun SettingsRow(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, subtitle: String, onClick: () -> Unit) {
     val interaction = remember { MutableInteractionSource() }
     Row(
-        Modifier.fillMaxWidth().clip(VShapes.Lg).background(VColors.SurfaceContainerLow)
+        Modifier.fillMaxWidth().clip(VShapes.Xl).background(VColors.SurfaceContainerLowest)
             .pressScale(interaction, pressedScale = 0.97f)
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Box(Modifier.size(40.dp).clip(VShapes.Lg).background(VColors.SurfaceContainerHigh), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(40.dp).clip(VShapes.Md).background(VColors.SurfaceContainerHigh), contentAlignment = Alignment.Center) {
             Icon(icon, contentDescription = null, tint = VColors.OnSurfaceVariant, modifier = Modifier.size(20.dp))
         }
         Column(Modifier.weight(1f)) {

@@ -14,21 +14,21 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Logout
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.PrivacyTip
-import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,29 +37,48 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentProfileViewModel
 import com.littlebridge.enrollplus.ui.v2.components.cards.VProfileHeroCard
 import com.littlebridge.enrollplus.ui.v2.components.typography.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.modifiers.pressScale
+import com.littlebridge.enrollplus.ui.v2.modifiers.shapeMorph
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.tokens.PremiumTheme
 import com.littlebridge.enrollplus.ui.v2.tokens.VColors
+import com.littlebridge.enrollplus.ui.v2.tokens.VMotion
 import com.littlebridge.enrollplus.ui.v2.tokens.VShapes
 import com.littlebridge.enrollplus.ui.v2.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
 
-/**
- * Premium parent profile — matches parent-portal.html Profile tab.
- * VProfileHeroCard with XP bar, stat tiles, settings sections
- * (Account, Preferences, Support), linked children, logout.
- */
+private data class BadgeData(
+    val name: String,
+    val description: String,
+    val icon: ImageVector,
+    val earned: Boolean,
+    val earnedDate: String? = null,
+    val progress: Float = 0f,
+    val progressText: String? = null,
+)
+
+private data class StatData(
+    val value: String,
+    val label: String,
+    val trend: String,
+)
+
 @Composable
 fun ParentProfileScreen(
     onLogout: () -> Unit = {},
     onLinkChild: () -> Unit = {},
+    onDiscoverSchools: () -> Unit = {},
+    onAccountSettings: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: ParentProfileViewModel = koinViewModel(),
 ) = PremiumTheme(isDark = false) {
@@ -104,117 +123,95 @@ fun ParentProfileScreen(
             return@PremiumTheme
         }
 
-        val initials = profile.name.split(" ").take(2).mapNotNull { it.firstOrNull()?.toString() }.joinToString("")
+        val childName = profile.name
+        val childInitial = childName.firstOrNull()?.toString() ?: "?"
 
-        // ── Profile Hero Card ──
+        // ── Profile Hero Card (child's info) ──
         VProfileHeroCard(
-            initials = initials,
-            name = profile.name,
+            initials = childInitial,
+            name = childName,
             className = profile.role.replaceFirstChar { it.uppercase() },
-            levelText = "Level 5 · Engaged Parent",
-            xpText = "1,240 / 2,000 XP",
-            xpProgress = 0.62f,
-            badge = "Premium",
+            levelText = "Level 12 — Scholar",
+            xpText = "3,400 / 5,000 XP",
+            xpProgress = 0.68f,
+            badge = "House Eagle · Level 12",
             onClick = { },
             modifier = Modifier.padding(horizontal = 20.dp),
         )
 
         Spacer(Modifier.height(24.dp))
 
-        // ── Stat Tiles ──
-        Row(
-            Modifier.padding(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            StatTile("3", "Children", Modifier.weight(1f))
-            StatTile("85%", "Attendance", Modifier.weight(1f))
-            StatTile("12", "Badges", Modifier.weight(1f))
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        // ── Linked Children ──
-        VSectionHeader("Linked Children", linkText = "Add", onLinkClick = onLinkChild)
+        // ── Stats — 2×2 grid ──
+        VSectionHeader("Stats")
+        val stats = listOf(
+            StatData("94%", "Attendance", "↑ 2% this month"),
+            StatData("88%", "Avg Marks", "↑ 5% this term"),
+            StatData("3.4K", "XP Points", "↑ 420 this week"),
+            StatData("18", "Quizzes Done", "↑ 3 this week"),
+        )
         Column(Modifier.padding(horizontal = 20.dp)) {
-            LinkedChildRow("Aarav Sharma", "Grade 5 · Section A")
-            Spacer(Modifier.height(10.dp))
-            LinkedChildRow("Diya Sharma", "Grade 3 · Section B")
-            Spacer(Modifier.height(10.dp))
-            val addInteraction = remember { MutableInteractionSource() }
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .clip(VShapes.Xl)
-                    .background(VColors.PrimaryContainer.copy(alpha = 0.3f))
-                    .pressScale(addInteraction, pressedScale = 0.97f)
-                    .clickable(interactionSource = addInteraction, indication = null, onClick = onLinkChild)
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                Box(
-                    Modifier.size(40.dp).clip(CircleShape).background(VColors.PrimaryContainer),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(Icons.Filled.Add, contentDescription = null, tint = VColors.Primary, modifier = Modifier.size(20.dp))
-                }
-                Text("Link another child", style = VTypography.UpdateTitle.copy(color = VColors.Primary, fontWeight = FontWeight.SemiBold))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                StatCard(stats[0], Modifier.weight(1f))
+                StatCard(stats[1], Modifier.weight(1f))
+            }
+            Spacer(Modifier.height(12.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                StatCard(stats[2], Modifier.weight(1f))
+                StatCard(stats[3], Modifier.weight(1f))
             }
         }
 
         Spacer(Modifier.height(24.dp))
 
-        // ── Account Settings ──
+        // ── Badges — horizontal scroll ──
+        VSectionHeader("Badges", linkText = "All", onLinkClick = { })
+        val badges = listOf(
+            BadgeData("Math Champ", "Score 90%+ in 5 consecutive math tests", Icons.Filled.CheckCircle, earned = true, earnedDate = "Feb 12"),
+            BadgeData("Bookworm", "Read and reviewed 10 library books", Icons.AutoMirrored.Filled.MenuBook, earned = true, earnedDate = "Jan 28"),
+            BadgeData("Quick Solver", "Complete 20 quizzes under time limit", Icons.Filled.Verified, earned = true, earnedDate = "Feb 20"),
+            BadgeData("Perfect Score", "Achieve 100% on any test", Icons.Filled.School, earned = true, earnedDate = "Mar 2"),
+            BadgeData("Science Whiz", "Score 90%+ in 5 science tests", Icons.Filled.School, earned = false, progress = 0.6f, progressText = "3 of 5 completed"),
+            BadgeData("100 Days", "100 consecutive days of attendance", Icons.Filled.CheckCircle, earned = false, progress = 0.94f, progressText = "94 of 100 days"),
+            BadgeData("Art Master", "Submit 10 creative art projects", Icons.Filled.School, earned = false, progress = 0.4f, progressText = "4 of 10 submitted"),
+        )
+        LazyRow(
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            items(badges) { badge ->
+                BadgeCard(badge)
+            }
+        }
+
+        Spacer(Modifier.height(24.dp))
+
+        // ── Account — 4 rows matching reference ──
         VSectionHeader("Account")
         Column(Modifier.padding(horizontal = 20.dp)) {
-            SettingsRow(Icons.Filled.AccountCircle, "Personal Information", "Name, email, phone", VColors.Primary) { }
+            AccountRow(
+                icon = Icons.Filled.Settings,
+                label = "Account Settings",
+                onClick = onAccountSettings,
+            )
             Spacer(Modifier.height(10.dp))
-            SettingsRow(Icons.Filled.Security, "Security", "Password, 2FA", VColors.Tertiary) { }
+            AccountRow(
+                icon = Icons.Filled.Add,
+                label = "Link Another Child",
+                onClick = onLinkChild,
+            )
             Spacer(Modifier.height(10.dp))
-            SettingsRow(Icons.Filled.PrivacyTip, "Privacy", "Data and permissions", VColors.WarmOrange) { }
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        // ── Preferences ──
-        VSectionHeader("Preferences")
-        Column(Modifier.padding(horizontal = 20.dp)) {
-            SettingsRow(Icons.Filled.Notifications, "Notifications", "Push, email, SMS", VColors.Primary) { }
+            AccountRow(
+                icon = Icons.Filled.Explore,
+                label = "Discover Schools",
+                onClick = onDiscoverSchools,
+            )
             Spacer(Modifier.height(10.dp))
-            SettingsRow(Icons.Filled.Palette, "Theme", "Light, dark, system", VColors.Tertiary) { }
-            Spacer(Modifier.height(10.dp))
-            SettingsRow(Icons.Filled.Language, "Language", "English", VColors.WarmOrange) { }
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        // ── Support ──
-        VSectionHeader("Support")
-        Column(Modifier.padding(horizontal = 20.dp)) {
-            SettingsRow(Icons.Filled.Info, "Help Center", "FAQs and guides", VColors.Primary) { }
-            Spacer(Modifier.height(10.dp))
-            SettingsRow(Icons.Filled.Description, "Terms & Policies", "Legal information", VColors.OnSurfaceVariant) { }
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        // ── Logout ──
-        val logoutInteraction = remember { MutableInteractionSource() }
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp)
-                .clip(VShapes.Xl)
-                .background(VColors.ErrorContainer)
-                .pressScale(logoutInteraction, pressedScale = 0.97f)
-                .clickable(interactionSource = logoutInteraction, indication = null, onClick = onLogout)
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-        ) {
-            Icon(Icons.Filled.Logout, contentDescription = null, tint = VColors.Error, modifier = Modifier.size(22.dp))
-            Spacer(Modifier.width(10.dp))
-            Text("Log Out", style = VTypography.UpdateTitle.copy(color = VColors.Error, fontWeight = FontWeight.Bold))
+            AccountRow(
+                icon = Icons.AutoMirrored.Filled.Logout,
+                label = "Logout",
+                labelColor = VColors.Error,
+                onClick = onLogout,
+            )
         }
 
         Spacer(Modifier.height(24.dp))
@@ -222,55 +219,124 @@ fun ParentProfileScreen(
 }
 
 @Composable
-private fun StatTile(value: String, label: String, modifier: Modifier = Modifier) {
+private fun StatCard(stat: StatData, modifier: Modifier = Modifier) {
+    val interaction = remember { MutableInteractionSource() }
     Column(
         modifier
             .clip(VShapes.Xl)
             .background(VColors.SurfaceContainerLowest)
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .pressScale(interaction, pressedScale = 0.96f)
+            .shapeMorph(interaction, VShapes.XlDp, VShapes.TwoXlDp, VMotion.DurShort2)
+            .clickable(interactionSource = interaction, indication = null) { }
+            .padding(20.dp),
     ) {
-        Text(value, style = VTypography.StatValue.copy(color = VColors.OnSurface))
+        Text(stat.value, style = VTypography.StatValue.copy(color = VColors.OnSurface))
         Spacer(Modifier.height(4.dp))
-        Text(label, style = VTypography.StatLabel.copy(color = VColors.OnSurfaceVariant))
+        Text(stat.label, style = VTypography.StatLabel.copy(color = VColors.OnSurfaceVariant))
+        Spacer(Modifier.height(8.dp))
+        Text(stat.trend, style = VTypography.NavLabel.copy(color = VColors.Tertiary, fontWeight = FontWeight.SemiBold))
     }
 }
 
 @Composable
-private fun LinkedChildRow(name: String, info: String) {
+private fun BadgeCard(badge: BadgeData) {
     val interaction = remember { MutableInteractionSource() }
-    Row(
+    val bg = if (badge.earned) VColors.SurfaceContainerLowest else VColors.SurfaceContainerLow
+    val iconRingBg = if (badge.earned) {
+        Brush.linearGradient(listOf(VColors.Primary, VColors.Tertiary, VColors.Primary))
+    } else {
+        null
+    }
+    val iconColor = if (badge.earned) VColors.Primary else VColors.OnSurfaceVariant
+    val iconAlpha = if (badge.earned) 1f else 0.4f
+
+    Column(
         Modifier
-            .fillMaxWidth()
+            .width(168.dp)
             .clip(VShapes.Xl)
-            .background(VColors.SurfaceContainerLowest)
-            .pressScale(interaction, pressedScale = 0.97f)
-            .clickable(interactionSource = interaction, indication = null) { }
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
+            .background(bg)
+            .pressScale(interaction, pressedScale = 0.96f)
+            .shapeMorph(interaction, VShapes.XlDp, VShapes.TwoXlDp, VMotion.DurShort2)
+            .clickable(interactionSource = interaction, indication = null) { },
     ) {
+        // Badge top — gradient bg for earned
         Box(
-            Modifier.size(40.dp).clip(CircleShape).background(VColors.PrimaryContainer),
+            Modifier
+                .fillMaxWidth()
+                .then(
+                    if (badge.earned) Modifier.background(
+                        Brush.linearGradient(
+                            colors = listOf(VColors.PrimaryContainer, VColors.SurfaceContainerLowest),
+                            start = androidx.compose.ui.geometry.Offset(0f, 0f),
+                            end = androidx.compose.ui.geometry.Offset(Float.MAX_VALUE, Float.MAX_VALUE),
+                        ),
+                    ) else Modifier.background(VColors.SurfaceContainerLow)
+                )
+                .padding(top = 24.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
             contentAlignment = Alignment.Center,
         ) {
-            Text(name.firstOrNull()?.toString() ?: "?", style = VTypography.HeroStatValue.copy(color = VColors.Primary))
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(
+                    Modifier
+                        .size(64.dp)
+                        .clip(CircleShape)
+                        .then(
+                            if (badge.earned) Modifier.background(iconRingBg!!) else Modifier.background(VColors.SurfaceContainerHigh)
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        badge.icon,
+                        contentDescription = null,
+                        tint = iconColor,
+                        modifier = Modifier.size(28.dp).then(if (!badge.earned) Modifier.alpha(iconAlpha) else Modifier),
+                    )
+                }
+                Spacer(Modifier.height(12.dp))
+                Text(badge.name, style = VTypography.UpdateTitle.copy(color = VColors.OnSurface, fontWeight = FontWeight.ExtraBold))
+            }
         }
-        Column(Modifier.weight(1f)) {
-            Text(name, style = VTypography.UpdateTitle.copy(color = VColors.OnSurface, fontWeight = FontWeight.SemiBold))
-            Text(info, style = VTypography.NavLabel.copy(color = VColors.OnSurfaceVariant))
+        // Badge body
+        Column(
+            Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                badge.description,
+                style = VTypography.NavLabel.copy(color = VColors.OnSurfaceVariant),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
+            Spacer(Modifier.height(10.dp))
+            if (badge.earned && badge.earnedDate != null) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = VColors.Tertiary, modifier = Modifier.size(12.dp))
+                    Text(
+                        "Earned · ${badge.earnedDate}",
+                        style = VTypography.NavLabel.copy(color = VColors.Tertiary, fontWeight = FontWeight.ExtraBold, fontSize = 10.sp),
+                    )
+                }
+            } else if (badge.progressText != null) {
+                Spacer(Modifier.height(6.dp))
+                Box(
+                    Modifier.fillMaxWidth().height(5.dp).clip(VShapes.Full).background(VColors.SurfaceContainerHigh),
+                ) {
+                    Box(
+                        Modifier.fillMaxWidth(badge.progress).height(5.dp).clip(VShapes.Full).background(VColors.Tertiary),
+                    )
+                }
+                Spacer(Modifier.height(6.dp))
+                Text(badge.progressText, style = VTypography.NavLabel.copy(color = VColors.OnSurfaceVariant, fontWeight = FontWeight.Bold, fontSize = 10.sp))
+            }
         }
-        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = VColors.OnSurfaceVariant, modifier = Modifier.size(24.dp))
     }
 }
 
 @Composable
-private fun SettingsRow(
+private fun AccountRow(
     icon: ImageVector,
-    title: String,
-    subtitle: String,
-    iconColor: androidx.compose.ui.graphics.Color,
+    label: String,
     onClick: () -> Unit,
+    labelColor: Color = VColors.OnSurface,
 ) {
     val interaction = remember { MutableInteractionSource() }
     Row(
@@ -278,22 +344,20 @@ private fun SettingsRow(
             .fillMaxWidth()
             .clip(VShapes.Xl)
             .background(VColors.SurfaceContainerLowest)
-            .pressScale(interaction, pressedScale = 0.97f)
+            .pressScale(interaction, pressedScale = 0.98f)
+            .shapeMorph(interaction, VShapes.XlDp, VShapes.TwoXlDp, VMotion.DurShort2)
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
-            .padding(16.dp),
+            .padding(horizontal = 20.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Box(
-            Modifier.size(40.dp).clip(VShapes.Md).background(iconColor.copy(alpha = 0.12f)),
+            Modifier.size(40.dp).clip(VShapes.Md).background(VColors.SurfaceContainerLow),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(22.dp))
+            Icon(icon, contentDescription = null, tint = VColors.OnSurfaceVariant, modifier = Modifier.size(20.dp))
         }
-        Column(Modifier.weight(1f)) {
-            Text(title, style = VTypography.UpdateTitle.copy(color = VColors.OnSurface, fontWeight = FontWeight.SemiBold))
-            Text(subtitle, style = VTypography.NavLabel.copy(color = VColors.OnSurfaceVariant))
-        }
-        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = VColors.OnSurfaceVariant, modifier = Modifier.size(24.dp))
+        Text(label, style = VTypography.UpdateTitle.copy(color = labelColor, fontWeight = FontWeight.SemiBold), modifier = Modifier.weight(1f))
+        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = VColors.Outline, modifier = Modifier.size(20.dp))
     }
 }

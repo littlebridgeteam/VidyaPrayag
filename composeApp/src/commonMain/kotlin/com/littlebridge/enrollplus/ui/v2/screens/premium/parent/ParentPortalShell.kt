@@ -381,6 +381,8 @@ fun ParentPortalShell(
                             onLogout()
                         },
                         onLinkChild = { overlay = ParentOverlay.LinkChild },
+                        onDiscoverSchools = { overlay = ParentOverlay.Discovery },
+                        onAccountSettings = { },
                     )
                 }
             }
