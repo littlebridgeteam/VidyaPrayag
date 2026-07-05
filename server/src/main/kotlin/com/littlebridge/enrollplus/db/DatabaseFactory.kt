@@ -350,6 +350,10 @@ object DatabaseFactory {
     internal var hikariDataSource: HikariDataSource? = null
         private set
 
+    /** Prometheus registry set before init() so it can be wired into HikariConfig pre-pool-creation. */
+    @Volatile
+    var meterRegistry: io.micrometer.core.instrument.MeterRegistry? = null
+
     // ── Read replica support (spec §17 Connection Pool) ─────────────────────
     // When READ_REPLICA_URL is configured, read-heavy queries (search, analytics,
     // audit log, export) route to the replica via readQuery { }.
@@ -618,6 +622,9 @@ object DatabaseFactory {
             validationTimeout = 5_000
             maxLifetime = 30 * 60 * 1000L
             connectionTestQuery = "SELECT 1"
+            // Set metrics/health registries BEFORE pool creation — HikariConfig is sealed once HikariDataSource starts.
+            meterRegistry?.let { this.metricRegistry = it }
+            meterRegistry?.let { this.healthCheckRegistry = it }
             validate()
         }
         return HikariDataSource(config)
