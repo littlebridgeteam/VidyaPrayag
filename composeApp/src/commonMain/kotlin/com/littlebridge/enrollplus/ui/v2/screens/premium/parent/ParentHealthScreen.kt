@@ -10,18 +10,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.MedicalServices
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.ui.v2.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.tokens.VShapes
 import com.littlebridge.enrollplus.ui.v2.tokens.VTypography
@@ -33,38 +33,64 @@ fun ParentHealthScreen(
     childId: String = "",
 ) {
     ParentOverlayScaffold(title = "Health Records", onBack = onBack, modifier = modifier) {
-        Row(
-            Modifier.fillMaxWidth().clip(VShapes.Lg).background(VColors.SurfaceContainerLow).padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        // Health Profile card
+        Column(
+            Modifier.fillMaxWidth().clip(VShapes.Xl).background(VColors.SurfaceContainerLowest).padding(24.dp),
         ) {
-            Box(Modifier.size(44.dp).clip(CircleShape).background(VColors.ErrorContainer), contentAlignment = Alignment.Center) {
-                Icon(Icons.Filled.MedicalServices, contentDescription = null, tint = VColors.OnErrorContainer, modifier = Modifier.size(22.dp))
-            }
-            Column(Modifier.weight(1f)) {
-                Text("Blood Group", style = VTypography.NavLabel.copy(color = VColors.OnSurfaceVariant))
-                Text("B+", style = VTypography.UpdateTitle.copy(color = VColors.OnSurface, fontWeight = FontWeight.SemiBold))
+            Text("Health Profile", style = VTypography.UpdateTitle.copy(color = VColors.OnSurface, fontWeight = FontWeight.Bold))
+            Spacer(Modifier.height(16.dp))
+            HealthRow("Blood Group", "O+", VColors.OnSurface)
+            Spacer(Modifier.height(12.dp))
+            HealthRow("Allergies", "Peanuts", VColors.Error)
+            Spacer(Modifier.height(12.dp))
+            HealthRow("Conditions", "None", VColors.OnSurface)
+            Spacer(Modifier.height(12.dp))
+            HealthRow("Immunizations", "Up to date", VColors.Tertiary)
+            Spacer(Modifier.height(12.dp))
+            HealthRow("Emergency Contact", "Priya Sharma (Mother)", VColors.OnSurface)
+        }
+        Spacer(Modifier.height(16.dp))
+
+        // Pulse Score card with ring
+        val pulseScore = 87
+        val ringColor = VColors.Tertiary
+        val trackColor = VColors.TertiaryContainer
+        val sweep = (pulseScore / 100f) * 360f
+        Column(
+            Modifier.fillMaxWidth().clip(VShapes.Xl).background(VColors.SurfaceContainerLowest).padding(24.dp),
+        ) {
+            Text("Pulse Score", style = VTypography.UpdateTitle.copy(color = VColors.OnSurface, fontWeight = FontWeight.Bold))
+            Spacer(Modifier.height(16.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(20.dp),
+            ) {
+                Box(Modifier.size(80.dp), contentAlignment = Alignment.Center) {
+                    Box(
+                        Modifier.size(80.dp).drawBehind {
+                            drawCircle(trackColor, style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round))
+                            drawArc(ringColor, startAngle = -90f, sweepAngle = sweep, useCenter = false, style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round))
+                        },
+                    )
+                    Text("$pulseScore", style = VTypography.StatValue.copy(color = ringColor, fontSize = 22.sp))
+                }
+                Column {
+                    Text("Healthy", style = VTypography.UpdateTitle.copy(color = VColors.OnSurface, fontWeight = FontWeight.Bold, fontSize = 16.sp))
+                    Text("No risk factors detected", style = VTypography.UpdateText.copy(color = VColors.OnSurfaceVariant))
+                }
             }
         }
-        Spacer(Modifier.height(12.dp))
-        InfoRow("Height", "142 cm")
-        Spacer(Modifier.height(8.dp))
-        InfoRow("Weight", "35 kg")
-        Spacer(Modifier.height(8.dp))
-        InfoRow("Allergies", "None reported")
-        Spacer(Modifier.height(8.dp))
-        InfoRow("Last Checkup", "Jan 2026")
     }
 }
 
 @Composable
-private fun InfoRow(label: String, value: String) {
+private fun HealthRow(label: String, value: String, valueColor: Color) {
     Row(
-        Modifier.fillMaxWidth().clip(VShapes.Lg).background(VColors.SurfaceContainerLow).padding(16.dp),
+        Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(label, style = VTypography.UpdateText.copy(color = VColors.OnSurfaceVariant))
-        Text(value, style = VTypography.UpdateTitle.copy(color = VColors.OnSurface, fontWeight = FontWeight.SemiBold))
+        Text(value, style = VTypography.UpdateText.copy(color = valueColor, fontWeight = FontWeight.Bold))
     }
 }

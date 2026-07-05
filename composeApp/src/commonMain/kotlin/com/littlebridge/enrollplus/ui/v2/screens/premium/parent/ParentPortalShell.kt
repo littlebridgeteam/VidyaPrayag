@@ -81,7 +81,7 @@ import org.koin.compose.viewmodel.koinViewModel
 /** Full-screen overlays the parent portal can push above its tab content. */
 private enum class ParentOverlay {
     None, Notifications, Calendar, Scholarships, Leave, Messages,
-    LinkChild, Discovery, Health, Pulse, Transport, TutorChat,
+    LinkChild, Discovery, SchoolDetail, Health, Pulse, Transport, TutorChat,
     TutorProgress, DigitalIdCard, Library, EventRegistration, AccountSettings,
 }
 
@@ -107,6 +107,7 @@ fun ParentPortalShell(
     var overlay by remember { mutableStateOf(ParentOverlay.None) }
     var localDeepLink by remember { mutableStateOf<DeepLinkTarget?>(null) }
     var deepLinkThreadId by remember { mutableStateOf<String?>(null) }
+    var selectedSchoolId by remember { mutableStateOf<String?>(null) }
 
     val state by dashboardViewModel.state.collectAsStateV2()
     val notifState by notificationsViewModel.state.collectAsStateV2()
@@ -242,8 +243,23 @@ fun ParentPortalShell(
             ParentDiscoveryScreen(
                 onExit = { overlay = ParentOverlay.None },
                 modifier = modifier,
+                onOpenSchool = { schoolId ->
+                    selectedSchoolId = schoolId
+                    overlay = ParentOverlay.SchoolDetail
+                },
             )
             return@PremiumTheme
+        }
+        ParentOverlay.SchoolDetail -> {
+            val schoolId = selectedSchoolId
+            if (schoolId == null) { overlay = ParentOverlay.Discovery } else {
+                ParentSchoolDetailScreen(
+                    schoolId = schoolId,
+                    onBack = { overlay = ParentOverlay.Discovery },
+                    modifier = modifier,
+                )
+                return@PremiumTheme
+            }
         }
         ParentOverlay.Health -> {
             val child = state.selectedChild

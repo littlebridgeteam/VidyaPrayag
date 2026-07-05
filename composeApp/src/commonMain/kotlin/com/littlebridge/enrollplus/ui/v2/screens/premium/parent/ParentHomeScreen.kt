@@ -144,11 +144,11 @@ fun ParentHomeScreen(
                 VHeroCard(
                 studentInitials = childInitial,
                 studentName = child.name,
-                studentClass = "Level ${child.currentLevel} · ${child.attendanceStatus}",
+                studentClass = state.timetable?.className?.ifBlank { null } ?: "Level ${child.currentLevel}",
                 stats = listOf(
-                    HeroStat("${child.overallProgress.toInt()}%", "Progress"),
-                    HeroStat("L${child.currentLevel}", "Level"),
-                    HeroStat("${state.alerts.size}", "Alerts"),
+                    HeroStat("${state.attendance?.attendanceRate ?: 0}%", "Attendance"),
+                    HeroStat(child.attendanceStatus.ifBlank { "—" }, "Status"),
+                    HeroStat("${state.alerts.size}", "Pending"),
                 ),
                 onClick = onOpenPulse,
                 onIconClick = onOpenPulse,
@@ -189,9 +189,10 @@ fun ParentHomeScreen(
                 Icon(Icons.Filled.Info, contentDescription = null, tint = VColors.OnTertiary, modifier = Modifier.size(20.dp))
             }
             Column(Modifier.weight(1f)) {
-                Text("Transport tracking", style = VTypography.UpdateTitle.copy(color = VColors.OnTertiaryContainer, fontWeight = FontWeight.Bold))
-                Text("Tap to view live status", style = VTypography.NavLabel.copy(color = VColors.OnTertiaryContainer.copy(alpha = 0.7f)))
+                Text("Live tracking available", style = VTypography.UpdateTitle.copy(color = VColors.OnTertiaryContainer, fontWeight = FontWeight.Bold))
+                Text("Tap to view real-time transport status", style = VTypography.NavLabel.copy(color = VColors.OnTertiaryContainer.copy(alpha = 0.7f)))
             }
+            Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, contentDescription = null, tint = VColors.OnTertiaryContainer.copy(alpha = 0.5f), modifier = Modifier.size(16.dp))
         }
         }
 
@@ -233,7 +234,7 @@ fun ParentHomeScreen(
                 listOf(
                     FeatureCardData(
                         title = "Fee Payment",
-                        subtitle = "Pending dues",
+                        subtitle = "Outstanding dues",
                         amount = state.fees?.outstandingFees ?: "—",
                         badge = "Pay Now",
                         bgColor = feeBg,
@@ -246,7 +247,7 @@ fun ParentHomeScreen(
                     ),
                     FeatureCardData(
                         title = "Attendance",
-                        subtitle = "This month",
+                        subtitle = "${state.attendance?.presentDays ?: 0} days present",
                         amount = "${state.attendance?.attendanceRate ?: 0}%",
                         badge = "On Track",
                         bgColor = attBg,
@@ -259,7 +260,7 @@ fun ParentHomeScreen(
                     ),
                     FeatureCardData(
                         title = "Homework",
-                        subtitle = "Pending tasks",
+                        subtitle = "${state.alerts.count { it.type == "WARNING" || it.type == "CRITICAL" }} pending",
                         amount = "${state.alerts.size}",
                         badge = "Review",
                         bgColor = hwBg,
@@ -304,7 +305,7 @@ fun ParentHomeScreen(
                 label = "Fees Due",
                 iconBg = VColors.PrimaryContainer,
                 iconColor = VColors.Primary,
-                icon = { Icon(Icons.Filled.Info, contentDescription = null, tint = VColors.Primary, modifier = Modifier.size(18.dp)) },
+                icon = { Icon(Icons.Filled.Payments, contentDescription = null, tint = VColors.Primary, modifier = Modifier.size(18.dp)) },
                 onClick = { onSwitchTab(2) },
                 modifier = Modifier.weight(1f),
             )
@@ -319,7 +320,7 @@ fun ParentHomeScreen(
             )
             VQuickStatCard(
                 value = "${state.alerts.size}",
-                label = "Alerts",
+                label = "Homework",
                 iconBg = VColors.WarmOrangeContainer,
                 iconColor = VColors.WarmOrange,
                 icon = { Icon(Icons.Filled.Warning, contentDescription = null, tint = VColors.WarmOrange, modifier = Modifier.size(18.dp)) },
@@ -355,8 +356,9 @@ fun ParentHomeScreen(
                     Text("$doneCount of ${state.todayPeriods.size} done", style = VTypography.NavLabel.copy(color = VColors.OnSurfaceVariant))
                 }
                 Spacer(Modifier.height(10.dp))
-                state.todayPeriods.take(6).forEach { period ->
-                    ScheduleCard(period)
+                val nextIndex = state.todayPeriods.indexOfFirst { it.relation == 1 }
+                state.todayPeriods.take(6).forEachIndexed { idx, period ->
+                    ScheduleCard(period, isNext = idx == nextIndex)
                     Spacer(Modifier.height(10.dp))
                 }
             }
@@ -370,12 +372,22 @@ fun ParentHomeScreen(
                 VSectionHeader("School Updates", linkText = "All", onLinkClick = { })
                 Column(Modifier.padding(horizontal = 20.dp)) {
                     state.alerts.take(3).forEach { alert ->
+                        val alertIcon: ImageVector = when (alert.type) {
+                            "CRITICAL" -> Icons.Filled.Warning
+                            "WARNING" -> Icons.Filled.Warning
+                            else -> Icons.Filled.Info
+                        }
+                        val alertIconColor = when (alert.type) {
+                            "CRITICAL" -> VColors.Error
+                            "WARNING" -> VColors.WarmOrange
+                            else -> VColors.Primary
+                        }
                         VUpdateCard(
                             source = "School",
                             timestamp = "",
                             title = alert.title,
                             text = alert.value,
-                            avatarIcon = { Icon(Icons.Filled.Info, contentDescription = null, tint = VColors.Primary, modifier = Modifier.size(20.dp)) },
+                            avatarIcon = { Icon(alertIcon, contentDescription = null, tint = alertIconColor, modifier = Modifier.size(20.dp)) },
                             actions = listOf(
                                 UpdateAction("View", isPrimary = true, onClick = { }),
                                 UpdateAction("Dismiss", isPrimary = false, onClick = { }),
@@ -452,7 +464,7 @@ private fun FeatureCard(data: FeatureCardData) {
 }
 
 @Composable
-private fun ScheduleCard(period: LivePeriod) {
+private fun ScheduleCard(period: LivePeriod, isNext: Boolean = false) {
     val isLive = period.relation == 0
     val isPast = period.relation == -1
     val interaction = remember { MutableInteractionSource() }
@@ -482,9 +494,13 @@ private fun ScheduleCard(period: LivePeriod) {
         horizontalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         // Time
+        val amPm = remember(period.startTime) {
+            val hour = period.startTime.substringBefore(":").toIntOrNull() ?: 0
+            if (hour < 12) "AM" else "PM"
+        }
         Column(Modifier.width(64.dp)) {
             Text(period.startTime, style = VTypography.ScheduleHour.copy(color = onColor))
-            Text("AM", style = VTypography.ScheduleAmPm.copy(color = onColorVariant))
+            Text(amPm, style = VTypography.ScheduleAmPm.copy(color = onColorVariant))
         }
         // Divider
         Box(Modifier.width(1.dp).height(40.dp).background(onColor.copy(alpha = 0.12f)))
@@ -507,7 +523,7 @@ private fun ScheduleCard(period: LivePeriod) {
             }
         } else if (isPast) {
             Text("DONE", style = VTypography.ScheduleStatus.copy(color = VColors.OnSurfaceVariant), modifier = Modifier.clip(VShapes.Full).background(VColors.SurfaceContainerHigh).padding(horizontal = 14.dp, vertical = 6.dp))
-        } else {
+        } else if (isNext) {
             Text("NEXT", style = VTypography.ScheduleStatus.copy(color = VColors.OnPrimaryContainer), modifier = Modifier.clip(VShapes.Full).background(VColors.PrimaryContainer).padding(horizontal = 14.dp, vertical = 6.dp))
         }
     }

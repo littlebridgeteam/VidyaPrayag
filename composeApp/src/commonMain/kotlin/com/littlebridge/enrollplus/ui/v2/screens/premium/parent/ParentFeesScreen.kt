@@ -84,9 +84,9 @@ fun ParentFeesScreen(
 
         // ── Fees Hero Card ──
         VFeesHeroCard(
-            label = "Outstanding Fees",
+            label = "Outstanding Balance",
             amount = state.outstandingFees,
-            dueDate = "${state.overdueCount} overdue",
+            dueDate = if (state.overdueCount > 0) "${state.overdueCount} overdue" else "No overdue fees",
             onPayClick = { },
             modifier = Modifier.padding(horizontal = 20.dp),
         )
@@ -95,7 +95,7 @@ fun ParentFeesScreen(
 
         // ── Fee Announcements ──
         if (state.announcements.isNotEmpty()) {
-            VSectionHeader("School Updates", linkText = "All", onLinkClick = { })
+            VSectionHeader("Fee Announcements", linkText = "All", onLinkClick = { })
             Column(Modifier.padding(horizontal = 20.dp)) {
                 state.announcements.forEach { ann ->
                     val typeColor = when (ann.type) {

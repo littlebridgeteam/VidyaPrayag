@@ -17,7 +17,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -31,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentMessageViewModel
@@ -38,7 +38,6 @@ import com.littlebridge.enrollplus.ui.v2.components.cards.VUpdateCard
 import com.littlebridge.enrollplus.ui.v2.components.cards.UpdateAction
 import com.littlebridge.enrollplus.ui.v2.components.navigation.VFilterChip
 import com.littlebridge.enrollplus.ui.v2.components.typography.VSectionHeader
-import com.littlebridge.enrollplus.ui.v2.modifiers.pressScale
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.tokens.PremiumTheme
 import com.littlebridge.enrollplus.ui.v2.tokens.VColors
@@ -67,26 +66,6 @@ fun ParentConversationsScreen(
             .verticalScroll(rememberScrollState()),
     ) {
         Spacer(Modifier.height(16.dp))
-
-        // ── Top bar: title + compose icon (matches ref: back + title + edit) ──
-        Row(
-            Modifier.padding(horizontal = 20.dp).fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text("Conversations", style = VTypography.SectionHeader.copy(color = VColors.OnSurface))
-            val composeInteraction = remember { MutableInteractionSource() }
-            Box(
-                Modifier.size(40.dp).clip(CircleShape).background(VColors.SurfaceContainerHigh)
-                    .pressScale(composeInteraction, pressedScale = 0.9f)
-                    .clickable(interactionSource = composeInteraction, indication = null) { },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Filled.Edit, contentDescription = "Compose", tint = VColors.OnSurfaceVariant, modifier = Modifier.size(20.dp))
-            }
-        }
-
-        Spacer(Modifier.height(20.dp))
 
         // ── Segment selector — flex:1 equal width, primary active ──
         Row(Modifier.padding(horizontal = 20.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -229,6 +208,7 @@ private fun ThreadRow(
                     fontWeight = if (!isRead) FontWeight.SemiBold else FontWeight.Medium,
                 ),
                 maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
         Column(horizontalAlignment = Alignment.End) {

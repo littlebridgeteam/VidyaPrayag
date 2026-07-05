@@ -1,28 +1,25 @@
 package com.littlebridge.enrollplus.ui.v2.screens.premium.parent
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Mood
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.littlebridge.enrollplus.ui.v2.components.progress.VProgressRing
+import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.ui.v2.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.tokens.VShapes
 import com.littlebridge.enrollplus.ui.v2.tokens.VTypography
@@ -32,40 +29,69 @@ fun ParentPulseScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    ParentOverlayScaffold(title = "Engagement Pulse", onBack = onBack, modifier = modifier) {
-        Row(
-            Modifier.fillMaxWidth().clip(VShapes.Xl).background(VColors.TertiaryContainer).padding(24.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(20.dp),
+    ParentOverlayScaffold(title = "Pulse Score", onBack = onBack, modifier = modifier) {
+        // Ring card — centered, 120dp ring with score
+        val pulseScore = 87
+        val ringColor = VColors.Tertiary
+        val trackColor = VColors.TertiaryContainer
+        val sweep = (pulseScore / 100f) * 360f
+        Column(
+            Modifier.fillMaxWidth().clip(VShapes.Xl).background(VColors.SurfaceContainerLowest).padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            VProgressRing(progress = 0.78f, label = "78%", size = 80.dp)
-            Column(Modifier.weight(1f)) {
-                Text("Engagement Score", style = VTypography.GreetingTitle.copy(color = VColors.OnTertiaryContainer))
-                Text("Your child's participation is above average", style = VTypography.UpdateText.copy(color = VColors.OnTertiaryContainer.copy(alpha = 0.7f)))
+            Box(
+                Modifier.size(120.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    Modifier.size(120.dp).drawBehind {
+                        drawCircle(trackColor, style = Stroke(width = 8.dp.toPx(), cap = StrokeCap.Round))
+                        drawArc(ringColor, startAngle = -90f, sweepAngle = sweep, useCenter = false, style = Stroke(width = 8.dp.toPx(), cap = StrokeCap.Round))
+                    },
+                )
+                Text("$pulseScore", style = VTypography.StatValue.copy(color = ringColor, fontSize = 32.sp))
             }
+            Spacer(Modifier.height(20.dp))
+            Text("Healthy", style = VTypography.UpdateTitle.copy(color = VColors.OnSurface, fontWeight = FontWeight.Bold, fontSize = 16.sp))
+            Spacer(Modifier.height(4.dp))
+            Text("Early warning score based on attendance, academics & engagement", style = VTypography.UpdateText.copy(color = VColors.OnSurfaceVariant))
         }
-        Spacer(Modifier.height(20.dp))
-        PulseMetric("Class Participation", "High", Icons.Filled.Mood, VColors.Tertiary)
-        Spacer(Modifier.height(8.dp))
-        PulseMetric("Homework Completion", "92%", Icons.Filled.Favorite, VColors.Primary)
-        Spacer(Modifier.height(8.dp))
-        PulseMetric("Attendance Rate", "95%", Icons.Filled.Mood, VColors.Tertiary)
-        Spacer(Modifier.height(8.dp))
-        PulseMetric("Peer Interaction", "Good", Icons.Filled.Favorite, VColors.Primary)
+        Spacer(Modifier.height(16.dp))
+
+        // Metrics card 1 — Attendance + Academics
+        Column(
+            Modifier.fillMaxWidth().clip(VShapes.Xl).background(VColors.SurfaceContainerLowest).padding(24.dp),
+        ) {
+            PulseMetricBar("Attendance", 94, "Good", VColors.Tertiary)
+            Spacer(Modifier.height(16.dp))
+            PulseMetricBar("Academics", 88, "Good", VColors.Primary)
+        }
+        Spacer(Modifier.height(16.dp))
+
+        // Metrics card 2 — Engagement + Wellness
+        Column(
+            Modifier.fillMaxWidth().clip(VShapes.Xl).background(VColors.SurfaceContainerLowest).padding(24.dp),
+        ) {
+            PulseMetricBar("Engagement", 79, "Fair", VColors.WarmOrange)
+            Spacer(Modifier.height(16.dp))
+            PulseMetricBar("Wellness", 85, "Good", VColors.Tertiary)
+        }
     }
 }
 
 @Composable
-private fun PulseMetric(label: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector, color: androidx.compose.ui.graphics.Color) {
-    Row(
-        Modifier.fillMaxWidth().clip(VShapes.Lg).background(VColors.SurfaceContainerLow).padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Box(Modifier.size(40.dp).clip(CircleShape).background(color.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
-            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
+private fun PulseMetricBar(label: String, pct: Int, rating: String, color: Color) {
+    Column(Modifier.fillMaxWidth()) {
+        Text(label, style = VTypography.UpdateText.copy(color = VColors.OnSurfaceVariant))
+        Spacer(Modifier.height(8.dp))
+        Box(
+            Modifier.fillMaxWidth().height(6.dp).clip(VShapes.Full).background(VColors.SurfaceContainerHigh),
+        ) {
+            Box(
+                Modifier.fillMaxWidth(pct / 100f).height(6.dp).clip(VShapes.Full).background(color),
+            )
         }
-        Text(label, style = VTypography.UpdateText.copy(color = VColors.OnSurfaceVariant), modifier = Modifier.weight(1f))
-        Text(value, style = VTypography.UpdateTitle.copy(color = VColors.OnSurface, fontWeight = FontWeight.SemiBold))
+        Spacer(Modifier.height(6.dp))
+        Text("$pct% · $rating", style = VTypography.NavLabel.copy(color = VColors.OnSurface, fontWeight = FontWeight.SemiBold))
     }
 }

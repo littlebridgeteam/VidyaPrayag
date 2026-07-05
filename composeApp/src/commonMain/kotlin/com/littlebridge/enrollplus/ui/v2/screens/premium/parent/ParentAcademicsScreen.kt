@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -86,7 +87,7 @@ fun ParentAcademicsScreen(
             ActionCard(
                 icon = { Icon(Icons.Filled.CalendarToday, contentDescription = null, tint = VColors.OnError, modifier = Modifier.size(20.dp)) },
                 title = "Apply Leave",
-                subtitle = "Submit a leave request",
+                subtitle = "Leave requests",
                 bgColor = VColors.ErrorContainer,
                 iconBg = VColors.Error,
                 onClick = onOpenLeave,
@@ -105,14 +106,14 @@ fun ParentAcademicsScreen(
 
         Spacer(Modifier.height(24.dp))
 
-        // ── Sub-tab selector (primary-container active style) ──
-        Row(
-            Modifier.padding(horizontal = 20.dp),
+        // ── Sub-tab selector (scrollable, primary-container active style) ──
+        LazyRow(
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            tabs.forEachIndexed { index, label ->
+            items(tabs.size) { index ->
                 VFilterChip(
-                    label = label,
+                    label = tabs[index],
                     active = selectedTab == index,
                     onClick = { selectedTab = index },
                     activeBg = VColors.PrimaryContainer,
@@ -203,8 +204,7 @@ private fun ProgressRingCard(
         score >= 60 -> VColors.Primary
         else -> VColors.WarmOrange
     }
-    val trackColor = VColors.TertiaryContainer
-    val trackColorResolved = trackColor
+    val trackColorResolved = VColors.TertiaryContainer
     val ringColorResolved = ringColor
     val sweep = (score.toFloat() / maxScore.toFloat()) * 360f
 
@@ -213,26 +213,31 @@ private fun ProgressRingCard(
             .clip(VShapes.Xl)
             .background(VColors.SurfaceContainerLowest)
             .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(
-            Modifier.size(80.dp),
-            contentAlignment = Alignment.Center,
+        Text(title, style = VTypography.UpdateTitle.copy(color = VColors.OnSurface, fontWeight = FontWeight.Bold))
+        Spacer(Modifier.height(16.dp))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             Box(
-                Modifier
-                    .size(80.dp)
-                    .drawBehind {
-                        drawCircle(trackColorResolved, style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round))
-                        drawArc(ringColorResolved, startAngle = -90f, sweepAngle = sweep, useCenter = false, style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round))
-                    },
-            )
-            Text("$score", style = VTypography.StatValue.copy(color = ringColorResolved, fontSize = 22.sp))
+                Modifier.size(80.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    Modifier
+                        .size(80.dp)
+                        .drawBehind {
+                            drawCircle(trackColorResolved, style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round))
+                            drawArc(ringColorResolved, startAngle = -90f, sweepAngle = sweep, useCenter = false, style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round))
+                        },
+                )
+                Text("$score%", style = VTypography.StatValue.copy(color = ringColorResolved, fontSize = 22.sp))
+            }
+            Column(Modifier.weight(1f)) {
+                Text(subtitle, style = VTypography.UpdateTitle.copy(color = VColors.OnSurface, fontWeight = FontWeight.Bold, fontSize = 16.sp))
+            }
         }
-        Spacer(Modifier.height(16.dp))
-        Text(title, style = VTypography.UpdateTitle.copy(color = VColors.OnSurface, fontWeight = FontWeight.Bold))
-        Spacer(Modifier.height(4.dp))
-        Text(subtitle, style = VTypography.UpdateText.copy(color = VColors.OnSurfaceVariant))
     }
 }
 
@@ -246,24 +251,28 @@ private fun OverviewTab(state: ParentAcademicsState) {
         return
     }
 
-    VSectionHeader("Academic Overview")
     Column(Modifier.padding(horizontal = 20.dp)) {
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            ProgressRingCard(
-                title = "Overall Progress",
-                score = child.overallProgress.toInt(),
-                subtitle = "Level ${child.currentLevel}",
-                modifier = Modifier.weight(1f),
-            )
-            ProgressRingCard(
-                title = "Attendance",
-                score = state.attendance?.attendanceRate ?: 0,
-                subtitle = "${state.attendance?.presentDays ?: 0} days present",
-                modifier = Modifier.weight(1f),
-            )
+        // Overall Performance card with ring + text (matching HTML)
+        val overallPct = child.overallProgress.toInt()
+        ProgressRingCard(
+            title = "Overall Performance",
+            score = overallPct,
+            subtitle = "Good Progress",
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(24.dp))
+
+        // Subject Breakdown with bars
+        VSectionHeader("Subject Breakdown")
+        Spacer(Modifier.height(12.dp))
+        if (state.marks == null || state.marks!!.results.isEmpty()) {
+            EmptyState("No subject data available")
+        } else {
+            state.marks!!.results.forEach { result ->
+                val pct = if (result.maxMarks > 0) (result.marks ?: 0.0) / result.maxMarks * 100 else 0.0
+                SubjectBreakdownRow(result.subject, pct.toInt())
+                Spacer(Modifier.height(10.dp))
+            }
         }
     }
 }
@@ -272,7 +281,6 @@ private fun OverviewTab(state: ParentAcademicsState) {
 
 @Composable
 private fun AttendanceTab(state: ParentAcademicsState) {
-    VSectionHeader("Attendance")
     Column(Modifier.padding(horizontal = 20.dp)) {
         if (state.attendanceLoading) {
             LoadingState()
@@ -282,20 +290,29 @@ private fun AttendanceTab(state: ParentAcademicsState) {
             EmptyState("No attendance data available")
         } else {
             val att = state.attendance!!
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                StatPill("Present", att.presentDays.toString(), VColors.Tertiary, Modifier.weight(1f))
-                StatPill("Absent", att.absentDays.toString(), VColors.Error, Modifier.weight(1f))
-                StatPill("Late", att.lateDays.toString(), VColors.WarmOrange, Modifier.weight(1f))
+            // Progress card with ring + summary text (matching HTML)
+            val rating = when {
+                att.attendanceRate >= 90 -> "Excellent"
+                att.attendanceRate >= 75 -> "Good"
+                else -> "Needs Improvement"
             }
-            Spacer(Modifier.height(16.dp))
-            InfoCard("Attendance Rate", "${att.attendanceRate}%")
+            ProgressRingCard(
+                title = "Attendance Summary",
+                score = att.attendanceRate,
+                subtitle = "$rating · ${att.presentDays} present · ${att.absentDays} absent · ${att.lateDays} late",
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(24.dp))
+
+            // This Month breakdown bars
+            VSectionHeader("This Month")
             Spacer(Modifier.height(12.dp))
-            VProgressBar(progress = att.attendanceRate / 100f, modifier = Modifier.fillMaxWidth())
-            Spacer(Modifier.height(16.dp))
-            InfoCard("Total Days", att.totalDays.toString())
+            val totalAtt = att.totalDays.coerceAtLeast(1)
+            SubjectBreakdownRow("Days Present", att.presentDays, totalAtt, VColors.Tertiary)
+            Spacer(Modifier.height(10.dp))
+            SubjectBreakdownRow("Absent", att.absentDays, totalAtt, VColors.Error)
+            Spacer(Modifier.height(10.dp))
+            SubjectBreakdownRow("Late Arrival", att.lateDays, totalAtt, VColors.WarmOrange)
         }
     }
 }
@@ -304,7 +321,7 @@ private fun AttendanceTab(state: ParentAcademicsState) {
 
 @Composable
 private fun MarksTab(state: ParentAcademicsState) {
-    VSectionHeader("Latest Marks")
+    VSectionHeader("Recent Test Scores")
     Column(Modifier.padding(horizontal = 20.dp)) {
         if (state.marksLoading) {
             LoadingState()
@@ -376,41 +393,127 @@ private fun HomeworkTab(state: ParentAcademicsState) {
 
 @Composable
 private fun ReportTab(state: ParentAcademicsState) {
-    VSectionHeader("Report Card")
     Column(Modifier.padding(horizontal = 20.dp)) {
         if (state.marks == null || state.marks!!.results.isEmpty()) {
             EmptyState("No report card data available")
         } else {
             val results = state.marks!!.results
-            val avgScore = results.mapNotNull { it.marks }.let { marks ->
-                if (marks.isNotEmpty()) marks.average() else 0.0
-            }
-            val avgMax = results.map { it.maxMarks.toDouble() }.let { maxes ->
-                if (maxes.isNotEmpty()) maxes.average() else 100.0
-            }
-            val avgPct = if (avgMax > 0) (avgScore / avgMax * 100).toInt() else 0
 
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            // Report card with subject bars + grades (matching HTML)
+            Column(
+                Modifier.fillMaxWidth().clip(VShapes.Xl).background(VColors.SurfaceContainerLowest).padding(24.dp),
             ) {
-                ProgressRingCard(
-                    title = "Overall Average",
-                    score = avgPct,
-                    subtitle = "${results.size} subjects",
-                    modifier = Modifier.weight(1f),
-                )
+                Text("Term Report Card", style = VTypography.UpdateTitle.copy(color = VColors.OnSurface, fontWeight = FontWeight.Bold))
+                Spacer(Modifier.height(16.dp))
+                results.forEach { result ->
+                    val pct = if (result.maxMarks > 0) ((result.marks ?: 0.0) / result.maxMarks * 100).toInt() else 0
+                    val grade = when {
+                        pct >= 90 -> "A+"
+                        pct >= 80 -> "A"
+                        pct >= 70 -> "B+"
+                        pct >= 60 -> "B"
+                        else -> "C"
+                    }
+                    val barColor = when {
+                        pct >= 85 -> VColors.Primary
+                        pct >= 60 -> VColors.Tertiary
+                        else -> VColors.WarmOrange
+                    }
+                    Column(Modifier.fillMaxWidth()) {
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(result.subject, style = VTypography.SyllabusName.copy(color = VColors.OnSurface))
+                            Text("$pct% · $grade", style = VTypography.SyllabusPct.copy(color = barColor))
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Box(
+                            Modifier.fillMaxWidth().height(6.dp).clip(VShapes.Full).background(VColors.SurfaceContainerHigh),
+                        ) {
+                            Box(
+                                Modifier.fillMaxWidth(pct / 100f).height(6.dp).clip(VShapes.Full).background(barColor),
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(14.dp))
+                }
             }
-            Spacer(Modifier.height(20.dp))
-            results.forEach { result ->
-                MarkRow(result.subject, result.marks ?: 0.0, result.maxMarks.toDouble(), result.examName)
-                Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(16.dp))
+
+            // Teacher Remarks card
+            val remarks = state.dailySummary?.aiSummary ?: "No remarks available."
+            Column(
+                Modifier.fillMaxWidth().clip(VShapes.Xl).background(VColors.SurfaceContainerLowest).padding(24.dp),
+            ) {
+                Text("Teacher Remarks", style = VTypography.UpdateTitle.copy(color = VColors.OnSurface, fontWeight = FontWeight.Bold))
+                Spacer(Modifier.height(12.dp))
+                Text(remarks, style = VTypography.UpdateText.copy(color = VColors.OnSurfaceVariant))
             }
         }
     }
 }
 
 // ── Reusable UI elements ─────────────────────────────────────────────────────
+
+@Composable
+private fun SubjectBreakdownRow(
+    name: String,
+    pct: Int,
+    barColor: Color = VColors.Primary,
+) {
+    Column(
+        Modifier.fillMaxWidth().clip(VShapes.Xl).background(VColors.SurfaceContainerLowest).padding(16.dp),
+    ) {
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(name, style = VTypography.SyllabusName.copy(color = VColors.OnSurface))
+            Text("$pct%", style = VTypography.SyllabusPct.copy(color = barColor))
+        }
+        Spacer(Modifier.height(10.dp))
+        Box(
+            Modifier.fillMaxWidth().height(6.dp).clip(VShapes.Full).background(VColors.SurfaceContainerHigh),
+        ) {
+            Box(
+                Modifier.fillMaxWidth(pct / 100f).height(6.dp).clip(VShapes.Full).background(barColor),
+            )
+        }
+    }
+}
+
+@Composable
+private fun SubjectBreakdownRow(
+    name: String,
+    value: Int,
+    total: Int,
+    barColor: Color = VColors.Primary,
+) {
+    val pct = if (total > 0) (value * 100 / total) else 0
+    Column(
+        Modifier.fillMaxWidth().clip(VShapes.Xl).background(VColors.SurfaceContainerLowest).padding(16.dp),
+    ) {
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(name, style = VTypography.SyllabusName.copy(color = VColors.OnSurface))
+            Text("$value", style = VTypography.SyllabusPct.copy(color = barColor))
+        }
+        Spacer(Modifier.height(10.dp))
+        Box(
+            Modifier.fillMaxWidth().height(6.dp).clip(VShapes.Full).background(VColors.SurfaceContainerHigh),
+        ) {
+            Box(
+                Modifier.fillMaxWidth(pct / 100f).height(6.dp).clip(VShapes.Full).background(barColor),
+            )
+        }
+    }
+}
 
 @Composable
 private fun StatPill(label: String, value: String, color: Color, modifier: Modifier = Modifier) {

@@ -79,6 +79,11 @@ fun ParentProfileScreen(
     onLinkChild: () -> Unit = {},
     onDiscoverSchools: () -> Unit = {},
     onAccountSettings: () -> Unit = {},
+    childName: String? = null,
+    childLevel: Int? = null,
+    childAttendanceRate: Int? = null,
+    childAvgMarks: Int? = null,
+    childClassName: String? = null,
     modifier: Modifier = Modifier,
     viewModel: ParentProfileViewModel = koinViewModel(),
 ) = PremiumTheme(isDark = false) {
@@ -123,18 +128,21 @@ fun ParentProfileScreen(
             return@PremiumTheme
         }
 
-        val childName = profile.name
-        val childInitial = childName.firstOrNull()?.toString() ?: "?"
+        // Use child data if available, fall back to parent profile
+        val displayName = childName ?: profile.name
+        val displayInitial = displayName.firstOrNull()?.toString() ?: "?"
+        val displayClass = childClassName ?: profile.role.replaceFirstChar { it.uppercase() }
+        val displayLevel = childLevel ?: 1
 
         // ── Profile Hero Card (child's info) ──
         VProfileHeroCard(
-            initials = childInitial,
-            name = childName,
-            className = profile.role.replaceFirstChar { it.uppercase() },
-            levelText = "Level 12 — Scholar",
-            xpText = "3,400 / 5,000 XP",
-            xpProgress = 0.68f,
-            badge = "House Eagle · Level 12",
+            initials = displayInitial,
+            name = displayName,
+            className = displayClass,
+            levelText = "Level $displayLevel — Scholar",
+            xpText = "${displayLevel * 300} / ${(displayLevel + 1) * 500} XP",
+            xpProgress = (displayLevel * 300f) / ((displayLevel + 1) * 500f),
+            badge = "Level $displayLevel",
             onClick = { },
             modifier = Modifier.padding(horizontal = 20.dp),
         )
@@ -144,9 +152,9 @@ fun ParentProfileScreen(
         // ── Stats — 2×2 grid ──
         VSectionHeader("Stats")
         val stats = listOf(
-            StatData("94%", "Attendance", "↑ 2% this month"),
-            StatData("88%", "Avg Marks", "↑ 5% this term"),
-            StatData("3.4K", "XP Points", "↑ 420 this week"),
+            StatData("${childAttendanceRate ?: 0}%", "Attendance", "↑ 2% this month"),
+            StatData("${childAvgMarks ?: 0}%", "Avg Marks", "↑ 5% this term"),
+            StatData("${(displayLevel * 300)}", "XP Points", "↑ 420 this week"),
             StatData("18", "Quizzes Done", "↑ 3 this week"),
         )
         Column(Modifier.padding(horizontal = 20.dp)) {
