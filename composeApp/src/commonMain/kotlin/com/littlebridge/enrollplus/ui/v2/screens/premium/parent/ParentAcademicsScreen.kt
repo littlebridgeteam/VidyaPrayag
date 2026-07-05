@@ -1,13 +1,12 @@
 package com.littlebridge.enrollplus.ui.v2.screens.premium.parent
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,850 +17,743 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Quiz
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.feature.parent.domain.model.ParentMarkDto
+import com.littlebridge.enrollplus.feature.parent.domain.model.ParentSyllabusSubjectDto
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentQuizDto
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentAcademicsState
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentAcademicsViewModel
-import com.littlebridge.enrollplus.ui.v2.components.carousel.VStaggeredItem
-import com.littlebridge.enrollplus.ui.v2.components.misc.VPullRefreshPremium
+import com.littlebridge.enrollplus.ui.v2.components.misc.VShimmerBoxPremium
+import com.littlebridge.enrollplus.ui.v2.components.misc.VStateHostPremium
 import com.littlebridge.enrollplus.ui.v2.components.navigation.VFilterChip
-import com.littlebridge.enrollplus.ui.v2.components.progress.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.components.typography.VSectionHeader
-import com.littlebridge.enrollplus.ui.v2.modifiers.pressScale
-import com.littlebridge.enrollplus.ui.v2.modifiers.shapeMorph
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.tokens.PremiumTheme
 import com.littlebridge.enrollplus.ui.v2.tokens.VColors
-import com.littlebridge.enrollplus.ui.v2.tokens.VMotion
 import com.littlebridge.enrollplus.ui.v2.tokens.VShapes
 import com.littlebridge.enrollplus.ui.v2.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
 
-/**
- * Premium parent academics — rebuilt with 7 sub-tabs (Overview, Attendance,
- * Marks, Syllabus, Homework, Quizzes, Report), AnimatedContent transitions,
- * attendance calendar, premium loading/error/empty states, pull-to-refresh.
- */
+private val subTabs = listOf("Overview", "Attendance", "Marks", "Syllabus", "Homework", "Quizzes", "Report")
+
 @Composable
 fun ParentAcademicsScreen(
+    onOpenOverlay: (ParentOverlay) -> Unit,
+    onSwitchTab: (Int) -> Unit = {},
+    initialSubTab: Int = 0,
     modifier: Modifier = Modifier,
     viewModel: ParentAcademicsViewModel = koinViewModel(),
-    onOpenLeave: () -> Unit = {},
-    onOpenHealth: () -> Unit = {},
-    onOpenQuizDetail: (String) -> Unit = {},
-) = PremiumTheme(isDark = false) {
+) {
     val state by viewModel.state.collectAsStateV2()
-    val tabs = listOf("Overview", "Attendance", "Marks", "Syllabus", "Homework", "Quizzes", "Report")
-    var selectedTab by remember { mutableStateOf(0) }
+    var subTab by rememberSaveable { mutableIntStateOf(initialSubTab) }
 
-    VPullRefreshPremium(
-        isRefreshing = state.childrenLoading,
-        onRefresh = { viewModel.loadChildren() },
-        modifier = modifier.fillMaxSize().background(VColors.Surface),
+    LaunchedEffect(subTab) {
+        val childId = state.selectedChild?.id ?: return@LaunchedEffect
+        when (subTabs[subTab]) {
+            "Attendance" -> if (state.attendance == null) viewModel.loadAttendance(childId)
+            "Marks" -> if (state.marks == null) viewModel.loadMarks(childId)
+            "Syllabus" -> if (state.syllabus == null) viewModel.loadSyllabus(childId)
+            "Homework" -> if (state.dailySummary == null) viewModel.loadDailySummary(childId)
+            "Quizzes" -> if (state.quizzes.isEmpty()) viewModel.loadQuizzes(childId)
+            "Report" -> if (state.marks == null) viewModel.loadMarks(childId)
+        }
+    }
+
+    Column(modifier = modifier.fillMaxSize()) {
+        // Sub-tab chips row
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            subTabs.forEachIndexed { index, label ->
+                VFilterChip(
+                    label = label,
+                    active = subTab == index,
+                    onClick = { subTab = index },
+                )
+            }
+        }
+
+        // Content area: weight(1f) + verticalScroll (layout safety Rule 5)
+        Box(Modifier.weight(1f).fillMaxWidth()) {
+            AnimatedContent(
+                targetState = subTab,
+                transitionSpec = { fadeIn(tween(300)).togetherWith(fadeOut(tween(200))) },
+                label = "academicsSubTab",
+            ) { current ->
+                when (subTabs[current]) {
+                    "Overview" -> OverviewTab(state, viewModel)
+                    "Attendance" -> AttendanceTab(state, viewModel)
+                    "Marks" -> MarksTab(state)
+                    "Syllabus" -> SyllabusTab(state)
+                    "Homework" -> HomeworkTab(state)
+                    "Quizzes" -> QuizzesTab(state, onOpenOverlay)
+                    "Report" -> ReportTab(state)
+                }
+            }
+        }
+    }
+}
+
+// ── Overview ──────────────────────────────────────────────────────────────
+
+@Composable
+private fun OverviewTab(
+    state: ParentAcademicsState,
+    viewModel: ParentAcademicsViewModel,
+) {
+    val childId = state.selectedChild?.id
+    LaunchedEffect(childId) {
+        if (childId != null && state.attendance == null) viewModel.loadAttendance(childId)
+    }
+
+    AcademicsScrollContent(
+        loading = state.childrenLoading,
+        error = state.childrenError,
+        isEmpty = state.children.isEmpty() && !state.childrenLoading,
+        onRetry = { viewModel.loadChildren() },
+        emptyTitle = "No data yet",
+        emptyIcon = Icons.Filled.School,
+    ) {
+        // Attendance ring
+        val attendanceRate = state.attendance?.attendanceRate ?: 0
+        StatRingCard(
+            label = "Attendance",
+            percentage = attendanceRate,
+            subtitle = "${state.attendance?.presentDays ?: 0} present / ${state.attendance?.totalDays ?: 0} total",
+        )
+
+        Spacer(Modifier.height(16.dp))
+
+        // Marks summary
+        val marks = state.marks?.results ?: emptyList()
+        if (marks.isNotEmpty()) {
+            VSectionHeader(title = "Latest Marks", modifier = Modifier.padding(horizontal = 4.dp))
+            Spacer(Modifier.height(8.dp))
+            marks.take(3).forEach { mark ->
+                MarkCard(mark = mark)
+                Spacer(Modifier.height(8.dp))
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        // Syllabus coverage
+        val subjects = state.syllabus?.subjects ?: emptyList()
+        if (subjects.isNotEmpty()) {
+            VSectionHeader(title = "Syllabus Coverage", modifier = Modifier.padding(horizontal = 4.dp))
+            Spacer(Modifier.height(8.dp))
+            subjects.forEach { subject ->
+                SubjectProgressRow(subject = subject)
+                Spacer(Modifier.height(8.dp))
+            }
+        }
+    }
+}
+
+// ── Attendance ────────────────────────────────────────────────────────────
+
+@Composable
+private fun AttendanceTab(
+    state: ParentAcademicsState,
+    viewModel: ParentAcademicsViewModel,
+) {
+    val childId = state.selectedChild?.id
+    LaunchedEffect(childId) {
+        if (childId != null && state.attendance == null) viewModel.loadAttendance(childId)
+    }
+
+    AcademicsScrollContent(
+        loading = state.attendanceLoading,
+        error = state.attendanceError,
+        isEmpty = state.attendance == null && !state.attendanceLoading,
+        onRetry = { childId?.let { viewModel.loadAttendance(it) } },
+        emptyTitle = "No attendance records",
+        emptyIcon = Icons.Filled.School,
+    ) {
+        val att = state.attendance ?: return@AcademicsScrollContent
+
+        StatRingCard(
+            label = "Attendance Rate",
+            percentage = att.attendanceRate,
+            subtitle = "${att.presentDays} present, ${att.absentDays} absent, ${att.lateDays} late",
+        )
+
+        Spacer(Modifier.height(16.dp))
+
+        VSectionHeader(title = "Breakdown", modifier = Modifier.padding(horizontal = 4.dp))
+        Spacer(Modifier.height(8.dp))
+
+        BreakdownBar(label = "Present", count = att.presentDays, total = att.totalDays, color = VColors.Primary)
+        Spacer(Modifier.height(6.dp))
+        BreakdownBar(label = "Absent", count = att.absentDays, total = att.totalDays, color = VColors.Error)
+        Spacer(Modifier.height(6.dp))
+        BreakdownBar(label = "Late", count = att.lateDays, total = att.totalDays, color = VColors.WarmOrange)
+
+        Spacer(Modifier.height(16.dp))
+
+        VSectionHeader(title = "Recent Records", modifier = Modifier.padding(horizontal = 4.dp))
+        Spacer(Modifier.height(8.dp))
+
+        att.records.takeLast(10).forEach { record ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(VShapes.Lg)
+                    .background(VColors.SurfaceContainerLow)
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    Modifier.size(8.dp).clip(CircleShape).background(
+                        when (record.status.lowercase()) {
+                            "present" -> VColors.Primary
+                            "absent" -> VColors.Error
+                            "late" -> VColors.WarmOrange
+                            else -> VColors.Outline
+                        },
+                    ),
+                )
+                Text(
+                    text = record.date,
+                    style = VTypography.BodyMedium.copy(color = VColors.OnSurface),
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    text = record.status.replaceFirstChar { it.uppercase() },
+                    style = VTypography.ThreadPreview.copy(color = VColors.OnSurfaceVariant),
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+        }
+    }
+}
+
+// ── Marks ─────────────────────────────────────────────────────────────────
+
+@Composable
+private fun MarksTab(state: ParentAcademicsState) {
+    AcademicsScrollContent(
+        loading = state.marksLoading,
+        error = state.marksError,
+        isEmpty = (state.marks?.results?.isEmpty() ?: true) && !state.marksLoading,
+        onRetry = null,
+        emptyTitle = "No marks published",
+        emptyIcon = Icons.Filled.School,
+    ) {
+        val marks = state.marks?.results ?: return@AcademicsScrollContent
+
+        // Group by subject for filter chips
+        val subjects = marks.map { it.subject }.distinct()
+        var selectedSubject by rememberSaveable { mutableIntStateOf(0) }
+
+        if (subjects.size > 1) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                subjects.forEachIndexed { index, subject ->
+                    VFilterChip(
+                        label = subject,
+                        active = selectedSubject == index,
+                        onClick = { selectedSubject = index },
+                    )
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+        }
+
+        val filtered = if (subjects.size > 1) marks.filter { it.subject == subjects[selectedSubject] } else marks
+        filtered.forEach { mark ->
+            MarkCard(mark = mark)
+            Spacer(Modifier.height(8.dp))
+        }
+    }
+}
+
+// ── Syllabus ──────────────────────────────────────────────────────────────
+
+@Composable
+private fun SyllabusTab(state: ParentAcademicsState) {
+    AcademicsScrollContent(
+        loading = state.syllabusLoading,
+        error = state.syllabusError,
+        isEmpty = (state.syllabus?.subjects?.isEmpty() ?: true) && !state.syllabusLoading,
+        onRetry = null,
+        emptyTitle = "No syllabus data",
+        emptyIcon = Icons.Filled.School,
+    ) {
+        val subjects = state.syllabus?.subjects ?: return@AcademicsScrollContent
+
+        // Overall coverage card
+        val avgProgress = if (subjects.isNotEmpty()) subjects.sumOf { it.progress } / subjects.size else 0
+        StatRingCard(
+            label = "Overall Coverage",
+            percentage = avgProgress,
+            subtitle = "${subjects.size} subjects",
+        )
+
+        Spacer(Modifier.height(16.dp))
+
+        VSectionHeader(title = "Subjects", modifier = Modifier.padding(horizontal = 4.dp))
+        Spacer(Modifier.height(8.dp))
+
+        subjects.forEach { subject ->
+            SubjectProgressRow(subject = subject)
+            Spacer(Modifier.height(8.dp))
+        }
+    }
+}
+
+// ── Homework ──────────────────────────────────────────────────────────────
+
+@Composable
+private fun HomeworkTab(state: ParentAcademicsState) {
+    AcademicsScrollContent(
+        loading = state.dailySummaryLoading,
+        error = state.dailySummaryError,
+        isEmpty = (state.dailySummary?.entries?.isEmpty() ?: true) && !state.dailySummaryLoading,
+        onRetry = null,
+        emptyTitle = "No homework entries",
+        emptyIcon = Icons.Filled.School,
+    ) {
+        val entries = state.dailySummary?.entries ?: return@AcademicsScrollContent
+
+        entries.forEach { entry ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(VShapes.Lg)
+                    .background(VColors.SurfaceContainerLow)
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.Top,
+            ) {
+                Box(
+                    Modifier.size(36.dp).clip(VShapes.Md).background(VColors.PrimaryContainer),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = entry.subject.take(1).uppercase(),
+                        style = VTypography.QuickStatValue.copy(color = VColors.OnPrimaryContainer),
+                    )
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = entry.subject,
+                        style = VTypography.UpdateTitle.copy(color = VColors.OnSurface),
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = entry.summaryText,
+                        style = VTypography.BodyMedium.copy(color = VColors.OnSurfaceVariant),
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Text(
+                            text = entry.date,
+                            style = VTypography.ThreadTime.copy(color = VColors.Outline),
+                        )
+                        if (entry.isAiEstimated) {
+                            Text(
+                                text = "AI estimated",
+                                style = VTypography.ThreadTime.copy(color = VColors.Tertiary),
+                            )
+                        }
+                    }
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+        }
+    }
+}
+
+// ── Quizzes ───────────────────────────────────────────────────────────────
+
+@Composable
+private fun QuizzesTab(
+    state: ParentAcademicsState,
+    onOpenOverlay: (ParentOverlay) -> Unit,
+) {
+    AcademicsScrollContent(
+        loading = state.quizzesLoading,
+        error = state.quizzesError,
+        isEmpty = state.quizzes.isEmpty() && !state.quizzesLoading,
+        onRetry = null,
+        emptyTitle = "No quizzes available",
+        emptyIcon = Icons.Filled.Quiz,
+    ) {
+        state.quizzes.forEach { quiz ->
+            QuizCard(quiz = quiz)
+            Spacer(Modifier.height(8.dp))
+        }
+    }
+}
+
+// ── Report ────────────────────────────────────────────────────────────────
+
+@Composable
+private fun ReportTab(state: ParentAcademicsState) {
+    AcademicsScrollContent(
+        loading = state.marksLoading,
+        error = state.marksError,
+        isEmpty = (state.marks?.results?.isEmpty() ?: true) && !state.marksLoading,
+        onRetry = null,
+        emptyTitle = "No report data",
+        emptyIcon = Icons.Filled.School,
+    ) {
+        val marks = state.marks?.results ?: return@AcademicsScrollContent
+
+        // Group by exam name
+        val grouped = marks.groupBy { it.examName }
+        grouped.forEach { (examName, examMarks) ->
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(VShapes.Xl)
+                    .background(VColors.SurfaceContainerLowest)
+                    .padding(20.dp),
+            ) {
+                Text(
+                    text = examName,
+                    style = VTypography.SectionHeader.copy(color = VColors.OnSurface),
+                )
+                Spacer(Modifier.height(12.dp))
+                examMarks.forEach { mark ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = mark.subject,
+                            style = VTypography.BodyMedium.copy(color = VColors.OnSurface),
+                            modifier = Modifier.weight(1f),
+                        )
+                        val scoreText = mark.marks?.let { "${it.toInt()}/${mark.maxMarks}" } ?: "Pending"
+                        Text(
+                            text = scoreText,
+                            style = VTypography.QuickStatValue.copy(color = VColors.OnSurface),
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+        }
+    }
+}
+
+// ── Shared components ─────────────────────────────────────────────────────
+
+@Composable
+private fun AcademicsScrollContent(
+    loading: Boolean,
+    error: String?,
+    isEmpty: Boolean,
+    onRetry: (() -> Unit)?,
+    emptyTitle: String,
+    emptyIcon: androidx.compose.ui.graphics.vector.ImageVector,
+    content: @Composable () -> Unit,
+) {
+    VStateHostPremium(
+        loading = loading,
+        error = error,
+        isEmpty = isEmpty,
+        modifier = Modifier.fillMaxSize(),
+        emptyTitle = emptyTitle,
+        emptyIcon = emptyIcon,
+        onRetry = onRetry,
+        skeleton = {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                VShimmerBoxPremium(height = 120.dp, shape = VShapes.TwoXl)
+                repeat(4) { VShimmerBoxPremium(height = 60.dp, shape = VShapes.Lg) }
+            }
+        },
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 8.dp)
                 .padding(bottom = 140.dp),
         ) {
-            Spacer(Modifier.height(16.dp))
-
-            // ── Action Cards (Leave + Health) ──
-            VStaggeredItem(delayMs = 0) {
-                Row(
-                    Modifier.padding(horizontal = 20.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    ActionCard(
-                        icon = { Icon(Icons.Filled.CalendarToday, contentDescription = null, tint = VColors.OnError, modifier = Modifier.size(20.dp)) },
-                        title = "Apply Leave",
-                        subtitle = "Leave requests",
-                        bgColor = VColors.ErrorContainer,
-                        iconBg = VColors.Error,
-                        onClick = onOpenLeave,
-                        modifier = Modifier.weight(1f),
-                    )
-                    ActionCard(
-                        icon = { Icon(Icons.Filled.Favorite, contentDescription = null, tint = VColors.OnTertiary, modifier = Modifier.size(20.dp)) },
-                        title = "Health",
-                        subtitle = "View health records",
-                        bgColor = VColors.TertiaryContainer,
-                        iconBg = VColors.Tertiary,
-                        onClick = onOpenHealth,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(24.dp))
-
-            // ── Sub-tab selector ──
-            VStaggeredItem(delayMs = 60) {
-                LazyRow(
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 20.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    items(tabs) { tabLabel ->
-                        val index = tabs.indexOf(tabLabel)
-                        VFilterChip(
-                            label = tabLabel,
-                            active = selectedTab == index,
-                            onClick = {
-                                selectedTab = index
-                                when (index) {
-                                    1 -> viewModel.loadAttendance()
-                                    2 -> viewModel.loadMarks()
-                                    3 -> viewModel.loadSyllabus()
-                                    4 -> viewModel.loadDailySummary()
-                                    5 -> viewModel.loadQuizzes()
-                                }
-                            },
-                            activeBg = VColors.PrimaryContainer,
-                            activeFg = VColors.OnPrimaryContainer,
-                            activeFontWeight = FontWeight.Bold,
-                            fontSize = 13,
-                        )
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(20.dp))
-
-            // ── Child selector ──
-            if (state.children.size > 1) {
-                VStaggeredItem(delayMs = 100) {
-                    Row(
-                        Modifier.padding(horizontal = 20.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        state.children.forEach { child ->
-                            VFilterChip(
-                                label = child.name,
-                                active = state.selectedChildId == child.id,
-                                onClick = { viewModel.selectChild(child.id) },
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(16.dp))
-                }
-            }
-
-            // ── Tab content with AnimatedContent ──
-            AnimatedContent(
-                targetState = selectedTab,
-                transitionSpec = {
-                    fadeIn(tween(VMotion.DurMedium1)).togetherWith(fadeOut(tween(VMotion.DurShort2)))
-                },
-                label = "academicsTab",
-            ) { tab ->
-                when (tab) {
-                    0 -> OverviewTab(state)
-                    1 -> AttendanceTab(state, viewModel)
-                    2 -> MarksTab(state, viewModel)
-                    3 -> SyllabusTab(state, viewModel)
-                    4 -> HomeworkTab(state, viewModel)
-                    5 -> QuizzesTab(state, viewModel, onOpenQuizDetail)
-                    6 -> ReportTab(state)
-                }
-            }
-
-            Spacer(Modifier.height(24.dp))
+            content()
         }
     }
 }
 
-// ── Action Card ──────────────────────────────────────────────────────────────
-
 @Composable
-private fun ActionCard(
-    icon: @Composable () -> Unit,
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    bgColor: Color = VColors.SurfaceContainerLow,
-    iconBg: Color = VColors.Primary,
-) {
-    val interaction = remember { MutableInteractionSource() }
-    Column(
-        modifier
-            .pressScale(interaction, pressedScale = 0.96f)
-            .shapeMorph(interaction, VShapes.LgDp, VShapes.XlDp, VMotion.DurShort2)
-            .clip(VShapes.Lg)
-            .background(bgColor)
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+private fun StatRingCard(label: String, percentage: Int, subtitle: String) {
+    val primaryColor = VColors.Primary
+    val trackColor = VColors.SurfaceContainerHigh
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.TwoXl)
+            .background(VColors.SurfaceContainerLowest)
+            .padding(20.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         Box(
-            Modifier.size(36.dp).clip(VShapes.Md).background(iconBg),
+            modifier = Modifier.size(80.dp),
             contentAlignment = Alignment.Center,
-        ) { icon() }
-        Text(title, style = VTypography.UpdateTitle.copy(color = VColors.OnSurface, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp))
-        Text(subtitle, style = VTypography.NavLabel.copy(color = VColors.OnSurfaceVariant, fontSize = 11.sp))
-    }
-}
-
-// ── Progress Ring Card ───────────────────────────────────────────────────────
-
-@Composable
-private fun ProgressRingCard(
-    title: String,
-    score: Int,
-    maxScore: Int = 100,
-    subtitle: String,
-    modifier: Modifier = Modifier,
-) {
-    val ringColor = when {
-        score >= 85 -> VColors.Tertiary
-        score >= 60 -> VColors.Primary
-        else -> VColors.WarmOrange
-    }
-    val trackColorResolved = VColors.TertiaryContainer
-    val ringColorResolved = ringColor
-    val sweep = (score.toFloat() / maxScore.toFloat()) * 360f
-
-    Column(
-        modifier
-            .clip(VShapes.Xl)
-            .background(VColors.SurfaceContainerLowest)
-            .padding(24.dp),
-    ) {
-        Text(title, style = VTypography.UpdateTitle.copy(color = VColors.OnSurface, fontWeight = FontWeight.Bold))
-        Spacer(Modifier.height(16.dp))
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             Box(
-                Modifier.size(80.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Box(
-                    Modifier
-                        .size(80.dp)
-                        .drawBehind {
-                            drawCircle(trackColorResolved, style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round))
-                            drawArc(ringColorResolved, startAngle = -90f, sweepAngle = sweep, useCenter = false, style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round))
-                        },
-                )
-                Text("$score%", style = VTypography.StatValue.copy(color = ringColorResolved, fontSize = 22.sp))
-            }
-            Column(Modifier.weight(1f)) {
-                Text(subtitle, style = VTypography.UpdateTitle.copy(color = VColors.OnSurface, fontWeight = FontWeight.Bold, fontSize = 16.sp))
-            }
-        }
-    }
-}
-
-// ── Overview Tab ─────────────────────────────────────────────────────────────
-
-@Composable
-private fun OverviewTab(state: ParentAcademicsState) {
-    val child = state.selectedChild
-    if (child == null) {
-        EmptyState("No child selected")
-        return
-    }
-
-    Column(Modifier.padding(horizontal = 20.dp)) {
-        // Overall Performance card with ring + text (matching HTML)
-        val overallPct = child.overallProgress.toInt()
-        ProgressRingCard(
-            title = "Overall Performance",
-            score = overallPct,
-            subtitle = "Good Progress",
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(Modifier.height(24.dp))
-
-        // Subject Breakdown with bars
-        VSectionHeader("Subject Breakdown")
-        Spacer(Modifier.height(12.dp))
-        if (state.marks == null || state.marks!!.results.isEmpty()) {
-            EmptyState("No subject data available")
-        } else {
-            state.marks!!.results.forEach { result ->
-                val pct = if (result.maxMarks > 0) (result.marks ?: 0.0) / result.maxMarks * 100 else 0.0
-                SubjectBreakdownRow(result.subject, pct.toInt())
-                Spacer(Modifier.height(10.dp))
-            }
-        }
-    }
-}
-
-// ── Attendance Tab ───────────────────────────────────────────────────────────
-
-@Composable
-private fun AttendanceTab(state: ParentAcademicsState, viewModel: ParentAcademicsViewModel) {
-    Column(Modifier.padding(horizontal = 20.dp)) {
-        if (state.attendanceLoading) {
-            SkeletonCard(variant = "card")
-            Spacer(Modifier.height(12.dp))
-            SkeletonCard(variant = "card")
-        } else if (state.attendanceError != null) {
-            ErrorStateCard(message = state.attendanceError!!, onRetry = { viewModel.loadAttendance() })
-        } else if (state.attendance == null) {
-            EmptyState("No attendance data available")
-        } else {
-            val att = state.attendance!!
-            val rating = when {
-                att.attendanceRate >= 90 -> "Excellent"
-                att.attendanceRate >= 75 -> "Good"
-                else -> "Needs Improvement"
-            }
-            ProgressRingCard(
-                title = "Attendance Summary",
-                score = att.attendanceRate,
-                subtitle = "$rating · ${att.presentDays} present · ${att.absentDays} absent · ${att.lateDays} late",
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(24.dp))
-
-            // This Month breakdown bars
-            VSectionHeader("This Month")
-            Spacer(Modifier.height(12.dp))
-            val totalAtt = att.totalDays.coerceAtLeast(1)
-            SubjectBreakdownRow("Days Present", att.presentDays, totalAtt, VColors.Tertiary)
-            Spacer(Modifier.height(10.dp))
-            SubjectBreakdownRow("Absent", att.absentDays, totalAtt, VColors.Error)
-            Spacer(Modifier.height(10.dp))
-            SubjectBreakdownRow("Late Arrival", att.lateDays, totalAtt, VColors.WarmOrange)
-
-            Spacer(Modifier.height(24.dp))
-
-            // Attendance Calendar
-            VSectionHeader("Calendar")
-            Spacer(Modifier.height(12.dp))
-            val calendarDays = buildAttendanceCalendarDays(att)
-            AttendanceCalendar(
-                monthName = "This Month",
-                days = calendarDays,
-                onPrevMonth = {},
-                onNextMonth = {},
-            )
-        }
-    }
-}
-
-// ── Marks Tab ────────────────────────────────────────────────────────────────
-
-@Composable
-private fun MarksTab(state: ParentAcademicsState, viewModel: ParentAcademicsViewModel) {
-    var selectedFilter by remember { mutableStateOf("All") }
-    VSectionHeader("Recent Test Scores")
-    Column(Modifier.padding(horizontal = 20.dp)) {
-        if (state.marksLoading) {
-            SkeletonCard(variant = "list")
-            Spacer(Modifier.height(10.dp))
-            SkeletonCard(variant = "list")
-        } else if (state.marksError != null) {
-            ErrorStateCard(message = state.marksError!!, onRetry = { viewModel.loadMarks() })
-        } else if (state.marks == null || state.marks!!.results.isEmpty()) {
-            EmptyState("No marks published yet")
-        } else {
-            val allResults = state.marks!!.results
-            val subjects = allResults.map { it.subject }.distinct()
-            val filteredResults = if (selectedFilter == "All") allResults else allResults.filter { it.subject == selectedFilter }
-
-            // Filter chips
-            if (subjects.size > 1) {
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    items(listOf("All") + subjects) { label ->
-                        VFilterChip(
-                            label = label,
-                            active = label == selectedFilter,
-                            onClick = { selectedFilter = label },
+                modifier = Modifier
+                    .size(80.dp)
+                    .drawBehind {
+                        drawArc(
+                            color = trackColor,
+                            startAngle = 0f,
+                            sweepAngle = 360f,
+                            useCenter = false,
+                            style = Stroke(width = 8.dp.toPx(), cap = StrokeCap.Round),
                         )
-                    }
-                }
-                Spacer(Modifier.height(16.dp))
-            }
-
-            filteredResults.forEach { result ->
-                MarkRow(result.subject, result.marks ?: 0.0, result.maxMarks.toDouble(), result.examName)
-                Spacer(Modifier.height(10.dp))
-            }
-        }
-    }
-}
-
-// ── Syllabus Tab ─────────────────────────────────────────────────────────────
-
-@Composable
-private fun SyllabusTab(state: ParentAcademicsState, viewModel: ParentAcademicsViewModel) {
-    var expandedSubject by remember { mutableStateOf<String?>(null) }
-    VSectionHeader("Syllabus Coverage")
-    Column(Modifier.padding(horizontal = 20.dp)) {
-        if (state.syllabusLoading) {
-            SkeletonCard(variant = "list")
-            Spacer(Modifier.height(10.dp))
-            SkeletonCard(variant = "list")
-        } else if (state.syllabusError != null) {
-            ErrorStateCard(message = state.syllabusError!!, onRetry = { viewModel.loadSyllabus() })
-        } else if (state.syllabus == null) {
-            EmptyState("No syllabus data available")
-        } else {
-            val syllabus = state.syllabus!!
-            val avgProgress = if (syllabus.subjects.isNotEmpty()) syllabus.subjects.map { it.progress }.average() else 0.0
-            InfoCard("Overall Coverage", "${avgProgress.toInt()}%")
-            Spacer(Modifier.height(12.dp))
-            VProgressBar(progress = (avgProgress / 100f).toFloat(), modifier = Modifier.fillMaxWidth())
-            Spacer(Modifier.height(20.dp))
-            syllabus.subjects.forEach { subj ->
-                ExpandableSyllabusRow(
-                    subject = subj.subject,
-                    coverage = subj.progress.toDouble(),
-                    units = subj.units.map { it.title },
-                    isExpanded = expandedSubject == subj.subject,
-                    onToggle = {
-                        expandedSubject = if (expandedSubject == subj.subject) null else subj.subject
+                        drawArc(
+                            color = primaryColor,
+                            startAngle = -90f,
+                            sweepAngle = 360f * percentage / 100f,
+                            useCenter = false,
+                            style = Stroke(width = 8.dp.toPx(), cap = StrokeCap.Round),
+                        )
                     },
-                )
-                Spacer(Modifier.height(10.dp))
-            }
-        }
-    }
-}
-
-// ── Homework Tab ─────────────────────────────────────────────────────────────
-
-@Composable
-private fun HomeworkTab(state: ParentAcademicsState, viewModel: ParentAcademicsViewModel) {
-    VSectionHeader("Homework")
-    Column(Modifier.padding(horizontal = 20.dp)) {
-        if (state.dailySummaryLoading) {
-            LoadingState()
-        } else if (state.dailySummary == null) {
-            EmptyState("No homework data available")
-        } else {
-            val summary = state.dailySummary!!
-            if (summary.entries.isEmpty()) {
-                EmptyState("No homework assigned")
-            } else {
-                summary.entries.forEach { entry ->
-                    HomeworkRow(entry.subject, entry.summaryText, entry.date, if (entry.coveragePct >= 100) "Done" else "Pending")
-                    Spacer(Modifier.height(10.dp))
-                }
-            }
-        }
-    }
-}
-
-// ── Quizzes Tab ──────────────────────────────────────────────────────────────
-
-@Composable
-private fun QuizzesTab(
-    state: ParentAcademicsState,
-    viewModel: ParentAcademicsViewModel,
-    onOpenQuizDetail: (String) -> Unit,
-) {
-    VSectionHeader("Quizzes")
-    Column(Modifier.padding(horizontal = 20.dp)) {
-        if (state.quizzesLoading) {
-            SkeletonCard(variant = "list")
-            Spacer(Modifier.height(10.dp))
-            SkeletonCard(variant = "list")
-        } else if (state.quizzesError != null) {
-            ErrorStateCard(message = state.quizzesError!!, onRetry = { viewModel.loadQuizzes() })
-        } else if (state.quizzes.isEmpty()) {
-            EmptyStateCard(
-                title = "No Quizzes Available",
-                body = "Quizzes will appear here when assigned by the teacher.",
-                icon = Icons.Filled.Quiz,
             )
-        } else {
-            state.quizzes.forEach { quiz ->
-                QuizRow(quiz, onClick = { onOpenQuizDetail(quiz.id) })
-                Spacer(Modifier.height(10.dp))
-            }
+            Text(
+                text = "$percentage%",
+                style = VTypography.QuickStatValue.copy(color = VColors.OnSurface),
+            )
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = label,
+                style = VTypography.UpdateTitle.copy(color = VColors.OnSurface),
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = subtitle,
+                style = VTypography.BodyMedium.copy(color = VColors.OnSurfaceVariant),
+            )
         }
     }
 }
 
 @Composable
-private fun QuizRow(quiz: ParentQuizDto, onClick: () -> Unit) {
-    val isCompleted = quiz.status.equals("COMPLETED", ignoreCase = true)
-    val statusColor = if (isCompleted) VColors.Tertiary else VColors.WarmOrange
-    val statusBg = if (isCompleted) VColors.TertiaryContainer else VColors.WarmOrangeContainer
-    val statusFg = if (isCompleted) VColors.OnTertiaryContainer else VColors.WarmOrange
-    val interaction = remember { MutableInteractionSource() }
+private fun BreakdownBar(label: String, count: Int, total: Int, color: androidx.compose.ui.graphics.Color) {
+    val pct = if (total > 0) count.toFloat() / total else 0f
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = "$label ($count)",
+                style = VTypography.BodyMedium.copy(color = VColors.OnSurface),
+            )
+            Text(
+                text = "${(pct * 100).toInt()}%",
+                style = VTypography.ThreadPreview.copy(color = VColors.OnSurfaceVariant),
+            )
+        }
+        Spacer(Modifier.height(4.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .clip(VShapes.Full)
+                .background(VColors.SurfaceContainerHigh),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(pct)
+                    .height(8.dp)
+                    .clip(VShapes.Full)
+                    .background(color),
+            )
+        }
+    }
+}
+
+@Composable
+private fun MarkCard(mark: ParentMarkDto) {
     Row(
-        Modifier.fillMaxWidth().clip(VShapes.Xl).background(VColors.SurfaceContainerLowest)
-            .pressScale(interaction, pressedScale = 0.98f)
-            .shapeMorph(interaction, VShapes.XlDp, VShapes.TwoXlDp, VMotion.DurShort2)
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 18.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.Lg)
+            .background(VColors.SurfaceContainerLow)
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            Modifier.size(44.dp).clip(VShapes.Md).background(statusBg),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                Icons.Filled.Quiz,
-                contentDescription = null,
-                tint = statusColor,
-                modifier = Modifier.size(22.dp),
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = mark.subject,
+                style = VTypography.UpdateTitle.copy(color = VColors.OnSurface),
             )
-        }
-        Column(Modifier.weight(1f)) {
-            Text(quiz.title.ifBlank { "Quiz" }, style = VTypography.HwTitle.copy(color = VColors.OnSurface))
-            Text("${quiz.subject}${if (quiz.unitTitle.isNotBlank()) " · ${quiz.unitTitle}" else ""}", style = VTypography.HwSub.copy(color = VColors.OnSurfaceVariant))
             Spacer(Modifier.height(2.dp))
-            Text("${quiz.numQuestions} questions · ${quiz.totalMarks} marks", style = VTypography.HwSub.copy(color = VColors.OnSurfaceVariant))
+            Text(
+                text = mark.examName,
+                style = VTypography.ThreadPreview.copy(color = VColors.OnSurfaceVariant),
+            )
+            if (mark.examDate != null) {
+                val date = mark.examDate!!
+                Text(
+                    text = date,
+                    style = VTypography.ThreadTime.copy(color = VColors.Outline),
+                )
+            }
         }
+        val scoreText = mark.marks?.let { "${it.toInt()}/${mark.maxMarks}" } ?: "Pending"
         Text(
-            quiz.status.uppercase(),
-            style = VTypography.HwStatus.copy(color = statusFg),
-            modifier = Modifier.clip(VShapes.Full).background(statusBg).padding(horizontal = 12.dp, vertical = 6.dp),
+            text = scoreText,
+            style = VTypography.QuickStatValue.copy(color = VColors.OnSurface),
         )
     }
 }
 
-// ── Report Tab ───────────────────────────────────────────────────────────────
-
 @Composable
-private fun ReportTab(state: ParentAcademicsState) {
-    Column(Modifier.padding(horizontal = 20.dp)) {
-        if (state.marks == null || state.marks!!.results.isEmpty()) {
-            EmptyState("No report card data available")
-        } else {
-            val results = state.marks!!.results
-
-            // Report card with subject bars + grades (matching HTML)
-            Column(
-                Modifier.fillMaxWidth().clip(VShapes.Xl).background(VColors.SurfaceContainerLowest).padding(24.dp),
-            ) {
-                Text("Term Report Card", style = VTypography.UpdateTitle.copy(color = VColors.OnSurface, fontWeight = FontWeight.Bold))
-                Spacer(Modifier.height(16.dp))
-                results.forEach { result ->
-                    val pct = if (result.maxMarks > 0) ((result.marks ?: 0.0) / result.maxMarks * 100).toInt() else 0
-                    val grade = when {
-                        pct >= 90 -> "A+"
-                        pct >= 80 -> "A"
-                        pct >= 70 -> "B+"
-                        pct >= 60 -> "B"
-                        else -> "C"
-                    }
-                    val barColor = when {
-                        pct >= 85 -> VColors.Primary
-                        pct >= 60 -> VColors.Tertiary
-                        else -> VColors.WarmOrange
-                    }
-                    Column(Modifier.fillMaxWidth()) {
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(result.subject, style = VTypography.SyllabusName.copy(color = VColors.OnSurface))
-                            Text("$pct% · $grade", style = VTypography.SyllabusPct.copy(color = barColor))
-                        }
-                        Spacer(Modifier.height(8.dp))
-                        Box(
-                            Modifier.fillMaxWidth().height(6.dp).clip(VShapes.Full).background(VColors.SurfaceContainerHigh),
-                        ) {
-                            Box(
-                                Modifier.fillMaxWidth(pct / 100f).height(6.dp).clip(VShapes.Full).background(barColor),
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(14.dp))
-                }
-            }
-            Spacer(Modifier.height(16.dp))
-
-            // Teacher Remarks card
-            val remarks = state.dailySummary?.aiSummary ?: "No remarks available."
-            Column(
-                Modifier.fillMaxWidth().clip(VShapes.Xl).background(VColors.SurfaceContainerLowest).padding(24.dp),
-            ) {
-                Text("Teacher Remarks", style = VTypography.UpdateTitle.copy(color = VColors.OnSurface, fontWeight = FontWeight.Bold))
-                Spacer(Modifier.height(12.dp))
-                Text(remarks, style = VTypography.UpdateText.copy(color = VColors.OnSurfaceVariant))
-            }
-        }
-    }
-}
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-private fun buildAttendanceCalendarDays(
-    att: com.littlebridge.enrollplus.feature.parent.domain.model.ParentAttendanceData,
-): List<AttendanceCalendarDay> {
-    return att.records.map { rec ->
-        val status = when (rec.status.lowercase()) {
-            "present" -> AttendanceCellStatus.Present
-            "absent" -> AttendanceCellStatus.Absent
-            "late" -> AttendanceCellStatus.Late
-            else -> AttendanceCellStatus.NoData
-        }
-        val dayOfMonth = rec.date.substringAfterLast("-").toIntOrNull() ?: 1
-        AttendanceCalendarDay(dayOfMonth = dayOfMonth, status = status, isToday = false)
-    }
-}
-
-@Composable
-private fun ExpandableSyllabusRow(
-    subject: String,
-    coverage: Double,
-    units: List<String>,
-    isExpanded: Boolean,
-    onToggle: () -> Unit,
-) {
-    val coverageColor = when {
-        coverage >= 75 -> VColors.Tertiary
-        coverage >= 50 -> VColors.Primary
-        else -> VColors.WarmOrange
-    }
-    val interaction = remember { MutableInteractionSource() }
+private fun SubjectProgressRow(subject: ParentSyllabusSubjectDto) {
     Column(
-        Modifier.fillMaxWidth().clip(VShapes.Xl).background(VColors.SurfaceContainerLowest)
-            .pressScale(interaction, pressedScale = 0.98f)
-            .clickable(interactionSource = interaction, indication = null, onClick = onToggle)
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.Lg)
+            .background(VColors.SurfaceContainerLow)
             .padding(16.dp),
     ) {
         Row(
-            Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(subject, style = VTypography.SyllabusName.copy(color = VColors.OnSurface))
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("${coverage.toInt()}%", style = VTypography.SyllabusPct.copy(color = coverageColor))
-                Icon(
-                    if (isExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                    contentDescription = if (isExpanded) "Collapse" else "Expand",
-                    tint = VColors.OnSurfaceVariant,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-        }
-        Spacer(Modifier.height(10.dp))
-        Box(
-            Modifier.fillMaxWidth().height(6.dp).clip(VShapes.Full).background(VColors.SurfaceContainerHigh),
-        ) {
-            Box(
-                Modifier.fillMaxWidth((coverage / 100f).toFloat()).height(6.dp).clip(VShapes.Full)
-                    .background(coverageColor),
+            Text(
+                text = subject.subject,
+                style = VTypography.UpdateTitle.copy(color = VColors.OnSurface),
+            )
+            Text(
+                text = "${subject.progress}%",
+                style = VTypography.QuickStatValue.copy(color = VColors.OnSurface),
             )
         }
-        if (isExpanded && units.isNotEmpty()) {
-            Spacer(Modifier.height(12.dp))
-            units.forEach { unit ->
+        Spacer(Modifier.height(8.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(6.dp)
+                .clip(VShapes.Full)
+                .background(VColors.SurfaceContainerHigh),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(subject.progress / 100f)
+                    .height(6.dp)
+                    .clip(VShapes.Full)
+                    .background(VColors.Primary),
+            )
+        }
+        if (subject.units.isNotEmpty()) {
+            Spacer(Modifier.height(8.dp))
+            subject.units.take(3).forEach { unit ->
                 Row(
-                    Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Box(Modifier.size(6.dp).clip(VShapes.Full).background(coverageColor.copy(alpha = 0.5f)))
-                    Text(unit, style = VTypography.NavLabel.copy(color = VColors.OnSurfaceVariant))
+                    Box(
+                        Modifier.size(6.dp).clip(CircleShape).background(
+                            if (unit.isCovered) VColors.Primary else VColors.Outline,
+                        ),
+                    )
+                    Text(
+                        text = unit.title,
+                        style = VTypography.ThreadPreview.copy(color = VColors.OnSurfaceVariant),
+                    )
                 }
+                Spacer(Modifier.height(4.dp))
             }
         }
     }
 }
 
-// ── Reusable UI elements ─────────────────────────────────────────────────────
-
 @Composable
-private fun SubjectBreakdownRow(
-    name: String,
-    pct: Int,
-    barColor: Color = VColors.Primary,
-) {
-    Column(
-        Modifier.fillMaxWidth().clip(VShapes.Xl).background(VColors.SurfaceContainerLowest).padding(16.dp),
-    ) {
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(name, style = VTypography.SyllabusName.copy(color = VColors.OnSurface))
-            Text("$pct%", style = VTypography.SyllabusPct.copy(color = barColor))
-        }
-        Spacer(Modifier.height(10.dp))
-        Box(
-            Modifier.fillMaxWidth().height(6.dp).clip(VShapes.Full).background(VColors.SurfaceContainerHigh),
-        ) {
-            Box(
-                Modifier.fillMaxWidth(pct / 100f).height(6.dp).clip(VShapes.Full).background(barColor),
-            )
-        }
+private fun QuizCard(quiz: ParentQuizDto) {
+    val statusColor = when (quiz.status.uppercase()) {
+        "COMPLETED" -> VColors.Primary
+        "PENDING" -> VColors.WarmOrange
+        "EXPIRED" -> VColors.Error
+        else -> VColors.Outline
     }
-}
-
-@Composable
-private fun SubjectBreakdownRow(
-    name: String,
-    value: Int,
-    total: Int,
-    barColor: Color = VColors.Primary,
-) {
-    val pct = if (total > 0) (value * 100 / total) else 0
-    Column(
-        Modifier.fillMaxWidth().clip(VShapes.Xl).background(VColors.SurfaceContainerLowest).padding(16.dp),
-    ) {
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(name, style = VTypography.SyllabusName.copy(color = VColors.OnSurface))
-            Text("$value", style = VTypography.SyllabusPct.copy(color = barColor))
-        }
-        Spacer(Modifier.height(10.dp))
-        Box(
-            Modifier.fillMaxWidth().height(6.dp).clip(VShapes.Full).background(VColors.SurfaceContainerHigh),
-        ) {
-            Box(
-                Modifier.fillMaxWidth(pct / 100f).height(6.dp).clip(VShapes.Full).background(barColor),
-            )
-        }
-    }
-}
-
-@Composable
-private fun StatPill(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
-    Column(
-        modifier
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
             .clip(VShapes.Lg)
-            .background(color.copy(alpha = 0.12f))
+            .background(VColors.SurfaceContainerLow)
             .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(value, style = VTypography.StatValue.copy(color = color, fontSize = 24.sp))
-        Spacer(Modifier.height(4.dp))
-        Text(label, style = VTypography.NavLabel.copy(color = VColors.OnSurfaceVariant))
-    }
-}
-
-@Composable
-private fun InfoCard(label: String, value: String) {
-    Row(
-        Modifier.fillMaxWidth().clip(VShapes.Lg).background(VColors.SurfaceContainerLow).padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(label, style = VTypography.UpdateText.copy(color = VColors.OnSurfaceVariant))
-        Text(value, style = VTypography.UpdateTitle.copy(color = VColors.OnSurface, fontWeight = FontWeight.SemiBold))
-    }
-}
-
-@Composable
-private fun MarkRow(subject: String, score: Double, maxScore: Double, examName: String) {
-    val pct = if (maxScore > 0) (score / maxScore * 100).toInt() else 0
-    val scoreColor = when {
-        pct >= 85 -> VColors.Tertiary
-        pct >= 60 -> VColors.Primary
-        else -> VColors.WarmOrange
-    }
-    Row(
-        Modifier.fillMaxWidth().clip(VShapes.Xl).background(VColors.SurfaceContainerLowest).padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(subject, style = VTypography.MarkName.copy(color = VColors.OnSurface))
-            Text(examName, style = VTypography.MarkDate.copy(color = VColors.OnSurfaceVariant))
-        }
-        Column(horizontalAlignment = Alignment.End) {
-            Text("$score", style = VTypography.MarkScoreVal.copy(color = scoreColor))
-            Text("/ $maxScore", style = VTypography.MarkScoreMax.copy(color = VColors.OnSurfaceVariant))
-        }
-    }
-}
-
-@Composable
-private fun HomeworkRow(subject: String, description: String, dueDate: String, status: String) {
-    val isDone = status.lowercase() in listOf("done", "completed", "submitted")
-    val statusColor = if (isDone) VColors.Tertiary else VColors.WarmOrange
-    val statusBg = if (isDone) VColors.TertiaryContainer else VColors.WarmOrangeContainer
-    val statusFg = if (isDone) VColors.OnTertiaryContainer else VColors.WarmOrange
-    val iconBg = if (isDone) VColors.TertiaryContainer else VColors.WarmOrangeContainer
-    val iconColor = if (isDone) VColors.Tertiary else VColors.WarmOrange
-    Row(
-        Modifier.fillMaxWidth().clip(VShapes.Xl).background(VColors.SurfaceContainerLowest)
-            .padding(horizontal = 20.dp, vertical = 18.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            Modifier.size(44.dp).clip(VShapes.Md).background(iconBg),
+            Modifier.size(40.dp).clip(VShapes.Md).background(VColors.PrimaryContainer),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(
-                if (isDone) Icons.Filled.CheckCircle else Icons.Filled.Warning,
-                contentDescription = null,
-                tint = iconColor,
-                modifier = Modifier.size(22.dp),
+            Icon(Icons.Filled.Quiz, contentDescription = null, tint = VColors.Primary, modifier = Modifier.size(20.dp))
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = quiz.title.ifBlank { quiz.subject },
+                style = VTypography.UpdateTitle.copy(color = VColors.OnSurface),
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = "${quiz.subject} - ${quiz.numQuestions} questions",
+                style = VTypography.ThreadPreview.copy(color = VColors.OnSurfaceVariant),
             )
         }
-        Column(Modifier.weight(1f)) {
-            Text(subject, style = VTypography.HwTitle.copy(color = VColors.OnSurface))
-            Text(description, style = VTypography.HwSub.copy(color = VColors.OnSurfaceVariant))
-            Spacer(Modifier.height(2.dp))
-            Text("Due: $dueDate", style = VTypography.HwSub.copy(color = VColors.OnSurfaceVariant))
+        Column(horizontalAlignment = Alignment.End) {
+            Text(
+                text = quiz.status,
+                style = VTypography.ThreadTime.copy(color = statusColor),
+            )
+            if (quiz.totalMarks > 0) {
+                Text(
+                    text = "${quiz.totalMarks} marks",
+                    style = VTypography.ThreadTime.copy(color = VColors.Outline),
+                )
+            }
         }
-        Text(
-            status.uppercase(),
-            style = VTypography.HwStatus.copy(color = statusFg),
-            modifier = Modifier.clip(VShapes.Full).background(statusBg).padding(horizontal = 12.dp, vertical = 6.dp),
-        )
     }
 }
-
-@Composable
-private fun LoadingState() {
-    SkeletonCard(variant = "list")
-}
-
-@Composable
-private fun ErrorState(message: String, onRetry: (() -> Unit)? = null) {
-    ErrorStateCard(message = message, onRetry = onRetry, modifier = Modifier.padding(vertical = 8.dp))
-}
-
-@Composable
-private fun EmptyState(message: String) {
-    EmptyStateCard(
-        title = message,
-        icon = Icons.AutoMirrored.Filled.MenuBook,
-        modifier = Modifier.padding(vertical = 8.dp),
-    )
-}
-

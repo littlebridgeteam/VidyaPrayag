@@ -1,8 +1,6 @@
 package com.littlebridge.enrollplus.ui.v2.screens.premium.parent
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,152 +12,223 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import com.littlebridge.enrollplus.feature.parent.presentation.FeeAnnouncement
+import com.littlebridge.enrollplus.feature.parent.presentation.FeeState
 import com.littlebridge.enrollplus.feature.parent.presentation.FeeViewModel
 import com.littlebridge.enrollplus.ui.v2.components.cards.VFeesHeroCard
-import com.littlebridge.enrollplus.ui.v2.components.cards.VUpdateCard
-import com.littlebridge.enrollplus.ui.v2.components.carousel.VStaggeredItem
 import com.littlebridge.enrollplus.ui.v2.components.misc.VPullRefreshPremium
+import com.littlebridge.enrollplus.ui.v2.components.misc.VShimmerBoxPremium
+import com.littlebridge.enrollplus.ui.v2.components.misc.VStateHostPremium
 import com.littlebridge.enrollplus.ui.v2.components.typography.VSectionHeader
-import com.littlebridge.enrollplus.ui.v2.modifiers.pressScale
-import com.littlebridge.enrollplus.ui.v2.modifiers.shapeMorph
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.tokens.PremiumTheme
 import com.littlebridge.enrollplus.ui.v2.tokens.VColors
-import com.littlebridge.enrollplus.ui.v2.tokens.VMotion
 import com.littlebridge.enrollplus.ui.v2.tokens.VShapes
 import com.littlebridge.enrollplus.ui.v2.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
 
-/**
- * Premium parent fees — rebuilt with gradient hero, premium loading/error
- * states, pull-to-refresh, VStaggeredItem entrances, and 140dp bottom padding.
- */
 @Composable
 fun ParentFeesScreen(
+    onOpenOverlay: (ParentOverlay) -> Unit,
+    onSwitchTab: (Int) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: FeeViewModel = koinViewModel(),
-    onPayClick: () -> Unit = {},
-) = PremiumTheme(isDark = false) {
+) {
     val state by viewModel.state.collectAsStateV2()
 
     VPullRefreshPremium(
         isRefreshing = state.isLoading,
         onRefresh = { viewModel.reload() },
-        modifier = modifier.fillMaxSize().background(VColors.Surface),
+        modifier = modifier.fillMaxSize(),
     ) {
+        VStateHostPremium(
+            loading = state.isLoading,
+            error = state.error,
+            isEmpty = false,
+            modifier = Modifier.fillMaxSize(),
+            onRetry = { viewModel.reload() },
+            skeleton = { FeesSkeleton() },
+        ) {
+            FeesContent(state = state)
+        }
+    }
+}
+
+@Composable
+private fun FeesContent(state: FeeState) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp)
+            .padding(bottom = 140.dp),
+    ) {
+        // 1. Balance hero card
+        val hasOutstanding = state.outstandingFees.isNotBlank() && state.outstandingFees != "$0"
+        VFeesHeroCard(
+            label = if (hasOutstanding) "Outstanding Fees" else "Fees Status",
+            amount = if (hasOutstanding) state.outstandingFees else "All Clear",
+            dueDate = if (state.overdueCount > 0) "${state.overdueCount} overdue" else "No overdue payments",
+            onPayClick = { /* TODO: navigate to payment */ },
+        )
+
+        Spacer(Modifier.height(24.dp))
+
+        // 2. Collection progress
+        VSectionHeader(title = "Collection Progress", modifier = Modifier.padding(horizontal = 4.dp))
+        Spacer(Modifier.height(8.dp))
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(bottom = 140.dp),
+                .fillMaxWidth()
+                .clip(VShapes.Xl)
+                .background(VColors.SurfaceContainerLowest)
+                .padding(20.dp),
         ) {
-            Spacer(Modifier.height(16.dp))
-
-            // ── Loading state ──
-            if (state.isLoading) {
-                VStaggeredItem(delayMs = 0) {
-                    SkeletonCard(variant = "hero", modifier = Modifier.padding(horizontal = 20.dp))
-                }
-                VStaggeredItem(delayMs = 60) {
-                    SkeletonCard(variant = "card", modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp))
-                }
-                VStaggeredItem(delayMs = 120) {
-                    SkeletonCard(variant = "list", modifier = Modifier.padding(vertical = 8.dp))
-                }
-                VStaggeredItem(delayMs = 180) {
-                    SkeletonCard(variant = "list", modifier = Modifier.padding(vertical = 8.dp))
-                }
-                return@Column
-            }
-
-            // ── Error state ──
-            if (state.error != null) {
-                ErrorStateCard(
-                    message = state.error ?: "Unknown error",
-                    onRetry = { viewModel.reload() },
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 48.dp),
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Collected",
+                    style = VTypography.BodyMedium.copy(color = VColors.OnSurfaceVariant),
                 )
-                return@Column
-            }
-
-            // ── Fees Hero Card ──
-            VStaggeredItem(delayMs = 0) {
-                VFeesHeroCard(
-                    label = "Outstanding Balance",
-                    amount = state.outstandingFees,
-                    dueDate = if (state.overdueCount > 0) "${state.overdueCount} overdue" else "No overdue fees",
-                    onPayClick = onPayClick,
-                    modifier = Modifier.padding(horizontal = 20.dp),
+                Text(
+                    text = state.totalCollected,
+                    style = VTypography.QuickStatValue.copy(color = VColors.OnSurface),
                 )
             }
-
-            Spacer(Modifier.height(24.dp))
-
-            // ── Fee Announcements ──
-            if (state.announcements.isNotEmpty()) {
-                VStaggeredItem(delayMs = 60) {
-                    VSectionHeader("Fee Announcements")
-                }
-                VStaggeredItem(delayMs = 100) {
-                    Column(Modifier.padding(horizontal = 20.dp)) {
-                        state.announcements.forEach { ann ->
-                            val typeColor = when (ann.type) {
-                                "Emergency" -> VColors.Error
-                                "Payment" -> VColors.Tertiary
-                                else -> VColors.Primary
-                            }
-                            VUpdateCard(
-                                source = ann.type,
-                                timestamp = ann.time,
-                                title = ann.title,
-                                text = ann.description,
-                                avatarIcon = {
-                                    Icon(
-                                        Icons.Filled.Info,
-                                        contentDescription = null,
-                                        tint = typeColor,
-                                        modifier = Modifier.size(20.dp),
-                                    )
-                                },
-                                actions = emptyList(),
-                                onClick = {},
-                            )
-                            Spacer(Modifier.height(10.dp))
-                        }
-                    }
-                }
-                Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(12.dp))
+            val pct = state.collectionProgress
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(VShapes.Full)
+                    .background(VColors.SurfaceContainerHigh),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(pct.coerceIn(0f, 1f))
+                        .height(8.dp)
+                        .clip(VShapes.Full)
+                        .background(VColors.Primary),
+                )
             }
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = "${(pct * 100).toInt()}% collected",
+                style = VTypography.ThreadTime.copy(color = VColors.Outline),
+            )
+        }
 
-            // ── Payment History ──
-            VStaggeredItem(delayMs = 150) {
-                VSectionHeader("Payment History")
+        Spacer(Modifier.height(24.dp))
+
+        // 3. Fee announcements
+        if (state.announcements.isNotEmpty()) {
+            VSectionHeader(title = "Fee Announcements", modifier = Modifier.padding(horizontal = 4.dp))
+            Spacer(Modifier.height(8.dp))
+            state.announcements.forEach { announcement ->
+                FeeAnnouncementCard(announcement = announcement)
+                Spacer(Modifier.height(8.dp))
             }
-            VStaggeredItem(delayMs = 200) {
-                Column(Modifier.padding(horizontal = 20.dp)) {
-                    EmptyStateCard(
-                        title = "No Payment History",
-                        body = "Payment records will appear here once fees are paid.",
-                        icon = Icons.AutoMirrored.Filled.MenuBook,
+        }
+    }
+}
+
+@Composable
+private fun FeeAnnouncementCard(announcement: FeeAnnouncement) {
+    val typeColor = when (announcement.type.lowercase()) {
+        "emergency" -> VColors.Error
+        "payment" -> VColors.Primary
+        else -> VColors.Tertiary
+    }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.Lg)
+            .background(VColors.SurfaceContainerLow)
+            .padding(16.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Box(
+                    Modifier.size(32.dp).clip(VShapes.Md).background(VColors.PrimaryContainer),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Filled.Payments,
+                        contentDescription = null,
+                        tint = VColors.Primary,
+                        modifier = Modifier.size(16.dp),
                     )
                 }
+                Text(
+                    text = announcement.title,
+                    style = VTypography.UpdateTitle.copy(color = VColors.OnSurface),
+                    modifier = Modifier.weight(1f),
+                )
             }
-
-            Spacer(Modifier.height(24.dp))
         }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = announcement.description,
+            style = VTypography.BodyMedium.copy(color = VColors.OnSurfaceVariant),
+        )
+        Spacer(Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Box(
+                    Modifier.size(6.dp).clip(CircleShape).background(typeColor),
+                )
+                Text(
+                    text = announcement.type,
+                    style = VTypography.ThreadTime.copy(color = typeColor),
+                )
+            }
+            Text(
+                text = announcement.time,
+                style = VTypography.ThreadTime.copy(color = VColors.Outline),
+            )
+        }
+    }
+}
+
+@Composable
+private fun FeesSkeleton() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        VShimmerBoxPremium(height = 180.dp, shape = VShapes.TwoXl)
+        VShimmerBoxPremium(height = 100.dp, shape = VShapes.Xl)
+        repeat(3) { VShimmerBoxPremium(height = 80.dp, shape = VShapes.Lg) }
     }
 }
