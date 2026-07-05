@@ -1,6 +1,8 @@
 package com.littlebridge.enrollplus.ui.v2.screens.premium.parent
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,11 +15,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.littlebridge.enrollplus.ui.v2.components.carousel.VStaggeredItem
+import com.littlebridge.enrollplus.ui.v2.modifiers.pressScale
 import com.littlebridge.enrollplus.ui.v2.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.tokens.VShapes
 import com.littlebridge.enrollplus.ui.v2.tokens.VTypography
@@ -28,7 +33,9 @@ fun ParentCalendarScreen(
     modifier: Modifier = Modifier,
 ) {
     ParentOverlayScaffold(title = "Academic Calendar", onBack = onBack, modifier = modifier) {
-        Text("January 2026", style = VTypography.GreetingTitle.copy(color = VColors.OnSurface))
+        VStaggeredItem(delayMs = 0) {
+            Text("January 2026", style = VTypography.GreetingTitle.copy(color = VColors.OnSurface))
+        }
         Spacer(Modifier.height(16.dp))
         // Weekday headers
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
@@ -61,20 +68,26 @@ fun ParentCalendarScreen(
             Spacer(Modifier.height(4.dp))
         }
         Spacer(Modifier.height(20.dp))
-        Text("Upcoming", style = VTypography.SectionHeader.copy(color = VColors.OnSurface))
+        VStaggeredItem(delayMs = 200) {
+            Text("Upcoming", style = VTypography.SectionHeader.copy(color = VColors.OnSurface))
+        }
         Spacer(Modifier.height(12.dp))
-        CalendarEventRow("Jan 20", "Republic Day Holiday", VColors.Error)
+        VStaggeredItem(delayMs = 260) { CalendarEventRow("Jan 20", "Republic Day Holiday", VColors.Error) }
         Spacer(Modifier.height(8.dp))
-        CalendarEventRow("Jan 26", "Annual Day Celebration", VColors.Primary)
+        VStaggeredItem(delayMs = 320) { CalendarEventRow("Jan 26", "Annual Day Celebration", VColors.Primary) }
         Spacer(Modifier.height(8.dp))
-        CalendarEventRow("Feb 14", "Sports Day", VColors.Tertiary)
+        VStaggeredItem(delayMs = 380) { CalendarEventRow("Feb 14", "Sports Day", VColors.Tertiary) }
     }
 }
 
 @Composable
 private fun CalendarEventRow(date: String, title: String, color: androidx.compose.ui.graphics.Color) {
+    val interaction = remember { MutableInteractionSource() }
     Row(
-        Modifier.fillMaxWidth().clip(VShapes.Lg).background(VColors.SurfaceContainerLow).padding(16.dp),
+        Modifier.fillMaxWidth().clip(VShapes.Lg).background(VColors.SurfaceContainerLow)
+            .pressScale(interaction, pressedScale = 0.98f)
+            .clickable(interactionSource = interaction, indication = null) { /* TODO: view calendar event detail */ }
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {

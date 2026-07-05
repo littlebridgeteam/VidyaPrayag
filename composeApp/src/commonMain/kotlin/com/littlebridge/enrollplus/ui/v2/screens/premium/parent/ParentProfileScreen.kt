@@ -46,6 +46,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentProfileViewModel
 import com.littlebridge.enrollplus.ui.v2.components.cards.VProfileHeroCard
+import com.littlebridge.enrollplus.ui.v2.components.carousel.VStaggeredItem
+import com.littlebridge.enrollplus.ui.v2.components.misc.VPullRefreshPremium
 import com.littlebridge.enrollplus.ui.v2.components.typography.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.modifiers.pressScale
 import com.littlebridge.enrollplus.ui.v2.modifiers.shapeMorph
@@ -73,6 +75,10 @@ private data class StatData(
     val trend: String,
 )
 
+/**
+ * Premium parent profile — rebuilt with premium loading/error/empty states,
+ * pull-to-refresh, VStaggeredItem entrances, and 140dp bottom padding.
+ */
 @Composable
 fun ParentProfileScreen(
     onLogout: () -> Unit = {},
@@ -89,140 +95,164 @@ fun ParentProfileScreen(
 ) = PremiumTheme(isDark = false) {
     val state by viewModel.state.collectAsStateV2()
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(VColors.Surface)
-            .verticalScroll(rememberScrollState()),
+    VPullRefreshPremium(
+        isRefreshing = state.isLoading,
+        onRefresh = { viewModel.load() },
+        modifier = modifier.fillMaxSize().background(VColors.Surface),
     ) {
-        Spacer(Modifier.height(16.dp))
-
-        if (state.isLoading) {
-            Box(
-                Modifier.fillMaxWidth().height(200.dp).clip(VShapes.Lg).background(VColors.SurfaceContainerLow),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text("Loading profile...", style = VTypography.UpdateText.copy(color = VColors.OnSurfaceVariant))
-            }
-            return@PremiumTheme
-        }
-
-        if (state.error != null) {
-            Box(
-                Modifier.fillMaxWidth().height(200.dp).clip(VShapes.Lg).background(VColors.ErrorContainer),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(state.error!!, style = VTypography.UpdateText.copy(color = VColors.OnErrorContainer))
-            }
-            return@PremiumTheme
-        }
-
-        val profile = state.profile
-        if (profile == null) {
-            Box(
-                Modifier.fillMaxWidth().height(200.dp).clip(VShapes.Lg).background(VColors.SurfaceContainerLow),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text("No profile data", style = VTypography.UpdateText.copy(color = VColors.OnSurfaceVariant))
-            }
-            return@PremiumTheme
-        }
-
-        // Use child data if available, fall back to parent profile
-        val displayName = childName ?: profile.name
-        val displayInitial = displayName.firstOrNull()?.toString() ?: "?"
-        val displayClass = childClassName ?: profile.role.replaceFirstChar { it.uppercase() }
-        val displayLevel = childLevel ?: 1
-
-        // ── Profile Hero Card (child's info) ──
-        VProfileHeroCard(
-            initials = displayInitial,
-            name = displayName,
-            className = displayClass,
-            levelText = "Level $displayLevel — Scholar",
-            xpText = "${displayLevel * 300} / ${(displayLevel + 1) * 500} XP",
-            xpProgress = (displayLevel * 300f) / ((displayLevel + 1) * 500f),
-            badge = "Level $displayLevel",
-            onClick = { },
-            modifier = Modifier.padding(horizontal = 20.dp),
-        )
-
-        Spacer(Modifier.height(24.dp))
-
-        // ── Stats — 2×2 grid ──
-        VSectionHeader("Stats")
-        val stats = listOf(
-            StatData("${childAttendanceRate ?: 0}%", "Attendance", "↑ 2% this month"),
-            StatData("${childAvgMarks ?: 0}%", "Avg Marks", "↑ 5% this term"),
-            StatData("${(displayLevel * 300)}", "XP Points", "↑ 420 this week"),
-            StatData("18", "Quizzes Done", "↑ 3 this week"),
-        )
-        Column(Modifier.padding(horizontal = 20.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatCard(stats[0], Modifier.weight(1f))
-                StatCard(stats[1], Modifier.weight(1f))
-            }
-            Spacer(Modifier.height(12.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatCard(stats[2], Modifier.weight(1f))
-                StatCard(stats[3], Modifier.weight(1f))
-            }
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        // ── Badges — horizontal scroll ──
-        VSectionHeader("Badges", linkText = "All", onLinkClick = { })
-        val badges = listOf(
-            BadgeData("Math Champ", "Score 90%+ in 5 consecutive math tests", Icons.Filled.CheckCircle, earned = true, earnedDate = "Feb 12"),
-            BadgeData("Bookworm", "Read and reviewed 10 library books", Icons.AutoMirrored.Filled.MenuBook, earned = true, earnedDate = "Jan 28"),
-            BadgeData("Quick Solver", "Complete 20 quizzes under time limit", Icons.Filled.Verified, earned = true, earnedDate = "Feb 20"),
-            BadgeData("Perfect Score", "Achieve 100% on any test", Icons.Filled.School, earned = true, earnedDate = "Mar 2"),
-            BadgeData("Science Whiz", "Score 90%+ in 5 science tests", Icons.Filled.School, earned = false, progress = 0.6f, progressText = "3 of 5 completed"),
-            BadgeData("100 Days", "100 consecutive days of attendance", Icons.Filled.CheckCircle, earned = false, progress = 0.94f, progressText = "94 of 100 days"),
-            BadgeData("Art Master", "Submit 10 creative art projects", Icons.Filled.School, earned = false, progress = 0.4f, progressText = "4 of 10 submitted"),
-        )
-        LazyRow(
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = 140.dp),
         ) {
-            items(badges) { badge ->
-                BadgeCard(badge)
+            Spacer(Modifier.height(16.dp))
+
+            // ── Loading state ──
+            if (state.isLoading) {
+                VStaggeredItem(delayMs = 0) {
+                    SkeletonCard(variant = "hero", modifier = Modifier.padding(horizontal = 20.dp))
+                }
+                VStaggeredItem(delayMs = 60) {
+                    SkeletonCard(variant = "card", modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp))
+                }
+                VStaggeredItem(delayMs = 120) {
+                    SkeletonCard(variant = "card", modifier = Modifier.padding(horizontal = 20.dp))
+                }
+                return@Column
             }
+
+            // ── Error state ──
+            if (state.error != null) {
+                ErrorStateCard(
+                    message = state.error ?: "Unknown error",
+                    onRetry = { viewModel.load() },
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 48.dp),
+                )
+                return@Column
+            }
+
+            val profile = state.profile
+            if (profile == null) {
+                EmptyStateCard(
+                    title = "No Profile Data",
+                    body = "Your profile will appear here once loaded.",
+                    icon = Icons.Filled.Settings,
+                    modifier = Modifier.padding(vertical = 48.dp),
+                )
+                return@Column
+            }
+
+            // Use child data if available, fall back to parent profile
+            val displayName = childName ?: profile.name
+            val displayInitial = displayName.firstOrNull()?.toString() ?: "?"
+            val displayClass = childClassName ?: profile.role.replaceFirstChar { it.uppercase() }
+            val displayLevel = childLevel ?: 1
+
+            // ── Profile Hero Card ──
+            VStaggeredItem(delayMs = 0) {
+                VProfileHeroCard(
+                    initials = displayInitial,
+                    name = displayName,
+                    className = displayClass,
+                    levelText = "Level $displayLevel — Scholar",
+                    xpText = "${displayLevel * 300} / ${(displayLevel + 1) * 500} XP",
+                    xpProgress = (displayLevel * 300f) / ((displayLevel + 1) * 500f),
+                    badge = "Level $displayLevel",
+                    onClick = { /* TODO: open player card detail */ },
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                )
+            }
+
+            Spacer(Modifier.height(24.dp))
+
+            // ── Stats — 2×2 grid ──
+            VStaggeredItem(delayMs = 60) {
+                VSectionHeader("Stats")
+            }
+            val stats = listOf(
+                StatData("${childAttendanceRate ?: 0}%", "Attendance", "↑ 2% this month"),
+                StatData("${childAvgMarks ?: 0}%", "Avg Marks", "↑ 5% this term"),
+                StatData("${(displayLevel * 300)}", "XP Points", "↑ 420 this week"),
+                StatData("18", "Quizzes Done", "↑ 3 this week"),
+            )
+            VStaggeredItem(delayMs = 100) {
+                Column(Modifier.padding(horizontal = 20.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        StatCard(stats[0], Modifier.weight(1f))
+                        StatCard(stats[1], Modifier.weight(1f))
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        StatCard(stats[2], Modifier.weight(1f))
+                        StatCard(stats[3], Modifier.weight(1f))
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
+
+            // ── Badges — horizontal scroll ──
+            VStaggeredItem(delayMs = 150) {
+                VSectionHeader("Badges", linkText = "All", onLinkClick = { /* TODO: view all badges */ })
+            }
+            val badges = listOf(
+                BadgeData("Math Champ", "Score 90%+ in 5 consecutive math tests", Icons.Filled.CheckCircle, earned = true, earnedDate = "Feb 12"),
+                BadgeData("Bookworm", "Read and reviewed 10 library books", Icons.AutoMirrored.Filled.MenuBook, earned = true, earnedDate = "Jan 28"),
+                BadgeData("Quick Solver", "Complete 20 quizzes under time limit", Icons.Filled.Verified, earned = true, earnedDate = "Feb 20"),
+                BadgeData("Perfect Score", "Achieve 100% on any test", Icons.Filled.School, earned = true, earnedDate = "Mar 2"),
+                BadgeData("Science Whiz", "Score 90%+ in 5 science tests", Icons.Filled.School, earned = false, progress = 0.6f, progressText = "3 of 5 completed"),
+                BadgeData("100 Days", "100 consecutive days of attendance", Icons.Filled.CheckCircle, earned = false, progress = 0.94f, progressText = "94 of 100 days"),
+                BadgeData("Art Master", "Submit 10 creative art projects", Icons.Filled.School, earned = false, progress = 0.4f, progressText = "4 of 10 submitted"),
+            )
+            VStaggeredItem(delayMs = 200) {
+                LazyRow(
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    items(badges) { badge ->
+                        BadgeCard(badge)
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
+
+            // ── Account ──
+            VStaggeredItem(delayMs = 250) {
+                VSectionHeader("Account")
+            }
+            VStaggeredItem(delayMs = 300) {
+                Column(Modifier.padding(horizontal = 20.dp)) {
+                    AccountRow(
+                        icon = Icons.Filled.Settings,
+                        label = "Account Settings",
+                        onClick = onAccountSettings,
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    AccountRow(
+                        icon = Icons.Filled.Add,
+                        label = "Link Another Child",
+                        onClick = onLinkChild,
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    AccountRow(
+                        icon = Icons.Filled.Explore,
+                        label = "Discover Schools",
+                        onClick = onDiscoverSchools,
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    AccountRow(
+                        icon = Icons.AutoMirrored.Filled.Logout,
+                        label = "Logout",
+                        labelColor = VColors.Error,
+                        onClick = onLogout,
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
         }
-
-        Spacer(Modifier.height(24.dp))
-
-        // ── Account — 4 rows matching reference ──
-        VSectionHeader("Account")
-        Column(Modifier.padding(horizontal = 20.dp)) {
-            AccountRow(
-                icon = Icons.Filled.Settings,
-                label = "Account Settings",
-                onClick = onAccountSettings,
-            )
-            Spacer(Modifier.height(10.dp))
-            AccountRow(
-                icon = Icons.Filled.Add,
-                label = "Link Another Child",
-                onClick = onLinkChild,
-            )
-            Spacer(Modifier.height(10.dp))
-            AccountRow(
-                icon = Icons.Filled.Explore,
-                label = "Discover Schools",
-                onClick = onDiscoverSchools,
-            )
-            Spacer(Modifier.height(10.dp))
-            AccountRow(
-                icon = Icons.AutoMirrored.Filled.Logout,
-                label = "Logout",
-                labelColor = VColors.Error,
-                onClick = onLogout,
-            )
-        }
-
-        Spacer(Modifier.height(24.dp))
     }
 }
 
@@ -235,7 +265,7 @@ private fun StatCard(stat: StatData, modifier: Modifier = Modifier) {
             .background(VColors.SurfaceContainerLowest)
             .pressScale(interaction, pressedScale = 0.96f)
             .shapeMorph(interaction, VShapes.XlDp, VShapes.TwoXlDp, VMotion.DurShort2)
-            .clickable(interactionSource = interaction, indication = null) { }
+            .clickable(interactionSource = interaction, indication = null) { /* TODO: view stat detail */ }
             .padding(20.dp),
     ) {
         Text(stat.value, style = VTypography.StatValue.copy(color = VColors.OnSurface))
@@ -265,7 +295,7 @@ private fun BadgeCard(badge: BadgeData) {
             .background(bg)
             .pressScale(interaction, pressedScale = 0.96f)
             .shapeMorph(interaction, VShapes.XlDp, VShapes.TwoXlDp, VMotion.DurShort2)
-            .clickable(interactionSource = interaction, indication = null) { },
+            .clickable(interactionSource = interaction, indication = null) { /* TODO: view badge detail */ },
     ) {
         // Badge top — gradient bg for earned
         Box(

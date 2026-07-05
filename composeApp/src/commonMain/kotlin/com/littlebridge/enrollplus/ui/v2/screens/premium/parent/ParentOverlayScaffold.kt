@@ -87,7 +87,7 @@ fun ParentOverlayScaffold(
             Modifier.fillMaxWidth().padding(horizontal = 20.dp),
         ) {
             content()
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(140.dp))
         }
     }
 }

@@ -58,7 +58,7 @@ fun ParentUnlinkedScreen(
         Spacer(Modifier.height(32.dp))
         VPrimaryButton(text = "Link Your Child", onClick = onLinked, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(12.dp))
-        VSecondaryButton(text = "Explore Schools", onClick = {}, modifier = Modifier.fillMaxWidth())
+        VSecondaryButton(text = "Explore Schools", onClick = { /* TODO: open school discovery */ }, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(32.dp))
     }
 }

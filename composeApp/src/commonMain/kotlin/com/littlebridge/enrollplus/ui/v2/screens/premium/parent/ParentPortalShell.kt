@@ -142,6 +142,7 @@ fun ParentPortalShell(
                     "tutor-progress" -> overlay = ParentOverlay.TutorProgress
                     "id-card", "digital-id" -> overlay = ParentOverlay.DigitalIdCard
                     "link-child" -> overlay = ParentOverlay.LinkChild
+                    "account-settings" -> overlay = ParentOverlay.AccountSettings
                     else -> overlay = ParentOverlay.None
                 }
             }
@@ -166,6 +167,7 @@ fun ParentPortalShell(
                     pathOnly.startsWith("tutor") -> { overlay = ParentOverlay.TutorChat }
                     pathOnly.startsWith("timetable") -> { overlay = ParentOverlay.Calendar }
                     pathOnly.startsWith("link-child") -> { tab = 4; overlay = ParentOverlay.LinkChild }
+                    pathOnly.startsWith("account-settings") -> { tab = 4; overlay = ParentOverlay.AccountSettings }
                     else -> { tab = 0; overlay = ParentOverlay.None }
                 }
             }
@@ -366,9 +368,9 @@ fun ParentPortalShell(
             showSearchIcon = true,
             showBellIcon = tab == 0,
             unreadCount = notifState.unreadCount,
-            onMenuClick = { },
+            onMenuClick = { /* TODO: open drawer / settings menu */ },
             onBackClick = { if (tab != 0) tab = 0 },
-            onSearchClick = { },
+            onSearchClick = { /* TODO: open search overlay */ },
             onBellClick = { overlay = ParentOverlay.Notifications },
         )
 
@@ -399,6 +401,14 @@ fun ParentPortalShell(
                         onOpenPulse = { overlay = ParentOverlay.Pulse },
                         onOpenTransport = { overlay = ParentOverlay.Transport },
                         onOpenNotifications = { overlay = ParentOverlay.Notifications },
+                        onOpenCalendar = { overlay = ParentOverlay.Calendar },
+                        onOpenLibrary = { overlay = ParentOverlay.Library },
+                        onOpenTutorChat = { overlay = ParentOverlay.TutorChat },
+                        onOpenHealth = { overlay = ParentOverlay.Health },
+                        onOpenLeave = { overlay = ParentOverlay.Leave },
+                        onOpenScholarships = { overlay = ParentOverlay.Scholarships },
+                        onOpenDigitalId = { overlay = ParentOverlay.DigitalIdCard },
+                        onOpenEvents = { overlay = ParentOverlay.EventRegistration },
                         onSwitchTab = { tab = it },
                     )
                     1 -> ParentAcademicsScreen(
@@ -643,6 +653,7 @@ private fun FabMenuItem(
             .clip(VShapes.Lg)
             .background(VColors.SurfaceContainerLowest)
             .shadow(4.dp, VShapes.Lg)
+            .pressScale(interaction, pressedScale = 0.95f)
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
             .padding(horizontal = 20.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,

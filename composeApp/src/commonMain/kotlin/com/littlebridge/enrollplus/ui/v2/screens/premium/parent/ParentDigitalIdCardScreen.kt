@@ -17,6 +17,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.littlebridge.enrollplus.ui.v2.components.carousel.VStaggeredItem
 import com.littlebridge.enrollplus.ui.v2.components.misc.VBrandLogoPremium
 import com.littlebridge.enrollplus.ui.v2.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.tokens.VShapes
@@ -30,8 +31,9 @@ fun ParentDigitalIdCardScreen(
     isTeacher: Boolean = false,
 ) {
     ParentOverlayScaffold(title = "Digital ID Card", onBack = onBack, modifier = modifier) {
-        // ID card
-        Column(
+        VStaggeredItem(delayMs = 0) {
+            // ID card
+            Column(
             Modifier.fillMaxWidth().clip(VShapes.Xl).background(
                 androidx.compose.ui.graphics.Brush.linearGradient(listOf(VColors.Primary, VColors.PrimaryDeep))
             ).padding(24.dp),
@@ -54,6 +56,7 @@ fun ParentDigitalIdCardScreen(
             Spacer(Modifier.height(16.dp))
             Text("ID: SVM2025001", style = VTypography.NavLabel.copy(color = VColors.OnPrimary.copy(alpha = 0.7f)))
             Text("Valid: 2025-2026", style = VTypography.NavLabel.copy(color = VColors.OnPrimary.copy(alpha = 0.7f)))
+        }
         }
     }
 }

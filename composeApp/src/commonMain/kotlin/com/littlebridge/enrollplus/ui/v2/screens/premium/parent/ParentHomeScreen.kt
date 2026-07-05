@@ -24,31 +24,36 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Quiz
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.parent.presentation.LivePeriod
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentDashboardViewModel
 import com.littlebridge.enrollplus.ui.v2.components.cards.HeroStat
 import com.littlebridge.enrollplus.ui.v2.components.cards.VHeroCard
-import com.littlebridge.enrollplus.ui.v2.components.cards.VQuickStatCard
 import com.littlebridge.enrollplus.ui.v2.components.cards.VUpdateCard
 import com.littlebridge.enrollplus.ui.v2.components.cards.UpdateAction
 import com.littlebridge.enrollplus.ui.v2.components.carousel.VStaggeredItem
+import com.littlebridge.enrollplus.ui.v2.components.misc.VPullRefreshPremium
 import com.littlebridge.enrollplus.ui.v2.components.navigation.VFilterChip
 import com.littlebridge.enrollplus.ui.v2.components.typography.VGreetingEyebrow
 import com.littlebridge.enrollplus.ui.v2.components.typography.VGreetingTitle
@@ -66,9 +71,8 @@ import com.littlebridge.enrollplus.ui.v2.tokens.rememberLiveBlink
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
- * Premium parent home — matches parent-portal.html Home tab.
- * Hero card, live update banner, filter chips, priority carousel,
- * quick stats, schedule cards, school updates.
+ * Premium parent home — rebuilt with 10-card feature grid, child switcher,
+ * premium loading/error/empty states, pull-to-refresh, and 140dp bottom padding.
  */
 @Composable
 fun ParentHomeScreen(
@@ -77,390 +81,334 @@ fun ParentHomeScreen(
     onOpenPulse: () -> Unit = {},
     onOpenTransport: () -> Unit = {},
     onOpenNotifications: () -> Unit = {},
+    onOpenCalendar: () -> Unit = {},
+    onOpenLibrary: () -> Unit = {},
+    onOpenTutorChat: () -> Unit = {},
+    onOpenHealth: () -> Unit = {},
+    onOpenLeave: () -> Unit = {},
+    onOpenScholarships: () -> Unit = {},
+    onOpenDigitalId: () -> Unit = {},
+    onOpenEvents: () -> Unit = {},
     onSwitchTab: (Int) -> Unit = {},
 ) = PremiumTheme(isDark = false) {
     val state by viewModel.state.collectAsStateV2()
+    var selectedFilter by remember { mutableStateOf("All") }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(VColors.Surface)
-            .verticalScroll(rememberScrollState()),
+    VPullRefreshPremium(
+        isRefreshing = state.isLoading && state.children.isNotEmpty(),
+        onRefresh = { viewModel.load() },
+        modifier = modifier.fillMaxSize().background(VColors.Surface),
     ) {
-        // Loading state
-        if (state.isLoading && state.children.isEmpty()) {
-            Box(
-                Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text("Loading dashboard...", style = VTypography.UpdateText.copy(color = VColors.OnSurfaceVariant))
-            }
-            return@PremiumTheme
-        }
-
-        // Error state
-        if (state.error != null && state.children.isEmpty()) {
-            Box(
-                Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(state.error!!, style = VTypography.UpdateText.copy(color = VColors.Error))
-            }
-            return@PremiumTheme
-        }
-
-        // Empty state
-        if (state.children.isEmpty()) {
-            Box(
-                Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text("No children linked yet", style = VTypography.UpdateText.copy(color = VColors.OnSurfaceVariant))
-            }
-            return@PremiumTheme
-        }
-
-        val child = state.selectedChild
-        val childInitial = child?.name?.firstOrNull()?.toString() ?: "?"
-
-        // ── Greeting ──
-        VStaggeredItem(delayMs = 0) {
-            Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 24.dp)) {
-            if (state.greeting.isNotBlank()) {
-                VGreetingEyebrow(text = state.greeting)
-            }
-            val firstName = child?.name?.split(" ")?.firstOrNull() ?: "Parent"
-            val dayAccent = child?.name?.split(" ")?.lastOrNull()?.let { "${it}'s day" } ?: "your day"
-            VGreetingTitle(
-                plainText = "Hi $firstName,\nhere's ",
-                accentText = dayAccent,
-            )
-            }
-        }
-
-        // ── Hero Card ──
-        VStaggeredItem(delayMs = 30) {
-            if (child != null) {
-                VHeroCard(
-                studentInitials = childInitial,
-                studentName = child.name,
-                studentClass = state.timetable?.className?.ifBlank { null } ?: "Level ${child.currentLevel}",
-                stats = listOf(
-                    HeroStat("${state.attendance?.attendanceRate ?: 0}%", "Attendance"),
-                    HeroStat(child.attendanceStatus.ifBlank { "—" }, "Status"),
-                    HeroStat("${state.alerts.size}", "Pending"),
-                ),
-                onClick = onOpenPulse,
-                onIconClick = onOpenPulse,
-                iconContent = {
-                    Icon(
-                        Icons.AutoMirrored.Filled.ArrowForwardIos,
-                        contentDescription = "Open Pulse",
-                        tint = VColors.OnPrimary,
-                        modifier = Modifier.size(20.dp),
-                    )
-                },
-                modifier = Modifier.padding(horizontal = 20.dp),
-            )
-            Spacer(Modifier.height(20.dp))
-            }
-        }
-
-        // ── Live Update banner (transport) ──
-        VStaggeredItem(delayMs = 60) {
-            val liveInteraction = remember { MutableInteractionSource() }
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp)
-                .clip(VShapes.Lg)
-                .background(VColors.TertiaryContainer)
-                .pressScale(liveInteraction, pressedScale = 0.98f)
-                .shapeMorph(liveInteraction, VShapes.LgDp, VShapes.XlDp, VMotion.DurShort2)
-                .clickable(interactionSource = liveInteraction, indication = null, onClick = onOpenTransport)
-                .padding(horizontal = 20.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = 140.dp),
         ) {
-            Box(
-                Modifier.size(40.dp).clip(CircleShape).background(VColors.Tertiary),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Filled.Info, contentDescription = null, tint = VColors.OnTertiary, modifier = Modifier.size(20.dp))
+            // ── Loading state (initial) ──
+            if (state.isLoading && state.children.isEmpty()) {
+                VStaggeredItem(delayMs = 0) {
+                    SkeletonCard(variant = "hero", modifier = Modifier.padding(horizontal = 20.dp, vertical = 24.dp))
+                }
+                VStaggeredItem(delayMs = 60) {
+                    SkeletonCard(variant = "card", modifier = Modifier.padding(horizontal = 20.dp))
+                }
+                VStaggeredItem(delayMs = 120) {
+                    SkeletonCard(variant = "card", modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp))
+                }
+                VStaggeredItem(delayMs = 180) {
+                    SkeletonCard(variant = "list", modifier = Modifier.padding(vertical = 8.dp))
+                }
+                VStaggeredItem(delayMs = 240) {
+                    SkeletonCard(variant = "list", modifier = Modifier.padding(vertical = 8.dp))
+                }
+                return@Column
             }
-            Column(Modifier.weight(1f)) {
-                Text("Live tracking available", style = VTypography.UpdateTitle.copy(color = VColors.OnTertiaryContainer, fontWeight = FontWeight.Bold))
-                Text("Tap to view real-time transport status", style = VTypography.NavLabel.copy(color = VColors.OnTertiaryContainer.copy(alpha = 0.7f)))
+
+            // ── Error state ──
+            if (state.error != null && state.children.isEmpty()) {
+                ErrorStateCard(
+                    message = state.error ?: "Unknown error",
+                    onRetry = { viewModel.load() },
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 48.dp),
+                )
+                return@Column
             }
-            Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, contentDescription = null, tint = VColors.OnTertiaryContainer.copy(alpha = 0.5f), modifier = Modifier.size(16.dp))
-        }
-        }
 
-        Spacer(Modifier.height(24.dp))
+            // ── Empty state (no children linked) ──
+            if (state.children.isEmpty()) {
+                EmptyStateCard(
+                    title = "No Children Linked",
+                    body = "Link your child to start tracking their academic progress, attendance, and more.",
+                    icon = Icons.Filled.School,
+                    actionText = "Link a Child",
+                    onAction = { /* TODO: navigate to LinkChild overlay */ },
+                    modifier = Modifier.padding(vertical = 48.dp),
+                )
+                return@Column
+            }
 
-        // ── Filter Chips ──
-        VStaggeredItem(delayMs = 100, useSpringIn = true) {
-            LazyRow(
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                items(listOf("All", "Academics", "Fees", "Attendance", "Transport", "Library")) { label ->
-                    VFilterChip(label = label, active = label == "All", onClick = { })
+            val child = state.selectedChild
+            val childInitial = child?.name?.firstOrNull()?.toString() ?: "?"
+
+            // ── Greeting + Child Switcher ──
+            VStaggeredItem(delayMs = 0) {
+                Row(
+                    Modifier.fillMaxWidth().padding(start = 24.dp, end = 20.dp, top = 8.dp, bottom = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        if (state.greeting.isNotBlank()) {
+                            VGreetingEyebrow(text = state.greeting)
+                        }
+                        val firstName = child?.name?.split(" ")?.firstOrNull() ?: "Parent"
+                        val dayAccent = child?.name?.split(" ")?.lastOrNull()?.let { "${it}'s day" } ?: "your day"
+                        VGreetingTitle(
+                            plainText = "Hi $firstName,\nhere's ",
+                            accentText = dayAccent,
+                        )
+                    }
+                    if (state.children.size > 1) {
+                        ChildSwitcherDropdown(
+                            children = state.children,
+                            selectedChildId = state.selectedChildId,
+                            onSelect = { viewModel.selectChild(it) },
+                        )
+                    }
                 }
             }
-        }
 
-        Spacer(Modifier.height(24.dp))
-
-        // ── Priority Carousel ──
-        VStaggeredItem(delayMs = 150) {
-            VSectionHeader("Priority", linkText = "See all", onLinkClick = { })
-            val feeBg = VColors.PrimaryContainer
-        val feeIconBg = VColors.Primary
-        val feeIconFg = VColors.OnPrimary
-        val attBg = VColors.TertiaryContainer
-        val attIconBg = VColors.Tertiary
-        val attIconFg = VColors.OnTertiary
-        val hwBg = VColors.WarmOrangeContainer
-        val hwIconBg = VColors.WarmOrange
-        val msgBg = VColors.SecondaryContainer
-        val msgIconBg = VColors.Secondary
-        val msgIconFg = VColors.OnSecondary
-        LazyRow(
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            items(
-                listOf(
-                    FeatureCardData(
-                        title = "Fee Payment",
-                        subtitle = "Outstanding dues",
-                        amount = state.fees?.outstandingFees ?: "—",
-                        badge = "Pay Now",
-                        bgColor = feeBg,
-                        iconBg = feeIconBg,
-                        iconFg = feeIconFg,
-                        badgeBg = feeIconBg,
-                        badgeFg = feeIconFg,
-                        icon = Icons.Filled.Payments,
-                        onClick = { onSwitchTab(2) },
-                    ),
-                    FeatureCardData(
-                        title = "Attendance",
-                        subtitle = "${state.attendance?.presentDays ?: 0} days present",
-                        amount = "${state.attendance?.attendanceRate ?: 0}%",
-                        badge = "On Track",
-                        bgColor = attBg,
-                        iconBg = attIconBg,
-                        iconFg = attIconFg,
-                        badgeBg = attIconBg,
-                        badgeFg = attIconFg,
-                        icon = Icons.Filled.CheckCircle,
-                        onClick = { onSwitchTab(1) },
-                    ),
-                    FeatureCardData(
-                        title = "Homework",
-                        subtitle = "${state.alerts.count { it.type == "WARNING" || it.type == "CRITICAL" }} pending",
-                        amount = "${state.alerts.size}",
-                        badge = "Review",
-                        bgColor = hwBg,
-                        iconBg = hwIconBg,
-                        iconFg = Color.White,
-                        badgeBg = hwIconBg,
-                        badgeFg = Color.White,
-                        icon = Icons.Filled.Warning,
-                        onClick = onOpenNotifications,
-                    ),
-                    FeatureCardData(
-                        title = "Messages",
-                        subtitle = "Unread threads",
-                        amount = "${state.alerts.size}",
-                        badge = "Open",
-                        bgColor = msgBg,
-                        iconBg = msgIconBg,
-                        iconFg = msgIconFg,
-                        badgeBg = msgIconBg,
-                        badgeFg = msgIconFg,
-                        icon = Icons.AutoMirrored.Filled.Message,
-                        onClick = { onSwitchTab(3) },
-                    ),
-                )
-            ) { card ->
-                FeatureCard(card)
+            // ── Hero Card ──
+            VStaggeredItem(delayMs = 30) {
+                if (child != null) {
+                    VHeroCard(
+                        studentInitials = childInitial,
+                        studentName = child.name,
+                        studentClass = state.timetable?.className?.ifBlank { null } ?: "Level ${child.currentLevel}",
+                        stats = listOf(
+                            HeroStat("${state.attendance?.attendanceRate ?: 0}%", "Attendance"),
+                            HeroStat(child.attendanceStatus.ifBlank { "—" }, "Status"),
+                            HeroStat("${state.alerts.size}", "Pending"),
+                        ),
+                        onClick = onOpenPulse,
+                        onIconClick = onOpenPulse,
+                        iconContent = {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowForwardIos,
+                                contentDescription = "Open Pulse",
+                                tint = VColors.OnPrimary,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        },
+                        modifier = Modifier.padding(horizontal = 20.dp),
+                    )
+                    Spacer(Modifier.height(20.dp))
+                }
             }
-        }
-        }
 
-        Spacer(Modifier.height(24.dp))
-
-        // ── Quick Stats ──
-        VStaggeredItem(delayMs = 200) {
-            VSectionHeader("Quick Stats")
-            Row(
-                Modifier.padding(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            VQuickStatCard(
-                value = state.fees?.outstandingFees ?: "—",
-                label = "Fees Due",
-                iconBg = VColors.PrimaryContainer,
-                iconColor = VColors.Primary,
-                icon = { Icon(Icons.Filled.Payments, contentDescription = null, tint = VColors.Primary, modifier = Modifier.size(18.dp)) },
-                onClick = { onSwitchTab(2) },
-                modifier = Modifier.weight(1f),
-            )
-            VQuickStatCard(
-                value = "${state.attendance?.attendanceRate ?: 0}%",
-                label = "Attendance",
-                iconBg = VColors.TertiaryContainer,
-                iconColor = VColors.Tertiary,
-                icon = { Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = VColors.Tertiary, modifier = Modifier.size(18.dp)) },
-                onClick = { onSwitchTab(1) },
-                modifier = Modifier.weight(1f),
-            )
-            VQuickStatCard(
-                value = "${state.alerts.size}",
-                label = "Homework",
-                iconBg = VColors.WarmOrangeContainer,
-                iconColor = VColors.WarmOrange,
-                icon = { Icon(Icons.Filled.Warning, contentDescription = null, tint = VColors.WarmOrange, modifier = Modifier.size(18.dp)) },
-                onClick = onOpenNotifications,
-                modifier = Modifier.weight(1f),
-            )
-        }
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        // ── Today's Schedule ──
-        VStaggeredItem(delayMs = 250, useSpringIn = true) {
-            if (state.todayPeriods.isNotEmpty()) {
-            VSectionHeader("Today's Schedule", linkText = "Full timetable", onLinkClick = { })
-            Column(Modifier.padding(horizontal = 20.dp)) {
-                // Progress bar
-                val doneCount = state.todayPeriods.count { it.relation == -1 }
+            // ── Live Update banner (transport) ──
+            VStaggeredItem(delayMs = 60) {
+                val liveInteraction = remember { MutableInteractionSource() }
                 Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                        .clip(VShapes.Lg)
+                        .background(VColors.TertiaryContainer)
+                        .pressScale(liveInteraction, pressedScale = 0.98f)
+                        .shapeMorph(liveInteraction, VShapes.LgDp, VShapes.XlDp, VMotion.DurShort2)
+                        .clickable(interactionSource = liveInteraction, indication = null, onClick = onOpenTransport)
+                        .padding(horizontal = 20.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
                     Box(
-                        Modifier.weight(1f).height(4.dp).clip(VShapes.Full).background(VColors.SurfaceContainerHigh),
+                        Modifier.size(40.dp).clip(CircleShape).background(VColors.Tertiary),
+                        contentAlignment = Alignment.Center,
                     ) {
-                        val progress = if (state.todayPeriods.isNotEmpty()) doneCount.toFloat() / state.todayPeriods.size else 0f
-                        Box(
-                            Modifier.fillMaxWidth(progress).height(4.dp).clip(VShapes.Full)
-                                .background(Brush.linearGradient(listOf(VColors.Primary, VColors.Tertiary))),
-                        )
+                        Icon(Icons.Filled.Info, contentDescription = null, tint = VColors.OnTertiary, modifier = Modifier.size(20.dp))
                     }
-                    Text("$doneCount of ${state.todayPeriods.size} done", style = VTypography.NavLabel.copy(color = VColors.OnSurfaceVariant))
-                }
-                Spacer(Modifier.height(10.dp))
-                val nextIndex = state.todayPeriods.indexOfFirst { it.relation == 1 }
-                state.todayPeriods.take(6).forEachIndexed { idx, period ->
-                    ScheduleCard(period, isNext = idx == nextIndex)
-                    Spacer(Modifier.height(10.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("Live tracking available", style = VTypography.UpdateTitle.copy(color = VColors.OnTertiaryContainer, fontWeight = FontWeight.Bold))
+                        Text("Tap to view real-time transport status", style = VTypography.NavLabel.copy(color = VColors.OnTertiaryContainer.copy(alpha = 0.7f)))
+                    }
+                    Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, contentDescription = null, tint = VColors.OnTertiaryContainer.copy(alpha = 0.5f), modifier = Modifier.size(16.dp))
                 }
             }
+
+            Spacer(Modifier.height(24.dp))
+
+            // ── Filter Chips ──
+            VStaggeredItem(delayMs = 100, useSpringIn = true) {
+                LazyRow(
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    items(listOf("All", "Academics", "Fees", "Attendance", "Transport", "Library")) { label ->
+                        VFilterChip(
+                            label = label,
+                            active = label == selectedFilter,
+                            onClick = { selectedFilter = label },
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
+
+            // ── 10-Card Feature Grid (2-up) ──
+            VStaggeredItem(delayMs = 150) {
+                VSectionHeader("Quick Access")
+                val gridItems = buildFeatureGrid(state, onSwitchTab, onOpenPulse, onOpenTransport, onOpenNotifications, onOpenCalendar, onOpenLibrary, onOpenTutorChat, onOpenHealth, onOpenLeave, onOpenScholarships, onOpenDigitalId, onOpenEvents)
+                Column(Modifier.padding(horizontal = 20.dp)) {
+                    gridItems.chunked(2).forEach { rowItems ->
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            rowItems.forEach { item ->
+                                FeatureGridCard(
+                                    data = item,
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                            if (rowItems.size == 1) {
+                                Spacer(Modifier.weight(1f))
+                            }
+                        }
+                        Spacer(Modifier.height(12.dp))
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
+
+            // ── Today's Schedule ──
+            VStaggeredItem(delayMs = 250, useSpringIn = true) {
+                if (state.todayPeriods.isNotEmpty()) {
+                    VSectionHeader("Today's Schedule", linkText = "Full timetable", onLinkClick = onOpenCalendar)
+                    Column(Modifier.padding(horizontal = 20.dp)) {
+                        val doneCount = state.todayPeriods.count { it.relation == -1 }
+                        Row(
+                            Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Box(
+                                Modifier.weight(1f).height(4.dp).clip(VShapes.Full).background(VColors.SurfaceContainerHigh),
+                            ) {
+                                val progress = if (state.todayPeriods.isNotEmpty()) doneCount.toFloat() / state.todayPeriods.size else 0f
+                                Box(
+                                    Modifier.fillMaxWidth(progress).height(4.dp).clip(VShapes.Full)
+                                        .background(Brush.linearGradient(listOf(VColors.Primary, VColors.Tertiary))),
+                                )
+                            }
+                            Text("$doneCount of ${state.todayPeriods.size} done", style = VTypography.NavLabel.copy(color = VColors.OnSurfaceVariant))
+                        }
+                        Spacer(Modifier.height(10.dp))
+                        val nextIndex = state.todayPeriods.indexOfFirst { it.relation == 1 }
+                        state.todayPeriods.take(6).forEachIndexed { idx, period ->
+                            ScheduleCard(period, isNext = idx == nextIndex)
+                            Spacer(Modifier.height(10.dp))
+                        }
+                    }
+                    Spacer(Modifier.height(24.dp))
+                }
+            }
+
+            // ── School Updates (alerts as updates) ──
+            VStaggeredItem(delayMs = 300) {
+                if (state.alerts.isNotEmpty()) {
+                    VSectionHeader("School Updates", linkText = "All", onLinkClick = onOpenNotifications)
+                    Column(Modifier.padding(horizontal = 20.dp)) {
+                        state.alerts.take(3).forEach { alert ->
+                            val alertIcon: ImageVector = when (alert.type) {
+                                "CRITICAL" -> Icons.Filled.Warning
+                                "WARNING" -> Icons.Filled.Warning
+                                else -> Icons.Filled.Info
+                            }
+                            val alertIconColor = when (alert.type) {
+                                "CRITICAL" -> VColors.Error
+                                "WARNING" -> VColors.WarmOrange
+                                else -> VColors.Primary
+                            }
+                            VUpdateCard(
+                                source = "School",
+                                timestamp = "",
+                                title = alert.title,
+                                text = alert.value,
+                                avatarIcon = { Icon(alertIcon, contentDescription = null, tint = alertIconColor, modifier = Modifier.size(20.dp)) },
+                                actions = listOf(
+                                    UpdateAction("View", isPrimary = true, onClick = onOpenNotifications),
+                                    UpdateAction("Dismiss", isPrimary = false, onClick = { /* TODO: dismiss alert */ }),
+                                ),
+                                onClick = onOpenNotifications,
+                            )
+                            Spacer(Modifier.height(10.dp))
+                        }
+                    }
+                }
+            }
+
             Spacer(Modifier.height(24.dp))
         }
-        }
-
-        // ── School Updates (alerts as updates) ──
-        VStaggeredItem(delayMs = 300) {
-            if (state.alerts.isNotEmpty()) {
-                VSectionHeader("School Updates", linkText = "All", onLinkClick = { })
-                Column(Modifier.padding(horizontal = 20.dp)) {
-                    state.alerts.take(3).forEach { alert ->
-                        val alertIcon: ImageVector = when (alert.type) {
-                            "CRITICAL" -> Icons.Filled.Warning
-                            "WARNING" -> Icons.Filled.Warning
-                            else -> Icons.Filled.Info
-                        }
-                        val alertIconColor = when (alert.type) {
-                            "CRITICAL" -> VColors.Error
-                            "WARNING" -> VColors.WarmOrange
-                            else -> VColors.Primary
-                        }
-                        VUpdateCard(
-                            source = "School",
-                            timestamp = "",
-                            title = alert.title,
-                            text = alert.value,
-                            avatarIcon = { Icon(alertIcon, contentDescription = null, tint = alertIconColor, modifier = Modifier.size(20.dp)) },
-                            actions = listOf(
-                                UpdateAction("View", isPrimary = true, onClick = { }),
-                                UpdateAction("Dismiss", isPrimary = false, onClick = { }),
-                            ),
-                            onClick = { },
-                        )
-                        Spacer(Modifier.height(10.dp))
-                    }
-                }
-            }
-        }
-
-        Spacer(Modifier.height(24.dp))
     }
 }
 
-private data class FeatureCardData(
-    val title: String,
-    val subtitle: String,
-    val amount: String,
-    val badge: String,
-    val bgColor: Color,
-    val iconBg: Color,
-    val iconFg: Color,
-    val badgeBg: Color,
-    val badgeFg: Color,
-    val icon: androidx.compose.ui.graphics.vector.ImageVector,
-    val onClick: () -> Unit,
-)
-
 @Composable
-private fun FeatureCard(data: FeatureCardData) {
-    val interaction = remember { MutableInteractionSource() }
-    Column(
-        Modifier
-            .width(280.dp)
-            .clip(VShapes.Xl)
-            .background(data.bgColor)
-            .pressScale(interaction, pressedScale = 0.97f)
-            .shapeMorph(interaction, VShapes.XlDp, VShapes.TwoXlDp, VMotion.DurMedium2)
-            .clickable(interactionSource = interaction, indication = null, onClick = data.onClick)
-            .padding(24.dp),
-    ) {
-        Box(
-            Modifier.size(52.dp).clip(VShapes.Lg).background(data.iconBg),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(data.icon, contentDescription = null, tint = data.iconFg, modifier = Modifier.size(26.dp))
-        }
-        Spacer(Modifier.height(20.dp))
-        Text(data.title, style = VTypography.FeatureTitle.copy(color = VColors.OnSurface))
-        Spacer(Modifier.height(4.dp))
-        Text(data.subtitle, style = VTypography.FeatureSubtitle.copy(color = VColors.OnSurfaceVariant))
-        Spacer(Modifier.height(20.dp))
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(data.amount, style = VTypography.FeatureAmount.copy(color = VColors.OnSurface))
-            val badgeInteraction = remember { MutableInteractionSource() }
-            Text(
-                data.badge,
-                style = VTypography.FeatureBadge.copy(color = data.badgeFg),
-                modifier = Modifier
-                    .clip(VShapes.Full)
-                    .background(data.badgeBg)
-                    .pressScale(badgeInteraction, pressedScale = 0.95f)
-                    .clickable(interactionSource = badgeInteraction, indication = null, onClick = data.onClick)
-                    .padding(horizontal = 18.dp, vertical = 10.dp),
-            )
-        }
-    }
+private fun buildFeatureGrid(
+    state: com.littlebridge.enrollplus.feature.parent.presentation.ParentDashboardState,
+    onSwitchTab: (Int) -> Unit,
+    onOpenPulse: () -> Unit,
+    onOpenTransport: () -> Unit,
+    onOpenNotifications: () -> Unit,
+    onOpenCalendar: () -> Unit,
+    onOpenLibrary: () -> Unit,
+    onOpenTutorChat: () -> Unit,
+    onOpenHealth: () -> Unit,
+    onOpenLeave: () -> Unit,
+    onOpenScholarships: () -> Unit,
+    onOpenDigitalId: () -> Unit,
+    onOpenEvents: () -> Unit,
+): List<FeatureGridData> {
+    val feeIconBg = VColors.PrimaryContainer
+    val feeIconFg = VColors.Primary
+    val attIconBg = VColors.TertiaryContainer
+    val attIconFg = VColors.Tertiary
+    val hwIconBg = VColors.WarmOrangeContainer
+    val hwIconFg = VColors.WarmOrange
+    val msgIconBg = VColors.SecondaryContainer
+    val msgIconFg = VColors.Secondary
+    val calIconBg = VColors.PrimaryContainer
+    val calIconFg = VColors.Primary
+    val libIconBg = VColors.TertiaryContainer
+    val libIconFg = VColors.Tertiary
+    val tutorIconBg = VColors.WarmOrangeContainer
+    val tutorIconFg = VColors.WarmOrange
+    val healthIconBg = VColors.ErrorContainer
+    val healthIconFg = VColors.Error
+    val leaveIconBg = VColors.SecondaryContainer
+    val leaveIconFg = VColors.Secondary
+    val schIconBg = VColors.PrimaryContainer
+    val schIconFg = VColors.Primary
+    val idIconBg = VColors.TertiaryContainer
+    val idIconFg = VColors.Tertiary
+    val eventsIconBg = VColors.WarmOrangeContainer
+    val eventsIconFg = VColors.WarmOrange
+
+    return listOf(
+        FeatureGridData(Icons.Filled.Payments, "Fees Due", state.fees?.outstandingFees ?: "—", feeIconBg, feeIconFg, onClick = { onSwitchTab(2) }),
+        FeatureGridData(Icons.Filled.CheckCircle, "Attendance", "${state.attendance?.attendanceRate ?: 0}%", attIconBg, attIconFg, onClick = { onSwitchTab(1) }),
+        FeatureGridData(Icons.Filled.Warning, "Homework", "${state.alerts.size}", hwIconBg, hwIconFg, onClick = onOpenNotifications),
+        FeatureGridData(Icons.AutoMirrored.Filled.Message, "Messages", "${state.alerts.size}", msgIconBg, msgIconFg, onClick = { onSwitchTab(3) }),
+        FeatureGridData(Icons.Filled.CalendarToday, "Calendar", "Today", calIconBg, calIconFg, onClick = onOpenCalendar),
+        FeatureGridData(Icons.AutoMirrored.Filled.MenuBook, "Library", "Browse", libIconBg, libIconFg, onClick = onOpenLibrary),
+        FeatureGridData(Icons.Filled.School, "Tutor", "Ask AI", tutorIconBg, tutorIconFg, onClick = onOpenTutorChat),
+        FeatureGridData(Icons.Filled.Favorite, "Health", "Log", healthIconBg, healthIconFg, onClick = onOpenHealth),
+        FeatureGridData(Icons.Filled.Quiz, "Leave", "Apply", leaveIconBg, leaveIconFg, onClick = onOpenLeave),
+        FeatureGridData(Icons.Filled.Payments, "Scholarships", "Apply", schIconBg, schIconFg, onClick = onOpenScholarships),
+    )
 }
 
 @Composable
@@ -526,15 +474,5 @@ private fun ScheduleCard(period: LivePeriod, isNext: Boolean = false) {
         } else if (isNext) {
             Text("NEXT", style = VTypography.ScheduleStatus.copy(color = VColors.OnPrimaryContainer), modifier = Modifier.clip(VShapes.Full).background(VColors.PrimaryContainer).padding(horizontal = 14.dp, vertical = 6.dp))
         }
-    }
-}
-
-@Composable
-private fun LoadingCard() {
-    Box(
-        Modifier.fillMaxWidth().height(200.dp).clip(VShapes.Lg).background(VColors.SurfaceContainerLow),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text("Loading dashboard...", style = VTypography.UpdateText.copy(color = VColors.OnSurfaceVariant))
     }
 }

@@ -164,9 +164,9 @@ fun ParentSchoolDetailScreen(
                 Spacer(Modifier.height(24.dp))
 
                 // Action buttons
-                VPrimaryButton(text = "Request Admission Info", onClick = {}, modifier = Modifier.fillMaxWidth())
+                VPrimaryButton(text = "Request Admission Info", onClick = { /* TODO: request admission info */ }, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(12.dp))
-                VSecondaryButton(text = "Save to Favorites", onClick = {}, modifier = Modifier.fillMaxWidth())
+                VSecondaryButton(text = "Save to Favorites", onClick = { /* TODO: save school to favorites */ }, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(32.dp))
             }
         }

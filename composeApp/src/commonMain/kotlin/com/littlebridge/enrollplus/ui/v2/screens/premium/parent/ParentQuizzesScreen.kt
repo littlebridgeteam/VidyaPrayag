@@ -48,7 +48,7 @@ private fun QuizCard(title: String, topic: String, questions: String, status: St
         Text(status, style = VTypography.NavLabel.copy(color = if (canStart) VColors.Primary else VColors.Tertiary, fontWeight = FontWeight.SemiBold))
         if (canStart) {
             Spacer(Modifier.height(16.dp))
-            VPrimaryButton(text = "Start Quiz", onClick = {}, modifier = Modifier.fillMaxWidth())
+            VPrimaryButton(text = "Start Quiz", onClick = { /* TODO: start quiz */ }, modifier = Modifier.fillMaxWidth())
         }
     }
 }

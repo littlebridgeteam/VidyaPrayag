@@ -1,5 +1,10 @@
 package com.littlebridge.enrollplus.ui.v2.screens.premium.parent
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -14,12 +19,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Quiz
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -38,9 +48,12 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.feature.parent.domain.model.ParentQuizDto
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentAcademicsState
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentAcademicsViewModel
 import com.littlebridge.enrollplus.feature.parent.presentation.TrackProgressViewModel
+import com.littlebridge.enrollplus.ui.v2.components.carousel.VStaggeredItem
+import com.littlebridge.enrollplus.ui.v2.components.misc.VPullRefreshPremium
 import com.littlebridge.enrollplus.ui.v2.components.navigation.VFilterChip
 import com.littlebridge.enrollplus.ui.v2.components.progress.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.components.typography.VSectionHeader
@@ -55,9 +68,9 @@ import com.littlebridge.enrollplus.ui.v2.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
- * Premium parent academics — matches parent-portal.html Academics tab.
- * Action cards (leave, health), 6 sub-tabs (Overview, Attendance, Marks,
- * Syllabus, Homework, Report), progress ring cards, subject breakdowns.
+ * Premium parent academics — rebuilt with 7 sub-tabs (Overview, Attendance,
+ * Marks, Syllabus, Homework, Quizzes, Report), AnimatedContent transitions,
+ * attendance calendar, premium loading/error/empty states, pull-to-refresh.
  */
 @Composable
 fun ParentAcademicsScreen(
@@ -68,92 +81,123 @@ fun ParentAcademicsScreen(
     onOpenHealth: () -> Unit = {},
 ) = PremiumTheme(isDark = false) {
     val state by viewModel.state.collectAsStateV2()
-    val tabs = listOf("Overview", "Attendance", "Marks", "Syllabus", "Homework", "Report")
+    val tabs = listOf("Overview", "Attendance", "Marks", "Syllabus", "Homework", "Quizzes", "Report")
     var selectedTab by remember { mutableStateOf(0) }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(VColors.Surface)
-            .verticalScroll(rememberScrollState()),
+    VPullRefreshPremium(
+        isRefreshing = state.childrenLoading,
+        onRefresh = { viewModel.loadChildren() },
+        modifier = modifier.fillMaxSize().background(VColors.Surface),
     ) {
-        Spacer(Modifier.height(16.dp))
-
-        // ── Action Cards (Leave + Health) ──
-        Row(
-            Modifier.padding(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = 140.dp),
         ) {
-            ActionCard(
-                icon = { Icon(Icons.Filled.CalendarToday, contentDescription = null, tint = VColors.OnError, modifier = Modifier.size(20.dp)) },
-                title = "Apply Leave",
-                subtitle = "Leave requests",
-                bgColor = VColors.ErrorContainer,
-                iconBg = VColors.Error,
-                onClick = onOpenLeave,
-                modifier = Modifier.weight(1f),
-            )
-            ActionCard(
-                icon = { Icon(Icons.Filled.Favorite, contentDescription = null, tint = VColors.OnTertiary, modifier = Modifier.size(20.dp)) },
-                title = "Health",
-                subtitle = "View health records",
-                bgColor = VColors.TertiaryContainer,
-                iconBg = VColors.Tertiary,
-                onClick = onOpenHealth,
-                modifier = Modifier.weight(1f),
-            )
-        }
+            Spacer(Modifier.height(16.dp))
 
-        Spacer(Modifier.height(24.dp))
-
-        // ── Sub-tab selector (scrollable, primary-container active style) ──
-        LazyRow(
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            items(tabs.size) { index ->
-                VFilterChip(
-                    label = tabs[index],
-                    active = selectedTab == index,
-                    onClick = { selectedTab = index },
-                    activeBg = VColors.PrimaryContainer,
-                    activeFg = VColors.OnPrimaryContainer,
-                    activeFontWeight = FontWeight.Bold,
-                    fontSize = 13,
-                )
-            }
-        }
-
-        Spacer(Modifier.height(20.dp))
-
-        // ── Child selector ──
-        if (state.children.size > 1) {
-            Row(
-                Modifier.padding(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                state.children.forEach { child ->
-                    VFilterChip(
-                        label = child.name,
-                        active = state.selectedChildId == child.id,
-                        onClick = { viewModel.selectChild(child.id) },
+            // ── Action Cards (Leave + Health) ──
+            VStaggeredItem(delayMs = 0) {
+                Row(
+                    Modifier.padding(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    ActionCard(
+                        icon = { Icon(Icons.Filled.CalendarToday, contentDescription = null, tint = VColors.OnError, modifier = Modifier.size(20.dp)) },
+                        title = "Apply Leave",
+                        subtitle = "Leave requests",
+                        bgColor = VColors.ErrorContainer,
+                        iconBg = VColors.Error,
+                        onClick = onOpenLeave,
+                        modifier = Modifier.weight(1f),
+                    )
+                    ActionCard(
+                        icon = { Icon(Icons.Filled.Favorite, contentDescription = null, tint = VColors.OnTertiary, modifier = Modifier.size(20.dp)) },
+                        title = "Health",
+                        subtitle = "View health records",
+                        bgColor = VColors.TertiaryContainer,
+                        iconBg = VColors.Tertiary,
+                        onClick = onOpenHealth,
+                        modifier = Modifier.weight(1f),
                     )
                 }
             }
-            Spacer(Modifier.height(16.dp))
-        }
 
-        // ── Tab content ──
-        when (selectedTab) {
-            0 -> OverviewTab(state)
-            1 -> AttendanceTab(state)
-            2 -> MarksTab(state)
-            3 -> SyllabusTab(state)
-            4 -> HomeworkTab(state)
-            5 -> ReportTab(state)
-        }
+            Spacer(Modifier.height(24.dp))
 
-        Spacer(Modifier.height(24.dp))
+            // ── Sub-tab selector ──
+            VStaggeredItem(delayMs = 60) {
+                LazyRow(
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    items(tabs) { tabLabel ->
+                        val index = tabs.indexOf(tabLabel)
+                        VFilterChip(
+                            label = tabLabel,
+                            active = selectedTab == index,
+                            onClick = {
+                                selectedTab = index
+                                when (index) {
+                                    1 -> viewModel.loadAttendance()
+                                    2 -> viewModel.loadMarks()
+                                    3 -> viewModel.loadSyllabus()
+                                    4 -> viewModel.loadDailySummary()
+                                    5 -> viewModel.loadQuizzes()
+                                }
+                            },
+                            activeBg = VColors.PrimaryContainer,
+                            activeFg = VColors.OnPrimaryContainer,
+                            activeFontWeight = FontWeight.Bold,
+                            fontSize = 13,
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(20.dp))
+
+            // ── Child selector ──
+            if (state.children.size > 1) {
+                VStaggeredItem(delayMs = 100) {
+                    Row(
+                        Modifier.padding(horizontal = 20.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        state.children.forEach { child ->
+                            VFilterChip(
+                                label = child.name,
+                                active = state.selectedChildId == child.id,
+                                onClick = { viewModel.selectChild(child.id) },
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(16.dp))
+                }
+            }
+
+            // ── Tab content with AnimatedContent ──
+            AnimatedContent(
+                targetState = selectedTab,
+                transitionSpec = {
+                    fadeIn(tween(VMotion.DurMedium1)).togetherWith(fadeOut(tween(VMotion.DurShort2)))
+                },
+                label = "academicsTab",
+            ) { tab ->
+                when (tab) {
+                    0 -> OverviewTab(state)
+                    1 -> AttendanceTab(state)
+                    2 -> MarksTab(state)
+                    3 -> SyllabusTab(state)
+                    4 -> HomeworkTab(state)
+                    5 -> QuizzesTab(state, viewModel)
+                    6 -> ReportTab(state)
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
+        }
     }
 }
 
@@ -283,14 +327,15 @@ private fun OverviewTab(state: ParentAcademicsState) {
 private fun AttendanceTab(state: ParentAcademicsState) {
     Column(Modifier.padding(horizontal = 20.dp)) {
         if (state.attendanceLoading) {
-            LoadingState()
+            SkeletonCard(variant = "card")
+            Spacer(Modifier.height(12.dp))
+            SkeletonCard(variant = "card")
         } else if (state.attendanceError != null) {
-            ErrorState(state.attendanceError!!)
+            ErrorStateCard(message = state.attendanceError!!, onRetry = null)
         } else if (state.attendance == null) {
             EmptyState("No attendance data available")
         } else {
             val att = state.attendance!!
-            // Progress card with ring + summary text (matching HTML)
             val rating = when {
                 att.attendanceRate >= 90 -> "Excellent"
                 att.attendanceRate >= 75 -> "Good"
@@ -313,6 +358,19 @@ private fun AttendanceTab(state: ParentAcademicsState) {
             SubjectBreakdownRow("Absent", att.absentDays, totalAtt, VColors.Error)
             Spacer(Modifier.height(10.dp))
             SubjectBreakdownRow("Late Arrival", att.lateDays, totalAtt, VColors.WarmOrange)
+
+            Spacer(Modifier.height(24.dp))
+
+            // Attendance Calendar
+            VSectionHeader("Calendar")
+            Spacer(Modifier.height(12.dp))
+            val calendarDays = buildAttendanceCalendarDays(att)
+            AttendanceCalendar(
+                monthName = "This Month",
+                days = calendarDays,
+                onPrevMonth = { /* TODO: load previous month */ },
+                onNextMonth = { /* TODO: load next month */ },
+            )
         }
     }
 }
@@ -321,16 +379,39 @@ private fun AttendanceTab(state: ParentAcademicsState) {
 
 @Composable
 private fun MarksTab(state: ParentAcademicsState) {
+    var selectedFilter by remember { mutableStateOf("All") }
     VSectionHeader("Recent Test Scores")
     Column(Modifier.padding(horizontal = 20.dp)) {
         if (state.marksLoading) {
-            LoadingState()
+            SkeletonCard(variant = "list")
+            Spacer(Modifier.height(10.dp))
+            SkeletonCard(variant = "list")
         } else if (state.marksError != null) {
-            ErrorState(state.marksError!!)
+            ErrorStateCard(message = state.marksError!!, onRetry = null)
         } else if (state.marks == null || state.marks!!.results.isEmpty()) {
             EmptyState("No marks published yet")
         } else {
-            state.marks!!.results.forEach { result ->
+            val allResults = state.marks!!.results
+            val subjects = allResults.map { it.subject }.distinct()
+            val filteredResults = if (selectedFilter == "All") allResults else allResults.filter { it.subject == selectedFilter }
+
+            // Filter chips
+            if (subjects.size > 1) {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    items(listOf("All") + subjects) { label ->
+                        VFilterChip(
+                            label = label,
+                            active = label == selectedFilter,
+                            onClick = { selectedFilter = label },
+                        )
+                    }
+                }
+                Spacer(Modifier.height(16.dp))
+            }
+
+            filteredResults.forEach { result ->
                 MarkRow(result.subject, result.marks ?: 0.0, result.maxMarks.toDouble(), result.examName)
                 Spacer(Modifier.height(10.dp))
             }
@@ -342,12 +423,15 @@ private fun MarksTab(state: ParentAcademicsState) {
 
 @Composable
 private fun SyllabusTab(state: ParentAcademicsState) {
+    var expandedSubject by remember { mutableStateOf<String?>(null) }
     VSectionHeader("Syllabus Coverage")
     Column(Modifier.padding(horizontal = 20.dp)) {
         if (state.syllabusLoading) {
-            LoadingState()
+            SkeletonCard(variant = "list")
+            Spacer(Modifier.height(10.dp))
+            SkeletonCard(variant = "list")
         } else if (state.syllabusError != null) {
-            ErrorState(state.syllabusError!!)
+            ErrorStateCard(message = state.syllabusError!!, onRetry = null)
         } else if (state.syllabus == null) {
             EmptyState("No syllabus data available")
         } else {
@@ -358,7 +442,15 @@ private fun SyllabusTab(state: ParentAcademicsState) {
             VProgressBar(progress = (avgProgress / 100f).toFloat(), modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(20.dp))
             syllabus.subjects.forEach { subj ->
-                SyllabusRow(subj.subject, subj.units.firstOrNull()?.title ?: "", subj.progress.toDouble())
+                ExpandableSyllabusRow(
+                    subject = subj.subject,
+                    coverage = subj.progress.toDouble(),
+                    units = subj.units.map { it.title },
+                    isExpanded = expandedSubject == subj.subject,
+                    onToggle = {
+                        expandedSubject = if (expandedSubject == subj.subject) null else subj.subject
+                    },
+                )
                 Spacer(Modifier.height(10.dp))
             }
         }
@@ -386,6 +478,77 @@ private fun HomeworkTab(state: ParentAcademicsState) {
                 }
             }
         }
+    }
+}
+
+// ── Quizzes Tab ──────────────────────────────────────────────────────────────
+
+@Composable
+private fun QuizzesTab(
+    state: ParentAcademicsState,
+    viewModel: ParentAcademicsViewModel,
+) {
+    VSectionHeader("Quizzes")
+    Column(Modifier.padding(horizontal = 20.dp)) {
+        if (state.quizzesLoading) {
+            SkeletonCard(variant = "list")
+            Spacer(Modifier.height(10.dp))
+            SkeletonCard(variant = "list")
+        } else if (state.quizzesError != null) {
+            ErrorStateCard(message = state.quizzesError!!, onRetry = { viewModel.loadQuizzes() })
+        } else if (state.quizzes.isEmpty()) {
+            EmptyStateCard(
+                title = "No Quizzes Available",
+                body = "Quizzes will appear here when assigned by the teacher.",
+                icon = Icons.Filled.Quiz,
+            )
+        } else {
+            state.quizzes.forEach { quiz ->
+                QuizRow(quiz)
+                Spacer(Modifier.height(10.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun QuizRow(quiz: ParentQuizDto) {
+    val isCompleted = quiz.status.equals("COMPLETED", ignoreCase = true)
+    val statusColor = if (isCompleted) VColors.Tertiary else VColors.WarmOrange
+    val statusBg = if (isCompleted) VColors.TertiaryContainer else VColors.WarmOrangeContainer
+    val statusFg = if (isCompleted) VColors.OnTertiaryContainer else VColors.WarmOrange
+    val interaction = remember { MutableInteractionSource() }
+    Row(
+        Modifier.fillMaxWidth().clip(VShapes.Xl).background(VColors.SurfaceContainerLowest)
+            .pressScale(interaction, pressedScale = 0.98f)
+            .shapeMorph(interaction, VShapes.XlDp, VShapes.TwoXlDp, VMotion.DurShort2)
+            .clickable(interactionSource = interaction, indication = null) { /* TODO: open quiz detail */ }
+            .padding(horizontal = 20.dp, vertical = 18.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier.size(44.dp).clip(VShapes.Md).background(statusBg),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Filled.Quiz,
+                contentDescription = null,
+                tint = statusColor,
+                modifier = Modifier.size(22.dp),
+            )
+        }
+        Column(Modifier.weight(1f)) {
+            Text(quiz.title.ifBlank { "Quiz" }, style = VTypography.HwTitle.copy(color = VColors.OnSurface))
+            Text("${quiz.subject}${if (quiz.unitTitle.isNotBlank()) " · ${quiz.unitTitle}" else ""}", style = VTypography.HwSub.copy(color = VColors.OnSurfaceVariant))
+            Spacer(Modifier.height(2.dp))
+            Text("${quiz.numQuestions} questions · ${quiz.totalMarks} marks", style = VTypography.HwSub.copy(color = VColors.OnSurfaceVariant))
+        }
+        Text(
+            quiz.status.uppercase(),
+            style = VTypography.HwStatus.copy(color = statusFg),
+            modifier = Modifier.clip(VShapes.Full).background(statusBg).padding(horizontal = 12.dp, vertical = 6.dp),
+        )
     }
 }
 
@@ -450,6 +613,84 @@ private fun ReportTab(state: ParentAcademicsState) {
                 Text("Teacher Remarks", style = VTypography.UpdateTitle.copy(color = VColors.OnSurface, fontWeight = FontWeight.Bold))
                 Spacer(Modifier.height(12.dp))
                 Text(remarks, style = VTypography.UpdateText.copy(color = VColors.OnSurfaceVariant))
+            }
+        }
+    }
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+private fun buildAttendanceCalendarDays(
+    att: com.littlebridge.enrollplus.feature.parent.domain.model.ParentAttendanceData,
+): List<AttendanceCalendarDay> {
+    return att.records.map { rec ->
+        val status = when (rec.status.lowercase()) {
+            "present" -> AttendanceCellStatus.Present
+            "absent" -> AttendanceCellStatus.Absent
+            "late" -> AttendanceCellStatus.Late
+            else -> AttendanceCellStatus.NoData
+        }
+        val dayOfMonth = rec.date.substringAfterLast("-").toIntOrNull() ?: 1
+        AttendanceCalendarDay(dayOfMonth = dayOfMonth, status = status, isToday = false)
+    }
+}
+
+@Composable
+private fun ExpandableSyllabusRow(
+    subject: String,
+    coverage: Double,
+    units: List<String>,
+    isExpanded: Boolean,
+    onToggle: () -> Unit,
+) {
+    val coverageColor = when {
+        coverage >= 75 -> VColors.Tertiary
+        coverage >= 50 -> VColors.Primary
+        else -> VColors.WarmOrange
+    }
+    val interaction = remember { MutableInteractionSource() }
+    Column(
+        Modifier.fillMaxWidth().clip(VShapes.Xl).background(VColors.SurfaceContainerLowest)
+            .pressScale(interaction, pressedScale = 0.98f)
+            .clickable(interactionSource = interaction, indication = null, onClick = onToggle)
+            .padding(16.dp),
+    ) {
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(subject, style = VTypography.SyllabusName.copy(color = VColors.OnSurface))
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("${coverage.toInt()}%", style = VTypography.SyllabusPct.copy(color = coverageColor))
+                Icon(
+                    if (isExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                    contentDescription = if (isExpanded) "Collapse" else "Expand",
+                    tint = VColors.OnSurfaceVariant,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+        }
+        Spacer(Modifier.height(10.dp))
+        Box(
+            Modifier.fillMaxWidth().height(6.dp).clip(VShapes.Full).background(VColors.SurfaceContainerHigh),
+        ) {
+            Box(
+                Modifier.fillMaxWidth((coverage / 100f).toFloat()).height(6.dp).clip(VShapes.Full)
+                    .background(coverageColor),
+            )
+        }
+        if (isExpanded && units.isNotEmpty()) {
+            Spacer(Modifier.height(12.dp))
+            units.forEach { unit ->
+                Row(
+                    Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(Modifier.size(6.dp).clip(VShapes.Full).background(coverageColor.copy(alpha = 0.5f)))
+                    Text(unit, style = VTypography.NavLabel.copy(color = VColors.OnSurfaceVariant))
+                }
             }
         }
     }
@@ -567,40 +808,6 @@ private fun MarkRow(subject: String, score: Double, maxScore: Double, examName: 
 }
 
 @Composable
-private fun SyllabusRow(subject: String, topic: String, coverage: Double) {
-    val coverageColor = when {
-        coverage >= 75 -> VColors.Tertiary
-        coverage >= 50 -> VColors.Primary
-        else -> VColors.WarmOrange
-    }
-    Column(
-        Modifier.fillMaxWidth().clip(VShapes.Xl).background(VColors.SurfaceContainerLowest).padding(16.dp),
-    ) {
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(subject, style = VTypography.SyllabusName.copy(color = VColors.OnSurface))
-            Text("${coverage.toInt()}%", style = VTypography.SyllabusPct.copy(color = coverageColor))
-        }
-        if (topic.isNotBlank()) {
-            Spacer(Modifier.height(4.dp))
-            Text(topic, style = VTypography.NavLabel.copy(color = VColors.OnSurfaceVariant))
-        }
-        Spacer(Modifier.height(10.dp))
-        Box(
-            Modifier.fillMaxWidth().height(6.dp).clip(VShapes.Full).background(VColors.SurfaceContainerHigh),
-        ) {
-            Box(
-                Modifier.fillMaxWidth((coverage / 100f).toFloat()).height(6.dp).clip(VShapes.Full)
-                    .background(coverageColor),
-            )
-        }
-    }
-}
-
-@Composable
 private fun HomeworkRow(subject: String, description: String, dueDate: String, status: String) {
     val isDone = status.lowercase() in listOf("done", "completed", "submitted")
     val statusColor = if (isDone) VColors.Tertiary else VColors.WarmOrange
@@ -645,22 +852,20 @@ private fun HomeworkRow(subject: String, description: String, dueDate: String, s
 
 @Composable
 private fun LoadingState() {
-    Box(Modifier.fillMaxWidth().height(120.dp).clip(VShapes.Lg).background(VColors.SurfaceContainerLow), contentAlignment = Alignment.Center) {
-        Text("Loading...", style = VTypography.UpdateText.copy(color = VColors.OnSurfaceVariant))
-    }
+    SkeletonCard(variant = "list")
 }
 
 @Composable
 private fun ErrorState(message: String) {
-    Box(Modifier.fillMaxWidth().height(120.dp).clip(VShapes.Lg).background(VColors.ErrorContainer), contentAlignment = Alignment.Center) {
-        Text(message, style = VTypography.UpdateText.copy(color = VColors.OnErrorContainer))
-    }
+    ErrorStateCard(message = message, onRetry = null, modifier = Modifier.padding(vertical = 8.dp))
 }
 
 @Composable
 private fun EmptyState(message: String) {
-    Box(Modifier.fillMaxWidth().height(120.dp).clip(VShapes.Lg).background(VColors.SurfaceContainerLow), contentAlignment = Alignment.Center) {
-        Text(message, style = VTypography.UpdateText.copy(color = VColors.OnSurfaceVariant))
-    }
+    EmptyStateCard(
+        title = message,
+        icon = Icons.AutoMirrored.Filled.MenuBook,
+        modifier = Modifier.padding(vertical = 8.dp),
+    )
 }
 

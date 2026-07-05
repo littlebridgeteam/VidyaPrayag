@@ -36,6 +36,8 @@ import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentMessageViewModel
 import com.littlebridge.enrollplus.ui.v2.components.cards.VUpdateCard
 import com.littlebridge.enrollplus.ui.v2.components.cards.UpdateAction
+import com.littlebridge.enrollplus.ui.v2.components.carousel.VStaggeredItem
+import com.littlebridge.enrollplus.ui.v2.components.misc.VPullRefreshPremium
 import com.littlebridge.enrollplus.ui.v2.components.navigation.VFilterChip
 import com.littlebridge.enrollplus.ui.v2.components.typography.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
@@ -46,9 +48,8 @@ import com.littlebridge.enrollplus.ui.v2.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
- * Premium parent conversations — matches parent-portal.html Messages tab.
- * Top bar with search, segment selector (Messages/Announcements),
- * thread rows with colored avatars, announcements using VUpdateCard.
+ * Premium parent conversations — rebuilt with premium loading/error/empty
+ * states, pull-to-refresh, VStaggeredItem entrances, and 140dp bottom padding.
  */
 @Composable
 fun ParentConversationsScreen(
@@ -59,95 +60,120 @@ fun ParentConversationsScreen(
     val state by viewModel.state.collectAsStateV2()
     var segment by remember { mutableStateOf(0) }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(VColors.Surface)
-            .verticalScroll(rememberScrollState()),
+    VPullRefreshPremium(
+        isRefreshing = state.loading,
+        onRefresh = { viewModel.loadThreads() },
+        modifier = modifier.fillMaxSize().background(VColors.Surface),
     ) {
-        Spacer(Modifier.height(16.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = 140.dp),
+        ) {
+            Spacer(Modifier.height(16.dp))
 
-        // ── Segment selector — flex:1 equal width, primary active ──
-        Row(Modifier.padding(horizontal = 20.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            VFilterChip(
-                label = "Messages",
-                active = segment == 0,
-                onClick = { segment = 0 },
-                activeBg = VColors.Primary,
-                activeFg = VColors.OnPrimary,
-                inactiveBg = VColors.SurfaceContainer,
-                inactiveFg = VColors.OnSurfaceVariant,
-                modifier = Modifier.weight(1f),
-            )
-            VFilterChip(
-                label = "Announcements",
-                active = segment == 1,
-                onClick = { segment = 1 },
-                activeBg = VColors.Primary,
-                activeFg = VColors.OnPrimary,
-                inactiveBg = VColors.SurfaceContainer,
-                inactiveFg = VColors.OnSurfaceVariant,
-                modifier = Modifier.weight(1f),
-            )
-        }
+            // ── Segment selector ──
+            VStaggeredItem(delayMs = 0) {
+                Row(Modifier.padding(horizontal = 20.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    VFilterChip(
+                        label = "Messages",
+                        active = segment == 0,
+                        onClick = { segment = 0 },
+                        activeBg = VColors.Primary,
+                        activeFg = VColors.OnPrimary,
+                        inactiveBg = VColors.SurfaceContainer,
+                        inactiveFg = VColors.OnSurfaceVariant,
+                        modifier = Modifier.weight(1f),
+                    )
+                    VFilterChip(
+                        label = "Announcements",
+                        active = segment == 1,
+                        onClick = { segment = 1 },
+                        activeBg = VColors.Primary,
+                        activeFg = VColors.OnPrimary,
+                        inactiveBg = VColors.SurfaceContainer,
+                        inactiveFg = VColors.OnSurfaceVariant,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
 
-        Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(20.dp))
 
-        when (segment) {
-            0 -> {
-                if (state.loading) {
-                    StatusBox("Loading messages...")
-                } else if (state.error != null) {
-                    StatusBox(state.error!!, isError = true)
-                } else if (state.threads.isEmpty()) {
-                    StatusBox("No conversations yet")
-                } else {
-                    Column(Modifier.padding(horizontal = 0.dp)) {
-                        state.threads.forEach { thread ->
-                            ThreadRow(
-                                name = thread.senderName,
-                                role = thread.senderRole,
-                                preview = thread.lastMessage,
-                                time = thread.time,
-                                unread = thread.unreadCount,
-                                isRead = thread.isRead,
-                                onClick = { onOpenThread(thread.id) },
+            when (segment) {
+                0 -> {
+                    if (state.loading) {
+                        VStaggeredItem(delayMs = 60) { SkeletonCard(variant = "list") }
+                        VStaggeredItem(delayMs = 120) { SkeletonCard(variant = "list") }
+                        VStaggeredItem(delayMs = 180) { SkeletonCard(variant = "list") }
+                    } else if (state.error != null) {
+                        ErrorStateCard(
+                            message = state.error ?: "Unknown error",
+                            onRetry = { viewModel.loadThreads() },
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 24.dp),
+                        )
+                    } else if (state.threads.isEmpty()) {
+                        EmptyStateCard(
+                            title = "No Conversations",
+                            body = "Messages from teachers and school will appear here.",
+                            icon = Icons.Filled.Info,
+                            modifier = Modifier.padding(vertical = 24.dp),
+                        )
+                    } else {
+                        Column {
+                            state.threads.forEach { thread ->
+                                VStaggeredItem(delayMs = 60) {
+                                    ThreadRow(
+                                        name = thread.senderName,
+                                        role = thread.senderRole,
+                                        preview = thread.lastMessage,
+                                        time = thread.time,
+                                        unread = thread.unreadCount,
+                                        isRead = thread.isRead,
+                                        onClick = { onOpenThread(thread.id) },
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                1 -> {
+                    VStaggeredItem(delayMs = 60) {
+                        VSectionHeader("School Announcements")
+                    }
+                    VStaggeredItem(delayMs = 100) {
+                        Column(Modifier.padding(horizontal = 20.dp)) {
+                            VUpdateCard(
+                                source = "Principal",
+                                timestamp = "2h ago",
+                                title = "Annual Sports Day",
+                                text = "Sports Day will be held on January 20th. All parents are invited to attend.",
+                                avatarIcon = { Icon(Icons.Filled.Info, contentDescription = null, tint = VColors.Primary, modifier = Modifier.size(20.dp)) },
+                                actions = listOf(
+                                    UpdateAction("Read more", isPrimary = true, onClick = { /* TODO: open announcement detail */ }),
+                                ),
+                                onClick = { /* TODO: open announcement detail */ },
+                            )
+                            Spacer(Modifier.height(10.dp))
+                            VUpdateCard(
+                                source = "School Office",
+                                timestamp = "1d ago",
+                                title = "Parent-Teacher Meeting",
+                                text = "PTM scheduled for January 15th, 10:00 AM to 1:00 PM. Please confirm your attendance.",
+                                avatarIcon = { Icon(Icons.Filled.Info, contentDescription = null, tint = VColors.Tertiary, modifier = Modifier.size(20.dp)) },
+                                actions = listOf(
+                                    UpdateAction("Confirm", isPrimary = true, onClick = { /* TODO: confirm PTM attendance */ }),
+                                ),
+                                onClick = { /* TODO: open announcement detail */ },
                             )
                         }
                     }
                 }
             }
-            1 -> {
-                VSectionHeader("School Announcements")
-                Column(Modifier.padding(horizontal = 20.dp)) {
-                    VUpdateCard(
-                        source = "Principal",
-                        timestamp = "2h ago",
-                        title = "Annual Sports Day",
-                        text = "Sports Day will be held on January 20th. All parents are invited to attend.",
-                        avatarIcon = { Icon(Icons.Filled.Info, contentDescription = null, tint = VColors.Primary, modifier = Modifier.size(20.dp)) },
-                        actions = listOf(
-                            UpdateAction("Read more", isPrimary = true, onClick = { }),
-                        ),
-                        onClick = { },
-                    )
-                    Spacer(Modifier.height(10.dp))
-                    VUpdateCard(
-                        source = "School Office",
-                        timestamp = "1d ago",
-                        title = "Parent-Teacher Meeting",
-                        text = "PTM scheduled for January 15th, 10:00 AM to 1:00 PM. Please confirm your attendance.",
-                        avatarIcon = { Icon(Icons.Filled.Info, contentDescription = null, tint = VColors.Tertiary, modifier = Modifier.size(20.dp)) },
-                        actions = listOf(
-                            UpdateAction("Confirm", isPrimary = true, onClick = { }),
-                        ),
-                        onClick = { },
-                    )
-                }
-            }
-        }
 
-        Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(24.dp))
+        }
     }
 }
 
@@ -227,25 +253,8 @@ private fun ThreadRow(
             }
         }
     }
-    // Border-bottom divider
     Box(
         Modifier.fillMaxWidth().height(1.dp).background(VColors.SurfaceContainer)
             .padding(start = 82.dp),
     )
-}
-
-@Composable
-private fun StatusBox(msg: String, isError: Boolean = false) {
-    Box(
-        Modifier.fillMaxWidth().height(120.dp).clip(VShapes.Lg)
-            .background(if (isError) VColors.ErrorContainer else VColors.SurfaceContainerLow),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            msg,
-            style = VTypography.UpdateText.copy(
-                color = if (isError) VColors.OnErrorContainer else VColors.OnSurfaceVariant,
-            ),
-        )
-    }
 }

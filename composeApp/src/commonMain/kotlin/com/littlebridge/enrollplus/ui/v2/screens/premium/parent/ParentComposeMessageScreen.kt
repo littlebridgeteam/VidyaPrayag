@@ -19,12 +19,12 @@ fun ParentComposeMessageScreen(
     modifier: Modifier = Modifier,
 ) {
     ParentOverlayScaffold(title = "New Message", onBack = onBack, modifier = modifier) {
-        VTextInput(value = "", onValueChange = {}, label = "To", placeholder = "Select recipient", authStyle = false, modifier = Modifier.fillMaxWidth())
+        VTextInput(value = "", onValueChange = { /* TODO: bind recipient */ }, label = "To", placeholder = "Select recipient", authStyle = false, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(16.dp))
-        VTextInput(value = "", onValueChange = {}, label = "Subject", placeholder = "Message subject", authStyle = false, modifier = Modifier.fillMaxWidth())
+        VTextInput(value = "", onValueChange = { /* TODO: bind subject */ }, label = "Subject", placeholder = "Message subject", authStyle = false, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(16.dp))
-        VTextInput(value = "", onValueChange = {}, label = "Message", placeholder = "Type your message...", authStyle = false, modifier = Modifier.fillMaxWidth())
+        VTextInput(value = "", onValueChange = { /* TODO: bind message body */ }, label = "Message", placeholder = "Type your message...", authStyle = false, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(24.dp))
-        VPrimaryButton(text = "Send Message", onClick = {}, modifier = Modifier.fillMaxWidth())
+        VPrimaryButton(text = "Send Message", onClick = { /* TODO: send composed message */ }, modifier = Modifier.fillMaxWidth())
     }
 }

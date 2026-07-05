@@ -164,7 +164,7 @@ fun ParentDiscoveryScreen(
 
         // Search field
         Column(Modifier.padding(horizontal = 20.dp)) {
-            VSearchField(value = "", onValueChange = {}, modifier = Modifier.fillMaxWidth())
+            VSearchField(value = "", onValueChange = { /* TODO: bind search query */ }, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(16.dp))
 
             // Board filters

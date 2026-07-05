@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.littlebridge.enrollplus.ui.v2.components.carousel.VStaggeredItem
 import com.littlebridge.enrollplus.ui.v2.components.progress.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.tokens.VShapes
@@ -29,21 +30,23 @@ fun ParentTutorProgressScreen(
     modifier: Modifier = Modifier,
 ) {
     ParentOverlayScaffold(title = "Tutor Progress", onBack = onBack, modifier = modifier) {
-        Text("Your child's tutoring progress.", style = VTypography.UpdateText.copy(color = VColors.OnSurfaceVariant))
+        VStaggeredItem(delayMs = 0) {
+            Text("Your child's tutoring progress.", style = VTypography.UpdateText.copy(color = VColors.OnSurfaceVariant))
+        }
         Spacer(Modifier.height(20.dp))
-        SubjectProgress("Mathematics", 0.85f)
+        VStaggeredItem(delayMs = 60) { SubjectProgress("Mathematics", 0.85f) }
         Spacer(Modifier.height(12.dp))
-        SubjectProgress("Science", 0.72f)
+        VStaggeredItem(delayMs = 120) { SubjectProgress("Science", 0.72f) }
         Spacer(Modifier.height(12.dp))
-        SubjectProgress("English", 0.90f)
+        VStaggeredItem(delayMs = 180) { SubjectProgress("English", 0.90f) }
         Spacer(Modifier.height(20.dp))
-        Text("Recent Sessions", style = VTypography.SectionHeader.copy(color = VColors.OnSurface))
+        VStaggeredItem(delayMs = 240) { Text("Recent Sessions", style = VTypography.SectionHeader.copy(color = VColors.OnSurface)) }
         Spacer(Modifier.height(12.dp))
-        SessionRow("Jan 20", "Mathematics", "Algebra basics", "Completed")
+        VStaggeredItem(delayMs = 300) { SessionRow("Jan 20", "Mathematics", "Algebra basics", "Completed") }
         Spacer(Modifier.height(8.dp))
-        SessionRow("Jan 18", "Science", "Photosynthesis", "Completed")
+        VStaggeredItem(delayMs = 360) { SessionRow("Jan 18", "Science", "Photosynthesis", "Completed") }
         Spacer(Modifier.height(8.dp))
-        SessionRow("Jan 15", "English", "Essay writing", "Completed")
+        VStaggeredItem(delayMs = 420) { SessionRow("Jan 15", "English", "Essay writing", "Completed") }
     }
 }
 
