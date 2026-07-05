@@ -88,9 +88,11 @@ fun PremiumTheme(
             scrim = palette.scrim,
         )
     }
+    val interFont = interFontFamily()
     MaterialTheme(colorScheme = colorScheme) {
         CompositionLocalProvider(
             LocalVColorPalette provides palette,
+            LocalInterFont provides interFont,
             content = content,
         )
     }

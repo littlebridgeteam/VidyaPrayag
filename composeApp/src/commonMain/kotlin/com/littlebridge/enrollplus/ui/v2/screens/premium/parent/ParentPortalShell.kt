@@ -1,11 +1,15 @@
 package com.littlebridge.enrollplus.ui.v2.screens.premium.parent
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -16,17 +20,25 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Message
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,7 +53,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.core.notification.presentation.NotificationsViewModel
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentDashboardViewModel
@@ -49,11 +65,14 @@ import com.littlebridge.enrollplus.ui.v2.components.VBackHandler
 import com.littlebridge.enrollplus.ui.v2.components.navigation.NavItem
 import com.littlebridge.enrollplus.ui.v2.components.navigation.VBottomNav
 import com.littlebridge.enrollplus.ui.v2.modifiers.pressScale
+import com.littlebridge.enrollplus.ui.v2.modifiers.shapeMorph
 import com.littlebridge.enrollplus.ui.v2.navigation.DeepLinkTarget
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.screens.premium.auth.ParentLinkChildScreen
 import com.littlebridge.enrollplus.ui.v2.tokens.PremiumTheme
 import com.littlebridge.enrollplus.ui.v2.tokens.VColors
+import com.littlebridge.enrollplus.ui.v2.tokens.VMotion
+import com.littlebridge.enrollplus.ui.v2.tokens.VShapes
 import com.littlebridge.enrollplus.ui.v2.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -300,23 +319,31 @@ fun ParentPortalShell(
             NavItem("Home", icon = { NavIcon(Icons.Filled.Home) }),
             NavItem("Academics", icon = { NavIcon(Icons.Filled.School) }),
             NavItem("Fees", icon = { NavIcon(Icons.Filled.Payments) }),
-            NavItem("Messages", icon = { NavIcon(Icons.Filled.Message) }, badgeCount = notifState.unreadCount),
+            NavItem("Messages", icon = { NavIcon(Icons.AutoMirrored.Filled.Message) }, badgeCount = notifState.unreadCount),
             NavItem("Profile", icon = { NavIcon(Icons.Filled.AccountCircle) }),
         )
     }
 
+    var fabExpanded by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+
     Column(
         modifier = modifier.fillMaxSize().background(VColors.Surface),
     ) {
-        // Header
-        ParentHeader(
-            greeting = state.greeting,
-            childName = state.selectedChild?.name,
-            childInitial = state.selectedChild?.name?.firstOrNull()?.toString() ?: "",
+        // Top bar
+        ParentTopBar(
+            title = "VidyaSetu",
             unreadCount = notifState.unreadCount,
+            onMenuClick = { },
+            onSearchClick = { },
             onBellClick = { overlay = ParentOverlay.Notifications },
-            onMessagesClick = { overlay = ParentOverlay.Messages },
-            modifier = Modifier.fillMaxWidth(),
+        )
+
+        // Search field
+        ParentSearchField(
+            query = searchQuery,
+            onQueryChange = { searchQuery = it },
+            childInitial = state.selectedChild?.name?.firstOrNull()?.toString() ?: "P",
         )
 
         // Tab content
@@ -357,6 +384,15 @@ fun ParentPortalShell(
                     )
                 }
             }
+
+            // FAB with expandable menu
+            FabMenu(
+                expanded = fabExpanded,
+                onToggle = { fabExpanded = !fabExpanded },
+                onAiTutor = { fabExpanded = false; overlay = ParentOverlay.TutorChat },
+                onMessageTeacher = { fabExpanded = false; overlay = ParentOverlay.Messages },
+                onApplyLeave = { fabExpanded = false; overlay = ParentOverlay.Leave },
+            )
         }
 
         // Bottom nav
@@ -370,70 +406,42 @@ fun ParentPortalShell(
 }
 
 @Composable
-private fun ParentHeader(
-    greeting: String,
-    childName: String?,
-    childInitial: String,
+private fun ParentTopBar(
+    title: String,
     unreadCount: Int,
+    onMenuClick: () -> Unit,
+    onSearchClick: () -> Unit,
     onBellClick: () -> Unit,
-    onMessagesClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier
+            .fillMaxWidth()
             .background(VColors.Surface)
             .statusBarsPadding()
             .padding(horizontal = 20.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // Child avatar
-        Box(
-            Modifier.size(40.dp).clip(CircleShape).background(VColors.PrimaryContainer),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (childInitial.isNotEmpty()) {
-                Text(childInitial, style = VTypography.SectionHeader.copy(color = VColors.OnPrimaryContainer))
-            } else {
-                Icon(Icons.Filled.AccountCircle, contentDescription = null, tint = VColors.OnPrimaryContainer, modifier = Modifier.size(24.dp))
-            }
+        // Menu icon button
+        IconButton44(onClick = onMenuClick) {
+            Icon(Icons.Filled.Menu, contentDescription = "Menu", tint = VColors.OnSurfaceVariant, modifier = Modifier.size(24.dp))
         }
-        Column(Modifier.weight(1f)) {
-            if (greeting.isNotBlank()) {
-                Text(greeting, style = VTypography.Eyebrow.copy(color = VColors.OnSurfaceVariant))
-            }
-            Text(
-                childName ?: "Loading...",
-                style = VTypography.GreetingTitle.copy(color = VColors.OnSurface),
-            )
-        }
-        // Messages icon
-        val msgInteraction = remember { MutableInteractionSource() }
-        Box(
-            Modifier.size(40.dp).clip(CircleShape).background(VColors.SurfaceContainerHigh)
-                .pressScale(msgInteraction, pressedScale = 0.9f)
-                .clickable(interactionSource = msgInteraction, indication = null, onClick = onMessagesClick),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Icons.Filled.Message, contentDescription = "Messages", tint = VColors.OnSurfaceVariant, modifier = Modifier.size(22.dp))
-            if (unreadCount > 0) {
-                Box(
-                    Modifier.align(Alignment.TopEnd).size(8.dp).clip(CircleShape).background(VColors.Error),
-                )
-            }
+        // Title
+        Text(title, style = VTypography.TopBarTitle.copy(color = VColors.OnSurface), modifier = Modifier.weight(1f))
+        // Search icon button
+        IconButton44(onClick = onSearchClick) {
+            Icon(Icons.Filled.Search, contentDescription = "Search", tint = VColors.OnSurfaceVariant, modifier = Modifier.size(24.dp))
         }
         // Notification bell
-        val bellInteraction = remember { MutableInteractionSource() }
-        Box(
-            Modifier.size(40.dp).clip(CircleShape).background(VColors.SurfaceContainerHigh)
-                .pressScale(bellInteraction, pressedScale = 0.9f)
-                .clickable(interactionSource = bellInteraction, indication = null, onClick = onBellClick),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Icons.Filled.Notifications, contentDescription = "Notifications", tint = VColors.OnSurfaceVariant, modifier = Modifier.size(22.dp))
+        IconButton44(onClick = onBellClick) {
+            Icon(Icons.Filled.Notifications, contentDescription = "Notifications", tint = VColors.OnSurfaceVariant, modifier = Modifier.size(24.dp))
             if (unreadCount > 0) {
                 Box(
-                    Modifier.align(Alignment.TopEnd).size(8.dp).clip(CircleShape).background(VColors.Error),
+                    Modifier.align(Alignment.TopEnd).offset(x = 2.dp, y = 2.dp)
+                        .size(10.dp).clip(CircleShape)
+                        .background(VColors.Error)
+                        .border(2.dp, VColors.Surface, CircleShape),
                 )
             }
         }
@@ -441,6 +449,145 @@ private fun ParentHeader(
 }
 
 @Composable
+private fun IconButton44(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable androidx.compose.foundation.layout.BoxScope.() -> Unit,
+) {
+    val interaction = remember { MutableInteractionSource() }
+    Box(
+        modifier = modifier
+            .size(44.dp)
+            .clip(CircleShape)
+            .pressScale(interaction, pressedScale = 0.9f)
+            .clickable(interactionSource = interaction, indication = null, onClick = onClick),
+        contentAlignment = Alignment.Center,
+        content = content,
+    )
+}
+
+@Composable
+private fun ParentSearchField(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    childInitial: String,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 0.dp)
+            .padding(bottom = 16.dp)
+            .clip(VShapes.Full)
+            .background(VColors.SurfaceContainerHigh)
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Icon(Icons.Filled.Search, contentDescription = null, tint = VColors.OnSurfaceVariant, modifier = Modifier.size(22.dp))
+        BasicTextField(
+            value = query,
+            onValueChange = onQueryChange,
+            modifier = Modifier.weight(1f),
+            textStyle = VTypography.SearchInput.copy(color = VColors.OnSurface),
+            cursorBrush = SolidColor(VColors.Primary),
+            singleLine = true,
+            decorationBox = { inner ->
+                if (query.isEmpty()) {
+                    Text("Search students, fees, events…", style = VTypography.SearchInput.copy(color = VColors.OnSurfaceVariant))
+                }
+                inner()
+            },
+        )
+        // Search avatar
+        Box(
+            Modifier.size(36.dp).clip(CircleShape)
+                .background(Brush.linearGradient(listOf(VColors.Primary, VColors.PrimaryFixedDim))),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(childInitial, style = VTypography.SchoolOptionLogo.copy(color = VColors.OnPrimary))
+        }
+    }
+}
+
+@Composable
+private fun androidx.compose.foundation.layout.BoxScope.FabMenu(
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    onAiTutor: () -> Unit,
+    onMessageTeacher: () -> Unit,
+    onApplyLeave: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .align(Alignment.BottomEnd)
+            .padding(end = 20.dp, bottom = 20.dp),
+    ) {
+        Column(
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            // Menu items
+            AnimatedVisibility(
+                visible = expanded,
+                enter = fadeIn(tween(VMotion.DurMedium2)) + slideInVertically(tween(VMotion.DurMedium2)) { it / 2 },
+                exit = fadeOut(tween(VMotion.DurMedium2)) + slideOutVertically(tween(VMotion.DurMedium2)) { it / 2 },
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    FabMenuItem(icon = Icons.Filled.School, label = "AI Tutor", onClick = onAiTutor)
+                    FabMenuItem(icon = Icons.AutoMirrored.Filled.Message, label = "Message Teacher", onClick = onMessageTeacher)
+                    FabMenuItem(icon = Icons.Filled.CalendarToday, label = "Apply Leave", onClick = onApplyLeave)
+                }
+            }
+            // FAB button
+            val fabInteraction = remember { MutableInteractionSource() }
+            Box(
+                modifier = Modifier
+                    .size(60.dp)
+                    .clip(if (expanded) CircleShape else VShapes.Xl)
+                    .background(VColors.Primary)
+                    .shadow(8.dp, if (expanded) CircleShape else VShapes.Xl)
+                    .pressScale(fabInteraction, pressedScale = 0.92f)
+                    .clickable(interactionSource = fabInteraction, indication = null, onClick = onToggle),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    if (expanded) Icons.Filled.Close else Icons.Filled.Add,
+                    contentDescription = "FAB",
+                    tint = VColors.OnPrimary,
+                    modifier = Modifier.size(26.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FabMenuItem(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+) {
+    val interaction = remember { MutableInteractionSource() }
+    Row(
+        modifier = Modifier
+            .clip(VShapes.Lg)
+            .background(VColors.SurfaceContainerLowest)
+            .shadow(4.dp, VShapes.Lg)
+            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .padding(horizontal = 20.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = VColors.Primary, modifier = Modifier.size(22.dp))
+        Text(label, style = VTypography.ButtonText.copy(color = VColors.OnSurface))
+    }
+}
+
+@Composable
 private fun NavIcon(icon: ImageVector) {
-    Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
+    Icon(icon, contentDescription = null, modifier = Modifier.size(26.dp))
 }

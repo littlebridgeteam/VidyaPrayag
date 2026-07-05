@@ -20,8 +20,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
+import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -33,6 +36,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,9 +48,13 @@ import com.littlebridge.enrollplus.ui.v2.components.cards.VHeroCard
 import com.littlebridge.enrollplus.ui.v2.components.cards.VQuickStatCard
 import com.littlebridge.enrollplus.ui.v2.components.cards.VUpdateCard
 import com.littlebridge.enrollplus.ui.v2.components.cards.UpdateAction
+import com.littlebridge.enrollplus.ui.v2.components.carousel.VStaggeredItem
 import com.littlebridge.enrollplus.ui.v2.components.navigation.VFilterChip
+import com.littlebridge.enrollplus.ui.v2.components.typography.VGreetingEyebrow
+import com.littlebridge.enrollplus.ui.v2.components.typography.VGreetingTitle
 import com.littlebridge.enrollplus.ui.v2.components.typography.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.modifiers.pressScale
+import com.littlebridge.enrollplus.ui.v2.modifiers.radialGlow
 import com.littlebridge.enrollplus.ui.v2.modifiers.shapeMorph
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.tokens.PremiumTheme
@@ -114,20 +123,24 @@ fun ParentHomeScreen(
         val childInitial = child?.name?.firstOrNull()?.toString() ?: "?"
 
         // ── Greeting ──
-        Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 24.dp)) {
+        VStaggeredItem(delayMs = 0) {
+            Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 24.dp)) {
             if (state.greeting.isNotBlank()) {
-                Text(state.greeting, style = VTypography.Eyebrow.copy(color = VColors.Primary))
-                Spacer(Modifier.height(8.dp))
+                VGreetingEyebrow(text = state.greeting)
             }
-            Text(
-                "Hi ${child?.name?.split(" ")?.firstOrNull() ?: "Parent"},\nhere's ${child?.name?.split(" ")?.lastOrNull()?.let { "${it}'s" } ?: "your"} day",
-                style = VTypography.GreetingTitle.copy(color = VColors.OnSurface),
+            val firstName = child?.name?.split(" ")?.firstOrNull() ?: "Parent"
+            val dayAccent = child?.name?.split(" ")?.lastOrNull()?.let { "${it}'s day" } ?: "your day"
+            VGreetingTitle(
+                plainText = "Hi $firstName,\nhere's ",
+                accentText = dayAccent,
             )
+            }
         }
 
         // ── Hero Card ──
-        if (child != null) {
-            VHeroCard(
+        VStaggeredItem(delayMs = 30) {
+            if (child != null) {
+                VHeroCard(
                 studentInitials = childInitial,
                 studentName = child.name,
                 studentClass = "Level ${child.currentLevel} · ${child.attendanceStatus}",
@@ -137,13 +150,24 @@ fun ParentHomeScreen(
                     HeroStat("${state.alerts.size}", "Alerts"),
                 ),
                 onClick = onOpenPulse,
+                onIconClick = onOpenPulse,
+                iconContent = {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowForwardIos,
+                        contentDescription = "Open Pulse",
+                        tint = VColors.OnPrimary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                },
                 modifier = Modifier.padding(horizontal = 20.dp),
             )
             Spacer(Modifier.height(20.dp))
+            }
         }
 
         // ── Live Update banner (transport) ──
-        val liveInteraction = remember { MutableInteractionSource() }
+        VStaggeredItem(delayMs = 60) {
+            val liveInteraction = remember { MutableInteractionSource() }
         Row(
             Modifier
                 .fillMaxWidth()
@@ -168,52 +192,110 @@ fun ParentHomeScreen(
                 Text("Tap to view live status", style = VTypography.NavLabel.copy(color = VColors.OnTertiaryContainer.copy(alpha = 0.7f)))
             }
         }
+        }
 
         Spacer(Modifier.height(24.dp))
 
         // ── Filter Chips ──
-        LazyRow(
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            items(listOf("All", "Academics", "Fees", "Attendance", "Transport", "Library")) { label ->
-                VFilterChip(label = label, active = label == "All", onClick = { })
+        VStaggeredItem(delayMs = 100, useSpringIn = true) {
+            LazyRow(
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                items(listOf("All", "Academics", "Fees", "Attendance", "Transport", "Library")) { label ->
+                    VFilterChip(label = label, active = label == "All", onClick = { })
+                }
             }
         }
 
         Spacer(Modifier.height(24.dp))
 
         // ── Priority Carousel ──
-        VSectionHeader("Priority", linkText = "See all", onLinkClick = { })
-        val feeBg = VColors.PrimaryContainer
-        val feeFg = VColors.Primary
-        val feeText = VColors.OnPrimary
+        VStaggeredItem(delayMs = 150) {
+            VSectionHeader("Priority", linkText = "See all", onLinkClick = { })
+            val feeBg = VColors.PrimaryContainer
+        val feeIconBg = VColors.Primary
+        val feeIconFg = VColors.OnPrimary
         val attBg = VColors.TertiaryContainer
-        val attFg = VColors.Tertiary
-        val attText = VColors.OnTertiary
-        val alertBg = VColors.WarmOrangeContainer
-        val alertFg = VColors.WarmOrange
+        val attIconBg = VColors.Tertiary
+        val attIconFg = VColors.OnTertiary
+        val hwBg = VColors.WarmOrangeContainer
+        val hwIconBg = VColors.WarmOrange
+        val msgBg = VColors.SecondaryContainer
+        val msgIconBg = VColors.Secondary
+        val msgIconFg = VColors.OnSecondary
         LazyRow(
             contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             items(
                 listOf(
-                    FeatureCardData("Fee Payment", state.fees?.outstandingFees ?: "—", "Pay Now", feeBg, feeFg, feeText, onSwitchTab = { onSwitchTab(2) }),
-                    FeatureCardData("Attendance", "${state.attendance?.attendanceRate ?: 0}%", "On Track", attBg, attFg, attText, onSwitchTab = { onSwitchTab(1) }),
-                    FeatureCardData("Alerts", "${state.alerts.size}", "Review", alertBg, alertFg, Color.White, onSwitchTab = { onOpenNotifications() }),
+                    FeatureCardData(
+                        title = "Fee Payment",
+                        subtitle = "Pending dues",
+                        amount = state.fees?.outstandingFees ?: "—",
+                        badge = "Pay Now",
+                        bgColor = feeBg,
+                        iconBg = feeIconBg,
+                        iconFg = feeIconFg,
+                        badgeBg = feeIconBg,
+                        badgeFg = feeIconFg,
+                        icon = Icons.Filled.Payments,
+                        onClick = { onSwitchTab(2) },
+                    ),
+                    FeatureCardData(
+                        title = "Attendance",
+                        subtitle = "This month",
+                        amount = "${state.attendance?.attendanceRate ?: 0}%",
+                        badge = "On Track",
+                        bgColor = attBg,
+                        iconBg = attIconBg,
+                        iconFg = attIconFg,
+                        badgeBg = attIconBg,
+                        badgeFg = attIconFg,
+                        icon = Icons.Filled.CheckCircle,
+                        onClick = { onSwitchTab(1) },
+                    ),
+                    FeatureCardData(
+                        title = "Homework",
+                        subtitle = "Pending tasks",
+                        amount = "${state.alerts.size}",
+                        badge = "Review",
+                        bgColor = hwBg,
+                        iconBg = hwIconBg,
+                        iconFg = Color.White,
+                        badgeBg = hwIconBg,
+                        badgeFg = Color.White,
+                        icon = Icons.Filled.Warning,
+                        onClick = onOpenNotifications,
+                    ),
+                    FeatureCardData(
+                        title = "Messages",
+                        subtitle = "Unread threads",
+                        amount = "${state.alerts.size}",
+                        badge = "Open",
+                        bgColor = msgBg,
+                        iconBg = msgIconBg,
+                        iconFg = msgIconFg,
+                        badgeBg = msgIconBg,
+                        badgeFg = msgIconFg,
+                        icon = Icons.AutoMirrored.Filled.Message,
+                        onClick = { onSwitchTab(3) },
+                    ),
                 )
             ) { card ->
                 FeatureCard(card)
             }
         }
+        }
 
         Spacer(Modifier.height(24.dp))
 
         // ── Quick Stats ──
-        VSectionHeader("Quick Stats")
-        Row(
-            Modifier.padding(horizontal = 20.dp),
+        VStaggeredItem(delayMs = 200) {
+            VSectionHeader("Quick Stats")
+            Row(
+                Modifier.padding(horizontal = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             VQuickStatCard(
@@ -244,11 +326,13 @@ fun ParentHomeScreen(
                 modifier = Modifier.weight(1f),
             )
         }
+        }
 
         Spacer(Modifier.height(24.dp))
 
         // ── Today's Schedule ──
-        if (state.todayPeriods.isNotEmpty()) {
+        VStaggeredItem(delayMs = 250, useSpringIn = true) {
+            if (state.todayPeriods.isNotEmpty()) {
             VSectionHeader("Today's Schedule", linkText = "Full timetable", onLinkClick = { })
             Column(Modifier.padding(horizontal = 20.dp)) {
                 // Progress bar
@@ -277,25 +361,28 @@ fun ParentHomeScreen(
             }
             Spacer(Modifier.height(24.dp))
         }
+        }
 
         // ── School Updates (alerts as updates) ──
-        if (state.alerts.isNotEmpty()) {
-            VSectionHeader("School Updates", linkText = "All", onLinkClick = { })
-            Column(Modifier.padding(horizontal = 20.dp)) {
-                state.alerts.take(3).forEach { alert ->
-                    VUpdateCard(
-                        source = "School",
-                        timestamp = "",
-                        title = alert.title,
-                        text = alert.value,
-                        avatarIcon = { Icon(Icons.Filled.Info, contentDescription = null, tint = VColors.Primary, modifier = Modifier.size(20.dp)) },
-                        actions = listOf(
-                            UpdateAction("View", isPrimary = true, onClick = { }),
-                            UpdateAction("Dismiss", isPrimary = false, onClick = { }),
-                        ),
-                        onClick = { },
-                    )
-                    Spacer(Modifier.height(10.dp))
+        VStaggeredItem(delayMs = 300) {
+            if (state.alerts.isNotEmpty()) {
+                VSectionHeader("School Updates", linkText = "All", onLinkClick = { })
+                Column(Modifier.padding(horizontal = 20.dp)) {
+                    state.alerts.take(3).forEach { alert ->
+                        VUpdateCard(
+                            source = "School",
+                            timestamp = "",
+                            title = alert.title,
+                            text = alert.value,
+                            avatarIcon = { Icon(Icons.Filled.Info, contentDescription = null, tint = VColors.Primary, modifier = Modifier.size(20.dp)) },
+                            actions = listOf(
+                                UpdateAction("View", isPrimary = true, onClick = { }),
+                                UpdateAction("Dismiss", isPrimary = false, onClick = { }),
+                            ),
+                            onClick = { },
+                        )
+                        Spacer(Modifier.height(10.dp))
+                    }
                 }
             }
         }
@@ -306,12 +393,16 @@ fun ParentHomeScreen(
 
 private data class FeatureCardData(
     val title: String,
+    val subtitle: String,
     val amount: String,
     val badge: String,
     val bgColor: Color,
+    val iconBg: Color,
+    val iconFg: Color,
     val badgeBg: Color,
     val badgeFg: Color,
-    val onSwitchTab: () -> Unit,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val onClick: () -> Unit,
 )
 
 @Composable
@@ -324,35 +415,35 @@ private fun FeatureCard(data: FeatureCardData) {
             .background(data.bgColor)
             .pressScale(interaction, pressedScale = 0.97f)
             .shapeMorph(interaction, VShapes.XlDp, VShapes.TwoXlDp, VMotion.DurMedium2)
-            .clickable(interactionSource = interaction, indication = null, onClick = data.onSwitchTab)
+            .clickable(interactionSource = interaction, indication = null, onClick = data.onClick)
             .padding(24.dp),
     ) {
         Box(
-            Modifier.size(52.dp).clip(VShapes.Lg).background(data.badgeBg),
+            Modifier.size(52.dp).clip(VShapes.Lg).background(data.iconBg),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Filled.Info, contentDescription = null, tint = data.badgeFg, modifier = Modifier.size(26.dp))
+            Icon(data.icon, contentDescription = null, tint = data.iconFg, modifier = Modifier.size(26.dp))
         }
         Spacer(Modifier.height(20.dp))
-        Text(data.title, style = VTypography.UpdateTitle.copy(color = VColors.OnSurface, fontWeight = FontWeight.ExtraBold))
+        Text(data.title, style = VTypography.FeatureTitle.copy(color = VColors.OnSurface))
         Spacer(Modifier.height(4.dp))
-        Text(data.badge, style = VTypography.UpdateText.copy(color = VColors.OnSurfaceVariant))
+        Text(data.subtitle, style = VTypography.FeatureSubtitle.copy(color = VColors.OnSurfaceVariant))
         Spacer(Modifier.height(20.dp))
         Row(
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(data.amount, style = VTypography.HeroStatValue.copy(color = VColors.OnSurface))
+            Text(data.amount, style = VTypography.FeatureAmount.copy(color = VColors.OnSurface))
             val badgeInteraction = remember { MutableInteractionSource() }
             Text(
                 data.badge,
-                style = VTypography.UpdateAction.copy(color = data.badgeFg),
+                style = VTypography.FeatureBadge.copy(color = data.badgeFg),
                 modifier = Modifier
                     .clip(VShapes.Full)
                     .background(data.badgeBg)
                     .pressScale(badgeInteraction, pressedScale = 0.95f)
-                    .clickable(interactionSource = badgeInteraction, indication = null, onClick = data.onSwitchTab)
+                    .clickable(interactionSource = badgeInteraction, indication = null, onClick = data.onClick)
                     .padding(horizontal = 18.dp, vertical = 10.dp),
             )
         }
@@ -371,12 +462,17 @@ private fun ScheduleCard(period: LivePeriod) {
     }
     val onColor = if (isLive) VColors.OnPrimary else VColors.OnSurface
     val onColorVariant = if (isLive) VColors.OnPrimary.copy(alpha = 0.65f) else VColors.OnSurfaceVariant
+    val pastModifier = if (isPast) Modifier.graphicsLayer { alpha = 0.5f } else Modifier
 
     Row(
-        Modifier
+        pastModifier
             .fillMaxWidth()
             .clip(VShapes.Xl)
             .background(bg)
+            .then(
+                if (isLive) Modifier.radialGlow(offsetX = 120.dp, offsetY = (-40).dp, radius = 140.dp, color = VColors.LiveCyan.copy(alpha = 0.15f))
+                else Modifier
+            )
             .pressScale(interaction, pressedScale = 0.98f)
             .shapeMorph(interaction, VShapes.XlDp, VShapes.TwoXlDp, VMotion.DurMedium2)
             .clickable(interactionSource = interaction, indication = null) { }
@@ -386,28 +482,30 @@ private fun ScheduleCard(period: LivePeriod) {
     ) {
         // Time
         Column(Modifier.width(64.dp)) {
-            Text(period.startTime, style = VTypography.HeroStatValue.copy(color = onColor, fontSize = 22.sp))
-            Text("AM", style = VTypography.NavLabel.copy(color = onColorVariant))
+            Text(period.startTime, style = VTypography.ScheduleHour.copy(color = onColor))
+            Text("AM", style = VTypography.ScheduleAmPm.copy(color = onColorVariant))
         }
         // Divider
         Box(Modifier.width(1.dp).height(40.dp).background(onColor.copy(alpha = 0.12f)))
         // Info
         Column(Modifier.weight(1f)) {
-            Text(period.subject, style = VTypography.UpdateTitle.copy(color = onColor, fontWeight = FontWeight.ExtraBold))
-            Text("${period.teacherName} · Room ${period.room}", style = VTypography.NavLabel.copy(color = onColorVariant))
+            Text(period.subject, style = VTypography.ScheduleSubject.copy(color = onColor))
+            Text("${period.teacherName} · Room ${period.room}", style = VTypography.ScheduleTeacher.copy(color = onColorVariant))
         }
         // Status badge
         if (isLive) {
             Row(
-                Modifier.clip(VShapes.Full).background(VColors.GlassWhite15).padding(horizontal = 14.dp, vertical = 6.dp),
+                Modifier.clip(VShapes.Full).background(VColors.GlassWhite20).padding(horizontal = 14.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(Modifier.size(7.dp).clip(CircleShape).background(VColors.LiveCyan))
-                Text("LIVE", style = VTypography.NavBadge.copy(color = onColor))
+                Text("LIVE", style = VTypography.ScheduleStatus.copy(color = onColor))
             }
-        } else if (!isPast) {
-            Text("NEXT", style = VTypography.NavBadge.copy(color = VColors.OnPrimaryContainer), modifier = Modifier.clip(VShapes.Full).background(VColors.PrimaryContainer).padding(horizontal = 14.dp, vertical = 6.dp))
+        } else if (isPast) {
+            Text("DONE", style = VTypography.ScheduleStatus.copy(color = VColors.OnSurfaceVariant), modifier = Modifier.clip(VShapes.Full).background(VColors.SurfaceContainerHigh).padding(horizontal = 14.dp, vertical = 6.dp))
+        } else {
+            Text("NEXT", style = VTypography.ScheduleStatus.copy(color = VColors.OnPrimaryContainer), modifier = Modifier.clip(VShapes.Full).background(VColors.PrimaryContainer).padding(horizontal = 14.dp, vertical = 6.dp))
         }
     }
 }

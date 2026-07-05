@@ -97,10 +97,10 @@ fun SplashScreen(
             Spacer(Modifier.height(28.dp))
 
             Text(
-                text = "Enroll+",
+                text = "VidyaSetu",
                 style = VTypography.BrandText.copy(
                     color = VColors.OnPrimary,
-                    fontSize = 32.sp,
+                    fontSize = 28.sp,
                 ),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.graphicsLayer {
@@ -114,8 +114,7 @@ fun SplashScreen(
             Text(
                 text = "Bridge between school & home",
                 style = VTypography.LoginHeroSub.copy(
-                    color = VColors.OnPrimary.copy(alpha = 0.6f),
-                    fontSize = 15.sp,
+                    color = VColors.OnPrimary.copy(alpha = 0.7f),
                 ),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.graphicsLayer {

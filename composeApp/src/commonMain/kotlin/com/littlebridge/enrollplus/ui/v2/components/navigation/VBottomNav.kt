@@ -1,5 +1,6 @@
 package com.littlebridge.enrollplus.ui.v2.components.navigation
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -9,8 +10,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
@@ -78,10 +81,13 @@ fun VBottomNav(
                             Box(
                                 modifier = Modifier
                                     .align(Alignment.TopEnd)
+                                    .offset(x = 12.dp, y = (-6).dp)
+                                    .height(18.dp)
+                                    .widthIn(min = 18.dp)
                                     .clip(CircleShape)
                                     .background(VColors.Error)
-                                    .padding(horizontal = 5.dp, vertical = 0.dp)
-                                    .height(18.dp),
+                                    .border(2.dp, VColors.SurfaceContainerLowest, CircleShape)
+                                    .padding(horizontal = 4.dp),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Text(

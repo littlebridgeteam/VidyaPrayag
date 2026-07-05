@@ -52,6 +52,8 @@ fun VHeroCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     liveLabel: String = "LIVE",
+    onIconClick: () -> Unit = {},
+    iconContent: (@Composable () -> Unit)? = null,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val (ringScale, ringAlpha) = rememberLivePulse()
@@ -60,7 +62,7 @@ fun VHeroCard(
         modifier = modifier
             .fillMaxWidth()
             .shapeMorph(interaction, VShapes.TwoXlDp, VShapes.XlDp, VMotion.DurLong1)
-            .pressScale(interaction, pressedScale = 1f) // hero card doesn't scale, only morphs
+            .pressScale(interaction, pressedScale = 1f)
             .background(
                 Brush.linearGradient(
                     colors = listOf(VColors.Primary, VColors.PrimaryMid, VColors.PrimaryDeep),
@@ -73,7 +75,7 @@ fun VHeroCard(
             .clickable(interactionSource = interaction, indication = null, onClick = onClick),
     ) {
         Column(modifier = Modifier.padding(28.dp)) {
-            // Top row: live pill + icon button
+            // Top row: live pill + glass icon button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -107,6 +109,19 @@ fun VHeroCard(
                         text = liveLabel,
                         style = VTypography.LivePill.copy(color = VColors.OnPrimary),
                     )
+                }
+                // Glass icon button — .hero-icon-btn: 44dp, rgba(255,255,255,0.12)
+                val iconInteraction = remember { MutableInteractionSource() }
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(VColors.GlassWhite12)
+                        .pressScale(iconInteraction, pressedScale = 0.9f)
+                        .clickable(interactionSource = iconInteraction, indication = null, onClick = onIconClick),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    iconContent?.invoke()
                 }
             }
 
