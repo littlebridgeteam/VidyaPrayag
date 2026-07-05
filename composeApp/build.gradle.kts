@@ -261,3 +261,10 @@ compose.desktop {
         }
     }
 }
+
+// Pass devBaseUrl from local.properties as a system property to the desktop run
+// task so the JVM app hits the local server instead of Render.
+tasks.matching { it.name == "run" || it.name == "hotDevJvm" }.configureEach {
+    this as org.gradle.api.tasks.JavaExec
+    systemProperty("devBaseUrl", devBaseUrl)
+}
