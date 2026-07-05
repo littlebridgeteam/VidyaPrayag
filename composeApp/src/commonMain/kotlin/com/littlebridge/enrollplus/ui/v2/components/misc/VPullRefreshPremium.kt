@@ -1,6 +1,7 @@
 package com.littlebridge.enrollplus.ui.v2.components.misc
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
@@ -38,6 +39,6 @@ fun VPullRefreshPremium(
             )
         },
     ) {
-        Box { content() }
+        Box(Modifier.fillMaxSize()) { content() }
     }
 }

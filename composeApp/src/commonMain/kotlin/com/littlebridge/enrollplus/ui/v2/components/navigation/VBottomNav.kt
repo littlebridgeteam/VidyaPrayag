@@ -65,11 +65,12 @@ fun VBottomNav(
 
             Box(
                 modifier = Modifier
+                    .weight(1f)
                     .clip(VShapes.Lg)
                     .background(bg)
                     .pressScale(interaction, pressedScale = 0.93f)
                     .clickable(interactionSource = interaction, indication = null) { onItemClick(index) }
-                    .padding(horizontal = 18.dp, vertical = 10.dp),
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
