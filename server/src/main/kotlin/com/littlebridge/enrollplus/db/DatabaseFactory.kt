@@ -622,9 +622,9 @@ object DatabaseFactory {
             validationTimeout = 5_000
             maxLifetime = 30 * 60 * 1000L
             connectionTestQuery = "SELECT 1"
-            // Set metrics/health registries BEFORE pool creation — HikariConfig is sealed once HikariDataSource starts.
-            meterRegistry?.let { this.metricRegistry = it }
-            meterRegistry?.let { this.healthCheckRegistry = it }
+            // HikariCP metrics are collected via Micrometer's HikariDataSourceMetrics binder,
+            // not via HikariConfig's Dropwizard-based metricRegistry/healthCheckRegistry setters
+            // (which require com.codahale.metrics on the classpath).
             validate()
         }
         return HikariDataSource(config)
