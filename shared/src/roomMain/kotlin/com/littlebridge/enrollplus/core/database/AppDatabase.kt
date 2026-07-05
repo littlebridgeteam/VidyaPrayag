@@ -14,6 +14,12 @@ import com.littlebridge.enrollplus.feature.event.data.local.EventOutboxDao
 import com.littlebridge.enrollplus.feature.event.data.local.EventOutboxEntity
 import com.littlebridge.enrollplus.feature.schools.data.local.SchoolDao
 import com.littlebridge.enrollplus.feature.schools.data.local.SchoolEntity
+import com.littlebridge.enrollplus.feature.teacher.data.local.OutboxOperationDao
+import com.littlebridge.enrollplus.feature.teacher.data.local.OutboxOperationEntity
+import com.littlebridge.enrollplus.feature.teacher.data.local.TeacherDayCacheDao
+import com.littlebridge.enrollplus.feature.teacher.data.local.TeacherDayCacheEntity
+import com.littlebridge.enrollplus.feature.announcements.data.local.AnnouncementDao
+import com.littlebridge.enrollplus.feature.announcements.data.local.AnnouncementEntity
 
 @Database(
     entities = [
@@ -23,8 +29,11 @@ import com.littlebridge.enrollplus.feature.schools.data.local.SchoolEntity
         LibraryPendingActionEntity::class,
         EventCacheEntity::class,
         EventOutboxEntity::class,
+        OutboxOperationEntity::class,
+        AnnouncementEntity::class,
+        TeacherDayCacheEntity::class,
     ],
-    version = 2,
+    version = 3,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun schoolDao(): SchoolDao
@@ -33,6 +42,9 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun libraryPendingActionDao(): LibraryPendingActionDao
     abstract fun eventCacheDao(): EventCacheDao
     abstract fun eventOutboxDao(): EventOutboxDao
+    abstract fun outboxOperationDao(): OutboxOperationDao
+    abstract fun announcementDao(): AnnouncementDao
+    abstract fun teacherDayCacheDao(): TeacherDayCacheDao
 
     companion object
 }

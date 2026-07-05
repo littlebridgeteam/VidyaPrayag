@@ -29,9 +29,8 @@ export default function PaceAlertsPage() {
 
   const load = useCallback(async () => {
     try {
-      const res = await authRequest<{ alerts: PaceAlertDto[] } | PaceAlertDto[]>("/api/v1/school/syllabus-pace/alerts");
-      const raw = res as Record<string, unknown>;
-      setAlerts((Array.isArray(raw) ? raw : (raw.alerts as PaceAlertDto[])) ?? []);
+      const res = await authRequest<{ alerts: PaceAlertDto[] }>("/api/v1/school/syllabus-pace/alerts");
+      setAlerts(res.alerts ?? []);
     } catch (e) {
       setError(`Failed to load pace alerts: ${errorMessage(e)}`);
     } finally {

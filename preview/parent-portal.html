@@ -1,0 +1,1710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VidyaSetu — Parent Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800;14..32,900&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --primary: #6750F6;
+    --on-primary: #FFFFFF;
+    --primary-container: #E7E0FF;
+    --on-primary-container: #21005D;
+    --primary-fixed: #E7E0FF;
+    --primary-fixed-dim: #CDBDFF;
+    --secondary: #625B71;
+    --on-secondary: #FFFFFF;
+    --secondary-container: #E8DEF8;
+    --on-secondary-container: #1E192B;
+    --tertiary: #00BFA0;
+    --on-tertiary: #003830;
+    --tertiary-container: #00F5C4;
+    --on-tertiary-container: #005048;
+    --error: #BA1A1A;
+    --on-error: #FFFFFF;
+    --error-container: #FFDAD6;
+    --on-error-container: #410002;
+    --surface: #FEF9FF;
+    --surface-dim: #DED8E0;
+    --surface-bright: #FEF9FF;
+    --surface-container-lowest: #FFFFFF;
+    --surface-container-low: #F8F4FB;
+    --surface-container: #F2EEF5;
+    --surface-container-high: #ECE8F0;
+    --surface-container-highest: #E6E1E9;
+    --on-surface: #1D1B20;
+    --on-surface-variant: #49454F;
+    --outline: #7A757F;
+    --outline-variant: #CAC4CF;
+    --inverse-surface: #322F36;
+    --inverse-on-surface: #F5EFF7;
+    --inverse-primary: #CDBDFF;
+    --scrim: #000000;
+    --shape-xs: 4px;
+    --shape-sm: 8px;
+    --shape-md: 12px;
+    --shape-lg: 16px;
+    --shape-xl: 24px;
+    --shape-2xl: 28px;
+    --shape-full: 999px;
+    --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+    --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+    --dur-short-2: 150ms;
+    --dur-short-3: 200ms;
+    --dur-medium-1: 250ms;
+    --dur-medium-2: 300ms;
+    --dur-long-1: 400ms;
+    --dur-long-2: 500ms;
+  }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-variation-settings: 'opsz' 32;
+    background: #0D0B14;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 20px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  .phone {
+    width: 412px; height: 892px; border-radius: 56px;
+    background: linear-gradient(145deg, #1a1a24, #0D0B14);
+    padding: 12px;
+    box-shadow: 0 0 0 3px #252330, 0 0 0 4px #1a1a24, 0 60px 140px rgba(0,0,0,0.6), 0 0 180px rgba(103,80,246,0.06);
+    position: relative; overflow: hidden;
+  }
+  .screen {
+    width: 100%; height: 100%; border-radius: 44px;
+    overflow: hidden; position: relative;
+    background: var(--surface); display: flex; flex-direction: column;
+  }
+  .island {
+    position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+    width: 120px; height: 36px; background: #000;
+    border-radius: 22px; z-index: 100;
+  }
+  .status-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 18px 32px 0; height: 54px; flex-shrink: 0;
+  }
+  .status-time { font-size: 15px; font-weight: 700; color: var(--on-surface); letter-spacing: -0.01em; }
+  .status-icons { display: flex; gap: 6px; align-items: center; }
+  .status-icons svg { width: 18px; height: 18px; color: var(--on-surface); }
+  .content { flex: 1; overflow-y: auto; scrollbar-width: none; }
+  .content::-webkit-scrollbar { display: none; }
+
+  /* Top App Bar */
+  .top-bar { display: flex; align-items: center; gap: 8px; padding: 12px 20px 12px; }
+  .top-bar-title { flex: 1; font-size: 20px; font-weight: 800; color: var(--on-surface); letter-spacing: -0.03em; }
+  .icon-btn {
+    width: 44px; height: 44px; border-radius: var(--shape-full);
+    border: none; background: transparent; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background var(--dur-short-2) var(--ease-standard); position: relative;
+  }
+  .icon-btn:hover { background: var(--surface-container-high); }
+  .icon-btn:active { background: var(--surface-container-highest); transform: scale(0.9); }
+  .icon-btn svg { width: 24px; height: 24px; color: var(--on-surface-variant); }
+  .icon-badge {
+    position: absolute; top: 8px; right: 8px;
+    width: 10px; height: 10px; border-radius: var(--shape-full);
+    background: var(--error); border: 2px solid var(--surface);
+  }
+
+  /* Search */
+  .search-wrap { padding: 0 20px 16px; }
+  .search-field {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 20px; border-radius: var(--shape-full);
+    background: var(--surface-container-high);
+    transition: all var(--dur-short-2) var(--ease-standard);
+  }
+  .search-field:focus-within { background: var(--surface-container-highest); box-shadow: 0 0 0 2px var(--primary); }
+  .search-field svg { width: 22px; height: 22px; color: var(--on-surface-variant); flex-shrink: 0; }
+  .search-field input {
+    border: none; background: none; outline: none;
+    font-size: 16px; font-family: inherit; color: var(--on-surface); flex: 1; font-weight: 500;
+  }
+  .search-field input::placeholder { color: var(--on-surface-variant); }
+  .search-avatar {
+    width: 36px; height: 36px; border-radius: var(--shape-full);
+    background: linear-gradient(135deg, var(--primary), var(--primary-fixed-dim));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 800; color: var(--on-primary); flex-shrink: 0;
+  }
+
+  /* Greeting */
+  .greeting { padding: 8px 24px 24px; }
+  .greeting-eyebrow { font-size: 13px; font-weight: 600; color: var(--primary); letter-spacing: 0.01em; margin-bottom: 8px; }
+  .greeting-title { font-size: 34px; font-weight: 800; color: var(--on-surface); line-height: 1.05; letter-spacing: -0.035em; }
+  .greeting-title em {
+    font-style: normal; font-weight: 900; letter-spacing: -0.045em;
+    background: linear-gradient(135deg, var(--primary), var(--tertiary));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+
+  /* Hero Card */
+  .hero-card {
+    margin: 0 20px 20px; border-radius: var(--shape-2xl);
+    background: linear-gradient(140deg, var(--primary) 0%, #544AB8 50%, #3D35A0 100%);
+    padding: 0; position: relative; overflow: hidden; color: var(--on-primary);
+    transition: border-radius var(--dur-long-1) var(--ease-emphasized); cursor: pointer;
+  }
+  .hero-card:active { border-radius: var(--shape-xl); }
+  .hero-card::before {
+    content: ''; position: absolute; top: -100px; right: -100px;
+    width: 280px; height: 280px;
+    background: radial-gradient(circle, rgba(205,189,255,0.25) 0%, transparent 50%);
+    border-radius: 50%; pointer-events: none;
+  }
+  .hero-card::after {
+    content: ''; position: absolute; bottom: -80px; left: -80px;
+    width: 240px; height: 240px;
+    background: radial-gradient(circle, rgba(0,191,160,0.12) 0%, transparent 50%);
+    border-radius: 50%; pointer-events: none;
+  }
+  .hero-inner { position: relative; z-index: 1; padding: 28px; }
+  .hero-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .hero-live-pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 16px; border-radius: var(--shape-full);
+    background: rgba(255,255,255,0.15); backdrop-filter: blur(12px);
+    font-size: 12px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase;
+  }
+  .hero-live-dot {
+    width: 8px; height: 8px; border-radius: var(--shape-full);
+    background: #00F5C4; box-shadow: 0 0 0 4px rgba(0,245,196,0.2);
+    animation: livePulse 2s infinite;
+  }
+  @keyframes livePulse { 0%,100% { box-shadow: 0 0 0 4px rgba(0,245,196,0.2); } 50% { box-shadow: 0 0 0 10px rgba(0,245,196,0.05); } }
+  .hero-icon-btn {
+    width: 44px; height: 44px; border-radius: var(--shape-full);
+    background: rgba(255,255,255,0.12); border: none;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all var(--dur-short-2) var(--ease-standard);
+  }
+  .hero-icon-btn:hover { background: rgba(255,255,255,0.2); }
+  .hero-icon-btn:active { transform: scale(0.9); }
+  .hero-icon-btn svg { width: 22px; height: 22px; color: var(--on-primary); }
+  .hero-student-row { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+  .hero-avatar {
+    width: 64px; height: 64px; border-radius: var(--shape-xl);
+    background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; font-weight: 800; flex-shrink: 0;
+    transition: border-radius var(--dur-medium-2) var(--ease-emphasized);
+  }
+  .hero-card:active .hero-avatar { border-radius: var(--shape-full); }
+  .hero-student-info h3 { font-size: 22px; font-weight: 800; margin-bottom: 4px; letter-spacing: -0.03em; }
+  .hero-student-info p { font-size: 14px; opacity: 0.7; font-weight: 500; }
+  .hero-stats {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2px;
+    background: rgba(255,255,255,0.08); border-radius: var(--shape-lg); overflow: hidden;
+  }
+  .hero-stat {
+    background: rgba(255,255,255,0.06); padding: 18px 12px; text-align: center;
+    transition: all var(--dur-short-2) var(--ease-standard); cursor: pointer;
+  }
+  .hero-stat:active { background: rgba(255,255,255,0.14); transform: scale(0.95); }
+  .hero-stat-value { font-size: 26px; font-weight: 900; margin-bottom: 4px; letter-spacing: -0.04em; }
+  .hero-stat-label { font-size: 10px; font-weight: 600; opacity: 0.55; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* Filter Chips */
+  .chips-row { display: flex; gap: 10px; padding: 0 20px 24px; overflow-x: auto; scrollbar-width: none; }
+  .chips-row::-webkit-scrollbar { display: none; }
+  .chip {
+    padding: 10px 18px; border-radius: var(--shape-full);
+    font-size: 14px; font-weight: 600; white-space: nowrap;
+    cursor: pointer; transition: all var(--dur-short-2) var(--ease-standard);
+    border: none; font-family: inherit; letter-spacing: -0.005em;
+  }
+  .chip.active { background: var(--on-surface); color: var(--surface); }
+  .chip.inactive { background: var(--surface-container); color: var(--on-surface-variant); }
+  .chip:active { transform: scale(0.93); }
+
+  /* Section Header */
+  .section-header { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 24px 16px; }
+  .section-header h2 { font-size: 24px; font-weight: 800; color: var(--on-surface); letter-spacing: -0.03em; }
+  .section-header .link { font-size: 14px; font-weight: 600; color: var(--primary); cursor: pointer; }
+
+  /* Feature Carousel */
+  .carousel { display: flex; gap: 16px; padding: 0 20px 28px; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory; }
+  .carousel::-webkit-scrollbar { display: none; }
+  .feature-card {
+    min-width: 280px; border-radius: var(--shape-xl);
+    padding: 24px; position: relative; overflow: hidden;
+    cursor: pointer; scroll-snap-align: start;
+    transition: transform var(--dur-short-2) var(--ease-emphasized), border-radius var(--dur-medium-2) var(--ease-emphasized);
+  }
+  .feature-card:active { transform: scale(0.97); border-radius: var(--shape-2xl); }
+  .fc-fees { background: var(--primary-container); }
+  .fc-attend { background: var(--tertiary-container); }
+  .fc-hw { background: #FFEEE0; }
+  .fc-msg { background: var(--secondary-container); }
+  .fc-icon {
+    width: 52px; height: 52px; border-radius: var(--shape-lg);
+    display: flex; align-items: center; justify-content: center; margin-bottom: 20px;
+    transition: border-radius var(--dur-medium-2) var(--ease-emphasized);
+  }
+  .feature-card:active .fc-icon { border-radius: var(--shape-full); }
+  .fc-icon svg { width: 26px; height: 26px; }
+  .fc-fees .fc-icon { background: var(--primary); } .fc-fees .fc-icon svg { color: var(--on-primary); }
+  .fc-attend .fc-icon { background: var(--tertiary); } .fc-attend .fc-icon svg { color: var(--on-tertiary); }
+  .fc-hw .fc-icon { background: #FF6D00; } .fc-hw .fc-icon svg { color: #fff; }
+  .fc-msg .fc-icon { background: var(--secondary); } .fc-msg .fc-icon svg { color: var(--on-secondary); }
+  .fc-title { font-size: 18px; font-weight: 800; color: var(--on-surface); margin-bottom: 4px; letter-spacing: -0.025em; }
+  .fc-subtitle { font-size: 14px; color: var(--on-surface-variant); font-weight: 500; margin-bottom: 20px; line-height: 1.4; }
+  .fc-footer { display: flex; justify-content: space-between; align-items: center; }
+  .fc-amount { font-size: 30px; font-weight: 900; color: var(--on-surface); letter-spacing: -0.04em; }
+  .fc-badge {
+    padding: 10px 18px; border-radius: var(--shape-full);
+    font-size: 13px; font-weight: 700; border: none; cursor: pointer;
+    transition: border-radius var(--dur-short-2) var(--ease-emphasized), transform var(--dur-short-2) var(--ease-standard);
+    font-family: inherit;
+  }
+  .fc-badge:active { border-radius: var(--shape-md); transform: scale(0.95); }
+  .fc-fees .fc-badge { background: var(--primary); color: var(--on-primary); }
+  .fc-attend .fc-badge { background: var(--tertiary); color: var(--on-tertiary); }
+  .fc-hw .fc-badge { background: #FF6D00; color: #fff; }
+  .fc-msg .fc-badge { background: var(--secondary); color: var(--on-secondary); }
+
+  /* Schedule */
+  .schedule-wrap { padding: 0 20px 20px; }
+  .schedule-progress { display: flex; align-items: center; gap: 8px; padding: 0 4px 16px; }
+  .sp-track { flex: 1; height: 4px; border-radius: var(--shape-full); background: var(--surface-container-high); position: relative; overflow: hidden; }
+  .sp-fill { position: absolute; top: 0; left: 0; height: 100%; width: 25%; border-radius: var(--shape-full); background: linear-gradient(90deg, var(--primary), var(--tertiary)); }
+  .sp-label { font-size: 12px; font-weight: 600; color: var(--on-surface-variant); white-space: nowrap; }
+  .sched-list { display: flex; flex-direction: column; gap: 10px; }
+  .sched-card {
+    border-radius: var(--shape-xl); padding: 0;
+    cursor: pointer; position: relative; overflow: hidden;
+    transition: transform var(--dur-short-2) var(--ease-emphasized), border-radius var(--dur-medium-2) var(--ease-emphasized);
+  }
+  .sched-card:active { transform: scale(0.98); border-radius: var(--shape-2xl); }
+  .sched-card-inner { padding: 18px 20px; display: flex; align-items: center; gap: 20px; position: relative; z-index: 1; }
+  .sched-card.live { background: linear-gradient(135deg, var(--primary) 0%, #544AB8 100%); color: var(--on-primary); }
+  .sched-card.upcoming { background: var(--surface-container-low); }
+  .sched-card.past { opacity: 0.5; background: var(--surface-container-low); }
+  .sc-time { flex-shrink: 0; min-width: 64px; }
+  .sc-time .sc-hr { font-size: 22px; font-weight: 900; line-height: 1; letter-spacing: -0.04em; display: block; }
+  .sc-time .sc-ampm { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 3px; display: block; opacity: 0.6; }
+  .sched-card.upcoming .sc-time .sc-hr { color: var(--on-surface); }
+  .sched-card.upcoming .sc-time .sc-ampm { color: var(--on-surface-variant); }
+  .sc-divider { width: 1px; height: 40px; flex-shrink: 0; background: currentColor; opacity: 0.12; }
+  .sc-info { flex: 1; min-width: 0; }
+  .sc-subject { font-size: 16px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 4px; }
+  .sched-card.upcoming .sc-subject { color: var(--on-surface); }
+  .sc-teacher { font-size: 13px; font-weight: 500; opacity: 0.65; }
+  .sched-card.upcoming .sc-teacher { color: var(--on-surface-variant); }
+  .sc-status {
+    flex-shrink: 0; display: flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border-radius: var(--shape-full);
+    font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .sc-status.live-badge { background: rgba(255,255,255,0.2); backdrop-filter: blur(8px); color: #fff; }
+  .sc-status.live-badge .sb-dot { width: 7px; height: 7px; border-radius: var(--shape-full); background: #00F5C4; box-shadow: 0 0 0 3px rgba(0,245,196,0.3); animation: liveBlink 1.5s infinite; }
+  .sc-status.next-badge { background: var(--primary-container); color: var(--on-primary-container); }
+  .sc-status.done-badge { background: var(--surface-container-high); color: var(--on-surface-variant); }
+  @keyframes liveBlink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .sched-card.live::before {
+    content: ''; position: absolute; top: -40px; right: -40px;
+    width: 140px; height: 140px;
+    background: radial-gradient(circle, rgba(0,245,196,0.15) 0%, transparent 50%);
+    border-radius: 50%; pointer-events: none;
+  }
+
+  /* School Updates */
+  .updates-wrap { padding: 0 20px 20px; }
+  .update-item {
+    background: var(--surface-container-lowest);
+    border-radius: var(--shape-xl); overflow: hidden;
+    cursor: pointer; margin-bottom: 10px;
+    transition: transform var(--dur-short-2) var(--ease-emphasized), border-radius var(--dur-medium-2) var(--ease-emphasized);
+  }
+  .update-item:active { transform: scale(0.98); border-radius: var(--shape-2xl); }
+  .update-top { display: flex; align-items: flex-start; gap: 14px; padding: 20px 20px 16px; }
+  .update-avatar {
+    width: 40px; height: 40px; border-radius: var(--shape-md); flex-shrink: 0;
+    background: var(--primary-container);
+    display: flex; align-items: center; justify-content: center;
+    transition: border-radius var(--dur-medium-2) var(--ease-emphasized);
+  }
+  .update-item:active .update-avatar { border-radius: var(--shape-full); }
+  .update-avatar svg { width: 20px; height: 20px; color: var(--primary); }
+  .update-body { flex: 1; min-width: 0; }
+  .update-source { font-size: 12px; font-weight: 700; color: var(--on-surface-variant); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+  .update-source .us-time { color: var(--outline); font-weight: 500; }
+  .update-title { font-size: 16px; font-weight: 700; color: var(--on-surface); line-height: 1.3; letter-spacing: -0.015em; margin-bottom: 6px; }
+  .update-text { font-size: 14px; color: var(--on-surface-variant); line-height: 1.5; font-weight: 500; }
+  .update-actions { display: flex; gap: 8px; padding: 0 20px 16px 74px; }
+  .update-action-btn {
+    padding: 8px 16px; border-radius: var(--shape-full);
+    background: var(--surface-container-low); border: none; cursor: pointer; font-family: inherit;
+    font-size: 13px; font-weight: 600; color: var(--on-surface-variant);
+    transition: all var(--dur-short-2) var(--ease-standard);
+  }
+  .update-action-btn:active { transform: scale(0.95); background: var(--surface-container-high); }
+  .update-action-btn.primary { background: var(--primary); color: var(--on-primary); }
+
+  /* Live Update banner */
+  .live-update {
+    margin: 0 20px 20px; padding: 14px 20px;
+    border-radius: var(--shape-lg);
+    background: var(--tertiary-container);
+    display: flex; align-items: center; gap: 14px;
+    cursor: pointer; transition: border-radius var(--dur-short-2) var(--ease-standard);
+  }
+  .live-update:active { border-radius: var(--shape-xl); }
+  .lu-icon { width: 40px; height: 40px; border-radius: var(--shape-full); background: var(--tertiary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .lu-icon svg { width: 20px; height: 20px; color: var(--on-tertiary); }
+  .lu-content { flex: 1; }
+  .lu-title { font-size: 14px; font-weight: 700; color: var(--on-tertiary-container); margin-bottom: 2px; }
+  .lu-sub { font-size: 12px; color: var(--on-tertiary-container); opacity: 0.7; font-weight: 500; }
+  .lu-arrow { width: 28px; height: 28px; border-radius: var(--shape-full); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .lu-arrow svg { width: 18px; height: 18px; color: var(--on-tertiary-container); opacity: 0.5; }
+
+  /* Quick Stats */
+  .quick-stats { display: flex; gap: 12px; padding: 0 20px 24px; }
+  .qs-card {
+    flex: 1; padding: 16px; border-radius: var(--shape-lg);
+    background: var(--surface-container-low);
+    cursor: pointer; transition: all var(--dur-short-2) var(--ease-standard);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .qs-card:active { transform: scale(0.96); border-radius: var(--shape-xl); }
+  .qs-icon { width: 32px; height: 32px; border-radius: var(--shape-md); display: flex; align-items: center; justify-content: center; }
+  .qs-icon svg { width: 18px; height: 18px; }
+  .qs-card.fees .qs-icon { background: var(--primary-container); } .qs-card.fees .qs-icon svg { color: var(--primary); }
+  .qs-card.attend .qs-icon { background: var(--tertiary-container); } .qs-card.attend .qs-icon svg { color: var(--tertiary); }
+  .qs-card.hw .qs-icon { background: #FFEEE0; } .qs-card.hw .qs-icon svg { color: #FF6D00; }
+  .qs-value { font-size: 22px; font-weight: 900; color: var(--on-surface); letter-spacing: -0.03em; }
+  .qs-label { font-size: 11px; font-weight: 600; color: var(--on-surface-variant); text-transform: uppercase; letter-spacing: 0.04em; }
+
+  /* FAB Menu */
+  .fab-container { position: absolute; bottom: 100px; right: 20px; z-index: 50; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; pointer-events: none; }
+  .fab-menu-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 20px; border-radius: var(--shape-lg);
+    background: var(--surface-container-lowest);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.08);
+    cursor: pointer; border: none; font-family: inherit;
+    font-size: 14px; font-weight: 600; color: var(--on-surface);
+    opacity: 0; transform: translateY(12px) scale(0.8);
+    transition: all var(--dur-medium-2) var(--ease-emphasized); pointer-events: none;
+  }
+  .fab-menu-item svg { width: 22px; height: 22px; color: var(--primary); }
+  .fab-container.open .fab-menu-item { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+  .fab-container.open .fab-menu-item:nth-child(1) { transition-delay: 0ms; }
+  .fab-container.open .fab-menu-item:nth-child(2) { transition-delay: 50ms; }
+  .fab-container.open .fab-menu-item:nth-child(3) { transition-delay: 100ms; }
+  .fab {
+    width: 60px; height: 60px; border-radius: var(--shape-xl);
+    background: var(--primary); border: none;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; box-shadow: 0 8px 28px rgba(103,80,246,0.35);
+    transition: all var(--dur-medium-2) var(--ease-emphasized);
+    pointer-events: auto;
+  }
+  .fab:active { border-radius: var(--shape-full); transform: scale(0.92); }
+  .fab svg { width: 26px; height: 26px; color: var(--on-primary); transition: transform var(--dur-medium-2) var(--ease-emphasized); }
+  .fab-container.open .fab { border-radius: var(--shape-full); }
+  .fab-container.open .fab svg { transform: rotate(135deg); }
+
+  /* Navigation Bar */
+  .nav-bar {
+    height: 84px; background: var(--surface-container-lowest);
+    display: flex; justify-content: space-around; align-items: center;
+    padding: 0 12px; flex-shrink: 0;
+  }
+  .nav-item {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 10px 18px; border-radius: var(--shape-lg);
+    cursor: pointer; transition: all var(--dur-short-2) var(--ease-standard);
+    position: relative; border: none; background: none; font-family: inherit;
+  }
+  .nav-item:active { transform: scale(0.93); }
+  .nav-item.active { background: var(--primary-container); }
+  .nav-item svg { width: 26px; height: 26px; color: var(--on-surface-variant); transition: color var(--dur-short-2) var(--ease-standard); }
+  .nav-item.active svg { color: var(--primary); }
+  .nav-item .nav-label { font-size: 12px; font-weight: 600; color: var(--on-surface-variant); transition: color var(--dur-short-2) var(--ease-standard); }
+  .nav-item.active .nav-label { color: var(--on-primary-container); font-weight: 700; }
+  .nav-badge {
+    position: absolute; top: 6px; right: 12px;
+    min-width: 18px; height: 18px; border-radius: var(--shape-full);
+    background: var(--error); color: #fff; font-size: 10px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center; padding: 0 5px;
+    border: 2px solid var(--surface-container-lowest);
+  }
+
+  /* Entrance Animations */
+  @keyframes slideUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes springIn { from { opacity: 0; transform: scale(0.9) translateY(16px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  /* Loading Indicator */
+  .loading-indicator { display: flex; align-items: center; justify-content: center; gap: 5px; padding: 16px 0; }
+  .li-bar { width: 5px; height: 28px; border-radius: var(--shape-full); background: var(--primary); animation: liBounce 1s infinite var(--ease-emphasized); }
+  .li-bar:nth-child(2) { animation-delay: 100ms; }
+  .li-bar:nth-child(3) { animation-delay: 200ms; }
+  .li-bar:nth-child(4) { animation-delay: 300ms; }
+  @keyframes liBounce { 0%,100% { transform: scaleY(0.3); opacity: 0.3; border-radius: var(--shape-full); } 50% { transform: scaleY(1); opacity: 1; border-radius: var(--shape-sm); } }
+
+  /* ── TAB PAGES ── */
+  .tab-page { display: none; }
+  .tab-page.active { display: block; }
+  .tab-page.active > *:nth-child(1) { animation: slideUp var(--dur-medium-2) var(--ease-emphasized); }
+  .tab-page.active > *:nth-child(2) { animation: slideUp var(--dur-medium-2) var(--ease-emphasized) 0.03s both; }
+  .tab-page.active > *:nth-child(3) { animation: slideUp var(--dur-medium-2) var(--ease-emphasized) 0.06s both; }
+  .tab-page.active > *:nth-child(4) { animation: springIn var(--dur-long-2) var(--ease-emphasized) 0.1s both; }
+  .tab-page.active > *:nth-child(5) { animation: slideUp var(--dur-medium-2) var(--ease-emphasized) 0.15s both; }
+  .tab-page.active > *:nth-child(6) { animation: slideUp var(--dur-medium-2) var(--ease-emphasized) 0.2s both; }
+  .tab-page.active > *:nth-child(7) { animation: springIn var(--dur-long-2) var(--ease-emphasized) 0.25s both; }
+  .tab-page.active > *:nth-child(8) { animation: slideUp var(--dur-medium-2) var(--ease-emphasized) 0.3s both; }
+
+  /* ── SUB-TABS (Academics) ── */
+  .sub-tabs { display: flex; gap: 8px; padding: 0 20px 20px; overflow-x: auto; scrollbar-width: none; }
+  .sub-tabs::-webkit-scrollbar { display: none; }
+  .sub-tab {
+    padding: 8px 16px; border-radius: var(--shape-full);
+    font-size: 13px; font-weight: 600; white-space: nowrap;
+    cursor: pointer; transition: all var(--dur-short-2) var(--ease-standard);
+    border: none; font-family: inherit;
+  }
+  .sub-tab.active { background: var(--primary-container); color: var(--on-primary-container); font-weight: 700; }
+  .sub-tab.inactive { background: var(--surface-container); color: var(--on-surface-variant); }
+  .sub-tab:active { transform: scale(0.93); }
+  .sub-content { display: none; }
+  .sub-content.active { display: block; animation: fadeIn var(--dur-medium-2) var(--ease-standard); }
+
+  /* ── ACTION CARDS (Academics) ── */
+  .action-cards { display: flex; gap: 12px; padding: 0 20px 20px; }
+  .action-card {
+    flex: 1; padding: 16px; border-radius: var(--shape-lg);
+    cursor: pointer; transition: all var(--dur-short-2) var(--ease-standard);
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .action-card:active { transform: scale(0.96); border-radius: var(--shape-xl); }
+  .action-card.leave { background: var(--error-container); }
+  .action-card.health { background: var(--tertiary-container); }
+  .ac-icon { width: 36px; height: 36px; border-radius: var(--shape-md); display: flex; align-items: center; justify-content: center; }
+  .ac-icon svg { width: 20px; height: 20px; }
+  .action-card.leave .ac-icon { background: var(--error); } .action-card.leave .ac-icon svg { color: var(--on-error); }
+  .action-card.health .ac-icon { background: var(--tertiary); } .action-card.health .ac-icon svg { color: var(--on-tertiary); }
+  .ac-title { font-size: 14px; font-weight: 800; color: var(--on-surface); }
+  .ac-sub { font-size: 11px; color: var(--on-surface-variant); font-weight: 500; }
+
+  /* ── MARKS CARDS ── */
+  .marks-list { padding: 0 20px 20px; display: flex; flex-direction: column; gap: 10px; }
+  .mark-card {
+    background: var(--surface-container-lowest); border-radius: var(--shape-xl);
+    padding: 18px 20px; display: flex; align-items: center; gap: 16px;
+    cursor: pointer; transition: all var(--dur-short-2) var(--ease-standard);
+  }
+  .mark-card:active { transform: scale(0.98); border-radius: var(--shape-2xl); }
+  .mark-subject { flex: 1; }
+  .mark-name { font-size: 15px; font-weight: 700; color: var(--on-surface); margin-bottom: 2px; }
+  .mark-date { font-size: 12px; color: var(--on-surface-variant); font-weight: 500; }
+  .mark-score { text-align: right; }
+  .mark-score-val { font-size: 22px; font-weight: 900; color: var(--on-surface); letter-spacing: -0.03em; }
+  .mark-score-max { font-size: 12px; color: var(--on-surface-variant); font-weight: 500; }
+
+  /* ── PROGRESS CARDS ── */
+  .progress-card {
+    margin: 0 20px 20px; background: var(--surface-container-lowest);
+    border-radius: var(--shape-xl); padding: 24px;
+    transition: border-radius var(--dur-medium-2) var(--ease-emphasized);
+  }
+  .pc-title { font-size: 16px; font-weight: 800; color: var(--on-surface); margin-bottom: 20px; letter-spacing: -0.02em; }
+  .pc-ring {
+    width: 80px; height: 80px; border-radius: 50%;
+    border: 6px solid var(--tertiary-container);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; position: relative;
+  }
+  .pc-ring::before {
+    content: ''; position: absolute; top: -6px; left: -6px;
+    width: calc(100% + 12px); height: calc(100% + 12px);
+    border-radius: 50%; border: 6px solid transparent;
+    border-top-color: var(--tertiary); border-right-color: var(--tertiary);
+    transform: rotate(45deg);
+  }
+  .pc-ring-inner { font-size: 22px; font-weight: 900; color: var(--tertiary); z-index: 1; }
+  .pc-metrics { display: flex; flex-direction: column; gap: 20px; }
+  .pc-metric { display: flex; flex-direction: column; gap: 8px; }
+  .pc-metric-label { font-size: 13px; font-weight: 600; color: var(--on-surface-variant); }
+  .pc-metric-bar { height: 8px; border-radius: var(--shape-full); background: var(--surface-container-high); overflow: hidden; }
+  .pc-metric-fill { height: 100%; border-radius: var(--shape-full); transition: width var(--dur-long-2) var(--ease-emphasized); }
+  .pc-metric-value { font-size: 12px; font-weight: 600; color: var(--on-surface); }
+
+  /* ── SYLLABUS BARS ── */
+  .syllabus-list { padding: 0 20px 20px; display: flex; flex-direction: column; gap: 16px; }
+  .syllabus-item { display: flex; flex-direction: column; gap: 8px; }
+  .syllabus-header { display: flex; justify-content: space-between; align-items: center; }
+  .syllabus-name { font-size: 14px; font-weight: 700; color: var(--on-surface); }
+  .syllabus-pct { font-size: 13px; font-weight: 700; color: var(--primary); }
+  .syllabus-bar { height: 6px; border-radius: var(--shape-full); background: var(--surface-container-high); overflow: hidden; }
+  .syllabus-fill { height: 100%; border-radius: var(--shape-full); background: var(--primary); transition: width var(--dur-long-2) var(--ease-emphasized); }
+
+  /* ── HOMEWORK CARDS ── */
+  .hw-list { padding: 0 20px 20px; display: flex; flex-direction: column; gap: 10px; }
+  .hw-card {
+    background: var(--surface-container-lowest); border-radius: var(--shape-xl);
+    padding: 18px 20px; cursor: pointer;
+    transition: all var(--dur-short-2) var(--ease-standard);
+    display: flex; align-items: center; gap: 16px;
+  }
+  .hw-card:active { transform: scale(0.98); border-radius: var(--shape-2xl); }
+  .hw-icon { width: 44px; height: 44px; border-radius: var(--shape-md); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .hw-icon svg { width: 22px; height: 22px; }
+  .hw-card.pending .hw-icon { background: #FFEEE0; } .hw-card.pending .hw-icon svg { color: #FF6D00; }
+  .hw-card.done .hw-icon { background: var(--tertiary-container); } .hw-card.done .hw-icon svg { color: var(--tertiary); }
+  .hw-info { flex: 1; }
+  .hw-title { font-size: 15px; font-weight: 700; color: var(--on-surface); margin-bottom: 2px; }
+  .hw-sub { font-size: 12px; color: var(--on-surface-variant); font-weight: 500; }
+  .hw-status { padding: 6px 12px; border-radius: var(--shape-full); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+  .hw-status.pending { background: #FFEEE0; color: #FF6D00; }
+  .hw-status.done { background: var(--tertiary-container); color: var(--on-tertiary-container); }
+
+  /* ── FEES ── */
+  .fees-hero {
+    margin: 0 20px 24px; border-radius: var(--shape-2xl);
+    background: linear-gradient(140deg, var(--primary) 0%, #544AB8 50%, #3D35A0 100%);
+    padding: 28px; position: relative; overflow: hidden; color: var(--on-primary);
+    transition: border-radius var(--dur-long-1) var(--ease-emphasized); cursor: pointer;
+  }
+  .fees-hero:active { border-radius: var(--shape-xl); }
+  .fees-hero::before { content: ''; position: absolute; top: -80px; right: -80px; width: 220px; height: 220px; background: radial-gradient(circle, rgba(205,189,255,0.2) 0%, transparent 50%); border-radius: 50%; }
+  .fees-hero-label { font-size: 13px; font-weight: 600; opacity: 0.7; margin-bottom: 8px; }
+  .fees-hero-amount { font-size: 40px; font-weight: 900; letter-spacing: -0.04em; margin-bottom: 4px; position: relative; z-index: 1; }
+  .fees-hero-due { font-size: 14px; opacity: 0.8; font-weight: 500; margin-bottom: 24px; position: relative; z-index: 1; }
+  .fees-pay-btn {
+    width: 100%; padding: 16px; border-radius: var(--shape-full);
+    background: rgba(255,255,255,0.15); backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.2); color: var(--on-primary);
+    font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit;
+    transition: all var(--dur-short-2) var(--ease-standard); position: relative; z-index: 1;
+  }
+  .fees-pay-btn:active { transform: scale(0.97); border-radius: var(--shape-lg); }
+  .payment-item {
+    background: var(--surface-container-lowest); border-radius: var(--shape-xl);
+    padding: 18px 20px; display: flex; align-items: center; gap: 16px; margin-bottom: 10px;
+    cursor: pointer; transition: all var(--dur-short-2) var(--ease-standard);
+  }
+  .payment-item:active { transform: scale(0.98); border-radius: var(--shape-2xl); }
+  .pay-icon { width: 44px; height: 44px; border-radius: var(--shape-md); background: var(--tertiary-container); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .pay-icon svg { width: 22px; height: 22px; color: var(--tertiary); }
+  .pay-info { flex: 1; }
+  .pay-title { font-size: 15px; font-weight: 700; color: var(--on-surface); margin-bottom: 2px; }
+  .pay-date { font-size: 12px; color: var(--on-surface-variant); font-weight: 500; }
+  .pay-amount { font-size: 18px; font-weight: 900; color: var(--on-surface); letter-spacing: -0.03em; }
+
+  /* ── CONVERSATIONS ── */
+  .conv-segment { display: flex; gap: 8px; padding: 0 20px 20px; }
+  .seg-btn {
+    flex: 1; padding: 12px; border-radius: var(--shape-full);
+    font-size: 14px; font-weight: 600; cursor: pointer; border: none; font-family: inherit;
+    transition: all var(--dur-short-2) var(--ease-standard);
+  }
+  .seg-btn.active { background: var(--primary); color: var(--on-primary); }
+  .seg-btn.inactive { background: var(--surface-container); color: var(--on-surface-variant); }
+  .seg-btn:active { transform: scale(0.95); }
+  .seg-content { display: none; }
+  .seg-content.active { display: block; animation: fadeIn var(--dur-medium-2) var(--ease-standard); }
+  .thread-item {
+    display: flex; align-items: center; gap: 14px; padding: 16px 20px;
+    cursor: pointer; transition: all var(--dur-short-2) var(--ease-standard);
+    border-bottom: 1px solid var(--surface-container);
+  }
+  .thread-item:active { background: var(--surface-container-low); }
+  .thread-avatar {
+    width: 48px; height: 48px; border-radius: var(--shape-full);
+    background: var(--primary-container); color: var(--on-primary-container);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 800; flex-shrink: 0;
+  }
+  .thread-avatar.teal { background: var(--tertiary-container); color: var(--on-tertiary-container); }
+  .thread-avatar.amber { background: #FFEEE0; color: #FF6D00; }
+  .thread-info { flex: 1; min-width: 0; }
+  .thread-name { font-size: 15px; font-weight: 700; color: var(--on-surface); margin-bottom: 2px; }
+  .thread-preview { font-size: 13px; color: var(--on-surface-variant); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .thread-meta { flex-shrink: 0; text-align: right; }
+  .thread-time { font-size: 11px; color: var(--outline); font-weight: 500; margin-bottom: 4px; }
+  .thread-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; border-radius: var(--shape-full); background: var(--error); color: #fff; font-size: 11px; font-weight: 800; padding: 0 6px; }
+
+  /* ── PROFILE ── */
+  .profile-hero {
+    margin: 0 20px 24px; border-radius: var(--shape-2xl);
+    background: linear-gradient(140deg, var(--primary) 0%, #544AB8 50%, #3D35A0 100%);
+    padding: 28px; position: relative; overflow: hidden; color: var(--on-primary);
+    transition: border-radius var(--dur-long-1) var(--ease-emphasized); cursor: pointer;
+  }
+  .profile-hero:active { border-radius: var(--shape-xl); }
+  .profile-hero::before { content: ''; position: absolute; top: -80px; right: -80px; width: 220px; height: 220px; background: radial-gradient(circle, rgba(205,189,255,0.2) 0%, transparent 50%); border-radius: 50%; }
+  .ph-inner { position: relative; z-index: 1; }
+  .ph-top { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+  .ph-avatar {
+    width: 64px; height: 64px; border-radius: var(--shape-xl);
+    background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; font-weight: 800; flex-shrink: 0;
+  }
+  .ph-info h3 { font-size: 22px; font-weight: 800; margin-bottom: 4px; letter-spacing: -0.03em; }
+  .ph-info p { font-size: 14px; opacity: 0.7; font-weight: 500; margin-bottom: 8px; }
+  .ph-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: var(--shape-full); background: rgba(255,255,255,0.15); font-size: 11px; font-weight: 700; }
+  .ph-level { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .ph-level-text { font-size: 14px; font-weight: 700; }
+  .ph-xp { font-size: 12px; opacity: 0.7; font-weight: 600; }
+  .ph-xp-bar { height: 8px; border-radius: var(--shape-full); background: rgba(255,255,255,0.15); overflow: hidden; }
+  .ph-xp-fill { height: 100%; width: 68%; border-radius: var(--shape-full); background: linear-gradient(90deg, #00F5C4, #00BFA0); }
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 20px 24px; }
+  .stat-card {
+    background: var(--surface-container-lowest); border-radius: var(--shape-xl);
+    padding: 20px; transition: all var(--dur-short-2) var(--ease-standard); cursor: pointer;
+  }
+  .stat-card:active { transform: scale(0.96); border-radius: var(--shape-2xl); }
+  .stat-value { font-size: 28px; font-weight: 900; color: var(--on-surface); letter-spacing: -0.04em; margin-bottom: 4px; }
+  .stat-label { font-size: 12px; font-weight: 600; color: var(--on-surface-variant); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
+  .stat-trend { font-size: 11px; font-weight: 600; }
+  .stat-trend.up { color: var(--tertiary); }
+  /* ── BADGES — Premium M3 Expressive ── */
+  .badges-row { display: flex; gap: 14px; padding: 0 20px 24px; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory; }
+  .badges-row::-webkit-scrollbar { display: none; }
+  .badge-card {
+    flex-shrink: 0; width: 168px; border-radius: var(--shape-xl);
+    padding: 0; scroll-snap-align: start; cursor: pointer; overflow: hidden;
+    transition: transform var(--dur-short-2) var(--ease-emphasized), border-radius var(--dur-medium-2) var(--ease-emphasized);
+  }
+  .badge-card:active { transform: scale(0.96); border-radius: var(--shape-2xl); }
+  .badge-card.earned { background: var(--surface-container-lowest); }
+  .badge-card.locked { background: var(--surface-container-low); }
+  .badge-top {
+    padding: 24px 16px 16px; display: flex; flex-direction: column; align-items: center; gap: 12px;
+    position: relative; overflow: hidden;
+  }
+  .badge-card.earned .badge-top {
+    background: linear-gradient(160deg, var(--primary-container) 0%, var(--surface-container-lowest) 100%);
+  }
+  .badge-card.earned .badge-top::before {
+    content: ''; position: absolute; top: -30px; right: -30px;
+    width: 80px; height: 80px;
+    background: radial-gradient(circle, rgba(103,80,246,0.12) 0%, transparent 60%);
+    border-radius: 50%;
+  }
+  .badge-icon-ring {
+    width: 64px; height: 64px; border-radius: var(--shape-full);
+    display: flex; align-items: center; justify-content: center;
+    position: relative; z-index: 1;
+    transition: border-radius var(--dur-medium-2) var(--ease-emphasized);
+  }
+  .badge-card:active .badge-icon-ring { border-radius: var(--shape-xl); }
+  .badge-card.earned .badge-icon-ring {
+    background: conic-gradient(from 0deg, var(--primary), var(--tertiary), var(--primary));
+    padding: 3px;
+  }
+  .badge-card.earned .badge-icon-ring::before {
+    content: ''; position: absolute; inset: 3px; border-radius: var(--shape-full);
+    background: var(--surface-container-lowest);
+  }
+  .badge-card.earned .badge-icon-ring svg {
+    width: 28px; height: 28px; color: var(--primary); position: relative; z-index: 1;
+  }
+  .badge-card.locked .badge-icon-ring { background: var(--surface-container-high); }
+  .badge-card.locked .badge-icon-ring svg { width: 28px; height: 28px; color: var(--on-surface-variant); opacity: 0.4; }
+  .badge-name { font-size: 14px; font-weight: 800; color: var(--on-surface); text-align: center; letter-spacing: -0.02em; position: relative; z-index: 1; }
+  .badge-body { padding: 14px 16px 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .badge-desc { font-size: 11px; font-weight: 500; color: var(--on-surface-variant); text-align: center; line-height: 1.4; }
+  .badge-earned-tag { font-size: 10px; font-weight: 800; color: var(--tertiary); text-transform: uppercase; letter-spacing: 0.06em; display: flex; align-items: center; gap: 4px; }
+  .badge-earned-tag svg { width: 12px; height: 12px; }
+  .badge-progress { width: 100%; height: 5px; border-radius: var(--shape-full); background: var(--surface-container-high); overflow: hidden; }
+  .badge-progress-fill { height: 100%; border-radius: var(--shape-full); }
+  .badge-progress-text { font-size: 10px; font-weight: 700; color: var(--on-surface-variant); text-transform: uppercase; letter-spacing: 0.04em; }
+
+  /* ── EXPLORE SCHOOLS — Full Discovery ── */
+  .discover-search { padding: 0 20px 20px; }
+  .discover-filters { display: flex; gap: 8px; padding: 0 20px 20px; overflow-x: auto; scrollbar-width: none; }
+  .discover-filters::-webkit-scrollbar { display: none; }
+  .discover-filter {
+    padding: 8px 16px; border-radius: var(--shape-full);
+    font-size: 13px; font-weight: 600; white-space: nowrap;
+    cursor: pointer; transition: all var(--dur-short-2) var(--ease-standard);
+    border: none; font-family: inherit;
+  }
+  .discover-filter.active { background: var(--on-surface); color: var(--surface); }
+  .discover-filter.inactive { background: var(--surface-container); color: var(--on-surface-variant); }
+  .discover-filter:active { transform: scale(0.93); }
+  .school-list { padding: 0 20px 20px; display: flex; flex-direction: column; gap: 16px; }
+  .school-card-full {
+    border-radius: var(--shape-2xl); overflow: hidden; cursor: pointer;
+    transition: transform var(--dur-short-2) var(--ease-emphasized), border-radius var(--dur-medium-2) var(--ease-emphasized);
+  }
+  .school-card-full:active { transform: scale(0.98); border-radius: var(--shape-xl); }
+  .scf-header { height: 140px; position: relative; overflow: hidden; }
+  .scf-header::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.55) 100%); }
+  .scf-header-1 { background: linear-gradient(135deg, var(--primary) 0%, #544AB8 50%, #3D35A0 100%); }
+  .scf-header-2 { background: linear-gradient(135deg, var(--tertiary) 0%, #00897B 50%, #00695C 100%); }
+  .scf-header-3 { background: linear-gradient(135deg, #FF6D00 0%, #E65100 50%, #BF360C 100%); }
+  .scf-header-4 { background: linear-gradient(135deg, var(--secondary) 0%, #4A4458 50%, #2D2A3E 100%); }
+  .scf-header::after {
+    content: ''; position: absolute; top: -40px; right: -40px;
+    width: 160px; height: 160px;
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 50%);
+    border-radius: 50%;
+  }
+  .scf-rating {
+    position: absolute; top: 14px; right: 14px; z-index: 2;
+    display: flex; align-items: center; gap: 4px;
+    padding: 6px 14px; border-radius: var(--shape-full);
+    background: rgba(255,255,255,0.95); backdrop-filter: blur(12px);
+    font-size: 13px; font-weight: 800; color: var(--on-surface);
+  }
+  .scf-rating svg { width: 14px; height: 14px; color: #FF6D00; }
+  .scf-logo {
+    position: absolute; bottom: 14px; left: 16px; z-index: 2;
+    width: 52px; height: 52px; border-radius: var(--shape-lg);
+    background: rgba(255,255,255,0.95); backdrop-filter: blur(12px);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 900; color: var(--primary);
+    border: 2px solid rgba(255,255,255,0.3);
+  }
+  .scf-body { padding: 20px; background: var(--surface-container-lowest); }
+  .scf-name { font-size: 17px; font-weight: 800; color: var(--on-surface); margin-bottom: 4px; letter-spacing: -0.02em; }
+  .scf-addr { font-size: 13px; color: var(--on-surface-variant); font-weight: 500; margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+  .scf-addr svg { width: 14px; height: 14px; flex-shrink: 0; }
+  .scf-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+  .scf-tag { padding: 5px 12px; border-radius: var(--shape-full); font-size: 11px; font-weight: 700; }
+  .scf-tag.cbse { background: var(--primary-container); color: var(--on-primary-container); }
+  .scf-tag.ib { background: var(--secondary-container); color: var(--on-secondary-container); }
+  .scf-tag.coed { background: var(--tertiary-container); color: var(--on-tertiary-container); }
+  .scf-tag.k12 { background: #FFEEE0; color: #FF6D00; }
+  .scf-stats { display: flex; gap: 20px; padding-top: 14px; border-top: 1px solid var(--surface-container); }
+  .scf-stat { display: flex; flex-direction: column; gap: 2px; }
+  .scf-stat-val { font-size: 18px; font-weight: 900; color: var(--on-surface); letter-spacing: -0.03em; }
+  .scf-stat-label { font-size: 10px; font-weight: 600; color: var(--on-surface-variant); text-transform: uppercase; letter-spacing: 0.04em; }
+  .scf-action {
+    margin-top: 16px; width: 100%; padding: 14px; border-radius: var(--shape-full);
+    background: var(--primary); color: var(--on-primary); border: none; cursor: pointer;
+    font-size: 14px; font-weight: 700; font-family: inherit;
+    transition: border-radius var(--dur-short-2) var(--ease-emphasized), transform var(--dur-short-2) var(--ease-standard);
+  }
+  .scf-action:active { border-radius: var(--shape-md); transform: scale(0.97); }
+  .account-options { padding: 0 20px 20px; }
+  .account-row {
+    display: flex; align-items: center; gap: 16px; padding: 16px 20px;
+    background: var(--surface-container-lowest); border-radius: var(--shape-xl);
+    margin-bottom: 10px; cursor: pointer;
+    transition: all var(--dur-short-2) var(--ease-standard);
+  }
+  .account-row:active { transform: scale(0.98); border-radius: var(--shape-2xl); }
+  .ar-icon { width: 40px; height: 40px; border-radius: var(--shape-md); background: var(--surface-container-low); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .ar-icon svg { width: 20px; height: 20px; color: var(--on-surface-variant); }
+  .ar-label { flex: 1; font-size: 15px; font-weight: 600; color: var(--on-surface); }
+  .ar-chevron { width: 20px; height: 20px; color: var(--outline); flex-shrink: 0; }
+
+  /* ── OVERLAYS ── */
+  .overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: var(--surface); z-index: 200;
+    transform: translateX(100%); transition: transform var(--dur-medium-2) var(--ease-emphasized);
+    display: flex; flex-direction: column;
+  }
+  .overlay.active { transform: translateX(0); }
+  .overlay-header { display: flex; align-items: center; gap: 8px; padding: 12px 12px 12px 8px; flex-shrink: 0; }
+  .overlay-title { flex: 1; font-size: 20px; font-weight: 800; color: var(--on-surface); letter-spacing: -0.03em; }
+  .overlay-content { flex: 1; overflow-y: auto; scrollbar-width: none; padding-bottom: 20px; }
+  .overlay-content::-webkit-scrollbar { display: none; }
+
+  /* Chat bubbles */
+  .chat-bubble-l { display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px; align-items: flex-start; }
+  .chat-bubble-r { display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px; align-items: flex-end; }
+  .chat-text { padding: 14px 18px; border-radius: var(--shape-xl); font-size: 14px; font-weight: 500; line-height: 1.5; max-width: 80%; }
+  .chat-bubble-l .chat-text { background: var(--surface-container-low); color: var(--on-surface); border-bottom-left-radius: var(--shape-sm); }
+  .chat-bubble-r .chat-text { background: var(--primary); color: var(--on-primary); border-bottom-right-radius: var(--shape-sm); }
+  .chat-time { font-size: 11px; color: var(--outline); font-weight: 500; }
+  .chat-input { flex: 1; padding: 14px 18px; border-radius: var(--shape-full); border: none; background: var(--surface-container-high); font-size: 14px; font-family: inherit; color: var(--on-surface); outline: none; }
+  .chat-send { width: 44px; height: 44px; border-radius: var(--shape-full); background: var(--primary); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+  .chat-send svg { width: 20px; height: 20px; color: var(--on-primary); }
+
+  /* Form */
+  .form-group { margin-bottom: 16px; }
+  .form-label { display: block; font-size: 13px; font-weight: 600; color: var(--on-surface-variant); margin-bottom: 8px; }
+  .form-input {
+    width: 100%; padding: 14px 16px; border-radius: var(--shape-lg);
+    border: 1px solid var(--outline-variant); background: var(--surface-container-low);
+    font-size: 15px; font-family: inherit; color: var(--on-surface); outline: none;
+    transition: all var(--dur-short-2) var(--ease-standard);
+  }
+  .form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-container); }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="screen">
+    <div class="island"></div>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <span class="status-time">9:41</span>
+      <div class="status-icons">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.859a10 10 0 0 1 14 0"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 14h3v6H1zM6 10h3v10H6zM11 6h3v14h-3zM16 2h3v18h-3z" opacity="0.9"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="18" height="10" rx="3" fill="currentColor" opacity="0.1"/><rect x="3" y="8" width="14" height="8" rx="2" fill="currentColor"/><line x1="22" y1="11" x2="22" y2="13" stroke-width="2"/></svg>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ══ HOME TAB ══ -->
+      <div class="tab-page active" id="tab-home">
+        <!-- Top App Bar -->
+        <div class="top-bar">
+          <button class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+          <div class="top-bar-title">VidyaSetu</div>
+          <button class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+          <button class="icon-btn" onclick="openOverlay('notifications')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><div class="icon-badge"></div></button>
+        </div>
+
+        <!-- Search -->
+        <div class="search-wrap">
+          <div class="search-field">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" placeholder="Search students, fees, events…" />
+            <div class="search-avatar">P</div>
+          </div>
+        </div>
+
+        <!-- Greeting -->
+        <div class="greeting">
+          <div class="greeting-eyebrow">Wednesday, 5 March</div>
+          <div class="greeting-title">Hi Priya,<br>here's <em>Aarav's</em> day</div>
+        </div>
+
+        <!-- Hero Card -->
+        <div class="hero-card" onclick="openOverlay('pulse')">
+          <div class="hero-inner">
+            <div class="hero-top-row">
+              <div class="hero-live-pill"><span class="hero-live-dot"></span>Live · In School</div>
+              <button class="hero-icon-btn" onclick="event.stopPropagation(); openOverlay('transport')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>
+            </div>
+            <div class="hero-student-row">
+              <div class="hero-avatar">A</div>
+              <div class="hero-student-info">
+                <h3>Aarav Sharma</h3>
+                <p>Class 8-B · Roll 14 · Delhi Public School</p>
+              </div>
+            </div>
+            <div class="hero-stats">
+              <div class="hero-stat"><div class="hero-stat-value">94%</div><div class="hero-stat-label">Attendance</div></div>
+              <div class="hero-stat"><div class="hero-stat-value">A+</div><div class="hero-stat-label">Avg Grade</div></div>
+              <div class="hero-stat"><div class="hero-stat-value">3</div><div class="hero-stat-label">Pending</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Update banner -->
+        <div class="live-update" onclick="openOverlay('transport')">
+          <div class="lu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          <div class="lu-content">
+            <div class="lu-title">Bus arriving in 8 minutes</div>
+            <div class="lu-sub">Route 12 · GPS tracking active</div>
+          </div>
+          <div class="lu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+
+        <!-- Filter Chips -->
+        <div class="chips-row">
+          <button class="chip active">All</button>
+          <button class="chip inactive">Academics</button>
+          <button class="chip inactive">Fees</button>
+          <button class="chip inactive">Attendance</button>
+          <button class="chip inactive">Transport</button>
+          <button class="chip inactive">Library</button>
+        </div>
+
+        <!-- Priority Carousel -->
+        <div class="section-header"><h2>Priority</h2><span class="link">See all</span></div>
+        <div class="carousel">
+          <div class="feature-card fc-fees" onclick="switchTab('fees')">
+            <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
+            <div class="fc-title">Fee Payment</div>
+            <div class="fc-subtitle">Q4 Tuition · Due Mar 15</div>
+            <div class="fc-footer"><div class="fc-amount">₹12,500</div><button class="fc-badge">Pay Now</button></div>
+          </div>
+          <div class="feature-card fc-attend" onclick="switchTab('academics')">
+            <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+            <div class="fc-title">Attendance</div>
+            <div class="fc-subtitle">This month · 22 days present</div>
+            <div class="fc-footer"><div class="fc-amount">94%</div><button class="fc-badge">On Track</button></div>
+          </div>
+          <div class="feature-card fc-hw" onclick="switchTab('academics')">
+            <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></div>
+            <div class="fc-title">Homework</div>
+            <div class="fc-subtitle">3 assignments pending</div>
+            <div class="fc-footer"><div class="fc-amount">3</div><button class="fc-badge">Due Today</button></div>
+          </div>
+          <div class="feature-card fc-msg" onclick="switchTab('conversations')">
+            <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+            <div class="fc-title">Messages</div>
+            <div class="fc-subtitle">2 unread from teachers</div>
+            <div class="fc-footer"><div class="fc-amount">2</div><button class="fc-badge">Read</button></div>
+          </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="section-header"><h2>Quick Stats</h2></div>
+        <div class="quick-stats">
+          <div class="qs-card fees" onclick="switchTab('fees')">
+            <div class="qs-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
+            <div class="qs-value">₹12.5K</div>
+            <div class="qs-label">Fees Due</div>
+          </div>
+          <div class="qs-card attend" onclick="switchTab('academics')">
+            <div class="qs-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+            <div class="qs-value">94%</div>
+            <div class="qs-label">Attendance</div>
+          </div>
+          <div class="qs-card hw" onclick="switchTab('academics')">
+            <div class="qs-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+            <div class="qs-value">3</div>
+            <div class="qs-label">Homework</div>
+          </div>
+        </div>
+
+        <!-- Today's Schedule -->
+        <div class="section-header"><h2>Today's Schedule</h2><span class="link">Full timetable</span></div>
+        <div class="schedule-wrap">
+          <div class="schedule-progress">
+            <div class="sp-track"><div class="sp-fill"></div></div>
+            <div class="sp-label">1 of 4 done</div>
+          </div>
+          <div class="sched-list">
+            <div class="sched-card live">
+              <div class="sched-card-inner">
+                <div class="sc-time"><span class="sc-hr">9:00</span><span class="sc-ampm">AM</span></div>
+                <div class="sc-divider"></div>
+                <div class="sc-info"><div class="sc-subject">Mathematics</div><div class="sc-teacher">Mr. Rajesh Kumar · Room 204</div></div>
+                <div class="sc-status live-badge"><span class="sb-dot"></span>Live</div>
+              </div>
+            </div>
+            <div class="sched-card upcoming">
+              <div class="sched-card-inner">
+                <div class="sc-time"><span class="sc-hr">10:00</span><span class="sc-ampm">AM</span></div>
+                <div class="sc-divider"></div>
+                <div class="sc-info"><div class="sc-subject">Physics</div><div class="sc-teacher">Ms. Priya Nair · Lab 3</div></div>
+                <div class="sc-status next-badge">Next</div>
+              </div>
+            </div>
+            <div class="sched-card upcoming">
+              <div class="sched-card-inner">
+                <div class="sc-time"><span class="sc-hr">11:00</span><span class="sc-ampm">AM</span></div>
+                <div class="sc-divider"></div>
+                <div class="sc-info"><div class="sc-subject">English Literature</div><div class="sc-teacher">Mrs. Anjali Sharma · Room 112</div></div>
+              </div>
+            </div>
+            <div class="sched-card upcoming">
+              <div class="sched-card-inner">
+                <div class="sc-time"><span class="sc-hr">12:00</span><span class="sc-ampm">PM</span></div>
+                <div class="sc-divider"></div>
+                <div class="sc-info"><div class="sc-subject">Social Studies</div><div class="sc-teacher">Mr. Vikram Singh · Room 301</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- School Updates -->
+        <div class="section-header"><h2>School Updates</h2><span class="link">All</span></div>
+        <div class="updates-wrap">
+          <div class="update-item">
+            <div class="update-top">
+              <div class="update-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></div>
+              <div class="update-body">
+                <div class="update-source">DPS Admin <span class="us-time">· 2h</span></div>
+                <div class="update-title">Annual Sports Day — Registration Open</div>
+                <div class="update-text">Sign up by March 20 for track & field events. Inter-house competition on March 28.</div>
+              </div>
+            </div>
+            <div class="update-actions">
+              <button class="update-action-btn primary">Register</button>
+              <button class="update-action-btn">Dismiss</button>
+            </div>
+          </div>
+          <div class="update-item">
+            <div class="update-top">
+              <div class="update-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
+              <div class="update-body">
+                <div class="update-source">Accounts Dept <span class="us-time">· 5h</span></div>
+                <div class="update-title">Q4 Fee Invoice Generated</div>
+                <div class="update-text">Invoice for ₹12,500 is now available. Payment due by March 15.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="height: 24px;"></div>
+      </div>
+      <!-- END HOME -->
+
+      <!-- ══ ACADEMICS TAB ══ -->
+      <div class="tab-page" id="tab-academics">
+        <div class="top-bar">
+          <button class="icon-btn" onclick="switchTab('home',document.querySelector('[data-tab=home]'))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+          <div class="top-bar-title">Academics</div>
+          <button class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+        </div>
+
+        <!-- Action Cards -->
+        <div class="action-cards">
+          <div class="action-card leave" onclick="openOverlay('leave')">
+            <div class="ac-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+            <div class="ac-title">Apply Leave</div>
+            <div class="ac-sub">2 days used this term</div>
+          </div>
+          <div class="action-card health" onclick="openOverlay('health')">
+            <div class="ac-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+            <div class="ac-title">Health</div>
+            <div class="ac-sub">Pulse score: 87</div>
+          </div>
+        </div>
+
+        <!-- Sub Tabs -->
+        <div class="sub-tabs">
+          <button class="sub-tab active" onclick="switchSubTab(this,'sub-overview')">Overview</button>
+          <button class="sub-tab inactive" onclick="switchSubTab(this,'sub-attendance')">Attendance</button>
+          <button class="sub-tab inactive" onclick="switchSubTab(this,'sub-marks')">Marks</button>
+          <button class="sub-tab inactive" onclick="switchSubTab(this,'sub-syllabus')">Syllabus</button>
+          <button class="sub-tab inactive" onclick="switchSubTab(this,'sub-homework')">Homework</button>
+          <button class="sub-tab inactive" onclick="switchSubTab(this,'sub-report')">Report</button>
+        </div>
+
+        <!-- Overview -->
+        <div class="sub-content active" id="sub-overview">
+          <div class="progress-card">
+            <div class="pc-title">Overall Performance</div>
+            <div style="display:flex;align-items:center;gap:20px">
+              <div class="pc-ring"><div class="pc-ring-inner">88%</div></div>
+              <div style="flex:1">
+                <div style="font-size:16px;font-weight:800;color:var(--on-surface);margin-bottom:4px">Good Progress</div>
+                <div style="font-size:13px;color:var(--on-surface-variant);line-height:1.5">Aarav is performing well across all subjects. Science and Math are strongest.</div>
+              </div>
+            </div>
+          </div>
+          <div class="section-header"><h2>Subject Breakdown</h2></div>
+          <div class="syllabus-list">
+            <div class="syllabus-item"><div class="syllabus-header"><div class="syllabus-name">Mathematics</div><div class="syllabus-pct">92%</div></div><div class="syllabus-bar"><div class="syllabus-fill" style="width:92%"></div></div></div>
+            <div class="syllabus-item"><div class="syllabus-header"><div class="syllabus-name">Science</div><div class="syllabus-pct">90%</div></div><div class="syllabus-bar"><div class="syllabus-fill" style="width:90%;background:var(--tertiary)"></div></div></div>
+            <div class="syllabus-item"><div class="syllabus-header"><div class="syllabus-name">English</div><div class="syllabus-pct">85%</div></div><div class="syllabus-bar"><div class="syllabus-fill" style="width:85%;background:#FF6D00"></div></div></div>
+            <div class="syllabus-item"><div class="syllabus-header"><div class="syllabus-name">Social Studies</div><div class="syllabus-pct">82%</div></div><div class="syllabus-bar"><div class="syllabus-fill" style="width:82%"></div></div></div>
+          </div>
+        </div>
+
+        <!-- Attendance -->
+        <div class="sub-content" id="sub-attendance">
+          <div class="progress-card">
+            <div class="pc-title">Attendance Summary</div>
+            <div style="display:flex;align-items:center;gap:20px">
+              <div class="pc-ring"><div class="pc-ring-inner">94%</div></div>
+              <div style="flex:1">
+                <div style="font-size:16px;font-weight:800;color:var(--on-surface);margin-bottom:4px">Excellent</div>
+                <div style="font-size:13px;color:var(--on-surface-variant)">22 present · 1 absent · 1 late this month</div>
+              </div>
+            </div>
+          </div>
+          <div class="section-header"><h2>This Month</h2></div>
+          <div class="syllabus-list">
+            <div class="syllabus-item"><div class="syllabus-header"><div class="syllabus-name">Days Present</div><div class="syllabus-pct" style="color:var(--tertiary)">22</div></div><div class="syllabus-bar"><div class="syllabus-fill" style="width:92%;background:var(--tertiary)"></div></div></div>
+            <div class="syllabus-item"><div class="syllabus-header"><div class="syllabus-name">Absent</div><div class="syllabus-pct" style="color:var(--error)">1</div></div><div class="syllabus-bar"><div class="syllabus-fill" style="width:4%;background:var(--error)"></div></div></div>
+            <div class="syllabus-item"><div class="syllabus-header"><div class="syllabus-name">Late Arrival</div><div class="syllabus-pct" style="color:#FF6D00">1</div></div><div class="syllabus-bar"><div class="syllabus-fill" style="width:4%;background:#FF6D00"></div></div></div>
+          </div>
+        </div>
+
+        <!-- Marks -->
+        <div class="sub-content" id="sub-marks">
+          <div class="section-header"><h2>Recent Test Scores</h2></div>
+          <div class="marks-list">
+            <div class="mark-card"><div class="mark-subject"><div class="mark-name">Mathematics — Unit Test 3</div><div class="mark-date">Mar 2, 2026</div></div><div class="mark-score"><div class="mark-score-val">47</div><div class="mark-score-max">/ 50</div></div></div>
+            <div class="mark-card"><div class="mark-subject"><div class="mark-name">Science — Physics Quiz</div><div class="mark-date">Feb 28, 2026</div></div><div class="mark-score"><div class="mark-score-val">18</div><div class="mark-score-max">/ 20</div></div></div>
+            <div class="mark-card"><div class="mark-subject"><div class="mark-name">English — Essay</div><div class="mark-date">Feb 25, 2026</div></div><div class="mark-score"><div class="mark-score-val">42</div><div class="mark-score-max">/ 50</div></div></div>
+            <div class="mark-card"><div class="mark-subject"><div class="mark-name">Social Studies — Map Test</div><div class="mark-date">Feb 20, 2026</div></div><div class="mark-score"><div class="mark-score-val">38</div><div class="mark-score-max">/ 50</div></div></div>
+          </div>
+        </div>
+
+        <!-- Syllabus -->
+        <div class="sub-content" id="sub-syllabus">
+          <div class="section-header"><h2>Syllabus Coverage</h2></div>
+          <div class="syllabus-list">
+            <div class="syllabus-item"><div class="syllabus-header"><div class="syllabus-name">Mathematics — Algebra</div><div class="syllabus-pct">78%</div></div><div class="syllabus-bar"><div class="syllabus-fill" style="width:78%"></div></div></div>
+            <div class="syllabus-item"><div class="syllabus-header"><div class="syllabus-name">Science — Light & Optics</div><div class="syllabus-pct">65%</div></div><div class="syllabus-bar"><div class="syllabus-fill" style="width:65%;background:var(--tertiary)"></div></div></div>
+            <div class="syllabus-item"><div class="syllabus-header"><div class="syllabus-name">English — Poetry</div><div class="syllabus-pct">82%</div></div><div class="syllabus-bar"><div class="syllabus-fill" style="width:82%;background:#FF6D00"></div></div></div>
+            <div class="syllabus-item"><div class="syllabus-header"><div class="syllabus-name">Social Studies — Civics</div><div class="syllabus-pct">55%</div></div><div class="syllabus-bar"><div class="syllabus-fill" style="width:55%"></div></div></div>
+          </div>
+        </div>
+
+        <!-- Homework -->
+        <div class="sub-content" id="sub-homework">
+          <div class="section-header"><h2>Homework</h2></div>
+          <div class="hw-list">
+            <div class="hw-card pending"><div class="hw-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="hw-info"><div class="hw-title">Math — Algebra Worksheet</div><div class="hw-sub">Due tomorrow · Mr. Rajesh Kumar</div></div><div class="hw-status pending">Pending</div></div>
+            <div class="hw-card pending"><div class="hw-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="hw-info"><div class="hw-title">Science — Lab Report</div><div class="hw-sub">Due Mar 7 · Ms. Priya Nair</div></div><div class="hw-status pending">Pending</div></div>
+            <div class="hw-card pending"><div class="hw-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="hw-info"><div class="hw-title">English — Essay Draft</div><div class="hw-sub">Due Mar 8 · Mrs. Anjali Sharma</div></div><div class="hw-status pending">Pending</div></div>
+            <div class="hw-card done"><div class="hw-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div><div class="hw-info"><div class="hw-title">Social Studies — Map Work</div><div class="hw-sub">Submitted Feb 28 · Mr. Vikram Singh</div></div><div class="hw-status done">Done</div></div>
+          </div>
+        </div>
+
+        <!-- Report -->
+        <div class="sub-content" id="sub-report">
+          <div class="progress-card">
+            <div class="pc-title">Term 2 Report Card</div>
+            <div class="pc-metrics">
+              <div class="pc-metric"><div class="pc-metric-label">Mathematics</div><div class="pc-metric-bar"><div class="pc-metric-fill" style="width:92%;background:var(--primary)"></div></div><div class="pc-metric-value">92% · A+</div></div>
+              <div class="pc-metric"><div class="pc-metric-label">Science</div><div class="pc-metric-bar"><div class="pc-metric-fill" style="width:90%;background:var(--tertiary)"></div></div><div class="pc-metric-value">90% · A</div></div>
+              <div class="pc-metric"><div class="pc-metric-label">English</div><div class="pc-metric-bar"><div class="pc-metric-fill" style="width:85%;background:#FF6D00"></div></div><div class="pc-metric-value">85% · A</div></div>
+              <div class="pc-metric"><div class="pc-metric-label">Social Studies</div><div class="pc-metric-bar"><div class="pc-metric-fill" style="width:82%;background:var(--primary)"></div></div><div class="pc-metric-value">82% · B+</div></div>
+            </div>
+          </div>
+          <div class="progress-card">
+            <div class="pc-title">Teacher Remarks</div>
+            <div style="font-size:14px;color:var(--on-surface-variant);line-height:1.6">Aarav shows excellent analytical skills in Mathematics. Needs to participate more in group discussions. Overall a disciplined and curious learner.</div>
+          </div>
+        </div>
+
+        <div style="height: 24px;"></div>
+      </div>
+      <!-- END ACADEMICS -->
+
+      <!-- ══ FEES TAB ══ -->
+      <div class="tab-page" id="tab-fees">
+        <div class="top-bar">
+          <button class="icon-btn" onclick="switchTab('home',document.querySelector('[data-tab=home]'))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+          <div class="top-bar-title">Fees</div>
+          <button class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+        </div>
+
+        <div class="fees-hero">
+          <div class="fees-hero-label">Outstanding Balance</div>
+          <div class="fees-hero-amount">₹12,500</div>
+          <div class="fees-hero-due">Q4 Tuition · Due March 15, 2026</div>
+          <button class="fees-pay-btn">Pay Now</button>
+        </div>
+
+        <div class="section-header"><h2>Fee Announcements</h2></div>
+        <div class="updates-wrap">
+          <div class="update-item">
+            <div class="update-top">
+              <div class="update-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
+              <div class="update-body">
+                <div class="update-source">Accounts Dept <span class="us-time">· 5h</span></div>
+                <div class="update-title">Q4 Fee Invoice Generated</div>
+                <div class="update-text">Invoice for ₹12,500 is now available. Payment due by March 15.</div>
+              </div>
+            </div>
+            <div class="update-actions">
+              <button class="update-action-btn primary">View Invoice</button>
+              <button class="update-action-btn">Download</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-header"><h2>Payment History</h2></div>
+        <div class="updates-wrap">
+          <div class="payment-item"><div class="pay-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div><div class="pay-info"><div class="pay-title">Q3 Tuition Fee</div><div class="pay-date">Paid Dec 10, 2025 · Receipt #R4521</div></div><div class="pay-amount">₹12,500</div></div>
+          <div class="payment-item"><div class="pay-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div><div class="pay-info"><div class="pay-title">Q2 Tuition Fee</div><div class="pay-date">Paid Sep 8, 2025 · Receipt #R3892</div></div><div class="pay-amount">₹12,500</div></div>
+          <div class="payment-item"><div class="pay-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div><div class="pay-info"><div class="pay-title">Q1 Tuition Fee</div><div class="pay-date">Paid Jun 12, 2025 · Receipt #R3105</div></div><div class="pay-amount">₹12,500</div></div>
+        </div>
+        <div style="height: 24px;"></div>
+      </div>
+      <!-- END FEES -->
+
+      <!-- ══ CONVERSATIONS TAB ══ -->
+      <div class="tab-page" id="tab-conversations">
+        <div class="top-bar">
+          <button class="icon-btn" onclick="switchTab('home',document.querySelector('[data-tab=home]'))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+          <div class="top-bar-title">Conversations</div>
+          <button class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>
+        </div>
+
+        <div class="conv-segment">
+          <button class="seg-btn active" onclick="switchSeg(this,'seg-messages')">Messages</button>
+          <button class="seg-btn inactive" onclick="switchSeg(this,'seg-announcements')">Announcements</button>
+        </div>
+
+        <div class="seg-content active" id="seg-messages">
+          <div class="thread-item"><div class="thread-avatar">RK</div><div class="thread-info"><div class="thread-name">Mr. Rajesh Kumar</div><div class="thread-preview">Aarav did great in today's math test!</div></div><div class="thread-meta"><div class="thread-time">10:30 AM</div><div class="thread-badge">2</div></div></div>
+          <div class="thread-item"><div class="thread-avatar teal">PN</div><div class="thread-info"><div class="thread-name">Ms. Priya Nair</div><div class="thread-preview">Please ensure lab manual is brought tomorrow</div></div><div class="thread-meta"><div class="thread-time">Yesterday</div><div class="thread-badge">1</div></div></div>
+          <div class="thread-item"><div class="thread-avatar amber">DPS</div><div class="thread-info"><div class="thread-name">DPS Admin Office</div><div class="thread-preview">Sports Day registration is now open</div></div><div class="thread-meta"><div class="thread-time">2h ago</div></div></div>
+          <div class="thread-item"><div class="thread-avatar">AS</div><div class="thread-info"><div class="thread-name">Mrs. Anjali Sharma</div><div class="thread-preview">Thank you for the essay submission</div></div><div class="thread-meta"><div class="thread-time">3d ago</div></div></div>
+        </div>
+
+        <div class="seg-content" id="seg-announcements">
+          <div class="updates-wrap">
+            <div class="update-item"><div class="update-top"><div class="update-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></div><div class="update-body"><div class="update-source">DPS Admin <span class="us-time">· 2h</span></div><div class="update-title">Annual Sports Day — Registration Open</div><div class="update-text">Sign up by March 20 for track & field events.</div></div></div></div>
+            <div class="update-item"><div class="update-top"><div class="update-avatar" style="background:var(--tertiary-container)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--tertiary)"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg></div><div class="update-body"><div class="update-source">DPS Admin <span class="us-time">· 1d</span></div><div class="update-title">Holiday Notice — March 8 (Holi)</div><div class="update-text">School will remain closed on March 8 for Holi celebrations.</div></div></div></div>
+            <div class="update-item"><div class="update-top"><div class="update-avatar" style="background:#FFEEE0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#FF6D00"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div><div class="update-body"><div class="update-source">Accounts Dept <span class="us-time">· 3d</span></div><div class="update-title">Fee Payment Reminder</div><div class="update-text">Q4 fees due by March 15. Pay early to avoid late charges.</div></div></div></div>
+          </div>
+        </div>
+        <div style="height: 24px;"></div>
+      </div>
+      <!-- END CONVERSATIONS -->
+
+      <!-- ══ PROFILE TAB ══ -->
+      <div class="tab-page" id="tab-profile">
+        <div class="top-bar">
+          <button class="icon-btn" onclick="switchTab('home',document.querySelector('[data-tab=home]'))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+          <div class="top-bar-title">Profile</div>
+          <button class="icon-btn" onclick="openOverlay('account')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+        </div>
+
+        <div class="profile-hero">
+          <div class="ph-inner">
+            <div class="ph-top">
+              <div class="ph-avatar">A</div>
+              <div class="ph-info">
+                <h3>Aarav Sharma</h3>
+                <p>Class 8-B · Roll 14 · DPS</p>
+                <div class="ph-badge">🏆 House Eagle · Level 12</div>
+              </div>
+            </div>
+            <div class="ph-level">
+              <div class="ph-level-text">Level 12 — Scholar</div>
+              <div class="ph-xp">3,400 / 5,000 XP</div>
+            </div>
+            <div class="ph-xp-bar"><div class="ph-xp-fill"></div></div>
+          </div>
+        </div>
+
+        <div class="section-header"><h2>Stats</h2></div>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-value">94%</div><div class="stat-label">Attendance</div><div class="stat-trend up">↑ 2% this month</div></div>
+          <div class="stat-card"><div class="stat-value">88%</div><div class="stat-label">Avg Marks</div><div class="stat-trend up">↑ 5% this term</div></div>
+          <div class="stat-card"><div class="stat-value">3.4K</div><div class="stat-label">XP Points</div><div class="stat-trend up">↑ 420 this week</div></div>
+          <div class="stat-card"><div class="stat-value">18</div><div class="stat-label">Quizzes Done</div><div class="stat-trend up">↑ 3 this week</div></div>
+        </div>
+
+        <div class="section-header"><h2>Badges</h2><span class="link">All</span></div>
+        <div class="badges-row">
+          <div class="badge-card earned">
+            <div class="badge-top">
+              <div class="badge-icon-ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+              <div class="badge-name">Math Champ</div>
+            </div>
+            <div class="badge-body">
+              <div class="badge-desc">Score 90%+ in 5 consecutive math tests</div>
+              <div class="badge-earned-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/></svg>Earned · Feb 12</div>
+            </div>
+          </div>
+          <div class="badge-card earned">
+            <div class="badge-top">
+              <div class="badge-icon-ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
+              <div class="badge-name">Bookworm</div>
+            </div>
+            <div class="badge-body">
+              <div class="badge-desc">Read and reviewed 10 library books</div>
+              <div class="badge-earned-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/></svg>Earned · Jan 28</div>
+            </div>
+          </div>
+          <div class="badge-card earned">
+            <div class="badge-top">
+              <div class="badge-icon-ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+              <div class="badge-name">Quick Solver</div>
+            </div>
+            <div class="badge-body">
+              <div class="badge-desc">Complete 20 quizzes under time limit</div>
+              <div class="badge-earned-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/></svg>Earned · Feb 20</div>
+            </div>
+          </div>
+          <div class="badge-card earned">
+            <div class="badge-top">
+              <div class="badge-icon-ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
+              <div class="badge-name">Perfect Score</div>
+            </div>
+            <div class="badge-body">
+              <div class="badge-desc">Achieve 100% on any test</div>
+              <div class="badge-earned-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/></svg>Earned · Mar 2</div>
+            </div>
+          </div>
+          <div class="badge-card locked">
+            <div class="badge-top">
+              <div class="badge-icon-ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.31"/><path d="M14 9.3V2"/><path d="M8.5 2h7"/><path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.52 16h12.96"/></svg></div>
+              <div class="badge-name">Science Whiz</div>
+            </div>
+            <div class="badge-body">
+              <div class="badge-desc">Score 90%+ in 5 science tests</div>
+              <div class="badge-progress"><div class="badge-progress-fill" style="width:60%;background:var(--tertiary)"></div></div>
+              <div class="badge-progress-text">3 of 5 completed</div>
+            </div>
+          </div>
+          <div class="badge-card locked">
+            <div class="badge-top">
+              <div class="badge-icon-ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg></div>
+              <div class="badge-name">100 Days</div>
+            </div>
+            <div class="badge-body">
+              <div class="badge-desc">100 consecutive days of attendance</div>
+              <div class="badge-progress"><div class="badge-progress-fill" style="width:94%;background:var(--tertiary)"></div></div>
+              <div class="badge-progress-text">94 of 100 days</div>
+            </div>
+          </div>
+          <div class="badge-card locked">
+            <div class="badge-top">
+              <div class="badge-icon-ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg></div>
+              <div class="badge-name">Art Master</div>
+            </div>
+            <div class="badge-body">
+              <div class="badge-desc">Submit 10 creative art projects</div>
+              <div class="badge-progress"><div class="badge-progress-fill" style="width:40%;background:#FF6D00"></div></div>
+              <div class="badge-progress-text">4 of 10 submitted</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-header"><h2>Account</h2></div>
+        <div class="account-options">
+          <div class="account-row" onclick="openOverlay('account')"><div class="ar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg></div><div class="ar-label">Account Settings</div><svg class="ar-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+          <div class="account-row" onclick="openOverlay('linkchild')"><div class="ar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><div class="ar-label">Link Another Child</div><svg class="ar-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+          <div class="account-row" onclick="openOverlay('discovery')"><div class="ar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><div class="ar-label">Discover Schools</div><svg class="ar-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+          <div class="account-row"><div class="ar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></div><div class="ar-label" style="color:var(--error)">Logout</div><svg class="ar-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+        <div style="height: 24px;"></div>
+      </div>
+      <!-- END PROFILE -->
+
+    </div><!-- END content -->
+
+    <!-- FAB Menu -->
+    <div class="fab-container" id="fabContainer">
+      <button class="fab-menu-item" onclick="openOverlay('tutor')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>AI Tutor</button>
+      <button class="fab-menu-item" onclick="switchTab('conversations')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Message Teacher</button>
+      <button class="fab-menu-item" onclick="openOverlay('leave')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg>Apply Leave</button>
+      <button class="fab" id="fabBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+    </div>
+
+    <!-- Navigation Bar -->
+    <div class="nav-bar">
+      <button class="nav-item active" data-tab="home" onclick="switchTab('home',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="nav-label">Home</span></button>
+      <button class="nav-item" data-tab="academics" onclick="switchTab('academics',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg><span class="nav-label">Academics</span></button>
+      <button class="nav-item" data-tab="fees" onclick="switchTab('fees',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg><div class="nav-badge">1</div><span class="nav-label">Fees</span></button>
+      <button class="nav-item" data-tab="conversations" onclick="switchTab('conversations',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="nav-label">Chats</span></button>
+      <button class="nav-item" data-tab="profile" onclick="switchTab('profile',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg><span class="nav-label">Profile</span></button>
+    </div>
+
+    <!-- ══ OVERLAYS ══ -->
+    <div class="overlay" id="overlay-notifications">
+      <div class="overlay-header">
+        <button class="icon-btn" onclick="closeOverlay()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+        <div class="overlay-title">Notifications</div>
+      </div>
+      <div class="overlay-content" style="padding:0 20px">
+        <div class="update-item"><div class="update-top"><div class="update-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div><div class="update-body"><div class="update-source">Fees <span class="us-time">· 5h</span></div><div class="update-title">Q4 Fee Invoice Generated</div><div class="update-text">₹12,500 due by March 15.</div></div></div></div>
+        <div class="update-item"><div class="update-top"><div class="update-avatar" style="background:var(--tertiary-container)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--tertiary)"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="update-body"><div class="update-source">Messages <span class="us-time">· 10:30 AM</span></div><div class="update-title">New message from Mr. Rajesh Kumar</div><div class="update-text">Aarav did great in today's math test!</div></div></div></div>
+        <div class="update-item"><div class="update-top"><div class="update-avatar" style="background:#FFEEE0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#FF6D00"><path d="M3 11l18-5v12L3 14v-3z"/></svg></div><div class="update-body"><div class="update-source">Transport <span class="us-time">· 8:45 AM</span></div><div class="update-title">Bus arriving in 8 minutes</div><div class="update-text">Route 12 · GPS tracking active</div></div></div></div>
+      </div>
+    </div>
+
+    <div class="overlay" id="overlay-pulse">
+      <div class="overlay-header"><button class="icon-btn" onclick="closeOverlay()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button><div class="overlay-title">Pulse Score</div></div>
+      <div class="overlay-content" style="padding:0 20px">
+        <div class="progress-card" style="text-align:center"><div class="pc-ring" style="margin:0 auto 20px;width:120px;height:120px"><div class="pc-ring-inner" style="width:100px;height:100px;font-size:32px">87</div></div><div style="font-size:16px;font-weight:700">Healthy</div><div style="font-size:13px;color:var(--on-surface-variant);margin-top:4px">Early warning score based on attendance, academics & engagement</div></div>
+        <div class="progress-card"><div class="pc-metrics"><div class="pc-metric"><div class="pc-metric-label">Attendance</div><div class="pc-metric-bar"><div class="pc-metric-fill" style="width:94%;background:var(--tertiary)"></div></div><div class="pc-metric-value">94% · Good</div></div><div class="pc-metric"><div class="pc-metric-label">Academics</div><div class="pc-metric-bar"><div class="pc-metric-fill" style="width:88%;background:var(--primary)"></div></div><div class="pc-metric-value">88% · Good</div></div></div></div>
+        <div class="progress-card"><div class="pc-metrics"><div class="pc-metric"><div class="pc-metric-label">Engagement</div><div class="pc-metric-bar"><div class="pc-metric-fill" style="width:79%;background:#FF6D00"></div></div><div class="pc-metric-value">79% · Fair</div></div><div class="pc-metric"><div class="pc-metric-label">Wellness</div><div class="pc-metric-bar"><div class="pc-metric-fill" style="width:85%;background:var(--tertiary)"></div></div><div class="pc-metric-value">85% · Good</div></div></div></div>
+      </div>
+    </div>
+
+    <div class="overlay" id="overlay-transport">
+      <div class="overlay-header"><button class="icon-btn" onclick="closeOverlay()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button><div class="overlay-title">Transport Tracking</div></div>
+      <div class="overlay-content" style="padding:0 20px">
+        <div class="live-update" style="margin:0 0 20px"><div class="lu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="lu-content"><div class="lu-title">Bus arriving in 8 minutes</div><div class="lu-sub">Route 12 · GPS tracking active</div></div></div>
+        <div class="progress-card"><div class="pc-title" style="margin-bottom:16px">Route 12 — DPS to Home</div><div style="display:flex;flex-direction:column;gap:12px"><div style="display:flex;align-items:center;gap:12px"><div style="width:12px;height:12px;border-radius:50%;background:var(--tertiary)"></div><div><div style="font-size:14px;font-weight:700">School — DPS</div><div style="font-size:12px;color:var(--on-surface-variant)">Departed 3:30 PM</div></div></div><div style="display:flex;align-items:center;gap:12px"><div style="width:12px;height:12px;border-radius:50%;background:var(--primary);box-shadow:0 0 0 4px rgba(103,80,246,.2)"></div><div><div style="font-size:14px;font-weight:700">Stop 3 — MG Road</div><div style="font-size:12px;color:var(--on-surface-variant)">Current location · ETA 8 min</div></div></div><div style="display:flex;align-items:center;gap:12px;opacity:.4"><div style="width:12px;height:12px;border-radius:50%;background:var(--outline)"></div><div><div style="font-size:14px;font-weight:700">Home — Sector 14</div><div style="font-size:12px;color:var(--on-surface-variant)">ETA 3:52 PM</div></div></div></div></div>
+        <div style="height:20px"></div>
+        <div class="progress-card"><div class="pc-title" style="margin-bottom:12px">Bus Details</div><div style="font-size:14px;color:var(--on-surface-variant);line-height:2">Driver: Ramesh Yadav<br>Bus: DL-01-AB-4521<br>Phone: +91 98xxx xxx21</div></div>
+      </div>
+    </div>
+
+    <div class="overlay" id="overlay-tutor">
+      <div class="overlay-header"><button class="icon-btn" onclick="closeOverlay()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button><div class="overlay-title">AI Tutor</div></div>
+      <div class="overlay-content" style="padding:16px 20px;display:flex;flex-direction:column">
+        <div class="chat-bubble-l"><div class="chat-text">Hi Aarav! Ready to practice some math today? 🎯</div><div class="chat-time">AI Tutor · 9:35 AM</div></div>
+        <div class="chat-bubble-r"><div class="chat-text">Yes! Let's do algebra</div><div class="chat-time">You · 9:36 AM</div></div>
+        <div class="chat-bubble-l"><div class="chat-text">Great! Solve: 3x + 7 = 22. What is x?</div><div class="chat-time">AI Tutor · 9:36 AM</div></div>
+        <div style="display:flex;gap:8px;padding:8px 0;margin-top:auto"><input class="chat-input" type="text" placeholder="Type your answer…"><button class="chat-send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button></div>
+      </div>
+    </div>
+
+    <div class="overlay" id="overlay-leave">
+      <div class="overlay-header"><button class="icon-btn" onclick="closeOverlay()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button><div class="overlay-title">Apply for Leave</div></div>
+      <div class="overlay-content" style="padding:0 20px">
+        <div class="progress-card"><div style="font-size:14px;font-weight:700;margin-bottom:16px">Leave Application</div>
+          <div class="form-group"><label class="form-label">From Date</label><input class="form-input" type="text" placeholder="Select date"></div>
+          <div class="form-group"><label class="form-label">To Date</label><input class="form-input" type="text" placeholder="Select date"></div>
+          <div class="form-group"><label class="form-label">Leave Type</label><div style="display:flex;gap:8px"><button class="sub-tab active" style="font-size:13px">Sick</button><button class="sub-tab inactive" style="font-size:13px">Casual</button><button class="sub-tab inactive" style="font-size:13px">Other</button></div></div>
+          <div class="form-group"><label class="form-label">Reason</label><textarea class="form-input" placeholder="Enter reason…" style="min-height:80px;resize:none"></textarea></div>
+          <button class="fees-pay-btn" style="width:100%;background:var(--primary);color:var(--on-primary)">Submit Application</button>
+        </div>
+        <div style="height:20px"></div>
+        <div class="section-header" style="padding:0 0 16px"><h2>Leave History</h2></div>
+        <div class="mark-card"><div class="mark-subject"><div class="mark-name">Sick Leave</div><div class="mark-date">Feb 20-21, 2026 · 2 days</div></div><div class="mark-score"><div style="font-size:12px;font-weight:700;color:var(--tertiary)">Approved</div></div></div>
+      </div>
+    </div>
+
+    <div class="overlay" id="overlay-health">
+      <div class="overlay-header"><button class="icon-btn" onclick="closeOverlay()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button><div class="overlay-title">Health Records</div></div>
+      <div class="overlay-content" style="padding:0 20px">
+        <div class="progress-card"><div class="pc-title" style="margin-bottom:16px">Health Profile</div><div style="display:flex;flex-direction:column;gap:12px;font-size:14px"><div style="display:flex;justify-content:space-between"><span style="color:var(--on-surface-variant)">Blood Group</span><span style="font-weight:700">O+</span></div><div style="display:flex;justify-content:space-between"><span style="color:var(--on-surface-variant)">Allergies</span><span style="font-weight:700;color:var(--error)">Peanuts</span></div><div style="display:flex;justify-content:space-between"><span style="color:var(--on-surface-variant)">Conditions</span><span style="font-weight:700">None</span></div><div style="display:flex;justify-content:space-between"><span style="color:var(--on-surface-variant)">Immunizations</span><span style="font-weight:700;color:var(--tertiary)">Up to date</span></div><div style="display:flex;justify-content:space-between"><span style="color:var(--on-surface-variant)">Emergency Contact</span><span style="font-weight:700">Priya Sharma (Mother)</span></div></div></div>
+        <div class="progress-card"><div class="pc-title" style="margin-bottom:16px">Pulse Score</div><div style="display:flex;align-items:center;gap:20px"><div class="pc-ring"><div class="pc-ring-inner">87</div></div><div><div style="font-size:16px;font-weight:700">Healthy</div><div style="font-size:13px;color:var(--on-surface-variant)">No risk factors detected</div></div></div></div>
+      </div>
+    </div>
+
+    <div class="overlay" id="overlay-account">
+      <div class="overlay-header"><button class="icon-btn" onclick="closeOverlay()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button><div class="overlay-title">Account Settings</div></div>
+      <div class="overlay-content" style="padding:0 20px">
+        <div class="progress-card"><div style="font-size:14px;font-weight:700;margin-bottom:16px">Parent Profile</div>
+          <div class="form-group"><label class="form-label">Name</label><input class="form-input" type="text" value="Priya Sharma"></div>
+          <div class="form-group"><label class="form-label">Phone</label><input class="form-input" type="text" value="+91 98xxx xxx45"></div>
+          <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="text" value="priya.s@email.com"></div>
+          <button class="fees-pay-btn" style="width:100%;background:var(--primary);color:var(--on-primary)">Save Changes</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay" id="overlay-linkchild">
+      <div class="overlay-header"><button class="icon-btn" onclick="closeOverlay()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button><div class="overlay-title">Link Another Child</div></div>
+      <div class="overlay-content" style="padding:0 20px">
+        <div class="progress-card" style="text-align:center;padding:40px 24px"><div style="font-size:48px;margin-bottom:16px">👨‍👩‍👧‍👦</div><div style="font-size:18px;font-weight:800;margin-bottom:8px">Link Your Child</div><div style="font-size:14px;color:var(--on-surface-variant);line-height:1.5;margin-bottom:24px">Search for your child's school and enter their details to link them to your account.</div><button class="fees-pay-btn" style="width:100%;background:var(--primary);color:var(--on-primary)">Start Linking</button></div>
+      </div>
+    </div>
+
+    <div class="overlay" id="overlay-discovery">
+      <div class="overlay-header"><button class="icon-btn" onclick="closeOverlay()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button><div class="overlay-title">Discover Schools</div></div>
+      <div class="overlay-content">
+        <div class="discover-search">
+          <div class="search-field">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" placeholder="Search schools by name, city, or board…" />
+          </div>
+        </div>
+        <div class="discover-filters">
+          <button class="discover-filter active">All Boards</button>
+          <button class="discover-filter inactive">CBSE</button>
+          <button class="discover-filter inactive">ICSE</button>
+          <button class="discover-filter inactive">IB</button>
+          <button class="discover-filter inactive">State Board</button>
+        </div>
+        <div class="school-list">
+          <div class="school-card-full">
+            <div class="scf-header scf-header-1">
+              <div class="scf-rating"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>4.8</div>
+              <div class="scf-logo">DPS</div>
+            </div>
+            <div class="scf-body">
+              <div class="scf-name">Delhi Public School</div>
+              <div class="scf-addr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Sector 14, Dwarka · New Delhi</div>
+              <div class="scf-tags">
+                <div class="scf-tag cbse">CBSE</div>
+                <div class="scf-tag coed">Co-ed</div>
+                <div class="scf-tag k12">K-12</div>
+              </div>
+              <div class="scf-stats">
+                <div class="scf-stat"><div class="scf-stat-val">2,400</div><div class="scf-stat-label">Students</div></div>
+                <div class="scf-stat"><div class="scf-stat-val">120</div><div class="scf-stat-label">Teachers</div></div>
+                <div class="scf-stat"><div class="scf-stat-val">8.5</div><div class="scf-stat-label">Acres</div></div>
+              </div>
+              <button class="scf-action" onclick="openSchoolDetail('dps')">View Details & Apply</button>
+            </div>
+          </div>
+          <div class="school-card-full">
+            <div class="scf-header scf-header-2">
+              <div class="scf-rating"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>4.6</div>
+              <div class="scf-logo">MS</div>
+            </div>
+            <div class="scf-body">
+              <div class="scf-name">Modern School</div>
+              <div class="scf-addr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Barakhamba Road · New Delhi</div>
+              <div class="scf-tags">
+                <div class="scf-tag cbse">CBSE</div>
+                <div class="scf-tag coed">Co-ed</div>
+                <div class="scf-tag k12">K-12</div>
+              </div>
+              <div class="scf-stats">
+                <div class="scf-stat"><div class="scf-stat-val">1,800</div><div class="scf-stat-label">Students</div></div>
+                <div class="scf-stat"><div class="scf-stat-val">95</div><div class="scf-stat-label">Teachers</div></div>
+                <div class="scf-stat"><div class="scf-stat-val">6.2</div><div class="scf-stat-label">Acres</div></div>
+              </div>
+              <button class="scf-action" onclick="openSchoolDetail('ms')">View Details & Apply</button>
+            </div>
+          </div>
+          <div class="school-card-full">
+            <div class="scf-header scf-header-3">
+              <div class="scf-rating"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>4.5</div>
+              <div class="scf-logo">SI</div>
+            </div>
+            <div class="scf-body">
+              <div class="scf-name">Sunrise International</div>
+              <div class="scf-addr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Vasant Kunj · New Delhi</div>
+              <div class="scf-tags">
+                <div class="scf-tag ib">IB</div>
+                <div class="scf-tag coed">Co-ed</div>
+                <div class="scf-tag k12">K-12</div>
+              </div>
+              <div class="scf-stats">
+                <div class="scf-stat"><div class="scf-stat-val">1,200</div><div class="scf-stat-label">Students</div></div>
+                <div class="scf-stat"><div class="scf-stat-val">78</div><div class="scf-stat-label">Teachers</div></div>
+                <div class="scf-stat"><div class="scf-stat-val">12</div><div class="scf-stat-label">Acres</div></div>
+              </div>
+              <button class="scf-action" onclick="openSchoolDetail('si')">View Details & Apply</button>
+            </div>
+          </div>
+          <div class="school-card-full">
+            <div class="scf-header scf-header-4">
+              <div class="scf-rating"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>4.3</div>
+              <div class="scf-logo">HA</div>
+            </div>
+            <div class="scf-body">
+              <div class="scf-name">Heritage Academy</div>
+              <div class="scf-addr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Rohini · New Delhi</div>
+              <div class="scf-tags">
+                <div class="scf-tag cbse">CBSE</div>
+                <div class="scf-tag coed">Co-ed</div>
+                <div class="scf-tag k12">K-12</div>
+              </div>
+              <div class="scf-stats">
+                <div class="scf-stat"><div class="scf-stat-val">950</div><div class="scf-stat-label">Students</div></div>
+                <div class="scf-stat"><div class="scf-stat-val">62</div><div class="scf-stat-label">Teachers</div></div>
+                <div class="scf-stat"><div class="scf-stat-val">4.8</div><div class="scf-stat-label">Acres</div></div>
+              </div>
+              <button class="scf-action" onclick="openSchoolDetail('ha')">View Details & Apply</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCHOOL DETAIL OVERLAY -->
+    <div class="overlay" id="overlay-school-detail">
+      <div class="overlay-header"><button class="icon-btn" onclick="closeOverlay()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button><div class="overlay-title" id="sd-title">School Details</div></div>
+      <div class="overlay-content" id="sd-content"></div>
+    </div>
+    <!-- END OVERLAYS -->
+
+  </div><!-- END screen -->
+</div><!-- END phone -->
+<script>
+  // FAB toggle
+  const fabContainer = document.getElementById('fabContainer');
+  const fabBtn = document.getElementById('fabBtn');
+  fabBtn.addEventListener('click', (e) => { e.stopPropagation(); fabContainer.classList.toggle('open'); });
+  document.addEventListener('click', (e) => { if (!fabContainer.contains(e.target)) fabContainer.classList.remove('open'); });
+
+  // Chip toggle
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.chip').forEach(c => { c.classList.remove('active'); c.classList.add('inactive'); });
+      chip.classList.remove('inactive'); chip.classList.add('active');
+    });
+  });
+
+  // Tab switching
+  function switchTab(name, btn) {
+    document.querySelectorAll('.tab-page').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    if (btn) { btn.classList.add('active'); }
+    else {
+      const navBtn = document.querySelector('[data-tab="' + name + '"]');
+      if (navBtn) navBtn.classList.add('active');
+    }
+    document.querySelector('.content').scrollTop = 0;
+    fabContainer.classList.remove('open');
+  }
+
+  // Sub-tab switching
+  function switchSubTab(btn, targetId) {
+    btn.parentElement.querySelectorAll('.sub-tab').forEach(s => { s.classList.remove('active'); s.classList.add('inactive'); });
+    btn.classList.add('active'); btn.classList.remove('inactive');
+    btn.closest('.tab-page').querySelectorAll('.sub-content').forEach(s => s.classList.remove('active'));
+    document.getElementById(targetId).classList.add('active');
+  }
+
+  // Segment switching
+  function switchSeg(btn, targetId) {
+    btn.parentElement.querySelectorAll('.seg-btn').forEach(s => { s.classList.remove('active'); s.classList.add('inactive'); });
+    btn.classList.add('active'); btn.classList.remove('inactive');
+    btn.closest('.tab-page').querySelectorAll('.seg-content').forEach(s => s.classList.remove('active'));
+    document.getElementById(targetId).classList.add('active');
+  }
+
+  // Overlay management
+  function openOverlay(name) {
+    document.getElementById('overlay-' + name).classList.add('active');
+    fabContainer.classList.remove('open');
+  }
+  function closeOverlay() {
+    document.querySelectorAll('.overlay').forEach(o => o.classList.remove('active'));
+  }
+
+  // Discover filter chips
+  document.querySelectorAll('.discover-filter').forEach(f => {
+    f.addEventListener('click', () => {
+      document.querySelectorAll('.discover-filter').forEach(d => { d.classList.remove('active'); d.classList.add('inactive'); });
+      f.classList.remove('inactive'); f.classList.add('active');
+    });
+  });
+
+  // School detail
+  const schoolData = {
+    dps: { name:'Delhi Public School', addr:'Sector 14, Dwarka · New Delhi', rating:'4.8', board:'CBSE', students:'2,400', teachers:'120', acres:'8.5', fees:'₹1.2L/yr', established:'1996', header:'scf-header-1', logo:'DPS',
+      desc:'A premier CBSE institution with state-of-the-art facilities, smart classrooms, and a 1:20 teacher-student ratio. Known for consistent board results and national-level sports achievements.',
+      facilities:['Smart Classrooms','Science Labs','Sports Complex','Library','Robotics Lab','Auditorium'],
+      admissions:'Online applications open from Jan 15 – Mar 31. Entrance test for Class 9+. Documents required: Birth Certificate, Previous Report Card, Transfer Certificate.' },
+    ms: { name:'Modern School', addr:'Barakhamba Road · New Delhi', rating:'4.6', board:'CBSE', students:'1,800', teachers:'95', acres:'6.2', fees:'₹98K/yr', established:'1920', header:'scf-header-2', logo:'MS',
+      desc:'One of Delhi\'s oldest and most prestigious schools. Heritage campus with modern infrastructure. Strong focus on holistic education, arts, and leadership development.',
+      facilities:['Heritage Campus','Olympic Pool','Tennis Courts','Digital Library','Music Academy','Drama Studio'],
+      admissions:'Applications open Feb 1 – Apr 15. Interaction-based admission for primary, written test for senior classes. Priority to siblings and alumni.' },
+    si: { name:'Sunrise International', addr:'Vasant Kunj · New Delhi', rating:'4.5', board:'IB', students:'1,200', teachers:'78', acres:'12', fees:'₹2.1L/yr', established:'2004', header:'scf-header-3', logo:'SI',
+      desc:'International Baccalaureate school with global curriculum standards. Multi-cultural environment with exchange programs. 12-acre green campus with eco-friendly infrastructure.',
+      facilities:['IB Curriculum','Exchange Programs','Eco Campus','Innovation Hub','Language Lab','Cafeteria'],
+      admissions:'Rolling admissions. Assessment includes student portfolio review and parent interaction. International transfer students welcome.' },
+    ha: { name:'Heritage Academy', addr:'Rohini · New Delhi', rating:'4.3', board:'CBSE', students:'950', teachers:'62', acres:'4.8', fees:'₹72K/yr', established:'2008', header:'scf-header-4', logo:'HA',
+      desc:'Community-focused school with emphasis on values education and experiential learning. Small class sizes ensure personalized attention. Strong parent-teacher partnership model.',
+      facilities:['Experiential Labs','Art Studio','Community Garden','Sports Field','Counseling Center','Smart Boards'],
+      admissions:'Applications open Mar 1 – May 31. First-come basis with interaction session. Need-based scholarships available for meritorious students.' }
+  };
+
+  function openSchoolDetail(id) {
+    const s = schoolData[id]; if (!s) return;
+    document.getElementById('sd-title').textContent = s.name;
+    document.getElementById('sd-content').innerHTML = `
+      <div class="scf-header ${s.header}" style="height:160px;border-radius:0">
+        <div class="scf-rating"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>${s.rating}</div>
+        <div class="scf-logo">${s.logo}</div>
+      </div>
+      <div style="padding:20px">
+        <div style="font-size:20px;font-weight:900;color:var(--on-surface);letter-spacing:-0.03em;margin-bottom:6px">${s.name}</div>
+        <div style="font-size:13px;color:var(--on-surface-variant);font-weight:500;margin-bottom:16px;display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${s.addr}</div>
+        <div class="scf-tags" style="margin-bottom:20px">
+          <div class="scf-tag ${s.board==='CBSE'?'cbse':'ib'}">${s.board}</div>
+          <div class="scf-tag coed">Co-ed</div>
+          <div class="scf-tag k12">K-12</div>
+        </div>
+        <div style="font-size:14px;color:var(--on-surface-variant);line-height:1.6;margin-bottom:24px">${s.desc}</div>
+        <div class="scf-stats" style="border-top:1px solid var(--surface-container);padding-top:20px;margin-bottom:24px">
+          <div class="scf-stat"><div class="scf-stat-val">${s.students}</div><div class="scf-stat-label">Students</div></div>
+          <div class="scf-stat"><div class="scf-stat-val">${s.teachers}</div><div class="scf-stat-label">Teachers</div></div>
+          <div class="scf-stat"><div class="scf-stat-val">${s.acres}</div><div class="scf-stat-label">Acres</div></div>
+          <div class="scf-stat"><div class="scf-stat-val">${s.fees}</div><div class="scf-stat-label">Fees/yr</div></div>
+        </div>
+        <div class="section-header" style="padding:0 0 16px"><h2>Facilities</h2></div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px">
+          ${s.facilities.map(f=>`<div style="padding:8px 14px;border-radius:var(--shape-full);background:var(--surface-container-low);font-size:12px;font-weight:600;color:var(--on-surface-variant)">${f}</div>`).join('')}
+        </div>
+        <div class="section-header" style="padding:0 0 16px"><h2>Admissions</h2></div>
+        <div style="font-size:14px;color:var(--on-surface-variant);line-height:1.6;margin-bottom:16px">${s.admissions}</div>
+        <div style="display:flex;gap:12px;margin-bottom:24px">
+          <div style="flex:1"><div style="font-size:11px;font-weight:600;color:var(--on-surface-variant);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px">Established</div><div style="font-size:16px;font-weight:800">${s.established}</div></div>
+        </div>
+        <button class="scf-action" style="background:var(--primary);color:var(--on-primary)">Request Admission Info</button>
+        <div style="height:12px"></div>
+        <button class="scf-action" style="background:var(--surface-container-low);color:var(--on-surface)">Save to Favorites</button>
+      </div>`;
+    document.getElementById('overlay-school-detail').classList.add('active');
+  }
+</script>
+</body>
+</html>

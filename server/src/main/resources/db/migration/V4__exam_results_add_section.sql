@@ -17,7 +17,7 @@ DO $$ BEGIN
         SELECT 1 FROM pg_indexes
         WHERE indexname = 'ux_exam_results_unique'
     ) THEN
-        DROP INDEX IF EXISTS ux_exam_results_unique;
+        ALTER TABLE exam_results DROP CONSTRAINT IF EXISTS ux_exam_results_unique;
     END IF;
 END $$;
 

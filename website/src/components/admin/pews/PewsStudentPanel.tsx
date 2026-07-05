@@ -653,14 +653,15 @@ function InterventionRow({
 /** Parse plan_json to extract step descriptions. */
 function parsePlanSteps(planJson: string): string[] {
   try {
-    const obj = JSON.parse(planJson);
+    const obj = JSON.parse(planJson) as Record<string, unknown>;
     const steps = obj.steps || obj.plan;
     if (!Array.isArray(steps)) return [];
-    return steps.map((step: unknown) => {
+    return steps.map((step: unknown): string => {
       if (typeof step === "string") return step;
       if (typeof step === "object" && step !== null) {
         const s = step as Record<string, unknown>;
-        return (s.description || s.action || s.text || "") as string;
+        const desc = s.description ?? s.action ?? s.text;
+        return typeof desc === "string" ? desc : "";
       }
       return "";
     }).filter(Boolean);
@@ -672,15 +673,17 @@ function parsePlanSteps(planJson: string): string[] {
 /** Parse plan_json to extract structured step metadata (action + rationale). */
 function parsePlanStepsWithMeta(planJson: string): { action: string; rationale?: string }[] {
   try {
-    const obj = JSON.parse(planJson);
+    const obj = JSON.parse(planJson) as Record<string, unknown>;
     const steps = obj.steps || obj.plan;
     if (!Array.isArray(steps)) return [];
-    return steps.map((step: unknown) => {
+    return steps.map((step: unknown): { action: string; rationale?: string } => {
       if (typeof step === "object" && step !== null) {
         const s = step as Record<string, unknown>;
+        const action = s.action ?? s.description ?? s.text;
+        const rationale = s.rationale;
         return {
-          action: (s.action || s.description || s.text || "") as string,
-          rationale: (s.rationale || undefined) as string | undefined,
+          action: typeof action === "string" ? action : "",
+          rationale: typeof rationale === "string" ? rationale : undefined,
         };
       }
       return { action: String(step) };

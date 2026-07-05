@@ -203,6 +203,10 @@ private fun loadRootLocalProperties(): Properties {
 }
 
 fun main() {
+    // Create Prometheus registry BEFORE DatabaseFactory.init() so it can be wired into
+    // HikariConfig before the pool is sealed (HikariCP config is immutable once started).
+    val prometheusRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
+    DatabaseFactory.meterRegistry = prometheusRegistry
     DatabaseFactory.init()
     val props = loadRootLocalProperties()
 
@@ -449,17 +453,17 @@ fun Application.module() {
 
     // GAP-010: Observability — Micrometer metrics with Prometheus registry.
     // Exposes /metrics for Prometheus scraping and /api/v1/health for liveness.
-    val prometheusRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
+    // Registry was created in main() and wired into HikariConfig before pool creation.
+    val prometheusRegistry = DatabaseFactory.meterRegistry
+        ?: PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
     install(MicrometerMetrics) {
         registry = prometheusRegistry
     }
 
-    // GAP-015: HikariCP pool metrics — expose connection pool stats via Prometheus.
-    val hikariDs = DatabaseFactory.hikariDataSource
-    if (hikariDs != null) {
-        hikariDs.metricRegistry = prometheusRegistry
-        hikariDs.healthCheckRegistry = prometheusRegistry
-        appLog.info("HikariCP metrics and health checks registered with Prometheus")
+    // GAP-015: HikariCP pool metrics — registries were set on HikariConfig before pool
+    // creation in DatabaseFactory.createPostgresDataSource, so no post-start assignment here.
+    if (DatabaseFactory.hikariDataSource != null) {
+        appLog.info("HikariCP metrics and health checks registered with Prometheus (pre-pool)")
     } else {
         appLog.warn("HikariCP metrics NOT registered — hikariDataSource is null (DatabaseFactory.init may have failed)")
     }
@@ -478,7 +482,7 @@ fun Application.module() {
 
         // Prometheus metrics endpoint — scrape target for Prometheus/Grafana
         get("/metrics") {
-            call.respondText(prometheusRegistry.scrape(), ContentType.Text.Plain)
+            call.respondText((prometheusRegistry as PrometheusMeterRegistry).scrape(), ContentType.Text.Plain)
         }
 
         // Public

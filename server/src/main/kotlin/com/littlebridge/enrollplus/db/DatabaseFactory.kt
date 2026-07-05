@@ -52,6 +52,8 @@ import java.util.Properties
 object DatabaseFactory {
 
     private val logger = LoggerFactory.getLogger(DatabaseFactory::class.java)
+    @Volatile var seedFailure: String? = null
+        private set
 
     /**
      * Config resolution order for a given key (first non-blank wins):
@@ -348,6 +350,10 @@ object DatabaseFactory {
     internal var hikariDataSource: HikariDataSource? = null
         private set
 
+    /** Prometheus registry set before init() so it can be wired into HikariConfig pre-pool-creation. */
+    @Volatile
+    var meterRegistry: io.micrometer.core.instrument.MeterRegistry? = null
+
     // ── Read replica support (spec §17 Connection Pool) ─────────────────────
     // When READ_REPLICA_URL is configured, read-heavy queries (search, analytics,
     // audit log, export) route to the replica via readQuery { }.
@@ -508,7 +514,7 @@ object DatabaseFactory {
                     logger.warn("DB_INIT_TIP: Set AUTO_CREATE_TABLES=true on Render to create tables automatically.")
                 } else {
                     logger.error("DB_INIT_ERROR: Demo seeding failed with unexpected error", e)
-                    // Non-fatal: CMS + schema are already in place; don't crash-loop.
+                    seedFailure = "Demo seed failed: ${e.message}"
                 }
             }
         }
@@ -616,6 +622,9 @@ object DatabaseFactory {
             validationTimeout = 5_000
             maxLifetime = 30 * 60 * 1000L
             connectionTestQuery = "SELECT 1"
+            // HikariCP metrics are collected via Micrometer's HikariDataSourceMetrics binder,
+            // not via HikariConfig's Dropwizard-based metricRegistry/healthCheckRegistry setters
+            // (which require com.codahale.metrics on the classpath).
             validate()
         }
         return HikariDataSource(config)

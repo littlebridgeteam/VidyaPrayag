@@ -33,7 +33,7 @@ import com.littlebridge.enrollplus.presentation.MainViewModel
 import com.littlebridge.enrollplus.core.locale.LocaleManager
 import com.littlebridge.enrollplus.ui.v2.locale.LocalLocale
 import com.littlebridge.enrollplus.ui.v2.navigation.NavGraphV2
-import com.littlebridge.enrollplus.ui.v2.screens.auth.SplashScreenV2
+import com.littlebridge.enrollplus.ui.v2.screens.premium.auth.SplashScreen
 import com.littlebridge.enrollplus.ui.v2.theme.VColors
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.VThemeRegistry
@@ -50,8 +50,8 @@ import org.koin.core.annotation.KoinExperimentalAPI
  *
  * The legacy `ui/` (theme/components/auth/screens) and the old 35-destination
  * `navigation/NavGraph.kt` have been removed; navigation is now role-driven through
- * [NavGraphV2], which selects the correct portal (`SchoolPortalV2` / `TeacherPortalV2` /
- * `ParentPortalV2`) and applies the matching theme via [VThemeRegistry].
+ * [NavGraphV2], which selects the correct portal (`SchoolPortalPremium` / `TeacherPortalShell` /
+ * `ParentPortalShell`) and applies the matching theme via [VThemeRegistry].
  *
  * Flow:
  *  - `KoinContext` → [MainViewModel] (auth state).
@@ -179,7 +179,7 @@ fun App(
                 modifier = Modifier.fillMaxSize(),
             ) { loaded ->
                 if (!loaded) {
-                    SplashScreenV2(modifier = Modifier.fillMaxSize())
+                    SplashScreen(modifier = Modifier.fillMaxSize())
                 } else {
                     // The session key is the live JWT (unique per login) while
                     // authenticated, or a constant sentinel while logged out. When it

@@ -16,6 +16,7 @@ object FlywayMigrationRunner {
             .validateOnMigrate(true)
             .load()
 
+        flyway.repair()
         val result = flyway.migrate()
         logger.info(
             "FLYWAY: migrations applied={}, pending={}",

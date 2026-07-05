@@ -19,9 +19,16 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     environment:
       DATABASE_URL: "jdbc:postgresql://db:5432/vidyaprayag?user=vidyaprayag&password=vidyaprayag_dev"
       AUTO_CREATE_TABLES: "true"
@@ -43,8 +50,16 @@ services:
       dockerfile: website/Dockerfile
       args:
         NEXT_PUBLIC_API_BASE_URL: "http://localhost:8080"
+    restart: unless-stopped
     depends_on:
-      - server
+      server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
     environment:
       NEXT_PUBLIC_API_BASE_URL: "http://localhost:8080"
     ports:

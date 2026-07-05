@@ -24,6 +24,11 @@ object CsrfProtection {
                 ?.filter { it.isNotBlank() }
                 .orEmpty()
 
+            // No Origin header → not a browser request (mobile app, curl, etc.).
+            // CSRF via Origin validation is a browser-specific defense; mobile
+            // clients use JWT bearer tokens which are inherently CSRF-resistant.
+            if (origin == null) return@intercept proceed()
+
             if (allowedOrigins.isEmpty()) {
                 call.respond(
                     HttpStatusCode.Forbidden,
@@ -35,7 +40,7 @@ object CsrfProtection {
                 return@intercept finish()
             }
 
-            if (origin == null || origin !in allowedOrigins) {
+            if (origin !in allowedOrigins) {
                 call.respond(
                     HttpStatusCode.Forbidden,
                     ApiError(

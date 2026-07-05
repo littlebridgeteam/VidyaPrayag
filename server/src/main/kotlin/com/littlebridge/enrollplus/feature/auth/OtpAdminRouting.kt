@@ -9,6 +9,13 @@
  * var is unset, the endpoints are 404'd (not 401'd) so we don't even
  * advertise their existence to the world.
  *
+ * AUTH-013 SECURITY NOTE: OTP_ADMIN_TOKEN is a static shared secret, not a JWT.
+ * This is intentional for machine-to-machine ops access. Operators MUST:
+ *   - Rotate the token periodically (at least every 90 days)
+ *   - Use a high-entropy value (32+ characters)
+ *   - Never commit it to version control
+ *   - Restrict network access to these endpoints via firewall/VPN if possible
+ *
  * Endpoints
  * ---------
  *   GET  /api/v1/admin/otp/diagnostic

@@ -28,6 +28,9 @@ actual fun platformModule(): Module = module {
     single { get<AppDatabase>().libraryBookDao() }
     single { get<AppDatabase>().libraryCacheDao() }
     single { get<AppDatabase>().libraryPendingActionDao() }
+    single { get<AppDatabase>().outboxOperationDao() }
+    single { get<AppDatabase>().announcementDao() }
+    single { get<AppDatabase>().teacherDayCacheDao() }
     single<LibraryLocalDataSource> { RoomLibraryLocalDataSource(get(), get(), get()) }
 
     single {

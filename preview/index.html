@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VidyaSetu — Auth Flow</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800;14..32,900&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --primary: #6750F6; --on-primary: #FFFFFF;
+    --primary-container: #E7E0FF; --on-primary-container: #21005D;
+    --secondary: #625B71; --on-secondary: #FFFFFF;
+    --secondary-container: #E8DEF8; --on-secondary-container: #1E192B;
+    --tertiary: #00BFA0; --on-tertiary: #003830;
+    --tertiary-container: #00F5C4; --on-tertiary-container: #005048;
+    --error: #BA1A1A; --on-error: #FFFFFF;
+    --error-container: #FFDAD6; --on-error-container: #410002;
+    --surface: #FEF9FF; --surface-dim: #DED8E0; --surface-bright: #FEF9FF;
+    --surface-container-lowest: #FFFFFF; --surface-container-low: #F8F4FB;
+    --surface-container: #F2EEF5; --surface-container-high: #ECE8F0;
+    --surface-container-highest: #E6E1E9;
+    --on-surface: #1D1B20; --on-surface-variant: #49454F;
+    --outline: #7A757F; --outline-variant: #CAC4CF;
+    --inverse-surface: #322F36; --inverse-on-surface: #F5EFF7;
+    --inverse-primary: #CDBDFF; --scrim: #000000;
+    --shape-xs: 4px; --shape-sm: 8px; --shape-md: 12px;
+    --shape-lg: 16px; --shape-xl: 24px; --shape-2xl: 28px; --shape-full: 999px;
+    --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+    --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+    --dur-short-2: 150ms; --dur-short-3: 200ms; --dur-medium-1: 250ms;
+    --dur-medium-2: 300ms; --dur-long-1: 400ms; --dur-long-2: 500ms;
+  }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-variation-settings: 'opsz' 32;
+    background: #0D0B14; display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 20px;
+    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+  }
+  .phone {
+    width: 412px; height: 892px; border-radius: 56px;
+    background: linear-gradient(145deg, #1a1a24, #0D0B14); padding: 12px;
+    box-shadow: 0 0 0 3px #252330, 0 0 0 4px #1a1a24, 0 60px 140px rgba(0,0,0,0.6), 0 0 180px rgba(103,80,246,0.06);
+    position: relative; overflow: hidden;
+  }
+  .screen {
+    width: 100%; height: 100%; border-radius: 44px; overflow: hidden; position: relative;
+    background: var(--surface); display: flex; flex-direction: column;
+  }
+  .island { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 120px; height: 36px; background: #000; border-radius: 22px; z-index: 100; }
+  .status-bar { display: flex; justify-content: space-between; align-items: center; padding: 18px 32px 0; height: 54px; flex-shrink: 0; position: relative; z-index: 10; }
+  .status-time { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+  .status-icons { display: flex; gap: 6px; align-items: center; }
+  .status-icons svg { width: 18px; height: 18px; }
+  .light { color: #fff; } .light svg { color: #fff; }
+
+  /* PAGE SYSTEM */
+  .page { position: absolute; inset: 0; display: flex; flex-direction: column; transform: translateX(100%); opacity: 0; transition: transform var(--dur-long-2) var(--ease-emphasized), opacity var(--dur-medium-2) var(--ease-standard); pointer-events: none; }
+  .page.active { transform: translateX(0); opacity: 1; pointer-events: auto; }
+  .page.exit-left { transform: translateX(-30%); opacity: 0; }
+  .page-scroll { flex: 1; overflow-y: auto; scrollbar-width: none; }
+  .page-scroll::-webkit-scrollbar { display: none; }
+
+  /* SHARED */
+  .icon-btn { width: 44px; height: 44px; border-radius: var(--shape-full); border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background var(--dur-short-2) var(--ease-standard); }
+  .icon-btn:active { background: var(--surface-container-high); }
+  .icon-btn svg { width: 22px; height: 22px; color: var(--on-surface); }
+  .top-bar { display: flex; align-items: center; gap: 8px; padding: 12px 12px 12px 8px; flex-shrink: 0; }
+  .top-bar-title { flex: 1; font-size: 20px; font-weight: 800; color: var(--on-surface); letter-spacing: -0.03em; }
+
+  .form-group { margin-bottom: 20px; }
+  .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--on-surface-variant); margin-bottom: 8px; padding-left: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .form-input { width: 100%; padding: 16px 20px; border-radius: var(--shape-lg); border: 1.5px solid var(--outline-variant); background: var(--surface-container-low); font-size: 15px; font-weight: 500; color: var(--on-surface); font-family: inherit; transition: all var(--dur-short-2) var(--ease-standard); outline: none; }
+  .form-input:focus { border-color: var(--primary); background: var(--surface-container-lowest); box-shadow: 0 0 0 3px rgba(103,80,246,0.12); }
+  .form-input::placeholder { color: var(--outline); }
+
+  .btn-primary { width: 100%; padding: 16px; border-radius: var(--shape-full); background: var(--primary); color: var(--on-primary); border: none; cursor: pointer; font-size: 15px; font-weight: 700; font-family: inherit; transition: border-radius var(--dur-short-2) var(--ease-emphasized), transform var(--dur-short-2) var(--ease-standard); display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn-primary:active { border-radius: var(--shape-md); transform: scale(0.97); }
+  .btn-primary svg { width: 20px; height: 20px; }
+  .btn-secondary { width: 100%; padding: 16px; border-radius: var(--shape-full); background: var(--surface-container-low); color: var(--on-surface); border: 1.5px solid var(--outline-variant); cursor: pointer; font-size: 15px; font-weight: 700; font-family: inherit; transition: border-radius var(--dur-short-2) var(--ease-emphasized), transform var(--dur-short-2) var(--ease-standard); display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .btn-secondary:active { border-radius: var(--shape-md); transform: scale(0.97); }
+  .btn-secondary svg { width: 20px; height: 20px; }
+  .btn-text { background: none; border: none; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 600; color: var(--primary); transition: opacity var(--dur-short-2); }
+  .btn-text:active { opacity: 0.6; }
+  .divider { display: flex; align-items: center; gap: 16px; margin: 24px 0; }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--outline-variant); }
+  .divider span { font-size: 12px; font-weight: 600; color: var(--on-surface-variant); text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* ════════════════════════════════════════════════════════════════
+     LANDING — M3 Expressive Light Theme (matches parent portal)
+     ════════════════════════════════════════════════════════════════ */
+  .landing { flex: 1; overflow-y: auto; scrollbar-width: none; position: relative; }
+  .landing::-webkit-scrollbar { display: none; }
+  .landing-inner { position: relative; }
+  .landing-inner::before {
+    content: ''; position: absolute; top: -80px; right: -120px;
+    width: 320px; height: 320px;
+    background: radial-gradient(circle, rgba(103,80,246,0.12) 0%, transparent 55%);
+    border-radius: 50%; pointer-events: none; z-index: 0;
+  }
+  .landing-inner::after {
+    content: ''; position: absolute; top: 200px; left: -100px;
+    width: 280px; height: 280px;
+    background: radial-gradient(circle, rgba(0,191,160,0.08) 0%, transparent 55%);
+    border-radius: 50%; pointer-events: none; z-index: 0;
+  }
+
+  /* Brand bar */
+  .landing-top { position: relative; z-index: 1; padding: 8px 24px 0; display: flex; align-items: center; justify-content: space-between; }
+  .landing-brand { display: flex; align-items: center; gap: 12px; }
+  .landing-brand-icon {
+    width: 44px; height: 44px; border-radius: var(--shape-lg);
+    background: linear-gradient(135deg, var(--primary), #544AB8);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 6px 20px rgba(103,80,246,0.3);
+    transition: border-radius var(--dur-medium-2) var(--ease-emphasized);
+  }
+  .landing-brand-icon:active { border-radius: var(--shape-full); }
+  .landing-brand-icon svg { width: 24px; height: 24px; color: #fff; }
+  .landing-brand-text { font-size: 20px; font-weight: 900; color: var(--on-surface); letter-spacing: -0.03em; }
+  .landing-version { font-size: 11px; font-weight: 700; color: var(--on-surface-variant); padding: 5px 12px; border-radius: var(--shape-full); background: var(--surface-container-low); }
+
+  /* Greeting section — matches parent portal greeting */
+  .landing-greeting { position: relative; z-index: 1; padding: 32px 24px 0; }
+  .landing-eyebrow { font-size: 13px; font-weight: 600; color: var(--primary); letter-spacing: 0.01em; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .landing-eyebrow-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--tertiary); box-shadow: 0 0 0 4px rgba(0,191,160,0.15); animation: livePulse 2s infinite; }
+  .landing-headline { font-size: 36px; font-weight: 800; color: var(--on-surface); line-height: 1.05; letter-spacing: -0.035em; margin-bottom: 14px; }
+  .landing-headline em {
+    font-style: normal; font-weight: 900; letter-spacing: -0.045em;
+    background: linear-gradient(135deg, var(--primary), var(--tertiary));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .landing-sub { font-size: 15px; font-weight: 500; color: var(--on-surface-variant); line-height: 1.55; max-width: 340px; }
+
+  /* Hero card — matches parent portal hero card exactly */
+  .landing-hero-card {
+    margin: 28px 20px 0; border-radius: var(--shape-2xl);
+    background: linear-gradient(140deg, var(--primary) 0%, #544AB8 50%, #3D35A0 100%);
+    padding: 0; position: relative; overflow: hidden; color: var(--on-primary);
+    transition: border-radius var(--dur-long-1) var(--ease-emphasized); cursor: pointer;
+  }
+  .landing-hero-card:active { border-radius: var(--shape-xl); }
+  .landing-hero-card::before {
+    content: ''; position: absolute; top: -100px; right: -100px;
+    width: 280px; height: 280px;
+    background: radial-gradient(circle, rgba(205,189,255,0.25) 0%, transparent 50%);
+    border-radius: 50%; pointer-events: none;
+  }
+  .landing-hero-card::after {
+    content: ''; position: absolute; bottom: -80px; left: -80px;
+    width: 240px; height: 240px;
+    background: radial-gradient(circle, rgba(0,191,160,0.12) 0%, transparent 50%);
+    border-radius: 50%; pointer-events: none;
+  }
+  .lhc-inner { position: relative; z-index: 1; padding: 28px; }
+  .lhc-pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 16px; border-radius: var(--shape-full);
+    background: rgba(255,255,255,0.15); backdrop-filter: blur(12px);
+    font-size: 12px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+  .lhc-pill-dot { width: 8px; height: 8px; border-radius: 50%; background: #00F5C4; box-shadow: 0 0 0 4px rgba(0,245,196,0.2); animation: livePulse 2s infinite; }
+  .lhc-title { font-size: 24px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 8px; line-height: 1.2; }
+  .lhc-desc { font-size: 14px; font-weight: 500; opacity: 0.75; line-height: 1.5; margin-bottom: 24px; }
+  .lhc-features { display: flex; gap: 8px; flex-wrap: wrap; }
+  .lhc-feature {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border-radius: var(--shape-full);
+    background: rgba(255,255,255,0.12); backdrop-filter: blur(8px);
+    font-size: 12px; font-weight: 600;
+  }
+  .lhc-feature svg { width: 14px; height: 14px; }
+
+  /* Stats — M3 surface cards */
+  .landing-stats { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; padding: 24px 20px 0; }
+  .ls-card {
+    background: var(--surface-container-lowest); border-radius: var(--shape-xl);
+    padding: 20px 12px; text-align: center;
+    transition: all var(--dur-short-2) var(--ease-standard); cursor: pointer;
+  }
+  .ls-card:active { transform: scale(0.95); border-radius: var(--shape-2xl); }
+  .ls-val { font-size: 24px; font-weight: 900; color: var(--on-surface); letter-spacing: -0.04em; margin-bottom: 4px; }
+  .ls-label { font-size: 10px; font-weight: 600; color: var(--on-surface-variant); text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* Role cards — M3 Expressive cards */
+  .landing-roles { position: relative; z-index: 1; padding: 32px 20px 0; }
+  .landing-roles-title { font-size: 16px; font-weight: 800; color: var(--on-surface); letter-spacing: -0.02em; margin-bottom: 16px; }
+  .role-tile {
+    display: flex; align-items: center; gap: 16px; padding: 20px;
+    border-radius: var(--shape-xl); margin-bottom: 12px; cursor: pointer;
+    background: var(--surface-container-lowest);
+    transition: all var(--dur-short-2) var(--ease-emphasized);
+    position: relative; overflow: hidden;
+  }
+  .role-tile:active { transform: scale(0.97); border-radius: var(--shape-2xl); }
+  .role-tile.parent { background: linear-gradient(135deg, var(--primary-container) 0%, var(--surface-container-lowest) 60%); }
+  .role-tile.staff { background: linear-gradient(135deg, var(--tertiary-container) 0%, var(--surface-container-lowest) 60%); }
+  .role-tile::before {
+    content: ''; position: absolute; top: -30px; right: -30px;
+    width: 100px; height: 100px;
+    border-radius: 50%; pointer-events: none;
+  }
+  .role-tile.parent::before { background: radial-gradient(circle, rgba(103,80,246,0.1) 0%, transparent 60%); }
+  .role-tile.staff::before { background: radial-gradient(circle, rgba(0,191,160,0.1) 0%, transparent 60%); }
+  .role-tile-icon {
+    width: 56px; height: 56px; border-radius: var(--shape-lg);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    position: relative; z-index: 1;
+    transition: border-radius var(--dur-medium-2) var(--ease-emphasized);
+  }
+  .role-tile:active .role-tile-icon { border-radius: var(--shape-full); }
+  .role-tile.parent .role-tile-icon { background: linear-gradient(135deg, var(--primary), #544AB8); box-shadow: 0 6px 20px rgba(103,80,246,0.25); }
+  .role-tile.staff .role-tile-icon { background: linear-gradient(135deg, var(--tertiary), #00897B); box-shadow: 0 6px 20px rgba(0,191,160,0.25); }
+  .role-tile-icon svg { width: 28px; height: 28px; color: #fff; }
+  .role-tile-info { flex: 1; position: relative; z-index: 1; }
+  .role-tile-name { font-size: 17px; font-weight: 800; color: var(--on-surface); letter-spacing: -0.02em; margin-bottom: 3px; }
+  .role-tile-desc { font-size: 13px; font-weight: 500; color: var(--on-surface-variant); line-height: 1.4; }
+  .role-tile-arrow { width: 22px; height: 22px; color: var(--outline); flex-shrink: 0; transition: transform var(--dur-short-2) var(--ease-standard); position: relative; z-index: 1; }
+  .role-tile:active .role-tile-arrow { transform: translateX(4px); }
+
+  /* Trust badges */
+  .landing-trust { position: relative; z-index: 1; padding: 28px 20px 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .trust-badge {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border-radius: var(--shape-full);
+    background: var(--surface-container-low); font-size: 12px; font-weight: 600; color: var(--on-surface-variant);
+  }
+  .trust-badge svg { width: 14px; height: 14px; color: var(--tertiary); }
+
+  /* Bottom */
+  .landing-bottom { position: relative; z-index: 1; padding: 32px 24px 36px; }
+  .landing-terms { text-align: center; font-size: 12px; font-weight: 500; color: var(--on-surface-variant); line-height: 1.5; }
+  .landing-terms a { color: var(--primary); text-decoration: none; font-weight: 600; }
+
+  /* ════════════════════════════════════════════════════════════════
+     LOGIN — PARENT
+     ════════════════════════════════════════════════════════════════ */
+  .login-hero {
+    padding: 20px 28px 32px; position: relative; overflow: hidden;
+    background: linear-gradient(135deg, var(--primary) 0%, #544AB8 100%);
+    border-radius: 0 0 var(--shape-2xl) var(--shape-2xl);
+    flex-shrink: 0;
+  }
+  .login-hero::before { content: ''; position: absolute; top: -40px; right: -40px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 50%); border-radius: 50%; }
+  .login-hero-back { position: relative; z-index: 1; margin-bottom: 28px; }
+  .login-hero-back button { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); }
+  .login-hero-back svg { color: #fff; }
+  .login-hero-title { position: relative; z-index: 1; font-size: 26px; font-weight: 900; color: #fff; letter-spacing: -0.04em; margin-bottom: 6px; }
+  .login-hero-sub { position: relative; z-index: 1; font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.7); }
+  .login-hero-badge { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: var(--shape-full); background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.15); font-size: 11px; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 16px; }
+  .login-hero-badge svg { width: 14px; height: 14px; }
+
+  .login-staff-hero { background: linear-gradient(135deg, var(--tertiary) 0%, #00897B 100%); }
+  .login-staff-hero .login-hero-badge { background: rgba(0,245,196,0.15); border-color: rgba(0,245,196,0.3); }
+
+  .login-body { flex: 1; overflow-y: auto; scrollbar-width: none; padding: 28px 28px 20px; }
+  .login-body::-webkit-scrollbar { display: none; }
+  .login-footer { text-align: center; padding: 16px 28px 28px; flex-shrink: 0; }
+  .login-footer-text { font-size: 14px; color: var(--on-surface-variant); font-weight: 500; }
+
+  .social-row { display: flex; gap: 12px; margin-bottom: 8px; }
+  .social-btn { flex: 1; padding: 14px; border-radius: var(--shape-lg); border: 1.5px solid var(--outline-variant); background: var(--surface-container-low); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--on-surface); font-family: inherit; transition: all var(--dur-short-2) var(--ease-standard); }
+  .social-btn:active { transform: scale(0.96); border-radius: var(--shape-md); }
+  .social-btn svg { width: 20px; height: 20px; }
+
+  /* ════════════════════════════════════════════════════════════════
+     SIGNUP
+     ════════════════════════════════════════════════════════════════ */
+  .signup-type { display: flex; gap: 0; margin: 0 28px 24px; border-radius: var(--shape-full); background: var(--surface-container); padding: 4px; }
+  .signup-type-btn { flex: 1; padding: 12px; border-radius: var(--shape-full); border: none; background: none; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 700; color: var(--on-surface-variant); transition: all var(--dur-short-2) var(--ease-standard); }
+  .signup-type-btn.active { background: var(--surface-container-lowest); color: var(--on-surface); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+
+  /* ════════════════════════════════════════════════════════════════
+     ONBOARDING
+     ════════════════════════════════════════════════════════════════ */
+  .onboard-illustration { height: 300px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; border-radius: 0 0 var(--shape-2xl) var(--shape-2xl); flex-shrink: 0; }
+  .ob-illust-1 { background: linear-gradient(135deg, var(--primary) 0%, #544AB8 100%); }
+  .ob-illust-2 { background: linear-gradient(135deg, var(--tertiary) 0%, #00897B 100%); }
+  .ob-illust-3 { background: linear-gradient(135deg, #FF6D00 0%, #E65100 100%); }
+  .onboard-illustration::before { content: ''; position: absolute; top: -40px; right: -40px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 50%); border-radius: 50%; }
+  .ob-icon-circle { width: 100px; height: 100px; border-radius: var(--shape-full); background: rgba(255,255,255,0.15); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; position: relative; z-index: 1; }
+  .ob-icon-circle svg { width: 48px; height: 48px; color: #fff; }
+  .onboard-body { padding: 32px 28px 28px; flex: 1; display: flex; flex-direction: column; }
+  .onboard-title { font-size: 26px; font-weight: 900; color: var(--on-surface); letter-spacing: -0.04em; margin-bottom: 12px; }
+  .onboard-desc { font-size: 15px; font-weight: 500; color: var(--on-surface-variant); line-height: 1.6; margin-bottom: 32px; }
+  .onboard-dots { display: flex; gap: 8px; margin-bottom: 24px; }
+  .ob-dot { width: 8px; height: 8px; border-radius: var(--shape-full); background: var(--surface-container-high); transition: all var(--dur-medium-2) var(--ease-emphasized); }
+  .ob-dot.active { width: 28px; background: var(--primary); }
+  .onboard-actions { margin-top: auto; display: flex; align-items: center; justify-content: space-between; }
+
+  /* ════════════════════════════════════════════════════════════════
+     SCHOOL SELECT
+     ════════════════════════════════════════════════════════════════ */
+  .search-field { display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-radius: var(--shape-full); background: var(--surface-container-low); margin: 0 20px 20px; }
+  .search-field svg { width: 20px; height: 20px; color: var(--on-surface-variant); flex-shrink: 0; }
+  .search-field input { flex: 1; border: none; background: none; outline: none; font-size: 15px; font-weight: 500; color: var(--on-surface); font-family: inherit; }
+  .search-field input::placeholder { color: var(--outline); }
+  .school-option { display: flex; align-items: center; gap: 16px; padding: 16px 20px; border-radius: var(--shape-xl); margin: 0 20px 10px; cursor: pointer; background: var(--surface-container-lowest); border: 2px solid transparent; transition: all var(--dur-short-2) var(--ease-emphasized); }
+  .school-option:active { transform: scale(0.98); }
+  .school-option.selected { border-color: var(--primary); background: var(--primary-container); }
+  .school-option-logo { width: 48px; height: 48px; border-radius: var(--shape-md); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; color: #fff; flex-shrink: 0; }
+  .school-option-info { flex: 1; }
+  .school-option-name { font-size: 15px; font-weight: 800; color: var(--on-surface); margin-bottom: 2px; }
+  .school-option-meta { font-size: 12px; font-weight: 500; color: var(--on-surface-variant); }
+  .school-option-check { width: 24px; height: 24px; color: var(--primary); opacity: 0; transition: opacity var(--dur-short-2); }
+  .school-option.selected .school-option-check { opacity: 1; }
+
+  /* ════════════════════════════════════════════════════════════════
+     CHILD LINK
+     ════════════════════════════════════════════════════════════════ */
+  .child-card { margin: 0 20px 16px; padding: 24px 20px; border-radius: var(--shape-xl); background: var(--surface-container-lowest); display: flex; flex-direction: column; gap: 16px; }
+  .child-avatar { width: 64px; height: 64px; border-radius: var(--shape-full); background: linear-gradient(135deg, var(--primary), var(--tertiary)); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 900; color: #fff; }
+  .child-info { flex: 1; }
+  .child-name { font-size: 17px; font-weight: 800; color: var(--on-surface); margin-bottom: 4px; }
+  .child-meta { font-size: 13px; font-weight: 500; color: var(--on-surface-variant); }
+  .child-row { display: flex; align-items: center; gap: 16px; }
+  .linked-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: var(--shape-full); background: var(--tertiary-container); color: var(--on-tertiary-container); font-size: 12px; font-weight: 700; }
+  .linked-badge svg { width: 14px; height: 14px; }
+
+  /* ANIMATIONS */
+  @keyframes slideUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes floatGlow { 0%,100% { opacity: 0.35; } 50% { opacity: 0.5; } }
+  .anim-1 { animation: slideUp 0.6s var(--ease-emphasized) 0.1s both; }
+  .anim-2 { animation: slideUp 0.6s var(--ease-emphasized) 0.2s both; }
+  .anim-3 { animation: slideUp 0.6s var(--ease-emphasized) 0.3s both; }
+  .anim-4 { animation: slideUp 0.6s var(--ease-emphasized) 0.4s both; }
+  .anim-5 { animation: slideUp 0.6s var(--ease-emphasized) 0.5s both; }
+  .anim-6 { animation: slideUp 0.6s var(--ease-emphasized) 0.6s both; }
+  .landing-bg::before { animation: floatGlow 6s ease-in-out infinite; }
+  .landing-bg::after { animation: floatGlow 8s ease-in-out infinite 2s; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="screen">
+    <div class="island"></div>
+
+    <!-- ══ LANDING ══ -->
+    <div class="page active" id="page-landing">
+      <div class="status-bar">
+        <span class="status-time">9:41</span>
+        <div class="status-icons">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.859a10 10 0 0 1 14 0"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 14h3v6H1zM6 10h3v10H6zM11 6h3v14h-3zM16 2h3v18h-3z" opacity="0.9"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="18" height="10" rx="3" fill="currentColor" opacity="0.1"/><rect x="3" y="8" width="14" height="8" rx="2" fill="currentColor"/><line x1="22" y1="11" x2="22" y2="13" stroke-width="2"/></svg>
+        </div>
+      </div>
+      <div class="landing">
+        <div class="landing-inner">
+
+          <div class="landing-top anim-1">
+            <div class="landing-brand">
+              <div class="landing-brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
+              <div class="landing-brand-text">VidyaSetu</div>
+            </div>
+            <div class="landing-version">v3.0</div>
+          </div>
+
+          <div class="landing-greeting anim-2">
+            <div class="landing-eyebrow">
+              <div class="landing-eyebrow-dot"></div>
+              India's Smartest School Platform
+            </div>
+            <h1 class="landing-headline">One platform.<br><em>Every stakeholder.</em></h1>
+            <p class="landing-sub">Parents, teachers, and admins — unified in a single, beautifully crafted experience. Real-time insights, AI-powered learning, and seamless communication.</p>
+          </div>
+
+          <div class="landing-hero-card anim-3">
+            <div class="lhc-inner">
+              <div class="lhc-pill"><div class="lhc-pill-dot"></div>Trusted by 500+ Schools</div>
+              <div class="lhc-title">Everything your school needs, in one app.</div>
+              <div class="lhc-desc">Academics, fees, transport, conversations, AI tutoring, and gamified badges — all designed with Material 3 Expressive precision.</div>
+              <div class="lhc-features">
+                <div class="lhc-feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>Academics</div>
+                <div class="lhc-feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Fees</div>
+                <div class="lhc-feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chats</div>
+                <div class="lhc-feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Pulse Score</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="landing-stats anim-4">
+            <div class="ls-card"><div class="ls-val">500+</div><div class="ls-label">Schools</div></div>
+            <div class="ls-card"><div class="ls-val">2M+</div><div class="ls-label">Students</div></div>
+            <div class="ls-card"><div class="ls-val">98%</div><div class="ls-label">Satisfaction</div></div>
+          </div>
+
+          <div class="landing-roles anim-5">
+            <div class="landing-roles-title">Choose your experience</div>
+            <div class="role-tile parent" onclick="goTo('login-parent')">
+              <div class="role-tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg></div>
+              <div class="role-tile-info">
+                <div class="role-tile-name">Parent Portal</div>
+                <div class="role-tile-desc">Track your child's academic journey, fees, transport & conversations</div>
+              </div>
+              <svg class="role-tile-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+            <div class="role-tile staff" onclick="goTo('login-staff')">
+              <div class="role-tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
+              <div class="role-tile-info">
+                <div class="role-tile-name">Teacher / Admin</div>
+                <div class="role-tile-desc">Manage classes, students, attendance, grades & school operations</div>
+              </div>
+              <svg class="role-tile-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+
+          <div class="landing-trust anim-6">
+            <div class="trust-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>CBSE Verified</div>
+            <div class="trust-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>ISO 27001</div>
+            <div class="trust-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>DPDP Compliant</div>
+          </div>
+
+          <div class="landing-bottom anim-6">
+            <div class="landing-terms">By continuing you agree to our <a href="#">Terms</a> & <a href="#">Privacy Policy</a></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ LOGIN PARENT ══ -->
+    <div class="page" id="page-login-parent">
+      <div class="status-bar">
+        <span class="status-time">9:41</span>
+        <div class="status-icons">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.859a10 10 0 0 1 14 0"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 14h3v6H1zM6 10h3v10H6zM11 6h3v14h-3zM16 2h3v18h-3z" opacity="0.9"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="18" height="10" rx="3" fill="currentColor" opacity="0.1"/><rect x="3" y="8" width="14" height="8" rx="2" fill="currentColor"/><line x1="22" y1="11" x2="22" y2="13" stroke-width="2"/></svg>
+        </div>
+      </div>
+      <div class="login-hero">
+        <div class="login-hero-back">
+          <button class="icon-btn" onclick="goTo('landing')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+        </div>
+        <div class="login-hero-title">Parent Login</div>
+        <div class="login-hero-sub">Welcome back! Access your child's dashboard.</div>
+        <div class="login-hero-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>For Parents</div>
+      </div>
+      <div class="login-body">
+        <div class="anim-1">
+          <div class="form-group">
+            <label class="form-label">Email or Phone</label>
+            <input class="form-input" type="text" placeholder="priya.s@email.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input class="form-input" type="password" placeholder="••••••••">
+          </div>
+          <div style="text-align:right;margin-bottom:24px"><button class="btn-text">Forgot password?</button></div>
+          <button class="btn-primary" onclick="goTo('onboarding')">Login<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
+        </div>
+        <div class="divider anim-2"><span>Or continue with</span></div>
+        <div class="social-row anim-3">
+          <button class="social-btn"><svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09a6.99 6.99 0 0 1 0-4.18V7.07H2.18a11.01 11.01 0 0 0 0 9.86l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z" fill="#EA4335"/></svg>Google</button>
+          <button class="social-btn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>Apple</button>
+        </div>
+      </div>
+      <div class="login-footer">
+        <span class="login-footer-text">New parent? <button class="btn-text" onclick="goTo('signup')">Create account</button></span>
+      </div>
+    </div>
+
+    <!-- ══ LOGIN STAFF ══ -->
+    <div class="page" id="page-login-staff">
+      <div class="status-bar">
+        <span class="status-time">9:41</span>
+        <div class="status-icons">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.859a10 10 0 0 1 14 0"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 14h3v6H1zM6 10h3v10H6zM11 6h3v14h-3zM16 2h3v18h-3z" opacity="0.9"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="18" height="10" rx="3" fill="currentColor" opacity="0.1"/><rect x="3" y="8" width="14" height="8" rx="2" fill="currentColor"/><line x1="22" y1="11" x2="22" y2="13" stroke-width="2"/></svg>
+        </div>
+      </div>
+      <div class="login-hero login-staff-hero">
+        <div class="login-hero-back">
+          <button class="icon-btn" onclick="goTo('landing')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+        </div>
+        <div class="login-hero-title">Staff Login</div>
+        <div class="login-hero-sub">Teachers & administrators sign in here.</div>
+        <div class="login-hero-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>For Teachers & Admins</div>
+      </div>
+      <div class="login-body">
+        <div class="anim-1">
+          <div class="form-group">
+            <label class="form-label">Staff ID or Email</label>
+            <input class="form-input" type="text" placeholder="staff.id@school.edu">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input class="form-input" type="password" placeholder="••••••••">
+          </div>
+          <div style="text-align:right;margin-bottom:24px"><button class="btn-text">Forgot password?</button></div>
+          <button class="btn-primary" style="background:var(--tertiary);color:var(--on-tertiary)" onclick="goTo('onboarding')">Sign In<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
+        </div>
+        <div class="divider anim-2"><span>Or use SSO</span></div>
+        <div class="social-row anim-3">
+          <button class="social-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>School SSO</button>
+          <button class="social-btn"><svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09a6.99 6.99 0 0 1 0-4.18V7.07H2.18a11.01 11.01 0 0 0 0 9.86l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z" fill="#EA4335"/></svg>Google Workspace</button>
+        </div>
+      </div>
+      <div class="login-footer">
+        <span class="login-footer-text">Need a staff account? <button class="btn-text" onclick="goTo('signup')">Request access</button></span>
+      </div>
+    </div>
+
+    <!-- ══ SIGNUP ══ -->
+    <div class="page" id="page-signup">
+      <div class="status-bar">
+        <span class="status-time">9:41</span>
+        <div class="status-icons">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.859a10 10 0 0 1 14 0"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 14h3v6H1zM6 10h3v10H6zM11 6h3v14h-3zM16 2h3v18h-3z" opacity="0.9"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="18" height="10" rx="3" fill="currentColor" opacity="0.1"/><rect x="3" y="8" width="14" height="8" rx="2" fill="currentColor"/><line x1="22" y1="11" x2="22" y2="13" stroke-width="2"/></svg>
+        </div>
+      </div>
+      <div class="top-bar">
+        <button class="icon-btn" onclick="goTo('landing')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+        <div class="top-bar-title">Create Account</div>
+      </div>
+      <div class="page-scroll">
+        <div style="padding: 8px 28px 24px">
+          <div style="font-size:15px;font-weight:500;color:var(--on-surface-variant);line-height:1.5">Join VidyaSetu as a parent to track your child's education journey.</div>
+        </div>
+        <div class="signup-type">
+          <button class="signup-type-btn active" onclick="switchSignupType(this,'parent')">Parent</button>
+          <button class="signup-type-btn" onclick="switchSignupType(this,'staff')">Teacher / Admin</button>
+        </div>
+        <div style="padding: 0 28px">
+          <div class="form-group">
+            <label class="form-label">Full Name</label>
+            <input class="form-input" type="text" placeholder="Priya Sharma">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input class="form-input" type="email" placeholder="priya.s@email.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone</label>
+            <input class="form-input" type="tel" placeholder="+91 98xxx xxx45">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input class="form-input" type="password" placeholder="Create a strong password">
+          </div>
+          <button class="btn-primary" onclick="goTo('onboarding')">Create Account<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
+        </div>
+        <div class="divider" style="margin:24px 28px"><span>Or sign up with</span></div>
+        <div class="social-row" style="margin: 0 28px 28px">
+          <button class="social-btn"><svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09a6.99 6.99 0 0 1 0-4.18V7.07H2.18a11.01 11.01 0 0 0 0 9.86l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z" fill="#EA4335"/></svg>Google</button>
+          <button class="social-btn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>Apple</button>
+        </div>
+      </div>
+      <div class="login-footer">
+        <span class="login-footer-text">Already have an account? <button class="btn-text" onclick="goTo('login-parent')">Login</button></span>
+      </div>
+    </div>
+
+    <!-- ══ ONBOARDING 1 ══ -->
+    <div class="page" id="page-onboarding">
+      <div class="status-bar">
+        <span class="status-time">9:41</span>
+        <div class="status-icons">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.859a10 10 0 0 1 14 0"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 14h3v6H1zM6 10h3v10H6zM11 6h3v14h-3zM16 2h3v18h-3z" opacity="0.9"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="18" height="10" rx="3" fill="currentColor" opacity="0.1"/><rect x="3" y="8" width="14" height="8" rx="2" fill="currentColor"/><line x1="22" y1="11" x2="22" y2="13" stroke-width="2"/></svg>
+        </div>
+      </div>
+      <div class="page-scroll">
+        <div class="onboard-illustration ob-illust-1">
+          <div class="ob-icon-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+        </div>
+        <div class="onboard-body">
+          <h2 class="onboard-title">Welcome to VidyaSetu</h2>
+          <p class="onboard-desc">The all-in-one platform connecting parents, teachers, and schools. Track your child's academic journey with real-time updates and insights.</p>
+          <div class="onboard-dots"><div class="ob-dot active"></div><div class="ob-dot"></div><div class="ob-dot"></div></div>
+          <div class="onboard-actions">
+            <button class="btn-text" onclick="goTo('schoolselect')">Skip</button>
+            <button class="btn-primary" style="width:auto;padding:14px 32px" onclick="goTo('onboarding2')">Next<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ ONBOARDING 2 ══ -->
+    <div class="page" id="page-onboarding2">
+      <div class="status-bar">
+        <span class="status-time">9:41</span>
+        <div class="status-icons">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.859a10 10 0 0 1 14 0"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 14h3v6H1zM6 10h3v10H6zM11 6h3v14h-3zM16 2h3v18h-3z" opacity="0.9"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="18" height="10" rx="3" fill="currentColor" opacity="0.1"/><rect x="3" y="8" width="14" height="8" rx="2" fill="currentColor"/><line x1="22" y1="11" x2="22" y2="13" stroke-width="2"/></svg>
+        </div>
+      </div>
+      <div class="page-scroll">
+        <div class="onboard-illustration ob-illust-2">
+          <div class="ob-icon-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+        </div>
+        <div class="onboard-body">
+          <h2 class="onboard-title">Stay in the loop</h2>
+          <p class="onboard-desc">Get live updates on attendance, transport tracking, fee reminders, and teacher messages. Never miss what matters about your child's day.</p>
+          <div class="onboard-dots"><div class="ob-dot"></div><div class="ob-dot active"></div><div class="ob-dot"></div></div>
+          <div class="onboard-actions">
+            <button class="btn-text" onclick="goTo('schoolselect')">Skip</button>
+            <button class="btn-primary" style="width:auto;padding:14px 32px" onclick="goTo('onboarding3')">Next<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ ONBOARDING 3 ══ -->
+    <div class="page" id="page-onboarding3">
+      <div class="status-bar">
+        <span class="status-time">9:41</span>
+        <div class="status-icons">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.859a10 10 0 0 1 14 0"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 14h3v6H1zM6 10h3v10H6zM11 6h3v14h-3zM16 2h3v18h-3z" opacity="0.9"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="18" height="10" rx="3" fill="currentColor" opacity="0.1"/><rect x="3" y="8" width="14" height="8" rx="2" fill="currentColor"/><line x1="22" y1="11" x2="22" y2="13" stroke-width="2"/></svg>
+        </div>
+      </div>
+      <div class="page-scroll">
+        <div class="onboard-illustration ob-illust-3">
+          <div class="ob-icon-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>
+        </div>
+        <div class="onboard-body">
+          <h2 class="onboard-title">AI-powered insights</h2>
+          <p class="onboard-desc">Pulse Score early warning system, AI Tutor for homework help, and gamified badges to keep your child motivated. Everything you need in one app.</p>
+          <div class="onboard-dots"><div class="ob-dot"></div><div class="ob-dot"></div><div class="ob-dot active"></div></div>
+          <div class="onboard-actions">
+            <button class="btn-text" onclick="goTo('schoolselect')">Skip</button>
+            <button class="btn-primary" style="width:auto;padding:14px 32px" onclick="goTo('schoolselect')">Get Started<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SCHOOL SELECT ══ -->
+    <div class="page" id="page-schoolselect">
+      <div class="status-bar">
+        <span class="status-time">9:41</span>
+        <div class="status-icons">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.859a10 10 0 0 1 14 0"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 14h3v6H1zM6 10h3v10H6zM11 6h3v14h-3zM16 2h3v18h-3z" opacity="0.9"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="18" height="10" rx="3" fill="currentColor" opacity="0.1"/><rect x="3" y="8" width="14" height="8" rx="2" fill="currentColor"/><line x1="22" y1="11" x2="22" y2="13" stroke-width="2"/></svg>
+        </div>
+      </div>
+      <div class="top-bar">
+        <button class="icon-btn" onclick="goTo('onboarding3')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+        <div class="top-bar-title">Select School</div>
+      </div>
+      <div class="page-scroll">
+        <div style="padding:8px 20px 20px"><div style="font-size:15px;font-weight:500;color:var(--on-surface-variant);line-height:1.5">Search and select your child's school to link them to your account.</div></div>
+        <div class="search-field">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" placeholder="Search schools by name or city…">
+        </div>
+        <div class="school-option selected" onclick="selectSchool(this)">
+          <div class="school-option-logo" style="background:linear-gradient(135deg,var(--primary),#544AB8)">DPS</div>
+          <div class="school-option-info"><div class="school-option-name">Delhi Public School</div><div class="school-option-meta">Sector 14, Dwarka · CBSE · 4.8 ★</div></div>
+          <svg class="school-option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/></svg>
+        </div>
+        <div class="school-option" onclick="selectSchool(this)">
+          <div class="school-option-logo" style="background:linear-gradient(135deg,var(--tertiary),#00897B)">MS</div>
+          <div class="school-option-info"><div class="school-option-name">Modern School</div><div class="school-option-meta">Barakhamba Road · CBSE · 4.6 ★</div></div>
+          <svg class="school-option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/></svg>
+        </div>
+        <div class="school-option" onclick="selectSchool(this)">
+          <div class="school-option-logo" style="background:linear-gradient(135deg,#FF6D00,#E65100)">SI</div>
+          <div class="school-option-info"><div class="school-option-name">Sunrise International</div><div class="school-option-meta">Vasant Kunj · IB · 4.5 ★</div></div>
+          <svg class="school-option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/></svg>
+        </div>
+        <div class="school-option" onclick="selectSchool(this)">
+          <div class="school-option-logo" style="background:linear-gradient(135deg,var(--secondary),#4A4458)">HA</div>
+          <div class="school-option-info"><div class="school-option-name">Heritage Academy</div><div class="school-option-meta">Rohini · CBSE · 4.3 ★</div></div>
+          <svg class="school-option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/></svg>
+        </div>
+        <div style="padding:20px 20px 40px">
+          <button class="btn-primary" onclick="goTo('childlink')">Continue<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ CHILD LINK ══ -->
+    <div class="page" id="page-childlink">
+      <div class="status-bar">
+        <span class="status-time">9:41</span>
+        <div class="status-icons">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.859a10 10 0 0 1 14 0"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 14h3v6H1zM6 10h3v10H6zM11 6h3v14h-3zM16 2h3v18h-3z" opacity="0.9"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="18" height="10" rx="3" fill="currentColor" opacity="0.1"/><rect x="3" y="8" width="14" height="8" rx="2" fill="currentColor"/><line x1="22" y1="11" x2="22" y2="13" stroke-width="2"/></svg>
+        </div>
+      </div>
+      <div class="top-bar">
+        <button class="icon-btn" onclick="goTo('schoolselect')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+        <div class="top-bar-title">Link Your Child</div>
+      </div>
+      <div class="page-scroll">
+        <div style="padding:8px 20px 24px"><div style="font-size:15px;font-weight:500;color:var(--on-surface-variant);line-height:1.5">Enter your child's details to link them to Delhi Public School.</div></div>
+        <div style="padding:0 28px">
+          <div class="form-group"><label class="form-label">Child's Full Name</label><input class="form-input" type="text" placeholder="Aarav Sharma"></div>
+          <div class="form-group"><label class="form-label">Class / Grade</label><input class="form-input" type="text" placeholder="Class 8-B"></div>
+          <div class="form-group"><label class="form-label">Roll Number / Student ID</label><input class="form-input" type="text" placeholder="14 or DPS-2026-0814"></div>
+          <div class="form-group"><label class="form-label">Date of Birth</label><input class="form-input" type="text" placeholder="DD / MM / YYYY"></div>
+        </div>
+        <div class="child-card" style="border:2px solid var(--tertiary);background:var(--tertiary-container)">
+          <div class="child-row">
+            <div class="child-avatar">A</div>
+            <div class="child-info">
+              <div class="child-name" style="color:var(--on-tertiary-container)">Aarav Sharma</div>
+              <div class="child-meta" style="color:var(--on-tertiary-container);opacity:0.8">Class 8-B · Roll 14 · DPS</div>
+            </div>
+            <div class="linked-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/></svg>Linked</div>
+          </div>
+        </div>
+        <div style="padding:8px 20px 40px">
+          <button class="btn-primary" onclick="goTo('done')">Link Child & Continue<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
+          <div style="height:12px"></div>
+          <button class="btn-secondary" onclick="goTo('done')">Add Another Child Later</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ DONE ══ -->
+    <div class="page" id="page-done">
+      <div class="status-bar">
+        <span class="status-time">9:41</span>
+        <div class="status-icons">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.859a10 10 0 0 1 14 0"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 14h3v6H1zM6 10h3v10H6zM11 6h3v14h-3zM16 2h3v18h-3z" opacity="0.9"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="18" height="10" rx="3" fill="currentColor" opacity="0.1"/><rect x="3" y="8" width="14" height="8" rx="2" fill="currentColor"/><line x1="22" y1="11" x2="22" y2="13" stroke-width="2"/></svg>
+        </div>
+      </div>
+      <div class="page-scroll" style="display:flex;flex-direction:column;justify-content:center;align-items:center;padding:40px 28px">
+        <div style="width:120px;height:120px;border-radius:var(--shape-full);background:linear-gradient(135deg,var(--tertiary),#00897B);display:flex;align-items:center;justify-content:center;margin-bottom:32px;animation:slideUp 0.6s var(--ease-emphasized) both">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:56px;height:56px"><path d="M9 11l3 3L22 4"/></svg>
+        </div>
+        <h1 style="font-size:28px;font-weight:900;color:var(--on-surface);letter-spacing:-0.04em;text-align:center;margin-bottom:12px;animation:slideUp 0.5s var(--ease-emphasized) 0.15s both">You're all set!</h1>
+        <p style="font-size:15px;font-weight:500;color:var(--on-surface-variant);line-height:1.6;text-align:center;margin-bottom:40px;animation:slideUp 0.5s var(--ease-emphasized) 0.25s both">Your child Aarav Sharma has been successfully linked to Delhi Public School. You can now access the full Parent Portal.</p>
+        <div style="width:100%;animation:slideUp 0.5s var(--ease-emphasized) 0.35s both">
+          <a href="parent-portal.html" style="text-decoration:none"><button class="btn-primary">Enter Parent Portal<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button></a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<script>
+  let currentPage = 'landing';
+  function goTo(pageId) {
+    const current = document.getElementById('page-' + currentPage);
+    const next = document.getElementById('page-' + pageId);
+    if (!next || current === next) return;
+    current.classList.add('exit-left');
+    current.classList.remove('active');
+    next.classList.add('active');
+    setTimeout(() => { current.classList.remove('exit-left'); }, 500);
+    currentPage = pageId;
+  }
+  function switchSignupType(el, type) {
+    el.parentElement.querySelectorAll('.signup-type-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+  }
+  function selectSchool(el) {
+    el.parentElement.querySelectorAll('.school-option').forEach(s => s.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+</script>
+</body>
+</html>
