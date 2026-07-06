@@ -19,6 +19,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,27 +29,16 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.domain.util.UiState
+import com.littlebridge.enrollplus.feature.teacher.domain.model.TeacherClassSummaryDto
+import com.littlebridge.enrollplus.presentation.TeacherViewModel
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 
-private data class ClassCard(
-    val name: String,
-    val subject: String,
-    val studentCount: Int,
-    val pending: Int,
-    val ungraded: Int,
-    val syllabusPercent: Int,
-)
-
 @Composable
-fun TeacherClassesTab() {
-    val classes = remember {
-        listOf(
-            ClassCard("Class 7-B", "Mathematics", 32, 3, 5, 68),
-            ClassCard("Class 8-A", "Mathematics", 28, 1, 7, 75),
-            ClassCard("Class 9-C", "Algebra", 30, 2, 0, 82),
-        )
-    }
+fun TeacherClassesTab(viewModel: TeacherViewModel) {
+    val classesState by viewModel.classesState.collectAsState()
+    val classes = (classesState as? UiState.Success)?.data?.data?.classes ?: emptyList()
 
     Column(
         modifier = Modifier
@@ -81,15 +72,30 @@ fun TeacherClassesTab() {
                 )
             }
         }
-        classes.forEach { cls ->
-            ClassCardItem(cls)
+        if (classes.isEmpty()) {
+            Text(
+                text = when (classesState) {
+                    is UiState.Loading -> "Loading…"
+                    is UiState.Error -> (classesState as UiState.Error).message
+                    else -> "No classes assigned"
+                },
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = VColors.ink3,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
+            )
+        } else {
+            classes.forEach { cls ->
+                ClassCardItem(cls)
+            }
         }
         Spacer(Modifier.height(24.dp))
     }
 }
 
 @Composable
-private fun ClassCardItem(cls: ClassCard) {
+private fun ClassCardItem(cls: TeacherClassSummaryDto) {
+    val classLabel = "${cls.className}${if (cls.section.isNotBlank()) "-${cls.section}" else ""}"
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -109,7 +115,7 @@ private fun ClassCardItem(cls: ClassCard) {
         ) {
             Column {
                 Text(
-                    text = cls.name,
+                    text = classLabel,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = (-0.5).sp,
@@ -142,9 +148,17 @@ private fun ClassCardItem(cls: ClassCard) {
                 .padding(top = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            ClassMetaItem(TICheck, "${cls.pending} pending")
-            ClassMetaItem(TIEdit, "${cls.ungraded} ungraded")
-            ClassMetaItem(TIBook, "${cls.syllabusPercent}% syllabus")
+            if (!cls.todayAttendanceMarked) {
+                ClassMetaItem(TICheck, "Attendance due")
+            } else {
+                ClassMetaItem(TICheck, "Attendance done")
+            }
+            if (cls.atRiskCount > 0) {
+                ClassMetaItem(TIAlert, "${cls.atRiskCount} at risk")
+            }
+            if (cls.isClassTeacher) {
+                ClassMetaItem(TIUser, "Class teacher")
+            }
         }
     }
 }

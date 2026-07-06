@@ -23,6 +23,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,6 +40,14 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.domain.util.UiState
+import com.littlebridge.enrollplus.feature.teacher.domain.model.AssessmentDto
+import com.littlebridge.enrollplus.feature.teacher.domain.model.AttendanceStudentDto
+import com.littlebridge.enrollplus.feature.teacher.domain.model.HomeworkItemDto
+import com.littlebridge.enrollplus.feature.teacher.domain.model.LessonPlanDto
+import com.littlebridge.enrollplus.feature.teacher.domain.model.SyllabusNodeDto
+import com.littlebridge.enrollplus.feature.teacher.domain.model.TeacherClassSummaryDto
+import com.littlebridge.enrollplus.presentation.TeacherViewModel
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 
@@ -50,21 +60,25 @@ private enum class UpdateTool(val label: String, val icon: ImageVector) {
     Lesson("Lesson", TICalendar),
 }
 
-private data class ClassScope(
-    val id: String,
-    val name: String,
-    val subject: String,
-    val studentCount: Int,
-)
 
 @Composable
-fun TeacherUpdateTab() {
-    var selectedClass by rememberSaveable { mutableStateOf<ClassScope?>(null) }
+fun TeacherUpdateTab(viewModel: TeacherViewModel) {
+    val classesState by viewModel.classesState.collectAsState()
+    val classes = (classesState as? UiState.Success)?.data?.data?.classes ?: emptyList()
+
+    var selectedClass by rememberSaveable { mutableStateOf<TeacherClassSummaryDto?>(null) }
     var selectedTool by rememberSaveable { mutableStateOf(UpdateTool.Attendance) }
+
+    LaunchedEffect(selectedClass) {
+        selectedClass?.let {
+            viewModel.selectClass(it.assignmentId, it)
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         if (selectedClass == null) {
             ScopeSelector(
+                classes = classes,
                 onClassSelected = { selectedClass = it },
             )
         } else {
@@ -80,11 +94,11 @@ fun TeacherUpdateTab() {
                     .verticalScroll(rememberScrollState()),
             ) {
                 when (selectedTool) {
-                    UpdateTool.Attendance -> AttendanceToolContent(selectedClass!!)
-                    UpdateTool.Marks -> MarksToolContent(selectedClass!!)
-                    UpdateTool.Syllabus -> SyllabusToolContent()
-                    UpdateTool.Homework -> HomeworkToolContent()
-                    UpdateTool.Lesson -> LessonToolContent()
+                    UpdateTool.Attendance -> AttendanceToolContent(viewModel, selectedClass!!)
+                    UpdateTool.Marks -> MarksToolContent(viewModel, selectedClass!!)
+                    UpdateTool.Syllabus -> SyllabusToolContent(viewModel)
+                    UpdateTool.Homework -> HomeworkToolContent(viewModel)
+                    UpdateTool.Lesson -> LessonToolContent(viewModel)
                 }
             }
         }
@@ -92,14 +106,10 @@ fun TeacherUpdateTab() {
 }
 
 @Composable
-private fun ScopeSelector(onClassSelected: (ClassScope) -> Unit) {
-    val classes = remember {
-        listOf(
-            ClassScope("7-B", "Class 7-B", "Mathematics", 32),
-            ClassScope("8-A", "Class 8-A", "Mathematics", 28),
-            ClassScope("9-C", "Class 9-C", "Algebra", 30),
-        )
-    }
+private fun ScopeSelector(
+    classes: List<TeacherClassSummaryDto>,
+    onClassSelected: (TeacherClassSummaryDto) -> Unit,
+) {
     Column(modifier = Modifier.padding(24.dp)) {
         Text(
             text = "Select a class to continue",
@@ -108,14 +118,25 @@ private fun ScopeSelector(onClassSelected: (ClassScope) -> Unit) {
             color = VColors.ink3,
             modifier = Modifier.padding(bottom = 8.dp),
         )
-        classes.forEach { cls ->
-            ScopeItem(cls) { onClassSelected(cls) }
+        if (classes.isEmpty()) {
+            Text(
+                text = "No classes available",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = VColors.ink3,
+                modifier = Modifier.padding(vertical = 16.dp),
+            )
+        } else {
+            classes.forEach { cls ->
+                ScopeItem(cls) { onClassSelected(cls) }
+            }
         }
     }
 }
 
 @Composable
-private fun ScopeItem(scope: ClassScope, onClick: () -> Unit) {
+private fun ScopeItem(scope: TeacherClassSummaryDto, onClick: () -> Unit) {
+    val classLabel = "${scope.className}${if (scope.section.isNotBlank()) "-${scope.section}" else ""}"
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -141,15 +162,15 @@ private fun ScopeItem(scope: ClassScope, onClick: () -> Unit) {
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = scope.id,
-                    fontSize = 16.sp,
+                    text = classLabel,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = VColors.ink2,
                 )
             }
             Column {
                 Text(
-                    text = scope.name,
+                    text = classLabel,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = VColors.ink,
@@ -228,17 +249,15 @@ private fun ToolSegments(
 }
 
 @Composable
-private fun AttendanceToolContent(scope: ClassScope) {
-    val students = remember {
-        listOf(
-            StudentAtt("AK", "Aarav Kumar", "Roll #01", AttStatus.Present),
-            StudentAtt("DS", "Diya Singh", "Roll #02", AttStatus.Present),
-            StudentAtt("RP", "Rohan Patel", "Roll #03", AttStatus.Absent),
-            StudentAtt("AN", "Ananya Nair", "Roll #04", AttStatus.Present),
-            StudentAtt("VR", "Vihaan Reddy", "Roll #05", AttStatus.Late),
-        )
+private fun AttendanceToolContent(viewModel: TeacherViewModel, scope: TeacherClassSummaryDto) {
+    val attendanceState by viewModel.attendanceState.collectAsState()
+    val attData = (attendanceState as? UiState.Success)?.data?.data
+    val students = attData?.students ?: emptyList()
+    val classLabel = "${scope.className}${if (scope.section.isNotBlank()) "-${scope.section}" else ""}"
+
+    var statuses by remember(students) {
+        mutableStateOf(students.associate { it.studentId to it.status })
     }
-    var statuses by remember { mutableStateOf(students.associate { it to it.status }) }
 
     Column {
         Row(
@@ -250,60 +269,84 @@ private fun AttendanceToolContent(scope: ClassScope) {
         ) {
             Column {
                 Text(
-                    text = "Class ${scope.id} · ${scope.subject}",
+                    text = "$classLabel · ${scope.subject}",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = VColors.ink,
                 )
                 Text(
-                    text = "Monday, 15 July 2026",
+                    text = attData?.date ?: "",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
                     color = VColors.ink3,
                 )
             }
         }
-        Row(
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            QuickPillButton("Mark all present") {}
-            QuickPillButton("Mark all absent") {}
-        }
-        students.forEach { student ->
-            AttendanceRow(
-                student = student,
-                currentStatus = statuses[student] ?: AttStatus.Present,
-                onStatusChange = { newStatus ->
-                    statuses = statuses.toMutableMap().apply { this[student] = newStatus }
-                },
+        if (attData?.isHoliday == true) {
+            Text(
+                text = "Holiday: ${attData.holidayName ?: "No classes"}",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = VColors.ink3,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
             )
-        }
-        // Summary
-        val present = statuses.count { it.value == AttStatus.Present }
-        val absent = statuses.count { it.value == AttStatus.Absent }
-        val late = statuses.count { it.value == AttStatus.Late }
-        Row(
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            SummaryChip("$present Present", VColors.successSoft, VColors.success, Modifier.weight(1f))
-            SummaryChip("$absent Absent", VColors.errorSoft, VColors.error, Modifier.weight(1f))
-            SummaryChip("$late Late", VColors.goldSoft, VColors.gold, Modifier.weight(1f))
+        } else if (students.isEmpty()) {
+            Text(
+                text = when (attendanceState) {
+                    is UiState.Loading -> "Loading…"
+                    is UiState.Error -> (attendanceState as UiState.Error).message
+                    else -> "No students enrolled"
+                },
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = VColors.ink3,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
+            )
+        } else {
+            Row(
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                QuickPillButton("Mark all present") {
+                    statuses = students.associate { it.studentId to "present" }
+                }
+                QuickPillButton("Mark all absent") {
+                    statuses = students.associate { it.studentId to "absent" }
+                }
+            }
+            students.forEach { student ->
+                val currentStatus = statuses[student.studentId] ?: "present"
+                AttendanceRow(
+                    student = student,
+                    currentStatus = currentStatus,
+                    onStatusChange = { newStatus ->
+                        statuses = statuses.toMutableMap().apply { this[student.studentId] = newStatus }
+                    },
+                )
+            }
+            val present = statuses.count { it.value == "present" }
+            val absent = statuses.count { it.value == "absent" }
+            val late = statuses.count { it.value == "late" }
+            Row(
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                SummaryChip("$present Present", VColors.successSoft, VColors.success, Modifier.weight(1f))
+                SummaryChip("$absent Absent", VColors.errorSoft, VColors.error, Modifier.weight(1f))
+                SummaryChip("$late Late", VColors.goldSoft, VColors.gold, Modifier.weight(1f))
+            }
         }
         Spacer(Modifier.height(24.dp))
     }
 }
 
-private enum class AttStatus { Present, Absent, Late }
-private data class StudentAtt(val initials: String, val name: String, val roll: String, val status: AttStatus)
-
 @Composable
 private fun AttendanceRow(
-    student: StudentAtt,
-    currentStatus: AttStatus,
-    onStatusChange: (AttStatus) -> Unit,
+    student: AttendanceStudentDto,
+    currentStatus: String,
+    onStatusChange: (String) -> Unit,
 ) {
+    val initials = student.name.take(2).uppercase()
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -322,7 +365,7 @@ private fun AttendanceRow(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = student.initials,
+                    text = initials,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = VColors.ink2,
@@ -336,7 +379,7 @@ private fun AttendanceRow(
                     color = VColors.ink,
                 )
                 Text(
-                    text = student.roll,
+                    text = if (student.rollNo.isNotBlank()) "Roll #${student.rollNo}" else "",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                     color = VColors.ink3,
@@ -344,14 +387,14 @@ private fun AttendanceRow(
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            AttToggleButton("P", currentStatus == AttStatus.Present, VColors.successSoft, VColors.success) {
-                onStatusChange(AttStatus.Present)
+            AttToggleButton("P", currentStatus == "present", VColors.successSoft, VColors.success) {
+                onStatusChange("present")
             }
-            AttToggleButton("A", currentStatus == AttStatus.Absent, VColors.coralSoft, VColors.coral) {
-                onStatusChange(AttStatus.Absent)
+            AttToggleButton("A", currentStatus == "absent", VColors.coralSoft, VColors.coral) {
+                onStatusChange("absent")
             }
-            AttToggleButton("L", currentStatus == AttStatus.Late, VColors.goldSoft, VColors.gold) {
-                onStatusChange(AttStatus.Late)
+            AttToggleButton("L", currentStatus == "late", VColors.goldSoft, VColors.gold) {
+                onStatusChange("late")
             }
         }
     }
@@ -433,46 +476,64 @@ private fun SummaryChip(text: String, bg: Color, fg: Color, modifier: Modifier =
 }
 
 @Composable
-private fun MarksToolContent(scope: ClassScope) {
-    val students = remember {
-        listOf(
-            StudentMark("AK", "Aarav Kumar", "Roll #01", "42", "B+", VColors.mint),
-            StudentMark("DS", "Diya Singh", "Roll #02", "48", "A", VColors.mint),
-            StudentMark("RP", "Rohan Patel", "Roll #03", "35", "C+", VColors.gold),
-            StudentMark("AN", "Ananya Nair", "Roll #04", "45", "A-", VColors.mint),
-            StudentMark("VR", "Vihaan Reddy", "Roll #05", "", "—", VColors.ink3),
-        )
-    }
+private fun MarksToolContent(viewModel: TeacherViewModel, scope: TeacherClassSummaryDto) {
+    val assessmentsState by viewModel.assessmentsState.collectAsState()
+    val assessments = (assessmentsState as? UiState.Success)?.data?.data?.assessments ?: emptyList()
+    val classLabel = "${scope.className}${if (scope.section.isNotBlank()) "-${scope.section}" else ""}"
+
+    var selectedAssessment by remember { mutableStateOf<AssessmentDto?>(null) }
+    val activeAssessment = selectedAssessment ?: assessments.firstOrNull()
+
     Column {
-        // Assessment chips
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            AssessmentChip("Unit Test 1", "50 marks", true)
-            AssessmentChip("Quiz 3", "20 marks", false)
-            AssessmentChip("Assignment 2", "30 marks", false)
-        }
-        students.forEach { student ->
-            MarksRow(student)
+        if (assessments.isEmpty()) {
+            Text(
+                text = when (assessmentsState) {
+                    is UiState.Loading -> "Loading…"
+                    is UiState.Error -> (assessmentsState as UiState.Error).message
+                    else -> "No assessments created for this class"
+                },
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = VColors.ink3,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
+            )
+        } else {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                assessments.take(4).forEach { assessment ->
+                    AssessmentChip(
+                        name = assessment.name,
+                        meta = "${assessment.maxMarks} marks",
+                        isActive = activeAssessment?.id == assessment.id,
+                        onClick = { selectedAssessment = assessment },
+                    )
+                }
+            }
+            Text(
+                text = "$classLabel · ${scope.subject} — ${activeAssessment?.name ?: ""} (${activeAssessment?.enteredCount ?: 0}/${activeAssessment?.rosterCount ?: 0} entered)",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = VColors.ink2,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+            )
+            Text(
+                text = "Status: ${activeAssessment?.status ?: ""}",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                color = VColors.ink3,
+                modifier = Modifier.padding(horizontal = 24.dp),
+            )
         }
         Spacer(Modifier.height(24.dp))
     }
 }
 
-private data class StudentMark(
-    val initials: String,
-    val name: String,
-    val roll: String,
-    val marks: String,
-    val grade: String,
-    val gradeColor: Color,
-)
-
 @Composable
-private fun AssessmentChip(name: String, meta: String, isActive: Boolean) {
+private fun AssessmentChip(name: String, meta: String, isActive: Boolean, onClick: () -> Unit = {}) {
     val bg = if (isActive) VColors.violetSoft else Color.Transparent
     val border = if (isActive) VColors.violet else VColors.line
     val nameColor = if (isActive) VColors.violet else VColors.ink
@@ -483,7 +544,7 @@ private fun AssessmentChip(name: String, meta: String, isActive: Boolean) {
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
-            ) {}
+            ) { onClick() }
             .padding(horizontal = 16.dp, vertical = 10.dp),
     ) {
         Text(
@@ -501,135 +562,80 @@ private fun AssessmentChip(name: String, meta: String, isActive: Boolean) {
     }
 }
 
+
 @Composable
-private fun MarksRow(student: StudentMark) {
-    var marksValue by remember { mutableStateOf(student.marks) }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .background(VColors.surfaceTint, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = student.initials,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = VColors.ink2,
-                )
-            }
-            Column {
-                Text(
-                    text = student.name,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = VColors.ink,
-                )
-                Text(
-                    text = student.roll,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = VColors.ink3,
-                )
-            }
-        }
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            BasicTextField(
-                value = marksValue,
-                onValueChange = { marksValue = it.take(3) },
-                textStyle = TextStyle(
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = VColors.ink,
-                ),
-                cursorBrush = SolidColor(VColors.violet),
-                modifier = Modifier
-                    .width(40.dp)
-                    .padding(vertical = 4.dp),
-            ) { innerTextField ->
-                Box(contentAlignment = Alignment.Center) {
-                    if (marksValue.isEmpty()) {
-                        Text(
-                            text = "—",
-                            fontSize = 15.sp,
-                            color = VColors.ink3,
-                        )
-                    }
-                    innerTextField()
-                }
-            }
+private fun SyllabusToolContent(viewModel: TeacherViewModel) {
+    val syllabusState by viewModel.syllabusState.collectAsState()
+    val syllabusData = (syllabusState as? UiState.Success)?.data?.data
+    val units = syllabusData?.units ?: emptyList()
+    val coveredCount = syllabusData?.coveredCount ?: 0
+    val totalCount = syllabusData?.totalCount ?: 0
+    val progress = if (totalCount > 0) coveredCount.toFloat() / totalCount else 0f
+
+    Column(modifier = Modifier.padding(24.dp)) {
+        if (syllabusData == null) {
             Text(
-                text = "/50",
+                text = when (syllabusState) {
+                    is UiState.Loading -> "Loading…"
+                    is UiState.Error -> (syllabusState as UiState.Error).message
+                    else -> "No syllabus data"
+                },
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 color = VColors.ink3,
+                modifier = Modifier.padding(vertical = 16.dp),
             )
-            Text(
-                text = student.grade,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = student.gradeColor,
-            )
-        }
-    }
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp)
-            .height(1.dp)
-            .background(VColors.lineSoft),
-    )
-}
-
-@Composable
-private fun SyllabusToolContent() {
-    Column(modifier = Modifier.padding(24.dp)) {
-        // Progress bar
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(6.dp)
-                .background(VColors.surfaceTint, VShapes.full),
-        ) {
+        } else {
             Box(
                 modifier = Modifier
-                    .fillMaxWidth(0.62f)
+                    .fillMaxWidth()
                     .height(6.dp)
-                    .background(VColors.violet, VShapes.full),
-            )
+                    .background(VColors.surfaceTint, VShapes.full),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(progress)
+                        .height(6.dp)
+                        .background(VColors.mint, VShapes.full),
+                )
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text("Coverage", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = VColors.ink3)
+                Text("$coveredCount of $totalCount topics · ${(progress * 100).toInt()}%", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = VColors.ink3)
+            }
+            Spacer(Modifier.height(16.dp))
+            units.filter { it.depth == 0 }.forEach { chapter ->
+                val chapterTopics = units.filter { it.parentId == chapter.id }
+                val chapterCovered = chapterTopics.count { it.isCovered }
+                val chapterTotal = chapterTopics.size
+                val allDone = chapterTotal > 0 && chapterCovered == chapterTotal
+                SyllabusUnit(
+                    chapter.title,
+                    if (chapterTotal > 0) "$chapterCovered/$chapterTotal ${if (allDone) "✓" else ""}" else (if (chapter.isCovered) "✓" else "—"),
+                    if (allDone) VColors.successSoft else if (chapterCovered > 0) VColors.goldSoft else VColors.surfaceTint,
+                    if (allDone) VColors.success else if (chapterCovered > 0) VColors.gold else VColors.ink3,
+                    allDone,
+                )
+            }
         }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text("Coverage", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = VColors.ink2)
-            Text("8 of 13 topics · 62%", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = VColors.ink2)
-        }
-        Spacer(Modifier.height(16.dp))
-        SyllabusUnit("Chapter 1: Integers", "3/3 ✓", VColors.successSoft, VColors.success, true)
-        SyllabusUnit("Chapter 2: Fractions", "2/4", VColors.goldSoft, VColors.gold, false)
-        SyllabusUnit("Chapter 3: Decimals", "0/3", VColors.surfaceTint, VColors.ink3, false)
     }
 }
 
 @Composable
 private fun SyllabusUnit(name: String, badgeText: String, badgeBg: Color, badgeFg: Color, allDone: Boolean) {
-    Column(modifier = Modifier.padding(bottom = 12.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp)
+            .shadow(1.dp, VShapes.md)
+            .background(VColors.white, VShapes.md)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -658,11 +664,51 @@ private fun SyllabusUnit(name: String, badgeText: String, badgeBg: Color, badgeF
 }
 
 @Composable
-private fun HomeworkToolContent() {
+private fun HomeworkToolContent(viewModel: TeacherViewModel) {
+    val homeworkState by viewModel.homeworkState.collectAsState()
+    val homeworkItems = (homeworkState as? UiState.Success)?.data?.data?.items ?: emptyList()
+
     Column(modifier = Modifier.padding(24.dp)) {
-        HomeworkItem("Worksheet: Fractions Practice", "Due tomorrow", VColors.errorSoft, VColors.error, "Due: 16 Jul 2026", "3 submitted", "2 not submitted", "0 graded")
-        HomeworkItem("Chapter 2 — Exercise 2.3", "Due in 3 days", VColors.goldSoft, VColors.gold, "Due: 18 Jul 2026", "1 submitted", "4 not submitted", "0 graded")
-        HomeworkItem("Mental Math — Division", "Graded", VColors.successSoft, VColors.success, "Due: 12 Jul 2026", "5 submitted", "0 not submitted", "5 graded")
+        if (homeworkItems.isEmpty()) {
+            Text(
+                text = when (homeworkState) {
+                    is UiState.Loading -> "Loading…"
+                    is UiState.Error -> (homeworkState as UiState.Error).message
+                    else -> "No homework assigned for this class"
+                },
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = VColors.ink3,
+                modifier = Modifier.padding(vertical = 16.dp),
+            )
+        } else {
+            homeworkItems.forEach { hw ->
+                val badgeText: String
+                val badgeBg: Color
+                val badgeFg: Color
+                when {
+                    hw.isPastDue && hw.gradedCount == hw.totalCount && hw.totalCount > 0 -> {
+                        badgeText = "Graded"; badgeBg = VColors.successSoft; badgeFg = VColors.success
+                    }
+                    hw.isPastDue -> {
+                        badgeText = "Past due"; badgeBg = VColors.errorSoft; badgeFg = VColors.error
+                    }
+                    else -> {
+                        badgeText = "Active"; badgeBg = VColors.goldSoft; badgeFg = VColors.gold
+                    }
+                }
+                HomeworkItem(
+                    title = hw.title,
+                    badgeText = badgeText,
+                    badgeBg = badgeBg,
+                    badgeFg = badgeFg,
+                    due = "Due: ${hw.dueDate}${if (hw.dueTime != null) " ${hw.dueTime}" else ""}",
+                    "${hw.submittedCount} submitted",
+                    "${hw.notSubmittedCount} not submitted",
+                    "${hw.gradedCount} graded",
+                )
+            }
+        }
     }
 }
 
@@ -731,12 +777,34 @@ private fun HomeworkItem(
 }
 
 @Composable
-private fun LessonToolContent() {
+private fun LessonToolContent(viewModel: TeacherViewModel) {
+    val lessonPlansState by viewModel.lessonPlansState.collectAsState()
+    val lessons = (lessonPlansState as? UiState.Success)?.data?.data ?: emptyList()
+
     Column(modifier = Modifier.padding(24.dp)) {
-        LessonItem("Mon, 15 Jul 2026", "Fractions — Comparing and Ordering", "Students will learn to compare fractions with unlike denominators using LCM method")
-        LessonItem("Wed, 17 Jul 2026", "Fractions — Addition & Subtraction", "Students will practice adding and subtracting mixed fractions with word problems")
-        LessonItem("Fri, 19 Jul 2026", "Decimals — Introduction", "Introduce decimal notation, place value chart, and conversion from fractions")
-        LessonItem("Mon, 22 Jul 2026", "Decimals — Operations", "Add, subtract, multiply and divide decimals up to 2 places", faded = true)
+        if (lessons.isEmpty()) {
+            Text(
+                text = when (lessonPlansState) {
+                    is UiState.Loading -> "Loading…"
+                    is UiState.Error -> (lessonPlansState as UiState.Error).message
+                    else -> "No lesson plans for this class"
+                },
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = VColors.ink3,
+                modifier = Modifier.padding(vertical = 16.dp),
+            )
+        } else {
+            lessons.forEach { lesson ->
+                val faded = lesson.status == "completed"
+                LessonItem(
+                    date = lesson.plannedDate ?: "",
+                    topic = lesson.title,
+                    objectives = lesson.objectives.joinToString("; "),
+                    faded = faded,
+                )
+            }
+        }
     }
 }
 
@@ -753,23 +821,23 @@ private fun LessonItem(date: String, topic: String, objectives: String, faded: B
     ) {
         Text(
             text = date,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.SemiBold,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
             color = VColors.violet.copy(alpha = alpha),
         )
         Text(
             text = topic,
             fontSize = 15.sp,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.SemiBold,
             color = VColors.ink.copy(alpha = alpha),
             modifier = Modifier.padding(top = 4.dp),
         )
         Text(
             text = objectives,
-            fontSize = 14.sp,
+            fontSize = 13.sp,
             fontWeight = FontWeight.Medium,
             color = VColors.ink2.copy(alpha = alpha),
-            modifier = Modifier.padding(top = 4.dp),
+            modifier = Modifier.padding(top = 6.dp),
         )
     }
 }

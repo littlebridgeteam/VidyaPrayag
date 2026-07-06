@@ -20,6 +20,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,37 +34,78 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.domain.util.UiState
+import com.littlebridge.enrollplus.feature.teacher.domain.model.CalendarOverlayDto
+import com.littlebridge.enrollplus.feature.teacher.domain.model.ResolvedDayDto
+import com.littlebridge.enrollplus.feature.teacher.domain.model.ResolvedPeriodDto
+import com.littlebridge.enrollplus.feature.teacher.domain.model.TeacherClassSummaryDto
+import com.littlebridge.enrollplus.feature.teacher.domain.model.TeacherObligationsDto
+import com.littlebridge.enrollplus.presentation.TeacherViewModel
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.util.nowMinutesOfDay
 
 @Composable
 fun TeacherHomeTab(
+    viewModel: TeacherViewModel,
     onNavigateTab: (TeacherTab) -> Unit = {},
 ) {
+    val dayState by viewModel.dayState.collectAsState()
+    val obligationsState by viewModel.obligationsState.collectAsState()
+    val classesState by viewModel.classesState.collectAsState()
+    val profileState by viewModel.profileState.collectAsState()
+
+    val dayData = (dayState as? UiState.Success)?.data?.data
+    val obligations = (obligationsState as? UiState.Success)?.data?.data
+    val classes = (classesState as? UiState.Success)?.data?.data?.classes ?: emptyList()
+    val teacherName = (profileState as? UiState.Success)?.data?.data?.name ?: "Teacher"
+    val firstName = teacherName.substringBefore(" ")
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        GreetingSection()
-        NowTeachingCard(onClick = { onNavigateTab(TeacherTab.Classes) })
+        GreetingSection(
+            firstName = firstName,
+            dayData = dayData,
+            obligations = obligations,
+        )
+        NowTeachingCard(
+            dayData = dayData,
+            onClick = { onNavigateTab(TeacherTab.Classes) },
+        )
         TodayScheduleSection(
+            dayData = dayData,
             onViewWeek = { onNavigateTab(TeacherTab.Timetable) },
         )
         QuickActionsSection(
             onAction = { onNavigateTab(TeacherTab.Update) },
         )
         MyClassesSection(
+            classes = classes,
             onViewAll = { onNavigateTab(TeacherTab.Classes) },
         )
-        UpcomingEventsSection()
+        UpcomingEventsSection(
+            calendar = dayData?.calendar ?: emptyList(),
+            dateStr = dayData?.date,
+        )
         Spacer(Modifier.height(24.dp))
     }
 }
 
 @Composable
-private fun GreetingSection() {
+private fun GreetingSection(
+    firstName: String,
+    dayData: ResolvedDayDto?,
+    obligations: TeacherObligationsDto?,
+) {
+    val inClassNow = dayData?.nowIndex != null
+    val classesToday = dayData?.periods?.size ?: 0
+    val pendingTasks = obligations?.items?.size ?: 0
+    val totalStudents = obligations?.classesTodayTotal ?: 0
+
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -71,12 +114,12 @@ private fun GreetingSection() {
             Box(
                 modifier = Modifier
                     .size(5.dp)
-                    .background(VColors.success, VShapes.full),
+                    .background(if (inClassNow) VColors.success else VColors.ink3, VShapes.full),
             )
             Text(
-                text = "IN CLASS NOW",
+                text = if (inClassNow) "IN CLASS NOW" else "NOT IN CLASS",
                 style = VTypography.accentLabel,
-                color = VColors.success,
+                color = if (inClassNow) VColors.success else VColors.ink3,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
             )
@@ -84,9 +127,9 @@ private fun GreetingSection() {
         Spacer(Modifier.height(10.dp))
         Text(
             text = buildAnnotatedString {
-                append("Good morning,\n")
+                append("${greetingForHour(nowMinutesOfDay() / 60)},\n")
                 withStyle(SpanStyle(fontWeight = FontWeight.Normal, color = VColors.ink2)) {
-                    append("Priya")
+                    append(firstName)
                 }
             },
             style = VTypography.h2.copy(fontSize = 31.sp, letterSpacing = (-1).sp, lineHeight = 33.sp),
@@ -94,7 +137,7 @@ private fun GreetingSection() {
         )
         Spacer(Modifier.height(6.dp))
         Text(
-            text = "5 classes today · 7 pending tasks · 90 students",
+            text = "$classesToday classes today · $pendingTasks pending tasks · $totalStudents students",
             style = VTypography.body,
             color = VColors.ink2,
         )
@@ -102,7 +145,17 @@ private fun GreetingSection() {
 }
 
 @Composable
-private fun NowTeachingCard(onClick: () -> Unit) {
+private fun NowTeachingCard(
+    dayData: ResolvedDayDto?,
+    onClick: () -> Unit,
+) {
+    val nowIndex = dayData?.nowIndex
+    val currentPeriod = if (nowIndex != null && nowIndex < dayData.periods.size) {
+        dayData.periods[nowIndex]
+    } else null
+
+    if (currentPeriod == null) return
+
     Column(
         modifier = Modifier
             .padding(horizontal = 24.dp)
@@ -140,9 +193,9 @@ private fun NowTeachingCard(onClick: () -> Unit) {
                 }
                 Text(
                     text = buildAnnotatedString {
-                        append("9:00 ")
+                        append(currentPeriod.startTime + " ")
                         withStyle(SpanStyle(color = VColors.ink3, fontWeight = FontWeight.Medium)) {
-                            append("— 9:45")
+                            append("— " + currentPeriod.endTime)
                         }
                     },
                     fontSize = 14.sp,
@@ -152,7 +205,7 @@ private fun NowTeachingCard(onClick: () -> Unit) {
             }
             Spacer(Modifier.height(14.dp))
             Text(
-                text = "8-A · Mathematics",
+                text = "${currentPeriod.className}${if (currentPeriod.section.isNotBlank()) "-${currentPeriod.section}" else ""} · ${currentPeriod.subject}",
                 fontSize = 22.sp,
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = (-0.5).sp,
@@ -160,24 +213,39 @@ private fun NowTeachingCard(onClick: () -> Unit) {
             )
             Spacer(Modifier.height(3.dp))
             Text(
-                text = "Room 312",
+                text = currentPeriod.room.ifBlank { "No room assigned" },
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 color = VColors.ink3,
             )
         }
-        // Stats row
+        // Stats row — 3 stats with dividers matching prototype
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(VColors.surfaceTint)
                 .padding(horizontal = 20.dp, vertical = 14.dp),
         ) {
-            NowStat("28", "Present", VColors.ink)
-            Spacer(Modifier.width(16.dp))
-            NowStat("2", "Absent", VColors.coral)
-            Spacer(Modifier.width(16.dp))
-            NowStat("7", "Ungraded", VColors.gold)
+            NowStat(
+                if (currentPeriod.attendanceMarked) "✓" else "!",
+                if (currentPeriod.attendanceMarked) "Marked" else "Unmarked",
+                if (currentPeriod.attendanceMarked) VColors.ink else VColors.coral,
+                Modifier.weight(1f),
+            )
+            Box(modifier = Modifier.width(1.dp).height(32.dp).background(VColors.lineSoft))
+            NowStat(
+                if (currentPeriod.lessonPlanStatus == "completed") "✓" else "—",
+                "Lesson",
+                if (currentPeriod.lessonPlanStatus == "completed") VColors.success else VColors.ink3,
+                Modifier.weight(1f).padding(horizontal = 16.dp),
+            )
+            Box(modifier = Modifier.width(1.dp).height(32.dp).background(VColors.lineSoft))
+            NowStat(
+                if (currentPeriod.status == "SCHEDULED") "●" else "○",
+                "Status",
+                if (currentPeriod.status == "SCHEDULED") VColors.ink else VColors.ink3,
+                Modifier.weight(1f).padding(start = 16.dp),
+            )
         }
         // CTA row
         Row(
@@ -192,7 +260,7 @@ private fun NowTeachingCard(onClick: () -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(5.dp),
             ) {
                 Text(
-                    text = "Take attendance",
+                    text = if (currentPeriod.attendanceMarked) "View class" else "Take attendance",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = VColors.violet,
@@ -209,8 +277,8 @@ private fun NowTeachingCard(onClick: () -> Unit) {
 }
 
 @Composable
-private fun NowStat(num: String, label: String, numColor: Color) {
-    Column {
+private fun NowStat(num: String, label: String, numColor: Color, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
         Text(
             text = num,
             fontSize = 20.sp,
@@ -276,14 +344,37 @@ private fun SectionHeader(
 }
 
 @Composable
-private fun TodayScheduleSection(onViewWeek: () -> Unit) {
+private fun TodayScheduleSection(
+    dayData: ResolvedDayDto?,
+    onViewWeek: () -> Unit,
+) {
+    val periods = dayData?.periods ?: emptyList()
+    val nowIdx = dayData?.nowIndex
+    val nextIdx = dayData?.nextIndex
+
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
         SectionHeader("Today's Schedule", "View week", onViewWeek)
-        ScheduleItem("8:00 — 8:45", "7-B · Mathematics", "Room 204", ScheduleStatus.Done)
-        ScheduleItem("9:00 — 9:45", "8-A · Mathematics", "Room 312", ScheduleStatus.Now)
-        ScheduleItem("10:00 — 10:45", "9-C · Algebra", "Room 108", ScheduleStatus.Next)
-        ScheduleItem("11:15 — 12:00", "7-B · Mathematics", "Room 204", ScheduleStatus.Upcoming)
-        ScheduleItem("1:00 — 1:45", "8-A · Mathematics", "Room 312", ScheduleStatus.Upcoming)
+        if (periods.isEmpty()) {
+            Text(
+                text = if (dayData?.isHoliday == true) "Holiday: ${dayData.holidayName ?: "No classes"}" else "No periods scheduled",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = VColors.ink3,
+                modifier = Modifier.padding(vertical = 16.dp),
+            )
+        } else {
+            periods.forEachIndexed { index, period ->
+                val status = when {
+                    index == nowIdx -> ScheduleStatus.Now
+                    index == nextIdx -> ScheduleStatus.Next
+                    nowIdx != null && index < nowIdx -> ScheduleStatus.Done
+                    else -> ScheduleStatus.Upcoming
+                }
+                val classLabel = "${period.className}${if (period.section.isNotBlank()) "-${period.section}" else ""} · ${period.subject}"
+                val timeLabel = "${period.startTime} — ${period.endTime}"
+                ScheduleItem(timeLabel, classLabel, period.room, status)
+            }
+        }
     }
 }
 
@@ -430,12 +521,45 @@ private fun QuickActionItem(
 }
 
 @Composable
-private fun MyClassesSection(onViewAll: () -> Unit) {
+private fun MyClassesSection(
+    classes: List<TeacherClassSummaryDto>,
+    onViewAll: () -> Unit,
+) {
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
         SectionHeader("My Classes", "View all", onViewAll)
-        ClassRow("7-B", "Mathematics", "32 students · 3 pending · 5 ungraded", "3 pending", VColors.coralSoft, VColors.coral)
-        ClassRow("8-A", "Mathematics", "28 students · 1 pending · 7 ungraded", "1 pending", VColors.coralSoft, VColors.coral)
-        ClassRow("9-C", "Algebra", "30 students · 2 pending", "All graded", VColors.successSoft, VColors.success)
+        if (classes.isEmpty()) {
+            Text(
+                text = "No classes assigned",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = VColors.ink3,
+                modifier = Modifier.padding(vertical = 16.dp),
+            )
+        } else {
+            classes.take(5).forEach { cls ->
+                val classId = "${cls.className}${if (cls.section.isNotBlank()) "-${cls.section}" else ""}"
+                val meta = "${cls.studentCount} students"
+                val atRisk = cls.atRiskCount
+                val attendanceMarked = cls.todayAttendanceMarked
+                val badgeText: String
+                val badgeBg: Color
+                val badgeFg: Color
+                if (atRisk > 0) {
+                    badgeText = "$atRisk at risk"
+                    badgeBg = VColors.coralSoft
+                    badgeFg = VColors.coral
+                } else if (!attendanceMarked) {
+                    badgeText = "Attendance due"
+                    badgeBg = VColors.coralSoft
+                    badgeFg = VColors.coral
+                } else {
+                    badgeText = "All caught up"
+                    badgeBg = VColors.successSoft
+                    badgeFg = VColors.success
+                }
+                ClassRow(classId, cls.subject, meta, badgeText, badgeBg, badgeFg)
+            }
+        }
     }
 }
 
@@ -503,11 +627,32 @@ private fun ClassRow(
 }
 
 @Composable
-private fun UpcomingEventsSection() {
+private fun UpcomingEventsSection(calendar: List<CalendarOverlayDto>, dateStr: String?) {
+    val dayNum = dateStr?.substringAfterLast("-")?.toIntOrNull()?.toString() ?: "--"
+    val monthMap = listOf("JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC")
+    val monthNum = dateStr?.substringAfter("-")?.substringBefore("-")?.toIntOrNull()
+    val monthLabel = if (monthNum != null && monthNum in 1..12) monthMap[monthNum - 1] else "---"
+
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
         SectionHeader("Upcoming Events")
-        EventRow("18", "JUL", "Parent-Teacher Meeting", "10:00 AM — 1:00 PM")
-        EventRow("22", "JUL", "Unit Test — Class 8-A", "11:00 AM — 12:00 PM")
+        if (calendar.isEmpty()) {
+            Text(
+                text = "No upcoming events",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = VColors.ink3,
+                modifier = Modifier.padding(vertical = 16.dp),
+            )
+        } else {
+            calendar.take(5).forEach { event ->
+                EventRow(
+                    day = dayNum,
+                    month = monthLabel,
+                    title = event.title,
+                    time = event.type.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() },
+                )
+            }
+        }
     }
 }
 

@@ -20,6 +20,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,22 +31,52 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.domain.util.UiState
+import com.littlebridge.enrollplus.feature.teacher.domain.model.TeacherProfileData
+import com.littlebridge.enrollplus.presentation.TeacherViewModel
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 
 @Composable
 fun TeacherProfileTab(
+    viewModel: TeacherViewModel,
     onLogout: () -> Unit = {},
 ) {
+    LaunchedEffect(Unit) {
+        viewModel.loadProfile()
+        viewModel.loadMyLeave()
+        viewModel.loadUnreadCount()
+        viewModel.loadHealthAlerts()
+        viewModel.loadPewsStudents()
+    }
+
+    val profileState by viewModel.profileState.collectAsState()
+    val myLeaveState by viewModel.myLeaveState.collectAsState()
+    val unreadCount by viewModel.unreadCount.collectAsState()
+    val healthAlertsState by viewModel.healthAlertsState.collectAsState()
+    val pewsStudentsState by viewModel.pewsStudentsState.collectAsState()
+
+    val profile = (profileState as? UiState.Success)?.data?.data
+    val leaveData = (myLeaveState as? UiState.Success)?.data?.data
+    val healthAlerts = (healthAlertsState as? UiState.Success)?.data
+    val pewsStudents = (pewsStudentsState as? UiState.Success)?.data
+    val classesState by viewModel.classesState.collectAsState()
+    val classes = (classesState as? UiState.Success)?.data?.data?.classes ?: emptyList()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        ProfileHero()
-        ProfileStats()
-        ProfileQuickAccess()
-        ProfileLeaveSection()
+        ProfileHero(profile)
+        ProfileStats(profile, classes)
+        ProfileQuickAccess(
+            unreadCount = unreadCount,
+            healthAlertCount = healthAlerts?.alerts?.size ?: 0,
+            pewsCount = pewsStudents?.size ?: 0,
+            leavePending = leaveData?.pendingCount ?: 0,
+        )
+        ProfileLeaveSection(leavePending = leaveData?.pendingCount ?: 0, leaveTotal = leaveData?.requests?.size ?: 0)
         ProfileSettingsSection()
         ProfileLogout(onLogout)
         Spacer(Modifier.height(24.dp))
@@ -51,48 +84,54 @@ fun TeacherProfileTab(
 }
 
 @Composable
-private fun ProfileHero() {
+private fun ProfileHero(profile: TeacherProfileData?) {
+    val name = profile?.name ?: "Teacher"
+    val initials = name.take(2).uppercase()
+    val subjects = profile?.subjects?.joinToString(", ") ?: "Teacher"
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(24.dp),
+            .padding(horizontal = 24.dp, vertical = 16.dp)
+            .shadow(1.dp, VShapes.md)
+            .background(VColors.white, VShapes.md)
+            .padding(20.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Box(
             modifier = Modifier
-                .size(64.dp)
+                .size(56.dp)
                 .background(VColors.violetSoft, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = "PS",
-                fontSize = 24.sp,
+                text = initials,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = VColors.violet,
             )
         }
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "Priya Sharma",
-                fontSize = 20.sp,
+                text = name,
+                fontSize = 17.sp,
                 fontWeight = FontWeight.ExtraBold,
-                letterSpacing = (-0.5).sp,
+                letterSpacing = (-0.4).sp,
                 color = VColors.ink,
             )
             Text(
-                text = "Mathematics Teacher",
-                fontSize = 14.sp,
+                text = subjects,
+                fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
-                color = VColors.ink2,
+                color = VColors.ink3,
                 modifier = Modifier.padding(top = 2.dp),
             )
             Row(
-                modifier = Modifier.padding(top = 6.dp),
+                modifier = Modifier.padding(top = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                ProfileTag("EMP-0421")
-                ProfileTag("Science Dept")
+                profile?.username?.let { ProfileTag(it) }
+                profile?.schoolName?.let { ProfileTag(it) }
             }
         }
     }
@@ -102,29 +141,33 @@ private fun ProfileHero() {
 private fun ProfileTag(text: String) {
     Box(
         modifier = Modifier
-            .background(VColors.surfaceTint, VShapes.sm)
+            .background(VColors.surfaceTint, VShapes.full)
             .padding(horizontal = 8.dp, vertical = 3.dp),
     ) {
         Text(
             text = text,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.3.sp,
             color = VColors.ink2,
         )
     }
 }
 
 @Composable
-private fun ProfileStats() {
+private fun ProfileStats(profile: TeacherProfileData?, classes: List<com.littlebridge.enrollplus.feature.teacher.domain.model.TeacherClassSummaryDto>) {
+    val classCount = profile?.classes?.size ?: 0
+    val subjectCount = profile?.subjects?.size ?: 0
+    val totalStudents = classes.sumOf { it.studentCount }
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        StatBlock("5", "Classes", Modifier.weight(1f))
-        StatBlock("142", "Students", Modifier.weight(1f))
-        StatBlock("7", "Years", Modifier.weight(1f))
+        StatBlock(classCount.toString(), "Classes", Modifier.weight(1f))
+        StatBlock(totalStudents.toString(), "Students", Modifier.weight(1f))
+        StatBlock(subjectCount.toString(), "Subjects", Modifier.weight(1f))
     }
 }
 
@@ -134,20 +177,21 @@ private fun StatBlock(num: String, label: String, modifier: Modifier = Modifier)
         modifier = modifier
             .shadow(1.dp, VShapes.md)
             .background(VColors.white, VShapes.md)
-            .padding(vertical = 16.dp),
+            .padding(vertical = 14.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
             text = num,
-            fontSize = 22.sp,
+            fontSize = 20.sp,
             fontWeight = FontWeight.ExtraBold,
-            letterSpacing = (-0.5).sp,
+            letterSpacing = (-0.4).sp,
             color = VColors.ink,
         )
         Text(
-            text = label,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Medium,
+            text = label.uppercase(),
+            fontSize = 10.sp,
+            fontWeight = FontWeight.SemiBold,
+            letterSpacing = 0.5.sp,
             color = VColors.ink3,
             modifier = Modifier.padding(top = 4.dp),
         )
@@ -155,29 +199,33 @@ private fun StatBlock(num: String, label: String, modifier: Modifier = Modifier)
 }
 
 @Composable
-private fun ProfileQuickAccess() {
-    val tiles = remember {
-        listOf(
-            QuickTile("Notifications", "3 unread", TIBell, 3),
-            QuickTile("Messages", "3 unread", TIEdit, 3),
-            QuickTile("Calendar", "View events", TICalendar, null),
-            QuickTile("Digital ID", "Show QR code", TIUser, null),
-            QuickTile("Transport", "Route attendance", TIMap, null),
-            QuickTile("Health Alerts", "2 active", TIAlert, 2),
-            QuickTile("PEWS", "2 at risk", TIBell, 2),
-            QuickTile("Reports", "3 pending", TIBook, 3),
-            QuickTile("Heatmap", "Learning insights", TIBook, null),
-            QuickTile("Scheduled", "2 upcoming", TIClock, 2),
-            QuickTile("Events", "Registration", TICalendar, null),
-        )
-    }
+private fun ProfileQuickAccess(
+    unreadCount: Int,
+    healthAlertCount: Int,
+    pewsCount: Int,
+    leavePending: Int,
+) {
+    val tiles = listOf(
+        QuickTile("Notifications", "$unreadCount unread", TIBell, unreadCount),
+        QuickTile("Messages", "$unreadCount unread", TIEdit, unreadCount),
+        QuickTile("Calendar", "View events", TICalendar, null),
+        QuickTile("Digital ID", "Show QR code", TIUser, null),
+        QuickTile("Transport", "Route attendance", TIMap, null),
+        QuickTile("Health Alerts", "$healthAlertCount active", TIAlert, healthAlertCount),
+        QuickTile("PEWS", "$pewsCount at risk", TIBell, pewsCount),
+        QuickTile("Reports", "Review", TIBook, null),
+        QuickTile("Heatmap", "Learning insights", TIBook, null),
+        QuickTile("Scheduled", "Upcoming", TIClock, null),
+        QuickTile("Events", "Registration", TICalendar, null),
+    )
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
         Text(
             text = "Quick Access",
-            fontSize = 15.sp,
+            fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
-            color = VColors.ink,
-            modifier = Modifier.padding(bottom = 12.dp),
+            letterSpacing = 1.sp,
+            color = VColors.ink3,
+            modifier = Modifier.padding(bottom = 8.dp).padding(start = 4.dp),
         )
         // Grid: 2 columns
         val rows = tiles.chunked(2)
@@ -205,7 +253,7 @@ private data class QuickTile(
 
 @Composable
 private fun QuickTileItem(tile: QuickTile, modifier: Modifier = Modifier) {
-    Row(
+    Column(
         modifier = modifier
             .shadow(1.dp, VShapes.md)
             .background(VColors.white, VShapes.md)
@@ -214,70 +262,77 @@ private fun QuickTileItem(tile: QuickTile, modifier: Modifier = Modifier) {
                 indication = null,
             ) {}
             .padding(14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .background(VColors.surfaceTint, VShapes.full),
-            contentAlignment = Alignment.Center,
+        // Top row: icon + badge
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                imageVector = tile.icon,
-                contentDescription = tile.label,
-                tint = VColors.ink2,
-                modifier = Modifier.size(19.dp),
-            )
-        }
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = tile.label,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = VColors.ink,
-            )
-            Text(
-                text = tile.sub,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                color = VColors.ink3,
-            )
-        }
-        if (tile.badge != null && tile.badge > 0) {
             Box(
                 modifier = Modifier
-                    .size(20.dp)
-                    .background(VColors.coral, VShapes.full),
+                    .size(32.dp)
+                    .background(VColors.surfaceTint, VShapes.sm),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    text = tile.badge.toString(),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = VColors.white,
+                Icon(
+                    imageVector = tile.icon,
+                    contentDescription = tile.label,
+                    tint = VColors.ink2,
+                    modifier = Modifier.size(16.dp),
                 )
             }
+            if (tile.badge != null && tile.badge > 0) {
+                Box(
+                    modifier = Modifier
+                        .background(VColors.coralSoft, VShapes.full)
+                        .padding(horizontal = 7.dp, vertical = 2.dp),
+                ) {
+                    Text(
+                        text = tile.badge.toString(),
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 0.3.sp,
+                        color = VColors.coral,
+                    )
+                }
+            }
         }
+        // Bottom: label + sub
+        Text(
+            text = tile.label,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = (-0.2).sp,
+            color = VColors.ink,
+        )
+        Text(
+            text = tile.sub,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Medium,
+            color = VColors.ink3,
+        )
     }
 }
 
 @Composable
-private fun ProfileLeaveSection() {
+private fun ProfileLeaveSection(leavePending: Int, leaveTotal: Int) {
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
         Text(
             text = "Leave Management",
-            fontSize = 15.sp,
+            fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
-            color = VColors.ink,
-            modifier = Modifier.padding(bottom = 12.dp),
+            letterSpacing = 1.sp,
+            color = VColors.ink3,
+            modifier = Modifier.padding(bottom = 8.dp).padding(start = 4.dp),
         )
         Column(
             modifier = Modifier
                 .shadow(1.dp, VShapes.md)
                 .background(VColors.white, VShapes.md),
         ) {
-            ProfileRow(TICalendar, "Apply for leave", "Casual · 7 left")
+            ProfileRow(TICalendar, "Apply for leave", if (leavePending > 0) "$leavePending pending" else null)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -285,7 +340,7 @@ private fun ProfileLeaveSection() {
                     .height(1.dp)
                     .background(VColors.lineSoft),
             )
-            ProfileRow(TIClock, "Leave history", "3 applications")
+            ProfileRow(TIClock, "Leave history", if (leaveTotal > 0) "$leaveTotal applications" else null)
         }
     }
 }
@@ -295,10 +350,11 @@ private fun ProfileSettingsSection() {
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
         Text(
             text = "Settings",
-            fontSize = 15.sp,
+            fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
-            color = VColors.ink,
-            modifier = Modifier.padding(bottom = 12.dp),
+            letterSpacing = 1.sp,
+            color = VColors.ink3,
+            modifier = Modifier.padding(bottom = 8.dp).padding(start = 4.dp),
         )
         Column(
             modifier = Modifier
@@ -338,31 +394,31 @@ private fun ProfileRow(icon: ImageVector, label: String, value: String?) {
             Box(
                 modifier = Modifier
                     .size(32.dp)
-                    .background(VColors.surfaceTint, VShapes.full),
+                    .background(VColors.surfaceTint, VShapes.sm),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
                     tint = VColors.ink2,
-                    modifier = Modifier.size(17.dp),
+                    modifier = Modifier.size(15.dp),
                 )
             }
             Text(
                 text = label,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Medium,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
                 color = VColors.ink,
             )
         }
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             if (value != null) {
                 Text(
                     text = value,
-                    fontSize = 14.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                     color = VColors.ink3,
                 )
@@ -371,7 +427,7 @@ private fun ProfileRow(icon: ImageVector, label: String, value: String?) {
                 imageVector = TIChevronRight,
                 contentDescription = null,
                 tint = VColors.ink3,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(14.dp),
             )
         }
     }
@@ -383,25 +439,27 @@ private fun ProfileLogout(onLogout: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp, vertical = 16.dp)
+            .shadow(1.dp, VShapes.md)
+            .background(VColors.white, VShapes.md)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
             ) { onLogout() }
-            .padding(vertical = 8.dp),
+            .padding(vertical = 14.dp, horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
             imageVector = TILogout,
             contentDescription = "Log out",
-            tint = VColors.error,
-            modifier = Modifier.size(20.dp),
+            tint = VColors.coral,
+            modifier = Modifier.size(16.dp),
         )
         Text(
             text = "Log out",
-            fontSize = 15.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = VColors.error,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = VColors.coral,
         )
     }
 }

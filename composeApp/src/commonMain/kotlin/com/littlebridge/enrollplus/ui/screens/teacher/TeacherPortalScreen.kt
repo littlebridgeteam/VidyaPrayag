@@ -23,6 +23,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,10 +38,16 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.domain.util.UiState
+import com.littlebridge.enrollplus.presentation.TeacherViewModel
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.tokens.VMotion
+import com.littlebridge.enrollplus.ui.navigation.DeepLinkTarget
+import com.littlebridge.enrollplus.ui.navigation.TeacherDeepLinkTab
+import com.littlebridge.enrollplus.ui.navigation.parseDeepLink
+import com.littlebridge.enrollplus.util.nowMinutesOfDay
 
 enum class TeacherTab(val label: String, val icon: ImageVector) {
     Home("Home", TIHome),
@@ -51,12 +59,32 @@ enum class TeacherTab(val label: String, val icon: ImageVector) {
 
 @Composable
 fun TeacherPortalScreen(
-    teacherName: String = "Priya Sharma",
-    notificationCount: Int = 3,
+    viewModel: TeacherViewModel,
     onLogout: () -> Unit = {},
+    initialTab: TeacherTab? = null,
 ) {
-    var selectedTab by rememberSaveable { mutableStateOf(TeacherTab.Home) }
+    LaunchedEffect(Unit) { viewModel.loadAll() }
 
+    val unreadCount by viewModel.unreadCount.collectAsState()
+    val profileState by viewModel.profileState.collectAsState()
+
+    val teacherName = when (val s = profileState) {
+        is UiState.Success -> s.data.data.name
+        else -> "Teacher"
+    }
+
+    var selectedTab by rememberSaveable { mutableStateOf(initialTab ?: TeacherTab.Home) }
+    var showNotifications by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(initialTab) {
+        if (initialTab != null) selectedTab = initialTab
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(VColors.cream),
+    ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -65,7 +93,8 @@ fun TeacherPortalScreen(
         // Portal Header
         PortalHeader(
             teacherName = teacherName,
-            notificationCount = notificationCount,
+            notificationCount = unreadCount,
+            onNotificationsClick = { showNotifications = true },
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding(),
@@ -82,12 +111,14 @@ fun TeacherPortalScreen(
         ) { tab ->
             when (tab) {
                 TeacherTab.Home -> TeacherHomeTab(
+                    viewModel = viewModel,
                     onNavigateTab = { selectedTab = it },
                 )
-                TeacherTab.Update -> TeacherUpdateTab()
-                TeacherTab.Classes -> TeacherClassesTab()
-                TeacherTab.Timetable -> TeacherTimetableTab()
+                TeacherTab.Update -> TeacherUpdateTab(viewModel = viewModel)
+                TeacherTab.Classes -> TeacherClassesTab(viewModel = viewModel)
+                TeacherTab.Timetable -> TeacherTimetableTab(viewModel = viewModel)
                 TeacherTab.Profile -> TeacherProfileTab(
+                    viewModel = viewModel,
                     onLogout = onLogout,
                 )
             }
@@ -102,12 +133,33 @@ fun TeacherPortalScreen(
                 .navigationBarsPadding(),
         )
     }
+
+        // Notifications Overlay
+        TeacherNotificationsOverlay(
+            viewModel = viewModel,
+            visible = showNotifications,
+            onDismiss = { showNotifications = false },
+            onDeepLink = { deepLinkString ->
+                val target = parseDeepLink(deepLinkString, "teacher")
+                if (target is DeepLinkTarget.TeacherTab) {
+                    selectedTab = when (target.tab) {
+                        TeacherDeepLinkTab.Home -> TeacherTab.Home
+                        TeacherDeepLinkTab.Update -> TeacherTab.Update
+                        TeacherDeepLinkTab.Classes -> TeacherTab.Classes
+                        TeacherDeepLinkTab.Timetable -> TeacherTab.Timetable
+                        TeacherDeepLinkTab.Profile -> TeacherTab.Profile
+                    }
+                }
+            },
+        )
+    }
 }
 
 @Composable
 private fun PortalHeader(
     teacherName: String,
     notificationCount: Int,
+    onNotificationsClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -117,7 +169,7 @@ private fun PortalHeader(
     ) {
         Column {
             Text(
-                text = "Good morning",
+                text = greetingForHour(remember { currentHour() }),
                 style = VTypography.caption.copy(
                     fontWeight = FontWeight.Medium,
                     letterSpacing = 0.3.sp,
@@ -139,7 +191,7 @@ private fun PortalHeader(
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                    ) { },
+                    ) { onNotificationsClick() },
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -222,4 +274,13 @@ private fun TeacherBottomNav(
             }
         }
     }
+}
+
+private fun currentHour(): Int = nowMinutesOfDay() / 60
+
+internal fun greetingForHour(hour: Int): String = when (hour) {
+    in 5..11 -> "Good morning"
+    in 12..16 -> "Good afternoon"
+    in 17..21 -> "Good evening"
+    else -> "Good night"
 }

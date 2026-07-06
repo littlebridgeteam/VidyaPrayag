@@ -527,6 +527,7 @@ val viewModelModule = module {
     factory { MainViewModel(get(), get(), get(), get()) }
     factory { com.littlebridge.enrollplus.presentation.PermissionViewModel(get(), get()) }
     factory { com.littlebridge.enrollplus.feature.auth.presentation.AuthViewModel(get()) }
+    factory { com.littlebridge.enrollplus.presentation.TeacherViewModel(get(), get(), get(), get(), get()) }
     single { com.littlebridge.enrollplus.core.state.SelectedChildHolder() }
 }
 

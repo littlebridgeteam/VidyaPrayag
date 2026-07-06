@@ -19,6 +19,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,13 +33,26 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.domain.util.UiState
+import com.littlebridge.enrollplus.feature.teacher.domain.model.ResolvedDayDto
+import com.littlebridge.enrollplus.feature.teacher.domain.model.ResolvedPeriodDto
+import com.littlebridge.enrollplus.feature.teacher.domain.model.ResolvedWeekDto
+import com.littlebridge.enrollplus.presentation.TeacherViewModel
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 
 private enum class TimetableSubTab { Week, Requests }
 
 @Composable
-fun TeacherTimetableTab() {
+fun TeacherTimetableTab(viewModel: TeacherViewModel) {
+    LaunchedEffect(Unit) {
+        viewModel.loadWeek()
+        viewModel.loadChangeRequests()
+    }
+
+    val weekState by viewModel.weekState.collectAsState()
+    val changeRequestsState by viewModel.changeRequestsState.collectAsState()
+
     var subTab by rememberSaveable { mutableStateOf(TimetableSubTab.Week) }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -60,8 +75,8 @@ fun TeacherTimetableTab() {
                 .verticalScroll(rememberScrollState()),
         ) {
             when (subTab) {
-                TimetableSubTab.Week -> WeekContent()
-                TimetableSubTab.Requests -> RequestsContent()
+                TimetableSubTab.Week -> WeekContent(weekState)
+                TimetableSubTab.Requests -> RequestsContent(changeRequestsState)
             }
         }
     }
@@ -99,9 +114,13 @@ private fun SubTabButton(text: String, isActive: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun WeekContent() {
-    var selectedDay by rememberSaveable { mutableStateOf("Tue") }
-    val days = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+private fun WeekContent(weekState: UiState<com.littlebridge.enrollplus.feature.teacher.domain.model.ResolvedWeekResponse>) {
+    val weekData = (weekState as? UiState.Success)?.data?.data
+    val days = weekData?.days ?: emptyList()
+    val dayLabels = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+    val weekdayIndex = listOf(1, 2, 3, 4, 5, 6, 7)
+
+    var selectedDay by rememberSaveable { mutableStateOf(1) }
 
     Row(
         modifier = Modifier
@@ -109,8 +128,9 @@ private fun WeekContent() {
             .padding(horizontal = 24.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        days.forEach { day ->
-            val isSelected = day == selectedDay
+        weekdayIndex.forEach { idx ->
+            val dayLabel = dayLabels[idx - 1]
+            val isSelected = idx == selectedDay
             val bg = if (isSelected) VColors.violet else Color.Transparent
             val fg = if (isSelected) VColors.white else VColors.ink2
             val border = if (isSelected) VColors.violet else VColors.line
@@ -121,11 +141,11 @@ private fun WeekContent() {
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                    ) { selectedDay = day }
+                    ) { selectedDay = idx }
                     .padding(horizontal = 14.dp, vertical = 7.dp),
             ) {
                 Text(
-                    text = day,
+                    text = dayLabel,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = fg,
@@ -134,25 +154,31 @@ private fun WeekContent() {
         }
     }
 
-    val periods = remember {
-        listOf(
-            PeriodData("1", "Class 7-B · Mathematics", "Room 204", "8:00 — 8:45"),
-            PeriodData("2", "Class 8-A · Mathematics", "Room 312", "9:00 — 9:45"),
-            PeriodData("3", "Class 9-C · Algebra", "Room 108", "10:00 — 10:45"),
-            PeriodData("4", "Class 7-B · Mathematics", "Room 204", "11:15 — 12:00"),
-            PeriodData("5", "Class 8-A · Mathematics", "Room 312", "1:00 — 1:45"),
+    val selectedDayData = days.find { it.weekday == selectedDay }
+    val periods = selectedDayData?.periods ?: emptyList()
+
+    if (periods.isEmpty()) {
+        Text(
+            text = when {
+                weekState is UiState.Loading -> "Loading…"
+                selectedDayData?.isHoliday == true -> "Holiday: ${selectedDayData.holidayName ?: "No classes"}"
+                else -> "No periods scheduled"
+            },
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            color = VColors.ink3,
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
         )
-    }
-    periods.forEach { period ->
-        TimetablePeriodRow(period)
+    } else {
+        periods.forEachIndexed { index, period ->
+            TimetablePeriodRow(period, index + 1)
+        }
     }
     Spacer(Modifier.height(24.dp))
 }
 
-private data class PeriodData(val num: String, val className: String, val room: String, val time: String)
-
 @Composable
-private fun TimetablePeriodRow(period: PeriodData) {
+private fun TimetablePeriodRow(period: ResolvedPeriodDto, num: Int) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -170,7 +196,7 @@ private fun TimetablePeriodRow(period: PeriodData) {
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = period.num,
+                text = num.toString(),
                 fontSize = 15.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = VColors.ink2,
@@ -178,13 +204,13 @@ private fun TimetablePeriodRow(period: PeriodData) {
         }
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = period.className,
+                text = "${period.className}${if (period.section.isNotBlank()) "-${period.section}" else ""} · ${period.subject}",
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
                 color = VColors.ink,
             )
             Text(
-                text = period.room,
+                text = period.room.ifBlank { "No room" },
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
                 color = VColors.ink3,
@@ -192,7 +218,7 @@ private fun TimetablePeriodRow(period: PeriodData) {
             )
         }
         Text(
-            text = period.time,
+            text = "${period.startTime} — ${period.endTime}",
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium,
             color = VColors.ink3,
@@ -201,7 +227,10 @@ private fun TimetablePeriodRow(period: PeriodData) {
 }
 
 @Composable
-private fun RequestsContent() {
+private fun RequestsContent(changeRequestsState: UiState<com.littlebridge.enrollplus.feature.admin.domain.model.ChangeRequestListResponse>) {
+    val requests = (changeRequestsState as? UiState.Success)?.data
+    val dayLabels = listOf("", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -222,9 +251,50 @@ private fun RequestsContent() {
             color = VColors.violet,
         )
     }
-    ChangeRequestCard("Modify Period 3", "Wednesday · 10:00 — 10:45", "Pending", VColors.goldSoft, VColors.gold, "Requesting room change from 108 to 205 due to smartboard maintenance.", "Submitted 12 Jul 2026")
-    ChangeRequestCard("New Period", "Friday · 2:00 — 2:45", "Approved", VColors.mintSoft, VColors.success, "Additional remedial session for Class 9-C before unit test.", "Submitted 8 Jul 2026")
-    ChangeRequestCard("Delete Period 5", "Monday · 1:00 — 1:45", "Rejected", VColors.errorSoft, VColors.error, "Request to cancel Monday afternoon session for personal leave.", "Submitted 5 Jul 2026")
+    if (requests == null) {
+        Text(
+            text = when (changeRequestsState) {
+                is UiState.Loading -> "Loading…"
+                is UiState.Error -> (changeRequestsState as UiState.Error).message
+                else -> "No requests"
+            },
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            color = VColors.ink3,
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
+        )
+    } else {
+        val reqList = requests.requests
+        if (reqList.isEmpty()) {
+            Text(
+                text = "No change requests submitted",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = VColors.ink3,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
+            )
+        } else {
+            reqList.forEach { req ->
+                val status = req.status
+                val (statusBg, statusFg) = when (status.lowercase()) {
+                    "pending" -> VColors.goldSoft to VColors.gold
+                    "approved" -> VColors.mintSoft to VColors.success
+                    "rejected" -> VColors.errorSoft to VColors.error
+                    else -> VColors.surfaceTint to VColors.ink2
+                }
+                val dayLabel = if (req.weekday in 1..7) dayLabels[req.weekday] else ""
+                ChangeRequestCard(
+                    type = req.kind.replaceFirstChar { it.uppercase() },
+                    period = "$dayLabel · ${req.startTime ?: ""} — ${req.endTime ?: ""}",
+                    status = status.replaceFirstChar { it.uppercase() },
+                    statusBg = statusBg,
+                    statusFg = statusFg,
+                    reason = req.reason,
+                    date = "Submitted ${req.createdAt}",
+                )
+            }
+        }
+    }
     Spacer(Modifier.height(24.dp))
 }
 

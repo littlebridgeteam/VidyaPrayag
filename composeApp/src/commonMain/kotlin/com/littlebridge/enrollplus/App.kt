@@ -21,10 +21,16 @@ import coil3.disk.DiskCache
 import coil3.memory.MemoryCache
 import coil3.network.ktor3.KtorNetworkFetcherFactory
 import coil3.request.crossfade
+import com.littlebridge.enrollplus.core.notification.NotificationFeedRepository
 import com.littlebridge.enrollplus.feature.auth.presentation.AuthViewModel
 import com.littlebridge.enrollplus.presentation.MainViewModel
+import com.littlebridge.enrollplus.presentation.TeacherViewModel
 import com.littlebridge.enrollplus.ui.navigation.AuthNavGraph
+import com.littlebridge.enrollplus.ui.navigation.DeepLinkTarget
+import com.littlebridge.enrollplus.ui.navigation.TeacherDeepLinkTab
+import com.littlebridge.enrollplus.ui.navigation.parseDeepLink
 import com.littlebridge.enrollplus.ui.screens.teacher.TeacherPortalScreen
+import com.littlebridge.enrollplus.ui.screens.teacher.TeacherTab
 import com.littlebridge.enrollplus.util.Config
 import io.ktor.client.*
 import org.koin.compose.KoinContext
@@ -118,9 +124,47 @@ fun App(
             val isAuthed = !authState.token.isNullOrBlank()
             val isTeacher = authState.role?.equals("teacher", ignoreCase = true) == true
 
+            // Parse deep link once when it arrives
+            val deepLinkTarget = remember(deepLink) {
+                parseDeepLink(deepLink, authState.role)
+            }
+
+            val notificationRepo = koinInject<NotificationFeedRepository>()
+
+            // Auto-mark-read via push ref (refType + refId from notification tap)
+            LaunchedEffect(pushRefType, pushRefId) {
+                if (!pushRefType.isNullOrBlank() && !pushRefId.isNullOrBlank()) {
+                    val token = authState.token
+                    if (!token.isNullOrBlank()) {
+                        runCatching { notificationRepo.markNotificationByRef(token, pushRefType, pushRefId) }
+                        onPushRefConsumed()
+                    }
+                }
+            }
+
+            // Consume deep link after routing
+            LaunchedEffect(deepLinkTarget) {
+                if (deepLinkTarget !is DeepLinkTarget.None) {
+                    onDeepLinkConsumed()
+                }
+            }
+
             if (isAuthed && isTeacher) {
+                val teacherViewModel: TeacherViewModel = koinViewModel()
+                val initialTab = when (deepLinkTarget) {
+                    is DeepLinkTarget.TeacherTab -> when (deepLinkTarget.tab) {
+                        TeacherDeepLinkTab.Home -> TeacherTab.Home
+                        TeacherDeepLinkTab.Update -> TeacherTab.Update
+                        TeacherDeepLinkTab.Classes -> TeacherTab.Classes
+                        TeacherDeepLinkTab.Timetable -> TeacherTab.Timetable
+                        TeacherDeepLinkTab.Profile -> TeacherTab.Profile
+                    }
+                    else -> null
+                }
                 TeacherPortalScreen(
+                    viewModel = teacherViewModel,
                     onLogout = { viewModel.logout() },
+                    initialTab = initialTab,
                 )
             } else {
                 AuthNavGraph(
