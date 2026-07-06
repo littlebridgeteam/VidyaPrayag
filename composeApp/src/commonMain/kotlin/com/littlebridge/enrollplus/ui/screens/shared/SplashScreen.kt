@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -36,8 +37,8 @@ import kotlinx.coroutines.launch
 fun SplashScreen(
     onTimeout: () -> Unit,
 ) {
-    val splashNameAlpha = Animatable(0f)
-    val accentWidth = Animatable(0f)
+    val splashNameAlpha = remember { Animatable(0f) }
+    val accentWidth = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
         launch {

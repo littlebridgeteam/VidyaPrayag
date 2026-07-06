@@ -6,71 +6,52 @@
 <title>Enroll+ — Teacher Portal Prototype</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-/* ═══ WARM CREAM — Matching auth prototype visual language ═══ */
+/* ═══ M3 EXPRESSIVE 2025 — Tonal grey surfaces, bold color pops ═══ */
 :root {
-  /* ── Warm Cream Base (matches auth) ── */
-  --cream:           #FBF8F4;
-  --cream-deep:      #F5F0E8;
-  --white:           #FFFFFF;
-  --surface:         #FBF8F4;
-  --surface-card:    #FFFFFF;
-  --surface-elevated:#FFFFFF;
-  --surface-tint:    #F8F4EF;
-  --surface-warm:    #FFF6EE;
-  /* ── On-surface ── */
-  --ink:             #1A1614;
-  --ink-2:           #5C544E;
-  --ink-3:           #8A8078;
-  --line:            #E8E0D6;
-  --line-soft:       #F0EAE0;
-  /* ── Primary — Deep violet (matches auth) ── */
-  --violet:          #5B41D5;
-  --violet-hover:    #4A30C4;
-  --violet-soft:     #EEE8FB;
-  --violet-ink:      #16006E;
-  /* ── Accents (Airtable warmth, matches auth) ── */
-  --coral:           #F82B60;
-  --coral-soft:      #FFE4EC;
-  --gold:            #FCB400;
-  --gold-soft:       #FFF4D1;
-  --sky:             #18BFFF;
-  --sky-soft:        #E0F6FF;
-  --mint:            #2DCE89;
-  --mint-soft:       #DCF5E8;
-  /* ── States ── */
-  --success:         #2D7A4A;
-  --success-soft:    #D4EDDB;
-  --error:           #BA1A1A;
-  --error-soft:      #FFDAD6;
-  --warning:         #B07500;
-  --warning-soft:    #FFF4D1;
-  /* ── M3 compat aliases ── */
-  --primary:var(--violet);--primary-hover:var(--violet-hover);
-  --primary-container:var(--violet-soft);--primary-on-cont:var(--violet-ink);
-  --surface-cl-lowest:var(--white);--surface-cl-low:var(--surface-tint);
-  --surface-cl:var(--surface-tint);--surface-cl-high:var(--cream-deep);
-  --surface-cl-highest:var(--cream-deep);--surface-bright:var(--white);
-  --outline:var(--line);--outline-soft:var(--line-soft);
-  --error-cont:var(--error-soft);--success-cont:var(--success-soft);
-  --warning-cont:var(--warning-soft);--info-cont:var(--sky-soft);
-  --secondary-cont:var(--violet-soft);--error-on-cont:var(--error);
-  --info:var(--sky);--mint-soft:var(--mint-soft);
-  /* ── Radii (matches auth) ── */
-  --r-sm:10px;--r-md:14px;--r-lg:18px;--r-xl:24px;--r-2xl:32px;--r-full:9999px;
-  /* ── Spacing ── */
+  --surface:           #F4F0F7;
+  --surface-bright:    #FFFBFF;
+  --surface-cl-lowest: #FFFFFF;
+  --surface-cl-low:    #F7F2FA;
+  --surface-cl:        #F1ECF4;
+  --surface-cl-high:   #EBE6F0;
+  --surface-cl-highest:#E5E0E9;
+  --ink:               #1D1B20;
+  --ink-2:             #46464F;
+  --ink-3:             #6F6E77;
+  --outline:           #C9C5D0;
+  --outline-soft:      #E0DCE8;
+  --primary:           #6750A4;
+  --primary-hover:     #584199;
+  --primary-container: #EADDFF;
+  --primary-on-cont:   #21005D;
+  --secondary-cont:    #E8DEF8;
+  --error:             #B3261E;
+  --error-cont:        #F9DEDC;
+  --error-on-cont:     #410E0B;
+  --success:           #2E6B3E;
+  --success-cont:      #D4F0DC;
+  --warning:           #B07500;
+  --warning-cont:      #FCEFC7;
+  --info:              #0B5FA5;
+  --info-cont:         #D6E8FA;
+  /* Compat aliases */
+  --cream:var(--surface);--surface-card:var(--surface-cl-lowest);--surface-tint:var(--surface-cl);
+  --surface-warm:var(--surface-cl);--violet:var(--primary);--violet-hover:var(--primary-hover);
+  --violet-soft:var(--primary-container);--violet-ink:var(--primary-on-cont);
+  --coral:var(--error);--coral-soft:var(--error-cont);--gold:var(--warning);--gold-soft:var(--warning-cont);
+  --sky:var(--info);--sky-soft:var(--info-cont);--mint:var(--success);--mint-soft:var(--success-cont);
+  --success-soft:var(--success-cont);--error-soft:var(--error-cont);--line:var(--outline);--line-soft:var(--outline-soft);
+  --r-sm:12px;--r-md:16px;--r-lg:20px;--r-xl:28px;--r-2xl:36px;--r-full:9999px;
   --s-xs:4px;--s-sm:8px;--s-md:16px;--s-lg:24px;--s-xl:32px;--s-2xl:48px;
-  /* ── Type (matches auth) ── */
-  --font:'Plus Jakarta Sans',-apple-system,system-ui,sans-serif;
+  --font:'Manrope',-apple-system,system-ui,sans-serif;
   --fw-r:400;--fw-m:500;--fw-s:600;--fw-b:700;--fw-eb:800;
-  /* ── Motion ── */
-  --dur:250ms;--ease:cubic-bezier(0.2,0,0,1);--ease-smooth:cubic-bezier(0.4,0,0.2,1);
-  /* ── Shadows — warm, subtle ── */
-  --shadow-1:0 1px 2px rgba(26,22,20,0.04),0 1px 3px rgba(26,22,20,0.06);
-  --shadow-2:0 2px 8px -2px rgba(26,22,20,0.08),0 1px 3px rgba(26,22,20,0.04);
-  --shadow-3:0 8px 24px -6px rgba(26,22,20,0.10),0 2px 8px rgba(26,22,20,0.04);
-  --shadow-primary:0 4px 16px -2px rgba(91,65,213,0.20);
+  --dur:300ms;--ease:cubic-bezier(0.2,0,0,1);--ease-smooth:cubic-bezier(0.4,0,0.2,1);
+  --shadow-1:0 1px 3px rgba(29,27,32,0.08),0 1px 2px rgba(29,27,32,0.04);
+  --shadow-2:0 2px 6px rgba(29,27,32,0.10),0 1px 2px rgba(29,27,32,0.06);
+  --shadow-3:0 6px 20px rgba(29,27,32,0.12),0 2px 6px rgba(29,27,32,0.06);
+  --shadow-primary:0 6px 20px rgba(103,80,164,0.25);
   --shadow-sm:var(--shadow-1);--shadow-md:var(--shadow-2);--shadow-lg:var(--shadow-3);
 }
 
@@ -1124,258 +1105,30 @@ body{
 .back-btn:hover{background:var(--surface-cl-high)}
 .back-header-title{font-size:16px;font-weight:var(--fw-eb);color:var(--ink);letter-spacing:-0.5px}
 
-/* ═══════════════════════════════════════════════════════════════
-   PREMIUM HOME v3 — Dark hero, glass stats, editorial layout
-   ═══════════════════════════════════════════════════════════════ */
-
-/* Hero Card — dark gradient with greeting + live status */
-.ph-hero{
-  margin:0 var(--s-lg) var(--s-lg);padding:28px 24px;
-  border-radius:var(--r-xl);position:relative;overflow:hidden;
-  background:linear-gradient(145deg,#1D1B20 0%,#2B2931 60%,#322E3C 100%);
-  color:#fff;
-}
-.ph-hero::before{
-  content:'';position:absolute;top:-40px;right:-30px;
-  width:160px;height:160px;border-radius:50%;
-  background:radial-gradient(circle,rgba(167,139,250,0.25) 0%,transparent 70%);
-}
-.ph-hero::after{
-  content:'';position:absolute;bottom:-60px;left:-20px;
-  width:120px;height:120px;border-radius:50%;
-  background:radial-gradient(circle,rgba(103,80,164,0.15) 0%,transparent 70%);
-}
-.ph-hero-date{
-  font-size:11px;font-weight:600;color:rgba(255,255,255,0.5);
-  letter-spacing:1.5px;text-transform:uppercase;position:relative;z-index:1;
-}
-.ph-hero-greeting{
-  font-size:26px;font-weight:800;color:#fff;letter-spacing:-0.8px;
-  margin-top:6px;position:relative;z-index:1;
-}
-.ph-hero-greeting span{color:#A78BFA}
-.ph-hero-sub{
-  font-size:13px;font-weight:500;color:rgba(255,255,255,0.6);
-  margin-top:8px;position:relative;z-index:1;line-height:1.4;
-}
-
-/* Live Status Pill inside hero */
-.ph-hero-status{
-  display:inline-flex;align-items:center;gap:6px;
-  margin-top:16px;padding:6px 14px;border-radius:9999px;
-  background:rgba(255,255,255,0.08);backdrop-filter:blur(8px);
-  position:relative;z-index:1;
-}
-.ph-hero-status-dot{
-  width:7px;height:7px;border-radius:50%;background:#4ADE80;
-  box-shadow:0 0 8px rgba(74,222,128,0.6);
-  animation:ph-pulse 2s ease-in-out infinite;
-}
-@keyframes ph-pulse{
-  0%,100%{opacity:1}50%{opacity:0.5}
-}
-.ph-hero-status-text{font-size:12px;font-weight:600;color:rgba(255,255,255,0.85)}
-
-/* Glass Stat Row — floating over hero bottom */
-.ph-stats{
-  display:flex;gap:1px;margin:0 var(--s-lg);margin-top:-20px;
-  position:relative;z-index:2;border-radius:var(--r-md);overflow:hidden;
-  background:var(--outline-soft);
-}
-.ph-stat{
-  flex:1;padding:14px 12px;background:var(--surface-cl-lowest);
-  display:flex;flex-direction:column;align-items:center;gap:2px;
-}
-.ph-stat-num{font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-0.5px}
-.ph-stat-num--accent{color:var(--primary)}
-.ph-stat-num--warn{color:var(--warning)}
-.ph-stat-num--err{color:var(--error)}
-.ph-stat-label{font-size:10px;font-weight:600;color:var(--ink-3);letter-spacing:0.3px;text-transform:uppercase}
-
-/* Section — Premium */
-.ph-section{margin-top:var(--s-xl);padding:0 var(--s-lg)}
-.ph-section-head{
-  display:flex;align-items:baseline;justify-content:space-between;
-  margin-bottom:var(--s-sm);
-}
-.ph-section-title{
-  font-size:13px;font-weight:700;color:var(--ink);
-  letter-spacing:0.3px;text-transform:uppercase;
-}
-.ph-section-link{
-  font-size:12px;font-weight:600;color:var(--primary);cursor:pointer;
-}
-
-/* Timeline — vertical connector with premium cards */
-.ph-timeline{position:relative;padding-left:28px}
-.ph-timeline::before{
-  content:'';position:absolute;left:7px;top:8px;bottom:8px;
-  width:2px;background:var(--outline-soft);border-radius:1px;
-}
-.ph-tl-item{
-  position:relative;margin-bottom:10px;padding:14px 16px;
-  background:var(--surface-cl-lowest);border-radius:var(--r-md);
-  cursor:pointer;transition:all 300ms var(--ease);
-}
-.ph-tl-item:hover{background:var(--surface-cl-low);box-shadow:var(--shadow-1)}
-.ph-tl-item::before{
-  content:'';position:absolute;left:-25px;top:18px;
-  width:12px;height:12px;border-radius:50%;
-  background:var(--surface-cl-lowest);border:2.5px solid var(--outline);
-}
-.ph-tl-item.done::before{border-color:var(--success);background:var(--success)}
-.ph-tl-item.current::before{
-  border-color:var(--primary);background:var(--primary);
-  box-shadow:0 0 0 4px rgba(103,80,164,0.15);
-}
-.ph-tl-item.current{background:var(--primary-container)}
-.ph-tl-top{display:flex;align-items:center;justify-content:space-between}
-.ph-tl-time{font-size:11px;font-weight:600;color:var(--ink-3);letter-spacing:0.3px}
-.ph-tl-badge{
-  font-size:10px;font-weight:700;padding:2px 8px;border-radius:9999px;
-  text-transform:uppercase;letter-spacing:0.5px;
-}
-.ph-tl-badge--done{background:var(--success-cont);color:var(--success)}
-.ph-tl-badge--now{background:var(--primary);color:#fff}
-.ph-tl-badge--next{background:var(--warning-cont);color:var(--warning)}
-.ph-tl-class{font-size:16px;font-weight:800;color:var(--ink);letter-spacing:-0.3px;margin-top:4px}
-.ph-tl-sub{font-size:13px;font-weight:500;color:var(--ink-2);margin-top:1px}
-.ph-tl-room{
-  font-size:11px;font-weight:600;color:var(--ink-3);
-  margin-top:8px;display:flex;align-items:center;gap:4px;
-}
-.ph-tl-room svg{width:12px;height:12px;stroke:var(--ink-3);stroke-width:2;fill:none}
-
-/* Task Card — premium with progress ring feel */
-.ph-tasks{
-  margin:0 var(--s-lg);padding:20px;
-  background:var(--surface-cl-lowest);border-radius:var(--r-lg);
-}
-.ph-tasks-head{
-  display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;
-}
-.ph-tasks-title{font-size:15px;font-weight:700;color:var(--ink)}
-.ph-tasks-count{
-  font-size:22px;font-weight:800;color:var(--error);letter-spacing:-0.5px;
-}
-.ph-task-row{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:10px 0;border-top:1px solid var(--outline-soft);
-  cursor:pointer;transition:background 300ms var(--ease);
-}
-.ph-task-row:hover{background:var(--surface-cl);border-radius:var(--r-sm);margin:0 -8px;padding:10px 8px}
-.ph-task-left{display:flex;align-items:center;gap:10px}
-.ph-task-icon{
-  width:32px;height:32px;border-radius:10px;
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
-}
-.ph-task-icon svg{width:16px;height:16px;stroke-width:2;fill:none}
-.ph-task-icon--att{background:var(--error-cont)}
-.ph-task-icon--att svg{stroke:var(--error)}
-.ph-task-icon--hw{background:var(--warning-cont)}
-.ph-task-icon--hw svg{stroke:var(--warning)}
-.ph-task-icon--sy{background:var(--info-cont)}
-.ph-task-icon--sy svg{stroke:var(--info)}
-.ph-task-label{font-size:14px;font-weight:600;color:var(--ink)}
-.ph-task-count{font-size:13px;font-weight:700;color:var(--ink-2)}
-
-/* Quick Actions — premium floating tiles */
-.ph-actions{
-  display:grid;grid-template-columns:repeat(4,1fr);gap:10px;
-  padding:0 var(--s-lg);
-}
-.ph-action{
-  display:flex;flex-direction:column;align-items:center;gap:10px;
-  padding:16px 8px;border-radius:var(--r-md);
-  background:var(--surface-cl-lowest);cursor:pointer;
-  transition:all 300ms var(--ease);border:none;
-}
-.ph-action:hover{background:var(--surface-cl-low);box-shadow:var(--shadow-1)}
-.ph-action-icon{
-  width:44px;height:44px;border-radius:14px;
-  display:flex;align-items:center;justify-content:center;
-}
-.ph-action-icon svg{width:22px;height:22px;stroke-width:2;fill:none}
-.ph-action-icon--att{background:var(--error-cont)}
-.ph-action-icon--att svg{stroke:var(--error)}
-.ph-action-icon--hw{background:var(--warning-cont)}
-.ph-action-icon--hw svg{stroke:var(--warning)}
-.ph-action-icon--mk{background:var(--success-cont)}
-.ph-action-icon--mk svg{stroke:var(--success)}
-.ph-action-icon--sy{background:var(--info-cont)}
-.ph-action-icon--sy svg{stroke:var(--info)}
-.ph-action-label{font-size:11px;font-weight:600;color:var(--ink)}
-
-/* Class Row — premium compact */
-.ph-class{
-  margin:0 var(--s-lg) 8px;padding:16px;
-  background:var(--surface-cl-lowest);border-radius:var(--r-md);
-  cursor:pointer;transition:all 300ms var(--ease);
-  display:flex;align-items:center;justify-content:space-between;
-}
-.ph-class:hover{background:var(--surface-cl-low);box-shadow:var(--shadow-1)}
-.ph-class-left{display:flex;align-items:center;gap:14px}
-.ph-class-avatar{
-  width:44px;height:44px;border-radius:12px;
-  background:var(--primary-container);display:flex;align-items:center;justify-content:center;
-  font-size:15px;font-weight:800;color:var(--primary-on-cont);
-}
-.ph-class-name{font-size:15px;font-weight:700;color:var(--ink)}
-.ph-class-sub{font-size:12px;font-weight:500;color:var(--ink-3);margin-top:1px}
-.ph-class-right{display:flex;align-items:center;gap:8px}
-.ph-class-pill{
-  font-size:11px;font-weight:700;padding:4px 10px;border-radius:9999px;
-}
-.ph-class-pill--att{background:var(--error-cont);color:var(--error)}
-.ph-class-pill--hw{background:var(--warning-cont);color:var(--warning)}
-.ph-class-pill--ok{background:var(--success-cont);color:var(--success)}
-
-/* Event Row — premium minimal */
-.ph-event{
-  display:flex;align-items:center;gap:14px;padding:12px 16px;
-  background:var(--surface-cl-lowest);border-radius:var(--r-md);
-  margin:0 var(--s-lg) 8px;cursor:pointer;
-  transition:all 300ms var(--ease);
-}
-.ph-event:hover{background:var(--surface-cl-low);box-shadow:var(--shadow-1)}
-.ph-event-date{
-  width:48px;height:48px;border-radius:12px;flex-shrink:0;
-  background:var(--surface-cl-high);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-}
-.ph-event-day{font-size:18px;font-weight:800;color:var(--ink);letter-spacing:-0.5px}
-.ph-event-mon{font-size:9px;font-weight:700;color:var(--ink-3);letter-spacing:1px;text-transform:uppercase}
-.ph-event-info{flex:1}
-.ph-event-title{font-size:14px;font-weight:600;color:var(--ink)}
-.ph-event-time{font-size:12px;font-weight:500;color:var(--ink-3);margin-top:2px}
-
 </style>
 </head>
 <body>
 
-<!-- ═══ SVG Icon Defs — Clean line icons, stroke-based ═══ -->
+<!-- ═══ SVG Icon Defs ═══ -->
 <svg style="display:none">
-  <symbol id="icon-home" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M3 12l9-9 9 9M5 10v10h4v-6h6v6h4V10" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="icon-edit" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="icon-classes" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M22 10v6M2 10l10-5 10 5-10 5z M6 12v5c0 1 2 3 6 3s6-2 6-3v-5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="icon-calendar" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18" stroke-linecap="round"/></symbol>
-  <symbol id="icon-user" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="icon-bell" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="icon-check" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="icon-clipboard" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1z M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="icon-book" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="icon-award" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="icon-map" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M9 18l-6 3V6l6-3 6 3 6-3v15l-6 3z M9 3v15 M15 6v15" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="icon-clock" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2" stroke-linecap="round"/></symbol>
-  <symbol id="icon-users" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="icon-lock" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-linecap="round"/></symbol>
-  <symbol id="icon-palette" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="icon-logout" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4 M16 17l5-5-5-5 M21 12H9" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="icon-chevron-right" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M9 18l6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="icon-plus" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></symbol>
-  <symbol id="icon-arrow-right" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="icon-pin" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="9" r="2.5"/></symbol>
-  <symbol id="icon-alert" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M12 2L1 22h22L12 2z" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 9v5M12 18v.5" stroke-linecap="round"/></symbol>
+  <symbol id="icon-home" viewBox="0 0 24 24"><path d="M3 12l9-9 9 9M5 10v10h4v-6h6v6h4V10" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-edit" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-classes" viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z M6 12v5c0 1 2 3 6 3s6-2 6-3v-5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18" stroke-linecap="round"/></symbol>
+  <symbol id="icon-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-bell" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-check" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-clipboard" viewBox="0 0 24 24"><path d="M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1z M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-award" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-map" viewBox="0 0 24 24"><path d="M9 18l-6 3V6l6-3 6 3 6-3v15l-6 3z M9 3v15 M15 6v15" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2" stroke-linecap="round"/></symbol>
+  <symbol id="icon-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-linecap="round"/></symbol>
+  <symbol id="icon-palette" viewBox="0 0 24 24"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4 M16 17l5-5-5-5 M21 12H9" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-chevron-right" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></symbol>
 </svg>
 
 <!-- ═══ Figma-like Shell ═══ -->
@@ -1442,229 +1195,184 @@ body{
   <div class="tab-content active" id="tab-home">
     <div class="scroll content-pb">
 
-      <!-- Dark Hero Card -->
-      <div style="padding-top:var(--s-md)"></div>
-      <div class="ph-hero">
-        <div class="ph-hero-date" id="greeting-date">MON · 15 JUL 2026</div>
-        <div class="ph-hero-greeting">Good morning, <span>Priya</span></div>
-        <div class="ph-hero-sub">You have 5 classes today and 7 pending tasks</div>
-        <div class="ph-hero-status">
-          <div class="ph-hero-status-dot"></div>
-          <div class="ph-hero-status-text">Currently teaching 8-A · Mathematics</div>
+      <!-- Greeting Bar -->
+      <div class="greeting-bar">
+        <div class="greeting-date" id="greeting-date">Monday, 15 July 2026</div>
+        <div class="greeting-text">Good morning, Priya</div>
+      </div>
+
+      <!-- Today's Class Timeline -->
+      <div class="section-header">
+        <div class="section-title">Today's Schedule</div>
+        <div class="section-link" data-nav="tab:Timetable">View week</div>
+      </div>
+      <div class="timeline-scroll">
+        <div class="period-card done">
+          <div class="period-status"><span class="badge badge--neutral">Done</span></div>
+          <div class="period-time">8:00 — 8:45</div>
+          <div class="period-class">7-B</div>
+          <div class="period-subject">Mathematics</div>
+          <div class="period-room">Room 204</div>
+        </div>
+        <div class="period-card current">
+          <div class="period-status"><span class="badge badge--violet">Now</span></div>
+          <div class="period-time">9:00 — 9:45</div>
+          <div class="period-class">8-A</div>
+          <div class="period-subject">Mathematics</div>
+          <div class="period-room">Room 312</div>
+        </div>
+        <div class="period-card">
+          <div class="period-status"><span class="badge badge--gold">Next</span></div>
+          <div class="period-time">10:00 — 10:45</div>
+          <div class="period-class">9-C</div>
+          <div class="period-subject">Algebra</div>
+          <div class="period-room">Room 108</div>
+        </div>
+        <div class="period-card">
+          <div class="period-time">11:15 — 12:00</div>
+          <div class="period-class">7-B</div>
+          <div class="period-subject">Mathematics</div>
+          <div class="period-room">Room 204</div>
+        </div>
+        <div class="period-card">
+          <div class="period-time">1:00 — 1:45</div>
+          <div class="period-class">8-A</div>
+          <div class="period-subject">Mathematics</div>
+          <div class="period-room">Room 312</div>
         </div>
       </div>
 
-      <!-- Glass Stat Row -->
-      <div class="ph-stats">
-        <div class="ph-stat">
-          <div class="ph-stat-num">5</div>
-          <div class="ph-stat-label">Classes</div>
-        </div>
-        <div class="ph-stat">
-          <div class="ph-stat-num ph-stat-num--err">7</div>
-          <div class="ph-stat-label">Pending</div>
-        </div>
-        <div class="ph-stat">
-          <div class="ph-stat-num ph-stat-num--accent">90</div>
-          <div class="ph-stat-label">Students</div>
-        </div>
-        <div class="ph-stat">
-          <div class="ph-stat-num ph-stat-num--warn">12</div>
-          <div class="ph-stat-label">Ungraded</div>
-        </div>
-      </div>
-
-      <!-- Today's Schedule — Vertical Timeline -->
-      <div class="ph-section">
-        <div class="ph-section-head">
-          <div class="ph-section-title">Today's Schedule</div>
-          <div class="ph-section-link" data-nav="tab:Timetable">View week</div>
-        </div>
-        <div class="ph-timeline">
-          <div class="ph-tl-item done">
-            <div class="ph-tl-top">
-              <div class="ph-tl-time">8:00 — 8:45</div>
-              <div class="ph-tl-badge ph-tl-badge--done">Done</div>
-            </div>
-            <div class="ph-tl-class">7-B · Mathematics</div>
-            <div class="ph-tl-sub">Room 204</div>
-          </div>
-          <div class="ph-tl-item current">
-            <div class="ph-tl-top">
-              <div class="ph-tl-time">9:00 — 9:45</div>
-              <div class="ph-tl-badge ph-tl-badge--now">Now</div>
-            </div>
-            <div class="ph-tl-class">8-A · Mathematics</div>
-            <div class="ph-tl-sub">Room 312</div>
-          </div>
-          <div class="ph-tl-item">
-            <div class="ph-tl-top">
-              <div class="ph-tl-time">10:00 — 10:45</div>
-              <div class="ph-tl-badge ph-tl-badge--next">Next</div>
-            </div>
-            <div class="ph-tl-class">9-C · Algebra</div>
-            <div class="ph-tl-sub">Room 108</div>
-          </div>
-          <div class="ph-tl-item">
-            <div class="ph-tl-top">
-              <div class="ph-tl-time">11:15 — 12:00</div>
-            </div>
-            <div class="ph-tl-class">7-B · Mathematics</div>
-            <div class="ph-tl-sub">Room 204</div>
-          </div>
-          <div class="ph-tl-item">
-            <div class="ph-tl-top">
-              <div class="ph-tl-time">1:00 — 1:45</div>
-            </div>
-            <div class="ph-tl-class">8-A · Mathematics</div>
-            <div class="ph-tl-sub">Room 312</div>
+      <!-- Obligations Summary -->
+      <div class="obligations-card">
+        <div class="obligations-header">
+          <div class="obligations-title">Pending Tasks</div>
+          <div class="obligations-count">
+            <span class="obligations-count-num">7</span>
+            <span class="obligations-count-label">outstanding</span>
           </div>
         </div>
-      </div>
-
-      <!-- Pending Tasks -->
-      <div class="ph-section">
-        <div class="ph-section-head">
-          <div class="ph-section-title">Pending Tasks</div>
+        <div class="obligation-row" data-nav="tab:Update">
+          <div class="obligation-row-left">
+            <div class="obligation-dot obligation-dot--attendance"></div>
+            <div class="obligation-label">Unmarked attendance</div>
+          </div>
+          <div class="obligation-count">3 classes</div>
         </div>
-        <div class="ph-tasks">
-          <div class="ph-tasks-head">
-            <div class="ph-tasks-title">Outstanding</div>
-            <div class="ph-tasks-count">7</div>
+        <div class="obligation-row" data-nav="tab:Update">
+          <div class="obligation-row-left">
+            <div class="obligation-dot obligation-dot--homework"></div>
+            <div class="obligation-label">Ungraded homework</div>
           </div>
-          <div class="ph-task-row" data-nav="tab:Update">
-            <div class="ph-task-left">
-              <div class="ph-task-icon ph-task-icon--att">
-                <svg><use href="#icon-clipboard"/></svg>
-              </div>
-              <div class="ph-task-label">Unmarked attendance</div>
-            </div>
-            <div class="ph-task-count">3 classes</div>
+          <div class="obligation-count">12 submissions</div>
+        </div>
+        <div class="obligation-row" data-nav="tab:Update">
+          <div class="obligation-row-left">
+            <div class="obligation-dot obligation-dot--syllabus"></div>
+            <div class="obligation-label">Syllabus updates</div>
           </div>
-          <div class="ph-task-row" data-nav="tab:Update">
-            <div class="ph-task-left">
-              <div class="ph-task-icon ph-task-icon--hw">
-                <svg><use href="#icon-edit"/></svg>
-              </div>
-              <div class="ph-task-label">Ungraded homework</div>
-            </div>
-            <div class="ph-task-count">12 submissions</div>
-          </div>
-          <div class="ph-task-row" data-nav="tab:Update">
-            <div class="ph-task-left">
-              <div class="ph-task-icon ph-task-icon--sy">
-                <svg><use href="#icon-book"/></svg>
-              </div>
-              <div class="ph-task-label">Syllabus updates</div>
-            </div>
-            <div class="ph-task-count">2 units</div>
-          </div>
+          <div class="obligation-count">2 units</div>
         </div>
       </div>
 
       <!-- Quick Actions -->
-      <div class="ph-section">
-        <div class="ph-section-head">
-          <div class="ph-section-title">Quick Actions</div>
+      <div class="section-header">
+        <div class="section-title">Quick Actions</div>
+      </div>
+      <div class="quick-actions">
+        <div class="quick-action" data-nav="tab:Update">
+          <div class="quick-action-icon quick-action-icon--attendance">
+            <svg><use href="#icon-clipboard"/></svg>
+          </div>
+          <div class="quick-action-label">Attendance</div>
         </div>
-        <div class="ph-actions">
-          <div class="ph-action" data-nav="tab:Update">
-            <div class="ph-action-icon ph-action-icon--att">
-              <svg><use href="#icon-clipboard"/></svg>
-            </div>
-            <div class="ph-action-label">Attendance</div>
+        <div class="quick-action" data-nav="tab:Update">
+          <div class="quick-action-icon quick-action-icon--homework">
+            <svg><use href="#icon-edit"/></svg>
           </div>
-          <div class="ph-action" data-nav="tab:Update">
-            <div class="ph-action-icon ph-action-icon--hw">
-              <svg><use href="#icon-edit"/></svg>
-            </div>
-            <div class="ph-action-label">Homework</div>
+          <div class="quick-action-label">Homework</div>
+        </div>
+        <div class="quick-action" data-nav="tab:Update">
+          <div class="quick-action-icon quick-action-icon--marks">
+            <svg><use href="#icon-award"/></svg>
           </div>
-          <div class="ph-action" data-nav="tab:Update">
-            <div class="ph-action-icon ph-action-icon--mk">
-              <svg><use href="#icon-award"/></svg>
-            </div>
-            <div class="ph-action-label">Marks</div>
+          <div class="quick-action-label">Marks</div>
+        </div>
+        <div class="quick-action" data-nav="tab:Update">
+          <div class="quick-action-icon quick-action-icon--syllabus">
+            <svg><use href="#icon-book"/></svg>
           </div>
-          <div class="ph-action" data-nav="tab:Update">
-            <div class="ph-action-icon ph-action-icon--sy">
-              <svg><use href="#icon-book"/></svg>
-            </div>
-            <div class="ph-action-label">Syllabus</div>
-          </div>
+          <div class="quick-action-label">Syllabus</div>
         </div>
       </div>
 
       <!-- My Classes -->
-      <div class="ph-section">
-        <div class="ph-section-head">
-          <div class="ph-section-title">My Classes</div>
-          <div class="ph-section-link" data-nav="tab:Classes">View all</div>
+      <div class="section-header" style="margin-top:var(--s-md)">
+        <div class="section-title">My Classes</div>
+        <div class="section-link" data-nav="tab:Classes">View all</div>
+      </div>
+      <div class="class-card" data-nav="tab:Classes">
+        <div class="class-card-header">
+          <div>
+            <div class="class-card-name">Class 7-B</div>
+            <div class="class-card-subject">Mathematics</div>
+          </div>
+          <span class="badge badge--violet">32 students</span>
         </div>
-        <div class="ph-class" data-nav="tab:Classes">
-          <div class="ph-class-left">
-            <div class="ph-class-avatar">7B</div>
-            <div>
-              <div class="ph-class-name">Class 7-B</div>
-              <div class="ph-class-sub">Mathematics · 32 students</div>
-            </div>
-          </div>
-          <div class="ph-class-right">
-            <span class="ph-class-pill ph-class-pill--att">3 pending</span>
-            <span class="ph-class-pill ph-class-pill--hw">5 ungraded</span>
-          </div>
+        <div class="class-card-meta">
+          <div class="class-meta-item"><svg><use href="#icon-clipboard"/></svg>3 pending</div>
+          <div class="class-meta-item"><svg><use href="#icon-edit"/></svg>5 ungraded</div>
         </div>
-        <div class="ph-class" data-nav="tab:Classes">
-          <div class="ph-class-left">
-            <div class="ph-class-avatar">8A</div>
-            <div>
-              <div class="ph-class-name">Class 8-A</div>
-              <div class="ph-class-sub">Mathematics · 28 students</div>
-            </div>
+      </div>
+      <div class="class-card" data-nav="tab:Classes">
+        <div class="class-card-header">
+          <div>
+            <div class="class-card-name">Class 8-A</div>
+            <div class="class-card-subject">Mathematics</div>
           </div>
-          <div class="ph-class-right">
-            <span class="ph-class-pill ph-class-pill--att">1 pending</span>
-            <span class="ph-class-pill ph-class-pill--hw">7 ungraded</span>
-          </div>
+          <span class="badge badge--violet">28 students</span>
         </div>
-        <div class="ph-class" data-nav="tab:Classes">
-          <div class="ph-class-left">
-            <div class="ph-class-avatar">9C</div>
-            <div>
-              <div class="ph-class-name">Class 9-C</div>
-              <div class="ph-class-sub">Algebra · 30 students</div>
-            </div>
+        <div class="class-card-meta">
+          <div class="class-meta-item"><svg><use href="#icon-clipboard"/></svg>1 pending</div>
+          <div class="class-meta-item"><svg><use href="#icon-edit"/></svg>7 ungraded</div>
+        </div>
+      </div>
+      <div class="class-card" data-nav="tab:Classes">
+        <div class="class-card-header">
+          <div>
+            <div class="class-card-name">Class 9-C</div>
+            <div class="class-card-subject">Algebra</div>
           </div>
-          <div class="ph-class-right">
-            <span class="ph-class-pill ph-class-pill--att">2 pending</span>
-            <span class="ph-class-pill ph-class-pill--ok">All graded</span>
-          </div>
+          <span class="badge badge--violet">30 students</span>
+        </div>
+        <div class="class-card-meta">
+          <div class="class-meta-item"><svg><use href="#icon-clipboard"/></svg>2 pending</div>
+          <div class="class-meta-item"><svg><use href="#icon-edit"/></svg>0 ungraded</div>
         </div>
       </div>
 
-      <!-- Upcoming Events -->
-      <div class="ph-section">
-        <div class="ph-section-head">
-          <div class="ph-section-title">Upcoming Events</div>
+      <!-- Upcoming Events Mini -->
+      <div class="section-header" style="margin-top:var(--s-md)">
+        <div class="section-title">Upcoming Events</div>
+      </div>
+      <div class="events-mini">
+        <div class="event-mini-card">
+          <div class="event-mini-date">
+            <div class="event-mini-day">18</div>
+            <div class="event-mini-month">JUL</div>
+          </div>
+          <div class="event-mini-info">
+            <div class="event-mini-title">Parent-Teacher Meeting</div>
+            <div class="event-mini-time">10:00 AM — 1:00 PM</div>
+          </div>
         </div>
-        <div class="ph-event">
-          <div class="ph-event-date">
-            <div class="ph-event-day">18</div>
-            <div class="ph-event-mon">JUL</div>
+        <div class="event-mini-card">
+          <div class="event-mini-date">
+            <div class="event-mini-day">22</div>
+            <div class="event-mini-month">JUL</div>
           </div>
-          <div class="ph-event-info">
-            <div class="ph-event-title">Parent-Teacher Meeting</div>
-            <div class="ph-event-time">10:00 AM — 1:00 PM</div>
-          </div>
-        </div>
-        <div class="ph-event">
-          <div class="ph-event-date">
-            <div class="ph-event-day">22</div>
-            <div class="ph-event-mon">JUL</div>
-          </div>
-          <div class="ph-event-info">
-            <div class="ph-event-title">Unit Test — Class 8-A</div>
-            <div class="ph-event-time">11:00 AM — 12:00 PM</div>
+          <div class="event-mini-info">
+            <div class="event-mini-title">Unit Test — Class 8-A</div>
+            <div class="event-mini-time">11:00 AM — 12:00 PM</div>
           </div>
         </div>
       </div>

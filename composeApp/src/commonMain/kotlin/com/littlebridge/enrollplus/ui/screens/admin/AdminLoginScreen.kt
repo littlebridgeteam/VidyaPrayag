@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -35,6 +37,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.feature.auth.presentation.AuthViewModel
+import com.littlebridge.enrollplus.getPlatform
 import com.littlebridge.enrollplus.ui.components.VBackHeader
 import com.littlebridge.enrollplus.ui.components.VButton
 import com.littlebridge.enrollplus.ui.components.VDividerWithText
@@ -73,7 +76,8 @@ fun AdminLoginScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(VColors.cream),
+            .background(VColors.cream)
+            .statusBarsPadding(),
     ) {
         Column(
             modifier = Modifier
@@ -104,22 +108,20 @@ fun AdminLoginScreen(
                 )
             }
 
-            // SSO
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
+            // SSO — Google on Android, Apple on iOS
+            val isAndroid = getPlatform().name.startsWith("Android")
+            if (isAndroid) {
                 VSSOButton(
                     text = "Google",
                     icon = GoogleIcon,
+                    iconTint = null,
                     onClick = { scope.launch { snackbarHostState.showSnackbar("Coming Soon") } },
-                    modifier = Modifier.weight(1f),
                 )
+            } else {
                 VSSOButton(
                     text = "Apple",
                     icon = AppleIcon,
                     onClick = { scope.launch { snackbarHostState.showSnackbar("Coming Soon") } },
-                    modifier = Modifier.weight(1f),
                 )
             }
 

@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -32,6 +33,7 @@ fun VSSOButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    iconTint: Color? = VColors.ink,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -47,7 +49,7 @@ fun VSSOButton(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = VColors.ink,
+            tint = iconTint ?: Color.Unspecified,
             modifier = Modifier.size(20.dp),
         )
         Spacer(Modifier.width(8.dp))
