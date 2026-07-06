@@ -41,6 +41,7 @@ import com.littlebridge.enrollplus.ui.tokens.VShapes
 fun TeacherProfileTab(
     viewModel: TeacherViewModel,
     onLogout: () -> Unit = {},
+    onOpenOverlay: (TeacherOverlayType) -> Unit = {},
 ) {
     LaunchedEffect(Unit) {
         viewModel.loadProfile()
@@ -75,9 +76,14 @@ fun TeacherProfileTab(
             healthAlertCount = healthAlerts?.alerts?.size ?: 0,
             pewsCount = pewsStudents?.size ?: 0,
             leavePending = leaveData?.pendingCount ?: 0,
+            onOpenOverlay = onOpenOverlay,
         )
-        ProfileLeaveSection(leavePending = leaveData?.pendingCount ?: 0, leaveTotal = leaveData?.requests?.size ?: 0)
-        ProfileSettingsSection()
+        ProfileLeaveSection(
+            leavePending = leaveData?.pendingCount ?: 0,
+            leaveTotal = leaveData?.requests?.size ?: 0,
+            onOpenOverlay = onOpenOverlay,
+        )
+        ProfileSettingsSection(onOpenOverlay = onOpenOverlay)
         ProfileLogout(onLogout)
         Spacer(Modifier.height(24.dp))
     }
@@ -204,19 +210,20 @@ private fun ProfileQuickAccess(
     healthAlertCount: Int,
     pewsCount: Int,
     leavePending: Int,
+    onOpenOverlay: (TeacherOverlayType) -> Unit,
 ) {
     val tiles = listOf(
-        QuickTile("Notifications", "$unreadCount unread", TIBell, unreadCount),
-        QuickTile("Messages", "$unreadCount unread", TIEdit, unreadCount),
-        QuickTile("Calendar", "View events", TICalendar, null),
-        QuickTile("Digital ID", "Show QR code", TIUser, null),
-        QuickTile("Transport", "Route attendance", TIMap, null),
-        QuickTile("Health Alerts", "$healthAlertCount active", TIAlert, healthAlertCount),
-        QuickTile("PEWS", "$pewsCount at risk", TIBell, pewsCount),
-        QuickTile("Reports", "Review", TIBook, null),
-        QuickTile("Heatmap", "Learning insights", TIBook, null),
-        QuickTile("Scheduled", "Upcoming", TIClock, null),
-        QuickTile("Events", "Registration", TICalendar, null),
+        QuickTile("Notifications", "$unreadCount unread", TIBell, unreadCount, TeacherOverlayType.ComingSoon),
+        QuickTile("Messages", "$unreadCount unread", TIEdit, unreadCount, TeacherOverlayType.Messages),
+        QuickTile("Calendar", "View events", TICalendar, null, TeacherOverlayType.ComingSoon),
+        QuickTile("Digital ID", "Show QR code", TIUser, null, TeacherOverlayType.ComingSoon),
+        QuickTile("Transport", "Route attendance", TIMap, null, TeacherOverlayType.ComingSoon),
+        QuickTile("Health Alerts", "$healthAlertCount active", TIAlert, healthAlertCount, TeacherOverlayType.HealthAlerts),
+        QuickTile("PEWS", "$pewsCount at risk", TIBell, pewsCount, TeacherOverlayType.PEWS),
+        QuickTile("Reports", "Review", TIBook, null, TeacherOverlayType.ComingSoon),
+        QuickTile("Heatmap", "Learning insights", TIBook, null, TeacherOverlayType.ComingSoon),
+        QuickTile("Scheduled", "Upcoming", TIClock, null, TeacherOverlayType.ComingSoon),
+        QuickTile("Events", "Registration", TICalendar, null, TeacherOverlayType.ComingSoon),
     )
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
         Text(
@@ -235,7 +242,7 @@ private fun ProfileQuickAccess(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 rowTiles.forEach { tile ->
-                    QuickTileItem(tile, Modifier.weight(1f))
+                    QuickTileItem(tile, Modifier.weight(1f), onClick = { onOpenOverlay(tile.overlayType) })
                 }
                 if (rowTiles.size == 1) Spacer(Modifier.weight(1f))
             }
@@ -249,10 +256,11 @@ private data class QuickTile(
     val sub: String,
     val icon: ImageVector,
     val badge: Int?,
+    val overlayType: TeacherOverlayType,
 )
 
 @Composable
-private fun QuickTileItem(tile: QuickTile, modifier: Modifier = Modifier) {
+private fun QuickTileItem(tile: QuickTile, modifier: Modifier = Modifier, onClick: () -> Unit = {}) {
     Column(
         modifier = modifier
             .shadow(1.dp, VShapes.md)
@@ -260,7 +268,7 @@ private fun QuickTileItem(tile: QuickTile, modifier: Modifier = Modifier) {
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
-            ) {}
+            ) { onClick() }
             .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
@@ -317,7 +325,11 @@ private fun QuickTileItem(tile: QuickTile, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun ProfileLeaveSection(leavePending: Int, leaveTotal: Int) {
+private fun ProfileLeaveSection(
+    leavePending: Int,
+    leaveTotal: Int,
+    onOpenOverlay: (TeacherOverlayType) -> Unit,
+) {
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
         Text(
             text = "Leave Management",
@@ -332,7 +344,9 @@ private fun ProfileLeaveSection(leavePending: Int, leaveTotal: Int) {
                 .shadow(1.dp, VShapes.md)
                 .background(VColors.white, VShapes.md),
         ) {
-            ProfileRow(TICalendar, "Apply for leave", if (leavePending > 0) "$leavePending pending" else null)
+            ProfileRow(TICalendar, "Apply for leave", if (leavePending > 0) "$leavePending pending" else null) {
+                onOpenOverlay(TeacherOverlayType.Leave)
+            }
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -340,13 +354,15 @@ private fun ProfileLeaveSection(leavePending: Int, leaveTotal: Int) {
                     .height(1.dp)
                     .background(VColors.lineSoft),
             )
-            ProfileRow(TIClock, "Leave history", if (leaveTotal > 0) "$leaveTotal applications" else null)
+            ProfileRow(TIClock, "Leave history", if (leaveTotal > 0) "$leaveTotal applications" else null) {
+                onOpenOverlay(TeacherOverlayType.Leave)
+            }
         }
     }
 }
 
 @Composable
-private fun ProfileSettingsSection() {
+private fun ProfileSettingsSection(onOpenOverlay: (TeacherOverlayType) -> Unit = {}) {
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
         Text(
             text = "Settings",
@@ -361,7 +377,9 @@ private fun ProfileSettingsSection() {
                 .shadow(1.dp, VShapes.md)
                 .background(VColors.white, VShapes.md),
         ) {
-            ProfileRow(TILock, "Change password", null)
+            ProfileRow(TILock, "Change password", null) {
+                onOpenOverlay(TeacherOverlayType.ComingSoon)
+            }
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -369,20 +387,22 @@ private fun ProfileSettingsSection() {
                     .height(1.dp)
                     .background(VColors.lineSoft),
             )
-            ProfileRow(TIPalette, "Theme", "System")
+            ProfileRow(TIPalette, "Theme", "System") {
+                onOpenOverlay(TeacherOverlayType.ComingSoon)
+            }
         }
     }
 }
 
 @Composable
-private fun ProfileRow(icon: ImageVector, label: String, value: String?) {
+private fun ProfileRow(icon: ImageVector, label: String, value: String?, onClick: () -> Unit = {}) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
-            ) {}
+            ) { onClick() }
             .padding(horizontal = 16.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,

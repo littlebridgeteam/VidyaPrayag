@@ -249,6 +249,10 @@ private fun RequestsContent(changeRequestsState: UiState<com.littlebridge.enroll
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
             color = VColors.violet,
+            modifier = Modifier.clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ) {},
         )
     }
     if (requests == null) {

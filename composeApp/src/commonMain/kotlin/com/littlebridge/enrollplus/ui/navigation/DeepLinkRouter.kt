@@ -4,6 +4,7 @@ sealed class DeepLinkTarget {
     object None : DeepLinkTarget()
 
     data class TeacherTab(val tab: TeacherDeepLinkTab, val params: Map<String, String> = emptyMap()) : DeepLinkTarget()
+    data class ParentRoute(val tab: String? = null, val overlay: String? = null, val params: Map<String, String> = emptyMap()) : DeepLinkTarget()
     object ParentDashboard : DeepLinkTarget()
     object AuthGate : DeepLinkTarget()
 }
@@ -38,7 +39,35 @@ fun parseDeepLink(path: String?, role: String?): DeepLinkTarget {
     }
 
     if (root == "parent" || (!isTeacher && root in listOf("attendance", "marks", "homework", "announcements", "fees", "leave", "pews", "report-card", "dashboard"))) {
-        return DeepLinkTarget.ParentDashboard
+        val parentSection = if (root == "parent") routeSegments.getOrNull(1)?.lowercase() else root
+        val tab = when (parentSection) {
+            "home", "dashboard", null -> "home"
+            "academics", "attendance", "marks", "syllabus", "homework", "quizzes", "report" -> "academics"
+            "fees" -> "fees"
+            "conversations", "messages", "announcements" -> "conversations"
+            "profile" -> "profile"
+            else -> null
+        }
+        val overlay = when (parentSection) {
+            "notifications" -> "notifications"
+            "transport" -> "transport"
+            "leave" -> "leave"
+            "scholarships" -> "scholarships"
+            "health" -> "health"
+            "pulse" -> "pulse"
+            "tutor" -> "tutor"
+            "tutor-progress" -> "tutor-progress"
+            "id-card" -> "id-card"
+            "library" -> "library"
+            "events" -> "events"
+            "calendar" -> "calendar"
+            "link-child" -> "link-child"
+            "account-settings" -> "account-settings"
+            "discovery" -> "discovery"
+            "school-detail" -> "school-detail"
+            else -> null
+        }
+        return DeepLinkTarget.ParentRoute(tab = tab, overlay = overlay, params = query)
     }
 
     return DeepLinkTarget.None

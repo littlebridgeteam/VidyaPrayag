@@ -75,6 +75,8 @@ fun TeacherPortalScreen(
 
     var selectedTab by rememberSaveable { mutableStateOf(initialTab ?: TeacherTab.Home) }
     var showNotifications by rememberSaveable { mutableStateOf(false) }
+    var activeOverlay by rememberSaveable { mutableStateOf<TeacherOverlayType?>(null) }
+    var pendingTool by rememberSaveable { mutableStateOf<UpdateTool?>(null) }
 
     LaunchedEffect(initialTab) {
         if (initialTab != null) selectedTab = initialTab
@@ -113,13 +115,27 @@ fun TeacherPortalScreen(
                 TeacherTab.Home -> TeacherHomeTab(
                     viewModel = viewModel,
                     onNavigateTab = { selectedTab = it },
+                    onNavigateToUpdateTool = { tool ->
+                        pendingTool = tool
+                        selectedTab = TeacherTab.Update
+                    },
                 )
-                TeacherTab.Update -> TeacherUpdateTab(viewModel = viewModel)
-                TeacherTab.Classes -> TeacherClassesTab(viewModel = viewModel)
+                TeacherTab.Update -> TeacherUpdateTab(
+                    viewModel = viewModel,
+                    initialTool = pendingTool ?: UpdateTool.Attendance,
+                )
+                TeacherTab.Classes -> TeacherClassesTab(
+                    viewModel = viewModel,
+                    onClassSelected = { cls ->
+                        viewModel.selectClass(cls.assignmentId, cls)
+                        selectedTab = TeacherTab.Update
+                    },
+                )
                 TeacherTab.Timetable -> TeacherTimetableTab(viewModel = viewModel)
                 TeacherTab.Profile -> TeacherProfileTab(
                     viewModel = viewModel,
                     onLogout = onLogout,
+                    onOpenOverlay = { overlayType -> activeOverlay = overlayType },
                 )
             }
         }
@@ -151,6 +167,15 @@ fun TeacherPortalScreen(
                     }
                 }
             },
+        )
+
+        // Generic Overlays (Messages, Health, PEWS, Leave, etc.)
+        TeacherGenericOverlay(
+            viewModel = viewModel,
+            visible = activeOverlay != null,
+            type = activeOverlay ?: TeacherOverlayType.ComingSoon,
+            title = overlayTitle(activeOverlay),
+            onDismiss = { activeOverlay = null },
         )
     }
 }
@@ -283,4 +308,13 @@ internal fun greetingForHour(hour: Int): String = when (hour) {
     in 12..16 -> "Good afternoon"
     in 17..21 -> "Good evening"
     else -> "Good night"
+}
+
+private fun overlayTitle(type: TeacherOverlayType?): String = when (type) {
+    TeacherOverlayType.Messages -> "Messages"
+    TeacherOverlayType.HealthAlerts -> "Health Alerts"
+    TeacherOverlayType.PEWS -> "Early Warning (PEWS)"
+    TeacherOverlayType.Leave -> "Leave Management"
+    TeacherOverlayType.ComingSoon -> "Coming Soon"
+    null -> ""
 }

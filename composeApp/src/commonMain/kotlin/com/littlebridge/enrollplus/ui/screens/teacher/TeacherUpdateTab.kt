@@ -52,7 +52,7 @@ import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 
 
-private enum class UpdateTool(val label: String, val icon: ImageVector) {
+enum class UpdateTool(val label: String, val icon: ImageVector) {
     Attendance("Attendance", TICheck),
     Marks("Marks", TIAward),
     Syllabus("Syllabus", TIBook),
@@ -62,12 +62,19 @@ private enum class UpdateTool(val label: String, val icon: ImageVector) {
 
 
 @Composable
-fun TeacherUpdateTab(viewModel: TeacherViewModel) {
+fun TeacherUpdateTab(
+    viewModel: TeacherViewModel,
+    initialTool: UpdateTool = UpdateTool.Attendance,
+) {
     val classesState by viewModel.classesState.collectAsState()
     val classes = (classesState as? UiState.Success)?.data?.data?.classes ?: emptyList()
 
     var selectedClass by rememberSaveable { mutableStateOf<TeacherClassSummaryDto?>(null) }
-    var selectedTool by rememberSaveable { mutableStateOf(UpdateTool.Attendance) }
+    var selectedTool by rememberSaveable { mutableStateOf(initialTool) }
+
+    LaunchedEffect(initialTool) {
+        selectedTool = initialTool
+    }
 
     LaunchedEffect(selectedClass) {
         selectedClass?.let {

@@ -36,7 +36,10 @@ import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 
 @Composable
-fun TeacherClassesTab(viewModel: TeacherViewModel) {
+fun TeacherClassesTab(
+    viewModel: TeacherViewModel,
+    onClassSelected: (TeacherClassSummaryDto) -> Unit = {},
+) {
     val classesState by viewModel.classesState.collectAsState()
     val classes = (classesState as? UiState.Success)?.data?.data?.classes ?: emptyList()
 
@@ -86,7 +89,7 @@ fun TeacherClassesTab(viewModel: TeacherViewModel) {
             )
         } else {
             classes.forEach { cls ->
-                ClassCardItem(cls)
+                ClassCardItem(cls, onClick = { onClassSelected(cls) })
             }
         }
         Spacer(Modifier.height(24.dp))
@@ -94,7 +97,7 @@ fun TeacherClassesTab(viewModel: TeacherViewModel) {
 }
 
 @Composable
-private fun ClassCardItem(cls: TeacherClassSummaryDto) {
+private fun ClassCardItem(cls: TeacherClassSummaryDto, onClick: () -> Unit = {}) {
     val classLabel = "${cls.className}${if (cls.section.isNotBlank()) "-${cls.section}" else ""}"
     Column(
         modifier = Modifier
@@ -105,7 +108,7 @@ private fun ClassCardItem(cls: TeacherClassSummaryDto) {
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
-            ) {}
+            ) { onClick() }
             .padding(16.dp),
     ) {
         Row(

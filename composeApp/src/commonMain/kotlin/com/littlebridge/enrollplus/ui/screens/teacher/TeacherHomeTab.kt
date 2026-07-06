@@ -50,6 +50,7 @@ import com.littlebridge.enrollplus.util.nowMinutesOfDay
 fun TeacherHomeTab(
     viewModel: TeacherViewModel,
     onNavigateTab: (TeacherTab) -> Unit = {},
+    onNavigateToUpdateTool: (UpdateTool) -> Unit = {},
 ) {
     val dayState by viewModel.dayState.collectAsState()
     val obligationsState by viewModel.obligationsState.collectAsState()
@@ -81,11 +82,12 @@ fun TeacherHomeTab(
             onViewWeek = { onNavigateTab(TeacherTab.Timetable) },
         )
         QuickActionsSection(
-            onAction = { onNavigateTab(TeacherTab.Update) },
+            onAction = { tool -> onNavigateToUpdateTool(tool) },
         )
         MyClassesSection(
             classes = classes,
             onViewAll = { onNavigateTab(TeacherTab.Classes) },
+            onClassClick = { onNavigateTab(TeacherTab.Classes) },
         )
         UpcomingEventsSection(
             calendar = dayData?.calendar ?: emptyList(),
@@ -464,17 +466,17 @@ private fun ScheduleItem(
 }
 
 @Composable
-private fun QuickActionsSection(onAction: () -> Unit) {
+private fun QuickActionsSection(onAction: (UpdateTool) -> Unit) {
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
         SectionHeader("Quick Actions")
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            QuickActionItem("Attendance", TICheck, onAction, Modifier.weight(1f))
-            QuickActionItem("Homework", TIEdit, onAction, Modifier.weight(1f))
-            QuickActionItem("Marks", TIAward, onAction, Modifier.weight(1f))
-            QuickActionItem("Syllabus", TIBook, onAction, Modifier.weight(1f))
+            QuickActionItem("Attendance", TICheck, { onAction(UpdateTool.Attendance) }, Modifier.weight(1f))
+            QuickActionItem("Homework", TIEdit, { onAction(UpdateTool.Homework) }, Modifier.weight(1f))
+            QuickActionItem("Marks", TIAward, { onAction(UpdateTool.Marks) }, Modifier.weight(1f))
+            QuickActionItem("Syllabus", TIBook, { onAction(UpdateTool.Syllabus) }, Modifier.weight(1f))
         }
     }
 }
@@ -524,6 +526,7 @@ private fun QuickActionItem(
 private fun MyClassesSection(
     classes: List<TeacherClassSummaryDto>,
     onViewAll: () -> Unit,
+    onClassClick: () -> Unit = {},
 ) {
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
         SectionHeader("My Classes", "View all", onViewAll)
@@ -557,7 +560,7 @@ private fun MyClassesSection(
                     badgeBg = VColors.successSoft
                     badgeFg = VColors.success
                 }
-                ClassRow(classId, cls.subject, meta, badgeText, badgeBg, badgeFg)
+                ClassRow(classId, cls.subject, meta, badgeText, badgeBg, badgeFg, onClick = onClassClick)
             }
         }
     }
@@ -571,6 +574,7 @@ private fun ClassRow(
     badgeText: String,
     badgeBg: Color,
     badgeFg: Color,
+    onClick: () -> Unit = {},
 ) {
     Row(
         modifier = Modifier
@@ -581,7 +585,7 @@ private fun ClassRow(
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
-            ) {}
+            ) { onClick() }
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),

@@ -24,11 +24,14 @@ import coil3.request.crossfade
 import com.littlebridge.enrollplus.core.notification.NotificationFeedRepository
 import com.littlebridge.enrollplus.feature.auth.presentation.AuthViewModel
 import com.littlebridge.enrollplus.presentation.MainViewModel
+import com.littlebridge.enrollplus.presentation.ParentViewModel
 import com.littlebridge.enrollplus.presentation.TeacherViewModel
 import com.littlebridge.enrollplus.ui.navigation.AuthNavGraph
 import com.littlebridge.enrollplus.ui.navigation.DeepLinkTarget
 import com.littlebridge.enrollplus.ui.navigation.TeacherDeepLinkTab
 import com.littlebridge.enrollplus.ui.navigation.parseDeepLink
+import com.littlebridge.enrollplus.ui.screens.parent.ParentDeepLinkParser
+import com.littlebridge.enrollplus.ui.screens.parent.ParentPortalScreen
 import com.littlebridge.enrollplus.ui.screens.teacher.TeacherPortalScreen
 import com.littlebridge.enrollplus.ui.screens.teacher.TeacherTab
 import com.littlebridge.enrollplus.util.Config
@@ -123,10 +126,15 @@ fun App(
             }
             val isAuthed = !authState.token.isNullOrBlank()
             val isTeacher = authState.role?.equals("teacher", ignoreCase = true) == true
+            val isParent = authState.role?.equals("parent", ignoreCase = true) == true
 
             // Parse deep link once when it arrives
             val deepLinkTarget = remember(deepLink) {
                 parseDeepLink(deepLink, authState.role)
+            }
+
+            val parentDeepLink = remember(deepLink) {
+                ParentDeepLinkParser.parse(deepLink)
             }
 
             val notificationRepo = koinInject<NotificationFeedRepository>()
@@ -165,6 +173,16 @@ fun App(
                     viewModel = teacherViewModel,
                     onLogout = { viewModel.logout() },
                     initialTab = initialTab,
+                )
+            } else if (isAuthed && isParent) {
+                val parentViewModel: ParentViewModel = koinViewModel()
+                LaunchedEffect(authState.token) {
+                    authState.token?.let { parentViewModel.setToken(it) }
+                }
+                ParentPortalScreen(
+                    viewModel = parentViewModel,
+                    onLogout = { viewModel.logout() },
+                    initialDeepLink = parentDeepLink,
                 )
             } else {
                 AuthNavGraph(
