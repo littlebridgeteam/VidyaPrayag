@@ -29,14 +29,13 @@ import coil3.disk.DiskCache
 import coil3.memory.MemoryCache
 import coil3.network.ktor3.KtorNetworkFetcherFactory
 import coil3.request.crossfade
+import com.littlebridge.enrollplus.feature.auth.presentation.AuthViewModel
 import com.littlebridge.enrollplus.presentation.MainViewModel
 import com.littlebridge.enrollplus.core.locale.LocaleManager
+import com.littlebridge.enrollplus.ui.navigation.AuthNavGraph
+import com.littlebridge.enrollplus.ui.screens.shared.SplashScreen
 import com.littlebridge.enrollplus.ui.v2.locale.LocalLocale
 import com.littlebridge.enrollplus.ui.v2.navigation.NavGraphV2
-import com.littlebridge.enrollplus.ui.v2.screens.premium.auth.SplashScreen
-import com.littlebridge.enrollplus.ui.v2.theme.VColors
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.VThemeRegistry
 import com.littlebridge.enrollplus.util.Config
 import io.ktor.client.*
 import okio.FileSystem
@@ -56,8 +55,9 @@ import org.koin.core.annotation.KoinExperimentalAPI
  * Flow:
  *  - `KoinContext` → [MainViewModel] (auth state).
  *  - Install the Coil image loader (Ktor fetcher + Supabase token-stripping cache mapper).
- *  - While auth is still loading → a minimal lavender splash with a spinner.
- *  - Once loaded → [NavGraphV2] with `role` + `isAuthenticated` + `onLogout`.
+ *  - While auth is still loading → backup-402 SplashScreen.
+ *  - Once loaded + authenticated → [NavGraphV2] (portals only).
+ *  - Once loaded + unauthenticated → [AuthNavGraph] (splash → landing → login/signup).
  */
 @OptIn(KoinExperimentalAPI::class, coil3.annotation.ExperimentalCoilApi::class)
 @Composable
@@ -128,8 +128,7 @@ fun App(
                 .build()
         }
 
-        // Resolve the colors for a lavender (Light) splash before the portal theme is known.
-        val splashColors: VColors = VThemeRegistry.resolve("light").colors
+        val authViewModel: AuthViewModel = koinViewModel()
 
         // ── SESSION-BLEED FIX (root cause) ───────────────────────────────────────
         // This app has NO NavHost / NavController: NavGraphV2 is a hand-rolled
@@ -166,12 +165,12 @@ fun App(
             }
         }
 
-        Box(modifier = Modifier.fillMaxSize().background(splashColors.background)) {
+        Box(modifier = Modifier.fillMaxSize().background(Color(0xFFFBF8F4))) {
          // Multi-Language: provide the current locale to all composables below.
          CompositionLocalProvider(LocalLocale provides currentLocale) {
-            // PHASE 2 — Splash shows the brand while the session check (JWT + role) runs in
+            // Splash shows the brand while the session check (JWT + role) runs in
             // parallel inside MainViewModel.authState. The instant `isLoaded` flips true we
-            // crossfade straight into the role-driven graph: no artificial hold, no blank frame.
+            // crossfade straight into either the auth flow or the portal.
             AnimatedContent(
                 targetState = authState.isLoaded,
                 transitionSpec = { fadeIn(tween(280)) togetherWith fadeOut(tween(220)) },
@@ -179,8 +178,8 @@ fun App(
                 modifier = Modifier.fillMaxSize(),
             ) { loaded ->
                 if (!loaded) {
-                    SplashScreen(modifier = Modifier.fillMaxSize())
-                } else {
+                    SplashScreen(onTimeout = { })
+                } else if (isAuthenticated) {
                     // The session key is the live JWT (unique per login) while
                     // authenticated, or a constant sentinel while logged out. When it
                     // changes — logout, or a logout→login role switch — SessionScope
@@ -192,16 +191,17 @@ fun App(
                         NavGraphV2(
                             role = authState.role,
                             isAuthenticated = isAuthenticated,
-                            // logout() revokes server-side + clears the persisted
-                            // session (prefs); that flips the session key, which
-                            // disposes this scope's store so no session-scoped VM
-                            // survives into the next login.
                             onLogout = { viewModel.logout() },
                             deepLink = deepLink,
                             onDeepLinkConsumed = onDeepLinkConsumed,
                             modifier = Modifier.fillMaxSize(),
                         )
                     }
+                } else {
+                    AuthNavGraph(
+                        authViewModel = authViewModel,
+                        onAuthSuccess = { },
+                    )
                 }
             }
 

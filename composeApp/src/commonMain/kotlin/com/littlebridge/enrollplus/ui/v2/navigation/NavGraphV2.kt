@@ -20,24 +20,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import com.littlebridge.enrollplus.ui.v2.components.VBackHandler
 import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.feature.admin.presentation.OnboardingGate
 import com.littlebridge.enrollplus.feature.admin.presentation.OnboardingGateViewModel
 import com.littlebridge.enrollplus.feature.auth.domain.repository.AuthRepository
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.screens.premium.auth.AdminAuthScreen
-import com.littlebridge.enrollplus.ui.v2.screens.premium.auth.CommonLandingScreen
-import com.littlebridge.enrollplus.ui.v2.screens.premium.auth.LanguageSelectionScreen
-import com.littlebridge.enrollplus.ui.v2.screens.premium.auth.LegalInfoScreen
-import com.littlebridge.enrollplus.ui.v2.screens.premium.auth.ParentAuthScreen
 import com.littlebridge.enrollplus.ui.v2.screens.premium.auth.ParentLinkChildScreen
 import com.littlebridge.enrollplus.ui.v2.screens.premium.auth.SchoolOnboardingScreen
 import com.littlebridge.enrollplus.ui.v2.screens.premium.auth.TeacherFirstLoginScreen
-import com.littlebridge.enrollplus.ui.v2.screens.premium.parent.ParentDiscoveryScreen
 import com.littlebridge.enrollplus.ui.v2.screens.premium.parent.ParentPortalShell
 import com.littlebridge.enrollplus.ui.v2.screens.premium.school.SchoolPortalPremium
 import com.littlebridge.enrollplus.ui.v2.screens.premium.teacher.TeacherPortalShell
@@ -48,7 +40,6 @@ import com.littlebridge.enrollplus.ui.v2.theme.VStatusBarAdapter
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.VThemeDef
 import com.littlebridge.enrollplus.ui.v2.theme.VThemeRegistry
-import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 /**
@@ -60,8 +51,10 @@ import org.koin.compose.koinInject
  * its predecessor so back-press can never return to splash, landing, or an auth screen (LAW 4).
  *
  *   Splash (in App.kt)
- *     ├─ valid session → [AuthedFlow] → role gate → correct portal
- *     └─ no session    → [UnauthFlow] → CommonLanding → Parent/Admin auth
+ *     └─ valid session → [AuthedFlow] → role gate → correct portal
+ *
+ * Unauthenticated flow (splash → landing → login/signup) is handled by App.kt
+ * via the backup-402 AuthNavGraph. This composable only runs when authenticated.
  *
  * Role is the persisted JWT role; [EntryRole] normalizes it (handles ADMIN / SCHOOL_ADMIN / TEACHER
  * / PARENT) so no decision site hardcodes a raw string.
@@ -149,17 +142,13 @@ fun NavGraphV2(
             // active theme — light icons on dark themes, dark icons on light.
             VStatusBarAdapter(def.colors.isNight)
 
-            if (isAuthenticated) {
-                AuthedFlow(
-                    role = entryRole,
-                    onLogout = onLogout,
-                    deepLinkTarget = pendingNavigation,
-                    onDeepLinkNavigated = { pendingNavigation = null },
-                    modifier = modifier,
-                )
-            } else {
-                UnauthFlow(modifier = modifier)
-            }
+            AuthedFlow(
+                role = entryRole,
+                onLogout = onLogout,
+                deepLinkTarget = pendingNavigation,
+                onDeepLinkNavigated = { pendingNavigation = null },
+                modifier = modifier,
+            )
         }
     }
 }
@@ -529,103 +518,7 @@ enum class EntryRole {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Unauthenticated funnel:  CommonLanding → Parent/Admin auth (+ discovery/link/onboard branches)
-// ─────────────────────────────────────────────────────────────────────────────
-
-private enum class UnauthRoute { LanguageSelection, Landing, ParentAuth, AdminAuth, Discovery, ParentLinkChild, SchoolOnboarding, Legal }
-
-@OptIn(ExperimentalComposeUiApi::class)
-@Composable
-private fun UnauthFlow(modifier: Modifier = Modifier) {
-    val preferenceRepository = koinInject<PreferenceRepository>()
-    val hasLanguagePref by preferenceRepository.getLanguagePref()
-        .collectAsState(initial = "")
-
-    var route by remember { mutableStateOf(UnauthRoute.Landing) }
-    // Which legal/info document the Legal route opens on (Privacy / Terms / Help Desk).
-    var legalDoc by remember { mutableStateOf("Privacy") }
-
-    // First-launch gate: if no language preference is set, show the language
-    // selection screen before the landing page.
-    LaunchedEffect(hasLanguagePref) {
-        if (hasLanguagePref.isBlank() && route == UnauthRoute.Landing) {
-            route = UnauthRoute.LanguageSelection
-        } else if (hasLanguagePref.isNotBlank() && route == UnauthRoute.LanguageSelection) {
-            route = UnauthRoute.Landing
-        }
-    }
-
-    // System back: collapse the funnel toward the landing screen (never exit from a leaf).
-    VBackHandler(enabled = route != UnauthRoute.Landing) {
-        route = when (route) {
-            UnauthRoute.ParentAuth -> UnauthRoute.Landing
-            UnauthRoute.AdminAuth -> UnauthRoute.Landing
-            UnauthRoute.Discovery -> UnauthRoute.ParentAuth
-            UnauthRoute.ParentLinkChild -> UnauthRoute.Discovery
-            UnauthRoute.SchoolOnboarding -> UnauthRoute.AdminAuth
-            // Legal/Support is a leaf reachable from the landing footer — back returns there.
-            UnauthRoute.Legal -> UnauthRoute.Landing
-            UnauthRoute.LanguageSelection -> UnauthRoute.Landing
-            UnauthRoute.Landing -> UnauthRoute.Landing
-        }
-    }
-
-    AnimatedContent(
-        targetState = route,
-        // Funnel screens advance "deeper" → subtle forward horizontal momentum + fade.
-        transitionSpec = { VMotion.forwardSlide() },
-        label = "unauth-flow",
-        modifier = modifier,
-    ) { current ->
-        when (current) {
-            UnauthRoute.LanguageSelection -> LanguageSelectionScreen(
-                onLanguageSelected = { route = UnauthRoute.Landing },
-                modifier = modifier,
-            )
-            // The single landing surface for BOTH roles (PHASE 7). Its two role-entry cards are the
-            // only auth CTAs: "I'm a Parent" → [onParent] → OTP funnel; "School / Administration" →
-            // [onAdmin] → credential funnel (teachers sign in via the Admin path). A tap on any
-            // Featured-Institution card or Portal-access row also funnels into the matching auth
-            // screen (a school tap leads families into the parent OTP sign-in). Content (hero copy,
-            // featured schools, offerings, portals) is CMS-driven inside the screen itself via
-            // LandingViewModel + MainViewModel — both fetch in `init`, so no extra wiring is needed
-            // here; this site only supplies the navigation callbacks.
-            UnauthRoute.Landing -> CommonLandingScreen(
-                onParent = { route = UnauthRoute.ParentAuth },
-                onAdmin = { route = UnauthRoute.AdminAuth },
-                onLegal = { doc ->
-                    legalDoc = doc
-                    route = UnauthRoute.Legal
-                },
-            )
-            UnauthRoute.ParentAuth -> ParentAuthScreen(
-                onAuthSuccess = {},
-                onBack = { route = UnauthRoute.Landing },
-            )
-            UnauthRoute.AdminAuth -> AdminAuthScreen(
-                onAuthSuccess = {},
-                onBack = { route = UnauthRoute.Landing },
-            )
-            UnauthRoute.Discovery -> ParentDiscoveryScreen(
-                onExit = { route = UnauthRoute.ParentAuth },
-                onOpenSchool = { _ -> route = UnauthRoute.ParentLinkChild },
-            )
-            UnauthRoute.ParentLinkChild -> ParentLinkChildScreen(
-                onDone = { route = UnauthRoute.ParentAuth },
-                onBack = { route = UnauthRoute.Discovery },
-            )
-            UnauthRoute.SchoolOnboarding -> SchoolOnboardingScreen(
-                onComplete = { route = UnauthRoute.AdminAuth },
-                onBack = { route = UnauthRoute.AdminAuth },
-            )
-            UnauthRoute.Legal -> LegalInfoScreen(
-                onBack = { route = UnauthRoute.Landing },
-                initial = legalDoc,
-            )
-        }
-    }
-}
+// UnauthFlow removed — unauthenticated flow is handled by App.kt via AuthNavGraph.
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Authenticated gate:  role → (child-link | onboarding | first-login) → portal
