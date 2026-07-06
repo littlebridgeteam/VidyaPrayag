@@ -17,8 +17,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedTextField
+import com.littlebridge.enrollplus.ui.v2.components.VButton
+import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
+import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
+import com.littlebridge.enrollplus.ui.v2.components.VInput
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
+import com.littlebridge.enrollplus.ui.v2.theme.colored
 
 @Composable
 actual fun rememberBarcodeScanner(
@@ -31,12 +35,13 @@ actual fun BarcodeScannerView(
     onClose: () -> Unit,
     modifier: Modifier,
 ) {
+    val c = VTheme.colors
     var manualBarcode by remember { mutableStateOf("") }
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(androidx.compose.ui.graphics.Color(0xFFF5F5F5))
+            .background(c.background)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -45,26 +50,29 @@ actual fun BarcodeScannerView(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Enter Barcode")
+            Text("Enter Barcode", style = VTheme.type.h2.colored(c.ink))
             TextButton(onClick = onClose) { Text("Close") }
         }
 
-        OutlinedTextField(
+        VInput(
             value = manualBarcode,
             onValueChange = { manualBarcode = it },
-            label = { Text("Barcode") },
+            label = "Barcode",
             modifier = Modifier.fillMaxWidth(),
         )
 
-        Button(
+        VButton(
+            text = "Submit",
             onClick = {
                 if (manualBarcode.isNotBlank()) {
                     onScanned(manualBarcode)
                     manualBarcode = ""
                 }
             },
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text("Submit") }
+            full = true,
+            tone = VButtonTone.Lavender,
+            size = VButtonSize.Md,
+        )
     }
 }
 
