@@ -235,14 +235,7 @@ fun BookCardWithContextMenu(book: LibraryBookDto, onClick: () -> Unit, menuActio
 @Composable
 fun SwipeableIssueCard(canRenew: Boolean, onReturn: () -> Unit, onRenew: () -> Unit, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     val c = VTheme.colors
-    val st = rememberSwipeToDismissBoxState(positionalThreshold = { it * 0.5f })
-    androidx.compose.runtime.LaunchedEffect(st.currentValue) {
-        when (st.currentValue) {
-            SwipeToDismissBoxValue.StartToEnd -> { if (canRenew) onRenew() }
-            SwipeToDismissBoxValue.EndToStart -> { onReturn() }
-            else -> {}
-        }
-    }
+    val st = rememberSwipeToDismissBoxState(confirmValueChange = { when (it) { SwipeToDismissBoxValue.StartToEnd -> { if (canRenew) onRenew(); false }; SwipeToDismissBoxValue.EndToStart -> { onReturn(); false }; else -> false } }, positionalThreshold = { it * 0.5f })
     SwipeToDismissBox(st, modifier = modifier, backgroundContent = {
         val s = st.dismissDirection == SwipeToDismissBoxValue.StartToEnd
         Box(Modifier.fillMaxSize().background(if (s) if (canRenew) c.successInk else c.ink3 else c.dangerInk).padding(horizontal = 24.dp), contentAlignment = if (s) Alignment.CenterStart else Alignment.CenterEnd) {

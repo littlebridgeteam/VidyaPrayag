@@ -226,5 +226,8 @@ private val MONTH_SHORT = listOf(
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 )
 
-/** "2026-06-13" -> "13 Jun 2026". Delegates to shared DateUtil.formatDate. */
-private fun prettyDate(iso: String): String = com.littlebridge.enrollplus.util.formatDate(iso)
+/** "2026-06-13" -> "13 Jun 2026". Falls back to the raw value if unparseable. */
+private fun prettyDate(iso: String): String {
+    val (y, m, d) = parseIsoDate(iso) ?: return iso
+    return "$d ${MONTH_SHORT[m - 1]} $y"
+}

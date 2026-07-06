@@ -551,7 +551,7 @@ private fun ProfileTab(state: StudentLibraryState, viewModel: StudentLibraryView
         var targetYear by remember { mutableStateOf(java.time.LocalDate.now().year.toString()) }
         VCard {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                VInput(value = goalCount, onValueChange = { v -> goalCount = v.filter { it.isDigit() }.take(4) }, label = appString(StringKeys.STU_LIB_GOAL_COUNT), modifier = Modifier.fillMaxWidth())
+                VInput(value = goalCount, onValueChange = { goalCount = it }, label = appString(StringKeys.STU_LIB_GOAL_COUNT), modifier = Modifier.fillMaxWidth())
                 Text(appString(StringKeys.STU_LIB_PERIOD), style = VTheme.type.caption.colored(c.ink2))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     listOf("monthly" to appString(StringKeys.STU_LIB_MONTHLY), "quarterly" to appString(StringKeys.STU_LIB_QUARTERLY), "yearly" to appString(StringKeys.STU_LIB_YEARLY)).forEach { (key, label) ->
@@ -562,14 +562,14 @@ private fun ProfileTab(state: StudentLibraryState, viewModel: StudentLibraryView
                         )
                     }
                 }
-                VInput(value = targetYear, onValueChange = { v -> targetYear = v.filter { it.isDigit() }.take(4) }, label = appString(StringKeys.STU_LIB_TARGET_YEAR), modifier = Modifier.fillMaxWidth())
+                VInput(value = targetYear, onValueChange = { targetYear = it }, label = appString(StringKeys.STU_LIB_TARGET_YEAR), modifier = Modifier.fillMaxWidth())
                 VButton(
                     text = appString(StringKeys.STU_LIB_SET_GOAL),
                     onClick = {
                         viewModel.setReadingGoal(
-                            (goalCount.toIntOrNull() ?: 5).coerceIn(1, 1000),
+                            goalCount.toIntOrNull() ?: 5,
                             period,
-                            (targetYear.toIntOrNull() ?: java.time.LocalDate.now().year).coerceIn(2000, 2100),
+                            targetYear.toIntOrNull() ?: java.time.LocalDate.now().year,
                         )
                     },
                     full = true,

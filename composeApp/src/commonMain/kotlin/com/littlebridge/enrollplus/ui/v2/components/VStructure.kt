@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -37,13 +36,10 @@ import com.littlebridge.enrollplus.ui.v2.theme.colored
 /**
  * VScreenScaffold — the phone-frame root for every screen.
  *
- * Centers a max-width column on wide displays (desktop/web), paints the portal
- * background, and stacks an optional [topBar] + scrolling [content] with an
- * optional floating [bottomBar]. The content area fills remaining height and
- * receives enough bottom padding to scroll above the floating navigation.
- *
- * Adaptive breakpoints (XPL-017): maxWidth scales up on tablet/landscape —
- * 440dp on phone, 560dp at 600dp+, 720dp at 840dp+.
+ * Translated from primitives.tsx → `PhoneFrame`. Centers a max-440dp column on wide displays
+ * (desktop/web), paints the portal background, and stacks an optional [topBar] + scrolling
+ * [content] with an optional floating [bottomBar]. The content area fills remaining height
+ * and receives enough bottom padding to scroll above the floating navigation.
  */
 @Composable
 fun VScreenScaffold(
@@ -63,44 +59,32 @@ fun VScreenScaffold(
         modifier.fillMaxSize().background(c.background),
         contentAlignment = Alignment.TopCenter,
     ) {
-        BoxWithConstraints(
+        Box(
             Modifier
                 .fillMaxSize()
+                .widthIn(max = d.maxContentWidth)
                 .background(c.background),
         ) {
-            val adaptiveMaxWidth = when {
-                maxWidth >= 840.dp -> 720.dp
-                maxWidth >= 600.dp -> 560.dp
-                else -> d.maxContentWidth
-            }
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .widthIn(max = adaptiveMaxWidth)
-                    .align(Alignment.TopCenter)
-                    .background(c.background),
-            ) {
-                Column(Modifier.fillMaxSize()) {
-                    topBar?.invoke()
-                    Box(Modifier.weight(1f).fillMaxWidth()) {
-                        content(
-                            PaddingValues(
-                                start = d.screenPadding,
-                                top = d.screenPadding,
-                                end = d.screenPadding,
-                                bottom = d.screenPadding + floatingBottomBarPadding,
-                            ),
-                        )
-                    }
+            Column(Modifier.fillMaxSize()) {
+                topBar?.invoke()
+                Box(Modifier.weight(1f).fillMaxWidth()) {
+                    content(
+                        PaddingValues(
+                            start = d.screenPadding,
+                            top = d.screenPadding,
+                            end = d.screenPadding,
+                            bottom = d.screenPadding + floatingBottomBarPadding,
+                        ),
+                    )
                 }
-                if (bottomBar != null) {
-                    Box(
-                        Modifier
-                            .align(Alignment.BottomCenter)
-                            .fillMaxWidth(),
-                    ) {
-                        bottomBar()
-                    }
+            }
+            if (bottomBar != null) {
+                Box(
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth(),
+                ) {
+                    bottomBar()
                 }
             }
         }

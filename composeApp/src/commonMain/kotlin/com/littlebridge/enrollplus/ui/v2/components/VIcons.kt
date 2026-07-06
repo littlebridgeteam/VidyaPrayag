@@ -14,9 +14,9 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Menu
@@ -26,7 +26,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
@@ -64,7 +64,7 @@ object VIcons {
     val Check get() = Icons.Filled.Check                     // Check
     val Close get() = Icons.Filled.Close                     // X
     val Plus get() = Icons.Filled.Add                        // Plus
-    val Send get() = Icons.AutoMirrored.Filled.Send          // Send
+    val Send get() = Icons.Filled.Send                       // Send
     val Share get() = Icons.Filled.Share                     // Share2
     val Star get() = Icons.Filled.Star                       // Star
     val Heart get() = Icons.Filled.Favorite                  // Heart
@@ -74,8 +74,8 @@ object VIcons {
     val Bookmark get() = Icons.Filled.Bookmark               // bookmark
     val ChevronDown get() = Icons.Filled.KeyboardArrowDown   // ChevronDown
     val ChevronUp get() = Icons.Filled.KeyboardArrowUp       // ChevronUp
-    val ChevronLeft get() = Icons.AutoMirrored.Filled.KeyboardArrowLeft   // ChevronLeft
-    val ChevronRight get() = Icons.AutoMirrored.Filled.KeyboardArrowRight // ChevronRight
+    val ChevronLeft get() = Icons.Filled.KeyboardArrowLeft   // ChevronLeft
+    val ChevronRight get() = Icons.Filled.KeyboardArrowRight // ChevronRight
     val ArrowLeft get() = Icons.AutoMirrored.Filled.ArrowBack    // ArrowLeft
     val ArrowRight get() = Icons.AutoMirrored.Filled.ArrowForward // ArrowRight
     val Chat get() = Icons.AutoMirrored.Filled.Chat          // MessageSquare
