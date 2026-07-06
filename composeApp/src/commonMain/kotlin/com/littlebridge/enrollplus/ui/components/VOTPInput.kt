@@ -12,8 +12,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -22,7 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -41,6 +42,7 @@ fun VOTPInput(
     val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(100)
         focusRequester.requestFocus()
     }
 
@@ -83,8 +85,8 @@ fun VOTPInput(
         }
     }
 
-    // Hidden BasicTextField to capture keyboard input
-    BasicTextField(
+    // Hidden TextField to capture keyboard input
+    TextField(
         value = value,
         onValueChange = { newValue ->
             val filtered = newValue.filter { it.isDigit() }.take(length)
@@ -94,8 +96,16 @@ fun VOTPInput(
             .size(0.dp)
             .focusRequester(focusRequester),
         textStyle = VTypography.otpBox,
-        cursorBrush = SolidColor(VColors.violet),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
         singleLine = true,
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = Color.Transparent,
+            unfocusedContainerColor = Color.Transparent,
+            disabledContainerColor = Color.Transparent,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+            disabledIndicatorColor = Color.Transparent,
+            cursorColor = VColors.violet,
+        ),
     )
 }

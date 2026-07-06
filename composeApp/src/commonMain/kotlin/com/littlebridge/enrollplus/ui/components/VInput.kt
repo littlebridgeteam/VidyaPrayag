@@ -15,9 +15,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,7 +27,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -100,29 +100,35 @@ fun VInput(
                             .background(VColors.line),
                     )
                 }
-                BasicTextField(
+                TextField(
                     value = value,
                     onValueChange = onValueChange,
                     modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 16.dp, vertical = 14.dp), // weight is RowScope extension
+                        .weight(1f),
                     textStyle = VTypography.body.copy(color = VColors.ink),
-                    cursorBrush = SolidColor(VColors.violet),
+                    placeholder = {
+                        Text(
+                            text = placeholder,
+                            style = VTypography.body,
+                            color = VColors.ink3,
+                        )
+                    },
                     keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
                     visualTransformation = visualTransformation,
                     singleLine = true,
                     enabled = enabled,
                     interactionSource = interactionSource,
-                    decorationBox = { inner ->
-                        if (value.isEmpty()) {
-                            Text(
-                                text = placeholder,
-                                style = VTypography.body,
-                                color = VColors.ink3,
-                            )
-                        }
-                        inner()
-                    },
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        disabledContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        disabledIndicatorColor = Color.Transparent,
+                        cursorColor = VColors.violet,
+                        focusedTextColor = VColors.ink,
+                        unfocusedTextColor = VColors.ink,
+                    ),
                 )
             }
         }
