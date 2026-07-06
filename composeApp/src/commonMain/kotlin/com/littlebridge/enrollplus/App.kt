@@ -34,10 +34,13 @@ import com.littlebridge.enrollplus.presentation.MainViewModel
 import com.littlebridge.enrollplus.core.locale.LocaleManager
 import com.littlebridge.enrollplus.ui.navigation.AuthNavGraph
 import com.littlebridge.enrollplus.ui.screens.shared.SplashScreen
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VMotion
 import com.littlebridge.enrollplus.ui.v2.locale.LocalLocale
 import com.littlebridge.enrollplus.ui.v2.navigation.NavGraphV2
 import com.littlebridge.enrollplus.util.Config
 import io.ktor.client.*
+import kotlinx.coroutines.delay
 import okio.FileSystem
 import org.koin.compose.KoinContext
 import org.koin.compose.koinInject
@@ -55,9 +58,10 @@ import org.koin.core.annotation.KoinExperimentalAPI
  * Flow:
  *  - `KoinContext` → [MainViewModel] (auth state).
  *  - Install the Coil image loader (Ktor fetcher + Supabase token-stripping cache mapper).
- *  - While auth is still loading → backup-402 SplashScreen.
- *  - Once loaded + authenticated → [NavGraphV2] (portals only).
- *  - Once loaded + unauthenticated → [AuthNavGraph] (splash → landing → login/signup).
+ *  - Splash always plays for a minimum 1600ms brand reveal, regardless of auth state.
+ *  - Once both the splash minimum has elapsed AND auth is loaded → transition.
+ *  - Authenticated → [NavGraphV2] (portals only).
+ *  - Unauthenticated → [AuthNavGraph] (starts at Landing — splash is already handled here).
  */
 @OptIn(KoinExperimentalAPI::class, coil3.annotation.ExperimentalCoilApi::class)
 @Composable
@@ -155,6 +159,16 @@ fun App(
         // can bleed across a role switch.
         val isAuthenticated = !authState.token.isNullOrBlank()
 
+        // Splash minimum duration — the brand reveal always plays in full,
+        // even if the session check resolves instantly. This gives a
+        // consistent premium feel for both logged-in and logged-out users.
+        var splashMinElapsed by remember { mutableStateOf(false) }
+        LaunchedEffect(Unit) {
+            delay(1600)
+            splashMinElapsed = true
+        }
+        val showSplash = !authState.isLoaded || !splashMinElapsed
+
         // Auto-mark notification as read when a push notification is tapped.
         // Uses refType+refId to identify the notification on the server.
         if (pushRefType != null && pushRefId != null && isAuthenticated) {
@@ -165,19 +179,20 @@ fun App(
             }
         }
 
-        Box(modifier = Modifier.fillMaxSize().background(Color(0xFFFBF8F4))) {
+        Box(modifier = Modifier.fillMaxSize().background(VColors.cream)) {
          // Multi-Language: provide the current locale to all composables below.
          CompositionLocalProvider(LocalLocale provides currentLocale) {
-            // Splash shows the brand while the session check (JWT + role) runs in
-            // parallel inside MainViewModel.authState. The instant `isLoaded` flips true we
-            // crossfade straight into either the auth flow or the portal.
+            // Splash plays for a minimum 1600ms brand reveal regardless of auth
+            // state. Only transitions when BOTH the min duration has elapsed AND
+            // the session check (JWT + role) has resolved. This ensures a
+            // consistent premium entry for logged-in and logged-out users alike.
             AnimatedContent(
-                targetState = authState.isLoaded,
-                transitionSpec = { fadeIn(tween(280)) togetherWith fadeOut(tween(220)) },
+                targetState = showSplash,
+                transitionSpec = { fadeIn(tween(400, easing = VMotion.ease)) togetherWith fadeOut(tween(400, easing = VMotion.ease)) },
                 label = "splash-to-app",
                 modifier = Modifier.fillMaxSize(),
-            ) { loaded ->
-                if (!loaded) {
+            ) { isSplash ->
+                if (isSplash) {
                     SplashScreen(onTimeout = { })
                 } else if (isAuthenticated) {
                     // The session key is the live JWT (unique per login) while

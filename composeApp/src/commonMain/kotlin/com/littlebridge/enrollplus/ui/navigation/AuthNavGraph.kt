@@ -28,7 +28,7 @@ fun AuthNavGraph(
     authViewModel: AuthViewModel,
     onAuthSuccess: () -> Unit,
 ) {
-    var currentRoute by remember { mutableStateOf(AuthRoute.Splash) }
+    var currentRoute by remember { mutableStateOf(AuthRoute.Landing) }
 
     fun navigateTo(route: AuthRoute) {
         currentRoute = route

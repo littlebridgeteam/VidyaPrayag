@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -21,30 +20,48 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.tokens.VMotion
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
+/**
+ * Premium splash — Enroll+ wordmark with a measured, confident reveal.
+ *
+ * Sequence (total ~1600ms):
+ *   0ms      → logo fade-in + scale 0.96→1 (600ms ease)
+ *   400ms    → accent line draws from 0 to 48dp (800ms ease)
+ *   1200ms   → hold
+ *   1600ms   → onTimeout
+ *
+ * No bouncy springs, no shimmer. Just a clean, timed reveal that matches
+ * the auth prototype's CSS keyframes exactly.
+ */
 @Composable
 fun SplashScreen(
     onTimeout: () -> Unit,
 ) {
-    val splashProgress = remember { Animatable(0f) }
-    val accentProgress = remember { Animatable(0f) }
+    val logoAlpha = remember { Animatable(0f) }
+    val logoScale = remember { Animatable(0.96f) }
+    val accentWidth = remember { Animatable(0f) }
+    val accentAlpha = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
-        splashProgress.animateTo(1f, tween(600, easing = VMotion.ease))
-        delay(200)
-        accentProgress.animateTo(1f, tween(700, easing = VMotion.ease))
-        delay(800)
+        // Phase 1 — logo reveal (0–600ms)
+        launch { logoAlpha.animateTo(1f, tween(600, easing = VMotion.ease)) }
+        launch { logoScale.animateTo(1f, tween(600, easing = VMotion.ease)) }
+
+        // Phase 2 — accent line draw (400ms delay, 800ms duration)
+        delay(400)
+        launch { accentWidth.animateTo(1f, tween(800, easing = VMotion.ease)) }
+        launch { accentAlpha.animateTo(1f, tween(800, easing = VMotion.ease)) }
+
+        // Phase 3 — hold then hand off
+        delay(400)
         onTimeout()
     }
 
@@ -67,15 +84,15 @@ fun SplashScreen(
                 style = VTypography.splashName,
                 color = VColors.ink,
                 modifier = Modifier
-                    .alpha(splashProgress.value)
-                    .scale(0.96f + 0.04f * splashProgress.value),
+                    .alpha(logoAlpha.value)
+                    .scale(logoScale.value),
             )
             Spacer(Modifier.height(14.dp))
             Box(
                 modifier = Modifier
                     .height(2.dp)
-                    .width(48.dp * accentProgress.value)
-                    .alpha(accentProgress.value)
+                    .width(48.dp * accentWidth.value)
+                    .alpha(accentAlpha.value)
                     .background(VColors.violet, RoundedCornerShape(2.dp)),
             )
         }
