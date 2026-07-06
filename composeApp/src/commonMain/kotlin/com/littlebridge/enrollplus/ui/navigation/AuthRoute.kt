@@ -7,4 +7,7 @@ enum class AuthRoute {
     ParentSignup,
     AdminLogin,
     AdminSignup,
+    Terms,
+    PrivacyPolicy,
+    ForgotPassword,
 }

@@ -1134,8 +1134,9 @@ body{
   padding:var(--s-lg) var(--s-lg) var(--s-md);
 }
 .ph-greeting-label{
-  font-size:13px;font-weight:700;letter-spacing:0.3px;
-  display:flex;align-items:center;gap:7px;margin-bottom:var(--s-sm);
+  font-size:12px;font-weight:700;letter-spacing:0.5px;
+  display:flex;align-items:center;gap:6px;margin-bottom:10px;
+  text-transform:uppercase;
 }
 .ph-greeting-label::before{
   content:'';width:5px;height:5px;border-radius:50%;background:var(--violet);
@@ -1153,72 +1154,48 @@ body{
   margin-top:6px;line-height:1.5;
 }
 
-/* Featured Card — rich "Now Teaching" hero card */
-.ph-featured{
-  margin:0 var(--s-lg) var(--s-lg);padding:0;
-  background:var(--white);border-radius:var(--r-lg);
-  overflow:hidden;box-shadow:var(--shadow-1);
-  cursor:pointer;transition:box-shadow 250ms var(--ease);
+/* Now Teaching — minimal inline card, no gradient */
+.ph-now{
+  margin:0 var(--s-lg) var(--s-lg);padding:16px 18px;
+  background:var(--white);border-radius:var(--r-md);
+  cursor:pointer;transition:all 250ms var(--ease);
+  box-shadow:var(--shadow-1);
 }
-.ph-featured:hover{box-shadow:var(--shadow-2)}
-.ph-featured-top{
-  padding:18px 20px 16px;position:relative;
-  background:linear-gradient(135deg,var(--violet) 0%,#7B5FE8 100%);
-  color:#fff;
+.ph-now:hover{box-shadow:var(--shadow-2)}
+.ph-now-row{display:flex;align-items:center;justify-content:space-between}
+.ph-now-left{display:flex;flex-direction:column;gap:2px}
+.ph-now-status{
+  font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;
+  color:var(--success);display:flex;align-items:center;gap:5px;
 }
-.ph-featured-top::after{
-  content:'';position:absolute;top:-20px;right:-10px;
-  width:90px;height:90px;border-radius:50%;
-  background:rgba(255,255,255,0.08);
+.ph-now-status::before{
+  content:'';width:5px;height:5px;border-radius:50%;background:var(--success);
 }
-.ph-featured-label{
-  font-size:11px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;
-  color:rgba(255,255,255,0.7);display:flex;align-items:center;gap:6px;
-}
-.ph-featured-label::before{
-  content:'';width:6px;height:6px;border-radius:50%;background:#4ADE80;
-  box-shadow:0 0 6px rgba(74,222,128,0.5);
-}
-.ph-featured-class{
-  font-size:24px;font-weight:800;letter-spacing:-0.6px;margin-top:8px;
-}
-.ph-featured-sub{
-  font-size:13px;font-weight:500;color:rgba(255,255,255,0.75);margin-top:2px;
-}
-.ph-featured-meta{
-  display:flex;gap:20px;margin-top:14px;
-}
-.ph-featured-meta-item{
-  display:flex;flex-direction:column;gap:1px;
-}
-.ph-featured-meta-num{font-size:18px;font-weight:800;letter-spacing:-0.4px;line-height:1}
-.ph-featured-meta-label{font-size:10px;font-weight:600;color:rgba(255,255,255,0.6);letter-spacing:0.3px;text-transform:uppercase;margin-top:2px}
-.ph-featured-bottom{
-  padding:12px 20px;display:flex;align-items:center;justify-content:space-between;
-  background:var(--white);
-}
-.ph-featured-time{
-  font-size:13px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;
-}
-.ph-featured-time .muted{color:var(--ink-3);font-weight:500}
-.ph-featured-cta{
+.ph-now-class{font-size:17px;font-weight:800;color:var(--ink);letter-spacing:-0.3px;margin-top:4px}
+.ph-now-meta{font-size:13px;font-weight:500;color:var(--ink-3);margin-top:1px}
+.ph-now-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.ph-now-time{font-size:13px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.ph-now-cta{
   font-size:12px;font-weight:700;color:var(--violet);
-  display:flex;align-items:center;gap:4px;
+  display:flex;align-items:center;gap:3px;
 }
-.ph-featured-cta svg{width:14px;height:14px;stroke:var(--violet);stroke-width:2.2;fill:none}
+.ph-now-cta svg{width:13px;height:13px;stroke:var(--violet);stroke-width:2.2;fill:none}
 
-/* Inline stat pills — compact, below featured card */
-.ph-stat-pills{
-  display:flex;gap:8px;padding:0 var(--s-lg) var(--s-lg);
+/* Day summary — single text line, no boxes */
+.ph-summary{
+  padding:0 var(--s-lg) var(--s-lg);
+  display:flex;gap:0;align-items:center;
 }
-.ph-stat-pill{
-  flex:1;padding:10px 12px;border-radius:var(--r-sm);
-  background:var(--surface-tint);display:flex;flex-direction:column;gap:1px;
+.ph-summary-item{
+  font-size:13px;font-weight:600;color:var(--ink-2);
+  display:flex;align-items:baseline;gap:4px;
 }
-.ph-stat-pill-num{font-size:16px;font-weight:800;color:var(--ink);letter-spacing:-0.4px;line-height:1}
-.ph-stat-pill-num--coral{color:var(--coral)}
-.ph-stat-pill-num--gold{color:var(--warning)}
-.ph-stat-pill-label{font-size:9px;font-weight:600;color:var(--ink-3);letter-spacing:0.3px;text-transform:uppercase}
+.ph-summary-item+.ph-summary-item::before{
+  content:'·';margin:0 8px;color:var(--ink-3);font-weight:400;
+}
+.ph-summary-num{font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-0.3px}
+.ph-summary-num--coral{color:var(--coral)}
+.ph-summary-num--gold{color:var(--warning)}
 
 /* Section */
 .ph-section{margin-top:var(--s-xl);padding:0 var(--s-lg)}
@@ -1328,21 +1305,14 @@ body{
 .ph-action-icon--sy svg{stroke:var(--sky)}
 .ph-action-label{font-size:11px;font-weight:600;color:var(--ink-2)}
 
-/* Class Card — sophisticated with color accent bar */
+/* Class Card — clean, no accent bars, typography-driven */
 .ph-class{
   margin:0 var(--s-lg) 8px;padding:16px 18px;
   background:var(--white);border-radius:var(--r-md);cursor:pointer;
-  transition:all 250ms var(--ease);position:relative;overflow:hidden;
+  transition:all 250ms var(--ease);
   box-shadow:var(--shadow-1);
 }
 .ph-class:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
-.ph-class::before{
-  content:'';position:absolute;left:0;top:0;bottom:0;
-  width:4px;border-radius:0 3px 3px 0;
-}
-.ph-class--violet::before{background:var(--violet)}
-.ph-class--coral::before{background:var(--coral)}
-.ph-class--sky::before{background:var(--sky)}
 .ph-class-top{display:flex;align-items:center;justify-content:space-between}
 .ph-class-name{font-size:16px;font-weight:800;color:var(--ink);letter-spacing:-0.3px}
 .ph-class-students{font-size:12px;font-weight:600;color:var(--ink-3)}
@@ -1382,27 +1352,27 @@ body{
 
 <!-- ═══ SVG Icon Defs — Clean line icons, stroke-based ═══ -->
 <svg style="display:none">
-  <symbol id="icon-home" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M3 12l9-9 9 9M5 10v10h4v-6h6v6h4V10" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="icon-edit" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="icon-classes" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M22 10v6M2 10l10-5 10 5-10 5z M6 12v5c0 1 2 3 6 3s6-2 6-3v-5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="icon-calendar" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18" stroke-linecap="round"/></symbol>
-  <symbol id="icon-user" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="icon-bell" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="icon-check" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="icon-clipboard" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1z M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="icon-book" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="icon-award" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="icon-map" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M9 18l-6 3V6l6-3 6 3 6-3v15l-6 3z M9 3v15 M15 6v15" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="icon-clock" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2" stroke-linecap="round"/></symbol>
-  <symbol id="icon-users" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="icon-lock" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-linecap="round"/></symbol>
-  <symbol id="icon-palette" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="icon-logout" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4 M16 17l5-5-5-5 M21 12H9" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="icon-chevron-right" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M9 18l6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="icon-plus" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></symbol>
-  <symbol id="icon-arrow-right" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="icon-pin" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="9" r="2.5"/></symbol>
-  <symbol id="icon-alert" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M12 2L1 22h22L12 2z" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 9v5M12 18v.5" stroke-linecap="round"/></symbol>
+  <symbol id="icon-home" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 12l9-9 9 9M5 10v10h4v-6h6v6h4V10" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-edit" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-classes" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M22 10v6M2 10l10-5 10 5-10 5z M6 12v5c0 1 2 3 6 3s6-2 6-3v-5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-calendar" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18" stroke-linecap="round"/></symbol>
+  <symbol id="icon-user" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-bell" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-check" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-clipboard" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1z M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-book" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-award" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-map" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M9 18l-6 3V6l6-3 6 3 6-3v15l-6 3z M9 3v15 M15 6v15" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-clock" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2" stroke-linecap="round"/></symbol>
+  <symbol id="icon-users" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-lock" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-linecap="round"/></symbol>
+  <symbol id="icon-palette" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-logout" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4 M16 17l5-5-5-5 M21 12H9" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-chevron-right" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M9 18l6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-plus" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></symbol>
+  <symbol id="icon-arrow-right" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-pin" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="9" r="2.5"/></symbol>
+  <symbol id="icon-alert" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 2L1 22h22L12 2z" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 9v5M12 18v.5" stroke-linecap="round"/></symbol>
 </svg>
 
 <!-- ═══ Figma-like Shell ═══ -->
@@ -1476,23 +1446,46 @@ body{
         <div class="ph-greeting-sub">5 classes today · 7 pending tasks · 90 students</div>
       </div>
 
-      <!-- Snapshot Card — clean white, divided metrics -->
-      <div class="ph-snapshot">
-        <div class="ph-snap-item">
-          <div class="ph-snap-num">5</div>
-          <div class="ph-snap-label">Classes</div>
+      <!-- Featured Card — Now Teaching -->
+      <div class="ph-featured" data-nav="tab:Classes">
+        <div class="ph-featured-top">
+          <div class="ph-featured-label">Now Teaching</div>
+          <div class="ph-featured-class">8-A · Mathematics</div>
+          <div class="ph-featured-sub">Room 312 · 28 students present</div>
+          <div class="ph-featured-meta">
+            <div class="ph-featured-meta-item">
+              <div class="ph-featured-meta-num">28</div>
+              <div class="ph-featured-meta-label">Present</div>
+            </div>
+            <div class="ph-featured-meta-item">
+              <div class="ph-featured-meta-num">2</div>
+              <div class="ph-featured-meta-label">Absent</div>
+            </div>
+            <div class="ph-featured-meta-item">
+              <div class="ph-featured-meta-num">7</div>
+              <div class="ph-featured-meta-label">Ungraded</div>
+            </div>
+          </div>
         </div>
-        <div class="ph-snap-item">
-          <div class="ph-snap-num ph-snap-num--coral">7</div>
-          <div class="ph-snap-label">Pending</div>
+        <div class="ph-featured-bottom">
+          <div class="ph-featured-time">9:00 <span class="muted">— 9:45</span></div>
+          <div class="ph-featured-cta">Take attendance <svg><use href="#icon-arrow-right"/></svg></div>
         </div>
-        <div class="ph-snap-item">
-          <div class="ph-snap-num ph-snap-num--violet">90</div>
-          <div class="ph-snap-label">Students</div>
+      </div>
+
+      <!-- Stat Pills — compact overview -->
+      <div class="ph-stat-pills">
+        <div class="ph-stat-pill">
+          <div class="ph-stat-pill-num">5</div>
+          <div class="ph-stat-pill-label">Classes</div>
         </div>
-        <div class="ph-snap-item">
-          <div class="ph-snap-num ph-snap-num--gold">12</div>
-          <div class="ph-snap-label">Ungraded</div>
+        <div class="ph-stat-pill">
+          <div class="ph-stat-pill-num ph-stat-pill-num--coral">7</div>
+          <div class="ph-stat-pill-label">Pending</div>
+        </div>
+        <div class="ph-stat-pill">
+          <div class="ph-stat-pill-num ph-stat-pill-num--gold">12</div>
+          <div class="ph-stat-pill-label">Ungraded</div>
         </div>
       </div>
 
@@ -1505,11 +1498,11 @@ body{
           </div>
         </div>
         <div class="ph-schedule">
-          <div class="ph-sched-item">
+          <div class="ph-sched-item done">
             <div class="ph-sched-time">8:00 — 8:45</div>
             <div class="ph-sched-info">
               <div class="ph-sched-class">7-B · Mathematics</div>
-              <div class="ph-sched-room"><svg><use href="#icon-pin"/></svg>Room 204</div>
+              <div class="ph-sched-room">Room 204</div>
             </div>
             <div class="ph-sched-badge ph-sched-badge--done">Done</div>
           </div>
@@ -1517,15 +1510,15 @@ body{
             <div class="ph-sched-time">9:00 — 9:45</div>
             <div class="ph-sched-info">
               <div class="ph-sched-class">8-A · Mathematics</div>
-              <div class="ph-sched-room"><svg><use href="#icon-pin"/></svg>Room 312</div>
+              <div class="ph-sched-room">Room 312</div>
             </div>
             <div class="ph-sched-badge ph-sched-badge--now">Now</div>
           </div>
-          <div class="ph-sched-item">
+          <div class="ph-sched-item upcoming">
             <div class="ph-sched-time">10:00 — 10:45</div>
             <div class="ph-sched-info">
               <div class="ph-sched-class">9-C · Algebra</div>
-              <div class="ph-sched-room"><svg><use href="#icon-pin"/></svg>Room 108</div>
+              <div class="ph-sched-room">Room 108</div>
             </div>
             <div class="ph-sched-badge ph-sched-badge--next">Next</div>
           </div>
@@ -1533,14 +1526,14 @@ body{
             <div class="ph-sched-time">11:15 — 12:00</div>
             <div class="ph-sched-info">
               <div class="ph-sched-class">7-B · Mathematics</div>
-              <div class="ph-sched-room"><svg><use href="#icon-pin"/></svg>Room 204</div>
+              <div class="ph-sched-room">Room 204</div>
             </div>
           </div>
           <div class="ph-sched-item">
             <div class="ph-sched-time">1:00 — 1:45</div>
             <div class="ph-sched-info">
               <div class="ph-sched-class">8-A · Mathematics</div>
-              <div class="ph-sched-room"><svg><use href="#icon-pin"/></svg>Room 312</div>
+              <div class="ph-sched-room">Room 312</div>
             </div>
           </div>
         </div>
@@ -1615,7 +1608,7 @@ body{
         </div>
       </div>
 
-      <!-- My Classes — compact rows with avatar -->
+      <!-- My Classes — sophisticated cards with accent bars -->
       <div class="ph-section">
         <div class="ph-section-head">
           <div class="ph-section-title">My Classes</div>
@@ -1623,43 +1616,45 @@ body{
             <svg><use href="#icon-arrow-right"/></svg>
           </div>
         </div>
-        <div class="ph-class" data-nav="tab:Classes">
-          <div class="ph-class-left">
-            <div class="ph-class-avatar">7B</div>
-            <div>
-              <div class="ph-class-name">Class 7-B</div>
-              <div class="ph-class-sub">Mathematics · 32 students</div>
-            </div>
+        <div class="ph-class ph-class--violet" data-nav="tab:Classes">
+          <div class="ph-class-top">
+            <div class="ph-class-name">Class 7-B</div>
+            <div class="ph-class-students">32 students</div>
           </div>
-          <div class="ph-class-right">
-            <span class="ph-class-pill ph-class-pill--att">3 pending</span>
+          <div class="ph-class-sub">Mathematics</div>
+          <div class="ph-class-bottom">
+            <span class="ph-class-pill ph-class-pill--att">
+              <svg><use href="#icon-alert"/></svg>3 pending
+            </span>
             <span class="ph-class-pill ph-class-pill--hw">5 ungraded</span>
           </div>
         </div>
-        <div class="ph-class" data-nav="tab:Classes">
-          <div class="ph-class-left">
-            <div class="ph-class-avatar">8A</div>
-            <div>
-              <div class="ph-class-name">Class 8-A</div>
-              <div class="ph-class-sub">Mathematics · 28 students</div>
-            </div>
+        <div class="ph-class ph-class--coral" data-nav="tab:Classes">
+          <div class="ph-class-top">
+            <div class="ph-class-name">Class 8-A</div>
+            <div class="ph-class-students">28 students</div>
           </div>
-          <div class="ph-class-right">
-            <span class="ph-class-pill ph-class-pill--att">1 pending</span>
+          <div class="ph-class-sub">Mathematics</div>
+          <div class="ph-class-bottom">
+            <span class="ph-class-pill ph-class-pill--att">
+              <svg><use href="#icon-alert"/></svg>1 pending
+            </span>
             <span class="ph-class-pill ph-class-pill--hw">7 ungraded</span>
           </div>
         </div>
-        <div class="ph-class" data-nav="tab:Classes">
-          <div class="ph-class-left">
-            <div class="ph-class-avatar">9C</div>
-            <div>
-              <div class="ph-class-name">Class 9-C</div>
-              <div class="ph-class-sub">Algebra · 30 students</div>
-            </div>
+        <div class="ph-class ph-class--sky" data-nav="tab:Classes">
+          <div class="ph-class-top">
+            <div class="ph-class-name">Class 9-C</div>
+            <div class="ph-class-students">30 students</div>
           </div>
-          <div class="ph-class-right">
-            <span class="ph-class-pill ph-class-pill--att">2 pending</span>
-            <span class="ph-class-pill ph-class-pill--ok">All graded</span>
+          <div class="ph-class-sub">Algebra</div>
+          <div class="ph-class-bottom">
+            <span class="ph-class-pill ph-class-pill--att">
+              <svg><use href="#icon-alert"/></svg>2 pending
+            </span>
+            <span class="ph-class-pill ph-class-pill--ok">
+              <svg><use href="#icon-check"/></svg>All graded
+            </span>
           </div>
         </div>
       </div>

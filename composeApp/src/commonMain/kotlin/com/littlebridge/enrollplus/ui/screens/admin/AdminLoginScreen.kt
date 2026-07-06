@@ -55,6 +55,7 @@ fun AdminLoginScreen(
     onBack: () -> Unit,
     onNavigateToSignup: () -> Unit,
     onAuthSuccess: () -> Unit,
+    onForgotPassword: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
     var email by remember { mutableStateOf("") }
@@ -160,7 +161,7 @@ fun AdminLoginScreen(
                     text = "Forgot password?", // TODO: i18n
                     style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
                     color = VColors.violet,
-                    modifier = Modifier.clickable { /* TODO: Forgot password flow */ },
+                    modifier = Modifier.clickable { onForgotPassword() },
                 )
             }
 

@@ -18,8 +18,11 @@ import com.littlebridge.enrollplus.ui.screens.admin.AdminLoginScreen
 import com.littlebridge.enrollplus.ui.screens.admin.AdminSignupScreen
 import com.littlebridge.enrollplus.ui.screens.parent.ParentLoginScreen
 import com.littlebridge.enrollplus.ui.screens.parent.ParentSignupScreen
+import com.littlebridge.enrollplus.ui.screens.shared.ForgotPasswordScreen
 import com.littlebridge.enrollplus.ui.screens.shared.LandingScreen
+import com.littlebridge.enrollplus.ui.screens.shared.PrivacyPolicyScreen
 import com.littlebridge.enrollplus.ui.screens.shared.SplashScreen
+import com.littlebridge.enrollplus.ui.screens.shared.TermsConditionScreen
 import com.littlebridge.enrollplus.ui.tokens.VMotion
 
 @Composable
@@ -41,6 +44,9 @@ fun AuthNavGraph(
             "ParentSignup" -> navigateTo(AuthRoute.ParentSignup)
             "AdminLogin" -> navigateTo(AuthRoute.AdminLogin)
             "AdminSignup" -> navigateTo(AuthRoute.AdminSignup)
+            "Terms" -> navigateTo(AuthRoute.Terms)
+            "PrivacyPolicy" -> navigateTo(AuthRoute.PrivacyPolicy)
+            "ForgotPassword" -> navigateTo(AuthRoute.ForgotPassword)
         }
     }
 
@@ -84,12 +90,22 @@ fun AuthNavGraph(
                 onBack = { navigateTo(AuthRoute.Landing) },
                 onNavigateToSignup = { navigateTo(AuthRoute.AdminSignup) },
                 onAuthSuccess = onAuthSuccess,
+                onForgotPassword = { navigateTo(AuthRoute.ForgotPassword) },
             )
             AuthRoute.AdminSignup -> AdminSignupScreen(
                 viewModel = authViewModel,
                 onBack = { navigateTo(AuthRoute.AdminLogin) },
                 onNavigateToLogin = { navigateTo(AuthRoute.AdminLogin) },
                 onAuthSuccess = onAuthSuccess,
+            )
+            AuthRoute.Terms -> TermsConditionScreen(
+                onBack = { navigateTo(AuthRoute.Landing) },
+            )
+            AuthRoute.PrivacyPolicy -> PrivacyPolicyScreen(
+                onBack = { navigateTo(AuthRoute.Landing) },
+            )
+            AuthRoute.ForgotPassword -> ForgotPasswordScreen(
+                onBack = { navigateTo(AuthRoute.AdminLogin) },
             )
         }
     }

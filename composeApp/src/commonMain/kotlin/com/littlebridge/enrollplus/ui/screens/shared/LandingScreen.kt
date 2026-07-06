@@ -144,7 +144,7 @@ fun LandingScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 48.dp, vertical = 48.dp),
+                .padding(horizontal = 32.dp, vertical = 40.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
             // Progress segments
@@ -178,20 +178,35 @@ fun LandingScreen(
                     onClick = { onNavigate(slides[pagerState.currentPage].targetRoute) },
                     icon = Icons.AutoMirrored.Filled.ArrowForward,
                 )
-                Text(
-                    text = buildAnnotatedString {
-                        append("By continuing you agree to our ")
-                        withStyle(SpanStyle(color = VColors.violet, fontWeight = FontWeight.Bold)) { append("Terms") }
-                        append(" & ")
-                        withStyle(SpanStyle(color = VColors.violet, fontWeight = FontWeight.Bold)) { append("Privacy Policy") }
-                    },
-                    style = VTypography.caption,
-                    color = VColors.ink3,
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 2.dp),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                )
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    Text(
+                        text = "By continuing you agree to our ",
+                        style = VTypography.caption,
+                        color = VColors.ink3,
+                    )
+                    Text(
+                        text = "Terms",
+                        style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
+                        color = VColors.violet,
+                        modifier = Modifier.clickable { onNavigate("Terms") },
+                    )
+                    Text(
+                        text = " & ",
+                        style = VTypography.caption,
+                        color = VColors.ink3,
+                    )
+                    Text(
+                        text = "Privacy Policy",
+                        style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
+                        color = VColors.violet,
+                        modifier = Modifier.clickable { onNavigate("PrivacyPolicy") },
+                    )
+                }
             }
         }
     }
@@ -240,7 +255,7 @@ private fun LandingSlideContent(
         modifier = Modifier
             .fillMaxSize()
             .padding(top = 24.dp)
-            .padding(horizontal = 48.dp),
+            .padding(horizontal = 32.dp),
     ) {
         // Top bar — wordmark + slide counter
         Row(
