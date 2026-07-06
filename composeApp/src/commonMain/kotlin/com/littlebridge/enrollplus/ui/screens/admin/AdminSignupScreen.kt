@@ -58,6 +58,11 @@ fun AdminSignupScreen(
     val state by viewModel.state.collectAsState()
     var step by remember { mutableStateOf(AdminSignupStep.SchoolDetails) }
 
+    // Reset stale state when this screen enters composition
+    LaunchedEffect(Unit) {
+        viewModel.resetAll()
+    }
+
     // Form fields
     var schoolName by remember { mutableStateOf("") }
     var board by remember { mutableStateOf("") }

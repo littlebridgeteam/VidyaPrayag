@@ -52,6 +52,11 @@ fun ParentLoginScreen(
     val state by viewModel.state.collectAsState()
     var phone by remember { mutableStateOf("") }
 
+    // Reset stale state when this screen enters composition
+    LaunchedEffect(Unit) {
+        viewModel.resetAll()
+    }
+
     if (state.authResponse != null) {
         LaunchedEffect(state.authResponse) {
             onAuthSuccess()

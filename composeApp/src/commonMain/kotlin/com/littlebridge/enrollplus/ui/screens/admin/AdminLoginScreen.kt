@@ -50,6 +50,11 @@ fun AdminLoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
+    // Reset stale state when this screen enters composition
+    LaunchedEffect(Unit) {
+        viewModel.resetAll()
+    }
+
     if (state.authResponse != null) {
         LaunchedEffect(state.authResponse) {
             onAuthSuccess()

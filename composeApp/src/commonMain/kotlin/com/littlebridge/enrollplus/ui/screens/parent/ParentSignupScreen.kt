@@ -68,6 +68,19 @@ fun ParentSignupScreen(
     var phone by remember { mutableStateOf("") }
     var otp by remember { mutableStateOf("") }
 
+    // Reset stale state when this screen enters composition
+    LaunchedEffect(Unit) {
+        viewModel.resetAll()
+    }
+
+    // Transition Form → Otp when OTP is successfully sent
+    LaunchedEffect(state.otpSent) {
+        if (state.otpSent && step == ParentSignupStep.Form) {
+            step = ParentSignupStep.Otp
+        }
+    }
+
+    // Transition to Success when auth response received
     if (state.authResponse != null && step != ParentSignupStep.Success) {
         LaunchedEffect(state.authResponse) {
             step = ParentSignupStep.Success
