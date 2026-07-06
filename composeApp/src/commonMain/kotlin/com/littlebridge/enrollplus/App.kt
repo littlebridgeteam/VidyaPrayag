@@ -96,7 +96,6 @@ fun App(
                 .build()
         }
 
-        val isAuthenticated = !authState.token.isNullOrBlank()
         val authViewModel: AuthViewModel = koinViewModel()
 
         Box(modifier = Modifier.fillMaxSize().background(Color(0xFFFBF8F4))) {
@@ -115,18 +114,10 @@ fun App(
                         .padding(horizontal = 8.dp, vertical = 2.dp)
                 )
             }
-            if (isAuthenticated) {
-                Text(
-                    text = "Authenticated — portal screens pending rebuild",
-                    modifier = Modifier.align(Alignment.Center),
-                    textAlign = TextAlign.Center,
-                )
-            } else {
-                AuthNavGraph(
-                    authViewModel = authViewModel,
-                    onAuthSuccess = { /* Portal screens will be built in next phase */ },
-                )
-            }
+            AuthNavGraph(
+                authViewModel = authViewModel,
+                onAuthSuccess = { /* Portal screens will be built in next phase */ },
+            )
         }
     }
 }
