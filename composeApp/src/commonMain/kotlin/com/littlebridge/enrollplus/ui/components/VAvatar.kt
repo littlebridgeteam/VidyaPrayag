@@ -13,19 +13,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.ui.tokens.VColors
+import androidx.compose.ui.unit.Dp
 
-enum class VAvatarSize(val dp: Int, val fontSize: Int) {
-    Sm(24, 9),
-    Md(32, 11),
-    Lg(48, 16),
-    Xl(72, 22),
+enum class VAvatarSize(val dp: Dp, val fontSize: Int) {
+    Sm(24.dp, 9),
+    Md(32.dp, 11),
+    Lg(48.dp, 16),
+    Xl(72.dp, 22),
 }
 
 @Composable
 fun VAvatar(
     name: String,
     modifier: Modifier = Modifier,
-    size: VAvatarSize = VAvatarSize.Md,
+    avatarSize: VAvatarSize = VAvatarSize.Md,
     imageUrl: String? = null,
 ) {
     val initials = name.take(2).uppercase()
@@ -37,13 +38,13 @@ fun VAvatar(
 
     Box(
         modifier = modifier
-            .size(size.dp.dp)
+            .size(avatarSize.dp)
             .background(VColors.violetSoft, CircleShape),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = initials,
-            fontSize = size.fontSize.sp,
+            fontSize = avatarSize.fontSize.sp,
             fontWeight = FontWeight.ExtraBold,
             color = VColors.violet,
         )

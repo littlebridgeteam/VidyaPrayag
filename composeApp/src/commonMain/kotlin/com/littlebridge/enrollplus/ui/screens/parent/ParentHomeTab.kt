@@ -17,25 +17,21 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.automirrored.rounded.Chat
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.AccountBox
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Campaign
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.CurrencyRupee
 import androidx.compose.material.icons.rounded.DirectionsBus
 import androidx.compose.material.icons.rounded.Favorite
@@ -70,6 +66,13 @@ import com.littlebridge.enrollplus.feature.parent.domain.model.ParentDailyLogEnt
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentPeriodDto
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentTimetableDayDto
 import com.littlebridge.enrollplus.presentation.ParentViewModel
+import com.littlebridge.enrollplus.ui.components.skeletons.SkeletonDashboard
+import com.littlebridge.enrollplus.ui.components.VEmptyState
+import com.littlebridge.enrollplus.ui.components.VPullRefresh
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
@@ -92,14 +95,29 @@ fun ParentHomeTab(
     val unreadCount by viewModel.unreadCount.collectAsState()
     val children by viewModel.children.collectAsState()
     val selectedChildId by viewModel.selectedChildId.collectAsState()
+    val transportLiveState by viewModel.transportLiveState.collectAsState()
+    val healthState by viewModel.healthState.collectAsState()
+    val libraryIssuedState by viewModel.libraryIssuedState.collectAsState()
+    val scholarshipsState by viewModel.scholarshipsState.collectAsState()
+    var isRefreshing by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(VColors.cream)
-            .statusBarsPadding()
-            .verticalScroll(rememberScrollState()),
+    VPullRefresh(
+        isRefreshing = isRefreshing,
+        onRefresh = {
+            isRefreshing = true
+            viewModel.loadAll()
+            selectedChildId?.let { viewModel.loadAttendance(it) }
+            isRefreshing = false
+        },
+        modifier = Modifier.fillMaxWidth(),
     ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(VColors.cream)
+                .statusBarsPadding()
+                .verticalScroll(rememberScrollState()),
+        ) {
         // ── Portal Header ──
         PortalHeader(
             dashboardState = dashboardState,
@@ -114,10 +132,13 @@ fun ParentHomeTab(
         )
 
         when (dashboardState) {
-            is UiState.Loading -> HomeLoadingState()
-            is UiState.Error -> HomeErrorState(
-                message = (dashboardState as UiState.Error).message,
-                onRetry = { viewModel.loadDashboard() },
+            is UiState.Loading -> SkeletonDashboard()
+            is UiState.Error -> VEmptyState(
+                title = "Couldn't load the dashboard",
+                body = (dashboardState as UiState.Error).message,
+                icon = Icons.Rounded.CloudOff,
+                actionLabel = "Retry",
+                onAction = { viewModel.loadDashboard() },
             )
             is UiState.Success -> {
                 val data = (dashboardState as UiState.Success).data
@@ -187,6 +208,27 @@ fun ParentHomeTab(
                     // Quick Access Grid
                     QuickAccessSection(
                         unreadMessages = unreadCount,
+                        attendanceRate = when (val s = attendanceState) {
+                            is UiState.Success -> s.data.attendanceRate
+                            else -> 0
+                        },
+                        outstandingFees = when (val s = feesState) {
+                            is UiState.Success -> s.data.outstandingFees
+                            else -> "—"
+                        },
+                        transportEta = when (val s = transportLiveState) {
+                            is UiState.Success -> s.data.etaMinutes
+                            else -> null
+                        },
+                        healthLoaded = healthState is UiState.Success,
+                        issuedBooksCount = when (val s = libraryIssuedState) {
+                            is UiState.Success -> s.data.size
+                            else -> 0
+                        },
+                        scholarshipsCount = when (val s = scholarshipsState) {
+                            is UiState.Success -> s.data.scholarships.size
+                            else -> 0
+                        },
                         onOverlayOpen = onOverlayOpen,
                         onTabSwitch = onTabSwitch,
                     )
@@ -198,12 +240,13 @@ fun ParentHomeTab(
                     )
                 } else {
                     // No child linked — should be caught by UnlinkedParentGate in shell
-                    HomeLoadingState()
+                    SkeletonDashboard()
                 }
             }
         }
 
         Spacer(Modifier.height(100.dp))
+        }
     }
 }
 
@@ -232,17 +275,18 @@ private fun PortalHeader(
         else -> "—"
     }
     val data = (dashboardState as? UiState.Success)?.data
+    val schoolName = "School"
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 8.dp),
+            .padding(horizontal = 24.dp, vertical = 16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "School",
+                text = schoolName,
                 style = TextStyle(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
@@ -273,7 +317,7 @@ private fun PortalHeader(
                         imageVector = Icons.Rounded.KeyboardArrowDown,
                         contentDescription = null,
                         tint = VColors.ink3,
-                        modifier = Modifier.size(14.dp).padding(start = 4.dp),
+                        modifier = Modifier.size(12.dp).padding(start = 4.dp),
                     )
                 }
             }
@@ -282,7 +326,7 @@ private fun PortalHeader(
         Box {
             Box(
                 modifier = Modifier
-                    .size(38.dp)
+                    .size(32.dp)
                     .background(VColors.white, VShapes.full)
                     .shadow(1.dp, VShapes.full)
                     .clickable(
@@ -295,7 +339,7 @@ private fun PortalHeader(
                     imageVector = Icons.Rounded.Notifications,
                     contentDescription = "Notifications",
                     tint = VColors.ink2,
-                    modifier = Modifier.size(18.dp),
+                    modifier = Modifier.size(15.dp),
                 )
             }
             if (unreadNotifications > 0) {
@@ -354,12 +398,29 @@ private fun PortalHeader(
                         )
                     }
                     Spacer(Modifier.width(12.dp))
-                    Text(
-                        text = child.name,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (child.id == selectedChildId) VColors.violet else VColors.ink,
-                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = child.name,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (child.id == selectedChildId) VColors.violet else VColors.ink,
+                        )
+                        Text(
+                            text = child.attendanceStatus,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = VColors.ink3,
+                            modifier = Modifier.padding(top = 1.dp),
+                        )
+                    }
+                    if (child.id == selectedChildId) {
+                        Icon(
+                            imageVector = Icons.Rounded.CheckCircle,
+                            contentDescription = null,
+                            tint = VColors.violet,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
                 }
             }
         }
@@ -386,22 +447,6 @@ private fun ChildHeroCard(
                 indication = null,
             ) { onClick() },
     ) {
-        // Decorative circles — violet top-right, coral bottom-right
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .size(140.dp)
-                .background(VColors.violetSoft.copy(alpha = 0.35f), CircleShape)
-                .offset(x = 30.dp, y = (-30).dp),
-        )
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .size(80.dp)
-                .background(VColors.coralSoft.copy(alpha = 0.3f), CircleShape)
-                .offset(x = 20.dp, y = 20.dp),
-        )
-
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -434,23 +479,15 @@ private fun ChildHeroCard(
             Spacer(Modifier.width(14.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = child.name,
-                        style = TextStyle(
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = (-0.4).sp,
-                        ),
-                        color = VColors.ink,
-                    )
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
-                        contentDescription = null,
-                        tint = VColors.ink3,
-                        modifier = Modifier.size(14.dp).padding(start = 6.dp),
-                    )
-                }
+                Text(
+                    text = child.name,
+                    style = TextStyle(
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = (-0.4).sp,
+                    ),
+                    color = VColors.ink,
+                )
                 Text(
                     text = "Level ${child.currentLevel} · ${if (attendanceRate > 0) "$attendanceRate% Attendance" else child.attendanceStatus}",
                     style = TextStyle(
@@ -464,14 +501,16 @@ private fun ChildHeroCard(
                     modifier = Modifier.padding(top = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    HeroTag(
-                        text = "${(child.overallProgress * 100).toInt()}% Progress",
-                        bg = VColors.violetSoft,
-                        color = VColors.violet,
-                    )
+                    if (child.attendanceStatus.isNotBlank()) {
+                        HeroTag(
+                            text = child.attendanceStatus,
+                            bg = VColors.violetSoft,
+                            color = VColors.violet,
+                        )
+                    }
                     if (attendanceRate > 0) {
                         HeroTag(
-                            text = "$attendanceRate% Present",
+                            text = "$attendanceRate% Attendance",
                             bg = VColors.mintSoft,
                             color = VColors.success,
                         )
@@ -1066,6 +1105,12 @@ private data class QuickTile(
 @Composable
 private fun QuickAccessSection(
     unreadMessages: Int,
+    attendanceRate: Int,
+    outstandingFees: String,
+    transportEta: Int?,
+    healthLoaded: Boolean,
+    issuedBooksCount: Int,
+    scholarshipsCount: Int,
     onOverlayOpen: (ParentOverlay) -> Unit,
     onTabSwitch: (ParentTab) -> Unit,
 ) {
@@ -1087,7 +1132,10 @@ private fun QuickAccessSection(
                 iconBg = VColors.violetSoft,
                 iconTint = VColors.violet,
                 label = "Academics",
-                sub = "View marks & attendance",
+                sub = if (attendanceRate > 0) "$attendanceRate% attendance" else "View marks & attendance",
+                badge = if (attendanceRate > 0) "$attendanceRate%" else null,
+                badgeBg = VColors.violetSoft,
+                badgeColor = VColors.violet,
                 onClick = { onTabSwitch(ParentTab.Academics) },
             ),
             QuickTile(
@@ -1106,7 +1154,7 @@ private fun QuickAccessSection(
                 iconBg = VColors.coralSoft,
                 iconTint = VColors.coral,
                 label = "Health",
-                sub = "Health records & pulse",
+                sub = if (healthLoaded) "Records loaded" else "Health records & pulse",
                 onClick = { onOverlayOpen(ParentOverlay.Health) },
             ),
             QuickTile(
@@ -1114,7 +1162,10 @@ private fun QuickAccessSection(
                 iconBg = VColors.mintSoft,
                 iconTint = VColors.success,
                 label = "Transport",
-                sub = "Track bus route",
+                sub = if (transportEta != null) "ETA · ${transportEta}m" else "Track bus route",
+                badge = if (transportEta != null) "On route" else null,
+                badgeBg = VColors.mintSoft,
+                badgeColor = VColors.success,
                 onClick = { onOverlayOpen(ParentOverlay.Transport) },
             ),
             QuickTile(
@@ -1130,7 +1181,10 @@ private fun QuickAccessSection(
                 iconBg = VColors.goldSoft,
                 iconTint = VColors.gold,
                 label = "Scholarships",
-                sub = "Available scholarships",
+                sub = if (scholarshipsCount > 0) "$scholarshipsCount available" else "Available scholarships",
+                badge = if (scholarshipsCount > 0) scholarshipsCount.toString() else null,
+                badgeBg = VColors.goldSoft,
+                badgeColor = VColors.gold,
                 onClick = { onOverlayOpen(ParentOverlay.Scholarships) },
             ),
             QuickTile(
@@ -1146,7 +1200,10 @@ private fun QuickAccessSection(
                 iconBg = VColors.skySoft,
                 iconTint = VColors.sky,
                 label = "Library",
-                sub = "Borrowed books",
+                sub = if (issuedBooksCount > 0) "$issuedBooksCount books issued" else "Borrowed books",
+                badge = if (issuedBooksCount > 0) issuedBooksCount.toString() else null,
+                badgeBg = VColors.skySoft,
+                badgeColor = VColors.sky,
                 onClick = { onOverlayOpen(ParentOverlay.Library) },
             ),
             QuickTile(
@@ -1388,53 +1445,5 @@ private fun AnnouncementCard(ann: ParentAnnouncementDto) {
 }
 
 // ════════════════════════════════════════════════════════════════
-// Loading / Error States
+// Loading / Error States — replaced by SkeletonDashboard and VEmptyState
 // ════════════════════════════════════════════════════════════════
-
-@Composable
-private fun HomeLoadingState() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(32.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text("Loading dashboard...", style = VTypography.body, color = VColors.ink3)
-    }
-}
-
-@Composable
-private fun HomeErrorState(message: String, onRetry: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(
-            text = "Could not load dashboard",
-            style = VTypography.h3,
-            color = VColors.ink,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-        )
-        Text(
-            text = message,
-            style = VTypography.body,
-            color = VColors.ink3,
-            modifier = Modifier.padding(top = 8.dp),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-        )
-        Text(
-            text = "Retry",
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-            color = VColors.violet,
-            modifier = Modifier
-                .padding(top = 16.dp)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                ) { onRetry() },
-        )
-    }
-}

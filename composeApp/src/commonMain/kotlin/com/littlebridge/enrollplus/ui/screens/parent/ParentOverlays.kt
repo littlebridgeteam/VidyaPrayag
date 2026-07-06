@@ -1,5 +1,11 @@
 package com.littlebridge.enrollplus.ui.screens.parent
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -8,38 +14,68 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.Send
+import androidx.compose.material.icons.rounded.Book
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.DirectionsBus
+import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Event
+import androidx.compose.material.icons.rounded.HealthAndSafety
 import androidx.compose.material.icons.rounded.LocalHospital
 import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.Psychology
 import androidx.compose.material.icons.rounded.QrCode
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.domain.util.UiState
 import com.littlebridge.enrollplus.feature.event.domain.model.ParentEventDto
 import com.littlebridge.enrollplus.feature.health.domain.model.HealthIncidentDto
+import com.littlebridge.enrollplus.feature.health.domain.model.HealthProfileDto
 import com.littlebridge.enrollplus.feature.health.domain.model.ImmunizationDto
 import com.littlebridge.enrollplus.feature.health.domain.model.ParentHealthResponse
 import com.littlebridge.enrollplus.feature.idcard.domain.model.IdCardDto
@@ -48,12 +84,16 @@ import com.littlebridge.enrollplus.feature.library.domain.model.LibraryIssueDto
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentNotificationDto
 import com.littlebridge.enrollplus.feature.schools.data.remote.DiscoveredSchoolDto
 import com.littlebridge.enrollplus.feature.transport.domain.model.RouteProgress
+import com.littlebridge.enrollplus.feature.transport.domain.model.TransportRoute
 import com.littlebridge.enrollplus.presentation.ParentViewModel
+import com.littlebridge.enrollplus.ui.components.VAvatar
+import com.littlebridge.enrollplus.ui.components.VAvatarSize
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.util.formatDate
 import com.littlebridge.enrollplus.util.formatDateDisplay
 import com.littlebridge.enrollplus.util.todayIso
+import kotlinx.coroutines.delay
 
 @Composable
 fun OvSectionTitle(text: String) {
@@ -63,15 +103,16 @@ fun OvSectionTitle(text: String) {
 
 @Composable
 fun OvCard(content: @Composable () -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth().background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(16.dp)) { content() }
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(16.dp)) { content() }
 }
 
 @Composable
-fun OvStatRow(label: String, value: String) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+fun OvStatRow(label: String, value: String, isLast: Boolean = false) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(label, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = VColors.ink2)
-        Text(value, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = VColors.ink)
+        Text(value, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VColors.ink)
     }
+    if (!isLast) { Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.lineSoft)) }
 }
 
 @Composable
@@ -104,13 +145,19 @@ fun NotificationsOverlay(viewModel: ParentViewModel) {
 
 @Composable
 private fun NotificationItem(notif: ParentNotificationDto, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md)
+    val (iconBg, iconTint) = when (notif.category.lowercase()) {
+        "fees" -> VColors.coralSoft to VColors.coral
+        "academic" -> VColors.skySoft to VColors.sky
+        "attendance" -> VColors.mintSoft to VColors.success
+        else -> VColors.violetSoft to VColors.violet
+    }
+    Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 4.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md)
         .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onClick() }.padding(14.dp)) {
-        Box(Modifier.size(34.dp).background(VColors.violetSoft, VShapes.sm), Alignment.Center) { Icon(Icons.Rounded.Notifications, null, tint = VColors.violet, modifier = Modifier.size(15.dp)) }
+        Box(Modifier.size(29.dp).background(iconBg, VShapes.sm), Alignment.Center) { Icon(Icons.Rounded.Notifications, null, tint = iconTint, modifier = Modifier.size(13.dp)) }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(notif.title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VColors.ink)
-            Text(notif.body, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = VColors.ink2, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(notif.body, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = VColors.ink3, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(notif.time, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = VColors.ink3, modifier = Modifier.padding(top = 4.dp))
         }
     }
@@ -120,17 +167,117 @@ private fun NotificationItem(notif: ParentNotificationDto, onClick: () -> Unit) 
 @Composable
 fun HealthOverlay(viewModel: ParentViewModel, childId: String) {
     val state by viewModel.healthState.collectAsState()
+    val pulseState by viewModel.pulseState.collectAsState()
     Column(Modifier.fillMaxWidth()) {
         when (val s = state) {
             is UiState.Loading -> OvLoading()
             is UiState.Error -> OvError(s.message)
-            is UiState.Success -> HealthContent(s.data)
+            is UiState.Success -> HealthContent(s.data, pulseState)
         }
     }
 }
 
 @Composable
-private fun HealthContent(data: ParentHealthResponse) {
+private fun HealthPulseRing(score: Int, modifier: Modifier = Modifier) {
+    val animatedScore by rememberInfiniteTransition(label = "pulse").animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(2000), RepeatMode.Reverse),
+        label = "pulseAnim",
+    )
+    val sweep = 360f * (score / 100f)
+    val ringColor = when {
+        score >= 80 -> VColors.success
+        score >= 60 -> VColors.gold
+        else -> VColors.coral
+    }
+    Box(modifier = modifier.size(102.dp), Alignment.Center) {
+        androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
+            drawArc(
+                color = VColors.surfaceTint,
+                startAngle = -90f,
+                sweepAngle = 360f,
+                useCenter = false,
+                style = Stroke(width = 8.dp.toPx(), cap = StrokeCap.Round),
+            )
+            drawArc(
+                color = ringColor,
+                startAngle = -90f,
+                sweepAngle = sweep,
+                useCenter = false,
+                style = Stroke(width = 8.dp.toPx(), cap = StrokeCap.Round),
+            )
+        }
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("$score", fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = ringColor)
+            Text("Health Score", fontSize = 9.sp, fontWeight = FontWeight.SemiBold, color = VColors.ink3)
+        }
+    }
+}
+
+@Composable
+private fun HealthContent(data: ParentHealthResponse, pulseState: UiState<com.littlebridge.enrollplus.feature.parent.domain.model.PulseDto>) {
+    // Pulse score ring
+    val pulseScore = when (pulseState) {
+        is UiState.Success -> (pulseState.data.attendancePercentage?.toInt() ?: 85)
+        else -> 85
+    }
+    OvCard {
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            HealthPulseRing(score = pulseScore)
+            Spacer(Modifier.height(8.dp))
+            Text(data.childName.ifBlank { "Health Profile" }, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = VColors.ink)
+        }
+    }
+
+    // Risk factors card
+    data.profile?.let { p ->
+        val riskFactors = mutableListOf<Pair<String, String>>()
+        if (!p.allergies.isNullOrBlank() && p.allergies != "[]") riskFactors.add("Allergies" to "Moderate")
+        if (!p.chronicConditions.isNullOrBlank() && p.chronicConditions != "[]") riskFactors.add("Chronic Conditions" to "Major")
+        if (p.bloodGroup?.lowercase()?.contains("o-") == true) riskFactors.add("Blood Type O-" to "Low")
+        if (riskFactors.isNotEmpty()) {
+            OvSectionTitle("Risk Factors")
+            OvCard {
+                riskFactors.forEachIndexed { idx, (factor, severity) ->
+                    val (sevBg, sevTint) = when (severity.lowercase()) {
+                        "major" -> VColors.coralSoft to VColors.coral
+                        "moderate" -> VColors.goldSoft to VColors.gold
+                        else -> VColors.mintSoft to VColors.success
+                    }
+                    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text(factor, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = VColors.ink2)
+                        Box(Modifier.background(sevBg, VShapes.full).padding(horizontal = 8.dp, vertical = 2.dp)) { Text(severity, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = sevTint) }
+                    }
+                    if (idx < riskFactors.lastIndex) { Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.lineSoft)) }
+                }
+            }
+        }
+    }
+
+    // AI recommendation card
+    OvSectionTitle("AI Recommendation")
+    OvCard {
+        Row(Modifier.fillMaxWidth()) {
+            Box(Modifier.size(32.dp).background(VColors.violetSoft, VShapes.sm), Alignment.Center) {
+                Icon(Icons.Rounded.Psychology, null, tint = VColors.violet, modifier = Modifier.size(16.dp))
+            }
+            Spacer(Modifier.width(12.dp))
+            Text(
+                data.profile?.let { p ->
+                    when {
+                        !p.allergies.isNullOrBlank() && p.allergies != "[]" -> "Ensure emergency contact information is up to date. School staff should be notified of known allergies."
+                        !p.chronicConditions.isNullOrBlank() && p.chronicConditions != "[]" -> "Regular monitoring recommended. Keep medication records current."
+                        else -> "Health profile looks good. Schedule regular check-ups to maintain wellness."
+                    }
+                } ?: "No health profile on record. Consider adding health information for better care.",
+                fontSize = 13.sp, fontWeight = FontWeight.Medium, color = VColors.ink, lineHeight = 19.sp,
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+
+    // Health profile details
     OvSectionTitle("Health Profile")
     OvCard {
         data.profile?.let { p ->
@@ -142,7 +289,7 @@ private fun HealthContent(data: ParentHealthResponse) {
             OvStatRow("Emergency Contact", p.emergencyContactName ?: "—")
             OvStatRow("Emergency Phone", p.emergencyContactPhone ?: "—")
             OvStatRow("Doctor", p.doctorName ?: "—")
-            OvStatRow("Doctor Phone", p.doctorPhone ?: "—")
+            OvStatRow("Doctor Phone", p.doctorPhone ?: "—", isLast = true)
         } ?: Text("No health profile on record", fontSize = 13.sp, color = VColors.ink3)
     }
     if (data.immunizations.isNotEmpty()) {
@@ -157,7 +304,7 @@ private fun HealthContent(data: ParentHealthResponse) {
 
 @Composable
 private fun ImmItem(imm: ImmunizationDto) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(14.dp)) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 4.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(14.dp)) {
         Box(Modifier.size(30.dp).background(VColors.mintSoft, VShapes.sm), Alignment.Center) { Icon(Icons.Rounded.CheckCircle, null, tint = VColors.success, modifier = Modifier.size(14.dp)) }
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
@@ -172,7 +319,7 @@ private fun ImmItem(imm: ImmunizationDto) {
 private fun IncidentItem(inc: HealthIncidentDto) {
     val sevColor = when (inc.severity) { "major" -> VColors.coral; "moderate" -> VColors.gold; else -> VColors.success }
     val sevBg = when (inc.severity) { "major" -> VColors.coralSoft; "moderate" -> VColors.goldSoft; else -> VColors.mintSoft }
-    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(14.dp)) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 4.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(14.dp)) {
         Box(Modifier.size(30.dp).background(sevBg, VShapes.sm), Alignment.Center) { Icon(Icons.Rounded.LocalHospital, null, tint = sevColor, modifier = Modifier.size(14.dp)) }
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
@@ -197,25 +344,74 @@ fun TransportOverlay(viewModel: ParentViewModel, childId: String) {
             is UiState.Error -> OvError(s.message)
             is UiState.Success -> {
                 val rp = s.data
-                OvSectionTitle("Live Tracking")
+
+                // On Route status card
+                OvCard {
+                    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(Modifier.size(48.dp).background(VColors.violetSoft, CircleShape), Alignment.Center) {
+                            Icon(Icons.Rounded.DirectionsBus, null, tint = VColors.violet, modifier = Modifier.size(24.dp))
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Text("On Route", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = VColors.ink)
+                        rp.etaMinutes?.let {
+                            Spacer(Modifier.height(4.dp))
+                            Text("$it min", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = VColors.violet, letterSpacing = (-0.5).sp)
+                        }
+                    }
+                }
+
+                // Boarded banner
+                Box(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 4.dp)
+                    .background(VColors.mintSoft, VShapes.md).padding(12.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.CheckCircle, null, tint = VColors.success, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Child has boarded the bus", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VColors.success)
+                    }
+                }
+
+                // Route dots row (School → Home)
+                OvCard {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(12.dp).background(VColors.violet, CircleShape))
+                        Text("  School  ", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = VColors.ink)
+                        Box(Modifier.weight(1f).height(2.dp).background(VColors.lineSoft))
+                        rp.nextStop?.let {
+                            Box(Modifier.size(10.dp).background(VColors.violet, CircleShape))
+                            Text("  ${it.name}  ", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = VColors.violet)
+                        }
+                        Box(Modifier.weight(1f).height(2.dp).background(VColors.lineSoft))
+                        Box(Modifier.size(12.dp).background(VColors.surfaceTint, CircleShape))
+                        Text("  Home", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = VColors.ink3)
+                    }
+                }
+
+                // Route details card
+                OvSectionTitle("Route Details")
                 OvCard {
                     OvStatRow("Route", rp.routeName)
                     OvStatRow("Bus", rp.busNumber)
-                    rp.etaMinutes?.let { OvStatRow("ETA", "$it min") }
                     rp.nextStop?.let { OvStatRow("Next Stop", it.name) }
+                    rp.etaMinutes?.let { OvStatRow("ETA", "$it min", isLast = true) }
                 }
+
+                // Route stops
                 if (rp.stops.isNotEmpty()) {
-                    OvSectionTitle("Route Stops")
+                    OvSectionTitle("All Stops")
                     rp.stops.forEach { stop ->
                         val isNext = rp.nextStop?.id == stop.id
-                        Row(Modifier.fillMaxWidth().padding(vertical = 4.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(14.dp)) {
-                            Box(Modifier.size(10.dp).background(if (isNext) VColors.violet else VColors.surfaceTint, CircleShape))
+                        val isPassed = rp.nextStop != null && stop.sequence < (rp.nextStop?.sequence ?: 0)
+                        Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 4.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(14.dp)) {
+                            Box(Modifier.size(10.dp).background(
+                                if (isNext) VColors.violet else if (isPassed) VColors.mintSoft else VColors.surfaceTint, CircleShape
+                            ))
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
                                 Text(stop.name, fontSize = 13.sp, fontWeight = if (isNext) FontWeight.ExtraBold else FontWeight.SemiBold, color = if (isNext) VColors.violet else VColors.ink)
                                 stop.estimatedTime?.let { Text("Est. $it", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = VColors.ink3) }
                             }
                             if (isNext) { Box(Modifier.background(VColors.violetSoft, VShapes.full).padding(horizontal = 7.dp, vertical = 2.dp)) { Text("NEXT", fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = VColors.violet) } }
+                            else if (isPassed) { Icon(Icons.Rounded.CheckCircle, null, tint = VColors.success, modifier = Modifier.size(14.dp)) }
                         }
                     }
                 }
@@ -240,22 +436,43 @@ fun DigitalIdOverlay(viewModel: ParentViewModel, childId: String) {
 
 @Composable
 private fun IdCardContent(card: IdCardDto) {
-    Box(Modifier.fillMaxWidth().padding(8.dp).background(VColors.violet, VShapes.lg).padding(24.dp)) {
-        Column {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("EnrollPlus", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = VColors.white)
-                Box(Modifier.size(40.dp).background(VColors.white.copy(alpha = 0.15f), VShapes.sm), Alignment.Center) { Icon(Icons.Rounded.QrCode, null, tint = VColors.white, modifier = Modifier.size(20.dp)) }
-            }
-            Spacer(Modifier.height(24.dp))
-            Text("Student ID Card", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = VColors.white.copy(alpha = 0.7f), letterSpacing = 1.sp)
-            Spacer(Modifier.height(8.dp))
-            Text(card.personName, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = VColors.white, letterSpacing = (-0.5).sp)
-            Spacer(Modifier.height(6.dp))
-            Text("ID: ${card.personId}", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = VColors.white.copy(alpha = 0.8f))
-            card.validTill?.let { Text("Valid till: ${formatDateDisplay(it)}", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = VColors.white.copy(alpha = 0.8f)) }
+    Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp)) {
+        // ID Card
+        Column(
+            Modifier.fillMaxWidth().background(VColors.white, VShapes.lg).shadow(2.dp, VShapes.lg).padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text("Delhi Public School", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = VColors.ink3, letterSpacing = 0.5.sp)
             Spacer(Modifier.height(16.dp))
-            Box(Modifier.background(VColors.white.copy(alpha = 0.15f), VShapes.sm).padding(horizontal = 12.dp, vertical = 6.dp)) {
-                Text(card.status.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = VColors.white, letterSpacing = 1.sp)
+            VAvatar(
+                name = card.personName,
+                avatarSize = VAvatarSize.Xl,
+            )
+            Spacer(Modifier.height(12.dp))
+            Text(card.personName, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = VColors.ink, letterSpacing = (-0.4).sp)
+            Spacer(Modifier.height(4.dp))
+            Text("ID: ${card.personId}", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = VColors.ink3)
+            Spacer(Modifier.height(16.dp))
+            Box(Modifier.size(102.dp).background(VColors.cream, VShapes.sm), Alignment.Center) {
+                Icon(Icons.Rounded.QrCode, null, tint = VColors.ink, modifier = Modifier.size(80.dp))
+            }
+            Spacer(Modifier.height(12.dp))
+            card.validTill?.let {
+                Text("Valid till: ${formatDateDisplay(it)}", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = VColors.ink3)
+            }
+            Spacer(Modifier.height(8.dp))
+            Box(Modifier.background(VColors.mintSoft, VShapes.full).padding(horizontal = 12.dp, vertical = 4.dp)) {
+                Text(card.status.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = VColors.success, letterSpacing = 1.sp)
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+        // Download button
+        Box(Modifier.fillMaxWidth().background(VColors.violet, VShapes.md).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
+            .padding(vertical = 14.dp), Alignment.Center) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.Download, null, tint = VColors.white, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Download ID Card", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = VColors.white)
             }
         }
     }
@@ -280,15 +497,21 @@ fun EventsOverlay(viewModel: ParentViewModel) {
 @Composable
 private fun EventItem(ev: ParentEventDto) {
     val (bg, tint) = when (ev.type.lowercase()) { "ptm" -> VColors.skySoft to VColors.sky; "holiday" -> VColors.mintSoft to VColors.success; "sports" -> VColors.goldSoft to VColors.gold; else -> VColors.violetSoft to VColors.violet }
-    Column(Modifier.fillMaxWidth().padding(vertical = 4.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(16.dp)) {
+    val (statusText, statusBg, statusTint) = when {
+        ev.myRegistrationStatus != null -> Triple("Registered", VColors.mintSoft, VColors.success)
+        ev.registrationEnabled && ev.hasSlots -> Triple("Book Slot", VColors.goldSoft, VColors.gold)
+        ev.registrationEnabled -> Triple("Registration Open", VColors.violetSoft, VColors.violet)
+        else -> Triple("Coming Soon", VColors.surfaceTint, VColors.ink3)
+    }
+    Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 4.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(34.dp).background(bg, VShapes.sm), Alignment.Center) { Icon(Icons.Rounded.Event, null, tint = tint, modifier = Modifier.size(15.dp)) }
+            Box(Modifier.size(29.dp).background(bg, VShapes.sm), Alignment.Center) { Icon(Icons.Rounded.Event, null, tint = tint, modifier = Modifier.size(13.dp)) }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(ev.title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = VColors.ink)
-                Text(formatDateDisplay(ev.startDate), fontSize = 12.sp, fontWeight = FontWeight.Medium, color = VColors.ink3)
+                Text(ev.title, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = VColors.ink, letterSpacing = (-0.2).sp)
+                Text(formatDateDisplay(ev.startDate), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = VColors.violet)
             }
-            Box(Modifier.background(bg, VShapes.full).padding(horizontal = 8.dp, vertical = 2.dp)) { Text(ev.type, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = tint) }
+            Box(Modifier.background(statusBg, VShapes.full).padding(horizontal = 8.dp, vertical = 2.dp)) { Text(statusText, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = statusTint) }
         }
         if (ev.description.isNotBlank()) { Text(ev.description, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = VColors.ink2, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp)) }
         ev.venue?.let { Text("Venue: $it", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = VColors.ink3, modifier = Modifier.padding(top = 4.dp)) }
@@ -306,13 +529,19 @@ fun ScholarshipsOverlay(viewModel: ParentViewModel) {
             is UiState.Success -> {
                 if (s.data.scholarships.isEmpty()) { Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) { Text("No scholarships available", color = VColors.ink3) } }
                 else s.data.scholarships.forEach { sch ->
-                    Column(Modifier.fillMaxWidth().padding(vertical = 4.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(16.dp)) {
-                        Text(sch.title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = VColors.ink)
+                    val appStatus = s.data.applications.firstOrNull { it.institution == sch.title }?.status
+                    val (badgeText, badgeBg, badgeTint) = when (appStatus?.lowercase()) {
+                        "approved", "applied" -> Triple("Applied", VColors.mintSoft, VColors.success)
+                        "rejected" -> Triple("Not Eligible", VColors.coralSoft, VColors.coral)
+                        else -> Triple("Eligible", VColors.violetSoft, VColors.violet)
+                    }
+                    Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 4.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(16.dp)) {
+                        Text(sch.title, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = VColors.ink, letterSpacing = (-0.2).sp)
+                        Text(sch.amount, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = VColors.violet, modifier = Modifier.padding(top = 4.dp))
                         Text(sch.description, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = VColors.ink2, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp))
                         Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text("Time left: ${sch.timeLeft}", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = if (sch.isCritical) VColors.coral else VColors.ink3)
-                            val (bg, tint) = if (sch.isCritical) VColors.coralSoft to VColors.coral else VColors.violetSoft to VColors.violet
-                            Box(Modifier.background(bg, VShapes.full).padding(horizontal = 8.dp, vertical = 2.dp)) { Text(sch.category, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = tint) }
+                            Box(Modifier.background(badgeBg, VShapes.full).padding(horizontal = 8.dp, vertical = 2.dp)) { Text(badgeText, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = badgeTint) }
                         }
                     }
                 }
@@ -340,7 +569,7 @@ fun LeaveOverlay(viewModel: ParentViewModel, childId: String) {
                 if (s.data.requests.isEmpty()) { Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) { Text("No leave requests", color = VColors.ink3) } }
                 else s.data.requests.forEach { lr ->
                     val (bg, tint) = when (lr.status.lowercase()) { "approved" -> VColors.mintSoft to VColors.success; "rejected" -> VColors.coralSoft to VColors.coral; else -> VColors.goldSoft to VColors.gold }
-                    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(14.dp)) {
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 4.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(14.dp)) {
                         Column(Modifier.weight(1f)) {
                             Text("${formatDate(lr.dateFrom)} → ${formatDate(lr.dateTo)}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VColors.ink)
                             Text(lr.reason, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = VColors.ink2, maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -399,7 +628,7 @@ fun PulseOverlay(viewModel: ParentViewModel, childId: String) {
                 if (p.actionableItems.isNotEmpty()) {
                     OvSectionTitle("Action Items")
                     p.actionableItems.forEach { item ->
-                        Row(Modifier.fillMaxWidth().padding(vertical = 4.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(14.dp)) {
+                        Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 4.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(14.dp)) {
                             Box(Modifier.size(8.dp).background(VColors.violet, CircleShape))
                             Spacer(Modifier.width(12.dp))
                             Text(item, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = VColors.ink, modifier = Modifier.weight(1f))
@@ -474,8 +703,8 @@ fun DiscoveryOverlay(viewModel: ParentViewModel) {
             is UiState.Success -> {
                 OvSectionTitle("Results (${s.data.schools.size})")
                 s.data.schools.forEach { school ->
-                    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(14.dp)) {
-                        Box(Modifier.size(34.dp).background(VColors.violetSoft, VShapes.sm), Alignment.Center) { Icon(Icons.Rounded.School, null, tint = VColors.violet, modifier = Modifier.size(15.dp)) }
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 4.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(14.dp)) {
+                        Box(Modifier.size(29.dp).background(VColors.violetSoft, VShapes.sm), Alignment.Center) { Icon(Icons.Rounded.School, null, tint = VColors.violet, modifier = Modifier.size(13.dp)) }
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
                             Text(school.name, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = VColors.ink)
@@ -503,7 +732,7 @@ fun CalendarOverlay(viewModel: ParentViewModel) {
                     val dayName = listOf("Mon","Tue","Wed","Thu","Fri","Sat","Sun").getOrNull(day.weekday - 1) ?: "Day"
                     OvSectionTitle(dayName)
                     day.periods.forEach { p ->
-                        Row(Modifier.fillMaxWidth().padding(vertical = 3.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(12.dp)) {
+                        Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 3.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(12.dp)) {
                             Text(p.startTime, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = VColors.ink3, modifier = Modifier.width(60.dp))
                             Text(p.subject, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VColors.ink, modifier = Modifier.weight(1f))
                             p.teacherName?.let { Text(it, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = VColors.ink3) }
@@ -554,6 +783,29 @@ fun LibraryOverlay(viewModel: ParentViewModel, childId: String) {
                 }
             }
         }
+        OvSectionTitle("Fines & Dues")
+        when (val s = issuedState) {
+            is UiState.Loading -> OvLoading()
+            is UiState.Error -> OvError(s.message)
+            is UiState.Success -> {
+                val finedBooks = s.data.filter { it.fineAmount > 0 && it.fineStatus != "paid" && it.fineStatus != "waived" }
+                if (finedBooks.isEmpty()) {
+                    Box(Modifier.fillMaxWidth().padding(24.dp), Alignment.Center) { Text("No outstanding fines", color = VColors.ink3) }
+                } else {
+                    val totalFines = finedBooks.sumOf { it.fineAmount }
+                    OvCard {
+                        Text("Outstanding: ₹$totalFines", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = VColors.coral)
+                        Spacer(Modifier.height(8.dp))
+                        finedBooks.forEach { issue ->
+                            Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(issue.bookTitle, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = VColors.ink2, modifier = Modifier.weight(1f))
+                                Text("₹${issue.fineAmount}", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = VColors.coral)
+                            }
+                        }
+                    }
+                }
+            }
+        }
         OvSectionTitle("Issued Books")
         when (val s = issuedState) {
             is UiState.Loading -> OvLoading()
@@ -568,8 +820,8 @@ fun LibraryOverlay(viewModel: ParentViewModel, childId: String) {
 
 @Composable
 private fun BookItem(book: LibraryBookDto) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(14.dp)) {
-        Box(Modifier.size(34.dp).background(VColors.violetSoft, VShapes.sm), Alignment.Center) { Icon(Icons.Rounded.School, null, tint = VColors.violet, modifier = Modifier.size(15.dp)) }
+    Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 4.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(14.dp)) {
+        Box(Modifier.size(29.dp).background(VColors.skySoft, VShapes.sm), Alignment.Center) { Icon(Icons.Rounded.Book, null, tint = VColors.sky, modifier = Modifier.size(13.dp)) }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(book.title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = VColors.ink)
@@ -583,7 +835,7 @@ private fun BookItem(book: LibraryBookDto) {
 @Composable
 private fun IssuedBookItem(issue: LibraryIssueDto) {
     val isOverdue = issue.status == "issued" && issue.returnDate == null
-    Column(Modifier.fillMaxWidth().padding(vertical = 4.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(14.dp)) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 4.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(14.dp)) {
         Text(issue.bookTitle, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = VColors.ink)
         Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
             Text("Issued: ${formatDate(issue.issueDate)}", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = VColors.ink3)
@@ -601,48 +853,156 @@ private fun IssuedBookItem(issue: LibraryIssueDto) {
 }
 
 // ── Tutor Chat Overlay ──
+private data class ChatMessage(val text: String, val isUser: Boolean)
+
 @Composable
 fun TutorChatOverlay(viewModel: ParentViewModel, childId: String) {
     val subjectsState by viewModel.tutorSubjectsState.collectAsState()
     val doubtState by viewModel.tutorDoubtState.collectAsState()
     var selectedSubject by rememberSaveable { mutableStateOf("") }
     var question by rememberSaveable { mutableStateOf("") }
+    val messages = remember { mutableStateListOf<ChatMessage>() }
+    var showSubjectPicker by rememberSaveable { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
+
+    val isLoading = doubtState is UiState.Loading
+
+    LaunchedEffect(doubtState) {
+        val current = doubtState
+        if (current is UiState.Success) {
+            current.data.data?.turn?.studentFacing?.let { sf ->
+                if (messages.none { !it.isUser && it.text == sf.text }) {
+                    messages.add(ChatMessage(sf.text, isUser = false))
+                }
+            }
+        }
+    }
+
     Column(Modifier.fillMaxWidth()) {
-        OvSectionTitle("Select Subject")
-        when (val s = subjectsState) {
-            is UiState.Loading -> OvLoading()
-            is UiState.Error -> OvError(s.message)
-            is UiState.Success -> {
-                s.data.forEach { subj ->
-                    val isSelected = selectedSubject == subj.subjectId
-                    Row(Modifier.fillMaxWidth().padding(vertical = 3.dp).background(if (isSelected) VColors.violetSoft else VColors.white, VShapes.md)
-                        .shadow(1.dp, VShapes.md).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { selectedSubject = subj.subjectId }.padding(12.dp)) {
-                        Text(subj.subjectName, fontSize = 13.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium, color = if (isSelected) VColors.violet else VColors.ink)
+        // Subject selector dropdown
+        Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 4.dp)
+            .background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md)
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { showSubjectPicker = !showSubjectPicker }
+            .padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(29.dp).background(VColors.violetSoft, VShapes.sm), Alignment.Center) {
+                Icon(Icons.Rounded.Psychology, null, tint = VColors.violet, modifier = Modifier.size(13.dp))
+            }
+            Spacer(Modifier.width(12.dp))
+            Text(
+                if (selectedSubject.isBlank()) "Select Subject" else subjectsState.let { s -> (s as? UiState.Success)?.data?.firstOrNull { it.subjectId == selectedSubject }?.subjectName } ?: "Subject",
+                fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (selectedSubject.isBlank()) VColors.ink3 else VColors.ink,
+                modifier = Modifier.weight(1f)
+            )
+            Text(if (showSubjectPicker) "▲" else "▼", fontSize = 10.sp, color = VColors.ink3)
+        }
+
+        if (showSubjectPicker) {
+            when (val s = subjectsState) {
+                is UiState.Loading -> OvLoading()
+                is UiState.Error -> OvError(s.message)
+                is UiState.Success -> {
+                    s.data.forEach { subj ->
+                        val isSelected = selectedSubject == subj.subjectId
+                        Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 2.dp)
+                            .background(if (isSelected) VColors.violetSoft else VColors.surfaceTint, VShapes.sm)
+                            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
+                                selectedSubject = subj.subjectId; showSubjectPicker = false
+                            }.padding(12.dp)) {
+                            Text(subj.subjectName, fontSize = 13.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium, color = if (isSelected) VColors.violet else VColors.ink2)
+                        }
                     }
                 }
-                if (s.data.isEmpty()) { Text("No subjects available", fontSize = 12.sp, color = VColors.ink3, modifier = Modifier.padding(8.dp)) }
             }
         }
-        if (selectedSubject.isNotBlank()) {
-            OvSectionTitle("Ask a Question")
-            OvCard {
-                Box(Modifier.fillMaxWidth().background(VColors.surfaceTint, VShapes.sm).padding(12.dp)) {
-                    Text(question.ifBlank { "Type your question..." }, fontSize = 14.sp, color = if (question.isBlank()) VColors.ink3 else VColors.ink)
+
+        // Chat messages area
+        Column(Modifier.weight(1f).verticalScroll(scrollState).padding(horizontal = 24.dp)) {
+            if (messages.isEmpty()) {
+                Box(Modifier.fillMaxWidth().padding(24.dp), Alignment.Center) {
+                    Text("Ask me anything about your child's studies", fontSize = 13.sp, color = VColors.ink3, textAlign = TextAlign.Center)
                 }
-                Spacer(Modifier.height(12.dp))
-                Box(Modifier.fillMaxWidth().background(VColors.violet, VShapes.md).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
-                    if (question.isNotBlank()) viewModel.askDoubt(childId, selectedSubject, question)
-                }.padding(vertical = 12.dp), Alignment.Center) { Text("Ask AI Tutor", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = VColors.white) }
+            }
+            messages.forEach { msg ->
+                ChatBubble(msg)
+                Spacer(Modifier.height(8.dp))
+            }
+            if (isLoading) { TypingIndicator(); Spacer(Modifier.height(8.dp)) }
+        }
+
+        // Quick suggestion chips
+        if (selectedSubject.isNotBlank() && messages.isEmpty()) {
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 4.dp)) {
+                listOf("Explain this topic", "Give practice question", "Show examples").forEach { suggestion ->
+                    Box(Modifier.padding(end = 8.dp).background(VColors.surfaceTint, VShapes.full)
+                        .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { question = suggestion }
+                        .padding(horizontal = 12.dp, vertical = 6.dp)) {
+                        Text(suggestion, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = VColors.ink2)
+                    }
+                }
             }
         }
-        when (val s = doubtState) {
-            is UiState.Loading -> OvLoading()
-            is UiState.Error -> OvError(s.message)
-            is UiState.Success -> {
-                s.data.data?.turn?.studentFacing?.let { sf ->
-                    OvSectionTitle("AI Tutor Response")
-                    OvCard { Text(sf.text, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = VColors.ink, lineHeight = 19.sp) }
-                    sf.nextPrompt?.let { Text(it, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = VColors.violet, modifier = Modifier.padding(12.dp)) }
+
+        // Input bar
+        Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp)
+            .background(VColors.white, VShapes.lg).shadow(1.dp, VShapes.lg).padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(
+                value = question,
+                onValueChange = { question = it },
+                modifier = Modifier.weight(1f),
+                placeholder = { Text("Type your question...", fontSize = 14.sp, color = VColors.ink3) },
+                shape = VShapes.lg,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color.Transparent,
+                ),
+                singleLine = false,
+                maxLines = 3,
+            )
+            Spacer(Modifier.width(8.dp))
+            Box(Modifier.size(40.dp).background(
+                if (question.isNotBlank() && selectedSubject.isNotBlank()) VColors.violet else VColors.surfaceTint, CircleShape
+            ).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
+                if (question.isNotBlank() && selectedSubject.isNotBlank() && !isLoading) {
+                    messages.add(ChatMessage(question, isUser = true))
+                    viewModel.askDoubt(childId, selectedSubject, question)
+                    question = ""
+                }
+            }, Alignment.Center) {
+                Icon(Icons.AutoMirrored.Rounded.Send, null, tint = if (question.isNotBlank() && selectedSubject.isNotBlank()) VColors.white else VColors.ink3, modifier = Modifier.size(18.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun ChatBubble(msg: ChatMessage) {
+    if (msg.isUser) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            Box(Modifier.background(VColors.violet, VShapes.lg).padding(horizontal = 14.dp, vertical = 10.dp)) {
+                Text(msg.text, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = VColors.white, lineHeight = 19.sp)
+            }
+        }
+    } else {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
+            Box(Modifier.background(VColors.white, VShapes.lg).shadow(1.dp, VShapes.lg).padding(horizontal = 14.dp, vertical = 10.dp)) {
+                Text(msg.text, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = VColors.ink, lineHeight = 19.sp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun TypingIndicator() {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
+        val transition = rememberInfiniteTransition(label = "typing")
+        val dot1 by transition.animateFloat(0f, 1f, infiniteRepeatable(tween(400), RepeatMode.Reverse), label = "dot1")
+        val dot2 by transition.animateFloat(0f, 1f, infiniteRepeatable(tween(400, 200), RepeatMode.Reverse), label = "dot2")
+        val dot3 by transition.animateFloat(0f, 1f, infiniteRepeatable(tween(400, 400), RepeatMode.Reverse), label = "dot3")
+        Box(Modifier.background(VColors.white, VShapes.lg).shadow(1.dp, VShapes.lg).padding(14.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                listOf(dot1, dot2, dot3).forEach { alpha ->
+                    Box(Modifier.size(8.dp).background(VColors.ink3.copy(alpha = 0.3f + 0.7f * alpha), CircleShape))
                 }
             }
         }
@@ -663,7 +1023,7 @@ fun TutorProgressOverlay(viewModel: ParentViewModel, childId: String) {
             is UiState.Success -> {
                 s.data.forEach { subj ->
                     val isSelected = selectedSubject == subj.subjectId
-                    Row(Modifier.fillMaxWidth().padding(vertical = 3.dp).background(if (isSelected) VColors.violetSoft else VColors.white, VShapes.md)
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 3.dp).background(if (isSelected) VColors.violetSoft else VColors.white, VShapes.md)
                         .shadow(1.dp, VShapes.md).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
                             selectedSubject = subj.subjectId
                             viewModel.loadTutorProgress(childId, subj.subjectId)
@@ -689,7 +1049,7 @@ fun TutorProgressOverlay(viewModel: ParentViewModel, childId: String) {
                         if (pc.topics.isNotEmpty()) {
                             OvSectionTitle("Topic Mastery")
                             pc.topics.forEach { tp ->
-                                Row(Modifier.fillMaxWidth().padding(vertical = 3.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(14.dp)) {
+                                Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 3.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(14.dp)) {
                                     Text(tp.topicId, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = VColors.ink, modifier = Modifier.weight(1f))
                                     Text("${(tp.currentMastery * 100).toInt()}%", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = VColors.violet)
                                 }
@@ -721,7 +1081,7 @@ fun SchoolDetailOverlay(viewModel: ParentViewModel) {
 
 @Composable
 private fun DiscoveredSchoolItem(school: DiscoveredSchoolDto) {
-    Column(Modifier.fillMaxWidth().padding(vertical = 4.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(16.dp)) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 4.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(16.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text(school.name, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = VColors.ink, modifier = Modifier.weight(1f))
             Box(Modifier.background(VColors.goldSoft, VShapes.full).padding(horizontal = 8.dp, vertical = 2.dp)) {

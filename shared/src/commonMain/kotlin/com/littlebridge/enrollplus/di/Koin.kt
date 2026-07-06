@@ -530,6 +530,12 @@ val viewModelModule = module {
     factory { com.littlebridge.enrollplus.presentation.TeacherViewModel(get(), get(), get(), get(), get()) }
     factory { com.littlebridge.enrollplus.presentation.ParentViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { com.littlebridge.enrollplus.core.state.SelectedChildHolder() }
+    // Admin Portal ViewModels
+    factory { com.littlebridge.enrollplus.presentation.admin.AdminHomeViewModel(get(), get()) }
+    factory { com.littlebridge.enrollplus.presentation.admin.AdminPeopleViewModel(get(), get(), get(), get(), get()) }
+    factory { com.littlebridge.enrollplus.presentation.admin.AdminRecordsViewModel(get(), get(), get()) }
+    factory { com.littlebridge.enrollplus.presentation.admin.AdminCommsViewModel(get(), get(), get(), get(), get()) }
+    factory { com.littlebridge.enrollplus.presentation.admin.AdminSettingsViewModel(get(), get(), get()) }
 }
 
 fun initKoin(

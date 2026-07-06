@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -82,7 +83,7 @@ fun ParentPortalScreen(
                 onDiscoverSchools = { activeOverlay = ParentOverlay.Discovery },
             )
         } else {
-            Column(
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(VColors.cream),
@@ -93,7 +94,7 @@ fun ParentPortalScreen(
                         fadeIn(tween(VMotion.durDefault)) togetherWith fadeOut(tween(VMotion.durDefault))
                     },
                     label = "parentTab",
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.fillMaxSize(),
                 ) { tab ->
                     when (tab) {
                         ParentTab.Home -> ParentHomeTab(
@@ -126,13 +127,14 @@ fun ParentPortalScreen(
                     }
                 }
 
-                ParentBottomNav(
+                ParentDock(
                     selectedTab = selectedTab,
                     onTabSelected = { selectedTab = it },
                     unreadCount = unreadCount,
                     notificationCount = notificationCount,
                     modifier = Modifier
                         .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
                         .navigationBarsPadding(),
                 )
             }
@@ -191,93 +193,92 @@ fun ParentPortalScreen(
 }
 
 @Composable
-private fun ParentBottomNav(
+private fun ParentDock(
     selectedTab: ParentTab,
     onTabSelected: (ParentTab) -> Unit,
     unreadCount: Int,
     notificationCount: Int,
     modifier: Modifier = Modifier,
 ) {
-    Column(
+    Box(
         modifier = modifier
-            .background(VColors.surfaceCard),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        contentAlignment = Alignment.BottomCenter,
     ) {
-        // Top border line
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(VColors.line),
-        )
         Row(
             modifier = Modifier
+                .fillMaxWidth()
+                .background(VColors.white.copy(alpha = 0.92f), VShapes.xl)
+                .border(1.dp, VColors.lineSoft, VShapes.xl)
                 .padding(horizontal = 4.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceAround,
         ) {
-        ParentTab.entries.forEach { tab ->
-            val isSelected = tab == selectedTab
-            val iconColor = if (isSelected) VColors.violet else VColors.ink3
-            val labelColor = if (isSelected) VColors.violet else VColors.ink3
-            val labelWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Medium
+            ParentTab.entries.forEach { tab ->
+                val isSelected = tab == selectedTab
+                val iconColor = if (isSelected) VColors.violet else VColors.ink3
+                val labelColor = if (isSelected) VColors.violet else VColors.ink3
+                val labelWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.SemiBold
 
-            val badgeCount = when (tab) {
-                ParentTab.Conversations -> unreadCount
-                ParentTab.Home -> notificationCount
-                else -> 0
-            }
+                val badgeCount = when (tab) {
+                    ParentTab.Conversations -> unreadCount
+                    ParentTab.Home -> notificationCount
+                    else -> 0
+                }
 
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                    ) { onTabSelected(tab) }
-                    .padding(horizontal = 8.dp, vertical = 2.dp),
-            ) {
-                Box {
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .background(
-                                if (isSelected) VColors.violetSoft else Color.Transparent,
-                                VShapes.sm,
-                            ),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            imageVector = tab.icon,
-                            contentDescription = tab.label,
-                            tint = iconColor,
-                            modifier = Modifier.size(22.dp),
-                        )
-                    }
-                    if (badgeCount > 0) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(3.dp),
+                    modifier = Modifier
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                        ) { onTabSelected(tab) }
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                ) {
+                    Box {
                         Box(
                             modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .size(17.dp)
-                                .background(VColors.coral, CircleShape),
+                                .size(30.dp)
+                                .background(
+                                    if (isSelected) VColors.violetSoft else Color.Transparent,
+                                    VShapes.sm,
+                                ),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text(
-                                text = badgeCount.toString(),
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = VColors.white,
+                            Icon(
+                                imageVector = tab.icon,
+                                contentDescription = tab.label,
+                                tint = iconColor,
+                                modifier = Modifier.size(20.dp),
                             )
                         }
+                        if (badgeCount > 0) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .size(16.dp)
+                                    .background(VColors.coral, CircleShape)
+                                    .border(2.dp, VColors.white, CircleShape),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text = badgeCount.toString(),
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = VColors.white,
+                                )
+                            }
+                        }
                     }
+                    Text(
+                        text = tab.label,
+                        fontSize = 10.sp,
+                        fontWeight = labelWeight,
+                        color = labelColor,
+                        letterSpacing = (-0.2).sp,
+                    )
                 }
-                Text(
-                    text = tab.label,
-                    fontSize = 11.sp,
-                    fontWeight = labelWeight,
-                    color = labelColor,
-                )
             }
-        }
         }
     }
 }

@@ -51,7 +51,7 @@ fun ParentOverlayScaffold(
             modifier = Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp),
+                .padding(horizontal = 24.dp),
         ) {
             content()
             Spacer(Modifier.height(140.dp))

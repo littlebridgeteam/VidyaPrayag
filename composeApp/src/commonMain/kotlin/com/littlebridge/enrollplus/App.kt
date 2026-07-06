@@ -30,6 +30,7 @@ import com.littlebridge.enrollplus.ui.navigation.AuthNavGraph
 import com.littlebridge.enrollplus.ui.navigation.DeepLinkTarget
 import com.littlebridge.enrollplus.ui.navigation.TeacherDeepLinkTab
 import com.littlebridge.enrollplus.ui.navigation.parseDeepLink
+import com.littlebridge.enrollplus.ui.screens.admin.AdminPortalScreen
 import com.littlebridge.enrollplus.ui.screens.parent.ParentDeepLinkParser
 import com.littlebridge.enrollplus.ui.screens.parent.ParentPortalScreen
 import com.littlebridge.enrollplus.ui.screens.teacher.TeacherPortalScreen
@@ -127,6 +128,7 @@ fun App(
             val isAuthed = !authState.token.isNullOrBlank()
             val isTeacher = authState.role?.equals("teacher", ignoreCase = true) == true
             val isParent = authState.role?.equals("parent", ignoreCase = true) == true
+            val isAdmin = authState.role?.equals("admin", ignoreCase = true) == true
 
             // Parse deep link once when it arrives
             val deepLinkTarget = remember(deepLink) {
@@ -157,7 +159,21 @@ fun App(
                 }
             }
 
-            if (isAuthed && isTeacher) {
+            if (isAuthed && isAdmin) {
+                val homeViewModel: com.littlebridge.enrollplus.presentation.admin.AdminHomeViewModel = koinViewModel()
+                val peopleViewModel: com.littlebridge.enrollplus.presentation.admin.AdminPeopleViewModel = koinViewModel()
+                val recordsViewModel: com.littlebridge.enrollplus.presentation.admin.AdminRecordsViewModel = koinViewModel()
+                val commsViewModel: com.littlebridge.enrollplus.presentation.admin.AdminCommsViewModel = koinViewModel()
+                val settingsViewModel: com.littlebridge.enrollplus.presentation.admin.AdminSettingsViewModel = koinViewModel()
+                AdminPortalScreen(
+                    homeViewModel = homeViewModel,
+                    peopleViewModel = peopleViewModel,
+                    recordsViewModel = recordsViewModel,
+                    commsViewModel = commsViewModel,
+                    settingsViewModel = settingsViewModel,
+                    onLogout = { viewModel.logout() },
+                )
+            } else if (isAuthed && isTeacher) {
                 val teacherViewModel: TeacherViewModel = koinViewModel()
                 val initialTab = when (deepLinkTarget) {
                     is DeepLinkTarget.TeacherTab -> when (deepLinkTarget.tab) {

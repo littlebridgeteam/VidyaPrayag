@@ -1,30 +1,21 @@
 package com.littlebridge.enrollplus.ui.components
 
-import androidx.compose.animation.core.animate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.ui.tokens.VColors
@@ -38,11 +29,10 @@ fun VPullRefresh(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    val pullThreshold = 80.dp
-    var pullDistance by remember { mutableFloatStateOf(0f) }
+    val density = LocalDensity.current
+    val pullThresholdPx = with(density) { 80.dp.toPx() }
+    var pullDistance by remember { mutableStateOf(0f) }
     var isDragging by remember { mutableStateOf(false) }
-    val coroutineScope = rememberCoroutineScope()
-
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -52,7 +42,7 @@ fun VPullRefresh(
                     onDragStart = { isDragging = true },
                     onDragEnd = {
                         isDragging = false
-                        if (pullDistance >= pullThreshold.toPx()) {
+                        if (pullDistance >= pullThresholdPx) {
                             onRefresh()
                         }
                         pullDistance = 0f
@@ -63,14 +53,14 @@ fun VPullRefresh(
                     },
                     onVerticalDrag = { _, dragAmount ->
                         if (dragAmount > 0 && pullDistance >= 0) {
-                            pullDistance = (pullDistance + dragAmount * 0.5f).coerceAtMost(pullThreshold.toPx() * 1.5f)
+                            pullDistance = (pullDistance + dragAmount * 0.5f).coerceAtMost(pullThresholdPx * 1.5f)
                         }
                     },
                 )
             },
     ) {
         val indicatorOffset = if (isRefreshing) {
-            pullThreshold.toPx()
+            pullThresholdPx
         } else {
             pullDistance
         }
@@ -79,7 +69,7 @@ fun VPullRefresh(
         if (indicatorOffset > 0 || isRefreshing) {
             Box(
                 modifier = Modifier
-                    .offset { IntOffset(0, ((indicatorOffset - 30.dp.toPx()) / 2).roundToInt()) }
+                    .offset { IntOffset(0, ((indicatorOffset - with(density) { 30.dp.toPx() }) / 2).roundToInt()) }
                     .align(Alignment.TopCenter)
                     .size(36.dp)
                     .background(VColors.violetSoft, VShapes.full),
@@ -96,7 +86,7 @@ fun VPullRefresh(
         // Content
         Box(
             modifier = Modifier
-                .offset { IntOffset(0, if (isRefreshing) pullThreshold.toPx().roundToInt() else 0) },
+                .offset { IntOffset(0, if (isRefreshing) pullThresholdPx.roundToInt() else 0) },
         ) {
             content()
         }
