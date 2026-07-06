@@ -8,8 +8,6 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,13 +24,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,21 +38,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.littlebridge.enrollplus.ui.v2.components.buttons.VPrimaryButton
-import com.littlebridge.enrollplus.ui.v2.components.form.VTextInput
-import com.littlebridge.enrollplus.ui.v2.components.navigation.VFilterChip
-import com.littlebridge.enrollplus.ui.v2.modifiers.pressScale
-import com.littlebridge.enrollplus.ui.v2.tokens.PremiumTheme
-import com.littlebridge.enrollplus.ui.v2.tokens.VColors
-import com.littlebridge.enrollplus.ui.v2.tokens.VShapes
-import com.littlebridge.enrollplus.ui.v2.tokens.VTypography
+import com.littlebridge.enrollplus.ui.components.FilterChip
+import com.littlebridge.enrollplus.ui.components.VBackHeader
+import com.littlebridge.enrollplus.ui.components.VButton
+import com.littlebridge.enrollplus.ui.components.VInput
+import com.littlebridge.enrollplus.ui.components.VProgressBarSegments
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VShapes
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 
 /**
- * Premium school onboarding — multi-step wizard for new school registration.
+ * School onboarding — multi-step wizard for new school registration.
+ * Uses the cream-based design language matching the landing/login screens.
  * Steps: School Details → Admin Details → Classes → Review → Done
  */
 @OptIn(ExperimentalLayoutApi::class)
@@ -67,7 +62,7 @@ fun SchoolOnboardingScreen(
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {},
     resumeStep: String = "BASIC",
-) = PremiumTheme(isDark = false) {
+) {
     val initialStep = remember(resumeStep) {
         when (resumeStep.uppercase()) {
             "BRANDING" -> 2
@@ -89,155 +84,213 @@ fun SchoolOnboardingScreen(
     var adminPhone by remember { mutableStateOf("") }
     var classes by remember { mutableStateOf(listOf("Nursery", "LKG", "UKG", "Grade 1-5", "Grade 6-8", "Grade 9-10", "Grade 11-12")) }
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .background(VColors.Surface)
-            .statusBarsPadding()
-            .imePadding()
-            .navigationBarsPadding()
-            .padding(horizontal = 24.dp)
-            .verticalScroll(rememberScrollState()),
+            .background(VColors.cream)
+            .statusBarsPadding(),
     ) {
-        Spacer(Modifier.height(40.dp))
-
-        // Back button
-        val backInteraction = remember { MutableInteractionSource() }
-        Box(
-            Modifier.size(40.dp).clip(CircleShape).background(VColors.SurfaceContainerHigh)
-                .pressScale(backInteraction, pressedScale = 0.9f)
-                .clickable(
-                    interactionSource = backInteraction,
-                    indication = null,
-                    onClick = { if (step > 1) step-- else onBack() },
-                ),
-            contentAlignment = Alignment.Center,
+        Column(
+            modifier = Modifier.fillMaxSize(),
         ) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = VColors.OnSurface, modifier = Modifier.size(20.dp))
-        }
+            VBackHeader(
+                title = "School Onboarding",
+                onBack = { if (step > 1) step-- else onBack() },
+            )
 
-        Spacer(Modifier.height(24.dp))
-
-        // Step indicator
-        Text("Onboarding · Step $step of $total", style = VTypography.Eyebrow.copy(color = VColors.Primary))
-        Spacer(Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            repeat(total) { i ->
-                Box(
-                    Modifier.weight(1f).height(4.dp).clip(VShapes.Full)
-                        .background(if (i < step) VColors.Primary else VColors.SurfaceContainerHigh),
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 32.dp)
+                    .padding(top = 24.dp, bottom = 48.dp)
+                    .imePadding()
+                    .navigationBarsPadding(),
+                verticalArrangement = Arrangement.spacedBy(24.dp),
+            ) {
+                // Step indicator
+                VProgressBarSegments(total = total, current = step - 1)
+                Text(
+                    text = "Step $step of $total",
+                    style = VTypography.caption,
+                    color = VColors.ink3,
                 )
-            }
-        }
 
-        Spacer(Modifier.height(32.dp))
-
-        AnimatedContent(
-            targetState = step,
-            transitionSpec = {
-                (slideInHorizontally(tween(300)) { it / 3 } + fadeIn(tween(300)))
-                    .togetherWith(slideOutHorizontally(tween(300)) { -it / 3 } + fadeOut(tween(300)))
-            },
-            label = "onboardStep",
-        ) { current ->
-            Column {
-                when (current) {
-                    1 -> {
-                        Text("School Details", style = VTypography.GreetingTitle.copy(color = VColors.OnSurface))
-                        Spacer(Modifier.height(8.dp))
-                        Text("Tell us about your school.", style = VTypography.UpdateText.copy(color = VColors.OnSurfaceVariant))
-                        Spacer(Modifier.height(24.dp))
-                        VTextInput(value = schoolName, onValueChange = { schoolName = it }, label = "School Name", placeholder = "Saraswati Vidya Mandir", authStyle = true, modifier = Modifier.fillMaxWidth())
-                        Spacer(Modifier.height(16.dp))
-                        Text("Board", style = VTypography.FormLabelAuth.copy(color = VColors.OnSurfaceVariant), modifier = Modifier.padding(start = 4.dp, bottom = 6.dp))
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            listOf("CBSE", "ICSE", "UP State", "Other").forEach { b ->
-                                VFilterChip(label = b, active = board == b, onClick = { board = b })
+                AnimatedContent(
+                    targetState = step,
+                    transitionSpec = {
+                        (slideInHorizontally(tween(300)) { it / 3 } + fadeIn(tween(300)))
+                            .togetherWith(slideOutHorizontally(tween(300)) { -it / 3 } + fadeOut(tween(300)))
+                    },
+                    label = "onboardStep",
+                ) { current ->
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        when (current) {
+                            1 -> {
+                                Text(
+                                    text = "School Details",
+                                    style = VTypography.h2,
+                                    color = VColors.ink,
+                                )
+                                Text(
+                                    text = "Tell us about your school.",
+                                    style = VTypography.bodySmall,
+                                    color = VColors.ink2,
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                VInput(
+                                    label = "School Name",
+                                    value = schoolName,
+                                    onValueChange = { schoolName = it },
+                                    placeholder = "Saraswati Vidya Mandir",
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                                Text(
+                                    text = "Board",
+                                    style = VTypography.label,
+                                    color = VColors.ink2,
+                                    modifier = Modifier.padding(start = 2.dp, bottom = 2.dp),
+                                )
+                                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    listOf("CBSE", "ICSE", "UP State", "Other").forEach { b ->
+                                        FilterChip(label = b, selected = board == b, onClick = { board = b })
+                                    }
+                                }
+                                Text(
+                                    text = "School Type",
+                                    style = VTypography.label,
+                                    color = VColors.ink2,
+                                    modifier = Modifier.padding(start = 2.dp, bottom = 2.dp),
+                                )
+                                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    listOf("Private Unaided", "Private Aided", "Government", "Other").forEach { t ->
+                                        FilterChip(label = t, selected = schoolType == t, onClick = { schoolType = t })
+                                    }
+                                }
+                                VInput(
+                                    label = "City",
+                                    value = city,
+                                    onValueChange = { city = it },
+                                    placeholder = "Lucknow",
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
                             }
-                        }
-                        Spacer(Modifier.height(16.dp))
-                        Text("School Type", style = VTypography.FormLabelAuth.copy(color = VColors.OnSurfaceVariant), modifier = Modifier.padding(start = 4.dp, bottom = 6.dp))
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            listOf("Private Unaided", "Private Aided", "Government", "Other").forEach { t ->
-                                VFilterChip(label = t, active = schoolType == t, onClick = { schoolType = t })
+                            2 -> {
+                                Text(
+                                    text = "Administrator Details",
+                                    style = VTypography.h2,
+                                    color = VColors.ink,
+                                )
+                                Text(
+                                    text = "The primary admin for this school account.",
+                                    style = VTypography.bodySmall,
+                                    color = VColors.ink2,
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                VInput(
+                                    label = "Your Name",
+                                    value = adminName,
+                                    onValueChange = { adminName = it },
+                                    placeholder = "Dr. Anita Verma",
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                                VInput(
+                                    label = "Work Email",
+                                    value = adminEmail,
+                                    onValueChange = { adminEmail = it },
+                                    placeholder = "office@svm.edu.in",
+                                    keyboardType = KeyboardType.Email,
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                                VInput(
+                                    label = "Phone Number",
+                                    value = adminPhone,
+                                    onValueChange = { adminPhone = it },
+                                    placeholder = "+91 98XXX XXXXX",
+                                    keyboardType = KeyboardType.Phone,
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
                             }
-                        }
-                        Spacer(Modifier.height(16.dp))
-                        VTextInput(value = city, onValueChange = { city = it }, label = "City", placeholder = "Lucknow", authStyle = true, modifier = Modifier.fillMaxWidth())
-                    }
-                    2 -> {
-                        Text("Administrator Details", style = VTypography.GreetingTitle.copy(color = VColors.OnSurface))
-                        Spacer(Modifier.height(8.dp))
-                        Text("The primary admin for this school account.", style = VTypography.UpdateText.copy(color = VColors.OnSurfaceVariant))
-                        Spacer(Modifier.height(24.dp))
-                        VTextInput(value = adminName, onValueChange = { adminName = it }, label = "Your Name", placeholder = "Dr. Anita Verma", authStyle = true, modifier = Modifier.fillMaxWidth())
-                        Spacer(Modifier.height(16.dp))
-                        VTextInput(value = adminEmail, onValueChange = { adminEmail = it }, label = "Work Email", placeholder = "office@svm.edu.in", keyboardType = KeyboardType.Email, authStyle = true, modifier = Modifier.fillMaxWidth())
-                        Spacer(Modifier.height(16.dp))
-                        VTextInput(value = adminPhone, onValueChange = { adminPhone = it }, label = "Phone Number", placeholder = "+91 98XXX XXXXX", keyboardType = KeyboardType.Phone, authStyle = true, modifier = Modifier.fillMaxWidth())
-                    }
-                    3 -> {
-                        Text("Classes & Sections", style = VTypography.GreetingTitle.copy(color = VColors.OnSurface))
-                        Spacer(Modifier.height(8.dp))
-                        Text("Select the classes offered at your school.", style = VTypography.UpdateText.copy(color = VColors.OnSurfaceVariant))
-                        Spacer(Modifier.height(24.dp))
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            listOf("Nursery", "LKG", "UKG", "Grade 1-5", "Grade 6-8", "Grade 9-10", "Grade 11-12").forEach { c ->
-                                val active = classes.contains(c)
-                                VFilterChip(label = c, active = active, onClick = {
-                                    classes = if (active) classes - c else classes + c
-                                })
+                            3 -> {
+                                Text(
+                                    text = "Classes & Sections",
+                                    style = VTypography.h2,
+                                    color = VColors.ink,
+                                )
+                                Text(
+                                    text = "Select the classes offered at your school.",
+                                    style = VTypography.bodySmall,
+                                    color = VColors.ink2,
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    listOf("Nursery", "LKG", "UKG", "Grade 1-5", "Grade 6-8", "Grade 9-10", "Grade 11-12").forEach { c ->
+                                        val active = classes.contains(c)
+                                        FilterChip(label = c, selected = active, onClick = {
+                                            classes = if (active) classes - c else classes + c
+                                        })
+                                    }
+                                }
                             }
-                        }
-                    }
-                    4 -> {
-                        Text("Review & Confirm", style = VTypography.GreetingTitle.copy(color = VColors.OnSurface))
-                        Spacer(Modifier.height(8.dp))
-                        Text("Please review the details before completing onboarding.", style = VTypography.UpdateText.copy(color = VColors.OnSurfaceVariant))
-                        Spacer(Modifier.height(24.dp))
-                        ReviewRow("School Name", schoolName.ifBlank { "—" })
-                        ReviewRow("Board", board)
-                        ReviewRow("School Type", schoolType)
-                        ReviewRow("City", city.ifBlank { "—" })
-                        ReviewRow("Admin Name", adminName.ifBlank { "—" })
-                        ReviewRow("Admin Email", adminEmail.ifBlank { "—" })
-                        ReviewRow("Admin Phone", adminPhone.ifBlank { "—" })
-                        ReviewRow("Classes", classes.joinToString(", "))
-                        Spacer(Modifier.height(16.dp))
-                        Row(
-                            Modifier.fillMaxWidth().clip(VShapes.Lg).background(VColors.TertiaryContainer).padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            Icon(Icons.Filled.Check, contentDescription = null, tint = VColors.OnTertiaryContainer, modifier = Modifier.size(24.dp))
-                            Text("Ready to complete! Tap 'Finish' to create your school account.", style = VTypography.UpdateText.copy(color = VColors.OnTertiaryContainer))
+                            4 -> {
+                                Text(
+                                    text = "Review & Confirm",
+                                    style = VTypography.h2,
+                                    color = VColors.ink,
+                                )
+                                Text(
+                                    text = "Please review the details before completing onboarding.",
+                                    style = VTypography.bodySmall,
+                                    color = VColors.ink2,
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                ReviewRow("School Name", schoolName.ifBlank { "—" })
+                                ReviewRow("Board", board)
+                                ReviewRow("School Type", schoolType)
+                                ReviewRow("City", city.ifBlank { "—" })
+                                ReviewRow("Admin Name", adminName.ifBlank { "—" })
+                                ReviewRow("Admin Email", adminEmail.ifBlank { "—" })
+                                ReviewRow("Admin Phone", adminPhone.ifBlank { "—" })
+                                ReviewRow("Classes", classes.joinToString(", "))
+                                Spacer(Modifier.height(8.dp))
+                                Row(
+                                    Modifier.fillMaxWidth()
+                                        .background(VColors.successSoft, VShapes.lg)
+                                        .padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                ) {
+                                    Icon(Icons.Filled.Check, contentDescription = null, tint = VColors.success, modifier = Modifier.size(24.dp))
+                                    Text(
+                                        text = "Ready to complete! Tap 'Finish' to create your school account.",
+                                        style = VTypography.bodySmall,
+                                        color = VColors.success,
+                                    )
+                                }
+                            }
                         }
                     }
                 }
+
+                VButton(
+                    text = if (step < total) "Continue" else "Finish Onboarding",
+                    onClick = {
+                        if (step < total) step++
+                        else onComplete()
+                    },
+                    enabled = when (step) {
+                        1 -> schoolName.isNotBlank()
+                        2 -> adminName.isNotBlank() && adminEmail.isNotBlank()
+                        3 -> classes.isNotEmpty()
+                        else -> true
+                    },
+                    icon = Icons.AutoMirrored.Filled.ArrowForward,
+                )
             }
         }
-
-        Spacer(Modifier.height(32.dp))
-
-        VPrimaryButton(
-            text = if (step < total) "Continue" else "Finish Onboarding",
-            onClick = {
-                if (step < total) step++
-                else onComplete()
-            },
-            enabled = when (step) {
-                1 -> schoolName.isNotBlank()
-                2 -> adminName.isNotBlank() && adminEmail.isNotBlank()
-                3 -> classes.isNotEmpty()
-                else -> true
-            },
-            trailing = {
-                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = VColors.OnPrimary, modifier = Modifier.size(18.dp))
-            },
-            modifier = Modifier.fillMaxWidth(),
-        )
-
-        Spacer(Modifier.height(32.dp))
     }
 }
 
@@ -247,7 +300,7 @@ private fun ReviewRow(label: String, value: String) {
         Modifier.fillMaxWidth().padding(vertical = 6.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(label, style = VTypography.UpdateText.copy(color = VColors.OnSurfaceVariant))
-        Text(value, style = VTypography.UpdateTitle.copy(color = VColors.OnSurface, fontWeight = FontWeight.SemiBold))
+        Text(label, style = VTypography.bodySmall, color = VColors.ink2)
+        Text(value, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
     }
 }
