@@ -1154,32 +1154,44 @@ body{
   margin-top:6px;line-height:1.5;
 }
 
-/* Now Teaching — minimal inline card, no gradient */
+/* Now Teaching — premium card with real hierarchy */
 .ph-now{
-  margin:0 var(--s-lg) var(--s-lg);padding:16px 18px;
+  margin:0 var(--s-lg) var(--s-lg);padding:0;
   background:var(--white);border-radius:var(--r-md);
   cursor:pointer;transition:all 250ms var(--ease);
-  box-shadow:var(--shadow-1);
+  box-shadow:var(--shadow-1);overflow:hidden;
 }
-.ph-now:hover{box-shadow:var(--shadow-2)}
-.ph-now-row{display:flex;align-items:center;justify-content:space-between}
-.ph-now-left{display:flex;flex-direction:column;gap:2px}
+.ph-now:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
+.ph-now-top{padding:18px 20px 16px}
+.ph-now-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .ph-now-status{
   font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;
-  color:var(--success);display:flex;align-items:center;gap:5px;
+  color:var(--success);display:flex;align-items:center;gap:6px;
 }
 .ph-now-status::before{
-  content:'';width:5px;height:5px;border-radius:50%;background:var(--success);
+  content:'';width:6px;height:6px;border-radius:50%;background:var(--success);
+  box-shadow:0 0 8px rgba(74,222,128,0.4);
 }
-.ph-now-class{font-size:17px;font-weight:800;color:var(--ink);letter-spacing:-0.3px;margin-top:4px}
-.ph-now-meta{font-size:13px;font-weight:500;color:var(--ink-3);margin-top:1px}
-.ph-now-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
-.ph-now-time{font-size:13px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.ph-now-time{
+  font-size:13px;font-weight:700;color:var(--ink-2);
+  font-variant-numeric:tabular-nums;
+}
+.ph-now-time .muted{color:var(--ink-3);font-weight:500}
+.ph-now-class{font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-0.5px;line-height:1.2}
+.ph-now-room{font-size:13px;font-weight:500;color:var(--ink-3);margin-top:3px}
+.ph-now-stats{display:flex;gap:0;padding:14px 20px;background:var(--surface-tint);border-top:1px solid var(--line-soft)}
+.ph-now-stat{flex:1;display:flex;flex-direction:column;gap:2px}
+.ph-now-stat+.ph-now-stat{padding-left:16px;border-left:1px solid var(--line-soft)}
+.ph-now-stat-num{font-size:18px;font-weight:800;color:var(--ink);letter-spacing:-0.4px;line-height:1}
+.ph-now-stat-num--coral{color:var(--coral)}
+.ph-now-stat-num--gold{color:var(--warning)}
+.ph-now-stat-label{font-size:10px;font-weight:600;color:var(--ink-3);letter-spacing:0.3px;text-transform:uppercase;margin-top:3px}
 .ph-now-cta{
-  font-size:12px;font-weight:700;color:var(--violet);
-  display:flex;align-items:center;gap:3px;
+  padding:12px 20px;display:flex;align-items:center;justify-content:space-between;
+  background:var(--white);border-top:1px solid var(--line-soft);
 }
-.ph-now-cta svg{width:13px;height:13px;stroke:var(--violet);stroke-width:2.2;fill:none}
+.ph-now-cta-text{font-size:13px;font-weight:700;color:var(--violet);display:flex;align-items:center;gap:5px}
+.ph-now-cta-text svg{width:14px;height:14px;stroke:var(--violet);stroke-width:2.2;fill:none}
 
 /* Day summary — single text line, no boxes */
 .ph-summary{
@@ -1212,43 +1224,35 @@ body{
 }
 .ph-section-link svg{width:13px;height:13px;stroke:var(--violet);stroke-width:2.2;fill:none}
 
-/* Schedule List — clean rows with left accent */
-.ph-schedule{display:flex;flex-direction:column;gap:4px}
+/* Schedule List — clean rows, no accent bars */
+.ph-schedule{display:flex;flex-direction:column;gap:8px}
 .ph-sched-item{
-  display:flex;align-items:center;gap:12px;padding:14px 16px 14px 18px;
+  display:flex;align-items:center;gap:14px;padding:14px 16px;
   background:var(--white);border-radius:var(--r-md);cursor:pointer;
-  transition:all 250ms var(--ease);position:relative;
-  border:none;
+  transition:all 200ms var(--ease);position:relative;
+  box-shadow:var(--shadow-1);
 }
-.ph-sched-item::before{
-  content:'';position:absolute;left:0;top:10px;bottom:10px;
-  width:3px;border-radius:0 2px 2px 0;background:transparent;
-}
-.ph-sched-item:hover{background:var(--surface-tint)}
-.ph-sched-item.done::before{background:var(--success)}
-.ph-sched-item.current{
-  background:var(--violet-soft);
-}
-.ph-sched-item.current::before{background:var(--violet)}
-.ph-sched-item.upcoming::before{background:var(--gold)}
+.ph-sched-item:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
+.ph-sched-item.current{background:var(--violet-soft)}
 .ph-sched-time{
   font-size:12px;font-weight:600;color:var(--ink-3);
   font-variant-numeric:tabular-nums;letter-spacing:0.1px;
-  min-width:68px;flex-shrink:0;
+  min-width:72px;flex-shrink:0;
 }
 .ph-sched-item.current .ph-sched-time{color:var(--violet);font-weight:700}
+.ph-sched-item.done .ph-sched-class{color:var(--ink-3);text-decoration:line-through;text-decoration-color:var(--ink-3);text-decoration-thickness:1px}
 .ph-sched-info{flex:1;min-width:0}
 .ph-sched-class{font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-0.2px}
 .ph-sched-room{
   font-size:12px;font-weight:500;color:var(--ink-3);margin-top:2px;
 }
 .ph-sched-badge{
-  font-size:10px;font-weight:700;padding:3px 9px;border-radius:var(--r-full);
+  font-size:10px;font-weight:700;padding:3px 10px;border-radius:var(--r-full);
   text-transform:uppercase;letter-spacing:0.5px;flex-shrink:0;
 }
-.ph-sched-badge--done{background:var(--success-soft);color:var(--success)}
+.ph-sched-badge--done{background:var(--surface-tint);color:var(--ink-3)}
 .ph-sched-badge--now{background:var(--violet);color:#fff}
-.ph-sched-badge--next{background:var(--gold-soft);color:var(--warning)}
+.ph-sched-badge--next{background:var(--surface-tint);color:var(--ink-2)}
 
 /* Task Pills — horizontal scroll, compact */
 .ph-tasks-scroll{
@@ -1278,7 +1282,7 @@ body{
 .ph-task-pill-num{font-size:18px;font-weight:800;color:var(--ink);letter-spacing:-0.4px;line-height:1}
 .ph-task-pill-label{font-size:11px;font-weight:600;color:var(--ink-3)}
 
-/* Quick Actions — clean grid */
+/* Quick Actions — clean grid, uniform icons */
 .ph-actions{
   display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
 }
@@ -1291,42 +1295,36 @@ body{
 }
 .ph-action:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
 .ph-action-icon{
-  width:42px;height:42px;border-radius:var(--r-sm);
+  width:40px;height:40px;border-radius:var(--r-full);
   display:flex;align-items:center;justify-content:center;
+  background:var(--surface-tint);
 }
-.ph-action-icon svg{width:20px;height:20px;stroke-width:2;fill:none}
-.ph-action-icon--att{background:var(--coral-soft)}
-.ph-action-icon--att svg{stroke:var(--coral)}
-.ph-action-icon--hw{background:var(--gold-soft)}
-.ph-action-icon--hw svg{stroke:var(--warning)}
-.ph-action-icon--mk{background:var(--mint-soft)}
-.ph-action-icon--mk svg{stroke:var(--mint)}
-.ph-action-icon--sy{background:var(--sky-soft)}
-.ph-action-icon--sy svg{stroke:var(--sky)}
+.ph-action-icon svg{width:19px;height:19px;stroke-width:2;fill:none;stroke:var(--ink-2)}
 .ph-action-label{font-size:11px;font-weight:600;color:var(--ink-2)}
 
-/* Class Card — clean, no accent bars, typography-driven */
+/* Class Card — row layout matching schedule items */
 .ph-class{
-  margin:0 var(--s-lg) 8px;padding:16px 18px;
+  margin:0 0 8px;padding:14px 16px;
   background:var(--white);border-radius:var(--r-md);cursor:pointer;
-  transition:all 250ms var(--ease);
+  transition:all 200ms var(--ease);
   box-shadow:var(--shadow-1);
+  display:flex;align-items:center;gap:14px;
 }
 .ph-class:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
-.ph-class-top{display:flex;align-items:center;justify-content:space-between}
-.ph-class-name{font-size:16px;font-weight:800;color:var(--ink);letter-spacing:-0.3px}
-.ph-class-students{font-size:12px;font-weight:600;color:var(--ink-3)}
-.ph-class-sub{font-size:13px;font-weight:500;color:var(--ink-2);margin-top:2px}
-.ph-class-bottom{display:flex;align-items:center;gap:8px;margin-top:12px}
-.ph-class-pill{
-  font-size:10px;font-weight:700;padding:4px 10px;border-radius:var(--r-full);
-  display:flex;align-items:center;gap:4px;
+.ph-class-id{
+  font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-0.2px;
+  min-width:64px;flex-shrink:0;
 }
-.ph-class-pill svg{width:11px;height:11px;stroke-width:2.2;fill:none}
-.ph-class-pill--att{background:var(--coral-soft);color:var(--coral)}
-.ph-class-pill--hw{background:var(--gold-soft);color:var(--warning)}
-.ph-class-pill--ok{background:var(--success-soft);color:var(--success)}
-.ph-class-pill--ok svg{stroke:var(--success)}
+.ph-class-info{flex:1;min-width:0}
+.ph-class-subject{font-size:14px;font-weight:700;color:var(--ink);letter-spacing:-0.2px}
+.ph-class-students{font-size:12px;font-weight:500;color:var(--ink-3);margin-top:2px}
+.ph-class-badge{
+  font-size:10px;font-weight:700;padding:3px 10px;border-radius:var(--r-full);
+  text-transform:uppercase;letter-spacing:0.5px;flex-shrink:0;
+}
+.ph-class-badge--att{background:var(--coral-soft);color:var(--coral)}
+.ph-class-badge--hw{background:var(--gold-soft);color:var(--warning)}
+.ph-class-badge--ok{background:var(--success-soft);color:var(--success)}
 
 /* Event Row — minimal, date block */
 .ph-event{
@@ -1446,26 +1444,33 @@ body{
         <div class="ph-greeting-sub">5 classes today · 7 pending tasks · 90 students</div>
       </div>
 
-      <!-- Now Teaching — minimal card -->
+      <!-- Now Teaching — premium card -->
       <div class="ph-now" data-nav="tab:Classes">
-        <div class="ph-now-row">
-          <div class="ph-now-left">
+        <div class="ph-now-top">
+          <div class="ph-now-header">
             <div class="ph-now-status">Now Teaching</div>
-            <div class="ph-now-class">8-A · Mathematics</div>
-            <div class="ph-now-meta">Room 312 · 28 present · 2 absent</div>
+            <div class="ph-now-time">9:00 <span class="muted">— 9:45</span></div>
           </div>
-          <div class="ph-now-right">
-            <div class="ph-now-time">9:00 — 9:45</div>
-            <div class="ph-now-cta">Take attendance <svg><use href="#icon-arrow-right"/></svg></div>
+          <div class="ph-now-class">8-A · Mathematics</div>
+          <div class="ph-now-room">Room 312</div>
+        </div>
+        <div class="ph-now-stats">
+          <div class="ph-now-stat">
+            <div class="ph-now-stat-num">28</div>
+            <div class="ph-now-stat-label">Present</div>
+          </div>
+          <div class="ph-now-stat">
+            <div class="ph-now-stat-num ph-now-stat-num--coral">2</div>
+            <div class="ph-now-stat-label">Absent</div>
+          </div>
+          <div class="ph-now-stat">
+            <div class="ph-now-stat-num ph-now-stat-num--gold">7</div>
+            <div class="ph-now-stat-label">Ungraded</div>
           </div>
         </div>
-      </div>
-
-      <!-- Day Summary — single line, no boxes -->
-      <div class="ph-summary">
-        <div class="ph-summary-item"><span class="ph-summary-num">5</span>classes</div>
-        <div class="ph-summary-item"><span class="ph-summary-num ph-summary-num--coral">7</span>pending</div>
-        <div class="ph-summary-item"><span class="ph-summary-num ph-summary-num--gold">12</span>ungraded</div>
+        <div class="ph-now-cta">
+          <div class="ph-now-cta-text">Take attendance <svg><use href="#icon-arrow-right"/></svg></div>
+        </div>
       </div>
 
       <!-- Today's Schedule — clean list rows -->
@@ -1518,42 +1523,6 @@ body{
         </div>
       </div>
 
-      <!-- Pending Tasks — horizontal scroll pills -->
-      <div class="ph-section">
-        <div class="ph-section-head">
-          <div class="ph-section-title">Pending Tasks</div>
-        </div>
-        <div class="ph-tasks-scroll">
-          <div class="ph-task-pill" data-nav="tab:Update">
-            <div class="ph-task-pill-icon ph-task-pill-icon--att">
-              <svg><use href="#icon-clipboard"/></svg>
-            </div>
-            <div class="ph-task-pill-info">
-              <div class="ph-task-pill-num">3</div>
-              <div class="ph-task-pill-label">Unmarked attendance</div>
-            </div>
-          </div>
-          <div class="ph-task-pill" data-nav="tab:Update">
-            <div class="ph-task-pill-icon ph-task-pill-icon--hw">
-              <svg><use href="#icon-edit"/></svg>
-            </div>
-            <div class="ph-task-pill-info">
-              <div class="ph-task-pill-num">12</div>
-              <div class="ph-task-pill-label">Ungraded homework</div>
-            </div>
-          </div>
-          <div class="ph-task-pill" data-nav="tab:Update">
-            <div class="ph-task-pill-icon ph-task-pill-icon--sy">
-              <svg><use href="#icon-book"/></svg>
-            </div>
-            <div class="ph-task-pill-info">
-              <div class="ph-task-pill-num">2</div>
-              <div class="ph-task-pill-label">Syllabus updates</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- Quick Actions — clean grid -->
       <div class="ph-section">
         <div class="ph-section-head">
@@ -1561,25 +1530,25 @@ body{
         </div>
         <div class="ph-actions">
           <div class="ph-action" data-nav="tab:Update">
-            <div class="ph-action-icon ph-action-icon--att">
+            <div class="ph-action-icon">
               <svg><use href="#icon-clipboard"/></svg>
             </div>
             <div class="ph-action-label">Attendance</div>
           </div>
           <div class="ph-action" data-nav="tab:Update">
-            <div class="ph-action-icon ph-action-icon--hw">
+            <div class="ph-action-icon">
               <svg><use href="#icon-edit"/></svg>
             </div>
             <div class="ph-action-label">Homework</div>
           </div>
           <div class="ph-action" data-nav="tab:Update">
-            <div class="ph-action-icon ph-action-icon--mk">
+            <div class="ph-action-icon">
               <svg><use href="#icon-award"/></svg>
             </div>
             <div class="ph-action-label">Marks</div>
           </div>
           <div class="ph-action" data-nav="tab:Update">
-            <div class="ph-action-icon ph-action-icon--sy">
+            <div class="ph-action-icon">
               <svg><use href="#icon-book"/></svg>
             </div>
             <div class="ph-action-label">Syllabus</div>
@@ -1596,37 +1565,28 @@ body{
           </div>
         </div>
         <div class="ph-class" data-nav="tab:Classes">
-          <div class="ph-class-top">
-            <div class="ph-class-name">Class 7-B</div>
-            <div class="ph-class-students">32 students</div>
+          <div class="ph-class-id">7-B</div>
+          <div class="ph-class-info">
+            <div class="ph-class-subject">Mathematics</div>
+            <div class="ph-class-students">32 students · 3 pending · 5 ungraded</div>
           </div>
-          <div class="ph-class-sub">Mathematics</div>
-          <div class="ph-class-bottom">
-            <span class="ph-class-pill ph-class-pill--att">3 pending</span>
-            <span class="ph-class-pill ph-class-pill--hw">5 ungraded</span>
-          </div>
+          <div class="ph-class-badge ph-class-badge--att">3 pending</div>
         </div>
         <div class="ph-class" data-nav="tab:Classes">
-          <div class="ph-class-top">
-            <div class="ph-class-name">Class 8-A</div>
-            <div class="ph-class-students">28 students</div>
+          <div class="ph-class-id">8-A</div>
+          <div class="ph-class-info">
+            <div class="ph-class-subject">Mathematics</div>
+            <div class="ph-class-students">28 students · 1 pending · 7 ungraded</div>
           </div>
-          <div class="ph-class-sub">Mathematics</div>
-          <div class="ph-class-bottom">
-            <span class="ph-class-pill ph-class-pill--att">1 pending</span>
-            <span class="ph-class-pill ph-class-pill--hw">7 ungraded</span>
-          </div>
+          <div class="ph-class-badge ph-class-badge--att">1 pending</div>
         </div>
         <div class="ph-class" data-nav="tab:Classes">
-          <div class="ph-class-top">
-            <div class="ph-class-name">Class 9-C</div>
-            <div class="ph-class-students">30 students</div>
+          <div class="ph-class-id">9-C</div>
+          <div class="ph-class-info">
+            <div class="ph-class-subject">Algebra</div>
+            <div class="ph-class-students">30 students · 2 pending</div>
           </div>
-          <div class="ph-class-sub">Algebra</div>
-          <div class="ph-class-bottom">
-            <span class="ph-class-pill ph-class-pill--att">2 pending</span>
-            <span class="ph-class-pill ph-class-pill--ok">All graded</span>
-          </div>
+          <div class="ph-class-badge ph-class-badge--ok">All graded</div>
         </div>
       </div>
 

@@ -310,7 +310,7 @@ fun AdminSignupScreen(
                             color = VColors.ink,
                         )
                         Text(
-                            text = "Welcome to Enroll+ — your school management portal is ready to set up.", // TODO: i18n
+                            text = "Welcome to Enroll+, your school management portal is ready to set up.", // TODO: i18n
                             style = VTypography.body,
                             color = VColors.ink2,
                             textAlign = TextAlign.Center,
