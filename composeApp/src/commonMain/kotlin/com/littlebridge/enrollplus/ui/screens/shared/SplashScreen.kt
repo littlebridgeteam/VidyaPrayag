@@ -52,17 +52,22 @@ fun SplashScreen(
     val accentAlpha = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
-        // Phase 1 — logo reveal (0–600ms)
+        // Phase 1 — logo reveal (0–600ms, parallel)
         launch { logoAlpha.animateTo(1f, tween(600, easing = VMotion.ease)) }
         launch { logoScale.animateTo(1f, tween(600, easing = VMotion.ease)) }
 
-        // Phase 2 — accent line draw (400ms delay, 800ms duration)
+        // Phase 2 — accent line draw (starts at 400ms, 800ms duration)
         delay(400)
         launch { accentWidth.animateTo(1f, tween(800, easing = VMotion.ease)) }
         launch { accentAlpha.animateTo(1f, tween(800, easing = VMotion.ease)) }
 
-        // Phase 3 — hold then hand off
+        // Wait for accent to fully complete (400ms start + 800ms anim = 1200ms)
+        delay(800)
+
+        // Phase 3 — hold (1200ms → 1600ms)
         delay(400)
+
+        // Total: 400 + 800 + 400 = 1600ms — all animations complete
         onTimeout()
     }
 
