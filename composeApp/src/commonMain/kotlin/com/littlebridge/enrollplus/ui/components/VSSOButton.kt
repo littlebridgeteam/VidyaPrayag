@@ -3,6 +3,8 @@ package com.littlebridge.enrollplus.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -15,8 +17,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -35,15 +40,24 @@ fun VSSOButton(
     enabled: Boolean = true,
     iconTint: Color? = VColors.ink,
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale = if (isPressed && enabled) 0.97f else 1f
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = 48.dp)
+            .scale(scale)
             .background(VColors.surfaceCard, VShapes.md)
             .border(1.5.dp, VColors.line, VShapes.md)
-            .clickable(enabled = enabled) { onClick() }
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                enabled = enabled,
+            ) { onClick() }
             .padding(horizontal = 16.dp, vertical = 13.dp),
     ) {
         Icon(

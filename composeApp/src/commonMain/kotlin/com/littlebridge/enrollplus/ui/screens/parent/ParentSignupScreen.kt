@@ -134,17 +134,22 @@ fun ParentSignupScreen(
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
             // Header
-            Column {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 Text(
                     text = "Parent Sign Up", // TODO: i18n
                     style = VTypography.h2,
                     color = VColors.ink,
+                    textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
                     text = "Create your account to get started", // TODO: i18n
                     style = VTypography.bodySmall,
                     color = VColors.ink2,
+                    textAlign = TextAlign.Center,
                 )
             }
 

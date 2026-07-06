@@ -37,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -206,22 +207,31 @@ private fun LandingSlideContent(
     val labelAlpha = remember { Animatable(0f) }
     val headlineAlpha = remember { Animatable(0f) }
     val subAlpha = remember { Animatable(0f) }
+    val labelOffset = remember { Animatable(24f) }
+    val headlineOffset = remember { Animatable(24f) }
+    val subOffset = remember { Animatable(24f) }
 
     LaunchedEffect(slideIndex) {
         labelAlpha.snapTo(0f)
         headlineAlpha.snapTo(0f)
         subAlpha.snapTo(0f)
+        labelOffset.snapTo(24f)
+        headlineOffset.snapTo(24f)
+        subOffset.snapTo(24f)
         kotlinx.coroutines.coroutineScope {
             launch {
                 labelAlpha.animateTo(1f, tween(VMotion.durSlower, easing = VMotion.ease))
+                labelOffset.animateTo(0f, tween(VMotion.durSlower, easing = VMotion.ease))
             }
             launch {
                 delay(120)
                 headlineAlpha.animateTo(1f, tween(VMotion.durSlower, easing = VMotion.ease))
+                headlineOffset.animateTo(0f, tween(VMotion.durSlower, easing = VMotion.ease))
             }
             launch {
                 delay(240)
                 subAlpha.animateTo(1f, tween(VMotion.durSlower, easing = VMotion.ease))
+                subOffset.animateTo(0f, tween(VMotion.durSlower, easing = VMotion.ease))
             }
         }
     }
@@ -272,6 +282,7 @@ private fun LandingSlideContent(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(7.dp),
                 modifier = Modifier
+                    .graphicsLayer(translationY = labelOffset.value)
                     .alpha(labelAlpha.value)
                     .padding(bottom = 16.dp),
             ) {
@@ -299,6 +310,7 @@ private fun LandingSlideContent(
                 },
                 style = VTypography.h1,
                 modifier = Modifier
+                    .graphicsLayer(translationY = headlineOffset.value)
                     .alpha(headlineAlpha.value)
                     .padding(bottom = 16.dp),
                 maxLines = 3,
@@ -309,7 +321,9 @@ private fun LandingSlideContent(
                 text = slide.subtitle,
                 style = VTypography.body,
                 color = VColors.ink2,
-                modifier = Modifier.alpha(subAlpha.value),
+                modifier = Modifier
+                    .graphicsLayer(translationY = subOffset.value)
+                    .alpha(subAlpha.value),
                 maxLines = 3,
             )
         }

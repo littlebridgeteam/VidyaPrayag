@@ -1,5 +1,7 @@
 package com.littlebridge.enrollplus.ui.components
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -23,7 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
@@ -48,14 +50,21 @@ fun VInput(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isFocused by interactionSource.collectIsFocusedAsState()
-    val borderColor = when {
-        isError -> VColors.error
-        isFocused -> VColors.violet
-        else -> VColors.line
-    }
-    val shadowModifier = if (isFocused && !isError) {
-        Modifier.shadow(0.dp, VShapes.md, ambientColor = VColors.violetSoft, spotColor = VColors.violetSoft)
-    } else Modifier
+
+    val borderColor by animateColorAsState(
+        targetValue = when {
+            isError -> VColors.error
+            isFocused -> VColors.violet
+            else -> VColors.line
+        },
+        animationSpec = tween(200),
+        label = "inputBorder",
+    )
+    val bgColor by animateColorAsState(
+        targetValue = if (isFocused && !isError) VColors.violetSoft else VColors.surfaceCard,
+        animationSpec = tween(200),
+        label = "inputBg",
+    )
 
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
@@ -68,8 +77,7 @@ fun VInput(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 48.dp)
-                .then(shadowModifier)
-                .background(VColors.surfaceCard, VShapes.md)
+                .background(bgColor, VShapes.md)
                 .border(1.5.dp, borderColor, VShapes.md),
         ) {
             Row(

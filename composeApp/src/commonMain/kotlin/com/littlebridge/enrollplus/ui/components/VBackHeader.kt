@@ -1,7 +1,11 @@
 package com.littlebridge.enrollplus.ui.components
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,6 +19,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -31,6 +37,15 @@ fun VBackHeader(
     modifier: Modifier = Modifier,
     trailing: (@Composable () -> Unit)? = null,
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val pressScale = if (isPressed) 0.92f else 1f
+    val bg by animateColorAsState(
+        targetValue = if (isPressed) VColors.surfaceTint else Color.Transparent,
+        animationSpec = tween(150),
+        label = "backBg",
+    )
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
@@ -41,8 +56,12 @@ fun VBackHeader(
         Box(
             modifier = Modifier
                 .size(40.dp)
-                .background(Color.Transparent, VShapes.full)
-                .clickable { onBack() },
+                .scale(pressScale)
+                .background(bg, VShapes.full)
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                ) { onBack() },
             contentAlignment = Alignment.Center,
         ) {
             Icon(

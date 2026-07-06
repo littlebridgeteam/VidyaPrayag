@@ -1,5 +1,7 @@
 package com.littlebridge.enrollplus.ui.components
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.ui.focus.FocusRequester
@@ -50,12 +52,20 @@ fun VOTPInput(
         repeat(length) { index ->
             val char = value.getOrNull(index)?.toString() ?: ""
             val isFilled = char.isNotEmpty()
-            val borderColor = when {
-                isError -> VColors.error
-                isFilled -> VColors.violet
-                else -> VColors.line
-            }
-            val bgColor = if (isFilled && !isError) VColors.violetSoft else VColors.surfaceCard
+            val borderColor by animateColorAsState(
+                targetValue = when {
+                    isError -> VColors.error
+                    isFilled -> VColors.violet
+                    else -> VColors.line
+                },
+                animationSpec = tween(200),
+                label = "otpBorder$index",
+            )
+            val bgColor by animateColorAsState(
+                targetValue = if (isFilled && !isError) VColors.violetSoft else VColors.surfaceCard,
+                animationSpec = tween(200),
+                label = "otpBg$index",
+            )
             Box(
                 modifier = Modifier
                     .size(48.dp, 56.dp)

@@ -78,7 +78,7 @@
 html,body{height:100%}
 body{
   font-family:var(--font);
-  background:#0F0D13;
+  background:#0A0910;
   display:flex;align-items:center;justify-content:center;
   overflow:hidden;-webkit-font-smoothing:antialiased;
   text-rendering:optimizeLegibility;
@@ -89,14 +89,14 @@ body{
 .shell{display:flex;height:100vh;width:100vw}
 
 .sidebar{
-  width:260px;background:#161419;padding:var(--s-lg) var(--s-md);
-  overflow-y:auto;flex-shrink:0;border-right:1px solid #232128;
+  width:260px;background:#131218;padding:var(--s-lg) var(--s-md);
+  overflow-y:auto;flex-shrink:0;border-right:1px solid #1E1D26;
   scrollbar-width:none;
 }
 .sidebar::-webkit-scrollbar{display:none}
 .sidebar .brand{display:flex;align-items:center;gap:10px;margin-bottom:var(--s-xl);padding:0 var(--s-sm)}
 .sidebar .brand-name{font-size:15px;font-weight:var(--fw-eb);color:#fff;letter-spacing:-0.5px}
-.sidebar .brand-name .plus{color:#A99BDB}
+.sidebar .brand-name .plus{color:#6C5CE0}
 .sidebar .nav-group{
   font-size:10px;color:#56545F;text-transform:uppercase;
   letter-spacing:1.6px;margin:var(--s-lg) var(--s-sm) var(--s-xs);font-weight:var(--fw-b);
@@ -109,27 +109,27 @@ body{
   text-align:left;cursor:pointer;width:100%;
   transition:all var(--dur) var(--ease);
 }
-.sidebar .nav-item:hover{background:#1F1D26;color:#C0BDC8}
-.sidebar .nav-item.active{background:var(--primary);color:#fff;box-shadow:var(--shadow-primary)}
+.sidebar .nav-item:hover{background:#1C1B24;color:#C0BDC8}
+.sidebar .nav-item.active{background:var(--violet);color:#fff}
 .sidebar .nav-dot{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:0.35;flex-shrink:0}
 .sidebar .nav-item.active .nav-dot{opacity:1}
 
 /* ═══ PHONE ═══ */
 .phone-wrap{
   flex:1;display:flex;align-items:center;justify-content:center;
-  background:radial-gradient(ellipse at center,#161419 0%,#0F0D13 100%);
+  background:radial-gradient(ellipse at center,#131218 0%,#0A0910 100%);
   overflow:hidden;
 }
 .phone{
-  width:390px;height:844px;background:#1C1B1F;border-radius:50px;padding:7px;
-  box-shadow:0 0 0 1.5px rgba(255,255,255,0.06),0 0 0 7px rgba(0,0,0,0.35),0 50px 120px rgba(0,0,0,0.55),0 20px 50px rgba(0,0,0,0.3);
+  width:390px;height:844px;background:#000;border-radius:50px;padding:8px;
+  box-shadow:0 0 0 1.5px rgba(255,255,255,0.04),0 0 0 6px rgba(0,0,0,0.3),0 40px 100px rgba(0,0,0,0.6),0 15px 40px rgba(0,0,0,0.3);
   flex-shrink:0;position:relative;
   transform:scale(var(--phone-scale,1));
   transform-origin:center center;
 }
 .screen-area{
   width:100%;height:100%;border-radius:42px;overflow:hidden;position:relative;
-  background:var(--surface);
+  background:var(--cream);
   display:flex;flex-direction:column;
 }
 .island{
@@ -139,6 +139,7 @@ body{
 .home-bar{
   position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
   width:134px;height:5px;border-radius:3px;z-index:100;
+  background:rgba(26,22,20,0.25);
 }
 .statusbar{
   display:flex;justify-content:space-between;align-items:center;
@@ -1125,228 +1126,254 @@ body{
 .back-header-title{font-size:16px;font-weight:var(--fw-eb);color:var(--ink);letter-spacing:-0.5px}
 
 /* ═══════════════════════════════════════════════════════════════
-   PREMIUM HOME v3 — Dark hero, glass stats, editorial layout
+   PREMIUM HOME v4 — Warm cream, editorial, Notion-meets-Linear
    ═══════════════════════════════════════════════════════════════ */
 
-/* Hero Card — dark gradient with greeting + live status */
-.ph-hero{
-  margin:0 var(--s-lg) var(--s-lg);padding:28px 24px;
-  border-radius:var(--r-xl);position:relative;overflow:hidden;
-  background:linear-gradient(145deg,#1D1B20 0%,#2B2931 60%,#322E3C 100%);
+/* Greeting — editorial, bottom-anchored like auth landing */
+.ph-greeting{
+  padding:var(--s-lg) var(--s-lg) var(--s-md);
+}
+.ph-greeting-label{
+  font-size:13px;font-weight:700;letter-spacing:0.3px;
+  display:flex;align-items:center;gap:7px;margin-bottom:var(--s-sm);
+}
+.ph-greeting-label::before{
+  content:'';width:5px;height:5px;border-radius:50%;background:var(--violet);
+}
+.ph-greeting-label--now::before{background:var(--mint)}
+.ph-greeting-label--now{color:var(--success)}
+.ph-greeting-label--default{color:var(--violet)}
+.ph-greeting-text{
+  font-size:28px;font-weight:800;color:var(--ink);
+  letter-spacing:-1px;line-height:1.05;
+}
+.ph-greeting-text .light{font-weight:400;color:var(--ink-2)}
+.ph-greeting-sub{
+  font-size:14px;font-weight:500;color:var(--ink-2);
+  margin-top:6px;line-height:1.5;
+}
+
+/* Featured Card — rich "Now Teaching" hero card */
+.ph-featured{
+  margin:0 var(--s-lg) var(--s-lg);padding:0;
+  background:var(--white);border-radius:var(--r-lg);
+  overflow:hidden;box-shadow:var(--shadow-1);
+  cursor:pointer;transition:box-shadow 250ms var(--ease);
+}
+.ph-featured:hover{box-shadow:var(--shadow-2)}
+.ph-featured-top{
+  padding:18px 20px 16px;position:relative;
+  background:linear-gradient(135deg,var(--violet) 0%,#7B5FE8 100%);
   color:#fff;
 }
-.ph-hero::before{
-  content:'';position:absolute;top:-40px;right:-30px;
-  width:160px;height:160px;border-radius:50%;
-  background:radial-gradient(circle,rgba(167,139,250,0.25) 0%,transparent 70%);
+.ph-featured-top::after{
+  content:'';position:absolute;top:-20px;right:-10px;
+  width:90px;height:90px;border-radius:50%;
+  background:rgba(255,255,255,0.08);
 }
-.ph-hero::after{
-  content:'';position:absolute;bottom:-60px;left:-20px;
-  width:120px;height:120px;border-radius:50%;
-  background:radial-gradient(circle,rgba(103,80,164,0.15) 0%,transparent 70%);
+.ph-featured-label{
+  font-size:11px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;
+  color:rgba(255,255,255,0.7);display:flex;align-items:center;gap:6px;
 }
-.ph-hero-date{
-  font-size:11px;font-weight:600;color:rgba(255,255,255,0.5);
-  letter-spacing:1.5px;text-transform:uppercase;position:relative;z-index:1;
+.ph-featured-label::before{
+  content:'';width:6px;height:6px;border-radius:50%;background:#4ADE80;
+  box-shadow:0 0 6px rgba(74,222,128,0.5);
 }
-.ph-hero-greeting{
-  font-size:26px;font-weight:800;color:#fff;letter-spacing:-0.8px;
-  margin-top:6px;position:relative;z-index:1;
+.ph-featured-class{
+  font-size:24px;font-weight:800;letter-spacing:-0.6px;margin-top:8px;
 }
-.ph-hero-greeting span{color:#A78BFA}
-.ph-hero-sub{
-  font-size:13px;font-weight:500;color:rgba(255,255,255,0.6);
-  margin-top:8px;position:relative;z-index:1;line-height:1.4;
+.ph-featured-sub{
+  font-size:13px;font-weight:500;color:rgba(255,255,255,0.75);margin-top:2px;
 }
+.ph-featured-meta{
+  display:flex;gap:20px;margin-top:14px;
+}
+.ph-featured-meta-item{
+  display:flex;flex-direction:column;gap:1px;
+}
+.ph-featured-meta-num{font-size:18px;font-weight:800;letter-spacing:-0.4px;line-height:1}
+.ph-featured-meta-label{font-size:10px;font-weight:600;color:rgba(255,255,255,0.6);letter-spacing:0.3px;text-transform:uppercase;margin-top:2px}
+.ph-featured-bottom{
+  padding:12px 20px;display:flex;align-items:center;justify-content:space-between;
+  background:var(--white);
+}
+.ph-featured-time{
+  font-size:13px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;
+}
+.ph-featured-time .muted{color:var(--ink-3);font-weight:500}
+.ph-featured-cta{
+  font-size:12px;font-weight:700;color:var(--violet);
+  display:flex;align-items:center;gap:4px;
+}
+.ph-featured-cta svg{width:14px;height:14px;stroke:var(--violet);stroke-width:2.2;fill:none}
 
-/* Live Status Pill inside hero */
-.ph-hero-status{
-  display:inline-flex;align-items:center;gap:6px;
-  margin-top:16px;padding:6px 14px;border-radius:9999px;
-  background:rgba(255,255,255,0.08);backdrop-filter:blur(8px);
-  position:relative;z-index:1;
+/* Inline stat pills — compact, below featured card */
+.ph-stat-pills{
+  display:flex;gap:8px;padding:0 var(--s-lg) var(--s-lg);
 }
-.ph-hero-status-dot{
-  width:7px;height:7px;border-radius:50%;background:#4ADE80;
-  box-shadow:0 0 8px rgba(74,222,128,0.6);
-  animation:ph-pulse 2s ease-in-out infinite;
+.ph-stat-pill{
+  flex:1;padding:10px 12px;border-radius:var(--r-sm);
+  background:var(--surface-tint);display:flex;flex-direction:column;gap:1px;
 }
-@keyframes ph-pulse{
-  0%,100%{opacity:1}50%{opacity:0.5}
-}
-.ph-hero-status-text{font-size:12px;font-weight:600;color:rgba(255,255,255,0.85)}
+.ph-stat-pill-num{font-size:16px;font-weight:800;color:var(--ink);letter-spacing:-0.4px;line-height:1}
+.ph-stat-pill-num--coral{color:var(--coral)}
+.ph-stat-pill-num--gold{color:var(--warning)}
+.ph-stat-pill-label{font-size:9px;font-weight:600;color:var(--ink-3);letter-spacing:0.3px;text-transform:uppercase}
 
-/* Glass Stat Row — floating over hero bottom */
-.ph-stats{
-  display:flex;gap:1px;margin:0 var(--s-lg);margin-top:-20px;
-  position:relative;z-index:2;border-radius:var(--r-md);overflow:hidden;
-  background:var(--outline-soft);
-}
-.ph-stat{
-  flex:1;padding:14px 12px;background:var(--surface-cl-lowest);
-  display:flex;flex-direction:column;align-items:center;gap:2px;
-}
-.ph-stat-num{font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-0.5px}
-.ph-stat-num--accent{color:var(--primary)}
-.ph-stat-num--warn{color:var(--warning)}
-.ph-stat-num--err{color:var(--error)}
-.ph-stat-label{font-size:10px;font-weight:600;color:var(--ink-3);letter-spacing:0.3px;text-transform:uppercase}
-
-/* Section — Premium */
+/* Section */
 .ph-section{margin-top:var(--s-xl);padding:0 var(--s-lg)}
 .ph-section-head{
   display:flex;align-items:baseline;justify-content:space-between;
   margin-bottom:var(--s-sm);
 }
 .ph-section-title{
-  font-size:13px;font-weight:700;color:var(--ink);
-  letter-spacing:0.3px;text-transform:uppercase;
+  font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-0.3px;
 }
 .ph-section-link{
-  font-size:12px;font-weight:600;color:var(--primary);cursor:pointer;
+  font-size:13px;font-weight:600;color:var(--violet);cursor:pointer;
+  display:flex;align-items:center;gap:3px;
 }
+.ph-section-link svg{width:13px;height:13px;stroke:var(--violet);stroke-width:2.2;fill:none}
 
-/* Timeline — vertical connector with premium cards */
-.ph-timeline{position:relative;padding-left:28px}
-.ph-timeline::before{
-  content:'';position:absolute;left:7px;top:8px;bottom:8px;
-  width:2px;background:var(--outline-soft);border-radius:1px;
+/* Schedule List — clean rows with left accent */
+.ph-schedule{display:flex;flex-direction:column;gap:4px}
+.ph-sched-item{
+  display:flex;align-items:center;gap:12px;padding:14px 16px 14px 18px;
+  background:var(--white);border-radius:var(--r-md);cursor:pointer;
+  transition:all 250ms var(--ease);position:relative;
+  border:none;
 }
-.ph-tl-item{
-  position:relative;margin-bottom:10px;padding:14px 16px;
-  background:var(--surface-cl-lowest);border-radius:var(--r-md);
-  cursor:pointer;transition:all 300ms var(--ease);
+.ph-sched-item::before{
+  content:'';position:absolute;left:0;top:10px;bottom:10px;
+  width:3px;border-radius:0 2px 2px 0;background:transparent;
 }
-.ph-tl-item:hover{background:var(--surface-cl-low);box-shadow:var(--shadow-1)}
-.ph-tl-item::before{
-  content:'';position:absolute;left:-25px;top:18px;
-  width:12px;height:12px;border-radius:50%;
-  background:var(--surface-cl-lowest);border:2.5px solid var(--outline);
+.ph-sched-item:hover{background:var(--surface-tint)}
+.ph-sched-item.done::before{background:var(--success)}
+.ph-sched-item.current{
+  background:var(--violet-soft);
 }
-.ph-tl-item.done::before{border-color:var(--success);background:var(--success)}
-.ph-tl-item.current::before{
-  border-color:var(--primary);background:var(--primary);
-  box-shadow:0 0 0 4px rgba(103,80,164,0.15);
+.ph-sched-item.current::before{background:var(--violet)}
+.ph-sched-item.upcoming::before{background:var(--gold)}
+.ph-sched-time{
+  font-size:12px;font-weight:600;color:var(--ink-3);
+  font-variant-numeric:tabular-nums;letter-spacing:0.1px;
+  min-width:68px;flex-shrink:0;
 }
-.ph-tl-item.current{background:var(--primary-container)}
-.ph-tl-top{display:flex;align-items:center;justify-content:space-between}
-.ph-tl-time{font-size:11px;font-weight:600;color:var(--ink-3);letter-spacing:0.3px}
-.ph-tl-badge{
-  font-size:10px;font-weight:700;padding:2px 8px;border-radius:9999px;
-  text-transform:uppercase;letter-spacing:0.5px;
+.ph-sched-item.current .ph-sched-time{color:var(--violet);font-weight:700}
+.ph-sched-info{flex:1;min-width:0}
+.ph-sched-class{font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-0.2px}
+.ph-sched-room{
+  font-size:12px;font-weight:500;color:var(--ink-3);margin-top:2px;
 }
-.ph-tl-badge--done{background:var(--success-cont);color:var(--success)}
-.ph-tl-badge--now{background:var(--primary);color:#fff}
-.ph-tl-badge--next{background:var(--warning-cont);color:var(--warning)}
-.ph-tl-class{font-size:16px;font-weight:800;color:var(--ink);letter-spacing:-0.3px;margin-top:4px}
-.ph-tl-sub{font-size:13px;font-weight:500;color:var(--ink-2);margin-top:1px}
-.ph-tl-room{
-  font-size:11px;font-weight:600;color:var(--ink-3);
-  margin-top:8px;display:flex;align-items:center;gap:4px;
+.ph-sched-badge{
+  font-size:10px;font-weight:700;padding:3px 9px;border-radius:var(--r-full);
+  text-transform:uppercase;letter-spacing:0.5px;flex-shrink:0;
 }
-.ph-tl-room svg{width:12px;height:12px;stroke:var(--ink-3);stroke-width:2;fill:none}
+.ph-sched-badge--done{background:var(--success-soft);color:var(--success)}
+.ph-sched-badge--now{background:var(--violet);color:#fff}
+.ph-sched-badge--next{background:var(--gold-soft);color:var(--warning)}
 
-/* Task Card — premium with progress ring feel */
-.ph-tasks{
-  margin:0 var(--s-lg);padding:20px;
-  background:var(--surface-cl-lowest);border-radius:var(--r-lg);
+/* Task Pills — horizontal scroll, compact */
+.ph-tasks-scroll{
+  display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;
+  padding:0 var(--s-lg);margin:0 calc(-1 * var(--s-lg));
 }
-.ph-tasks-head{
-  display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;
+.ph-tasks-scroll::-webkit-scrollbar{display:none}
+.ph-task-pill{
+  display:flex;align-items:center;gap:12px;padding:14px 18px;
+  background:var(--white);border-radius:var(--r-md);cursor:pointer;flex-shrink:0;
+  transition:all 250ms var(--ease);min-width:170px;
+  box-shadow:var(--shadow-1);
 }
-.ph-tasks-title{font-size:15px;font-weight:700;color:var(--ink)}
-.ph-tasks-count{
-  font-size:22px;font-weight:800;color:var(--error);letter-spacing:-0.5px;
+.ph-task-pill:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
+.ph-task-pill-icon{
+  width:38px;height:38px;border-radius:var(--r-sm);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
 }
-.ph-task-row{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:10px 0;border-top:1px solid var(--outline-soft);
-  cursor:pointer;transition:background 300ms var(--ease);
-}
-.ph-task-row:hover{background:var(--surface-cl);border-radius:var(--r-sm);margin:0 -8px;padding:10px 8px}
-.ph-task-left{display:flex;align-items:center;gap:10px}
-.ph-task-icon{
-  width:32px;height:32px;border-radius:10px;
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
-}
-.ph-task-icon svg{width:16px;height:16px;stroke-width:2;fill:none}
-.ph-task-icon--att{background:var(--error-cont)}
-.ph-task-icon--att svg{stroke:var(--error)}
-.ph-task-icon--hw{background:var(--warning-cont)}
-.ph-task-icon--hw svg{stroke:var(--warning)}
-.ph-task-icon--sy{background:var(--info-cont)}
-.ph-task-icon--sy svg{stroke:var(--info)}
-.ph-task-label{font-size:14px;font-weight:600;color:var(--ink)}
-.ph-task-count{font-size:13px;font-weight:700;color:var(--ink-2)}
+.ph-task-pill-icon svg{width:18px;height:18px;stroke-width:2;fill:none}
+.ph-task-pill-icon--att{background:var(--coral-soft)}
+.ph-task-pill-icon--att svg{stroke:var(--coral)}
+.ph-task-pill-icon--hw{background:var(--gold-soft)}
+.ph-task-pill-icon--hw svg{stroke:var(--warning)}
+.ph-task-pill-icon--sy{background:var(--sky-soft)}
+.ph-task-pill-icon--sy svg{stroke:var(--sky)}
+.ph-task-pill-info{display:flex;flex-direction:column;gap:1px}
+.ph-task-pill-num{font-size:18px;font-weight:800;color:var(--ink);letter-spacing:-0.4px;line-height:1}
+.ph-task-pill-label{font-size:11px;font-weight:600;color:var(--ink-3)}
 
-/* Quick Actions — premium floating tiles */
+/* Quick Actions — clean grid */
 .ph-actions{
-  display:grid;grid-template-columns:repeat(4,1fr);gap:10px;
-  padding:0 var(--s-lg);
+  display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
 }
 .ph-action{
   display:flex;flex-direction:column;align-items:center;gap:10px;
   padding:16px 8px;border-radius:var(--r-md);
-  background:var(--surface-cl-lowest);cursor:pointer;
-  transition:all 300ms var(--ease);border:none;
+  background:var(--white);cursor:pointer;
+  transition:all 250ms var(--ease);border:none;
+  box-shadow:var(--shadow-1);
 }
-.ph-action:hover{background:var(--surface-cl-low);box-shadow:var(--shadow-1)}
+.ph-action:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
 .ph-action-icon{
-  width:44px;height:44px;border-radius:14px;
+  width:42px;height:42px;border-radius:var(--r-sm);
   display:flex;align-items:center;justify-content:center;
 }
-.ph-action-icon svg{width:22px;height:22px;stroke-width:2;fill:none}
-.ph-action-icon--att{background:var(--error-cont)}
-.ph-action-icon--att svg{stroke:var(--error)}
-.ph-action-icon--hw{background:var(--warning-cont)}
+.ph-action-icon svg{width:20px;height:20px;stroke-width:2;fill:none}
+.ph-action-icon--att{background:var(--coral-soft)}
+.ph-action-icon--att svg{stroke:var(--coral)}
+.ph-action-icon--hw{background:var(--gold-soft)}
 .ph-action-icon--hw svg{stroke:var(--warning)}
-.ph-action-icon--mk{background:var(--success-cont)}
-.ph-action-icon--mk svg{stroke:var(--success)}
-.ph-action-icon--sy{background:var(--info-cont)}
-.ph-action-icon--sy svg{stroke:var(--info)}
-.ph-action-label{font-size:11px;font-weight:600;color:var(--ink)}
+.ph-action-icon--mk{background:var(--mint-soft)}
+.ph-action-icon--mk svg{stroke:var(--mint)}
+.ph-action-icon--sy{background:var(--sky-soft)}
+.ph-action-icon--sy svg{stroke:var(--sky)}
+.ph-action-label{font-size:11px;font-weight:600;color:var(--ink-2)}
 
-/* Class Row — premium compact */
+/* Class Card — sophisticated with color accent bar */
 .ph-class{
-  margin:0 var(--s-lg) 8px;padding:16px;
-  background:var(--surface-cl-lowest);border-radius:var(--r-md);
-  cursor:pointer;transition:all 300ms var(--ease);
-  display:flex;align-items:center;justify-content:space-between;
+  margin:0 var(--s-lg) 8px;padding:16px 18px;
+  background:var(--white);border-radius:var(--r-md);cursor:pointer;
+  transition:all 250ms var(--ease);position:relative;overflow:hidden;
+  box-shadow:var(--shadow-1);
 }
-.ph-class:hover{background:var(--surface-cl-low);box-shadow:var(--shadow-1)}
-.ph-class-left{display:flex;align-items:center;gap:14px}
-.ph-class-avatar{
-  width:44px;height:44px;border-radius:12px;
-  background:var(--primary-container);display:flex;align-items:center;justify-content:center;
-  font-size:15px;font-weight:800;color:var(--primary-on-cont);
+.ph-class:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
+.ph-class::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;
+  width:4px;border-radius:0 3px 3px 0;
 }
-.ph-class-name{font-size:15px;font-weight:700;color:var(--ink)}
-.ph-class-sub{font-size:12px;font-weight:500;color:var(--ink-3);margin-top:1px}
-.ph-class-right{display:flex;align-items:center;gap:8px}
+.ph-class--violet::before{background:var(--violet)}
+.ph-class--coral::before{background:var(--coral)}
+.ph-class--sky::before{background:var(--sky)}
+.ph-class-top{display:flex;align-items:center;justify-content:space-between}
+.ph-class-name{font-size:16px;font-weight:800;color:var(--ink);letter-spacing:-0.3px}
+.ph-class-students{font-size:12px;font-weight:600;color:var(--ink-3)}
+.ph-class-sub{font-size:13px;font-weight:500;color:var(--ink-2);margin-top:2px}
+.ph-class-bottom{display:flex;align-items:center;gap:8px;margin-top:12px}
 .ph-class-pill{
-  font-size:11px;font-weight:700;padding:4px 10px;border-radius:9999px;
+  font-size:10px;font-weight:700;padding:4px 10px;border-radius:var(--r-full);
+  display:flex;align-items:center;gap:4px;
 }
-.ph-class-pill--att{background:var(--error-cont);color:var(--error)}
-.ph-class-pill--hw{background:var(--warning-cont);color:var(--warning)}
-.ph-class-pill--ok{background:var(--success-cont);color:var(--success)}
+.ph-class-pill svg{width:11px;height:11px;stroke-width:2.2;fill:none}
+.ph-class-pill--att{background:var(--coral-soft);color:var(--coral)}
+.ph-class-pill--hw{background:var(--gold-soft);color:var(--warning)}
+.ph-class-pill--ok{background:var(--success-soft);color:var(--success)}
+.ph-class-pill--ok svg{stroke:var(--success)}
 
-/* Event Row — premium minimal */
+/* Event Row — minimal, date block */
 .ph-event{
-  display:flex;align-items:center;gap:14px;padding:12px 16px;
-  background:var(--surface-cl-lowest);border-radius:var(--r-md);
-  margin:0 var(--s-lg) 8px;cursor:pointer;
-  transition:all 300ms var(--ease);
+  display:flex;align-items:center;gap:14px;padding:14px 16px;
+  background:var(--white);border-radius:var(--r-md);margin-bottom:8px;cursor:pointer;
+  transition:all 250ms var(--ease);box-shadow:var(--shadow-1);
 }
-.ph-event:hover{background:var(--surface-cl-low);box-shadow:var(--shadow-1)}
+.ph-event:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
 .ph-event-date{
-  width:48px;height:48px;border-radius:12px;flex-shrink:0;
-  background:var(--surface-cl-high);
+  width:46px;height:46px;border-radius:var(--r-sm);flex-shrink:0;
+  background:var(--surface-tint);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
 }
-.ph-event-day{font-size:18px;font-weight:800;color:var(--ink);letter-spacing:-0.5px}
-.ph-event-mon{font-size:9px;font-weight:700;color:var(--ink-3);letter-spacing:1px;text-transform:uppercase}
-.ph-event-info{flex:1}
-.ph-event-title{font-size:14px;font-weight:600;color:var(--ink)}
+.ph-event-day{font-size:18px;font-weight:800;color:var(--ink);letter-spacing:-0.5px;line-height:1}
+.ph-event-mon{font-size:8px;font-weight:700;color:var(--ink-3);letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+.ph-event-info{flex:1;min-width:0}
+.ph-event-title{font-size:14px;font-weight:700;color:var(--ink);letter-spacing:-0.2px}
 .ph-event-time{font-size:12px;font-weight:500;color:var(--ink-3);margin-top:2px}
 
 </style>
@@ -1442,127 +1469,120 @@ body{
   <div class="tab-content active" id="tab-home">
     <div class="scroll content-pb">
 
-      <!-- Dark Hero Card -->
-      <div style="padding-top:var(--s-md)"></div>
-      <div class="ph-hero">
-        <div class="ph-hero-date" id="greeting-date">MON · 15 JUL 2026</div>
-        <div class="ph-hero-greeting">Good morning, <span>Priya</span></div>
-        <div class="ph-hero-sub">You have 5 classes today and 7 pending tasks</div>
-        <div class="ph-hero-status">
-          <div class="ph-hero-status-dot"></div>
-          <div class="ph-hero-status-text">Currently teaching 8-A · Mathematics</div>
+      <!-- Greeting — editorial, matches auth landing style -->
+      <div class="ph-greeting">
+        <div class="ph-greeting-label ph-greeting-label--now">In class now</div>
+        <div class="ph-greeting-text">Good morning,<br><span class="light">Priya</span></div>
+        <div class="ph-greeting-sub">5 classes today · 7 pending tasks · 90 students</div>
+      </div>
+
+      <!-- Snapshot Card — clean white, divided metrics -->
+      <div class="ph-snapshot">
+        <div class="ph-snap-item">
+          <div class="ph-snap-num">5</div>
+          <div class="ph-snap-label">Classes</div>
+        </div>
+        <div class="ph-snap-item">
+          <div class="ph-snap-num ph-snap-num--coral">7</div>
+          <div class="ph-snap-label">Pending</div>
+        </div>
+        <div class="ph-snap-item">
+          <div class="ph-snap-num ph-snap-num--violet">90</div>
+          <div class="ph-snap-label">Students</div>
+        </div>
+        <div class="ph-snap-item">
+          <div class="ph-snap-num ph-snap-num--gold">12</div>
+          <div class="ph-snap-label">Ungraded</div>
         </div>
       </div>
 
-      <!-- Glass Stat Row -->
-      <div class="ph-stats">
-        <div class="ph-stat">
-          <div class="ph-stat-num">5</div>
-          <div class="ph-stat-label">Classes</div>
-        </div>
-        <div class="ph-stat">
-          <div class="ph-stat-num ph-stat-num--err">7</div>
-          <div class="ph-stat-label">Pending</div>
-        </div>
-        <div class="ph-stat">
-          <div class="ph-stat-num ph-stat-num--accent">90</div>
-          <div class="ph-stat-label">Students</div>
-        </div>
-        <div class="ph-stat">
-          <div class="ph-stat-num ph-stat-num--warn">12</div>
-          <div class="ph-stat-label">Ungraded</div>
-        </div>
-      </div>
-
-      <!-- Today's Schedule — Vertical Timeline -->
+      <!-- Today's Schedule — clean list rows -->
       <div class="ph-section">
         <div class="ph-section-head">
           <div class="ph-section-title">Today's Schedule</div>
-          <div class="ph-section-link" data-nav="tab:Timetable">View week</div>
+          <div class="ph-section-link" data-nav="tab:Timetable">View week
+            <svg><use href="#icon-arrow-right"/></svg>
+          </div>
         </div>
-        <div class="ph-timeline">
-          <div class="ph-tl-item done">
-            <div class="ph-tl-top">
-              <div class="ph-tl-time">8:00 — 8:45</div>
-              <div class="ph-tl-badge ph-tl-badge--done">Done</div>
+        <div class="ph-schedule">
+          <div class="ph-sched-item">
+            <div class="ph-sched-time">8:00 — 8:45</div>
+            <div class="ph-sched-info">
+              <div class="ph-sched-class">7-B · Mathematics</div>
+              <div class="ph-sched-room"><svg><use href="#icon-pin"/></svg>Room 204</div>
             </div>
-            <div class="ph-tl-class">7-B · Mathematics</div>
-            <div class="ph-tl-sub">Room 204</div>
+            <div class="ph-sched-badge ph-sched-badge--done">Done</div>
           </div>
-          <div class="ph-tl-item current">
-            <div class="ph-tl-top">
-              <div class="ph-tl-time">9:00 — 9:45</div>
-              <div class="ph-tl-badge ph-tl-badge--now">Now</div>
+          <div class="ph-sched-item current">
+            <div class="ph-sched-time">9:00 — 9:45</div>
+            <div class="ph-sched-info">
+              <div class="ph-sched-class">8-A · Mathematics</div>
+              <div class="ph-sched-room"><svg><use href="#icon-pin"/></svg>Room 312</div>
             </div>
-            <div class="ph-tl-class">8-A · Mathematics</div>
-            <div class="ph-tl-sub">Room 312</div>
+            <div class="ph-sched-badge ph-sched-badge--now">Now</div>
           </div>
-          <div class="ph-tl-item">
-            <div class="ph-tl-top">
-              <div class="ph-tl-time">10:00 — 10:45</div>
-              <div class="ph-tl-badge ph-tl-badge--next">Next</div>
+          <div class="ph-sched-item">
+            <div class="ph-sched-time">10:00 — 10:45</div>
+            <div class="ph-sched-info">
+              <div class="ph-sched-class">9-C · Algebra</div>
+              <div class="ph-sched-room"><svg><use href="#icon-pin"/></svg>Room 108</div>
             </div>
-            <div class="ph-tl-class">9-C · Algebra</div>
-            <div class="ph-tl-sub">Room 108</div>
+            <div class="ph-sched-badge ph-sched-badge--next">Next</div>
           </div>
-          <div class="ph-tl-item">
-            <div class="ph-tl-top">
-              <div class="ph-tl-time">11:15 — 12:00</div>
+          <div class="ph-sched-item">
+            <div class="ph-sched-time">11:15 — 12:00</div>
+            <div class="ph-sched-info">
+              <div class="ph-sched-class">7-B · Mathematics</div>
+              <div class="ph-sched-room"><svg><use href="#icon-pin"/></svg>Room 204</div>
             </div>
-            <div class="ph-tl-class">7-B · Mathematics</div>
-            <div class="ph-tl-sub">Room 204</div>
           </div>
-          <div class="ph-tl-item">
-            <div class="ph-tl-top">
-              <div class="ph-tl-time">1:00 — 1:45</div>
+          <div class="ph-sched-item">
+            <div class="ph-sched-time">1:00 — 1:45</div>
+            <div class="ph-sched-info">
+              <div class="ph-sched-class">8-A · Mathematics</div>
+              <div class="ph-sched-room"><svg><use href="#icon-pin"/></svg>Room 312</div>
             </div>
-            <div class="ph-tl-class">8-A · Mathematics</div>
-            <div class="ph-tl-sub">Room 312</div>
           </div>
         </div>
       </div>
 
-      <!-- Pending Tasks -->
+      <!-- Pending Tasks — horizontal scroll pills -->
       <div class="ph-section">
         <div class="ph-section-head">
           <div class="ph-section-title">Pending Tasks</div>
         </div>
-        <div class="ph-tasks">
-          <div class="ph-tasks-head">
-            <div class="ph-tasks-title">Outstanding</div>
-            <div class="ph-tasks-count">7</div>
-          </div>
-          <div class="ph-task-row" data-nav="tab:Update">
-            <div class="ph-task-left">
-              <div class="ph-task-icon ph-task-icon--att">
-                <svg><use href="#icon-clipboard"/></svg>
-              </div>
-              <div class="ph-task-label">Unmarked attendance</div>
+        <div class="ph-tasks-scroll">
+          <div class="ph-task-pill" data-nav="tab:Update">
+            <div class="ph-task-pill-icon ph-task-pill-icon--att">
+              <svg><use href="#icon-clipboard"/></svg>
             </div>
-            <div class="ph-task-count">3 classes</div>
-          </div>
-          <div class="ph-task-row" data-nav="tab:Update">
-            <div class="ph-task-left">
-              <div class="ph-task-icon ph-task-icon--hw">
-                <svg><use href="#icon-edit"/></svg>
-              </div>
-              <div class="ph-task-label">Ungraded homework</div>
+            <div class="ph-task-pill-info">
+              <div class="ph-task-pill-num">3</div>
+              <div class="ph-task-pill-label">Unmarked attendance</div>
             </div>
-            <div class="ph-task-count">12 submissions</div>
           </div>
-          <div class="ph-task-row" data-nav="tab:Update">
-            <div class="ph-task-left">
-              <div class="ph-task-icon ph-task-icon--sy">
-                <svg><use href="#icon-book"/></svg>
-              </div>
-              <div class="ph-task-label">Syllabus updates</div>
+          <div class="ph-task-pill" data-nav="tab:Update">
+            <div class="ph-task-pill-icon ph-task-pill-icon--hw">
+              <svg><use href="#icon-edit"/></svg>
             </div>
-            <div class="ph-task-count">2 units</div>
+            <div class="ph-task-pill-info">
+              <div class="ph-task-pill-num">12</div>
+              <div class="ph-task-pill-label">Ungraded homework</div>
+            </div>
+          </div>
+          <div class="ph-task-pill" data-nav="tab:Update">
+            <div class="ph-task-pill-icon ph-task-pill-icon--sy">
+              <svg><use href="#icon-book"/></svg>
+            </div>
+            <div class="ph-task-pill-info">
+              <div class="ph-task-pill-num">2</div>
+              <div class="ph-task-pill-label">Syllabus updates</div>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Quick Actions -->
+      <!-- Quick Actions — clean grid -->
       <div class="ph-section">
         <div class="ph-section-head">
           <div class="ph-section-title">Quick Actions</div>
@@ -1595,11 +1615,13 @@ body{
         </div>
       </div>
 
-      <!-- My Classes -->
+      <!-- My Classes — compact rows with avatar -->
       <div class="ph-section">
         <div class="ph-section-head">
           <div class="ph-section-title">My Classes</div>
-          <div class="ph-section-link" data-nav="tab:Classes">View all</div>
+          <div class="ph-section-link" data-nav="tab:Classes">View all
+            <svg><use href="#icon-arrow-right"/></svg>
+          </div>
         </div>
         <div class="ph-class" data-nav="tab:Classes">
           <div class="ph-class-left">
@@ -1642,7 +1664,7 @@ body{
         </div>
       </div>
 
-      <!-- Upcoming Events -->
+      <!-- Upcoming Events — minimal date blocks -->
       <div class="ph-section">
         <div class="ph-section-head">
           <div class="ph-section-title">Upcoming Events</div>

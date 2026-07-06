@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -49,6 +50,7 @@ fun VButton(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale = if (isPressed && enabled) 0.98f else 1f
+    val arrowOffset = if (isPressed && enabled) 3f else 0f
 
     val (bgColor, fgColor, borderColor) = when (variant) {
         VButtonVariant.Primary -> Triple(VColors.violet, VColors.white, null)
@@ -60,10 +62,10 @@ fun VButton(
 
     val shadowModifier = if (variant == VButtonVariant.Primary && enabled) {
         Modifier.shadow(
-            elevation = 4.dp,
+            elevation = 3.dp,
             shape = VShapes.md,
-            ambientColor = VColors.violet.copy(alpha = 0.35f),
-            spotColor = VColors.violet.copy(alpha = 0.35f),
+            ambientColor = VColors.violet.copy(alpha = 0.25f),
+            spotColor = VColors.violet.copy(alpha = 0.25f),
         )
     } else Modifier
 
@@ -111,7 +113,9 @@ fun VButton(
                         imageVector = icon,
                         contentDescription = null,
                         tint = fgColor,
-                        modifier = Modifier.size(18.dp),
+                        modifier = Modifier
+                            .size(18.dp)
+                            .graphicsLayer(translationX = arrowOffset),
                     )
                 }
             }

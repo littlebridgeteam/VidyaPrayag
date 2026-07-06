@@ -113,17 +113,22 @@ fun AdminSignupScreen(
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
             // Header
-            Column {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 Text(
                     text = "Register Your School", // TODO: i18n
                     style = VTypography.h2,
                     color = VColors.ink,
+                    textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
                     text = "Set up your management portal in minutes", // TODO: i18n
                     style = VTypography.bodySmall,
                     color = VColors.ink2,
+                    textAlign = TextAlign.Center,
                 )
             }
 

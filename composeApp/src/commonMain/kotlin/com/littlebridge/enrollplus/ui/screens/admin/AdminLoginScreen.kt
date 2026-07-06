@@ -94,17 +94,22 @@ fun AdminLoginScreen(
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
             // Header
-            Column {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 Text(
                     text = "Staff Sign In", // TODO: i18n
                     style = VTypography.h2,
                     color = VColors.ink,
+                    textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
                     text = "Access your school management console", // TODO: i18n
                     style = VTypography.bodySmall,
                     color = VColors.ink2,
+                    textAlign = TextAlign.Center,
                 )
             }
 
