@@ -28,9 +28,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import com.littlebridge.enrollplus.ui.v2.components.VInput
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedTextField
 
 @Composable
 actual fun rememberBarcodeScanner(
@@ -49,16 +48,12 @@ actual fun BarcodeScannerView(
     onClose: () -> Unit,
     modifier: Modifier,
 ) {
-    val c = VTheme.colors
     var manualBarcode by remember { mutableStateOf("") }
 
-    // Fallback: manual text input (camera integration requires ML Kit + CameraX
-    // dependencies which are not yet wired into the build.gradle.kts).
-    // The live camera preview will be enabled when those deps are added.
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(c.background)
+            .background(Color(0xFFF5F5F5))
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -67,34 +62,28 @@ actual fun BarcodeScannerView(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Scan Barcode", style = VTheme.type.h2.colored(c.ink))
+            Text("Scan Barcode", fontWeight = FontWeight.Bold)
             TextButton(onClick = onClose) { Text("Close") }
         }
 
-        Text(
-            "Enter the barcode manually below. Camera scanning will be available in a future update.",
-            style = VTheme.type.caption.colored(c.ink2),
-        )
+        Text("Enter the barcode manually below.")
 
-        VInput(
+        OutlinedTextField(
             value = manualBarcode,
             onValueChange = { manualBarcode = it },
-            label = "Barcode",
+            label = { Text("Barcode") },
             modifier = Modifier.fillMaxWidth(),
         )
 
-        com.littlebridge.enrollplus.ui.v2.components.VButton(
-            text = "Submit",
+        Button(
             onClick = {
                 if (manualBarcode.isNotBlank()) {
                     onScanned(manualBarcode)
                     manualBarcode = ""
                 }
             },
-            full = true,
-            tone = com.littlebridge.enrollplus.ui.v2.components.VButtonTone.Lavender,
-            size = com.littlebridge.enrollplus.ui.v2.components.VButtonSize.Md,
-        )
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text("Submit") }
     }
 }
 

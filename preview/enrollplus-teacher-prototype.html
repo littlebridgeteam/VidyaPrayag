@@ -1,0 +1,3138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enroll+ — Teacher Portal Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   DESIGN TOKENS — Same as auth prototype. Warm cream, premium.
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --cream:           #FBF8F4;
+  --cream-deep:      #F5F0E8;
+  --white:           #FFFFFF;
+  --surface:         #FBF8F4;
+  --surface-card:    #FFFFFF;
+  --surface-elevated:#FFFFFF;
+  --surface-tint:    #F8F4EF;
+  --surface-warm:    #FFF6EE;
+  --ink:             #1A1614;
+  --ink-2:           #5C544E;
+  --ink-3:           #8A8078;
+  --line:            #E8E0D6;
+  --line-soft:       #F0EAE0;
+  --violet:          #5B41D5;
+  --violet-hover:    #4A30C4;
+  --violet-soft:     #EEE8FB;
+  --violet-ink:      #16006E;
+  --coral:           #F82B60;
+  --coral-soft:      #FFE4EC;
+  --gold:            #FCB400;
+  --gold-soft:       #FFF4D1;
+  --sky:             #18BFFF;
+  --sky-soft:        #E0F6FF;
+  --mint:            #2DCE89;
+  --mint-soft:       #DCF5E8;
+  --success:         #2D7A4A;
+  --success-soft:    #D4EDDB;
+  --error:           #BA1A1A;
+  --error-soft:      #FFDAD6;
+  --r-sm: 10px; --r-md: 14px; --r-lg: 18px; --r-xl: 24px; --r-2xl: 32px; --r-full: 9999px;
+  --s-xs: 4px; --s-sm: 8px; --s-md: 16px; --s-lg: 24px; --s-xl: 32px; --s-2xl: 48px;
+  --font: 'Plus Jakarta Sans', -apple-system, system-ui, sans-serif;
+  --fw-r: 400; --fw-m: 500; --fw-s: 600; --fw-b: 700; --fw-eb: 800;
+  --dur: 250ms; --ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:var(--font);
+  background:#0A0910;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;-webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  -webkit-tap-highlight-color:transparent;
+}
+
+/* ═══ SHELL ═══ */
+.shell{display:flex;height:100vh;width:100vw}
+
+.sidebar{
+  width:260px;background:#131218;padding:var(--s-lg) var(--s-md);
+  overflow-y:auto;flex-shrink:0;border-right:1px solid #1E1D26;
+}
+.sidebar .brand{display:flex;align-items:center;gap:10px;margin-bottom:var(--s-xl);padding:0 var(--s-sm)}
+.sidebar .brand-name{font-size:15px;font-weight:var(--fw-eb);color:#fff;letter-spacing:-0.4px}
+.sidebar .brand-name .plus{color:#6C5CE0}
+.sidebar .nav-group{
+  font-size:10px;color:#5A5764;text-transform:uppercase;
+  letter-spacing:1.4px;margin:var(--s-lg) var(--s-sm) var(--s-xs);font-weight:var(--fw-b);
+}
+.sidebar .nav-item{
+  display:flex;align-items:center;gap:10px;
+  background:transparent;border:none;color:#8A8794;
+  padding:11px var(--s-sm);border-radius:var(--r-sm);
+  font-size:13px;font-family:var(--font);font-weight:var(--fw-m);
+  text-align:left;cursor:pointer;width:100%;
+  transition:all 150ms var(--ease);
+}
+.sidebar .nav-item:hover{background:#1C1B24;color:#C0BDC8}
+.sidebar .nav-item.active{background:var(--violet);color:#fff}
+.sidebar .nav-dot{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:0.4;flex-shrink:0}
+.sidebar .nav-item.active .nav-dot{opacity:1}
+
+/* ═══ PHONE ═══ */
+.phone-wrap{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at center,#131218 0%,#0A0910 100%);
+  overflow:hidden;
+}
+.phone{
+  width:390px;height:844px;background:#000;border-radius:50px;padding:8px;
+  box-shadow:0 0 0 1.5px rgba(255,255,255,0.04),0 0 0 6px rgba(0,0,0,0.3),0 40px 100px rgba(0,0,0,0.6),0 15px 40px rgba(0,0,0,0.3);
+  flex-shrink:0;position:relative;
+}
+.screen-area{
+  width:100%;height:100%;border-radius:42px;overflow:hidden;position:relative;
+  background:var(--cream);
+  display:flex;flex-direction:column;
+}
+.island{
+  position:absolute;top:10px;left:50%;transform:translateX(-50%);
+  width:124px;height:34px;background:#000;border-radius:20px;z-index:100;
+}
+.home-bar{
+  position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
+  width:134px;height:5px;border-radius:3px;z-index:100;
+}
+.statusbar{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:12px 32px 4px;font-size:14px;font-weight:var(--fw-s);
+  flex-shrink:0;z-index:10;
+}
+.statusbar .icons{font-size:11px;letter-spacing:-0.5px}
+
+/* ═══ Screen System ═══ */
+.scroll{
+  flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.scroll::-webkit-scrollbar{display:none}
+
+/* ═══ Header ═══ */
+.portal-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:var(--s-sm) var(--s-lg) var(--s-md);
+  flex-shrink:0;
+}
+.portal-header-left{display:flex;flex-direction:column;gap:2px}
+.portal-header-greeting{font-size:12px;font-weight:var(--fw-m);color:var(--ink-3)}
+.portal-header-name{font-size:18px;font-weight:var(--fw-eb);color:var(--ink);letter-spacing:-0.5px}
+.portal-header-right{display:flex;align-items:center;gap:var(--s-sm)}
+.header-icon-btn{
+  width:40px;height:40px;border-radius:var(--r-full);
+  background:var(--surface-card);border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;position:relative;transition:all var(--dur) var(--ease);
+}
+.header-icon-btn:hover{border-color:var(--violet);color:var(--violet)}
+.header-icon-btn svg{width:18px;height:18px;stroke:var(--ink-2);stroke-width:2;fill:none}
+.header-badge{
+  position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;
+  border-radius:var(--r-full);background:var(--coral);color:#fff;
+  font-size:10px;font-weight:var(--fw-b);display:flex;align-items:center;
+  justify-content:center;padding:0 5px;border:2px solid var(--cream);
+}
+
+/* ═══ Bottom Nav ═══ */
+.bottom-nav{
+  display:flex;align-items:center;justify-content:space-around;
+  padding:var(--s-sm) var(--s-xs) var(--s-md);
+  background:var(--surface-card);border-top:1px solid var(--line);
+  flex-shrink:0;
+}
+.nav-item{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:var(--s-xs) var(--s-sm);border:none;background:none;
+  cursor:pointer;font-family:var(--font);position:relative;
+  transition:all var(--dur) var(--ease);
+}
+.nav-item-icon{
+  width:26px;height:26px;display:flex;align-items:center;justify-content:center;
+  transition:all var(--dur) var(--ease);
+}
+.nav-item-icon svg{width:22px;height:22px;stroke-width:2;fill:none;stroke:currentColor}
+.nav-item-label{
+  font-size:10px;font-weight:var(--fw-s);color:var(--ink-3);
+  transition:color var(--dur) var(--ease);
+}
+.nav-item.active .nav-item-icon{
+  background:var(--violet-soft);border-radius:var(--r-full);
+  color:var(--violet);
+}
+.nav-item.active .nav-item-label{color:var(--violet);font-weight:var(--fw-b)}
+.nav-item .nav-badge{
+  position:absolute;top:0;right:8px;min-width:16px;height:16px;
+  border-radius:var(--r-full);background:var(--coral);color:#fff;
+  font-size:9px;font-weight:var(--fw-b);display:flex;align-items:center;
+  justify-content:center;padding:0 4px;
+}
+
+/* ═══ Cards ═══ */
+.card{
+  background:var(--surface-card);border-radius:var(--r-lg);
+  padding:var(--s-md);border:1px solid var(--line-soft);
+}
+.card-elevated{box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+.card-tint{background:var(--surface-tint);border-color:var(--line-soft)}
+.card-warm{background:var(--surface-warm);border-color:transparent}
+
+/* ═══ Badges ═══ */
+.badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 8px;border-radius:var(--r-full);
+  font-size:11px;font-weight:var(--fw-s);
+}
+.badge--violet{background:var(--violet-soft);color:var(--violet)}
+.badge--coral{background:var(--coral-soft);color:var(--coral)}
+.badge--gold{background:var(--gold-soft);color:var(--gold)}
+.badge--mint{background:var(--mint-soft);color:var(--mint)}
+.badge--neutral{background:var(--line-soft);color:var(--ink-2)}
+.badge--error{background:var(--error-soft);color:var(--error)}
+
+/* ═══ Buttons ═══ */
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:14px var(--s-lg);border-radius:var(--r-md);border:none;
+  font-family:var(--font);font-size:15px;font-weight:var(--fw-s);
+  cursor:pointer;transition:all var(--dur) var(--ease);width:100%;
+}
+.btn-primary{background:var(--violet);color:#fff}
+.btn-primary:hover{background:var(--violet-hover)}
+.btn-outline{background:transparent;border:1.5px solid var(--line);color:var(--ink)}
+.btn-outline:hover{border-color:var(--violet);color:var(--violet)}
+.btn-ghost{background:transparent;color:var(--ink-2)}
+.btn-ghost:hover{background:var(--surface-tint)}
+.btn-sm{padding:10px var(--s-md);font-size:13px}
+.btn-arrow{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none}
+
+/* ═══ Section Header ═══ */
+.section-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 var(--s-lg);margin-bottom:var(--s-sm);
+}
+.section-title{font-size:15px;font-weight:var(--fw-b);color:var(--ink)}
+.section-link{font-size:13px;font-weight:var(--fw-m);color:var(--violet);cursor:pointer}
+
+/* ═══ Greeting Bar ═══ */
+.greeting-bar{
+  padding:var(--s-sm) var(--s-lg) var(--s-md);
+}
+.greeting-date{font-size:12px;font-weight:var(--fw-m);color:var(--ink-3)}
+.greeting-text{font-size:24px;font-weight:var(--fw-eb);color:var(--ink);letter-spacing:-0.8px;margin-top:2px}
+
+/* ═══ Period Timeline Cards (Home) ═══ */
+.timeline-scroll{
+  display:flex;gap:var(--s-sm);overflow-x:auto;
+  padding:0 var(--s-lg) var(--s-md);scrollbar-width:none;
+}
+.timeline-scroll::-webkit-scrollbar{display:none}
+.period-card{
+  flex-shrink:0;width:140px;padding:var(--s-md);
+  border-radius:var(--r-md);background:var(--surface-card);
+  border:1px solid var(--line-soft);cursor:pointer;
+  transition:all var(--dur) var(--ease);position:relative;
+}
+.period-card:hover{border-color:var(--violet)}
+.period-card.current{
+  border-color:var(--violet);background:var(--violet-soft);
+}
+.period-card.done{opacity:0.55}
+.period-time{font-size:11px;font-weight:var(--fw-m);color:var(--ink-3)}
+.period-class{font-size:16px;font-weight:var(--fw-eb);color:var(--ink);margin-top:4px;letter-spacing:-0.4px}
+.period-subject{font-size:13px;font-weight:var(--fw-m);color:var(--ink-2);margin-top:2px}
+.period-room{font-size:11px;font-weight:var(--fw-m);color:var(--ink-3);margin-top:8px}
+.period-status{
+  position:absolute;top:var(--s-sm);right:var(--s-sm);
+}
+
+/* ═══ Obligations Card ═══ */
+.obligations-card{
+  margin:0 var(--s-lg) var(--s-md);padding:var(--s-md);
+  background:var(--surface-card);border-radius:var(--r-lg);
+  border:1px solid var(--line-soft);
+}
+.obligations-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:var(--s-sm);
+}
+.obligations-title{font-size:15px;font-weight:var(--fw-b);color:var(--ink)}
+.obligations-count{
+  display:flex;align-items:center;gap:6px;
+}
+.obligations-count-num{
+  font-size:22px;font-weight:var(--fw-eb);color:var(--coral);letter-spacing:-0.5px;
+}
+.obligations-count-label{font-size:12px;font-weight:var(--fw-m);color:var(--ink-3)}
+.obligation-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 0;border-top:1px solid var(--line-soft);cursor:pointer;
+  transition:background var(--dur) var(--ease);
+}
+.obligation-row:hover{background:var(--surface-tint);border-radius:var(--r-sm);margin:0 -8px;padding:10px 8px}
+.obligation-row-left{display:flex;align-items:center;gap:10px}
+.obligation-dot{width:8px;height:8px;border-radius:50%}
+.obligation-dot--attendance{background:var(--coral)}
+.obligation-dot--homework{background:var(--gold)}
+.obligation-dot--syllabus{background:var(--sky)}
+.obligation-label{font-size:14px;font-weight:var(--fw-m);color:var(--ink)}
+.obligation-count{font-size:13px;font-weight:var(--fw-b);color:var(--ink-2)}
+.obligations-allclear{
+  text-align:center;padding:var(--s-md);color:var(--success);
+  font-size:14px;font-weight:var(--fw-s);
+}
+
+/* ═══ Quick Actions ═══ */
+.quick-actions{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s-sm);
+  padding:0 var(--s-lg) var(--s-md);
+}
+.quick-action{
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  padding:var(--s-md) var(--s-xs);border-radius:var(--r-md);
+  background:var(--surface-card);border:1px solid var(--line-soft);
+  cursor:pointer;transition:all var(--dur) var(--ease);
+}
+.quick-action:hover{border-color:var(--violet);transform:translateY(-2px)}
+.quick-action-icon{
+  width:40px;height:40px;border-radius:var(--r-md);
+  display:flex;align-items:center;justify-content:center;
+}
+.quick-action-icon svg{width:20px;height:20px;stroke-width:2;fill:none}
+.quick-action-icon--attendance{background:var(--coral-soft)}
+.quick-action-icon--attendance svg{stroke:var(--coral)}
+.quick-action-icon--homework{background:var(--gold-soft)}
+.quick-action-icon--homework svg{stroke:var(--gold)}
+.quick-action-icon--marks{background:var(--mint-soft)}
+.quick-action-icon--marks svg{stroke:var(--mint)}
+.quick-action-icon--syllabus{background:var(--sky-soft)}
+.quick-action-icon--syllabus svg{stroke:var(--sky)}
+.quick-action-label{font-size:11px;font-weight:var(--fw-s);color:var(--ink);text-align:center}
+
+/* ═══ Class Cards (Home & Classes tab) ═══ */
+.class-card{
+  margin:0 var(--s-lg) var(--s-sm);padding:var(--s-md);
+  background:var(--surface-card);border-radius:var(--r-lg);
+  border:1px solid var(--line-soft);cursor:pointer;
+  transition:all var(--dur) var(--ease);
+}
+.class-card:hover{border-color:var(--violet)}
+.class-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--s-sm)}
+.class-card-name{font-size:16px;font-weight:var(--fw-eb);color:var(--ink);letter-spacing:-0.3px}
+.class-card-subject{font-size:13px;font-weight:var(--fw-m);color:var(--ink-2);margin-top:2px}
+.class-card-meta{display:flex;align-items:center;gap:var(--s-sm);margin-top:var(--s-sm)}
+.class-meta-item{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:var(--fw-m);color:var(--ink-3)}
+.class-meta-item svg{width:14px;height:14px;stroke:var(--ink-3);stroke-width:2;fill:none}
+
+/* ═══ Update Tab — Scope Selector ═══ */
+.scope-selector{
+  padding:var(--s-lg);
+}
+.scope-title{font-size:14px;font-weight:var(--fw-m);color:var(--ink-3);margin-bottom:var(--s-sm)}
+.scope-list{display:flex;flex-direction:column;gap:var(--s-sm)}
+.scope-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:var(--s-md);border-radius:var(--r-md);
+  background:var(--surface-card);border:1px solid var(--line-soft);
+  cursor:pointer;transition:all var(--dur) var(--ease);
+}
+.scope-item:hover{border-color:var(--violet)}
+.scope-item-left{display:flex;align-items:center;gap:var(--s-sm)}
+.scope-item-icon{
+  width:44px;height:44px;border-radius:var(--r-md);
+  background:var(--violet-soft);display:flex;align-items:center;justify-content:center;
+  font-size:16px;font-weight:var(--fw-eb);color:var(--violet);
+}
+.scope-item-info{display:flex;flex-direction:column}
+.scope-item-name{font-size:15px;font-weight:var(--fw-b);color:var(--ink)}
+.scope-item-sub{font-size:12px;font-weight:var(--fw-m);color:var(--ink-3)}
+.scope-item-chevron{color:var(--ink-3);font-size:20px}
+
+/* ═══ Update Tab — Tool Segments ═══ */
+.tool-segments{
+  display:flex;gap:0;padding:0 var(--s-lg) var(--s-md);
+  border-bottom:1px solid var(--line-soft);
+}
+.tool-seg{
+  flex:1;padding:10px var(--s-xs);border:none;background:none;
+  font-family:var(--font);font-size:12px;font-weight:var(--fw-s);
+  color:var(--ink-3);cursor:pointer;position:relative;
+  transition:color var(--dur) var(--ease);
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+}
+.tool-seg svg{width:18px;height:18px;stroke-width:2;fill:none;stroke:currentColor}
+.tool-seg.active{color:var(--violet)}
+.tool-seg.active::after{
+  content:'';position:absolute;bottom:-1px;left:50%;transform:translateX(-50%);
+  width:24px;height:2px;border-radius:1px;background:var(--violet);
+}
+
+/* ═══ Attendance Tool ═══ */
+.attendance-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:var(--s-md) var(--s-lg) var(--s-sm);
+}
+.attendance-class-name{font-size:16px;font-weight:var(--fw-eb);color:var(--ink)}
+.attendance-date{font-size:12px;font-weight:var(--fw-m);color:var(--ink-3)}
+.attendance-quick{
+  display:flex;gap:var(--s-sm);padding:0 var(--s-lg) var(--s-sm);
+}
+.attendance-quick-btn{
+  padding:8px var(--s-md);border-radius:var(--r-full);
+  font-size:12px;font-weight:var(--fw-s);cursor:pointer;
+  border:1px solid var(--line);background:var(--surface-card);color:var(--ink-2);
+  transition:all var(--dur) var(--ease);
+}
+.attendance-quick-btn:hover{border-color:var(--violet);color:var(--violet)}
+.student-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px var(--s-lg);border-bottom:1px solid var(--line-soft);
+  transition:background var(--dur) var(--ease);
+}
+.student-row:hover{background:var(--surface-tint)}
+.student-row-left{display:flex;align-items:center;gap:var(--s-sm)}
+.student-avatar{
+  width:36px;height:36px;border-radius:var(--r-full);
+  background:var(--violet-soft);display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:var(--fw-b);color:var(--violet);
+}
+.student-info{display:flex;flex-direction:column}
+.student-name{font-size:14px;font-weight:var(--fw-s);color:var(--ink)}
+.student-roll{font-size:11px;font-weight:var(--fw-m);color:var(--ink-3)}
+.attendance-toggle{display:flex;gap:4px}
+.att-toggle-btn{
+  width:32px;height:32px;border-radius:var(--r-sm);
+  border:1.5px solid var(--line);background:var(--surface-card);
+  font-size:11px;font-weight:var(--fw-b);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all var(--dur) var(--ease);color:var(--ink-3);
+}
+.att-toggle-btn.present.active{background:var(--success-soft);border-color:var(--success);color:var(--success)}
+.att-toggle-btn.absent.active{background:var(--error-soft);border-color:var(--error);color:var(--error)}
+.att-toggle-btn.late.active{background:var(--gold-soft);border-color:var(--gold);color:var(--gold)}
+.attendance-summary{
+  display:flex;gap:var(--s-sm);padding:var(--s-sm) var(--s-lg);
+}
+.summary-chip{
+  flex:1;text-align:center;padding:8px;border-radius:var(--r-sm);
+  font-size:12px;font-weight:var(--fw-s);
+}
+.summary-chip.present{background:var(--success-soft);color:var(--success)}
+.summary-chip.absent{background:var(--error-soft);color:var(--error)}
+.summary-chip.late{background:var(--gold-soft);color:var(--gold)}
+
+/* ═══ Timetable ═══ */
+.day-selector{
+  display:flex;gap:0;padding:0 var(--s-lg) var(--s-sm);overflow-x:auto;
+  scrollbar-width:none;
+}
+.day-selector::-webkit-scrollbar{display:none}
+.day-btn{
+  flex-shrink:0;padding:8px 14px;border-radius:var(--r-full);
+  border:1px solid var(--line);background:var(--surface-card);
+  font-size:12px;font-weight:var(--fw-s);color:var(--ink-2);
+  cursor:pointer;transition:all var(--dur) var(--ease);
+  margin-right:6px;
+}
+.day-btn.active{background:var(--violet);color:#fff;border-color:var(--violet)}
+.day-btn.today{border-color:var(--violet);color:var(--violet)}
+.day-btn.active.today{background:var(--violet);color:#fff}
+.timetable-period{
+  margin:0 var(--s-lg) var(--s-sm);padding:var(--s-md);
+  background:var(--surface-card);border-radius:var(--r-md);
+  border:1px solid var(--line-soft);cursor:pointer;
+  transition:all var(--dur) var(--ease);
+  display:flex;align-items:center;gap:var(--s-md);
+}
+.timetable-period:hover{border-color:var(--violet)}
+.timetable-period-num{
+  width:36px;height:36px;border-radius:var(--r-sm);
+  background:var(--surface-tint);display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:var(--fw-eb);color:var(--ink-2);flex-shrink:0;
+}
+.timetable-period-info{flex:1}
+.timetable-period-class{font-size:14px;font-weight:var(--fw-s);color:var(--ink)}
+.timetable-period-meta{font-size:12px;font-weight:var(--fw-m);color:var(--ink-3);margin-top:2px}
+.timetable-period-time{font-size:12px;font-weight:var(--fw-m);color:var(--ink-2)}
+
+/* ═══ Profile ═══ */
+.profile-identity{
+  margin:var(--s-md) var(--s-lg) var(--s-md);padding:var(--s-lg);
+  background:var(--surface-card);border-radius:var(--r-lg);
+  border:1px solid var(--line-soft);text-align:center;
+}
+.profile-avatar{
+  width:72px;height:72px;border-radius:var(--r-full);
+  background:var(--violet-soft);margin:0 auto var(--s-sm);
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;font-weight:var(--fw-eb);color:var(--violet);
+}
+.profile-name{font-size:18px;font-weight:var(--fw-eb);color:var(--ink);letter-spacing:-0.4px}
+.profile-role{font-size:13px;font-weight:var(--fw-m);color:var(--ink-3);margin-top:2px}
+.profile-meta{display:flex;justify-content:center;gap:var(--s-md);margin-top:var(--s-sm)}
+.profile-meta-item{font-size:12px;font-weight:var(--fw-m);color:var(--ink-2)}
+.profile-section{
+  margin:0 var(--s-lg) var(--s-md);
+}
+.profile-section-title{font-size:13px;font-weight:var(--fw-b);color:var(--ink-3);margin-bottom:var(--s-sm);text-transform:uppercase;letter-spacing:0.5px}
+.profile-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 0;border-bottom:1px solid var(--line-soft);cursor:pointer;
+  transition:background var(--dur) var(--ease);
+}
+.profile-row:hover{background:var(--surface-tint);border-radius:var(--r-sm);margin:0 -8px;padding:12px 8px}
+.profile-row:last-child{border-bottom:none}
+.profile-row-left{display:flex;align-items:center;gap:10px}
+.profile-row-icon{
+  width:32px;height:32px;border-radius:var(--r-sm);
+  display:flex;align-items:center;justify-content:center;
+}
+.profile-row-icon svg{width:16px;height:16px;stroke-width:2;fill:none}
+.profile-row-icon--leave{background:var(--gold-soft)}
+.profile-row-icon--leave svg{stroke:var(--gold)}
+.profile-row-icon--password{background:var(--sky-soft)}
+.profile-row-icon--password svg{stroke:var(--sky)}
+.profile-row-icon--theme{background:var(--violet-soft)}
+.profile-row-icon--theme svg{stroke:var(--violet)}
+.profile-row-icon--logout{background:var(--error-soft)}
+.profile-row-icon--logout svg{stroke:var(--error)}
+.profile-row-label{font-size:14px;font-weight:var(--fw-s);color:var(--ink)}
+.profile-row-value{font-size:13px;font-weight:var(--fw-m);color:var(--ink-3)}
+
+/* ═══ Empty State ═══ */
+.empty-state{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:var(--s-2xl) var(--s-lg);text-align:center;
+}
+.empty-state-icon{
+  width:56px;height:56px;border-radius:var(--r-full);
+  background:var(--surface-tint);display:flex;align-items:center;justify-content:center;
+  margin-bottom:var(--s-md);
+}
+.empty-state-icon svg{width:24px;height:24px;stroke:var(--ink-3);stroke-width:2;fill:none}
+.empty-state-title{font-size:16px;font-weight:var(--fw-b);color:var(--ink)}
+.empty-state-body{font-size:14px;font-weight:var(--fw-m);color:var(--ink-3);margin-top:4px;max-width:260px;line-height:1.5}
+
+/* ═══ Events Mini ═══ */
+.events-mini{
+  padding:0 var(--s-lg) var(--s-md);
+}
+.event-mini-card{
+  display:flex;align-items:center;gap:var(--s-sm);
+  padding:var(--s-sm);border-radius:var(--r-md);
+  background:var(--surface-card);border:1px solid var(--line-soft);
+  margin-bottom:var(--s-sm);
+}
+.event-mini-date{
+  width:44px;height:44px;border-radius:var(--r-sm);
+  background:var(--surface-warm);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;flex-shrink:0;
+}
+.event-mini-day{font-size:16px;font-weight:var(--fw-eb);color:var(--ink)}
+.event-mini-month{font-size:10px;font-weight:var(--fw-m);color:var(--ink-3)}
+.event-mini-info{flex:1}
+.event-mini-title{font-size:13px;font-weight:var(--fw-s);color:var(--ink)}
+.event-mini-time{font-size:11px;font-weight:var(--fw-m);color:var(--ink-3);margin-top:2px}
+
+/* ═══ Content padding bottom ═══ */
+.content-pb{padding-bottom:140px}
+
+/* ═══ Tab content ═══ */
+.tab-content{display:none;flex:1;flex-direction:column;overflow:hidden}
+.tab-content.active{display:flex}
+
+/* ═══ Sub-tabs (Timetable) ═══ */
+.sub-tabs{
+  display:flex;gap:0;padding:0 var(--s-lg);border-bottom:1px solid var(--line-soft);
+}
+.sub-tab{
+  padding:10px var(--s-md);border:none;background:none;
+  font-family:var(--font);font-size:13px;font-weight:var(--fw-s);
+  color:var(--ink-3);cursor:pointer;position:relative;
+  transition:color var(--dur) var(--ease);
+}
+.sub-tab.active{color:var(--ink);font-weight:var(--fw-b)}
+.sub-tab.active::after{
+  content:'';position:absolute;bottom:-1px;left:var(--s-md);right:var(--s-md);
+  height:2px;border-radius:1px;background:var(--violet);
+}
+
+/* ═══ Change Request List ═══ */
+.cr-card{
+  margin:0 var(--s-lg) var(--s-sm);padding:var(--s-md);
+  background:var(--surface-card);border-radius:var(--r-md);
+  border:1px solid var(--line-soft);
+}
+.cr-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--s-sm)}
+.cr-type{font-size:14px;font-weight:var(--fw-s);color:var(--ink)}
+.cr-period{font-size:12px;font-weight:var(--fw-m);color:var(--ink-3);margin-top:2px}
+.cr-reason{font-size:13px;font-weight:var(--fw-m);color:var(--ink-2);margin-top:var(--s-sm);line-height:1.5}
+.cr-date{font-size:11px;font-weight:var(--fw-m);color:var(--ink-3);margin-top:var(--s-sm)}
+
+/* ═══ Tool Content Areas ═══ */
+.tool-content{display:none;flex:1;flex-direction:column}
+.tool-content.active{display:flex}
+
+/* ═══ Form Elements ═══ */
+.form-group{padding:0 var(--s-lg) var(--s-sm)}
+.form-label{font-size:13px;font-weight:var(--fw-s);color:var(--ink-2);margin-bottom:6px;display:block}
+.form-input{
+  width:100%;padding:12px var(--s-md);border-radius:var(--r-md);
+  border:1.5px solid var(--line);background:var(--surface-card);
+  font-family:var(--font);font-size:15px;font-weight:var(--fw-m);color:var(--ink);
+  transition:border-color var(--dur) var(--ease);outline:none;
+}
+.form-input:focus{border-color:var(--violet)}
+.form-input::placeholder{color:var(--ink-3)}
+.form-select{
+  width:100%;padding:12px var(--s-md);border-radius:var(--r-md);
+  border:1.5px solid var(--line);background:var(--surface-card);
+  font-family:var(--font);font-size:15px;font-weight:var(--fw-m);color:var(--ink);
+  cursor:pointer;outline:none;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238A8078' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;padding-right:36px;
+}
+.form-textarea{
+  width:100%;padding:12px var(--s-md);border-radius:var(--r-md);
+  border:1.5px solid var(--line);background:var(--surface-card);
+  font-family:var(--font);font-size:15px;font-weight:var(--fw-m);color:var(--ink);
+  resize:none;min-height:80px;outline:none;
+}
+.form-textarea:focus{border-color:var(--violet)}
+.form-row{display:flex;gap:var(--s-sm)}
+.form-row .form-group{flex:1;padding:0}
+
+/* ═══ Dialog / Modal ═══ */
+.modal-overlay{
+  position:absolute;inset:0;background:rgba(0,0,0,0.4);
+  display:none;align-items:center;justify-content:center;
+  z-index:200;padding:var(--s-lg);
+}
+.modal-overlay.active{display:flex}
+.modal-card{
+  width:100%;background:var(--surface-card);border-radius:var(--r-xl);
+  padding:var(--s-lg);max-height:80%;overflow-y:auto;
+  animation:modal-slide-up 300ms var(--ease);
+}
+@keyframes modal-slide-up{
+  from{opacity:0;transform:translateY(20px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.modal-title{font-size:18px;font-weight:var(--fw-eb);color:var(--ink);letter-spacing:-0.4px;margin-bottom:var(--s-sm)}
+.modal-body{font-size:14px;font-weight:var(--fw-m);color:var(--ink-2);line-height:1.5;margin-bottom:var(--s-md)}
+.modal-actions{display:flex;gap:var(--s-sm)}
+.modal-actions .btn{flex:1}
+
+/* ═══ Overlay Screen ═══ */
+.overlay-screen{
+  position:absolute;inset:0;background:var(--cream);
+  display:none;flex-direction:column;z-index:150;
+  animation:overlay-slide-in 300ms var(--ease);
+}
+.overlay-screen.active{display:flex}
+@keyframes overlay-slide-in{
+  from{opacity:0;transform:translateX(20px)}
+  to{opacity:1;transform:translateX(0)}
+}
+.overlay-header{
+  display:flex;align-items:center;gap:var(--s-sm);
+  padding:var(--s-sm) var(--s-lg) var(--s-md);
+  border-bottom:1px solid var(--line-soft);flex-shrink:0;
+}
+.overlay-back{
+  width:36px;height:36px;border-radius:var(--r-full);
+  border:1px solid var(--line);background:var(--surface-card);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;flex-shrink:0;
+}
+.overlay-back svg{width:18px;height:18px;stroke:var(--ink);stroke-width:2;fill:none}
+.overlay-title{font-size:17px;font-weight:var(--fw-eb);color:var(--ink);letter-spacing:-0.4px}
+.overlay-content{flex:1;overflow-y:auto;scrollbar-width:none}
+.overlay-content::-webkit-scrollbar{display:none}
+
+/* ═══ Marks Tool ═══ */
+.assessment-selector{
+  display:flex;gap:var(--s-sm);padding:var(--s-md) var(--s-lg) var(--s-sm);
+  overflow-x:auto;scrollbar-width:none;
+}
+.assessment-selector::-webkit-scrollbar{display:none}
+.assessment-chip{
+  flex-shrink:0;padding:8px 14px;border-radius:var(--r-full);
+  border:1.5px solid var(--line);background:var(--surface-card);
+  font-size:13px;font-weight:var(--fw-s);color:var(--ink-2);
+  cursor:pointer;transition:all var(--dur) var(--ease);
+  display:flex;flex-direction:column;align-items:center;gap:2px;min-width:100px;
+}
+.assessment-chip.active{border-color:var(--violet);background:var(--violet-soft);color:var(--violet)}
+.assessment-chip-name{font-weight:var(--fw-b)}
+.assessment-chip-meta{font-size:11px;font-weight:var(--fw-m);opacity:0.7}
+.marks-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px var(--s-lg);border-bottom:1px solid var(--line-soft);
+}
+.marks-row-left{display:flex;align-items:center;gap:var(--s-sm)}
+.marks-input{
+  width:64px;padding:8px;text-align:center;border-radius:var(--r-sm);
+  border:1.5px solid var(--line);background:var(--surface-card);
+  font-family:var(--font);font-size:15px;font-weight:var(--fw-b);color:var(--ink);
+  outline:none;
+}
+.marks-input:focus{border-color:var(--violet)}
+.marks-grade{
+  font-size:12px;font-weight:var(--fw-b);color:var(--ink-3);
+  width:28px;text-align:center;
+}
+.marks-max{font-size:12px;font-weight:var(--fw-m);color:var(--ink-3)}
+
+/* ═══ Syllabus Tool ═══ */
+.syllabus-progress-bar{
+  margin:var(--s-md) var(--s-lg) var(--s-sm);
+  height:6px;border-radius:3px;background:var(--line);overflow:hidden;
+}
+.syllabus-progress-fill{
+  height:100%;border-radius:3px;background:var(--mint);
+  transition:width 600ms var(--ease);
+}
+.syllabus-progress-label{
+  display:flex;justify-content:space-between;
+  padding:0 var(--s-lg) var(--s-md);
+  font-size:12px;font-weight:var(--fw-m);color:var(--ink-3);
+}
+.syllabus-unit{
+  margin:0 var(--s-lg) var(--s-sm);padding:var(--s-md);
+  background:var(--surface-card);border-radius:var(--r-md);
+  border:1px solid var(--line-soft);cursor:pointer;
+  transition:all var(--dur) var(--ease);
+}
+.syllabus-unit:hover{border-color:var(--violet)}
+.syllabus-unit-header{display:flex;align-items:center;justify-content:space-between}
+.syllabus-unit-name{font-size:14px;font-weight:var(--fw-s);color:var(--ink)}
+.syllabus-unit-topics{
+  margin-top:var(--s-sm);padding-top:var(--s-sm);
+  border-top:1px solid var(--line-soft);display:none;flex-direction:column;gap:8px;
+}
+.syllabus-unit.expanded .syllabus-unit-topics{display:flex}
+.syllabus-topic{
+  display:flex;align-items:center;gap:8px;
+  font-size:13px;font-weight:var(--fw-m);color:var(--ink-2);
+}
+.syllabus-topic-check{
+  width:20px;height:20px;border-radius:6px;border:2px solid var(--line);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:all var(--dur) var(--ease);flex-shrink:0;
+}
+.syllabus-topic-check.done{background:var(--mint);border-color:var(--mint)}
+.syllabus-topic-check.done svg{width:12px;height:12px;stroke:#fff;stroke-width:3;fill:none}
+.syllabus-topic-check svg{display:none}
+.syllabus-topic-check.done svg{display:block}
+
+/* ═══ Homework Tool ═══ */
+.homework-item{
+  margin:0 var(--s-lg) var(--s-sm);padding:var(--s-md);
+  background:var(--surface-card);border-radius:var(--r-md);
+  border:1px solid var(--line-soft);cursor:pointer;
+  transition:all var(--dur) var(--ease);
+}
+.homework-item:hover{border-color:var(--violet)}
+.homework-item-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.homework-title{font-size:14px;font-weight:var(--fw-s);color:var(--ink)}
+.homework-due{font-size:12px;font-weight:var(--fw-m);color:var(--ink-3);margin-top:2px}
+.homework-meta{display:flex;gap:var(--s-sm);margin-top:var(--s-sm)}
+.homework-meta-item{font-size:12px;font-weight:var(--fw-m);color:var(--ink-3)}
+
+/* ═══ Lesson Plan Tool ═══ */
+.lesson-item{
+  margin:0 var(--s-lg) var(--s-sm);padding:var(--s-md);
+  background:var(--surface-card);border-radius:var(--r-md);
+  border:1px solid var(--line-soft);cursor:pointer;
+  transition:all var(--dur) var(--ease);
+}
+.lesson-item:hover{border-color:var(--violet)}
+.lesson-date{font-size:11px;font-weight:var(--fw-m);color:var(--ink-3)}
+.lesson-topic{font-size:14px;font-weight:var(--fw-s);color:var(--ink);margin-top:4px}
+.lesson-objectives{font-size:12px;font-weight:var(--fw-m);color:var(--ink-2);margin-top:6px;line-height:1.5}
+
+/* ═══ Student Profile Drill-down ═══ */
+.student-profile-header{
+  padding:var(--s-lg) var(--s-lg) var(--s-md);text-align:center;
+}
+.student-profile-avatar{
+  width:80px;height:80px;border-radius:var(--r-full);
+  background:var(--violet-soft);margin:0 auto var(--s-sm);
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;font-weight:var(--fw-eb);color:var(--violet);
+}
+.student-profile-name{font-size:20px;font-weight:var(--fw-eb);color:var(--ink);letter-spacing:-0.5px}
+.student-profile-meta{font-size:13px;font-weight:var(--fw-m);color:var(--ink-3);margin-top:4px}
+.student-profile-stats{
+  display:flex;gap:var(--s-sm);padding:var(--s-md) var(--s-lg);
+}
+.stat-card{
+  flex:1;padding:var(--s-md);border-radius:var(--r-md);
+  background:var(--surface-card);border:1px solid var(--line-soft);text-align:center;
+}
+.stat-value{font-size:22px;font-weight:var(--fw-eb);color:var(--ink);letter-spacing:-0.5px}
+.stat-label{font-size:11px;font-weight:var(--fw-m);color:var(--ink-3);margin-top:2px}
+.stat-card.attendance .stat-value{color:var(--mint)}
+.stat-card.marks .stat-value{color:var(--violet)}
+.stat-card.syllabus .stat-value{color:var(--sky)}
+
+/* ═══ Notification List ═══ */
+.notif-item{
+  display:flex;gap:var(--s-sm);padding:var(--s-md) var(--s-lg);
+  border-bottom:1px solid var(--line-soft);cursor:pointer;
+  transition:background var(--dur) var(--ease);
+}
+.notif-item:hover{background:var(--surface-tint)}
+.notif-item.unread{background:var(--violet-soft)}
+.notif-icon{
+  width:36px;height:36px;border-radius:var(--r-full);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.notif-icon svg{width:18px;height:18px;stroke-width:2;fill:none}
+.notif-icon--homework{background:var(--gold-soft)}
+.notif-icon--homework svg{stroke:var(--gold)}
+.notif-icon--attendance{background:var(--coral-soft)}
+.notif-icon--attendance svg{stroke:var(--coral)}
+.notif-icon--message{background:var(--sky-soft)}
+.notif-icon--message svg{stroke:var(--sky)}
+.notif-icon--leave{background:var(--mint-soft)}
+.notif-icon--leave svg{stroke:var(--mint)}
+.notif-content{flex:1}
+.notif-title{font-size:14px;font-weight:var(--fw-s);color:var(--ink)}
+.notif-body{font-size:13px;font-weight:var(--fw-m);color:var(--ink-2);margin-top:2px;line-height:1.4}
+.notif-time{font-size:11px;font-weight:var(--fw-m);color:var(--ink-3);margin-top:4px}
+.notif-unread-dot{width:8px;height:8px;border-radius:50%;background:var(--violet);flex-shrink:0;margin-top:6px}
+
+/* ═══ Messages ═══ */
+.thread-item{
+  display:flex;gap:var(--s-sm);padding:var(--s-md) var(--s-lg);
+  border-bottom:1px solid var(--line-soft);cursor:pointer;
+  transition:background var(--dur) var(--ease);
+}
+.thread-item:hover{background:var(--surface-tint)}
+.thread-avatar{
+  width:44px;height:44px;border-radius:var(--r-full);
+  background:var(--violet-soft);display:flex;align-items:center;justify-content:center;
+  font-size:15px;font-weight:var(--fw-eb);color:var(--violet);flex-shrink:0;
+}
+.thread-content{flex:1;min-width:0}
+.thread-header{display:flex;justify-content:space-between;align-items:center}
+.thread-name{font-size:14px;font-weight:var(--fw-s);color:var(--ink)}
+.thread-time{font-size:11px;font-weight:var(--fw-m);color:var(--ink-3);flex-shrink:0}
+.thread-preview{font-size:13px;font-weight:var(--fw-m);color:var(--ink-2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.thread-unread{
+  min-width:18px;height:18px;border-radius:var(--r-full);background:var(--violet);
+  color:#fff;font-size:10px;font-weight:var(--fw-b);
+  display:flex;align-items:center;justify-content:center;padding:0 5px;flex-shrink:0;
+}
+
+/* ═══ Health Alert Cards ═══ */
+.health-card{
+  margin:0 var(--s-lg) var(--s-sm);padding:var(--s-md);
+  background:var(--surface-card);border-radius:var(--r-md);
+  border:1px solid var(--line-soft);
+}
+.health-card-header{display:flex;align-items:center;gap:var(--s-sm);margin-bottom:var(--s-sm)}
+.health-card-avatar{
+  width:40px;height:40px;border-radius:var(--r-full);
+  background:var(--coral-soft);display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:var(--fw-eb);color:var(--coral);flex-shrink:0;
+}
+.health-card-name{font-size:14px;font-weight:var(--fw-s);color:var(--ink)}
+.health-card-class{font-size:12px;font-weight:var(--fw-m);color:var(--ink-3)}
+.health-card-detail{font-size:13px;font-weight:var(--fw-m);color:var(--ink-2);line-height:1.5}
+.health-card-instructions{
+  margin-top:var(--s-sm);padding:10px;border-radius:var(--r-sm);
+  background:var(--surface-warm);font-size:12px;font-weight:var(--fw-m);color:var(--ink-2);
+  line-height:1.5;
+}
+
+/* ═══ Transport ═══ */
+.route-selector{
+  display:flex;gap:var(--s-sm);padding:var(--s-md) var(--s-lg);overflow-x:auto;
+  scrollbar-width:none;
+}
+.route-selector::-webkit-scrollbar{display:none}
+.route-chip{
+  flex-shrink:0;padding:8px 14px;border-radius:var(--r-full);
+  border:1.5px solid var(--line);background:var(--surface-card);
+  font-size:13px;font-weight:var(--fw-s);color:var(--ink-2);
+  cursor:pointer;transition:all var(--dur) var(--ease);
+}
+.route-chip.active{border-color:var(--violet);background:var(--violet-soft);color:var(--violet)}
+.transport-stop{
+  margin:0 var(--s-lg) var(--s-sm);padding:var(--s-md);
+  background:var(--surface-card);border-radius:var(--r-md);
+  border:1px solid var(--line-soft);
+}
+.transport-stop-name{font-size:13px;font-weight:var(--fw-b);color:var(--ink);margin-bottom:var(--s-sm)}
+
+/* ═══ PEWS Risk Cards ═══ */
+.pews-card{
+  margin:0 var(--s-lg) var(--s-sm);padding:var(--s-md);
+  background:var(--surface-card);border-radius:var(--r-md);
+  border:1px solid var(--line-soft);
+}
+.pews-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--s-sm)}
+.pews-student{display:flex;align-items:center;gap:var(--s-sm)}
+.pews-avatar{
+  width:40px;height:40px;border-radius:var(--r-full);
+  background:var(--surface-tint);display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:var(--fw-eb);color:var(--ink-2);flex-shrink:0;
+}
+.pews-name{font-size:14px;font-weight:var(--fw-s);color:var(--ink)}
+.pews-class{font-size:12px;font-weight:var(--fw-m);color:var(--ink-3)}
+.pews-factor{font-size:13px;font-weight:var(--fw-m);color:var(--ink-2);margin-top:6px;line-height:1.4}
+
+/* ═══ Report Review ═══ */
+.report-card{
+  margin:0 var(--s-lg) var(--s-sm);padding:var(--s-md);
+  background:var(--surface-card);border-radius:var(--r-md);
+  border:1px solid var(--line-soft);cursor:pointer;
+  transition:all var(--dur) var(--ease);
+}
+.report-card:hover{border-color:var(--violet)}
+.report-card-header{display:flex;align-items:center;justify-content:space-between}
+.report-student-name{font-size:14px;font-weight:var(--fw-s);color:var(--ink)}
+.report-meta{font-size:12px;font-weight:var(--fw-m);color:var(--ink-3);margin-top:2px}
+
+/* ═══ Heatmap ═══ */
+.heatmap-grid{
+  padding:var(--s-md) var(--s-lg);
+  display:grid;grid-template-columns:80px repeat(5,1fr);gap:4px;
+}
+.heatmap-cell{
+  padding:8px 4px;border-radius:var(--r-sm);text-align:center;
+  font-size:11px;font-weight:var(--fw-s);
+}
+.heatmap-cell.header{background:transparent;color:var(--ink-3);font-weight:var(--fw-b)}
+.heatmap-cell.label{background:transparent;color:var(--ink-2);text-align:left;font-weight:var(--fw-m);font-size:12px}
+.heatmap-cell.red{background:var(--coral-soft);color:var(--coral)}
+.heatmap-cell.yellow{background:var(--gold-soft);color:var(--gold)}
+.heatmap-cell.green{background:var(--mint-soft);color:var(--mint)}
+
+/* ═══ ID Card ═══ */
+.id-card{
+  margin:var(--s-lg);padding:var(--s-lg);
+  background:linear-gradient(135deg,var(--violet) 0%,#4A30C4 100%);
+  border-radius:var(--r-xl);color:#fff;position:relative;overflow:hidden;
+}
+.id-card::before{
+  content:'';position:absolute;top:-20px;right:-20px;
+  width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.08);
+}
+.id-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:var(--s-lg)}
+.id-card-school{font-size:14px;font-weight:var(--fw-eb)}
+.id-card-logo{font-size:18px;font-weight:var(--fw-eb)}
+.id-card-photo{
+  width:72px;height:72px;border-radius:var(--r-md);background:rgba(255,255,255,0.2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;font-weight:var(--fw-eb);margin-bottom:var(--s-md);
+}
+.id-card-name{font-size:20px;font-weight:var(--fw-eb);letter-spacing:-0.3px}
+.id-card-role{font-size:13px;font-weight:var(--fw-m);opacity:0.8;margin-top:2px}
+.id-card-details{margin-top:var(--s-md);display:flex;flex-direction:column;gap:6px}
+.id-card-detail-row{display:flex;justify-content:space-between;font-size:13px;font-weight:var(--fw-m)}
+.id-card-detail-label{opacity:0.7}
+.id-card-qr{
+  margin-top:var(--s-lg);padding:var(--s-md);background:rgba(255,255,255,0.15);
+  border-radius:var(--r-md);text-align:center;
+  font-size:12px;font-weight:var(--fw-m);
+}
+
+/* ═══ Scheduled Messages ═══ */
+.sched-msg-item{
+  margin:0 var(--s-lg) var(--s-sm);padding:var(--s-md);
+  background:var(--surface-card);border-radius:var(--r-md);
+  border:1px solid var(--line-soft);
+}
+.sched-msg-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.sched-msg-title{font-size:14px;font-weight:var(--fw-s);color:var(--ink)}
+.sched-msg-time{font-size:12px;font-weight:var(--fw-m);color:var(--ink-3)}
+.sched-msg-body{font-size:13px;font-weight:var(--fw-m);color:var(--ink-2);line-height:1.5}
+.sched-msg-targets{font-size:11px;font-weight:var(--fw-m);color:var(--ink-3);margin-top:6px}
+
+/* ═══ Event Registration ═══ */
+.event-detail-card{
+  margin:0 var(--s-lg) var(--s-md);padding:var(--s-md);
+  background:var(--surface-card);border-radius:var(--r-lg);
+  border:1px solid var(--line-soft);
+}
+.event-detail-title{font-size:18px;font-weight:var(--fw-eb);color:var(--ink);letter-spacing:-0.4px}
+.event-detail-meta{font-size:13px;font-weight:var(--fw-m);color:var(--ink-3);margin-top:4px}
+.slot-card{
+  margin:0 var(--s-lg) var(--s-sm);padding:var(--s-md);
+  background:var(--surface-card);border-radius:var(--r-md);
+  border:1px solid var(--line-soft);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.slot-time{font-size:14px;font-weight:var(--fw-s);color:var(--ink)}
+.slot-parent{font-size:12px;font-weight:var(--fw-m);color:var(--ink-3);margin-top:2px}
+.slot-action{
+  padding:6px 12px;border-radius:var(--r-full);font-size:12px;font-weight:var(--fw-s);
+  border:1px solid var(--violet);color:var(--violet);background:transparent;cursor:pointer;
+  transition:all var(--dur) var(--ease);
+}
+.slot-action:hover{background:var(--violet);color:#fff}
+
+/* ═══ Calendar ═══ */
+.cal-grid{
+  padding:var(--s-md) var(--s-lg);
+  display:grid;grid-template-columns:repeat(7,1fr);gap:4px;
+}
+.cal-day-header{text-align:center;font-size:11px;font-weight:var(--fw-b);color:var(--ink-3);padding:4px 0}
+.cal-day{
+  aspect-ratio:1;border-radius:var(--r-sm);padding:4px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:13px;font-weight:var(--fw-m);color:var(--ink-2);
+  cursor:pointer;transition:all var(--dur) var(--ease);
+}
+.cal-day:hover{background:var(--surface-tint)}
+.cal-day.today{background:var(--violet);color:#fff;font-weight:var(--fw-eb)}
+.cal-day.has-event::after{
+  content:'';width:4px;height:4px;border-radius:50%;background:var(--coral);
+}
+.cal-day.today.has-event::after{background:#fff}
+.cal-events-list{padding:0 var(--s-lg)}
+.cal-event-item{
+  display:flex;gap:var(--s-sm);padding:var(--s-sm) 0;
+  border-bottom:1px solid var(--line-soft);
+}
+.cal-event-dot{width:10px;height:10px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.cal-event-dot--holiday{background:var(--coral)}
+.cal-event-dot--event{background:var(--violet)}
+.cal-event-dot--exam{background:var(--gold)}
+.cal-event-info{flex:1}
+.cal-event-title{font-size:14px;font-weight:var(--fw-s);color:var(--ink)}
+.cal-event-time{font-size:12px;font-weight:var(--fw-m);color:var(--ink-3);margin-top:2px}
+
+/* ═══ Leave Form ═══ */
+.leave-form-card{
+  margin:0 var(--s-lg) var(--s-md);padding:var(--s-md);
+  background:var(--surface-card);border-radius:var(--r-lg);
+  border:1px solid var(--line-soft);
+}
+.leave-status-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px var(--s-lg);border-bottom:1px solid var(--line-soft);
+}
+.leave-status-info{display:flex;flex-direction:column}
+.leave-status-dates{font-size:14px;font-weight:var(--fw-s);color:var(--ink)}
+.leave-status-type{font-size:12px;font-weight:var(--fw-m);color:var(--ink-3);margin-top:2px}
+.leave-status-reason{font-size:13px;font-weight:var(--fw-m);color:var(--ink-2);margin-top:4px;line-height:1.4}
+
+/* ═══ FAB ═══ */
+.fab{
+  position:absolute;bottom:80px;right:var(--s-lg);
+  width:52px;height:52px;border-radius:var(--r-full);
+  background:var(--violet);color:#fff;border:none;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;box-shadow:0 4px 16px -2px rgba(91,65,213,0.35);
+  z-index:50;transition:all var(--dur) var(--ease);
+}
+.fab:hover{background:var(--violet-hover);transform:scale(1.05)}
+.fab svg{width:24px;height:24px;stroke:#fff;stroke-width:2;fill:none}
+
+/* ═══ Check-in Popup ═══ */
+.checkin-popup{
+  position:absolute;bottom:90px;left:var(--s-lg);right:var(--s-lg);
+  background:var(--surface-card);border-radius:var(--r-lg);
+  padding:var(--s-md);box-shadow:0 8px 32px -4px rgba(0,0,0,0.15);
+  z-index:180;display:none;animation:checkin-slide-up 300ms var(--ease);
+}
+.checkin-popup.active{display:block}
+@keyframes checkin-slide-up{
+  from{opacity:0;transform:translateY(20px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.checkin-title{font-size:15px;font-weight:var(--fw-b);color:var(--ink)}
+.checkin-body{font-size:13px;font-weight:var(--fw-m);color:var(--ink-2);margin-top:4px;line-height:1.4}
+.checkin-actions{display:flex;gap:var(--s-sm);margin-top:var(--s-md)}
+
+/* ═══ Back Header (for drill-downs) ═══ */
+.back-header{
+  display:flex;align-items:center;gap:var(--s-sm);
+  padding:var(--s-sm) var(--s-lg);flex-shrink:0;
+}
+.back-btn{
+  width:36px;height:36px;border-radius:var(--r-full);
+  border:1px solid var(--line);background:var(--surface-card);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:18px;color:var(--ink);
+}
+.back-header-title{font-size:17px;font-weight:var(--fw-eb);color:var(--ink);letter-spacing:-0.4px}
+
+</style>
+</head>
+<body>
+
+<!-- ═══ SVG Icon Defs ═══ -->
+<svg style="display:none">
+  <symbol id="icon-home" viewBox="0 0 24 24"><path d="M3 12l9-9 9 9M5 10v10h4v-6h6v6h4V10" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-edit" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-classes" viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z M6 12v5c0 1 2 3 6 3s6-2 6-3v-5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18" stroke-linecap="round"/></symbol>
+  <symbol id="icon-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-bell" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-check" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-clipboard" viewBox="0 0 24 24"><path d="M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1z M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-award" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-map" viewBox="0 0 24 24"><path d="M9 18l-6 3V6l6-3 6 3 6-3v15l-6 3z M9 3v15 M15 6v15" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2" stroke-linecap="round"/></symbol>
+  <symbol id="icon-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-linecap="round"/></symbol>
+  <symbol id="icon-palette" viewBox="0 0 24 24"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4 M16 17l5-5-5-5 M21 12H9" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-chevron-right" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></symbol>
+</svg>
+
+<!-- ═══ Figma-like Shell ═══ -->
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-name">Enroll<span class="plus">+</span> <span style="color:#5A5764;font-weight:500;font-size:12px">Teacher</span></div>
+    </div>
+    <nav>
+      <div class="nav-group">Tabs</div>
+      <button class="nav-item active" data-nav="tab:Home"><span class="nav-dot"></span>Home</button>
+      <button class="nav-item" data-nav="tab:Update"><span class="nav-dot"></span>Update</button>
+      <button class="nav-item" data-nav="tab:Classes"><span class="nav-dot"></span>Classes</button>
+      <button class="nav-item" data-nav="tab:Timetable"><span class="nav-dot"></span>Timetable</button>
+      <button class="nav-item" data-nav="tab:Profile"><span class="nav-dot"></span>Profile</button>
+      <div class="nav-group">Overlays (B-6)</div>
+      <button class="nav-item" data-nav="overlay:Notifications"><span class="nav-dot"></span>Notifications</button>
+      <button class="nav-item" data-nav="overlay:HealthAlerts"><span class="nav-dot"></span>Health Alerts</button>
+      <button class="nav-item" data-nav="overlay:Transport"><span class="nav-dot"></span>Transport Attendance</button>
+      <button class="nav-item" data-nav="overlay:PEWS"><span class="nav-dot"></span>Early Warning (PEWS)</button>
+      <button class="nav-item" data-nav="overlay:ReportReview"><span class="nav-dot"></span>Report Review Queue</button>
+      <button class="nav-item" data-nav="overlay:ReportDraft"><span class="nav-dot"></span>Report Draft Editor</button>
+      <button class="nav-item" data-nav="overlay:Heatmap"><span class="nav-dot"></span>Learning Heatmap</button>
+      <button class="nav-item" data-nav="overlay:IdCard"><span class="nav-dot"></span>Digital ID Card</button>
+      <button class="nav-item" data-nav="overlay:ScheduledMessages"><span class="nav-dot"></span>Scheduled Messages</button>
+      <button class="nav-item" data-nav="overlay:EventRegistration"><span class="nav-dot"></span>Event Registration</button>
+      <button class="nav-item" data-nav="overlay:Messages"><span class="nav-dot"></span>Messages</button>
+      <button class="nav-item" data-nav="overlay:Calendar"><span class="nav-dot"></span>Calendar</button>
+    </nav>
+  </aside>
+
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="screen-area">
+        <div class="island"></div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       TEACHER PORTAL SHELL (B-0)
+       Header: Teacher name + notification bell
+       Bottom Nav: Home, Update, Classes, Timetable, Profile
+       ═══════════════════════════════════════════════════════════════ -->
+  <div class="statusbar"><span>9:41</span><span class="icons">●●● 100%</span></div>
+
+  <!-- Portal Header -->
+  <div class="portal-header" id="portal-header">
+    <div class="portal-header-left">
+      <div class="portal-header-greeting" id="header-greeting">Good morning</div>
+      <div class="portal-header-name" id="header-name">Priya Sharma</div>
+    </div>
+    <div class="portal-header-right">
+      <button class="header-icon-btn">
+        <svg><use href="#icon-bell"/></svg>
+        <span class="header-badge">3</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══ TAB CONTENTS ═══ -->
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       B-1 — HOME TAB
+       Greeting → Today's Timeline → Obligations → Quick Actions → Class Cards → Events Mini
+       ═══════════════════════════════════════════════════════════════ -->
+  <div class="tab-content active" id="tab-home">
+    <div class="scroll content-pb">
+
+      <!-- Greeting Bar -->
+      <div class="greeting-bar">
+        <div class="greeting-date" id="greeting-date">Monday, 15 July 2026</div>
+        <div class="greeting-text">Good morning, Priya</div>
+      </div>
+
+      <!-- Today's Class Timeline -->
+      <div class="section-header">
+        <div class="section-title">Today's Schedule</div>
+        <div class="section-link" data-nav="tab:Timetable">View week</div>
+      </div>
+      <div class="timeline-scroll">
+        <div class="period-card done">
+          <div class="period-status"><span class="badge badge--neutral">Done</span></div>
+          <div class="period-time">8:00 — 8:45</div>
+          <div class="period-class">7-B</div>
+          <div class="period-subject">Mathematics</div>
+          <div class="period-room">Room 204</div>
+        </div>
+        <div class="period-card current">
+          <div class="period-status"><span class="badge badge--violet">Now</span></div>
+          <div class="period-time">9:00 — 9:45</div>
+          <div class="period-class">8-A</div>
+          <div class="period-subject">Mathematics</div>
+          <div class="period-room">Room 312</div>
+        </div>
+        <div class="period-card">
+          <div class="period-status"><span class="badge badge--gold">Next</span></div>
+          <div class="period-time">10:00 — 10:45</div>
+          <div class="period-class">9-C</div>
+          <div class="period-subject">Algebra</div>
+          <div class="period-room">Room 108</div>
+        </div>
+        <div class="period-card">
+          <div class="period-time">11:15 — 12:00</div>
+          <div class="period-class">7-B</div>
+          <div class="period-subject">Mathematics</div>
+          <div class="period-room">Room 204</div>
+        </div>
+        <div class="period-card">
+          <div class="period-time">1:00 — 1:45</div>
+          <div class="period-class">8-A</div>
+          <div class="period-subject">Mathematics</div>
+          <div class="period-room">Room 312</div>
+        </div>
+      </div>
+
+      <!-- Obligations Summary -->
+      <div class="obligations-card">
+        <div class="obligations-header">
+          <div class="obligations-title">Pending Tasks</div>
+          <div class="obligations-count">
+            <span class="obligations-count-num">7</span>
+            <span class="obligations-count-label">outstanding</span>
+          </div>
+        </div>
+        <div class="obligation-row" data-nav="tab:Update">
+          <div class="obligation-row-left">
+            <div class="obligation-dot obligation-dot--attendance"></div>
+            <div class="obligation-label">Unmarked attendance</div>
+          </div>
+          <div class="obligation-count">3 classes</div>
+        </div>
+        <div class="obligation-row" data-nav="tab:Update">
+          <div class="obligation-row-left">
+            <div class="obligation-dot obligation-dot--homework"></div>
+            <div class="obligation-label">Ungraded homework</div>
+          </div>
+          <div class="obligation-count">12 submissions</div>
+        </div>
+        <div class="obligation-row" data-nav="tab:Update">
+          <div class="obligation-row-left">
+            <div class="obligation-dot obligation-dot--syllabus"></div>
+            <div class="obligation-label">Syllabus updates</div>
+          </div>
+          <div class="obligation-count">2 units</div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="section-header">
+        <div class="section-title">Quick Actions</div>
+      </div>
+      <div class="quick-actions">
+        <div class="quick-action" data-nav="tab:Update">
+          <div class="quick-action-icon quick-action-icon--attendance">
+            <svg><use href="#icon-clipboard"/></svg>
+          </div>
+          <div class="quick-action-label">Attendance</div>
+        </div>
+        <div class="quick-action" data-nav="tab:Update">
+          <div class="quick-action-icon quick-action-icon--homework">
+            <svg><use href="#icon-edit"/></svg>
+          </div>
+          <div class="quick-action-label">Homework</div>
+        </div>
+        <div class="quick-action" data-nav="tab:Update">
+          <div class="quick-action-icon quick-action-icon--marks">
+            <svg><use href="#icon-award"/></svg>
+          </div>
+          <div class="quick-action-label">Marks</div>
+        </div>
+        <div class="quick-action" data-nav="tab:Update">
+          <div class="quick-action-icon quick-action-icon--syllabus">
+            <svg><use href="#icon-book"/></svg>
+          </div>
+          <div class="quick-action-label">Syllabus</div>
+        </div>
+      </div>
+
+      <!-- My Classes -->
+      <div class="section-header" style="margin-top:var(--s-md)">
+        <div class="section-title">My Classes</div>
+        <div class="section-link" data-nav="tab:Classes">View all</div>
+      </div>
+      <div class="class-card" data-nav="tab:Classes">
+        <div class="class-card-header">
+          <div>
+            <div class="class-card-name">Class 7-B</div>
+            <div class="class-card-subject">Mathematics</div>
+          </div>
+          <span class="badge badge--violet">32 students</span>
+        </div>
+        <div class="class-card-meta">
+          <div class="class-meta-item"><svg><use href="#icon-clipboard"/></svg>3 pending</div>
+          <div class="class-meta-item"><svg><use href="#icon-edit"/></svg>5 ungraded</div>
+        </div>
+      </div>
+      <div class="class-card" data-nav="tab:Classes">
+        <div class="class-card-header">
+          <div>
+            <div class="class-card-name">Class 8-A</div>
+            <div class="class-card-subject">Mathematics</div>
+          </div>
+          <span class="badge badge--violet">28 students</span>
+        </div>
+        <div class="class-card-meta">
+          <div class="class-meta-item"><svg><use href="#icon-clipboard"/></svg>1 pending</div>
+          <div class="class-meta-item"><svg><use href="#icon-edit"/></svg>7 ungraded</div>
+        </div>
+      </div>
+      <div class="class-card" data-nav="tab:Classes">
+        <div class="class-card-header">
+          <div>
+            <div class="class-card-name">Class 9-C</div>
+            <div class="class-card-subject">Algebra</div>
+          </div>
+          <span class="badge badge--violet">30 students</span>
+        </div>
+        <div class="class-card-meta">
+          <div class="class-meta-item"><svg><use href="#icon-clipboard"/></svg>2 pending</div>
+          <div class="class-meta-item"><svg><use href="#icon-edit"/></svg>0 ungraded</div>
+        </div>
+      </div>
+
+      <!-- Upcoming Events Mini -->
+      <div class="section-header" style="margin-top:var(--s-md)">
+        <div class="section-title">Upcoming Events</div>
+      </div>
+      <div class="events-mini">
+        <div class="event-mini-card">
+          <div class="event-mini-date">
+            <div class="event-mini-day">18</div>
+            <div class="event-mini-month">JUL</div>
+          </div>
+          <div class="event-mini-info">
+            <div class="event-mini-title">Parent-Teacher Meeting</div>
+            <div class="event-mini-time">10:00 AM — 1:00 PM</div>
+          </div>
+        </div>
+        <div class="event-mini-card">
+          <div class="event-mini-date">
+            <div class="event-mini-day">22</div>
+            <div class="event-mini-month">JUL</div>
+          </div>
+          <div class="event-mini-info">
+            <div class="event-mini-title">Unit Test — Class 8-A</div>
+            <div class="event-mini-time">11:00 AM — 12:00 PM</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       B-2 — UPDATE TAB
+       Scope Selector → Tool Segments → Tool Content
+       ═══════════════════════════════════════════════════════════════ -->
+  <div class="tab-content" id="tab-update">
+    <div class="scroll content-pb">
+
+      <!-- Scope Selector (always visible at top) -->
+      <div class="scope-selector">
+        <div class="scope-title">Select a class to continue</div>
+        <div class="scope-list">
+          <div class="scope-item" data-nav="update-tool">
+            <div class="scope-item-left">
+              <div class="scope-item-icon">7-B</div>
+              <div class="scope-item-info">
+                <div class="scope-item-name">Class 7-B</div>
+                <div class="scope-item-sub">Mathematics · 32 students</div>
+              </div>
+            </div>
+            <div class="scope-item-chevron">›</div>
+          </div>
+          <div class="scope-item" data-nav="update-tool">
+            <div class="scope-item-left">
+              <div class="scope-item-icon">8-A</div>
+              <div class="scope-item-info">
+                <div class="scope-item-name">Class 8-A</div>
+                <div class="scope-item-sub">Mathematics · 28 students</div>
+              </div>
+            </div>
+            <div class="scope-item-chevron">›</div>
+          </div>
+          <div class="scope-item" data-nav="update-tool">
+            <div class="scope-item-left">
+              <div class="scope-item-icon">9-C</div>
+              <div class="scope-item-info">
+                <div class="scope-item-name">Class 9-C</div>
+                <div class="scope-item-sub">Algebra · 30 students</div>
+              </div>
+            </div>
+            <div class="scope-item-chevron">›</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tool Segments (hidden until class selected) -->
+      <div id="update-tools" style="display:none">
+        <div class="tool-segments">
+          <button class="tool-seg active" data-tool="attendance">
+            <svg><use href="#icon-clipboard"/></svg>
+            Attendance
+          </button>
+          <button class="tool-seg" data-tool="marks">
+            <svg><use href="#icon-award"/></svg>
+            Marks
+          </button>
+          <button class="tool-seg" data-tool="syllabus">
+            <svg><use href="#icon-book"/></svg>
+            Syllabus
+          </button>
+          <button class="tool-seg" data-tool="homework">
+            <svg><use href="#icon-edit"/></svg>
+            Homework
+          </button>
+          <button class="tool-seg" data-tool="lesson">
+            <svg><use href="#icon-calendar"/></svg>
+            Lesson
+          </button>
+        </div>
+
+        <!-- Attendance Tool Content -->
+        <div id="tool-attendance" class="tool-content active">
+          <div class="attendance-header">
+            <div>
+              <div class="attendance-class-name">Class 7-B · Mathematics</div>
+              <div class="attendance-date">Monday, 15 July 2026</div>
+            </div>
+            <button class="attendance-quick-btn">Change date</button>
+          </div>
+          <div class="attendance-quick">
+            <button class="attendance-quick-btn">Mark all present</button>
+            <button class="attendance-quick-btn">Mark all absent</button>
+          </div>
+          <div class="student-row">
+            <div class="student-row-left">
+              <div class="student-avatar">AK</div>
+              <div class="student-info">
+                <div class="student-name">Aarav Kumar</div>
+                <div class="student-roll">Roll #01</div>
+              </div>
+            </div>
+            <div class="attendance-toggle">
+              <button class="att-toggle-btn present active">P</button>
+              <button class="att-toggle-btn absent">A</button>
+              <button class="att-toggle-btn late">L</button>
+            </div>
+          </div>
+          <div class="student-row">
+            <div class="student-row-left">
+              <div class="student-avatar">DS</div>
+              <div class="student-info">
+                <div class="student-name">Diya Singh</div>
+                <div class="student-roll">Roll #02</div>
+              </div>
+            </div>
+            <div class="attendance-toggle">
+              <button class="att-toggle-btn present active">P</button>
+              <button class="att-toggle-btn absent">A</button>
+              <button class="att-toggle-btn late">L</button>
+            </div>
+          </div>
+          <div class="student-row">
+            <div class="student-row-left">
+              <div class="student-avatar">RP</div>
+              <div class="student-info">
+                <div class="student-name">Rohan Patel</div>
+                <div class="student-roll">Roll #03</div>
+              </div>
+            </div>
+            <div class="attendance-toggle">
+              <button class="att-toggle-btn present">P</button>
+              <button class="att-toggle-btn absent active">A</button>
+              <button class="att-toggle-btn late">L</button>
+            </div>
+          </div>
+          <div class="student-row">
+            <div class="student-row-left">
+              <div class="student-avatar">AN</div>
+              <div class="student-info">
+                <div class="student-name">Ananya Nair</div>
+                <div class="student-roll">Roll #04</div>
+              </div>
+            </div>
+            <div class="attendance-toggle">
+              <button class="att-toggle-btn present active">P</button>
+              <button class="att-toggle-btn absent">A</button>
+              <button class="att-toggle-btn late">L</button>
+            </div>
+          </div>
+          <div class="student-row">
+            <div class="student-row-left">
+              <div class="student-avatar">VR</div>
+              <div class="student-info">
+                <div class="student-name">Vihaan Reddy</div>
+                <div class="student-roll">Roll #05</div>
+              </div>
+            </div>
+            <div class="attendance-toggle">
+              <button class="att-toggle-btn present">P</button>
+              <button class="att-toggle-btn absent">A</button>
+              <button class="att-toggle-btn late active">L</button>
+            </div>
+          </div>
+          <div class="attendance-summary">
+            <div class="summary-chip present">3 Present</div>
+            <div class="summary-chip absent">1 Absent</div>
+            <div class="summary-chip late">1 Late</div>
+          </div>
+          <div style="padding:var(--s-md) var(--s-lg)">
+            <button class="btn btn-primary">Save Attendance <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+          </div>
+        </div>
+
+        <!-- ═══ Marks Tool Content ═══ -->
+        <div id="tool-marks" class="tool-content">
+          <div class="assessment-selector">
+            <div class="assessment-chip active">
+              <span class="assessment-chip-name">Unit Test 1</span>
+              <span class="assessment-chip-meta">50 marks</span>
+            </div>
+            <div class="assessment-chip">
+              <span class="assessment-chip-name">Quiz 3</span>
+              <span class="assessment-chip-meta">20 marks</span>
+            </div>
+            <div class="assessment-chip">
+              <span class="assessment-chip-name">Assignment 2</span>
+              <span class="assessment-chip-meta">30 marks</span>
+            </div>
+            <div class="assessment-chip" style="border-style:dashed;color:var(--ink-3)">
+              <span class="assessment-chip-name">+ New</span>
+              <span class="assessment-chip-meta">Create</span>
+            </div>
+          </div>
+          <div class="scroll" style="flex:1">
+            <div class="marks-row">
+              <div class="marks-row-left">
+                <div class="student-avatar">AK</div>
+                <div class="student-info">
+                  <div class="student-name">Aarav Kumar</div>
+                  <div class="student-roll">Roll #01</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input class="marks-input" type="text" value="42" maxlength="3">
+                <span class="marks-max">/50</span>
+                <span class="marks-grade" style="color:var(--mint)">B+</span>
+              </div>
+            </div>
+            <div class="marks-row">
+              <div class="marks-row-left">
+                <div class="student-avatar">DS</div>
+                <div class="student-info">
+                  <div class="student-name">Diya Singh</div>
+                  <div class="student-roll">Roll #02</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input class="marks-input" type="text" value="48" maxlength="3">
+                <span class="marks-max">/50</span>
+                <span class="marks-grade" style="color:var(--mint)">A</span>
+              </div>
+            </div>
+            <div class="marks-row">
+              <div class="marks-row-left">
+                <div class="student-avatar">RP</div>
+                <div class="student-info">
+                  <div class="student-name">Rohan Patel</div>
+                  <div class="student-roll">Roll #03</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input class="marks-input" type="text" value="35" maxlength="3">
+                <span class="marks-max">/50</span>
+                <span class="marks-grade" style="color:var(--gold)">C+</span>
+              </div>
+            </div>
+            <div class="marks-row">
+              <div class="marks-row-left">
+                <div class="student-avatar">AN</div>
+                <div class="student-info">
+                  <div class="student-name">Ananya Nair</div>
+                  <div class="student-roll">Roll #04</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input class="marks-input" type="text" value="45" maxlength="3">
+                <span class="marks-max">/50</span>
+                <span class="marks-grade" style="color:var(--mint)">A-</span>
+              </div>
+            </div>
+            <div class="marks-row">
+              <div class="marks-row-left">
+                <div class="student-avatar">VR</div>
+                <div class="student-info">
+                  <div class="student-name">Vihaan Reddy</div>
+                  <div class="student-roll">Roll #05</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input class="marks-input" type="text" value="" placeholder="—" maxlength="3">
+                <span class="marks-max">/50</span>
+                <span class="marks-grade">—</span>
+              </div>
+            </div>
+          </div>
+          <div style="padding:var(--s-md) var(--s-lg)">
+            <button class="btn btn-primary">Save Marks <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+          </div>
+        </div>
+
+        <!-- ═══ Syllabus Tool Content ═══ -->
+        <div id="tool-syllabus" class="tool-content">
+          <div class="scroll" style="flex:1">
+            <div class="syllabus-progress-bar">
+              <div class="syllabus-progress-fill" style="width:62%"></div>
+            </div>
+            <div class="syllabus-progress-label">
+              <span>Coverage</span>
+              <span>8 of 13 topics · 62%</span>
+            </div>
+            <div class="syllabus-unit" data-syllabus-unit>
+              <div class="syllabus-unit-header">
+                <span class="syllabus-unit-name">Chapter 1: Integers</span>
+                <span class="badge badge-success">3/3 ✓</span>
+              </div>
+              <div class="syllabus-unit-topics">
+                <div class="syllabus-topic">
+                  <div class="syllabus-topic-check done"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-9" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                  Introduction to Integers
+                </div>
+                <div class="syllabus-topic">
+                  <div class="syllabus-topic-check done"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-9" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                  Operations on Integers
+                </div>
+                <div class="syllabus-topic">
+                  <div class="syllabus-topic-check done"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-9" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                  Properties of Integers
+                </div>
+              </div>
+            </div>
+            <div class="syllabus-unit" data-syllabus-unit>
+              <div class="syllabus-unit-header">
+                <span class="syllabus-unit-name">Chapter 2: Fractions</span>
+                <span class="badge badge-warning">2/4</span>
+              </div>
+              <div class="syllabus-unit-topics">
+                <div class="syllabus-topic">
+                  <div class="syllabus-topic-check done"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-9" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                  Types of Fractions
+                </div>
+                <div class="syllabus-topic">
+                  <div class="syllabus-topic-check done"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-9" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                  Comparing Fractions
+                </div>
+                <div class="syllabus-topic">
+                  <div class="syllabus-topic-check"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-9" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                  Addition & Subtraction
+                </div>
+                <div class="syllabus-topic">
+                  <div class="syllabus-topic-check"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-9" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                  Multiplication & Division
+                </div>
+              </div>
+            </div>
+            <div class="syllabus-unit" data-syllabus-unit>
+              <div class="syllabus-unit-header">
+                <span class="syllabus-unit-name">Chapter 3: Decimals</span>
+                <span class="badge">0/3</span>
+              </div>
+              <div class="syllabus-unit-topics">
+                <div class="syllabus-topic">
+                  <div class="syllabus-topic-check"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-9" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                  Introduction to Decimals
+                </div>
+                <div class="syllabus-topic">
+                  <div class="syllabus-topic-check"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-9" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                  Converting Fractions to Decimals
+                </div>
+                <div class="syllabus-topic">
+                  <div class="syllabus-topic-check"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-9" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                  Operations with Decimals
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ Homework Tool Content ═══ -->
+        <div id="tool-homework" class="tool-content">
+          <div class="scroll" style="flex:1">
+            <div class="homework-item">
+              <div class="homework-item-header">
+                <span class="homework-title">Worksheet: Fractions Practice</span>
+                <span class="badge badge-error">Due tomorrow</span>
+              </div>
+              <div class="homework-due">Due: 16 Jul 2026</div>
+              <div class="homework-meta">
+                <span class="homework-meta-item">3 submitted</span>
+                <span class="homework-meta-item">2 not submitted</span>
+                <span class="homework-meta-item">0 graded</span>
+              </div>
+            </div>
+            <div class="homework-item">
+              <div class="homework-item-header">
+                <span class="homework-title">Chapter 2 — Exercise 2.3</span>
+                <span class="badge badge-warning">Due in 3 days</span>
+              </div>
+              <div class="homework-due">Due: 18 Jul 2026</div>
+              <div class="homework-meta">
+                <span class="homework-meta-item">1 submitted</span>
+                <span class="homework-meta-item">4 not submitted</span>
+                <span class="homework-meta-item">0 graded</span>
+              </div>
+            </div>
+            <div class="homework-item">
+              <div class="homework-item-header">
+                <span class="homework-title">Mental Math — Division</span>
+                <span class="badge badge-success">Graded</span>
+              </div>
+              <div class="homework-due">Due: 12 Jul 2026</div>
+              <div class="homework-meta">
+                <span class="homework-meta-item">5 submitted</span>
+                <span class="homework-meta-item">0 not submitted</span>
+                <span class="homework-meta-item">5 graded</span>
+              </div>
+            </div>
+          </div>
+          <div style="padding:var(--s-md) var(--s-lg)">
+            <button class="btn btn-primary" data-nav="dialog:homework-create">+ Assign Homework</button>
+          </div>
+        </div>
+
+        <!-- ═══ Lesson Plan Tool Content ═══ -->
+        <div id="tool-lesson" class="tool-content">
+          <div class="scroll" style="flex:1">
+            <div class="lesson-item">
+              <div class="lesson-date">Mon, 15 Jul 2026</div>
+              <div class="lesson-topic">Fractions — Comparing and Ordering</div>
+              <div class="lesson-objectives">Students will learn to compare fractions with unlike denominators using LCM method</div>
+            </div>
+            <div class="lesson-item">
+              <div class="lesson-date">Wed, 17 Jul 2026</div>
+              <div class="lesson-topic">Fractions — Addition & Subtraction</div>
+              <div class="lesson-objectives">Students will practice adding and subtracting mixed fractions with word problems</div>
+            </div>
+            <div class="lesson-item">
+              <div class="lesson-date">Fri, 19 Jul 2026</div>
+              <div class="lesson-topic">Decimals — Introduction</div>
+              <div class="lesson-objectives">Introduce decimal notation, place value chart, and conversion from fractions</div>
+            </div>
+            <div class="lesson-item" style="opacity:0.5">
+              <div class="lesson-date">Mon, 22 Jul 2026</div>
+              <div class="lesson-topic">Decimals — Operations</div>
+              <div class="lesson-objectives">Add, subtract, multiply and divide decimals up to 2 places</div>
+            </div>
+          </div>
+          <div style="padding:var(--s-md) var(--s-lg)">
+            <button class="btn btn-primary" data-nav="dialog:lesson-create">+ Create Lesson Plan</button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       B-3 — CLASSES TAB
+       Class list → Student drill-down
+       ═══════════════════════════════════════════════════════════════ -->
+  <div class="tab-content" id="tab-classes">
+    <div class="scroll content-pb">
+
+      <div class="section-header" style="margin-top:var(--s-sm)">
+        <div class="section-title">My Classes</div>
+        <span class="badge badge--neutral">3 classes</span>
+      </div>
+
+      <div class="class-card">
+        <div class="class-card-header">
+          <div>
+            <div class="class-card-name">Class 7-B</div>
+            <div class="class-card-subject">Mathematics</div>
+          </div>
+          <span class="badge badge--violet">32 students</span>
+        </div>
+        <div class="class-card-meta">
+          <div class="class-meta-item"><svg><use href="#icon-clipboard"/></svg>3 pending</div>
+          <div class="class-meta-item"><svg><use href="#icon-edit"/></svg>5 ungraded</div>
+          <div class="class-meta-item"><svg><use href="#icon-book"/></svg>68% syllabus</div>
+        </div>
+      </div>
+
+      <div class="class-card">
+        <div class="class-card-header">
+          <div>
+            <div class="class-card-name">Class 8-A</div>
+            <div class="class-card-subject">Mathematics</div>
+          </div>
+          <span class="badge badge--violet">28 students</span>
+        </div>
+        <div class="class-card-meta">
+          <div class="class-meta-item"><svg><use href="#icon-clipboard"/></svg>1 pending</div>
+          <div class="class-meta-item"><svg><use href="#icon-edit"/></svg>7 ungraded</div>
+          <div class="class-meta-item"><svg><use href="#icon-book"/></svg>75% syllabus</div>
+        </div>
+      </div>
+
+      <div class="class-card">
+        <div class="class-card-header">
+          <div>
+            <div class="class-card-name">Class 9-C</div>
+            <div class="class-card-subject">Algebra</div>
+          </div>
+          <span class="badge badge--violet">30 students</span>
+        </div>
+        <div class="class-card-meta">
+          <div class="class-meta-item"><svg><use href="#icon-clipboard"/></svg>2 pending</div>
+          <div class="class-meta-item"><svg><use href="#icon-edit"/></svg>0 ungraded</div>
+          <div class="class-meta-item"><svg><use href="#icon-book"/></svg>82% syllabus</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       B-4 — TIMETABLE TAB
+       Sub-tabs: This Week · Change Requests
+       ═══════════════════════════════════════════════════════════════ -->
+  <div class="tab-content" id="tab-timetable">
+    <div class="sub-tabs">
+      <button class="sub-tab active" data-subtab="week">This Week</button>
+      <button class="sub-tab" data-subtab="requests">Change Requests</button>
+    </div>
+    <div class="scroll content-pb">
+
+      <!-- This Week -->
+      <div id="subtab-week">
+        <div class="day-selector" style="margin-top:var(--s-sm)">
+          <button class="day-btn">Mon</button>
+          <button class="day-btn active today">Tue</button>
+          <button class="day-btn">Wed</button>
+          <button class="day-btn">Thu</button>
+          <button class="day-btn">Fri</button>
+          <button class="day-btn">Sat</button>
+          <button class="day-btn">Sun</button>
+        </div>
+
+        <div class="timetable-period">
+          <div class="timetable-period-num">1</div>
+          <div class="timetable-period-info">
+            <div class="timetable-period-class">Class 7-B · Mathematics</div>
+            <div class="timetable-period-meta">Room 204</div>
+          </div>
+          <div class="timetable-period-time">8:00 — 8:45</div>
+        </div>
+        <div class="timetable-period">
+          <div class="timetable-period-num">2</div>
+          <div class="timetable-period-info">
+            <div class="timetable-period-class">Class 8-A · Mathematics</div>
+            <div class="timetable-period-meta">Room 312</div>
+          </div>
+          <div class="timetable-period-time">9:00 — 9:45</div>
+        </div>
+        <div class="timetable-period">
+          <div class="timetable-period-num">3</div>
+          <div class="timetable-period-info">
+            <div class="timetable-period-class">Class 9-C · Algebra</div>
+            <div class="timetable-period-meta">Room 108</div>
+          </div>
+          <div class="timetable-period-time">10:00 — 10:45</div>
+        </div>
+        <div class="timetable-period">
+          <div class="timetable-period-num">4</div>
+          <div class="timetable-period-info">
+            <div class="timetable-period-class">Class 7-B · Mathematics</div>
+            <div class="timetable-period-meta">Room 204</div>
+          </div>
+          <div class="timetable-period-time">11:15 — 12:00</div>
+        </div>
+        <div class="timetable-period">
+          <div class="timetable-period-num">5</div>
+          <div class="timetable-period-info">
+            <div class="timetable-period-class">Class 8-A · Mathematics</div>
+            <div class="timetable-period-meta">Room 312</div>
+          </div>
+          <div class="timetable-period-time">1:00 — 1:45</div>
+        </div>
+      </div>
+
+      <!-- Change Requests -->
+      <div id="subtab-requests" style="display:none">
+        <div class="section-header" style="margin-top:var(--s-sm)">
+          <div class="section-title">Submitted Requests</div>
+          <div class="section-link">+ New request</div>
+        </div>
+        <div class="cr-card">
+          <div class="cr-header">
+            <div>
+              <div class="cr-type">Modify Period 3</div>
+              <div class="cr-period">Wednesday · 10:00 — 10:45</div>
+            </div>
+            <span class="badge badge--gold">Pending</span>
+          </div>
+          <div class="cr-reason">Requesting room change from 108 to 205 due to smartboard maintenance.</div>
+          <div class="cr-date">Submitted 12 Jul 2026</div>
+        </div>
+        <div class="cr-card">
+          <div class="cr-header">
+            <div>
+              <div class="cr-type">New Period</div>
+              <div class="cr-period">Friday · 2:00 — 2:45</div>
+            </div>
+            <span class="badge badge--mint">Approved</span>
+          </div>
+          <div class="cr-reason">Additional remedial session for Class 9-C before unit test.</div>
+          <div class="cr-date">Submitted 8 Jul 2026</div>
+        </div>
+        <div class="cr-card">
+          <div class="cr-header">
+            <div>
+              <div class="cr-type">Delete Period 5</div>
+              <div class="cr-period">Monday · 1:00 — 1:45</div>
+            </div>
+            <span class="badge badge--error">Rejected</span>
+          </div>
+          <div class="cr-reason">Request to cancel Monday afternoon session for personal leave.</div>
+          <div class="cr-date">Submitted 5 Jul 2026</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       B-5 — PROFILE TAB
+       Identity → Leave → Password → Theme → Logout
+       ═══════════════════════════════════════════════════════════════ -->
+  <div class="tab-content" id="tab-profile">
+    <div class="scroll content-pb">
+
+      <!-- Identity Card -->
+      <div class="profile-identity">
+        <div class="profile-avatar">PS</div>
+        <div class="profile-name">Priya Sharma</div>
+        <div class="profile-role">Mathematics Teacher</div>
+        <div class="profile-meta">
+          <div class="profile-meta-item">EMP-0421</div>
+          <div class="profile-meta-item">·</div>
+          <div class="profile-meta-item">Science Dept</div>
+        </div>
+      </div>
+
+      <!-- Leave Management -->
+      <div class="profile-section">
+        <div class="profile-section-title">Leave Management</div>
+        <div class="card">
+          <div class="profile-row">
+            <div class="profile-row-left">
+              <div class="profile-row-icon profile-row-icon--leave">
+                <svg><use href="#icon-calendar"/></svg>
+              </div>
+              <div class="profile-row-label">Apply for leave</div>
+            </div>
+            <div class="profile-row-value">Casual · 7 left</div>
+          </div>
+          <div class="profile-row">
+            <div class="profile-row-left">
+              <div class="profile-row-icon profile-row-icon--leave">
+                <svg><use href="#icon-clock"/></svg>
+              </div>
+              <div class="profile-row-label">Leave history</div>
+            </div>
+            <div class="profile-row-value">3 applications</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings -->
+      <div class="profile-section">
+        <div class="profile-section-title">Settings</div>
+        <div class="card">
+          <div class="profile-row">
+            <div class="profile-row-left">
+              <div class="profile-row-icon profile-row-icon--password">
+                <svg><use href="#icon-lock"/></svg>
+              </div>
+              <div class="profile-row-label">Change password</div>
+            </div>
+            <div class="profile-row-value">›</div>
+          </div>
+          <div class="profile-row">
+            <div class="profile-row-left">
+              <div class="profile-row-icon profile-row-icon--theme">
+                <svg><use href="#icon-palette"/></svg>
+              </div>
+              <div class="profile-row-label">Theme</div>
+            </div>
+            <div class="profile-row-value">System</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Logout -->
+      <div class="profile-section">
+        <div class="card">
+          <div class="profile-row">
+            <div class="profile-row-left">
+              <div class="profile-row-icon profile-row-icon--logout">
+                <svg><use href="#icon-logout"/></svg>
+              </div>
+              <div class="profile-row-label" style="color:var(--error)">Log out</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ Bottom Nav ═══ -->
+  <div class="bottom-nav">
+    <button class="nav-item active" data-nav="tab:Home">
+      <div class="nav-item-icon"><svg><use href="#icon-home"/></svg></div>
+      <div class="nav-item-label">Home</div>
+    </button>
+    <button class="nav-item" data-nav="tab:Update">
+      <div class="nav-item-icon"><svg><use href="#icon-edit"/></svg></div>
+      <div class="nav-item-label">Update</div>
+      <span class="nav-badge">7</span>
+    </button>
+    <button class="nav-item" data-nav="tab:Classes">
+      <div class="nav-item-icon"><svg><use href="#icon-classes"/></svg></div>
+      <div class="nav-item-label">Classes</div>
+    </button>
+    <button class="nav-item" data-nav="tab:Timetable">
+      <div class="nav-item-icon"><svg><use href="#icon-calendar"/></svg></div>
+      <div class="nav-item-label">Timetable</div>
+    </button>
+    <button class="nav-item" data-nav="tab:Profile">
+      <div class="nav-item-icon"><svg><use href="#icon-user"/></svg></div>
+      <div class="nav-item-label">Profile</div>
+    </button>
+  </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       B-3 FOO — STUDENT PROFILE DRILL-DOWN
+       ═══════════════════════════════════════════════════════════════ -->
+  <div class="overlay-screen" id="overlay-student-profile">
+    <div class="back-header">
+      <button class="back-btn" data-nav="back:student-profile">‹</button>
+      <span class="back-header-title">Student Profile</span>
+    </div>
+    <div class="scroll content-pb">
+      <div class="student-profile-header">
+        <div class="student-profile-avatar">AK</div>
+        <div class="student-profile-name">Aarav Kumar</div>
+        <div class="student-profile-meta">Class 7-B · Roll #01 · Mathematics</div>
+      </div>
+      <div class="student-profile-stats">
+        <div class="stat-card attendance">
+          <div class="stat-value">94%</div>
+          <div class="stat-label">Attendance</div>
+        </div>
+        <div class="stat-card marks">
+          <div class="stat-value">42/50</div>
+          <div class="stat-label">Latest Mark</div>
+        </div>
+        <div class="stat-card syllabus">
+          <div class="stat-value">62%</div>
+          <div class="stat-label">Syllabus</div>
+        </div>
+      </div>
+      <div class="section-header" style="margin-top:var(--s-md)">
+        <div class="section-title">Recent Attendance</div>
+      </div>
+      <div style="padding:0 var(--s-lg)">
+        <div class="leave-status-item" style="padding:10px 0">
+          <div class="leave-status-info">
+            <div class="leave-status-dates" style="font-size:13px">12 Jul</div>
+            <div class="leave-status-type">Present</div>
+          </div>
+          <span class="badge badge-success">P</span>
+        </div>
+        <div class="leave-status-item" style="padding:10px 0">
+          <div class="leave-status-info">
+            <div class="leave-status-dates" style="font-size:13px">11 Jul</div>
+            <div class="leave-status-type">Present</div>
+          </div>
+          <span class="badge badge-success">P</span>
+        </div>
+        <div class="leave-status-item" style="padding:10px 0">
+          <div class="leave-status-info">
+            <div class="leave-status-dates" style="font-size:13px">10 Jul</div>
+            <div class="leave-status-type">Late</div>
+          </div>
+          <span class="badge badge-warning">L</span>
+        </div>
+      </div>
+      <div class="section-header" style="margin-top:var(--s-md)">
+        <div class="section-title">Marks History</div>
+      </div>
+      <div style="padding:0 var(--s-lg)">
+        <div class="leave-status-item" style="padding:10px 0">
+          <div class="leave-status-info">
+            <div class="leave-status-dates" style="font-size:13px">Unit Test 1</div>
+            <div class="leave-status-type">42 / 50 · B+</div>
+          </div>
+          <span class="badge">84%</span>
+        </div>
+        <div class="leave-status-item" style="padding:10px 0">
+          <div class="leave-status-info">
+            <div class="leave-status-dates" style="font-size:13px">Quiz 2</div>
+            <div class="leave-status-type">18 / 20 · A</div>
+          </div>
+          <span class="badge badge-success">90%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       B-1 FOO — CHECK-IN POPUP
+       ═══════════════════════════════════════════════════════════════ -->
+  <div class="checkin-popup" id="checkin-popup">
+    <div class="checkin-title">Attendance due: Class 7-B</div>
+    <div class="checkin-body">Period 3 · Mathematics · Room 204. Mark attendance now?</div>
+    <div class="checkin-actions">
+      <button class="btn-outline" data-nav="dismiss:checkin">Later</button>
+      <button class="btn btn-primary" data-nav="tab:Update">Mark Now</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       B-6.01 — NOTIFICATIONS OVERLAY
+       ═══════════════════════════════════════════════════════════════ -->
+  <div class="overlay-screen" id="overlay-Notifications">
+    <div class="overlay-header">
+      <button class="overlay-back" data-nav="back:overlay"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <span class="overlay-title">Notifications</span>
+    </div>
+    <div class="overlay-content">
+      <div class="notif-item unread">
+        <div class="notif-icon notif-icon--homework"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="notif-content">
+          <div class="notif-title">New homework submission</div>
+          <div class="notif-body">Diya Singh submitted "Worksheet: Fractions Practice"</div>
+          <div class="notif-time">5 min ago</div>
+        </div>
+        <div class="notif-unread-dot"></div>
+      </div>
+      <div class="notif-item unread">
+        <div class="notif-icon notif-icon--leave"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="notif-content">
+          <div class="notif-title">Leave request from parent</div>
+          <div class="notif-body">Rohan Patel — 2 days sick leave (17-18 Jul)</div>
+          <div class="notif-time">1 hour ago</div>
+        </div>
+        <div class="notif-unread-dot"></div>
+      </div>
+      <div class="notif-item unread">
+        <div class="notif-icon notif-icon--message"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="notif-content">
+          <div class="notif-title">New message from parent</div>
+          <div class="notif-body">Vihaan Reddy's father: "Regarding tomorrow's test..."</div>
+          <div class="notif-time">3 hours ago</div>
+        </div>
+        <div class="notif-unread-dot"></div>
+      </div>
+      <div class="notif-item">
+        <div class="notif-icon notif-icon--attendance"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="notif-content">
+          <div class="notif-title">Attendance reminder</div>
+          <div class="notif-body">Class 7-B attendance not marked for Period 3</div>
+          <div class="notif-time">Yesterday</div>
+        </div>
+      </div>
+      <div class="notif-item">
+        <div class="notif-icon notif-icon--homework"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="notif-content">
+          <div class="notif-title">Homework grading pending</div>
+          <div class="notif-body">3 submissions pending for "Mental Math — Division"</div>
+          <div class="notif-time">2 days ago</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       B-6.02 — HEALTH ALERTS OVERLAY
+       ═══════════════════════════════════════════════════════════════ -->
+  <div class="overlay-screen" id="overlay-HealthAlerts">
+    <div class="overlay-header">
+      <button class="overlay-back" data-nav="back:overlay"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <span class="overlay-title">Health Alerts</span>
+    </div>
+    <div class="overlay-content content-pb">
+      <div class="section-header" style="margin-top:var(--s-sm)">
+        <div class="section-title">Active Alerts</div>
+        <span class="badge badge-error">2</span>
+      </div>
+      <div class="health-card">
+        <div class="health-card-header">
+          <div class="health-card-avatar">RP</div>
+          <div>
+            <div class="health-card-name">Rohan Patel</div>
+            <div class="health-card-class">Class 7-B · Roll #03</div>
+          </div>
+          <span class="badge badge-error" style="margin-left:auto">High</span>
+        </div>
+        <div class="health-card-detail">Fever reported by parent. Temperature 102°F. On medication.</div>
+        <div class="health-card-instructions">Monitor for 48 hours. Ensure student stays hydrated. Contact parent if symptoms persist.</div>
+      </div>
+      <div class="health-card">
+        <div class="health-card-header">
+          <div class="health-card-avatar">AN</div>
+          <div>
+            <div class="health-card-name">Ananya Nair</div>
+            <div class="health-card-class">Class 7-B · Roll #04</div>
+          </div>
+          <span class="badge badge-warning" style="margin-left:auto">Moderate</span>
+        </div>
+        <div class="health-card-detail">Asthma. Carries inhaler. Avoid strenuous activity during PE.</div>
+        <div class="health-card-instructions">Ensure inhaler is accessible. Allow rest breaks during physical activities.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       B-6.03 — TRANSPORT ATTENDANCE OVERLAY
+       ═══════════════════════════════════════════════════════════════ -->
+  <div class="overlay-screen" id="overlay-Transport">
+    <div class="overlay-header">
+      <button class="overlay-back" data-nav="back:overlay"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <span class="overlay-title">Transport Attendance</span>
+    </div>
+    <div class="overlay-content content-pb">
+      <div class="route-selector">
+        <div class="route-chip active">Route 1 — North</div>
+        <div class="route-chip">Route 2 — South</div>
+        <div class="route-chip">Route 3 — East</div>
+      </div>
+      <div class="section-header" style="margin-top:var(--s-sm)">
+        <div class="section-title">Stop: Green Park</div>
+        <span class="badge">3 students</span>
+      </div>
+      <div class="transport-stop">
+        <div class="transport-stop-name">Boarded at Green Park</div>
+        <div class="student-row">
+          <div class="student-row-left">
+            <div class="student-avatar">AK</div>
+            <div class="student-info">
+              <div class="student-name">Aarav Kumar</div>
+              <div class="student-roll">7-B · Roll #01</div>
+            </div>
+          </div>
+          <div class="attendance-toggle">
+            <button class="att-toggle-btn present active">Boarded</button>
+            <button class="att-toggle-btn absent">Absent</button>
+          </div>
+        </div>
+        <div class="student-row">
+          <div class="student-row-left">
+            <div class="student-avatar">DS</div>
+            <div class="student-info">
+              <div class="student-name">Diya Singh</div>
+              <div class="student-roll">7-B · Roll #02</div>
+            </div>
+          </div>
+          <div class="attendance-toggle">
+            <button class="att-toggle-btn present active">Boarded</button>
+            <button class="att-toggle-btn absent">Absent</button>
+          </div>
+        </div>
+        <div class="student-row">
+          <div class="student-row-left">
+            <div class="student-avatar">VR</div>
+            <div class="student-info">
+              <div class="student-name">Vihaan Reddy</div>
+              <div class="student-roll">7-B · Roll #05</div>
+            </div>
+          </div>
+          <div class="attendance-toggle">
+            <button class="att-toggle-btn present">Boarded</button>
+            <button class="att-toggle-btn absent active">Absent</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       B-6.04 — PEWS OVERLAY (Early Warning)
+       ═══════════════════════════════════════════════════════════════ -->
+  <div class="overlay-screen" id="overlay-PEWS">
+    <div class="overlay-header">
+      <button class="overlay-back" data-nav="back:overlay"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <span class="overlay-title">Early Warning System</span>
+    </div>
+    <div class="overlay-content content-pb">
+      <div class="section-header" style="margin-top:var(--s-sm)">
+        <div class="section-title">At-Risk Students</div>
+        <span class="badge badge-error">2</span>
+      </div>
+      <div class="pews-card">
+        <div class="pews-card-header">
+          <div class="pews-student">
+            <div class="pews-avatar">RP</div>
+            <div>
+              <div class="pews-name">Rohan Patel</div>
+              <div class="pews-class">Class 7-B · Mathematics</div>
+            </div>
+          </div>
+          <span class="badge badge-error">High Risk</span>
+        </div>
+        <div class="pews-factor">⚠ Low attendance (67%) — 3 absences in last 2 weeks</div>
+        <div class="pews-factor">⚠ Declining marks — 42/50 → 28/50 in last 2 assessments</div>
+      </div>
+      <div class="pews-card">
+        <div class="pews-card-header">
+          <div class="pews-student">
+            <div class="pews-avatar">VR</div>
+            <div>
+              <div class="pews-name">Vihaan Reddy</div>
+              <div class="pews-class">Class 7-B · Mathematics</div>
+            </div>
+          </div>
+          <span class="badge badge-warning">Moderate</span>
+        </div>
+        <div class="pews-factor">⚠ Late arrivals — 4 in last 2 weeks</div>
+        <div class="pews-factor">⚠ Homework not submitted — 2 pending</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       B-6.05 — REPORT REVIEW QUEUE OVERLAY
+       ═══════════════════════════════════════════════════════════════ -->
+  <div class="overlay-screen" id="overlay-ReportReview">
+    <div class="overlay-header">
+      <button class="overlay-back" data-nav="back:overlay"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <span class="overlay-title">Report Review Queue</span>
+    </div>
+    <div class="overlay-content content-pb">
+      <div class="section-header" style="margin-top:var(--s-sm)">
+        <div class="section-title">Pending Review</div>
+        <span class="badge badge-warning">3</span>
+      </div>
+      <div class="report-card">
+        <div class="report-card-header">
+          <div>
+            <div class="report-student-name">Aarav Kumar</div>
+            <div class="report-meta">Class 7-B · Term 1 · Draft</div>
+          </div>
+          <span class="badge badge-warning">Review</span>
+        </div>
+      </div>
+      <div class="report-card">
+        <div class="report-card-header">
+          <div>
+            <div class="report-student-name">Diya Singh</div>
+            <div class="report-meta">Class 7-B · Term 1 · Draft</div>
+          </div>
+          <span class="badge badge-warning">Review</span>
+        </div>
+      </div>
+      <div class="report-card">
+        <div class="report-card-header">
+          <div>
+            <div class="report-student-name">Rohan Patel</div>
+            <div class="report-meta">Class 7-B · Term 1 · Draft</div>
+          </div>
+          <span class="badge badge-warning">Review</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       B-6.06 — REPORT DRAFT EDITOR OVERLAY
+       ═══════════════════════════════════════════════════════════════ -->
+  <div class="overlay-screen" id="overlay-ReportDraft">
+    <div class="overlay-header">
+      <button class="overlay-back" data-nav="back:overlay"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <span class="overlay-title">Report Draft — Aarav Kumar</span>
+    </div>
+    <div class="overlay-content content-pb">
+      <div class="form-group" style="margin-top:var(--s-md)">
+        <label class="form-label">Academic Performance</label>
+        <textarea class="form-textarea" rows="3">Aarav shows strong understanding of mathematical concepts. Consistent performance in class tests. Needs to work on problem-solving speed.</textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Classroom Behaviour</label>
+        <textarea class="form-textarea" rows="3">Well-disciplined and respectful. Participates actively in class discussions. Helps peers with difficult topics.</textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Attendance Summary</label>
+        <textarea class="form-textarea" rows="2">94% attendance. 1 late arrival this term. No unexcused absences.</textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Teacher's Remarks</label>
+        <textarea class="form-textarea" rows="2">Keep up the good work. Focus on time management during exams.</textarea>
+      </div>
+      <div style="padding:var(--s-md) var(--s-lg);display:flex;gap:var(--s-sm)">
+        <button class="btn-outline" style="flex:1">Save Draft</button>
+        <button class="btn btn-primary" style="flex:1">Approve & Publish</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       B-6.07 — HEATMAP OVERLAY
+       ═══════════════════════════════════════════════════════════════ -->
+  <div class="overlay-screen" id="overlay-Heatmap">
+    <div class="overlay-header">
+      <button class="overlay-back" data-nav="back:overlay"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <span class="overlay-title">Learning Heatmap</span>
+    </div>
+    <div class="overlay-content content-pb">
+      <div class="section-header" style="margin-top:var(--s-sm)">
+        <div class="section-title">Class 7-B · Topic Mastery</div>
+      </div>
+      <div class="heatmap-grid">
+        <div class="heatmap-cell header">Student</div>
+        <div class="heatmap-cell header">Integers</div>
+        <div class="heatmap-cell header">Fractions</div>
+        <div class="heatmap-cell header">Decimals</div>
+        <div class="heatmap-cell header">Geometry</div>
+        <div class="heatmap-cell header">Algebra</div>
+
+        <div class="heatmap-cell label">Aarav K.</div>
+        <div class="heatmap-cell green">85%</div>
+        <div class="heatmap-cell green">78%</div>
+        <div class="heatmap-cell yellow">62%</div>
+        <div class="heatmap-cell green">80%</div>
+        <div class="heatmap-cell yellow">55%</div>
+
+        <div class="heatmap-cell label">Diya S.</div>
+        <div class="heatmap-cell green">92%</div>
+        <div class="heatmap-cell green">88%</div>
+        <div class="heatmap-cell green">75%</div>
+        <div class="heatmap-cell green">85%</div>
+        <div class="heatmap-cell green">72%</div>
+
+        <div class="heatmap-cell label">Rohan P.</div>
+        <div class="heatmap-cell yellow">58%</div>
+        <div class="heatmap-cell red">42%</div>
+        <div class="heatmap-cell red">35%</div>
+        <div class="heatmap-cell yellow">50%</div>
+        <div class="heatmap-cell red">28%</div>
+
+        <div class="heatmap-cell label">Ananya N.</div>
+        <div class="heatmap-cell green">88%</div>
+        <div class="heatmap-cell green">82%</div>
+        <div class="heatmap-cell yellow">65%</div>
+        <div class="heatmap-cell green">78%</div>
+        <div class="heatmap-cell yellow">60%</div>
+
+        <div class="heatmap-cell label">Vihaan R.</div>
+        <div class="heatmap-cell yellow">55%</div>
+        <div class="heatmap-cell yellow">60%</div>
+        <div class="heatmap-cell red">40%</div>
+        <div class="heatmap-cell yellow">52%</div>
+        <div class="heatmap-cell yellow">58%</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       B-6.08 — DIGITAL ID CARD OVERLAY
+       ═══════════════════════════════════════════════════════════════ -->
+  <div class="overlay-screen" id="overlay-IdCard">
+    <div class="overlay-header">
+      <button class="overlay-back" data-nav="back:overlay"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <span class="overlay-title">Digital ID Card</span>
+    </div>
+    <div class="overlay-content content-pb">
+      <div class="id-card">
+        <div class="id-card-header">
+          <div class="id-card-school">Greenwood Public School</div>
+          <div class="id-card-logo">Enroll<span style="opacity:0.7">+</span></div>
+        </div>
+        <div class="id-card-photo">PM</div>
+        <div class="id-card-name">Priya Menon</div>
+        <div class="id-card-role">Teacher · Mathematics</div>
+        <div class="id-card-details">
+          <div class="id-card-detail-row">
+            <span class="id-card-detail-label">Employee ID</span>
+            <span>GPS-T-0142</span>
+          </div>
+          <div class="id-card-detail-row">
+            <span class="id-card-detail-label">Department</span>
+            <span>Mathematics</span>
+          </div>
+          <div class="id-card-detail-row">
+            <span class="id-card-detail-label">Classes</span>
+            <span>7-B, 8-A, 8-C</span>
+          </div>
+          <div class="id-card-detail-row">
+            <span class="id-card-detail-label">Valid Until</span>
+            <span>Mar 2027</span>
+          </div>
+        </div>
+        <div class="id-card-qr">QR Code — Tap to enlarge</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       B-6.09 — SCHEDULED MESSAGES OVERLAY
+       ═══════════════════════════════════════════════════════════════ -->
+  <div class="overlay-screen" id="overlay-ScheduledMessages">
+    <div class="overlay-header">
+      <button class="overlay-back" data-nav="back:overlay"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <span class="overlay-title">Scheduled Messages</span>
+    </div>
+    <div class="overlay-content content-pb">
+      <div class="section-header" style="margin-top:var(--s-sm)">
+        <div class="section-title">Upcoming</div>
+        <span class="badge">2</span>
+      </div>
+      <div class="sched-msg-item">
+        <div class="sched-msg-header">
+          <span class="sched-msg-title">PTM Reminder</span>
+          <span class="sched-msg-time">Tomorrow · 10:00 AM</span>
+        </div>
+        <div class="sched-msg-body">Dear Parent, PTM is scheduled for Saturday 20 Jul at 10 AM. Please confirm your slot.</div>
+        <div class="sched-msg-targets">→ Class 7-B parents (28 recipients)</div>
+      </div>
+      <div class="sched-msg-item">
+        <div class="sched-msg-header">
+          <span class="sched-msg-title">Homework Reminder</span>
+          <span class="sched-msg-time">Today · 6:00 PM</span>
+        </div>
+        <div class="sched-msg-body">Reminder: "Worksheet: Fractions Practice" is due tomorrow. Please ensure completion.</div>
+        <div class="sched-msg-targets">→ Class 7-B parents (28 recipients)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       B-6.10 — EVENT REGISTRATION OVERLAY
+       ═══════════════════════════════════════════════════════════════ -->
+  <div class="overlay-screen" id="overlay-EventRegistration">
+    <div class="overlay-header">
+      <button class="overlay-back" data-nav="back:overlay"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <span class="overlay-title">Event Registration</span>
+    </div>
+    <div class="overlay-content content-pb">
+      <div class="event-detail-card">
+        <div class="event-detail-title">Parent-Teacher Meeting</div>
+        <div class="event-detail-meta">Saturday, 20 Jul 2026 · 10:00 AM — 1:00 PM</div>
+        <div class="event-detail-meta" style="margin-top:6px">Venue: School Auditorium</div>
+      </div>
+      <div class="section-header">
+        <div class="section-title">Time Slots</div>
+        <span class="badge">5 slots</span>
+      </div>
+      <div class="slot-card">
+        <div>
+          <div class="slot-time">10:00 — 10:20 AM</div>
+          <div class="slot-parent">Aarav Kumar's parent · Confirmed</div>
+        </div>
+        <span class="badge badge-success">Booked</span>
+      </div>
+      <div class="slot-card">
+        <div>
+          <div class="slot-time">10:20 — 10:40 AM</div>
+          <div class="slot-parent">Available</div>
+        </div>
+        <button class="slot-action">Assign</button>
+      </div>
+      <div class="slot-card">
+        <div>
+          <div class="slot-time">10:40 — 11:00 AM</div>
+          <div class="slot-parent">Diya Singh's parent · Confirmed</div>
+        </div>
+        <span class="badge badge-success">Booked</span>
+      </div>
+      <div class="slot-card">
+        <div>
+          <div class="slot-time">11:00 — 11:20 AM</div>
+          <div class="slot-parent">Available</div>
+        </div>
+        <button class="slot-action">Assign</button>
+      </div>
+      <div class="slot-card">
+        <div>
+          <div class="slot-time">11:20 — 11:40 AM</div>
+          <div class="slot-parent">Available</div>
+        </div>
+        <button class="slot-action">Assign</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       B-6.11 — MESSAGES OVERLAY
+       ═══════════════════════════════════════════════════════════════ -->
+  <div class="overlay-screen" id="overlay-Messages">
+    <div class="overlay-header">
+      <button class="overlay-back" data-nav="back:overlay"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <span class="overlay-title">Messages</span>
+    </div>
+    <div class="overlay-content">
+      <div class="thread-item">
+        <div class="thread-avatar">RP</div>
+        <div class="thread-content">
+          <div class="thread-header">
+            <span class="thread-name">Rohan's Father</span>
+            <span class="thread-time">5m</span>
+          </div>
+          <div class="thread-preview">Regarding tomorrow's test, Rohan has been sick...</div>
+        </div>
+        <div class="thread-unread">2</div>
+      </div>
+      <div class="thread-item">
+        <div class="thread-avatar">DS</div>
+        <div class="thread-content">
+          <div class="thread-header">
+            <span class="thread-name">Diya's Mother</span>
+            <span class="thread-time">1h</span>
+          </div>
+          <div class="thread-preview">Thank you for the feedback on Diya's progress</div>
+        </div>
+      </div>
+      <div class="thread-item">
+        <div class="thread-avatar">VR</div>
+        <div class="thread-content">
+          <div class="thread-header">
+            <span class="thread-name">Vihaan's Father</span>
+            <span class="thread-time">3h</span>
+          </div>
+          <div class="thread-preview">Can we schedule a meeting to discuss...</div>
+        </div>
+        <div class="thread-unread">1</div>
+      </div>
+      <div class="thread-item">
+        <div class="thread-avatar">AN</div>
+        <div class="thread-content">
+          <div class="thread-header">
+            <span class="thread-name">Ananya's Mother</span>
+            <span class="thread-time">Yesterday</span>
+          </div>
+          <div class="thread-preview">Ananya mentioned the science fair. How can we...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       B-6.12 — CALENDAR OVERLAY
+       ═══════════════════════════════════════════════════════════════ -->
+  <div class="overlay-screen" id="overlay-Calendar">
+    <div class="overlay-header">
+      <button class="overlay-back" data-nav="back:overlay"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <span class="overlay-title">July 2026</span>
+    </div>
+    <div class="overlay-content content-pb">
+      <div class="cal-grid">
+        <div class="cal-day-header">M</div>
+        <div class="cal-day-header">T</div>
+        <div class="cal-day-header">W</div>
+        <div class="cal-day-header">T</div>
+        <div class="cal-day-header">F</div>
+        <div class="cal-day-header">S</div>
+        <div class="cal-day-header">S</div>
+        <div class="cal-day">13</div>
+        <div class="cal-day">14</div>
+        <div class="cal-day today has-event">15</div>
+        <div class="cal-day">16</div>
+        <div class="cal-day has-event">17</div>
+        <div class="cal-day">18</div>
+        <div class="cal-day has-event">19</div>
+        <div class="cal-day">20</div>
+        <div class="cal-day has-event">21</div>
+        <div class="cal-day">22</div>
+        <div class="cal-day">23</div>
+        <div class="cal-day">24</div>
+        <div class="cal-day">25</div>
+        <div class="cal-day">26</div>
+        <div class="cal-day has-event">27</div>
+      </div>
+      <div class="section-header" style="margin-top:var(--s-md)">
+        <div class="section-title">Today's Events</div>
+      </div>
+      <div class="cal-events-list">
+        <div class="cal-event-item">
+          <div class="cal-event-dot cal-event-dot--event"></div>
+          <div class="cal-event-info">
+            <div class="cal-event-title">Unit Test 1 — Mathematics</div>
+            <div class="cal-event-time">11:00 AM — 12:00 PM · Class 7-B</div>
+          </div>
+        </div>
+        <div class="cal-event-item">
+          <div class="cal-event-dot cal-event-dot--event"></div>
+          <div class="cal-event-info">
+            <div class="cal-event-title">Staff Meeting</div>
+            <div class="cal-event-time">3:30 PM — 4:30 PM · Staff Room</div>
+          </div>
+        </div>
+      </div>
+      <div class="section-header" style="margin-top:var(--s-md)">
+        <div class="section-title">Upcoming</div>
+      </div>
+      <div class="cal-events-list">
+        <div class="cal-event-item">
+          <div class="cal-event-dot cal-event-dot--exam"></div>
+          <div class="cal-event-info">
+            <div class="cal-event-title">Quiz 3 — Fractions</div>
+            <div class="cal-event-time">17 Jul · 10:00 AM</div>
+          </div>
+        </div>
+        <div class="cal-event-item">
+          <div class="cal-event-dot cal-event-dot--event"></div>
+          <div class="cal-event-info">
+            <div class="cal-event-title">Parent-Teacher Meeting</div>
+            <div class="cal-event-time">20 Jul · 10:00 AM — 1:00 PM</div>
+          </div>
+        </div>
+        <div class="cal-event-item">
+          <div class="cal-event-dot cal-event-dot--holiday"></div>
+          <div class="cal-event-info">
+            <div class="cal-event-title">School Holiday — Guru Purnima</div>
+            <div class="cal-event-time">21 Jul</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       B-5 FOO — LEAVE APPLICATION FORM
+       ═══════════════════════════════════════════════════════════════ -->
+  <div class="overlay-screen" id="overlay-LeaveForm">
+    <div class="overlay-header">
+      <button class="overlay-back" data-nav="back:overlay"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <span class="overlay-title">Apply Leave</span>
+    </div>
+    <div class="overlay-content content-pb">
+      <div class="leave-form-card">
+        <div class="form-group" style="padding:0">
+          <label class="form-label">Leave Type</label>
+          <select class="form-select">
+            <option>Sick Leave</option>
+            <option>Casual Leave</option>
+            <option>Earned Leave</option>
+            <option>Personal Leave</option>
+          </select>
+        </div>
+        <div class="form-row" style="margin-top:var(--s-sm)">
+          <div class="form-group" style="padding:0">
+            <label class="form-label">From Date</label>
+            <input class="form-input" type="date" value="2026-07-18">
+          </div>
+          <div class="form-group" style="padding:0">
+            <label class="form-label">To Date</label>
+            <input class="form-input" type="date" value="2026-07-19">
+          </div>
+        </div>
+        <div class="form-group" style="padding:0;margin-top:var(--s-sm)">
+          <label class="form-label">Reason</label>
+          <textarea class="form-textarea" placeholder="Enter reason for leave...">Fever and doctor's advice to rest for 2 days.</textarea>
+        </div>
+      </div>
+      <div style="padding:0 var(--s-lg)">
+        <button class="btn btn-primary" style="width:100%">Submit Leave Request</button>
+      </div>
+      <div class="section-header" style="margin-top:var(--s-lg)">
+        <div class="section-title">Leave History</div>
+      </div>
+      <div class="leave-status-item">
+        <div class="leave-status-info">
+          <div class="leave-status-dates">10 Jun — 11 Jun 2026</div>
+          <div class="leave-status-type">Casual Leave · 2 days</div>
+          <div class="leave-status-reason">Family function</div>
+        </div>
+        <span class="badge badge-success">Approved</span>
+      </div>
+      <div class="leave-status-item">
+        <div class="leave-status-info">
+          <div class="leave-status-dates">22 May 2026</div>
+          <div class="leave-status-type">Sick Leave · 1 day</div>
+          <div class="leave-status-reason">Migraine</div>
+        </div>
+        <span class="badge badge-success">Approved</span>
+      </div>
+      <div class="leave-status-item">
+        <div class="leave-status-info">
+          <div class="leave-status-dates">05 Apr 2026</div>
+          <div class="leave-status-type">Earned Leave · 1 day</div>
+          <div class="leave-status-reason">Personal work</div>
+        </div>
+        <span class="badge badge-error">Rejected</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       B-5 FOO — CHANGE PASSWORD FORM
+       ═══════════════════════════════════════════════════════════════ -->
+  <div class="overlay-screen" id="overlay-ChangePassword">
+    <div class="overlay-header">
+      <button class="overlay-back" data-nav="back:overlay"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <span class="overlay-title">Change Password</span>
+    </div>
+    <div class="overlay-content content-pb">
+      <div class="leave-form-card">
+        <div class="form-group" style="padding:0">
+          <label class="form-label">Current Password</label>
+          <input class="form-input" type="password" placeholder="Enter current password">
+        </div>
+        <div class="form-group" style="padding:0;margin-top:var(--s-sm)">
+          <label class="form-label">New Password</label>
+          <input class="form-input" type="password" placeholder="Enter new password">
+        </div>
+        <div class="form-group" style="padding:0;margin-top:var(--s-sm)">
+          <label class="form-label">Confirm New Password</label>
+          <input class="form-input" type="password" placeholder="Re-enter new password">
+        </div>
+      </div>
+      <div style="padding:0 var(--s-lg)">
+        <button class="btn btn-primary" style="width:100%">Update Password</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       DIALOGS (modals)
+       ═══════════════════════════════════════════════════════════════ -->
+
+  <!-- B-4 FOO: Change Request Dialog -->
+  <div class="modal-overlay" id="modal-change-request">
+    <div class="modal-card">
+      <div class="modal-title">Request Timetable Change</div>
+      <div class="modal-body">Request a change for Period 3 · Monday · Mathematics · Class 7-B</div>
+      <div class="form-group" style="padding:0;margin-bottom:var(--s-sm)">
+        <label class="form-label">Request Type</label>
+        <select class="form-select">
+          <option>Swap with another period</option>
+          <option>Move to different day</option>
+          <option>Cancel period</option>
+          <option>Change room</option>
+        </select>
+      </div>
+      <div class="form-group" style="padding:0;margin-bottom:var(--s-sm)">
+        <label class="form-label">Reason</label>
+        <textarea class="form-textarea" placeholder="Explain the reason..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-outline" data-nav="dismiss:modal">Cancel</button>
+        <button class="btn btn-primary" data-nav="dismiss:modal">Submit Request</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Homework Create Dialog -->
+  <div class="modal-overlay" id="modal-homework-create">
+    <div class="modal-card">
+      <div class="modal-title">Assign Homework</div>
+      <div class="form-group" style="padding:0;margin-bottom:var(--s-sm)">
+        <label class="form-label">Title</label>
+        <input class="form-input" type="text" placeholder="e.g. Worksheet: Fractions">
+      </div>
+      <div class="form-group" style="padding:0;margin-bottom:var(--s-sm)">
+        <label class="form-label">Description</label>
+        <textarea class="form-textarea" placeholder="Instructions for students..."></textarea>
+      </div>
+      <div class="form-group" style="padding:0;margin-bottom:var(--s-sm)">
+        <label class="form-label">Due Date</label>
+        <input class="form-input" type="date" value="2026-07-18">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-outline" data-nav="dismiss:modal">Cancel</button>
+        <button class="btn btn-primary" data-nav="dismiss:modal">Assign</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lesson Plan Create Dialog -->
+  <div class="modal-overlay" id="modal-lesson-create">
+    <div class="modal-card">
+      <div class="modal-title">Create Lesson Plan</div>
+      <div class="form-group" style="padding:0;margin-bottom:var(--s-sm)">
+        <label class="form-label">Date</label>
+        <input class="form-input" type="date" value="2026-07-22">
+      </div>
+      <div class="form-group" style="padding:0;margin-bottom:var(--s-sm)">
+        <label class="form-label">Topic</label>
+        <input class="form-input" type="text" placeholder="e.g. Decimals — Operations">
+      </div>
+      <div class="form-group" style="padding:0;margin-bottom:var(--s-sm)">
+        <label class="form-label">Objectives</label>
+        <textarea class="form-textarea" placeholder="Learning objectives..."></textarea>
+      </div>
+      <div class="form-group" style="padding:0;margin-bottom:var(--s-sm)">
+        <label class="form-label">Resources</label>
+        <input class="form-input" type="text" placeholder="Textbook, slides, etc.">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-outline" data-nav="dismiss:modal">Cancel</button>
+        <button class="btn btn-primary" data-nav="dismiss:modal">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Logout Confirmation Dialog -->
+  <div class="modal-overlay" id="modal-logout">
+    <div class="modal-card">
+      <div class="modal-title">Logout?</div>
+      <div class="modal-body">You will be signed out of your teacher account. You can sign back in anytime.</div>
+      <div class="modal-actions">
+        <button class="btn-outline" data-nav="dismiss:modal">Cancel</button>
+        <button class="btn btn-primary" style="background:var(--coral)" data-nav="dismiss:modal">Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="home-bar" style="background:var(--ink);opacity:0.15"></div>
+
+      </div><!-- /screen-area -->
+    </div><!-- /phone -->
+  </div><!-- /phone-wrap -->
+</div><!-- /shell -->
+
+<script>
+// ═══ Tab Navigation ═══
+const bottomNavItems=document.querySelectorAll('.bottom-nav .nav-item');
+const sidebarNavItems=document.querySelectorAll('.sidebar .nav-item');
+const tabContents=document.querySelectorAll('.tab-content');
+const overlayScreens=document.querySelectorAll('.overlay-screen');
+const modals=document.querySelectorAll('.modal-overlay');
+
+function closeAllOverlays(){
+  overlayScreens.forEach(o=>o.classList.remove('active'));
+}
+function closeAllModals(){
+  modals.forEach(m=>m.classList.remove('active'));
+}
+
+function switchTab(tabName){
+  closeAllOverlays();
+  closeAllModals();
+  document.getElementById('checkin-popup').classList.remove('active');
+
+  bottomNavItems.forEach(n=>n.classList.remove('active'));
+  tabContents.forEach(t=>t.classList.remove('active'));
+
+  const navMap={'Home':0,'Update':1,'Classes':2,'Timetable':3,'Profile':4};
+  const tabMap={'Home':'tab-home','Update':'tab-update','Classes':'tab-classes','Timetable':'tab-timetable','Profile':'tab-profile'};
+
+  if(navMap[tabName]!==undefined)bottomNavItems[navMap[tabName]].classList.add('active');
+  if(tabMap[tabName]){
+    const el=document.getElementById(tabMap[tabName]);
+    if(el)el.classList.add('active');
+  }
+
+  sidebarNavItems.forEach(n=>{
+    n.classList.toggle('active',n.getAttribute('data-nav')==='tab:'+tabName);
+  });
+}
+
+function openOverlay(name){
+  closeAllOverlays();
+  const el=document.getElementById('overlay-'+name);
+  if(el)el.classList.add('active');
+  sidebarNavItems.forEach(n=>{
+    n.classList.toggle('active',n.getAttribute('data-nav')==='overlay:'+name);
+  });
+}
+
+function openModal(id){
+  const el=document.getElementById('modal-'+id);
+  if(el)el.classList.add('active');
+}
+
+// ═══ Main Navigation Handler ═══
+document.addEventListener('click',e=>{
+  const navEl=e.target.closest('[data-nav]');
+  if(!navEl)return;
+  const nav=navEl.getAttribute('data-nav');
+  e.preventDefault();
+
+  if(nav.startsWith('tab:')){
+    switchTab(nav.replace('tab:',''));
+  }else if(nav.startsWith('overlay:')){
+    openOverlay(nav.replace('overlay:',''));
+  }else if(nav.startsWith('dialog:')){
+    openModal(nav.replace('dialog:',''));
+  }else if(nav.startsWith('back:')){
+    const type=nav.replace('back:','');
+    if(type==='overlay'){
+      closeAllOverlays();
+      sidebarNavItems.forEach(n=>n.classList.remove('active'));
+    }else if(type==='student-profile'){
+      closeAllOverlays();
+    }
+  }else if(nav.startsWith('dismiss:')){
+    const type=nav.replace('dismiss:','');
+    if(type==='modal')closeAllModals();
+    if(type==='checkin')document.getElementById('checkin-popup').classList.remove('active');
+  }else if(nav==='update-tool'){
+    document.getElementById('update-tools').style.display='block';
+    document.querySelector('.scope-selector').style.display='none';
+  }
+});
+
+// ═══ Attendance Toggle ═══
+document.addEventListener('click',e=>{
+  const btn=e.target.closest('.att-toggle-btn');
+  if(!btn)return;
+  const siblings=btn.parentElement.querySelectorAll('.att-toggle-btn');
+  siblings.forEach(s=>s.classList.remove('active'));
+  btn.classList.add('active');
+});
+
+// ═══ Tool Segments ═══
+document.addEventListener('click',e=>{
+  const seg=e.target.closest('.tool-seg');
+  if(!seg)return;
+  document.querySelectorAll('.tool-seg').forEach(s=>s.classList.remove('active'));
+  seg.classList.add('active');
+  const tool=seg.getAttribute('data-tool');
+  document.querySelectorAll('.tool-content').forEach(c=>c.classList.remove('active'));
+  const el=document.getElementById('tool-'+tool);
+  if(el)el.classList.add('active');
+});
+
+// ═══ Day Selector ═══
+document.addEventListener('click',e=>{
+  const day=e.target.closest('.day-btn');
+  if(!day)return;
+  document.querySelectorAll('.day-btn').forEach(d=>d.classList.remove('active'));
+  day.classList.add('active');
+});
+
+// ═══ Sub-tabs (Timetable) ═══
+document.addEventListener('click',e=>{
+  const sub=e.target.closest('.sub-tab');
+  if(!sub)return;
+  document.querySelectorAll('.sub-tab').forEach(s=>s.classList.remove('active'));
+  sub.classList.add('active');
+  const target=sub.getAttribute('data-subtab');
+  document.getElementById('subtab-week').style.display=target==='week'?'block':'none';
+  document.getElementById('subtab-requests').style.display=target==='requests'?'block':'none';
+});
+
+// ═══ Syllabus Unit Expand/Collapse ═══
+document.addEventListener('click',e=>{
+  const unit=e.target.closest('[data-syllabus-unit]');
+  if(!unit)return;
+  unit.classList.toggle('expanded');
+});
+
+// ═══ Syllabus Topic Toggle ═══
+document.addEventListener('click',e=>{
+  const check=e.target.closest('.syllabus-topic-check');
+  if(!check)return;
+  e.stopPropagation();
+  check.classList.toggle('done');
+});
+
+// ═══ Assessment Chip Selector ═══
+document.addEventListener('click',e=>{
+  const chip=e.target.closest('.assessment-chip');
+  if(!chip)return;
+  document.querySelectorAll('.assessment-chip').forEach(c=>c.classList.remove('active'));
+  chip.classList.add('active');
+});
+
+// ═══ Route Chip Selector ═══
+document.addEventListener('click',e=>{
+  const chip=e.target.closest('.route-chip');
+  if(!chip)return;
+  document.querySelectorAll('.route-chip').forEach(c=>c.classList.remove('active'));
+  chip.classList.add('active');
+});
+
+// ═══ Profile Row Actions ═══
+document.addEventListener('click',e=>{
+  const row=e.target.closest('.profile-row');
+  if(!row)return;
+  const action=row.getAttribute('data-action');
+  if(action==='leave')openOverlay('LeaveForm');
+  else if(action==='password')openOverlay('ChangePassword');
+  else if(action==='logout')openModal('logout');
+  else if(action==='idcard')openOverlay('IdCard');
+  else if(action==='notifications')openOverlay('Notifications');
+  else if(action==='messages')openOverlay('Messages');
+  else if(action==='calendar')openOverlay('Calendar');
+  else if(action==='transport')openOverlay('Transport');
+  else if(action==='health')openOverlay('HealthAlerts');
+  else if(action==='pews')openOverlay('PEWS');
+  else if(action==='report-review')openOverlay('ReportReview');
+  else if(action==='heatmap')openOverlay('Heatmap');
+  else if(action==='scheduled')openOverlay('ScheduledMessages');
+  else if(action==='events')openOverlay('EventRegistration');
+});
+
+// ═══ Change Request Button ═══
+document.addEventListener('click',e=>{
+  const btn=e.target.closest('[data-action="change-request"]');
+  if(!btn)return;
+  openModal('change-request');
+});
+
+// ═══ Student Row Click → Profile ═══
+document.addEventListener('click',e=>{
+  const row=e.target.closest('.student-row[data-student]');
+  if(!row)return;
+  openOverlay('student-profile');
+});
+
+// ═══ Show Check-in Popup on Home Tab ═══
+document.addEventListener('click',e=>{
+  if(e.target.closest('[data-nav="tab:Home"]')){
+    setTimeout(()=>{
+      document.getElementById('checkin-popup').classList.add('active');
+    },400);
+  }
+});
+
+// Show check-in popup on initial load
+setTimeout(()=>{
+  document.getElementById('checkin-popup').classList.add('active');
+},800);
+
+</script>
+
+</body>
+</html>

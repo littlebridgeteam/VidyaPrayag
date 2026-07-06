@@ -13,7 +13,7 @@ import androidx.compose.ui.platform.LocalContext
  * bars are re-applied whenever the theme changes.
  */
 @Composable
-actual fun VStatusBarAdapter(isDark: Boolean) {
+fun VStatusBarAdapter(isDark: Boolean) {
     val context = LocalContext.current
     val activity = context as? ComponentActivity ?: return
 

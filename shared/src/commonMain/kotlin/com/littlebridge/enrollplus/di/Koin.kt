@@ -6,34 +6,6 @@ import com.littlebridge.enrollplus.feature.schools.data.repository.SchoolReposit
 import com.littlebridge.enrollplus.feature.schools.domain.repository.SchoolRepository
 import com.littlebridge.enrollplus.feature.schools.domain.usecase.GetSchoolsUseCase
 import com.littlebridge.enrollplus.presentation.MainViewModel
-import com.littlebridge.enrollplus.feature.parent.presentation.FeeViewModel
-import com.littlebridge.enrollplus.feature.parent.presentation.ScholarshipsViewModel
-import com.littlebridge.enrollplus.feature.parent.presentation.ParentAnnouncementViewModel
-import com.littlebridge.enrollplus.feature.parent.presentation.NotificationsViewModel
-import com.littlebridge.enrollplus.feature.parent.presentation.LinkChildViewModel
-import com.littlebridge.enrollplus.feature.parent.presentation.ParentHomeViewModel
-import com.littlebridge.enrollplus.feature.parent.presentation.ParentProfileViewModel
-import com.littlebridge.enrollplus.feature.parent.presentation.TrackProgressViewModel
-import com.littlebridge.enrollplus.feature.admin.presentation.SchoolDashboardViewModel
-import com.littlebridge.enrollplus.feature.admin.presentation.InstitutionalBasicOBViewModel
-import com.littlebridge.enrollplus.feature.admin.presentation.BrandingInfoOBViewModel
-import com.littlebridge.enrollplus.feature.admin.presentation.AcademicInfoOBViewModel
-import com.littlebridge.enrollplus.feature.admin.presentation.LaunchInfoOBViewModel
-import com.littlebridge.enrollplus.feature.admin.presentation.InstitutionalProfileViewModel
-import com.littlebridge.enrollplus.feature.admin.presentation.AdmissionCRMViewModel
-import com.littlebridge.enrollplus.feature.admin.presentation.SchoolAnnouncementsViewModel
-import com.littlebridge.enrollplus.feature.admin.presentation.MessagesViewModel
-import com.littlebridge.enrollplus.feature.admin.presentation.SchedulePTMViewModel
-import com.littlebridge.enrollplus.feature.admin.presentation.AcademicCalendarViewModel
-import com.littlebridge.enrollplus.feature.admin.presentation.LeaveRequestsViewModel
-import com.littlebridge.enrollplus.feature.admin.presentation.DailyAttendanceViewModel
-import com.littlebridge.enrollplus.feature.admin.presentation.AnalyticsDashboardViewModel
-import com.littlebridge.enrollplus.feature.admin.presentation.StudentAnalyticsViewModel
-import com.littlebridge.enrollplus.feature.admin.presentation.TeacherPerformanceViewModel
-import com.littlebridge.enrollplus.feature.admin.presentation.ClassPerformanceViewModel
-import com.littlebridge.enrollplus.feature.admin.presentation.SyllabusCoverageViewModel
-import com.littlebridge.enrollplus.feature.admin.presentation.PaceAlertsViewModel
-import com.littlebridge.enrollplus.feature.admin.presentation.ResultsViewModel
 import com.littlebridge.enrollplus.util.AppConfig
 import com.littlebridge.enrollplus.util.AppLogger
 import com.littlebridge.enrollplus.core.network.buildRefreshClient
@@ -448,11 +420,6 @@ val commonModule = module {
     single<com.littlebridge.enrollplus.feature.branding.domain.repository.BrandingRepository> {
         com.littlebridge.enrollplus.feature.branding.data.repository.BrandingRepositoryImpl(get())
     }
-    // Dynamic theming — app-lifecycle singleton holding school branding
-    single {
-        com.littlebridge.enrollplus.feature.branding.presentation.BrandingThemeManager(get(), get())
-    }
-
     // ID Card Generation (ID_CARD_GENERATION_SPEC.md)
     single {
         com.littlebridge.enrollplus.feature.idcard.data.remote.IdCardApi(
@@ -532,135 +499,8 @@ val commonModule = module {
     factory { com.littlebridge.enrollplus.feature.i18n.domain.usecase.UpdateLanguagePrefUseCase(get()) }
     single { com.littlebridge.enrollplus.core.locale.NetworkMonitor() }
     single { com.littlebridge.enrollplus.core.locale.LocaleManager(get(), get(), get()) }
-}
 
-val viewModelModule = module {
-    factory { MainViewModel(get(), get(), get(), get()) }
-    factory { com.littlebridge.enrollplus.presentation.PermissionViewModel(get(), get()) }
-    // Schools-discovery marketplace VM — drives DiscoveryScreenV2 off the real
-    // GET /api/v1/parent/schools/discover endpoint. See BACKEND_GAPS.md §3.
-    factory {
-        com.littlebridge.enrollplus.feature.schools.presentation.SchoolDiscoveryViewModel(
-            get(),  // KtorSchoolApi
-            get(),  // PreferenceRepository
-        )
-    }
-    // NOTE (SWEEP-B): the following V1 parent VMs were registered here but had
-    // ZERO injection/usage anywhere after the V1->V2 screen migration
-    // (ParentDashboardViewModel superseded by ParentHomeViewModel + SchoolDiscoveryViewModel;
-    //  ChildBasicInfo/YourPreferences/LocationRequest/CareerPath/DailyStatus/ParentReports/
-    //  ParentSchedulePTM/ParentMessage screens dropped in V2). Their dead factory
-    // registrations were removed to keep the Koin graph clean — every remaining
-    // registration below is actually consumed via koinViewModel().
-    // RA-S05: a single, app-scoped holder so every parent tab shares the same
-    // selected-child id (switching the child on one tab updates all of them).
-    single { com.littlebridge.enrollplus.core.state.SelectedChildHolder() }
-    factory { FeeViewModel(get(), get(), get()) }
-    factory { ScholarshipsViewModel(get(), get()) }
-    factory { ParentAnnouncementViewModel(get(), get()) }
-    factory { NotificationsViewModel(get<com.littlebridge.enrollplus.core.notification.NotificationFeedRepository>(), get()) }
-    factory { LinkChildViewModel(get(), get()) }
-    factory { ParentHomeViewModel(get(), get(), get()) }
-    factory { ParentProfileViewModel(get(), get()) }
-    factory { TrackProgressViewModel(get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.parent.presentation.ParentAcademicsViewModel(get(), get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.parent.presentation.ParentDashboardViewModel(get(), get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.parent.presentation.ParentLeaveViewModel(get(), get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.parent.presentation.ParentMessageViewModel(get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.parent.presentation.ParentPulseViewModel(get(), get(), get()) }
-    factory { SchoolDashboardViewModel(get(), get(), get()) }
-    factory { InstitutionalBasicOBViewModel(get(), get()) }
-    factory { BrandingInfoOBViewModel(get(), get(), get()) }
-    factory { AcademicInfoOBViewModel(get(), get()) }
-    // Onboarding-time teacher provisioning (creates REAL loginable teacher
-    // accounts via TeachersRepository → POST /school/teachers).
-    factory { com.littlebridge.enrollplus.feature.admin.presentation.TeacherProvisioningOBViewModel(get(), get()) }
-    factory { LaunchInfoOBViewModel(get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.admin.presentation.OnboardingGateViewModel(get(), get()) }
-    factory { InstitutionalProfileViewModel(get(), get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.admin.presentation.SchoolProfileViewModel(get(), get()) } // RA-47
-    factory { com.littlebridge.enrollplus.feature.admin.presentation.StudentRosterViewModel(get(), get()) } // RA-45
-    factory { com.littlebridge.enrollplus.feature.admin.presentation.StaffViewModel(get(), get()) } // RA-S17
-    factory { com.littlebridge.enrollplus.feature.admin.presentation.StudentProfileViewModel(get(), get()) } // RA-45
-    factory { com.littlebridge.enrollplus.feature.admin.presentation.TeacherProfileViewModel(get(), get(), get()) } // RA-45 (+RA-S17 delete-in-profile)
-    factory { com.littlebridge.enrollplus.feature.admin.presentation.TeacherAssignmentViewModel(get(), get()) } // RA-TAM: reusable assignment module
-    factory { com.littlebridge.enrollplus.feature.admin.presentation.SchoolRecordsViewModel(get(), get()) } // RA-52
-    factory { AdmissionCRMViewModel(get(), get()) }
-    factory { SchoolAnnouncementsViewModel(get(), get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.admin.presentation.SchoolTeachersViewModel(get(), get()) }
-    factory { MessagesViewModel(get(), get(), get()) }
-    factory { SchedulePTMViewModel(get(), get()) }
-    factory { AcademicCalendarViewModel(get(), get()) }
-    // CYC-006: Named qualifiers for all portal calendar VMs.
-    // School and teacher share the default (school endpoint). Parent uses a separate endpoint.
-    factory(qualifier = org.koin.core.qualifier.named("schoolCalendar")) { AcademicCalendarViewModel(get(), get(), "api/v1/school/calendar") }
-    factory(qualifier = org.koin.core.qualifier.named("teacherCalendar")) { AcademicCalendarViewModel(get(), get(), "api/v1/school/calendar") }
-    // Parent-specific calendar VM uses the parent endpoint (school endpoint returns 403)
-    factory(qualifier = org.koin.core.qualifier.named("parentCalendar")) { AcademicCalendarViewModel(get(), get(), "api/v1/parent/calendar") }
-    // VP-CAL: premium Academic Calendar platform + unified create-event + Academic Year mgmt
-    factory { com.littlebridge.enrollplus.feature.admin.presentation.AcademicCalendarPlatformViewModel(get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.admin.presentation.UnifiedCreateEventViewModel(get()) }
-    factory { com.littlebridge.enrollplus.feature.admin.presentation.AcademicYearViewModel(get(), get()) }
-    factory { LeaveRequestsViewModel(get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.admin.presentation.LinkRequestsViewModel(get(), get()) }
-    factory { DailyAttendanceViewModel(get(), get()) }
-    factory { AnalyticsDashboardViewModel(get(), get()) }
-    factory { StudentAnalyticsViewModel(get(), get()) }
-    factory { TeacherPerformanceViewModel(get(), get()) }
-    factory { ClassPerformanceViewModel(get(), get()) }
-    factory { SyllabusCoverageViewModel(get(), get()) }
-    factory { PaceAlertsViewModel(get(), get()) }
-    factory { ResultsViewModel(get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.content.presentation.LandingViewModel(get()) }
-    factory { com.littlebridge.enrollplus.feature.auth.presentation.AuthViewModel(get()) }
-    // Teacher vertical (master doc G1) — all (TeacherRepository, PreferenceRepository)
-    // T-601 (DELETE-don't-patch): TeacherHomeViewModel factory removed — the legacy
-    // Home tab is replaced by the Today tab (Doc 04 §4). See TeacherTodayViewModel below.
-    // T-105: the new Today tab (server-resolved schedule).
-    factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherTodayViewModel(get(), get()) }
-    // T-106c: teacher self check-in (Doc 06 §2) — backs the Today greeting band pill.
-    factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherCheckInViewModel(get(), get()) }
-    // T-107: real obligations strip (Doc 04 §5.5) — backs the Today "what needs me" strip.
-    factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherObligationsViewModel(get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherClassesViewModel(get(), get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherStudentProfileViewModel(get(), get()) } // T-505
-    factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherAttendanceViewModel(get(), get()) }
-    // T-305: the rebuilt gradebook state holder (replaces the legacy split of
-    // TeacherMarksViewModel + TeacherAssessmentsViewModel, both deleted in T-305).
-    factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherGradebookViewModel(get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherSyllabusViewModel(get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherHomeworkViewModel(get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherMessageViewModel(get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherLessonPlanViewModel(get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherProfileViewModel(get(), get()) }
-    // T-602b: the actionable Profile VM (own-leave list/apply, password change via
-    // AuthRepository, theme pref) — (TeacherRepository, PreferenceRepository, AuthRepository).
-    factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherProfileActionsViewModel(get(), get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherLeaveViewModel(get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherTimetableViewModel(get(), get()) }
-    // PEWS (Predictive Early Warning System) view models
-    factory { com.littlebridge.enrollplus.feature.pews.presentation.PewsCohortViewModel(get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.pews.presentation.PewsStudentDetailViewModel(get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.pews.presentation.TeacherPewsViewModel(get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.pews.presentation.ParentNudgeViewModel(get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.pews.presentation.PewsEffectivenessViewModel(get(), get()) }
-    // Health Records (P1-12) — admin/nurse + teacher + parent view models
-    factory { com.littlebridge.enrollplus.feature.health.presentation.AdminHealthViewModel(get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.health.presentation.TeacherHealthAlertsViewModel(get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.health.presentation.ParentHealthViewModel(get(), get()) }
-    // Alumni Management (ALUMNI_MANAGEMENT_SPEC.md)
-    factory { com.littlebridge.enrollplus.feature.alumni.presentation.AlumniViewModel(get(), get()) }
-    // Transport Tracking (TRANSPORT_TRACKING_SPEC.md)
-    factory { com.littlebridge.enrollplus.feature.transport.presentation.TransportViewModel(get(), get()) }
-
-    // AI Report Card 2.0 — cross-role view models
-    factory { com.littlebridge.enrollplus.feature.reportcard.presentation.TeacherReportReviewViewModel(get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.reportcard.presentation.TeacherReportDraftEditorViewModel(get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.reportcard.presentation.AdminReportPublishViewModel(get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.reportcard.presentation.AdminReportEffectivenessViewModel(get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.reportcard.presentation.ParentReportViewModel(get(), get()) }
-
-    // AI Tutor 2.0 — API + repository + view models
+    // AI Tutor 2.0 — API + repository
     single {
         com.littlebridge.enrollplus.feature.tutor.data.remote.TutorApi(
             client = get(),
@@ -670,17 +510,7 @@ val viewModelModule = module {
     single<com.littlebridge.enrollplus.feature.tutor.domain.repository.TutorRepository> {
         com.littlebridge.enrollplus.feature.tutor.data.repository.TutorRepositoryImpl(get())
     }
-    factory { com.littlebridge.enrollplus.feature.tutor.presentation.TutorChatViewModel(get(), get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.tutor.presentation.TutorPlanViewModel(get(), get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.tutor.presentation.TutorPracticeViewModel(get(), get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.tutor.presentation.TeacherHeatmapViewModel(get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.tutor.presentation.ParentProgressViewModel(get(), get(), get()) }
-    // Scholarship Workflow (SCHOLARSHIP_WORKFLOW_SPEC.md)
-    factory { com.littlebridge.enrollplus.feature.scholarship.presentation.ScholarshipViewModel(get(), get()) }
-    // School Branding Kit (SCHOOL_BRANDING_KIT_SPEC.md)
-    factory { com.littlebridge.enrollplus.feature.branding.presentation.BrandingViewModel(get(), get()) }
-    // ID Card Generation (ID_CARD_GENERATION_SPEC.md)
-    factory { com.littlebridge.enrollplus.feature.idcard.presentation.IdCardViewModel(get(), get()) }
+
     // Library Management (LIBRARY_MANAGEMENT_SPEC.md)
     single {
         com.littlebridge.enrollplus.feature.library.data.remote.LibraryApi(
@@ -691,19 +521,13 @@ val viewModelModule = module {
     single<com.littlebridge.enrollplus.feature.library.domain.repository.LibraryRepository> {
         com.littlebridge.enrollplus.feature.library.data.repository.LibraryRepositoryImpl(get(), getOrNull())
     }
-    factory { com.littlebridge.enrollplus.feature.library.presentation.SchoolLibraryViewModel(get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.library.presentation.StudentLibraryViewModel(get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.library.presentation.ParentLibraryViewModel(get(), get()) }
-    // Message Scheduling (MESSAGE_SCHEDULING_PLAN.md §8)
-    factory { com.littlebridge.enrollplus.feature.scheduling.presentation.ScheduledMessagesViewModel(get(), get()) }
-    // Event Registration & RSVP System (EVENT_REGISTRATION_PLAN.md §4)
-    factory { com.littlebridge.enrollplus.feature.event.presentation.ParentEventRegistrationViewModel(get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.event.presentation.TeacherEventRegistrationViewModel(get(), get()) }
-    factory { com.littlebridge.enrollplus.feature.event.presentation.AdminEventRegistrationViewModel(get(), get()) }
-    // School Day Configuration (TIMETABLE_CLASS_TEACHER_PLAN.md Phase 0)
-    factory { com.littlebridge.enrollplus.feature.admin.presentation.SchoolDayConfigViewModel(get(), get(), get()) }
-    // Classes & Subjects consolidated management screen
-    factory { com.littlebridge.enrollplus.feature.admin.presentation.ClassesSubjectsViewModel(get(), get(), get()) }
+}
+
+val viewModelModule = module {
+    factory { MainViewModel(get(), get(), get(), get()) }
+    factory { com.littlebridge.enrollplus.presentation.PermissionViewModel(get(), get()) }
+    factory { com.littlebridge.enrollplus.feature.auth.presentation.AuthViewModel(get()) }
+    single { com.littlebridge.enrollplus.core.state.SelectedChildHolder() }
 }
 
 fun initKoin(

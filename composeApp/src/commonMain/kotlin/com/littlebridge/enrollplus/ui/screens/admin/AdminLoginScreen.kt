@@ -1,0 +1,178 @@
+package com.littlebridge.enrollplus.ui.screens.admin
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import com.littlebridge.enrollplus.feature.auth.presentation.AuthViewModel
+import com.littlebridge.enrollplus.ui.components.VBackHeader
+import com.littlebridge.enrollplus.ui.components.VButton
+import com.littlebridge.enrollplus.ui.components.VDividerWithText
+import com.littlebridge.enrollplus.ui.components.VInput
+import com.littlebridge.enrollplus.ui.components.VSSOButton
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
+
+@Composable
+fun AdminLoginScreen(
+    viewModel: AuthViewModel,
+    onBack: () -> Unit,
+    onNavigateToSignup: () -> Unit,
+    onAuthSuccess: () -> Unit,
+) {
+    val state by viewModel.state.collectAsState()
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+
+    if (state.authResponse != null) {
+        LaunchedEffect(state.authResponse) {
+            onAuthSuccess()
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(VColors.cream),
+    ) {
+        VBackHeader(onBack = onBack)
+
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 32.dp)
+                .padding(top = 16.dp, bottom = 48.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
+        ) {
+            // Header
+            Column {
+                Text(
+                    text = "Staff Sign In", // TODO: i18n
+                    style = VTypography.h2,
+                    color = VColors.ink,
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = "Access your school management console", // TODO: i18n
+                    style = VTypography.bodySmall,
+                    color = VColors.ink2,
+                )
+            }
+
+            // SSO
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                VSSOButton(
+                    text = "Google",
+                    icon = Icons.Default.Lock,
+                    onClick = { /* TODO: Google SSO */ },
+                    modifier = Modifier.weight(1f),
+                )
+                VSSOButton(
+                    text = "Apple",
+                    icon = Icons.Default.Lock,
+                    onClick = { /* TODO: Apple SSO */ },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+
+            VDividerWithText("or sign in with credentials")
+
+            // Form
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                VInput(
+                    label = "Email Address", // TODO: i18n
+                    value = email,
+                    onValueChange = { email = it },
+                    placeholder = "principal@school.edu.in",
+                    keyboardType = KeyboardType.Email,
+                )
+                VInput(
+                    label = "Password", // TODO: i18n
+                    value = password,
+                    onValueChange = { password = it },
+                    placeholder = "Enter your password",
+                    keyboardType = KeyboardType.Password,
+                    visualTransformation = PasswordVisualTransformation(),
+                )
+            }
+
+            // Forgot password
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                Text(
+                    text = "Forgot password?", // TODO: i18n
+                    style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
+                    color = VColors.violet,
+                    modifier = Modifier.clickable { /* TODO: Forgot password flow */ },
+                )
+            }
+
+            if (state.error != null) {
+                Text(
+                    text = state.error!!,
+                    style = VTypography.caption,
+                    color = VColors.error,
+                )
+            }
+
+            VButton(
+                text = "Sign In",
+                onClick = { viewModel.loginStaff(email, password) },
+                enabled = email.isNotBlank() && password.isNotBlank(),
+                loading = state.isLoading,
+                icon = Icons.AutoMirrored.Filled.ArrowForward,
+            )
+
+            // Footer
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(top = 8.dp),
+            ) {
+                Text(
+                    text = "Don't have an account?", // TODO: i18n
+                    style = VTypography.caption,
+                    color = VColors.ink3,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                )
+                VButton(
+                    text = "Register your school",
+                    onClick = onNavigateToSignup,
+                    variant = com.littlebridge.enrollplus.ui.components.VButtonVariant.Outline,
+                )
+            }
+        }
+    }
+}
