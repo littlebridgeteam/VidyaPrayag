@@ -197,7 +197,7 @@ svg{display:block}
 .act-time{font-size:10px;font-weight:600;color:var(--ink-3);margin-top:3px}
 
 /* ═══ BOTTOM NAV — PREMIUM FLOATING PILL ═══ */
-.bottom-nav{display:flex;align-items:center;justify-content:space-between;gap:2px;margin:0 var(--s-md) var(--s-sm);padding:6px;border-radius:var(--r-xl);background:var(--white);flex-shrink:0;box-shadow:var(--shadow-2);position:relative}
+.bottom-nav{display:flex;align-items:center;justify-content:space-between;gap:2px;margin:0 var(--s-md) var(--s-sm);padding:6px;border-radius:var(--r-xl);background:var(--white);flex-shrink:0;box-shadow:var(--shadow-2);position:relative;z-index:20}
 .bn-item{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;cursor:pointer;padding:8px 10px;position:relative;transition:all var(--dur) var(--ease);border-radius:var(--r-md);flex:1}
 .bn-item:active{transform:scale(.93)}
 .bn-item-ic{width:34px;height:34px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;color:var(--ink-3);transition:all var(--dur) var(--ease)}
@@ -259,19 +259,58 @@ svg{display:block}
 .fees-pay-receipt{font-size:10px;font-weight:600;color:var(--sienna);margin-top:2px;cursor:pointer}
 
 /* ═══ INBOX TAB ═══ */
-.conv-segments{display:flex;gap:0;margin:var(--s-sm) var(--s-lg) var(--s-md);background:var(--surface-tint);border-radius:var(--r-md);padding:3px}
-.conv-seg{flex:1;padding:8px;border-radius:var(--r-sm);font-size:12px;font-weight:600;color:var(--ink-3);border:none;background:transparent;cursor:pointer;transition:all 250ms var(--ease);text-align:center}
+.ib-search{margin:var(--s-sm) var(--s-lg) var(--s-md);padding:10px 14px;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);display:flex;align-items:center;gap:10px}
+.ib-search svg{width:18px;height:18px;stroke:var(--ink-3);stroke-width:2;fill:none;flex-shrink:0}
+.ib-search input{flex:1;border:none;outline:none;font-size:14px;font-family:var(--font);color:var(--ink);background:transparent}
+.ib-search input::placeholder{color:var(--ink-3)}
+.conv-segments{display:flex;gap:0;margin:0 var(--s-lg) var(--s-md);background:var(--surface-tint);border-radius:var(--r-md);padding:3px}
+.conv-seg{flex:1;padding:8px 12px;border-radius:var(--r-sm);font-size:12px;font-weight:600;color:var(--ink-3);border:none;background:transparent;cursor:pointer;transition:all 250ms var(--ease);text-align:center;display:flex;align-items:center;justify-content:center;gap:6px}
 .conv-seg.active{background:var(--white);color:var(--ink);font-weight:800;box-shadow:var(--shadow-1)}
+.conv-seg-count{font-size:10px;font-weight:800;padding:1px 6px;border-radius:var(--r-full);background:var(--coral-soft);color:var(--coral);min-width:18px;text-align:center}
+.conv-seg.active .conv-seg-count{background:var(--sienna-soft);color:var(--sienna)}
 .conv-seg-content{display:none}
 .conv-seg-content.active{display:block}
+.ib-group{font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:1px;margin:var(--s-md) var(--s-lg) 6px}
+.ib-approval{background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);margin:0 var(--s-lg) 8px;cursor:pointer;transition:all 250ms var(--ease);position:relative;overflow:hidden}
+.ib-approval:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
+.ib-approval::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:0 2px 2px 0}
+.ib-approval--urgent::before{background:var(--coral)}
+.ib-approval--new::before{background:var(--sienna)}
+.ib-approval--pending::before{background:var(--gold)}
+.ib-approval-top{display:flex;align-items:flex-start;gap:12px;padding:14px 16px 10px}
+.ib-approval-ic{width:36px;height:36px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ib-approval-ic svg{width:17px;height:17px;stroke-width:2;fill:none}
+.ib-approval-ic--leave{background:var(--coral-soft)}.ib-approval-ic--leave svg{stroke:var(--coral)}
+.ib-approval-ic--adm{background:var(--sienna-soft)}.ib-approval-ic--adm svg{stroke:var(--sienna)}
+.ib-approval-ic--tc{background:var(--gold-soft)}.ib-approval-ic--tc svg{stroke:var(--warning)}
+.ib-approval-ic--fee{background:var(--sky-soft)}.ib-approval-ic--fee svg{stroke:var(--sky)}
+.ib-approval-body{flex:1;min-width:0}
+.ib-approval-title{font-size:13px;font-weight:700;color:var(--ink);letter-spacing:-.2px}
+.ib-approval-meta{font-size:11px;font-weight:500;color:var(--ink-3);margin-top:2px;line-height:1.4}
+.ib-approval-tag{font-size:9px;font-weight:800;padding:3px 8px;border-radius:var(--r-full);letter-spacing:.3px;flex-shrink:0}
+.ib-approval-tag--urgent{background:var(--coral-soft);color:var(--coral)}
+.ib-approval-tag--new{background:var(--sienna-soft);color:var(--sienna)}
+.ib-approval-tag--pending{background:var(--gold-soft);color:var(--warning)}
+.ib-approval-actions{display:flex;gap:6px;padding:0 16px 14px;margin-left:48px}
+.ib-approval-btn{padding:6px 14px;border-radius:var(--r-full);font-size:11px;font-weight:700;border:none;cursor:pointer;font-family:var(--font);transition:all 200ms var(--ease)}
+.ib-approval-btn--approve{background:var(--mint-soft);color:var(--success)}
+.ib-approval-btn--approve:hover{background:var(--mint);color:#fff}
+.ib-approval-btn--reject{background:var(--surface-tint);color:var(--ink-2)}
+.ib-approval-btn--reject:hover{background:var(--coral-soft);color:var(--coral)}
+.ib-approval-btn--view{background:var(--surface-tint);color:var(--ink-2)}
+.ib-approval-btn--view:hover{background:var(--sienna-soft);color:var(--sienna)}
 .conv-thread{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);margin:0 var(--s-lg) 6px;cursor:pointer;transition:all 250ms var(--ease)}
 .conv-thread:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
-.conv-avatar{width:42px;height:42px;border-radius:var(--r-full);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0}
+.conv-avatar-wrap{position:relative;flex-shrink:0}
+.conv-avatar{width:42px;height:42px;border-radius:var(--r-full);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800}
 .conv-avatar--sienna{background:var(--sienna-soft);color:var(--sienna)}
 .conv-avatar--sky{background:var(--sky-soft);color:var(--sky)}
 .conv-avatar--coral{background:var(--coral-soft);color:var(--coral)}
 .conv-avatar--gold{background:var(--gold-soft);color:var(--warning)}
 .conv-avatar--mint{background:var(--mint-soft);color:var(--success)}
+.conv-avatar-status{position:absolute;bottom:0;right:0;width:11px;height:11px;border-radius:50%;border:2px solid var(--white)}
+.conv-avatar-status--online{background:var(--success)}
+.conv-avatar-status--away{background:var(--warning)}
 .conv-info{flex:1;min-width:0}
 .conv-name{font-size:13px;font-weight:700;color:var(--ink);letter-spacing:-.2px}
 .conv-preview{font-size:12px;font-weight:500;color:var(--ink-3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -309,8 +348,8 @@ svg{display:block}
 .prof-logout:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
 
 /* ═══ OVERLAY SYSTEM ═══ */
-.overlay{position:absolute;inset:0;background:var(--cream);z-index:100;transform:translateX(100%);transition:transform 300ms var(--ease);display:flex;flex-direction:column;overflow:hidden}
-.overlay.active{transform:translateX(0)}
+.overlay{position:absolute;inset:0;background:var(--cream);z-index:100;transform:translateX(100%);transition:transform 300ms var(--ease);display:flex;flex-direction:column;overflow:hidden;pointer-events:none}
+.overlay.active{transform:translateX(0);pointer-events:auto}
 .overlay-header{display:flex;align-items:center;gap:12px;padding:var(--s-sm) var(--s-lg);background:var(--white);box-shadow:0 1px 0 var(--line-soft);flex-shrink:0}
 .overlay-back{width:32px;height:32px;border-radius:var(--r-sm);border:none;background:var(--surface-tint);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 200ms var(--ease);flex-shrink:0}
 .overlay-back:hover{background:var(--surface-cl)}
@@ -415,6 +454,128 @@ svg{display:block}
 .ov-ann-body{font-size:12px;font-weight:500;color:var(--ink-2);margin-top:3px;line-height:1.4}
 .ov-ann-time{font-size:10px;font-weight:600;color:var(--ink-3);margin-top:5px}
 
+/* ── Records tab sub-tabs ── */
+.rec-subtabs{display:flex;gap:0;margin:0 var(--s-lg) var(--s-md);background:var(--surface-tint);border-radius:var(--r-md);padding:3px;overflow-x:auto;scrollbar-width:none}
+.rec-subtabs::-webkit-scrollbar{display:none}
+.rec-subtab{flex:1;flex-shrink:0;padding:7px 10px;border-radius:var(--r-sm);font-size:11px;font-weight:600;color:var(--ink-3);border:none;background:transparent;cursor:pointer;transition:all 250ms var(--ease);text-align:center;white-space:nowrap}
+.rec-subtab.active{background:var(--white);color:var(--ink);font-weight:800;box-shadow:var(--shadow-1)}
+.rec-subtab-content{display:none}
+.rec-subtab-content.active{display:block}
+.rec-summary{margin:0 var(--s-lg) var(--s-md);padding:18px 20px;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1)}
+.rec-summary-label{font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:1px}
+.rec-summary-val{font-size:28px;font-weight:900;color:var(--ink);letter-spacing:-.5px;margin-top:4px;font-variant-numeric:tabular-nums}
+.rec-summary-sub{font-size:12px;font-weight:500;color:var(--ink-3);margin-top:4px}
+.rec-bar-row{display:flex;align-items:center;gap:10px;padding:10px 0}
+.rec-bar-row:not(:last-child){border-bottom:1px solid var(--line-soft)}
+.rec-bar-name{font-size:13px;font-weight:600;color:var(--ink);min-width:80px;flex-shrink:0}
+.rec-bar-track{flex:1;height:6px;background:var(--surface-cl);border-radius:var(--r-full);overflow:hidden}
+.rec-bar-fill{height:100%;border-radius:var(--r-full);transition:width 600ms var(--ease)}
+.rec-bar-pct{font-size:12px;font-weight:700;color:var(--ink-2);min-width:40px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums}
+.rec-alert{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);margin:0 var(--s-lg) 8px}
+.rec-alert-ic{width:28px;height:28px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rec-alert-ic svg{width:14px;height:14px;stroke-width:2;fill:none}
+.rec-alert-ic--behind{background:var(--coral-soft)}.rec-alert-ic--behind svg{stroke:var(--coral)}
+.rec-alert-ic--ahead{background:var(--mint-soft)}.rec-alert-ic--ahead svg{stroke:var(--success)}
+.rec-alert-info{flex:1;min-width:0}
+.rec-alert-title{font-size:12px;font-weight:700;color:var(--ink)}
+.rec-alert-meta{font-size:11px;font-weight:500;color:var(--ink-3);margin-top:1px}
+.rec-alert-btn{padding:5px 12px;border-radius:var(--r-full);font-size:10px;font-weight:700;border:none;cursor:pointer;font-family:var(--font);background:var(--sienna-soft);color:var(--sienna);transition:all 200ms var(--ease);flex-shrink:0}
+.rec-alert-btn:hover{background:var(--sienna);color:#fff}
+.rec-empty{padding:40px 20px;text-align:center}
+.rec-empty-title{font-size:14px;font-weight:700;color:var(--ink-2)}
+.rec-empty-sub{font-size:12px;font-weight:500;color:var(--ink-3);margin-top:4px}
+
+/* ── Comms entry cards ── */
+.comms-entry{display:flex;align-items:center;gap:14px;padding:18px 16px;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);margin:0 var(--s-lg) 10px;cursor:pointer;transition:all 250ms var(--ease)}
+.comms-entry:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
+.comms-entry-ic{width:40px;height:40px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.comms-entry-ic svg{width:19px;height:19px;stroke-width:2;fill:none}
+.comms-entry-ic--announce{background:var(--sienna-soft)}.comms-entry-ic--announce svg{stroke:var(--sienna)}
+.comms-entry-ic--msg{background:var(--sky-soft)}.comms-entry-ic--msg svg{stroke:var(--sky)}
+.comms-entry-ic--ptm{background:var(--plum-soft)}.comms-entry-ic--ptm svg{stroke:var(--plum)}
+.comms-entry-ic--notif{background:var(--gold-soft)}.comms-entry-ic--notif svg{stroke:var(--warning)}
+.comms-entry-body{flex:1;min-width:0}
+.comms-entry-title{font-size:14px;font-weight:700;color:var(--ink);letter-spacing:-.2px}
+.comms-entry-sub{font-size:12px;font-weight:500;color:var(--ink-3);margin-top:2px}
+.comms-entry-badge{min-width:20px;height:20px;border-radius:var(--r-full);background:var(--coral);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 6px;flex-shrink:0}
+
+/* ── Settings tab ── */
+.set-profile-card{margin:var(--s-sm) var(--s-lg) var(--s-md);padding:20px;background:var(--white);border-radius:var(--r-lg);box-shadow:var(--shadow-1);position:relative;overflow:hidden;cursor:pointer;transition:all 250ms var(--ease)}
+.set-profile-card:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
+.set-profile-card::before{content:'';position:absolute;top:-30px;right:-20px;width:100px;height:100px;border-radius:50%;background:var(--sienna-soft);opacity:.35}
+.set-profile-top{display:flex;align-items:center;gap:14px;position:relative;z-index:1}
+.set-profile-avatar{width:48px;height:48px;border-radius:var(--r-full);background:var(--sienna-soft);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--sienna);flex-shrink:0;outline:3px solid var(--white)}
+.set-profile-info{flex:1;min-width:0}
+.set-profile-name{font-size:16px;font-weight:800;color:var(--ink);letter-spacing:-.3px}
+.set-profile-role{font-size:12px;font-weight:500;color:var(--ink-3);margin-top:1px}
+.set-profile-pct{font-size:11px;font-weight:700;color:var(--sienna);margin-top:3px}
+.set-profile-bar{height:6px;background:var(--surface-cl);border-radius:var(--r-full);overflow:hidden;margin-top:14px;position:relative;z-index:1}
+.set-profile-bar-fill{height:100%;border-radius:var(--r-full);background:var(--sienna);transition:width 800ms var(--ease)}
+.set-row{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);cursor:pointer;transition:all 250ms var(--ease);margin:0 var(--s-lg) 6px}
+.set-row:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
+.set-row-ic{width:34px;height:34px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.set-row-ic svg{width:16px;height:16px;stroke-width:2;fill:none}
+.set-row-ic--calendar{background:var(--sienna-soft)}.set-row-ic--calendar svg{stroke:var(--sienna)}
+.set-row-ic--classes{background:var(--sky-soft)}.set-row-ic--classes svg{stroke:var(--sky)}
+.set-row-ic--transport{background:var(--mint-soft)}.set-row-ic--transport svg{stroke:var(--success)}
+.set-row-ic--scholar{background:var(--plum-soft)}.set-row-ic--scholar svg{stroke:var(--plum)}
+.set-row-ic--branding{background:var(--coral-soft)}.set-row-ic--branding svg{stroke:var(--coral)}
+.set-row-ic--idcard{background:var(--gold-soft)}.set-row-ic--idcard svg{stroke:var(--warning)}
+.set-row-ic--library{background:var(--sky-soft)}.set-row-ic--library svg{stroke:var(--sky)}
+.set-row-ic--fee{background:var(--sienna-soft)}.set-row-ic--fee svg{stroke:var(--sienna)}
+.set-row-ic--notif{background:var(--coral-soft)}.set-row-ic--notif svg{stroke:var(--coral)}
+.set-row-ic--export{background:var(--surface-tint)}.set-row-ic--export svg{stroke:var(--ink-2)}
+.set-row-ic--help{background:var(--surface-tint)}.set-row-ic--help svg{stroke:var(--ink-2)}
+.set-row-ic--logout{background:var(--coral-soft)}.set-row-ic--logout svg{stroke:var(--coral)}
+.set-row-body{flex:1;min-width:0}
+.set-row-title{font-size:13px;font-weight:700;color:var(--ink);letter-spacing:-.2px}
+.set-row-sub{font-size:11px;font-weight:500;color:var(--ink-3);margin-top:1px}
+.set-row-chevron{width:16px;height:16px;stroke:var(--ink-3);stroke-width:2;fill:none;flex-shrink:0}
+.set-row-badge{font-size:9px;font-weight:800;padding:3px 8px;border-radius:var(--r-full);background:var(--surface-tint);color:var(--ink-3);letter-spacing:.3px;flex-shrink:0}
+.set-theme{margin:var(--s-sm) var(--s-lg) var(--s-md);padding:16px;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1)}
+.set-theme-title{font-size:13px;font-weight:800;color:var(--ink);letter-spacing:-.2px;margin-bottom:12px}
+.set-theme-opts{display:flex;gap:8px}
+.set-theme-opt{flex:1;padding:10px;border-radius:var(--r-sm);border:2px solid var(--line-soft);cursor:pointer;text-align:center;font-size:11px;font-weight:600;color:var(--ink-3);transition:all 200ms var(--ease);font-family:var(--font);background:var(--surface)}
+.set-theme-opt.active{border-color:var(--sienna);color:var(--sienna);font-weight:800}
+.set-theme-opt:hover{border-color:var(--ink-4)}
+
+/* ── Notification filter tabs ── */
+.ov-notif-filters{display:flex;gap:0;margin:var(--s-sm) var(--s-lg) var(--s-md);background:var(--surface-tint);border-radius:var(--r-md);padding:3px}
+.ov-notif-filter{flex:1;padding:7px;border-radius:var(--r-sm);font-size:12px;font-weight:600;color:var(--ink-3);border:none;background:transparent;cursor:pointer;transition:all 250ms var(--ease);text-align:center}
+.ov-notif-filter.active{background:var(--white);color:var(--ink);font-weight:800;box-shadow:var(--shadow-1)}
+
+/* ── People tab sub-tabs ── */
+.pp-subtabs{display:flex;gap:0;margin:0 var(--s-lg) var(--s-md);background:var(--surface-tint);border-radius:var(--r-md);padding:3px;overflow-x:auto;scrollbar-width:none}
+.pp-subtabs::-webkit-scrollbar{display:none}
+.pp-subtab{flex:1;flex-shrink:0;padding:7px 10px;border-radius:var(--r-sm);font-size:11px;font-weight:600;color:var(--ink-3);border:none;background:transparent;cursor:pointer;transition:all 250ms var(--ease);text-align:center;white-space:nowrap}
+.pp-subtab.active{background:var(--white);color:var(--ink);font-weight:800;box-shadow:var(--shadow-1)}
+.pp-subtab-content{display:none}
+.pp-subtab-content.active{display:block}
+.pp-link-card{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);margin:0 var(--s-lg) var(--s-md);cursor:pointer;transition:all 250ms var(--ease)}
+.pp-link-card:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
+.pp-link-ic{width:36px;height:36px;border-radius:var(--r-sm);background:var(--sienna-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pp-link-ic svg{width:17px;height:17px;stroke:var(--sienna);stroke-width:2;fill:none}
+.pp-link-body{flex:1}
+.pp-link-title{font-size:13px;font-weight:700;color:var(--ink);letter-spacing:-.2px}
+.pp-link-sub{font-size:11px;font-weight:500;color:var(--ink-3);margin-top:1px}
+.pp-link-badge{min-width:22px;height:22px;border-radius:var(--r-full);background:var(--coral);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 7px;flex-shrink:0}
+.pp-add-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:10px;background:var(--sienna-soft);border-radius:var(--r-md);border:none;cursor:pointer;font-size:13px;font-weight:700;color:var(--sienna);font-family:var(--font);transition:all 200ms var(--ease);margin-bottom:var(--s-md)}
+.pp-add-btn:hover{background:var(--sienna);color:#fff}
+.pp-add-btn svg{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none}
+.pp-person-card{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);margin:0 var(--s-lg) 8px;cursor:pointer;transition:all 250ms var(--ease)}
+.pp-person-card:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
+.pp-person-info{flex:1;min-width:0}
+.pp-person-name{font-size:14px;font-weight:700;color:var(--ink);letter-spacing:-.2px}
+.pp-person-meta{font-size:11px;font-weight:500;color:var(--ink-3);margin-top:1px}
+.pp-person-actions{display:flex;gap:4px;flex-shrink:0}
+.pp-person-btn{padding:5px 10px;border-radius:var(--r-full);font-size:10px;font-weight:700;border:none;cursor:pointer;font-family:var(--font);transition:all 200ms var(--ease)}
+.pp-person-btn--view{background:var(--surface-tint);color:var(--ink-2)}
+.pp-person-btn--view:hover{background:var(--sienna-soft);color:var(--sienna)}
+.pp-person-btn--assign{background:var(--sky-soft);color:var(--sky)}
+.pp-person-btn--assign:hover{background:var(--sky);color:#fff}
+.pp-person-btn--deactivate{background:var(--coral-soft);color:var(--coral)}
+.pp-person-btn--deactivate:hover{background:var(--coral);color:#fff}
+
 /* ── Calendar overlay ── */
 .ov-cal{background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:16px;margin:var(--s-sm) var(--s-lg)}
 .ov-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin:8px 0}
@@ -456,6 +617,11 @@ svg{display:block}
   <symbol id="icon-file" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="icon-clipboard" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M9 2h6a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="icon-download" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-link" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-award" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-bus" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M8 6v6M16 6v6M2 12h19.9M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10c0 .4.1.8.2 1.2C2.5 16.3 3 18 3 18h3M6 18a2 2 0 1 0 4 0M14 18a2 2 0 1 0 4 0" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-palette" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.555C21.965 6.012 17.461 2 12 2z" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-book" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 </svg>
 
 <!-- ═══ Shell ═══ -->
@@ -467,10 +633,10 @@ svg{display:block}
     <nav>
       <div class="nav-group">Tabs</div>
       <button class="nav-item active" data-nav="tab:Home"><span class="nav-dot"></span>Home</button>
-      <button class="nav-item" data-nav="tab:Students"><span class="nav-dot"></span>Students</button>
-      <button class="nav-item" data-nav="tab:Fees"><span class="nav-dot"></span>Fees</button>
-      <button class="nav-item" data-nav="tab:Inbox"><span class="nav-dot"></span>Inbox</button>
-      <button class="nav-item" data-nav="tab:Profile"><span class="nav-dot"></span>Profile</button>
+      <button class="nav-item" data-nav="tab:People"><span class="nav-dot"></span>People</button>
+      <button class="nav-item" data-nav="tab:Records"><span class="nav-dot"></span>Records</button>
+      <button class="nav-item" data-nav="tab:Comms"><span class="nav-dot"></span>Comms</button>
+      <button class="nav-item" data-nav="tab:Settings"><span class="nav-dot"></span>Settings</button>
       <div class="nav-group">Overlays</div>
       <button class="nav-item" data-nav="overlay:ov-notifications"><span class="nav-dot"></span>Notifications</button>
       <button class="nav-item" data-nav="overlay:ov-staff"><span class="nav-dot"></span>Staff Directory</button>
@@ -548,11 +714,11 @@ svg{display:block}
                 <div class="qa-btn-ic qa-btn-ic--calendar"><svg><use href="#icon-calendar"/></svg></div>
                 <span class="qa-btn-label">Calendar</span>
               </button>
-              <button class="qa-btn">
+              <button class="qa-btn" data-overlay="ov-schedule-ptm">
                 <div class="qa-btn-ic qa-btn-ic--approve"><svg><use href="#icon-check"/></svg></div>
                 <span class="qa-btn-label">Approve</span>
               </button>
-              <button class="qa-btn">
+              <button class="qa-btn" data-overlay="ov-analytics">
                 <div class="qa-btn-ic qa-btn-ic--remind"><svg><use href="#icon-rupee"/></svg></div>
                 <span class="qa-btn-label">Remind</span>
               </button>
@@ -564,7 +730,7 @@ svg{display:block}
 
             <!-- Pulse Cards -->
             <div class="ph-pulse-scroll">
-              <div class="ph-pulse-card ph-pulse-card--fee">
+              <div class="ph-pulse-card ph-pulse-card--fee" data-overlay="ov-analytics">
                 <div class="ph-pulse-top">
                   <div class="ph-pulse-icon ph-pulse-icon--fee"><svg><use href="#icon-rupee"/></svg></div>
                   <span class="ph-pulse-trend ph-pulse-trend--up"><svg><use href="#icon-trend-up"/></svg>+12%</span>
@@ -573,7 +739,7 @@ svg{display:block}
                 <div class="ph-pulse-label">Fees Collected</div>
                 <div class="ph-pulse-sub">This month · 842 paid</div>
               </div>
-              <div class="ph-pulse-card ph-pulse-card--alert">
+              <div class="ph-pulse-card ph-pulse-card--alert" data-overlay="ov-leave-requests">
                 <div class="ph-pulse-top">
                   <div class="ph-pulse-icon ph-pulse-icon--alert"><svg><use href="#icon-alert"/></svg></div>
                   <span class="ph-pulse-trend ph-pulse-trend--alert">Action</span>
@@ -582,7 +748,7 @@ svg{display:block}
                 <div class="ph-pulse-label">Pending Approvals</div>
                 <div class="ph-pulse-sub">Leave · Admissions · TC</div>
               </div>
-              <div class="ph-pulse-card ph-pulse-card--adm">
+              <div class="ph-pulse-card ph-pulse-card--adm" data-overlay="ov-admissions">
                 <div class="ph-pulse-top">
                   <div class="ph-pulse-icon ph-pulse-icon--adm"><svg><use href="#icon-users"/></svg></div>
                   <span class="ph-pulse-trend ph-pulse-trend--up"><svg><use href="#icon-trend-up"/></svg>+8</span>
@@ -591,7 +757,7 @@ svg{display:block}
                 <div class="ph-pulse-label">Total Students</div>
                 <div class="ph-pulse-sub">+8 new this week</div>
               </div>
-              <div class="ph-pulse-card ph-pulse-card--col">
+              <div class="ph-pulse-card ph-pulse-card--col" data-overlay="ov-analytics">
                 <div class="ph-pulse-top">
                   <div class="ph-pulse-icon ph-pulse-icon--col"><svg><use href="#icon-rupee"/></svg></div>
                   <span class="ph-pulse-trend ph-pulse-trend--alert">Due</span>
@@ -699,85 +865,295 @@ svg{display:block}
           </div>
         </div>
 
-        <!-- ═══ STUDENTS TAB ═══ -->
-        <div class="tab-content" id="tab-students">
+        <!-- ═══ PEOPLE TAB ═══ -->
+        <div class="tab-content" id="tab-people">
           <div class="scroll content-pb">
-            <div class="st-search">
-              <svg><use href="#icon-search"/></svg>
-              <input type="text" placeholder="Search students, class, roll no...">
-            </div>
-            <div class="st-chips">
-              <button class="st-chip active">All</button>
-              <button class="st-chip">Class 6</button>
-              <button class="st-chip">Class 7</button>
-              <button class="st-chip">Class 8</button>
-              <button class="st-chip">Present</button>
-              <button class="st-chip">Absent</button>
-              <button class="st-chip">Late</button>
-            </div>
-            <div class="st-card">
-              <div class="st-avatar st-avatar--sienna">AS</div>
-              <div class="st-info">
-                <div class="st-name">Aarav Sharma</div>
-                <div class="st-meta">Class 7-B · Roll 14 · 94% attendance</div>
+            <div class="pp-link-card" data-overlay="ov-link-requests">
+              <div class="pp-link-ic"><svg><use href="#icon-link"/></svg></div>
+              <div class="pp-link-body">
+                <div class="pp-link-title">Child Link Requests</div>
+                <div class="pp-link-sub">Parents requesting to link with their children</div>
               </div>
-              <span class="st-badge st-badge--present">Present</span>
+              <span class="pp-link-badge">3</span>
             </div>
-            <div class="st-card">
-              <div class="st-avatar st-avatar--sky">RP</div>
-              <div class="st-info">
-                <div class="st-name">Riya Patel</div>
-                <div class="st-meta">Class 5-A · Roll 28 · New admission</div>
+            <div class="pp-subtabs">
+              <button class="pp-subtab active" data-ppsub="teachers">Teachers</button>
+              <button class="pp-subtab" data-ppsub="students">Students</button>
+              <button class="pp-subtab" data-ppsub="staff">Non-teaching</button>
+              <button class="pp-subtab" data-ppsub="alumni">Alumni</button>
+            </div>
+
+            <!-- Teachers -->
+            <div class="pp-subtab-content active" id="ppsub-teachers">
+              <button class="pp-add-btn" style="margin:0 var(--s-lg) var(--s-md)"><svg><use href="#icon-plus"/></svg> Add Teacher</button>
+              <div class="pp-person-card" data-overlay="ov-teacher-profile">
+                <div class="conv-avatar conv-avatar--sienna">PS</div>
+                <div class="pp-person-info">
+                  <div class="pp-person-name">Priya Sharma</div>
+                  <div class="pp-person-meta">EMP-001 · Mathematics · Classes 7-A, 7-B</div>
+                </div>
+                <div class="pp-person-actions">
+                  <button class="pp-person-btn pp-person-btn--view">View</button>
+                  <button class="pp-person-btn pp-person-btn--assign">Assign</button>
+                </div>
               </div>
-              <span class="st-badge st-badge--pending">New</span>
-            </div>
-            <div class="st-card">
-              <div class="st-avatar st-avatar--coral">RG</div>
-              <div class="st-info">
-                <div class="st-name">Rohan Gupta</div>
-                <div class="st-meta">Class 8-B · Roll 07 · 72% attendance</div>
+              <div class="pp-person-card">
+                <div class="conv-avatar conv-avatar--sky">MI</div>
+                <div class="pp-person-info">
+                  <div class="pp-person-name">Meera Iyer</div>
+                  <div class="pp-person-meta">EMP-002 · English · Classes 7-A, 6-B</div>
+                </div>
+                <div class="pp-person-actions">
+                  <button class="pp-person-btn pp-person-btn--view">View</button>
+                  <button class="pp-person-btn pp-person-btn--assign">Assign</button>
+                </div>
               </div>
-              <span class="st-badge st-badge--absent">Absent</span>
-            </div>
-            <div class="st-card">
-              <div class="st-avatar st-avatar--mint">SR</div>
-              <div class="st-info">
-                <div class="st-name">Sneha Reddy</div>
-                <div class="st-meta">Class 8-A · Roll 22 · On leave</div>
+              <div class="pp-person-card">
+                <div class="conv-avatar conv-avatar--gold">AD</div>
+                <div class="pp-person-info">
+                  <div class="pp-person-name">Anita Desai</div>
+                  <div class="pp-person-meta">EMP-003 · Social Studies · Class 8-B</div>
+                </div>
+                <div class="pp-person-actions">
+                  <button class="pp-person-btn pp-person-btn--view">View</button>
+                  <button class="pp-person-btn pp-person-btn--assign">Assign</button>
+                </div>
               </div>
-              <span class="st-badge st-badge--late">Leave</span>
-            </div>
-            <div class="st-card">
-              <div class="st-avatar st-avatar--gold">MK</div>
-              <div class="st-info">
-                <div class="st-name">Mohit Kumar</div>
-                <div class="st-meta">Class 6-A · Roll 03 · 88% attendance</div>
+              <div class="pp-person-card">
+                <div class="conv-avatar conv-avatar--mint">RK</div>
+                <div class="pp-person-info">
+                  <div class="pp-person-name">Rajesh Kumar</div>
+                  <div class="pp-person-meta">EMP-004 · Science · Classes 6-A, 6-B, 7-A</div>
+                </div>
+                <div class="pp-person-actions">
+                  <button class="pp-person-btn pp-person-btn--view">View</button>
+                  <button class="pp-person-btn pp-person-btn--assign">Assign</button>
+                </div>
               </div>
-              <span class="st-badge st-badge--present">Present</span>
-            </div>
-            <div class="st-card">
-              <div class="st-avatar st-avatar--plum">PD</div>
-              <div class="st-info">
-                <div class="st-name">Priya Desai</div>
-                <div class="st-meta">Class 7-A · Roll 11 · 91% attendance</div>
+              <div class="pp-person-card">
+                <div class="conv-avatar conv-avatar--coral">SN</div>
+                <div class="pp-person-info">
+                  <div class="pp-person-name">Sunita Nair</div>
+                  <div class="pp-person-meta">EMP-005 · Hindi · Classes 8-A, 8-B · Inactive</div>
+                </div>
+                <div class="pp-person-actions">
+                  <button class="pp-person-btn pp-person-btn--view">View</button>
+                  <button class="pp-person-btn pp-person-btn--deactivate">Activate</button>
+                </div>
               </div>
-              <span class="st-badge st-badge--present">Present</span>
             </div>
-            <div class="st-card">
-              <div class="st-avatar st-avatar--sienna">VK</div>
-              <div class="st-info">
-                <div class="st-name">Vikram Kapoor</div>
-                <div class="st-meta">Class 6-B · Roll 19 · Late today</div>
+
+            <!-- Students -->
+            <div class="pp-subtab-content" id="ppsub-students">
+              <div style="display:flex;gap:8px;margin:0 var(--s-lg) var(--s-md)">
+                <button class="pp-add-btn" style="margin:0;flex:1"><svg><use href="#icon-plus"/></svg> Add Student</button>
+                <button class="pp-add-btn" style="margin:0;flex:1;background:var(--surface-tint);color:var(--ink-2)"><svg><use href="#icon-file"/></svg> Import CSV</button>
               </div>
-              <span class="st-badge st-badge--late">Late</span>
+              <div class="st-search" style="margin:0 var(--s-lg) var(--s-md)">
+                <svg><use href="#icon-search"/></svg>
+                <input type="text" placeholder="Search students, class, roll no...">
+              </div>
+              <div class="st-card" data-overlay="ov-student-profile">
+                <div class="st-avatar st-avatar--sienna">AS</div>
+                <div class="st-info">
+                  <div class="st-name">Aarav Sharma</div>
+                  <div class="st-meta">Class 7-B · Roll 14 · Parent: Priya Sharma</div>
+                </div>
+                <span class="st-badge st-badge--present">Present</span>
+              </div>
+              <div class="st-card">
+                <div class="st-avatar st-avatar--sky">RP</div>
+                <div class="st-info">
+                  <div class="st-name">Riya Patel</div>
+                  <div class="st-meta">Class 5-A · Roll 28 · New admission</div>
+                </div>
+                <span class="st-badge st-badge--pending">New</span>
+              </div>
+              <div class="st-card">
+                <div class="st-avatar st-avatar--coral">RG</div>
+                <div class="st-info">
+                  <div class="st-name">Rohan Gupta</div>
+                  <div class="st-meta">Class 8-B · Roll 07 · Parent: Suresh Gupta</div>
+                </div>
+                <span class="st-badge st-badge--absent">Absent</span>
+              </div>
+              <div class="st-card">
+                <div class="st-avatar st-avatar--mint">SR</div>
+                <div class="st-info">
+                  <div class="st-name">Sneha Reddy</div>
+                  <div class="st-meta">Class 8-A · Roll 22 · Parent: Krishna Reddy</div>
+                </div>
+                <span class="st-badge st-badge--late">Leave</span>
+              </div>
+              <div class="st-card">
+                <div class="st-avatar st-avatar--gold">MK</div>
+                <div class="st-info">
+                  <div class="st-name">Mohit Kumar</div>
+                  <div class="st-meta">Class 6-A · Roll 03 · Parent: Ajay Kumar</div>
+                </div>
+                <span class="st-badge st-badge--present">Present</span>
+              </div>
+              <div class="st-card">
+                <div class="st-avatar st-avatar--plum">PD</div>
+                <div class="st-info">
+                  <div class="st-name">Priya Desai</div>
+                  <div class="st-meta">Class 7-A · Roll 11 · Parent: Nilam Desai</div>
+                </div>
+                <span class="st-badge st-badge--present">Present</span>
+              </div>
+              <div class="st-card">
+                <div class="st-avatar st-avatar--sienna">VK</div>
+                <div class="st-info">
+                  <div class="st-name">Vikram Kapoor</div>
+                  <div class="st-meta">Class 6-B · Roll 19 · Parent: Anil Kapoor</div>
+                </div>
+                <span class="st-badge st-badge--late">Late</span>
+              </div>
             </div>
+
+            <!-- Non-teaching Staff -->
+            <div class="pp-subtab-content" id="ppsub-staff">
+              <button class="pp-add-btn" style="margin:0 var(--s-lg) var(--s-md)"><svg><use href="#icon-plus"/></svg> Add Staff</button>
+              <div class="st-search" style="margin:0 var(--s-lg) var(--s-md)">
+                <svg><use href="#icon-search"/></svg>
+                <input type="text" placeholder="Search staff, role, department...">
+              </div>
+              <div class="pp-person-card" data-overlay="ov-staff-profile">
+                <div class="conv-avatar conv-avatar--sienna">GT</div>
+                <div class="pp-person-info">
+                  <div class="pp-person-name">Gopal Tiwari</div>
+                  <div class="pp-person-meta">Accountant · Finance · +91 98765 43210</div>
+                </div>
+                <div class="pp-person-actions">
+                  <button class="pp-person-btn pp-person-btn--view">View</button>
+                </div>
+              </div>
+              <div class="pp-person-card">
+                <div class="conv-avatar conv-avatar--sky">LM</div>
+                <div class="pp-person-info">
+                  <div class="pp-person-name">Lakshmi Menon</div>
+                  <div class="pp-person-meta">Librarian · Library · +91 98765 12345</div>
+                </div>
+                <div class="pp-person-actions">
+                  <button class="pp-person-btn pp-person-btn--view">View</button>
+                </div>
+              </div>
+              <div class="pp-person-card">
+                <div class="conv-avatar conv-avatar--gold">HV</div>
+                <div class="pp-person-info">
+                  <div class="pp-person-name">Harish Verma</div>
+                  <div class="pp-person-meta">Transport In-charge · Operations · +91 98450 67890</div>
+                </div>
+                <div class="pp-person-actions">
+                  <button class="pp-person-btn pp-person-btn--view">View</button>
+                </div>
+              </div>
+              <div class="pp-person-card">
+                <div class="conv-avatar conv-avatar--mint">NJ</div>
+                <div class="pp-person-info">
+                  <div class="pp-person-name">Nisha Joshi</div>
+                  <div class="pp-person-meta">Front Office · Administration · +91 98000 11111</div>
+                </div>
+                <div class="pp-person-actions">
+                  <button class="pp-person-btn pp-person-btn--view">View</button>
+                </div>
+              </div>
+              <div class="pp-person-card">
+                <div class="conv-avatar conv-avatar--coral">RB</div>
+                <div class="pp-person-info">
+                  <div class="pp-person-name">Ramesh Babu</div>
+                  <div class="pp-person-meta">Maintenance · Facilities · +91 97000 22222</div>
+                </div>
+                <div class="pp-person-actions">
+                  <button class="pp-person-btn pp-person-btn--view">View</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Alumni -->
+            <div class="pp-subtab-content" id="ppsub-alumni">
+              <div class="pp-link-card">
+                <div class="pp-link-ic" style="background:var(--plum-soft)"><svg style="stroke:var(--plum)"><use href="#icon-award"/></svg></div>
+                <div class="pp-link-body">
+                  <div class="pp-link-title">Alumni Management</div>
+                  <div class="pp-link-sub">View alumni directory, donations, mentorship, and analytics</div>
+                </div>
+                <svg style="width:16px;height:16px;stroke:var(--ink-3);stroke-width:2;fill:none;flex-shrink:0"><use href="#icon-chevron-right"/></svg>
+              </div>
+            </div>
+
           </div>
         </div>
 
-        <!-- ═══ FEES TAB ═══ -->
-        <div class="tab-content" id="tab-fees">
+        <!-- ═══ RECORDS TAB ═══ -->
+        <div class="tab-content" id="tab-records">
           <div class="scroll content-pb">
-            <div class="fees-hero">
+            <div class="rec-subtabs">
+              <button class="rec-subtab active" data-recsub="coverage">Coverage</button>
+              <button class="rec-subtab" data-recsub="pace">Pace</button>
+              <button class="rec-subtab" data-recsub="attendance">Attendance</button>
+              <button class="rec-subtab" data-recsub="marks">Marks</button>
+              <button class="rec-subtab" data-recsub="fee">Fee</button>
+              <button class="rec-subtab" data-recsub="documents">Documents</button>
+            </div>
+
+            <!-- Coverage -->
+            <div class="rec-subtab-content active" id="recsub-coverage">
+              <div class="rec-summary">
+                <div class="rec-summary-label">Overall Syllabus Coverage</div>
+                <div class="rec-summary-val">78%</div>
+                <div class="rec-summary-sub">Across all classes and subjects</div>
+              </div>
+              <div style="background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:12px 16px;margin:0 var(--s-lg) var(--s-md)">
+                <div class="rec-bar-row"><span class="rec-bar-name">Mathematics</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:85%;background:var(--mint)"></div></div><span class="rec-bar-pct">85%</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name">English</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:82%;background:var(--mint)"></div></div><span class="rec-bar-pct">82%</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name">Science</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:74%;background:var(--gold)"></div></div><span class="rec-bar-pct">74%</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name">Social Studies</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:71%;background:var(--gold)"></div></div><span class="rec-bar-pct">71%</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name">Hindi</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:68%;background:var(--coral)"></div></div><span class="rec-bar-pct">68%</span></div>
+              </div>
+              <div class="ib-group" style="margin-top:var(--s-md)">Alerts</div>
+              <div class="rec-alert"><div class="rec-alert-ic rec-alert-ic--behind"><svg><use href="#icon-alert"/></svg></div><div class="rec-alert-info"><div class="rec-alert-title">Class 8-B Hindi — 15% behind</div><div class="rec-alert-meta">Unit 3 incomplete · Target was Jan 10</div></div><button class="rec-alert-btn">Resolve</button></div>
+              <div class="rec-alert"><div class="rec-alert-ic rec-alert-ic--behind"><svg><use href="#icon-alert"/></svg></div><div class="rec-alert-info"><div class="rec-alert-title">Class 6-A Science — 8% behind</div><div class="rec-alert-meta">Practical sessions pending</div></div><button class="rec-alert-btn">Resolve</button></div>
+            </div>
+
+            <!-- Pace -->
+            <div class="rec-subtab-content" id="recsub-pace">
+              <div class="rec-summary"><div class="rec-summary-label">Pace Status — All Classes</div><div class="rec-summary-val">12 On Track</div><div class="rec-summary-sub">3 ahead · 2 behind · 12 on track</div></div>
+              <div class="rec-alert"><div class="rec-alert-ic rec-alert-ic--behind"><svg><use href="#icon-trend-down"/></svg></div><div class="rec-alert-info"><div class="rec-alert-title">Class 8-B Hindi — Behind by 3 days</div><div class="rec-alert-meta">Deviation: -12% · Teacher: Sunita Nair</div></div><button class="rec-alert-btn">Resolve</button></div>
+              <div class="rec-alert"><div class="rec-alert-ic rec-alert-ic--behind"><svg><use href="#icon-trend-down"/></svg></div><div class="rec-alert-info"><div class="rec-alert-title">Class 6-A Science — Behind by 2 days</div><div class="rec-alert-meta">Deviation: -8% · Teacher: Rajesh Kumar</div></div><button class="rec-alert-btn">Resolve</button></div>
+              <div class="rec-alert"><div class="rec-alert-ic rec-alert-ic--ahead"><svg><use href="#icon-trend-up"/></svg></div><div class="rec-alert-info"><div class="rec-alert-title">Class 7-A Mathematics — Ahead by 2 days</div><div class="rec-alert-meta">Deviation: +6% · Teacher: Priya Sharma</div></div></div>
+              <div class="rec-alert"><div class="rec-alert-ic rec-alert-ic--ahead"><svg><use href="#icon-trend-up"/></svg></div><div class="rec-alert-info"><div class="rec-alert-title">Class 7-B English — Ahead by 1 day</div><div class="rec-alert-meta">Deviation: +4% · Teacher: Meera Iyer</div></div></div>
+            </div>
+
+            <!-- Attendance -->
+            <div class="rec-subtab-content" id="recsub-attendance">
+              <div class="rec-summary"><div class="rec-summary-label">Overall Attendance</div><div class="rec-summary-val">95%</div><div class="rec-summary-sub">1,247 of 1,312 present today</div></div>
+              <div style="background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:12px 16px;margin:0 var(--s-lg) var(--s-md)">
+                <div class="rec-bar-row"><span class="rec-bar-name">Class 6-A</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:96%;background:var(--mint)"></div></div><span class="rec-bar-pct">96%</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name">Class 6-B</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:94%;background:var(--mint)"></div></div><span class="rec-bar-pct">94%</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name">Class 7-A</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:91%;background:var(--mint)"></div></div><span class="rec-bar-pct">91%</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name">Class 7-B</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:88%;background:var(--gold)"></div></div><span class="rec-bar-pct">88%</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name">Class 8-A</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:85%;background:var(--gold)"></div></div><span class="rec-bar-pct">85%</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name">Class 8-B</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:72%;background:var(--coral)"></div></div><span class="rec-bar-pct">72%</span></div>
+              </div>
+            </div>
+
+            <!-- Marks -->
+            <div class="rec-subtab-content" id="recsub-marks">
+              <div class="rec-summary"><div class="rec-summary-label">Overall Average — Term 3</div><div class="rec-summary-val">76.4%</div><div class="rec-summary-sub">Across 24 assessments · 1,312 students</div></div>
+              <div style="background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:12px 16px;margin:0 var(--s-lg) var(--s-md)">
+                <div class="rec-bar-row"><span class="rec-bar-name">Class 6-A</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:82%;background:var(--mint)"></div></div><span class="rec-bar-pct">82%</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name">Class 6-B</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:78%;background:var(--mint)"></div></div><span class="rec-bar-pct">78%</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name">Class 7-A</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:75%;background:var(--gold)"></div></div><span class="rec-bar-pct">75%</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name">Class 7-B</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:74%;background:var(--gold)"></div></div><span class="rec-bar-pct">74%</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name">Class 8-A</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:73%;background:var(--gold)"></div></div><span class="rec-bar-pct">73%</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name">Class 8-B</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:68%;background:var(--coral)"></div></div><span class="rec-bar-pct">68%</span></div>
+              </div>
+            </div>
+
+            <!-- Fee -->
+            <div class="rec-subtab-content" id="recsub-fee">
+              <div class="fees-hero">
               <div class="fees-hero-label">Total Collected — Term 3</div>
               <div class="fees-hero-amount">₹4,20,000</div>
               <div class="fees-hero-due">Outstanding: ₹6,80,000 · Due by March 15</div>
@@ -840,120 +1216,276 @@ svg{display:block}
                 <span class="st-badge st-badge--absent">Overdue</span>
               </div>
             </div>
+            </div>
+
+            <!-- Documents -->
+            <div class="rec-subtab-content" id="recsub-documents">
+              <div class="rec-empty">
+                <div class="rec-empty-title">Document Library</div>
+                <div class="rec-empty-sub">Circulars, timetables and holiday lists are uploaded via Announcements and the Academic Calendar.</div>
+              </div>
+            </div>
+
           </div>
         </div>
 
-        <!-- ═══ INBOX TAB ═══ -->
-        <div class="tab-content" id="tab-inbox">
+        <!-- ═══ COMMS TAB ═══ -->
+        <div class="tab-content" id="tab-comms">
           <div class="scroll content-pb">
+            <div class="rec-subtabs">
+              <button class="rec-subtab active" data-commsub="announcements">Announcements</button>
+              <button class="rec-subtab" data-commsub="messages">Messages</button>
+              <button class="rec-subtab" data-commsub="ptm">PTM</button>
+              <button class="rec-subtab" data-commsub="notifications">Notifications</button>
+            </div>
+
+            <!-- Announcements sub-tab -->
+            <div class="rec-subtab-content active" id="commsub-announcements">
+              <div style="display:flex;gap:8px;margin:0 var(--s-lg) var(--s-md)">
+                <button class="pp-add-btn" style="margin:0;flex:1" data-overlay="ov-create-event"><svg><use href="#icon-plus"/></svg> New</button>
+                <button class="pp-add-btn" style="margin:0;flex:1;background:var(--surface-tint);color:var(--ink-2)" data-overlay="ov-scheduled-msgs"><svg><use href="#icon-clock"/></svg> Scheduled</button>
+              </div>
+              <div class="ov-ann-item">
+                <span class="ov-ann-cat">Holiday</span>
+                <div class="ov-ann-title">Republic Day Holiday — January 26</div>
+                <div class="ov-ann-body">School will remain closed on January 26 in observance of Republic Day. Regular classes resume January 27.</div>
+                <div class="ov-ann-time">Posted 2 hours ago · All Parents</div>
+              </div>
+              <div class="ov-ann-item" style="--sky:var(--sienna);--sky-soft:var(--sienna-soft)">
+                <span class="ov-ann-cat" style="background:var(--sienna-soft);color:var(--sienna)">Event</span>
+                <div class="ov-ann-title">Annual Sports Day — February 15</div>
+                <div class="ov-ann-body">Inter-house athletics competition. Parents invited. Event starts 9 AM at the school ground.</div>
+                <div class="ov-ann-time">Posted yesterday · Classes 6-8 Parents</div>
+              </div>
+              <div class="ov-ann-item" style="--sky:var(--plum);--sky-soft:var(--plum-soft)">
+                <span class="ov-ann-cat" style="background:var(--plum-soft);color:var(--plum)">Fee</span>
+                <div class="ov-ann-title">Term 3 Fee Payment Reminder</div>
+                <div class="ov-ann-body">Last date for Term 3 fee payment is March 15. Pay via UPI, Card, or Net Banking through the parent app.</div>
+                <div class="ov-ann-time">Posted 3 days ago · All Parents</div>
+              </div>
+            </div>
+
+            <!-- Messages sub-tab (existing inbox content) -->
+            <div class="rec-subtab-content" id="commsub-messages">
+            <div class="ib-search">
+              <svg><use href="#icon-search"/></svg>
+              <input type="text" placeholder="Search approvals, messages...">
+            </div>
             <div class="conv-segments">
-              <button class="conv-seg active" data-convseg="approvals">Approvals</button>
-              <button class="conv-seg" data-convseg="messages">Messages</button>
+              <button class="conv-seg active" data-convseg="approvals">Approvals <span class="conv-seg-count">4</span></button>
+              <button class="conv-seg" data-convseg="messages">Messages <span class="conv-seg-count">2</span></button>
             </div>
             <!-- Approvals -->
             <div class="conv-seg-content active" id="convseg-approvals">
-              <div class="inbox-item inbox-item--urgent">
-                <div class="inbox-dot inbox-dot--urgent"></div>
-                <div class="inbox-body">
-                  <div class="inbox-title">Leave Request — Aarav Sharma (7-B)</div>
-                  <div class="inbox-meta">2 days · Medical · Parent: Priya Sharma</div>
+              <div class="ib-group">Needs Attention</div>
+              <div class="ib-approval ib-approval--urgent">
+                <div class="ib-approval-top">
+                  <div class="ib-approval-ic ib-approval-ic--leave"><svg><use href="#icon-clipboard"/></svg></div>
+                  <div class="ib-approval-body">
+                    <div class="ib-approval-title">Leave Request — Aarav Sharma (7-B)</div>
+                    <div class="ib-approval-meta">2 days · Medical · Parent: Priya Sharma</div>
+                  </div>
+                  <span class="ib-approval-tag ib-approval-tag--urgent">Urgent</span>
                 </div>
-                <span class="inbox-tag inbox-tag--urgent">Urgent</span>
+                <div class="ib-approval-actions">
+                  <button class="ib-approval-btn ib-approval-btn--approve">Approve</button>
+                  <button class="ib-approval-btn ib-approval-btn--reject">Reject</button>
+                  <button class="ib-approval-btn ib-approval-btn--view">View Details</button>
+                </div>
               </div>
-              <div class="inbox-item inbox-item--new">
-                <div class="inbox-dot inbox-dot--new"></div>
-                <div class="inbox-body">
-                  <div class="inbox-title">New Admission — Riya Patel (Grade 5)</div>
-                  <div class="inbox-meta">Documents verified · Awaiting approval</div>
+              <div class="ib-approval ib-approval--new">
+                <div class="ib-approval-top">
+                  <div class="ib-approval-ic ib-approval-ic--adm"><svg><use href="#icon-users"/></svg></div>
+                  <div class="ib-approval-body">
+                    <div class="ib-approval-title">New Admission — Riya Patel (Grade 5)</div>
+                    <div class="ib-approval-meta">Documents verified · Awaiting approval</div>
+                  </div>
+                  <span class="ib-approval-tag ib-approval-tag--new">New</span>
                 </div>
-                <span class="inbox-tag inbox-tag--new">New</span>
+                <div class="ib-approval-actions">
+                  <button class="ib-approval-btn ib-approval-btn--approve">Approve</button>
+                  <button class="ib-approval-btn ib-approval-btn--reject">Decline</button>
+                  <button class="ib-approval-btn ib-approval-btn--view">View Details</button>
+                </div>
               </div>
-              <div class="inbox-item inbox-item--pending">
-                <div class="inbox-dot inbox-dot--pending"></div>
-                <div class="inbox-body">
-                  <div class="inbox-title">Transfer Certificate — Rohan Gupta</div>
-                  <div class="inbox-meta">Alumni 2024 · Parent request</div>
+              <div class="ib-group">Pending</div>
+              <div class="ib-approval ib-approval--pending">
+                <div class="ib-approval-top">
+                  <div class="ib-approval-ic ib-approval-ic--tc"><svg><use href="#icon-file"/></svg></div>
+                  <div class="ib-approval-body">
+                    <div class="ib-approval-title">Transfer Certificate — Rohan Gupta</div>
+                    <div class="ib-approval-meta">Alumni 2024 · Parent request</div>
+                  </div>
+                  <span class="ib-approval-tag ib-approval-tag--pending">Pending</span>
                 </div>
-                <span class="inbox-tag inbox-tag--pending">Pending</span>
+                <div class="ib-approval-actions">
+                  <button class="ib-approval-btn ib-approval-btn--approve">Approve</button>
+                  <button class="ib-approval-btn ib-approval-btn--view">View Details</button>
+                </div>
               </div>
-              <div class="inbox-item inbox-item--pending">
-                <div class="inbox-dot inbox-dot--pending"></div>
-                <div class="inbox-body">
-                  <div class="inbox-title">Fee Concession — Ananya Tiwari (6-B)</div>
-                  <div class="inbox-meta">50% request · Income certificate attached</div>
+              <div class="ib-approval ib-approval--pending">
+                <div class="ib-approval-top">
+                  <div class="ib-approval-ic ib-approval-ic--fee"><svg><use href="#icon-rupee"/></svg></div>
+                  <div class="ib-approval-body">
+                    <div class="ib-approval-title">Fee Concession — Ananya Tiwari (6-B)</div>
+                    <div class="ib-approval-meta">50% request · Income certificate attached</div>
+                  </div>
+                  <span class="ib-approval-tag ib-approval-tag--pending">Pending</span>
                 </div>
-                <span class="inbox-tag inbox-tag--pending">Pending</span>
+                <div class="ib-approval-actions">
+                  <button class="ib-approval-btn ib-approval-btn--approve">Approve</button>
+                  <button class="ib-approval-btn ib-approval-btn--reject">Reject</button>
+                  <button class="ib-approval-btn ib-approval-btn--view">View Details</button>
+                </div>
               </div>
             </div>
             <!-- Messages -->
             <div class="conv-seg-content" id="convseg-messages">
+              <div class="ib-group">Unread</div>
               <div class="conv-thread">
-                <div class="conv-avatar conv-avatar--sienna">PS</div>
+                <div class="conv-avatar-wrap">
+                  <div class="conv-avatar conv-avatar--sienna">PS</div>
+                  <div class="conv-avatar-status conv-avatar-status--online"></div>
+                </div>
                 <div class="conv-info"><div class="conv-name">Priya Sharma (Teacher)</div><div class="conv-preview">Aarav's quiz performance has improved significantly</div></div>
                 <div class="conv-meta"><span class="conv-time">11:30</span><span class="conv-unread">1</span></div>
               </div>
               <div class="conv-thread">
-                <div class="conv-avatar conv-avatar--sky">MI</div>
+                <div class="conv-avatar-wrap">
+                  <div class="conv-avatar conv-avatar--sky">MI</div>
+                  <div class="conv-avatar-status conv-avatar-status--online"></div>
+                </div>
                 <div class="conv-info"><div class="conv-name">Meera Iyer (Teacher)</div><div class="conv-preview">Need approval for field trip to Science Museum</div></div>
                 <div class="conv-meta"><span class="conv-time">10:15</span><span class="conv-unread">1</span></div>
               </div>
+              <div class="ib-group">Earlier</div>
               <div class="conv-thread">
-                <div class="conv-avatar conv-avatar--gold">AD</div>
+                <div class="conv-avatar-wrap">
+                  <div class="conv-avatar conv-avatar--gold">AD</div>
+                  <div class="conv-avatar-status conv-avatar-status--away"></div>
+                </div>
                 <div class="conv-info"><div class="conv-name">Anita Desai (Teacher)</div><div class="conv-preview">Syllabus completion report for Term 2 ready</div></div>
                 <div class="conv-meta"><span class="conv-time">Yesterday</span></div>
               </div>
               <div class="conv-thread">
-                <div class="conv-avatar conv-avatar--mint">OF</div>
+                <div class="conv-avatar-wrap">
+                  <div class="conv-avatar conv-avatar--mint">OF</div>
+                </div>
                 <div class="conv-info"><div class="conv-name">School Office</div><div class="conv-preview">8 fee receipts pending verification</div></div>
                 <div class="conv-meta"><span class="conv-time">2d</span></div>
               </div>
             </div>
+            </div>
+
+            <!-- PTM sub-tab -->
+            <div class="rec-subtab-content" id="commsub-ptm">
+              <div class="comms-entry" data-overlay="ov-schedule-ptm">
+                <div class="comms-entry-ic comms-entry-ic--ptm"><svg><use href="#icon-calendar"/></svg></div>
+                <div class="comms-entry-body">
+                  <div class="comms-entry-title">Parent-Teacher Meetings</div>
+                  <div class="comms-entry-sub">Schedule PTMs and track slot bookings</div>
+                </div>
+                <svg class="set-row-chevron"><use href="#icon-chevron-right"/></svg>
+              </div>
+            </div>
+
+            <!-- Notifications sub-tab -->
+            <div class="rec-subtab-content" id="commsub-notifications">
+              <div class="comms-entry" data-overlay="ov-notifications">
+                <div class="comms-entry-ic comms-entry-ic--notif"><svg><use href="#icon-bell"/></svg></div>
+                <div class="comms-entry-body">
+                  <div class="comms-entry-title">Notification Center</div>
+                  <div class="comms-entry-sub">View delivery logs & send push notifications</div>
+                </div>
+                <svg class="set-row-chevron"><use href="#icon-chevron-right"/></svg>
+              </div>
+            </div>
+
           </div>
         </div>
 
-        <!-- ═══ PROFILE TAB ═══ -->
-        <div class="tab-content" id="tab-profile">
+        <!-- ═══ SETTINGS TAB ═══ -->
+        <div class="tab-content" id="tab-settings">
           <div class="scroll content-pb">
-            <div class="prof-hero">
-              <div class="prof-hero-avatar">PM</div>
-              <div class="prof-hero-name">Priya Mehta</div>
-              <div class="prof-hero-role">Principal · Delhi Public School</div>
+            <div class="set-profile-card" data-overlay="ov-edit-profile">
+              <div class="set-profile-top">
+                <div class="set-profile-avatar">PM</div>
+                <div class="set-profile-info">
+                  <div class="set-profile-name">Priya Mehta</div>
+                  <div class="set-profile-role">Principal · Delhi Public School</div>
+                  <div class="set-profile-pct">Profile 85% complete</div>
+                </div>
+              </div>
+              <div class="set-profile-bar"><div class="set-profile-bar-fill" style="width:85%"></div></div>
             </div>
-            <div class="prof-stats">
-              <div class="prof-stat"><div class="prof-stat-num">1,312</div><div class="prof-stat-label">Students</div><div class="prof-stat-trend prof-stat-trend--up">+8 this week</div></div>
-              <div class="prof-stat"><div class="prof-stat-num">87</div><div class="prof-stat-label">Staff</div><div class="prof-stat-trend">84 active</div></div>
-              <div class="prof-stat"><div class="prof-stat-num">₹4.2L</div><div class="prof-stat-label">Fees (Month)</div><div class="prof-stat-trend prof-stat-trend--up">+12%</div></div>
-              <div class="prof-stat"><div class="prof-stat-num">95%</div><div class="prof-stat-label">Attendance</div><div class="prof-stat-trend prof-stat-trend--up">+1.2%</div></div>
+            <div class="set-row" data-overlay="ov-academic-year">
+              <div class="set-row-ic set-row-ic--calendar"><svg><use href="#icon-calendar"/></svg></div>
+              <div class="set-row-body"><div class="set-row-title">Academic Year</div><div class="set-row-sub">Manage term dates & holidays</div></div>
+              <svg class="set-row-chevron"><use href="#icon-chevron-right"/></svg>
             </div>
-            <div class="prof-section">
-              <div class="ph-section-head"><span class="ph-section-title">Management</span></div>
-              <div class="prof-row" data-overlay="ov-staff">
-                <div class="prof-row-icon prof-row-icon--staff"><svg><use href="#icon-users"/></svg></div>
-                <span class="prof-row-label">Staff Directory</span>
-                <svg class="prof-row-chevron"><use href="#icon-chevron-right"/></svg>
-              </div>
-              <div class="prof-row" data-overlay="ov-reports">
-                <div class="prof-row-icon prof-row-icon--report"><svg><use href="#icon-file"/></svg></div>
-                <span class="prof-row-label">Reports & Analytics</span>
-                <svg class="prof-row-chevron"><use href="#icon-chevron-right"/></svg>
-              </div>
-              <div class="prof-row" data-overlay="ov-announce">
-                <div class="prof-row-icon prof-row-icon--settings"><svg><use href="#icon-megaphone"/></svg></div>
-                <span class="prof-row-label">Send Announcement</span>
-                <svg class="prof-row-chevron"><use href="#icon-chevron-right"/></svg>
-              </div>
-              <div class="prof-row" data-overlay="ov-calendar">
-                <div class="prof-row-icon prof-row-icon--report"><svg><use href="#icon-calendar"/></svg></div>
-                <span class="prof-row-label">School Calendar</span>
-                <svg class="prof-row-chevron"><use href="#icon-chevron-right"/></svg>
-              </div>
-              <div class="prof-row">
-                <div class="prof-row-icon prof-row-icon--settings"><svg><use href="#icon-settings"/></svg></div>
-                <span class="prof-row-label">Account Settings</span>
-                <svg class="prof-row-chevron"><use href="#icon-chevron-right"/></svg>
+            <div class="set-row" data-overlay="ov-classes-subjects">
+              <div class="set-row-ic set-row-ic--classes"><svg><use href="#icon-users"/></svg></div>
+              <div class="set-row-body"><div class="set-row-title">Classes & Subjects</div><div class="set-row-sub">Classes, subjects, bell schedule & timetable</div></div>
+              <svg class="set-row-chevron"><use href="#icon-chevron-right"/></svg>
+            </div>
+            <div class="set-row" data-overlay="ov-transport">
+              <div class="set-row-ic set-row-ic--transport"><svg><use href="#icon-bus"/></svg></div>
+              <div class="set-row-body"><div class="set-row-title">Transport Management</div><div class="set-row-sub">Routes, vehicles & student assignments</div></div>
+              <svg class="set-row-chevron"><use href="#icon-chevron-right"/></svg>
+            </div>
+            <div class="set-row" data-overlay="ov-scholarships">
+              <div class="set-row-ic set-row-ic--scholar"><svg><use href="#icon-award"/></svg></div>
+              <div class="set-row-body"><div class="set-row-title">Scholarship Management</div><div class="set-row-sub">Schemes, applications & renewals</div></div>
+              <svg class="set-row-chevron"><use href="#icon-chevron-right"/></svg>
+            </div>
+            <div class="set-row" data-overlay="ov-branding">
+              <div class="set-row-ic set-row-ic--branding"><svg><use href="#icon-palette"/></svg></div>
+              <div class="set-row-body"><div class="set-row-title">Branding Kit</div><div class="set-row-sub">Logo, colors & custom subdomain</div></div>
+              <svg class="set-row-chevron"><use href="#icon-chevron-right"/></svg>
+            </div>
+            <div class="set-row" data-overlay="ov-idcards">
+              <div class="set-row-ic set-row-ic--idcard"><svg><use href="#icon-file"/></svg></div>
+              <div class="set-row-body"><div class="set-row-title">ID Cards</div><div class="set-row-sub">Templates, generation & PDF export</div></div>
+              <svg class="set-row-chevron"><use href="#icon-chevron-right"/></svg>
+            </div>
+            <div class="set-row" data-overlay="ov-library">
+              <div class="set-row-ic set-row-ic--library"><svg><use href="#icon-book"/></svg></div>
+              <div class="set-row-body"><div class="set-row-title">Library Management</div><div class="set-row-sub">Catalog, issues, returns & fines</div></div>
+              <svg class="set-row-chevron"><use href="#icon-chevron-right"/></svg>
+            </div>
+            <div class="set-row">
+              <div class="set-row-ic set-row-ic--fee"><svg><use href="#icon-rupee"/></svg></div>
+              <div class="set-row-body"><div class="set-row-title">Fee Structure</div><div class="set-row-sub">Edit heads & amounts for next cycle</div></div>
+              <svg class="set-row-chevron"><use href="#icon-chevron-right"/></svg>
+            </div>
+            <div class="set-row" data-overlay="ov-notifications">
+              <div class="set-row-ic set-row-ic--notif"><svg><use href="#icon-bell"/></svg></div>
+              <div class="set-row-body"><div class="set-row-title">Notifications</div><div class="set-row-sub">Channels & quiet hours</div></div>
+              <svg class="set-row-chevron"><use href="#icon-chevron-right"/></svg>
+            </div>
+            <div class="set-row">
+              <div class="set-row-ic set-row-ic--export"><svg><use href="#icon-download"/></svg></div>
+              <div class="set-row-body"><div class="set-row-title">Data Export</div><div class="set-row-sub">CSV / PDF / UDISE</div></div>
+              <span class="set-row-badge">SOON</span>
+            </div>
+            <div class="set-row">
+              <div class="set-row-ic set-row-ic--help"><svg><use href="#icon-chat"/></svg></div>
+              <div class="set-row-body"><div class="set-row-title">Help & Support</div><div class="set-row-sub">Email support@enrollplus.in</div></div>
+              <svg class="set-row-chevron"><use href="#icon-chevron-right"/></svg>
+            </div>
+            <div class="set-theme">
+              <div class="set-theme-title">Theme</div>
+              <div class="set-theme-opts">
+                <button class="set-theme-opt active">Light</button>
+                <button class="set-theme-opt">Dark</button>
+                <button class="set-theme-opt">High Contrast</button>
               </div>
             </div>
-            <button class="prof-logout">Logout</button>
+            <div class="set-row" style="margin-top:var(--s-md)">
+              <div class="set-row-ic set-row-ic--logout"><svg><use href="#icon-logout"/></svg></div>
+              <div class="set-row-body"><div class="set-row-title" style="color:var(--coral)">Logout</div><div class="set-row-sub">Sign out of the admin console</div></div>
+              <svg class="set-row-chevron"><use href="#icon-chevron-right"/></svg>
+            </div>
           </div>
         </div>
 
@@ -963,22 +1495,22 @@ svg{display:block}
             <div class="bn-item-ic"><svg><use href="#icon-home"/></svg></div>
             <div class="bn-item-label">Home</div>
           </button>
-          <button class="bn-item" data-nav="tab:Students">
+          <button class="bn-item" data-nav="tab:People">
             <div class="bn-item-ic"><svg><use href="#icon-users"/></svg></div>
-            <div class="bn-item-label">Students</div>
+            <div class="bn-item-label">People</div>
           </button>
-          <button class="bn-item" data-nav="tab:Fees">
-            <div class="bn-item-ic"><svg><use href="#icon-rupee"/></svg></div>
-            <div class="bn-item-label">Fees</div>
+          <button class="bn-item" data-nav="tab:Records">
+            <div class="bn-item-ic"><svg><use href="#icon-clipboard"/></svg></div>
+            <div class="bn-item-label">Records</div>
           </button>
-          <button class="bn-item" data-nav="tab:Inbox">
-            <div class="bn-item-ic"><svg><use href="#icon-chat"/></svg></div>
-            <div class="bn-item-label">Inbox</div>
+          <button class="bn-item" data-nav="tab:Comms">
+            <div class="bn-item-ic"><svg><use href="#icon-megaphone"/></svg></div>
+            <div class="bn-item-label">Comms</div>
             <span class="bn-badge">5</span>
           </button>
-          <button class="bn-item" data-nav="tab:Profile">
-            <div class="bn-item-ic"><svg><use href="#icon-user"/></svg></div>
-            <div class="bn-item-label">Profile</div>
+          <button class="bn-item" data-nav="tab:Settings">
+            <div class="bn-item-ic"><svg><use href="#icon-settings"/></svg></div>
+            <div class="bn-item-label">Settings</div>
           </button>
         </div>
 
@@ -988,6 +1520,10 @@ svg{display:block}
         <div class="overlay" id="ov-notifications">
           <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Notifications</span></div>
           <div class="overlay-body">
+            <div class="ov-notif-filters">
+              <button class="ov-notif-filter active" data-notiffilter="all">All</button>
+              <button class="ov-notif-filter" data-notiffilter="unread">Unread <span style="font-size:10px;opacity:.7">3</span></button>
+            </div>
             <button class="ov-notif-markall"><svg><use href="#icon-check"/></svg> Mark all as read</button>
             <div class="ov-notif-group">Today</div>
             <div class="ov-notif ov-notif--urgent">
@@ -1169,6 +1705,610 @@ svg{display:block}
           </div>
         </div>
 
+        <!-- Teacher Profile -->
+        <div class="overlay" id="ov-teacher-profile">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Teacher Profile</span></div>
+          <div class="overlay-body">
+            <div class="set-profile-card"><div class="set-profile-top"><div class="set-profile-avatar" style="background:var(--sienna-soft);color:var(--sienna)">PS</div><div class="set-profile-info"><div class="set-profile-name">Priya Sharma</div><div class="set-profile-role">EMP-001 · Mathematics</div><div class="set-profile-pct">4 Class assignments</div></div></div></div>
+            <div class="ib-group">Class Assignments</div>
+            <div class="st-card"><div class="st-avatar st-avatar--sienna">7A</div><div class="st-info"><div class="st-name">Class 7-A · Mathematics</div><div class="st-meta">32 students · Periods 1,3,5</div></div></div>
+            <div class="st-card"><div class="st-avatar st-avatar--sky">7B</div><div class="st-info"><div class="st-name">Class 7-B · Mathematics</div><div class="st-meta">30 students · Periods 2,4,6</div></div></div>
+            <div class="ib-group">Performance</div>
+            <div class="rec-summary"><div class="rec-summary-label">Avg Class Performance</div><div class="rec-summary-val">82%</div><div class="rec-summary-sub">Syllabus coverage: 85% · Pace: On track</div></div>
+            <div style="display:flex;gap:8px;margin:var(--s-md) var(--s-lg)"><button class="pp-add-btn" style="margin:0;flex:1" data-overlay="ov-teacher-assignments"><svg><use href="#icon-plus"/></svg> Assign Classes</button><button class="pp-add-btn" style="margin:0;flex:1;background:var(--surface-tint);color:var(--ink-2)"><svg><use href="#icon-settings"/></svg> Edit</button></div>
+          </div>
+        </div>
+
+        <!-- Student Profile -->
+        <div class="overlay" id="ov-student-profile">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Student Profile</span></div>
+          <div class="overlay-body">
+            <div class="set-profile-card"><div class="set-profile-top"><div class="set-profile-avatar" style="background:var(--sienna-soft);color:var(--sienna)">AS</div><div class="set-profile-info"><div class="set-profile-name">Aarav Sharma</div><div class="set-profile-role">Class 7-B · Roll 14</div><div class="set-profile-pct">Parent: Priya Sharma · +91 98765 43210</div></div></div></div>
+            <div class="rec-subtabs"><button class="rec-subtab active" data-ovsub="academic">Academic</button><button class="rec-subtab" data-ovsub="fees">Fees</button><button class="rec-subtab" data-ovsub="health">Health</button><button class="rec-subtab" data-ovsub="pews">PEWS</button></div>
+            <div class="rec-subtab-content active" id="ovsub-academic">
+              <div class="rec-summary"><div class="rec-summary-label">Overall Average — Term 3</div><div class="rec-summary-val">78%</div><div class="rec-summary-sub">Attendance: 96% · Rank: 14/30</div></div>
+              <div style="background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:12px 16px;margin:0 var(--s-lg) var(--s-md)">
+                <div class="rec-bar-row"><span class="rec-bar-name">Mathematics</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:82%;background:var(--mint)"></div></div><span class="rec-bar-pct">82%</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name">English</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:75%;background:var(--mint)"></div></div><span class="rec-bar-pct">75%</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name">Science</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:71%;background:var(--gold)"></div></div><span class="rec-bar-pct">71%</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name">Social Studies</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:85%;background:var(--mint)"></div></div><span class="rec-bar-pct">85%</span></div>
+              </div>
+            </div>
+            <div class="rec-subtab-content" id="ovsub-fees">
+              <div class="st-card"><div class="st-avatar st-avatar--mint">T1</div><div class="st-info"><div class="st-name">Term 1 — Paid</div><div class="st-meta">₹12,500 · UPI · TXN88411</div></div><span class="st-badge st-badge--present">Paid</span></div>
+              <div class="st-card"><div class="st-avatar st-avatar--mint">T2</div><div class="st-info"><div class="st-name">Term 2 — Paid</div><div class="st-meta">₹12,500 · UPI · TXN88419</div></div><span class="st-badge st-badge--present">Paid</span></div>
+              <div class="st-card"><div class="st-avatar st-avatar--mint">T3</div><div class="st-info"><div class="st-name">Term 3 — Paid</div><div class="st-meta">₹12,500 · UPI · TXN88421</div></div><span class="st-badge st-badge--present">Paid</span></div>
+            </div>
+            <div class="rec-subtab-content" id="ovsub-health">
+              <div class="ov-card"><div class="ov-card-title">Health Profile</div>
+                <div class="rec-bar-row"><span class="rec-bar-name" style="min-width:100px">Blood Group</span><span style="font-size:13px;font-weight:600;color:var(--ink-2)">O+</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name" style="min-width:100px">Allergies</span><span style="font-size:13px;font-weight:600;color:var(--ink-2)">None</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name" style="min-width:100px">Conditions</span><span style="font-size:13px;font-weight:600;color:var(--ink-2)">Asthma (mild)</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name" style="min-width:100px">Emergency</span><span style="font-size:13px;font-weight:600;color:var(--ink-2)">Priya Sharma · 9876543210</span></div>
+              </div>
+              <div class="st-card"><div class="st-avatar st-avatar--gold">!</div><div class="st-info"><div class="st-name">Asthma flare-up</div><div class="st-meta">Nov 2025 · Treated with inhaler · Rest 1hr</div></div></div>
+            </div>
+            <div class="rec-subtab-content" id="ovsub-pews">
+              <div class="rec-summary"><div class="rec-summary-label">Risk Score</div><div class="rec-summary-val" style="color:var(--mint)">22/100</div><div class="rec-summary-sub">Low risk · No interventions needed</div></div>
+              <div style="background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:12px 16px;margin:0 var(--s-lg) var(--s-md)">
+                <div class="rec-bar-row"><span class="rec-bar-name">Attendance</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:96%;background:var(--mint)"></div></div><span class="rec-bar-pct">96%</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name">Academics</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:78%;background:var(--mint)"></div></div><span class="rec-bar-pct">78%</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name">Engagement</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:88%;background:var(--mint)"></div></div><span class="rec-bar-pct">88%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Staff Profile -->
+        <div class="overlay" id="ov-staff-profile">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Staff Profile</span></div>
+          <div class="overlay-body">
+            <div class="set-profile-card"><div class="set-profile-top"><div class="set-profile-avatar" style="background:var(--sienna-soft);color:var(--sienna)">GT</div><div class="set-profile-info"><div class="set-profile-name">Gopal Tiwari</div><div class="set-profile-role">Accountant · Finance Dept</div><div class="set-profile-pct">+91 98765 43210 · gopal@dps.edu</div></div></div></div>
+            <div class="ib-group">Employment Details</div>
+            <div style="background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:12px 16px;margin:0 var(--s-lg) var(--s-md)">
+              <div class="rec-bar-row"><span class="rec-bar-name" style="min-width:100px">Employee ID</span><span style="font-size:13px;font-weight:600;color:var(--ink-2)">STF-001</span></div>
+              <div class="rec-bar-row"><span class="rec-bar-name" style="min-width:100px">Joined</span><span style="font-size:13px;font-weight:600;color:var(--ink-2)">Jun 2019</span></div>
+              <div class="rec-bar-row"><span class="rec-bar-name" style="min-width:100px">Status</span><span class="st-badge st-badge--present">Active</span></div>
+            </div>
+            <button class="pp-add-btn" style="margin:var(--s-md) var(--s-lg) 0"><svg><use href="#icon-settings"/></svg> Edit Profile</button>
+          </div>
+        </div>
+
+        <!-- Link Requests -->
+        <div class="overlay" id="ov-link-requests">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Link Requests</span></div>
+          <div class="overlay-body">
+            <div class="ib-group">Pending — 3 requests</div>
+            <div class="inbox-item inbox-item--urgent"><div class="inbox-dot inbox-dot--urgent"></div><div class="inbox-body"><div class="inbox-title">Priya Sharma → Aarav Sharma (7-B)</div><div class="inbox-meta">+91 98765 43210 · 2 hours ago</div></div><div class="ib-approval-actions"><button class="ib-approval-btn ib-approval-btn--approve">Approve</button><button class="ib-approval-btn ib-approval-btn--reject">Reject</button></div></div>
+            <div class="inbox-item"><div class="inbox-dot"></div><div class="inbox-body"><div class="inbox-title">Suresh Gupta → Rohan Gupta (8-B)</div><div class="inbox-meta">+91 98450 67890 · Yesterday</div></div><div class="ib-approval-actions"><button class="ib-approval-btn ib-approval-btn--approve">Approve</button><button class="ib-approval-btn ib-approval-btn--reject">Reject</button></div></div>
+            <div class="inbox-item"><div class="inbox-dot"></div><div class="inbox-body"><div class="inbox-title">Krishna Reddy → Sneha Reddy (8-A)</div><div class="inbox-meta">+91 98300 11111 · 3 days ago</div></div><div class="ib-approval-actions"><button class="ib-approval-btn ib-approval-btn--approve">Approve</button><button class="ib-approval-btn ib-approval-btn--reject">Reject</button></div></div>
+          </div>
+        </div>
+
+        <!-- Teacher Assignments -->
+        <div class="overlay" id="ov-teacher-assignments">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Assign Classes</span></div>
+          <div class="overlay-body">
+            <div class="set-profile-card"><div class="set-profile-top"><div class="set-profile-avatar" style="background:var(--sienna-soft);color:var(--sienna);width:40px;height:40px;font-size:14px">PS</div><div class="set-profile-info"><div class="set-profile-name" style="font-size:14px">Priya Sharma</div><div class="set-profile-role">Mathematics Teacher</div></div></div></div>
+            <div class="ib-group">Current Assignments</div>
+            <div class="st-card"><div class="st-avatar st-avatar--sienna">7A</div><div class="st-info"><div class="st-name">Class 7-A · Mathematics</div><div class="st-meta">Periods 1, 3, 5</div></div><button class="pp-person-btn pp-person-btn--deactivate">Remove</button></div>
+            <div class="st-card"><div class="st-avatar st-avatar--sky">7B</div><div class="st-info"><div class="st-name">Class 7-B · Mathematics</div><div class="st-meta">Periods 2, 4, 6</div></div><button class="pp-person-btn pp-person-btn--deactivate">Remove</button></div>
+            <button class="pp-add-btn" style="margin:var(--s-md) var(--s-lg) 0"><svg><use href="#icon-plus"/></svg> Add Assignment</button>
+          </div>
+        </div>
+
+        <!-- Student Roster -->
+        <div class="overlay" id="ov-student-roster">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Student Roster</span></div>
+          <div class="overlay-body">
+            <div class="st-search" style="margin:var(--s-sm) var(--s-lg) var(--s-md)"><svg><use href="#icon-search"/></svg><input type="text" placeholder="Search name, roll, parent phone..."></div>
+            <div class="st-chips"><button class="st-chip active">All</button><button class="st-chip">Class 6</button><button class="st-chip">Class 7</button><button class="st-chip">Class 8</button></div>
+            <div class="st-card"><div class="st-avatar st-avatar--sienna">AS</div><div class="st-info"><div class="st-name">Aarav Sharma</div><div class="st-meta">7-B · Roll 14 · 9876543210</div></div><span class="st-badge st-badge--present">Active</span></div>
+            <div class="st-card"><div class="st-avatar st-avatar--sky">RP</div><div class="st-info"><div class="st-name">Riya Patel</div><div class="st-meta">5-A · Roll 28 · New admission</div></div><span class="st-badge st-badge--pending">New</span></div>
+            <div class="st-card"><div class="st-avatar st-avatar--coral">RG</div><div class="st-info"><div class="st-name">Rohan Gupta</div><div class="st-meta">8-B · Roll 07 · 9845067890</div></div><span class="st-badge st-badge--present">Active</span></div>
+            <div class="st-card"><div class="st-avatar st-avatar--mint">SR</div><div class="st-info"><div class="st-name">Sneha Reddy</div><div class="st-meta">8-A · Roll 22 · 9830011111</div></div><span class="st-badge st-badge--present">Active</span></div>
+            <button class="pp-add-btn" style="margin:var(--s-md) var(--s-lg) 0;background:var(--surface-tint);color:var(--ink-2)"><svg><use href="#icon-download"/></svg> Export Roster</button>
+          </div>
+        </div>
+
+        <!-- Edit School Profile -->
+        <div class="overlay" id="ov-edit-profile">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Edit School Profile</span></div>
+          <div class="overlay-body">
+            <div class="ov-card"><div class="ov-card-title">School Information</div>
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div><label style="font-size:11px;font-weight:600;color:var(--ink-3);display:block;margin-bottom:4px">School Name</label><input type="text" value="Delhi Public School" style="width:100%;padding:10px 14px;border:1px solid var(--line-soft);border-radius:var(--r-sm);font-size:14px;font-family:var(--font);color:var(--ink);background:var(--white)"></div>
+                <div><label style="font-size:11px;font-weight:600;color:var(--ink-3);display:block;margin-bottom:4px">Board</label><input type="text" value="CBSE" style="width:100%;padding:10px 14px;border:1px solid var(--line-soft);border-radius:var(--r-sm);font-size:14px;font-family:var(--font);color:var(--ink);background:var(--white)"></div>
+                <div><label style="font-size:11px;font-weight:600;color:var(--ink-3);display:block;margin-bottom:4px">Principal</label><input type="text" value="Priya Mehta" style="width:100%;padding:10px 14px;border:1px solid var(--line-soft);border-radius:var(--r-sm);font-size:14px;font-family:var(--font);color:var(--ink);background:var(--white)"></div>
+                <div><label style="font-size:11px;font-weight:600;color:var(--ink-3);display:block;margin-bottom:4px">Phone</label><input type="text" value="+91 11 2345 6789" style="width:100%;padding:10px 14px;border:1px solid var(--line-soft);border-radius:var(--r-sm);font-size:14px;font-family:var(--font);color:var(--ink);background:var(--white)"></div>
+                <div><label style="font-size:11px;font-weight:600;color:var(--ink-3);display:block;margin-bottom:4px">Email</label><input type="text" value="office@dps.edu" style="width:100%;padding:10px 14px;border:1px solid var(--line-soft);border-radius:var(--r-sm);font-size:14px;font-family:var(--font);color:var(--ink);background:var(--white)"></div>
+              </div>
+            </div>
+            <button class="ov-btn" style="margin:var(--s-sm) var(--s-lg)">Save Changes</button>
+          </div>
+        </div>
+
+        <!-- Academic Year -->
+        <div class="overlay" id="ov-academic-year">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Academic Year</span></div>
+          <div class="overlay-body">
+            <div class="ov-card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div class="ov-card-title" style="margin:0">2025-2026</div><span class="st-badge st-badge--present">Current</span></div>
+              <div class="rec-bar-row"><span class="rec-bar-name" style="min-width:80px">Term 1</span><span style="font-size:12px;color:var(--ink-2)">Apr 1 – Sep 30</span></div>
+              <div class="rec-bar-row"><span class="rec-bar-name" style="min-width:80px">Term 2</span><span style="font-size:12px;color:var(--ink-2)">Oct 1 – Mar 31</span></div>
+              <div class="rec-bar-row"><span class="rec-bar-name" style="min-width:80px">Holidays</span><span style="font-size:12px;color:var(--ink-2)">12 listed</span></div>
+            </div>
+            <div class="ov-card"><div class="ov-card-title">2024-2025</div><div style="font-size:12px;color:var(--ink-3)">Completed · Archives available</div></div>
+            <button class="pp-add-btn" style="margin:var(--s-md) var(--s-lg) 0"><svg><use href="#icon-plus"/></svg> Add Academic Year</button>
+          </div>
+        </div>
+
+        <!-- Classes & Subjects -->
+        <div class="overlay" id="ov-classes-subjects">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Classes & Subjects</span></div>
+          <div class="overlay-body">
+            <div class="rec-subtabs"><button class="rec-subtab active" data-ovsub="classes">Classes</button><button class="rec-subtab" data-ovsub="subjects">Subjects</button><button class="rec-subtab" data-ovsub="schedule">Schedule</button><button class="rec-subtab" data-ovsub="requests">Requests</button></div>
+            <div class="rec-subtab-content active" id="ovsub-classes">
+              <div class="st-card" data-overlay="ov-class-detail"><div class="st-avatar st-avatar--sienna">6A</div><div class="st-info"><div class="st-name">Class 6-A</div><div class="st-meta">32 students · 8 subjects</div></div><svg class="set-row-chevron"><use href="#icon-chevron-right"/></svg></div>
+              <div class="st-card" data-overlay="ov-class-detail"><div class="st-avatar st-avatar--sky">6B</div><div class="st-info"><div class="st-name">Class 6-B</div><div class="st-meta">30 students · 8 subjects</div></div><svg class="set-row-chevron"><use href="#icon-chevron-right"/></svg></div>
+              <div class="st-card" data-overlay="ov-class-detail"><div class="st-avatar st-avatar--mint">7A</div><div class="st-info"><div class="st-name">Class 7-A</div><div class="st-meta">32 students · 8 subjects</div></div><svg class="set-row-chevron"><use href="#icon-chevron-right"/></svg></div>
+              <div class="st-card" data-overlay="ov-class-detail"><div class="st-avatar st-avatar--gold">7B</div><div class="st-info"><div class="st-name">Class 7-B</div><div class="st-meta">30 students · 8 subjects</div></div><svg class="set-row-chevron"><use href="#icon-chevron-right"/></svg></div>
+              <div class="st-card" data-overlay="ov-class-detail"><div class="st-avatar st-avatar--coral">8A</div><div class="st-info"><div class="st-name">Class 8-A</div><div class="st-meta">28 students · 8 subjects</div></div><svg class="set-row-chevron"><use href="#icon-chevron-right"/></svg></div>
+              <div class="st-card" data-overlay="ov-class-detail"><div class="st-avatar st-avatar--plum">8B</div><div class="st-info"><div class="st-name">Class 8-B</div><div class="st-meta">27 students · 8 subjects</div></div><svg class="set-row-chevron"><use href="#icon-chevron-right"/></svg></div>
+              <button class="pp-add-btn" style="margin:var(--s-md) var(--s-lg) 0"><svg><use href="#icon-plus"/></svg> Add Class</button>
+            </div>
+            <div class="rec-subtab-content" id="ovsub-subjects">
+              <div class="st-card"><div class="st-avatar st-avatar--sienna">M</div><div class="st-info"><div class="st-name">Mathematics</div><div class="st-meta">6 classes · Priya Sharma, Rajesh Kumar</div></div></div>
+              <div class="st-card"><div class="st-avatar st-avatar--sky">E</div><div class="st-info"><div class="st-name">English</div><div class="st-meta">6 classes · Meera Iyer, Anita Desai</div></div></div>
+              <div class="st-card"><div class="st-avatar st-avatar--mint">S</div><div class="st-info"><div class="st-name">Science</div><div class="st-meta">6 classes · Rajesh Kumar, Sunita Nair</div></div></div>
+              <div class="st-card"><div class="st-avatar st-avatar--gold">SS</div><div class="st-info"><div class="st-name">Social Studies</div><div class="st-meta">6 classes · Anita Desai</div></div></div>
+              <div class="st-card"><div class="st-avatar st-avatar--coral">H</div><div class="st-info"><div class="st-name">Hindi</div><div class="st-meta">6 classes · Sunita Nair</div></div></div>
+              <button class="pp-add-btn" style="margin:var(--s-md) var(--s-lg) 0"><svg><use href="#icon-plus"/></svg> Add Subject</button>
+            </div>
+            <div class="rec-subtab-content" id="ovsub-schedule">
+              <div class="ov-card"><div class="ov-card-title">Bell Schedule</div>
+                <div class="rec-bar-row"><span class="rec-bar-name" style="min-width:60px">Per 1</span><span style="font-size:12px;color:var(--ink-2)">8:00 – 8:45 AM</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name" style="min-width:60px">Per 2</span><span style="font-size:12px;color:var(--ink-2)">8:45 – 9:30 AM</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name" style="min-width:60px">Break</span><span style="font-size:12px;color:var(--ink-2)">9:30 – 9:45 AM</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name" style="min-width:60px">Per 3</span><span style="font-size:12px;color:var(--ink-2)">9:45 – 10:30 AM</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name" style="min-width:60px">Per 4</span><span style="font-size:12px;color:var(--ink-2)">10:30 – 11:15 AM</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name" style="min-width:60px">Lunch</span><span style="font-size:12px;color:var(--ink-2)">11:15 – 12:00 PM</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name" style="min-width:60px">Per 5</span><span style="font-size:12px;color:var(--ink-2)">12:00 – 12:45 PM</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name" style="min-width:60px">Per 6</span><span style="font-size:12px;color:var(--ink-2)">12:45 – 1:30 PM</span></div>
+              </div>
+              <button class="pp-add-btn" style="margin:var(--s-md) var(--s-lg) 0"><svg><use href="#icon-plus"/></svg> Edit Schedule</button>
+            </div>
+            <div class="rec-subtab-content" id="ovsub-requests">
+              <div class="st-card"><div class="st-avatar st-avatar--sienna">SR</div><div class="st-info"><div class="st-name">Subject change — Class 7-B</div><div class="st-meta">Request to add Computer Science</div></div><span class="st-badge st-badge--pending">Pending</span></div>
+              <div class="st-card"><div class="st-avatar st-avatar--sky">RP</div><div class="st-info"><div class="st-name">New section — Class 5</div><div class="st-meta">Request for Section C due to overflow</div></div><span class="st-badge st-badge--pending">Pending</span></div>
+              <div class="rec-empty"><div class="rec-empty-title">No approved or rejected requests</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Transport Management -->
+        <div class="overlay" id="ov-transport">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Transport</span></div>
+          <div class="overlay-body">
+            <div class="rec-subtabs"><button class="rec-subtab active" data-ovsub="routes">Routes</button><button class="rec-subtab" data-ovsub="vehicles">Vehicles</button><button class="rec-subtab" data-ovsub="tstudents">Students</button></div>
+            <div class="rec-subtab-content active" id="ovsub-routes">
+              <div class="st-card"><div class="st-avatar st-avatar--sienna">R1</div><div class="st-info"><div class="st-name">Route 1 — North Campus</div><div class="st-meta">8 stops · 6:30 AM · DL-01-AB-1234</div></div></div>
+              <div class="st-card"><div class="st-avatar st-avatar--sky">R2</div><div class="st-info"><div class="st-name">Route 2 — South City</div><div class="st-meta">12 stops · 6:15 AM · DL-01-CD-5678</div></div></div>
+              <div class="st-card"><div class="st-avatar st-avatar--mint">R3</div><div class="st-info"><div class="st-name">Route 3 — East Valley</div><div class="st-meta">6 stops · 6:45 AM · DL-01-EF-9012</div></div></div>
+              <button class="pp-add-btn" style="margin:var(--s-md) var(--s-lg) 0"><svg><use href="#icon-plus"/></svg> Add Route</button>
+            </div>
+            <div class="rec-subtab-content" id="ovsub-vehicles">
+              <div class="st-card"><div class="st-avatar st-avatar--sienna">V1</div><div class="st-info"><div class="st-name">DL-01-AB-1234</div><div class="st-meta">Bus 42 seater · Route 1 · Driver: Ramesh</div></div><span class="st-badge st-badge--present">Active</span></div>
+              <div class="st-card"><div class="st-avatar st-avatar--sky">V2</div><div class="st-info"><div class="st-name">DL-01-CD-5678</div><div class="st-meta">Bus 32 seater · Route 2 · Driver: Suresh</div></div><span class="st-badge st-badge--present">Active</span></div>
+              <div class="st-card"><div class="st-avatar st-avatar--mint">V3</div><div class="st-info"><div class="st-name">DL-01-EF-9012</div><div class="st-meta">Mini 18 seater · Route 3 · Driver: Mahesh</div></div><span class="st-badge st-badge--late">Maintenance</span></div>
+              <button class="pp-add-btn" style="margin:var(--s-md) var(--s-lg) 0"><svg><use href="#icon-plus"/></svg> Add Vehicle</button>
+            </div>
+            <div class="rec-subtab-content" id="ovsub-tstudents">
+              <div class="st-card"><div class="st-avatar st-avatar--sienna">AS</div><div class="st-info"><div class="st-name">Aarav Sharma</div><div class="st-meta">Class 7-B · Route 1 · Stop 5</div></div></div>
+              <div class="st-card"><div class="st-avatar st-avatar--sky">RP</div><div class="st-info"><div class="st-name">Riya Patel</div><div class="st-meta">Class 5-A · Route 2 · Stop 8</div></div></div>
+              <div class="st-card"><div class="st-avatar st-avatar--mint">SR</div><div class="st-info"><div class="st-name">Sneha Reddy</div><div class="st-meta">Class 8-A · Route 1 · Stop 3</div></div></div>
+              <div class="st-card"><div class="st-avatar st-avatar--coral">RG</div><div class="st-info"><div class="st-name">Rohan Gupta</div><div class="st-meta">Class 8-B · Route 3 · Stop 2</div></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Scholarships -->
+        <div class="overlay" id="ov-scholarships">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Scholarships</span></div>
+          <div class="overlay-body">
+            <div class="ov-card"><div style="display:flex;justify-content:space-between;align-items:start"><div><div class="ov-card-title" style="margin:0">Merit Scholarship</div><div style="font-size:12px;color:var(--ink-3);margin-top:2px">85%+ · ₹25,000 · Deadline: Mar 15</div></div><span class="st-badge st-badge--pending">12 applied</span></div></div>
+            <div class="ov-card"><div style="display:flex;justify-content:space-between;align-items:start"><div><div class="ov-card-title" style="margin:0">Need-Based Aid</div><div style="font-size:12px;color:var(--ink-3);margin-top:2px">Income &lt; ₹3L · ₹15,000 · Deadline: Apr 30</div></div><span class="st-badge st-badge--pending">8 applied</span></div></div>
+            <div class="ov-card"><div style="display:flex;justify-content:space-between;align-items:start"><div><div class="ov-card-title" style="margin:0">Sports Excellence</div><div style="font-size:12px;color:var(--ink-3);margin-top:2px">State-level · ₹10,000 · Deadline: May 15</div></div><span class="st-badge st-badge--pending">5 applied</span></div></div>
+            <button class="pp-add-btn" style="margin:var(--s-md) var(--s-lg) 0"><svg><use href="#icon-plus"/></svg> Add Scheme</button>
+          </div>
+        </div>
+
+        <!-- Branding Kit -->
+        <div class="overlay" id="ov-branding">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Branding Kit</span></div>
+          <div class="overlay-body">
+            <div class="ov-card"><div class="ov-card-title">Logo</div><div style="display:flex;align-items:center;gap:12px"><div style="width:60px;height:60px;border-radius:var(--r-md);background:var(--sienna-soft);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:var(--sienna)">DPS</div><button class="pp-add-btn" style="margin:0;width:auto;padding:8px 16px"><svg><use href="#icon-download"/></svg> Upload</button></div></div>
+            <div class="ov-card"><div class="ov-card-title">Colors</div><div style="display:flex;gap:10px;margin-bottom:12px"><div style="text-align:center"><div style="width:44px;height:44px;border-radius:var(--r-sm);background:#B45309;margin-bottom:4px"></div><div style="font-size:10px;font-weight:600;color:var(--ink-3)">Primary</div></div><div style="text-align:center"><div style="width:44px;height:44px;border-radius:var(--r-sm);background:#0EA5E9;margin-bottom:4px"></div><div style="font-size:10px;font-weight:600;color:var(--ink-3)">Secondary</div></div><div style="text-align:center"><div style="width:44px;height:44px;border-radius:var(--r-sm);background:#FBF8F4;margin-bottom:4px;border:1px solid var(--line-soft)"></div><div style="font-size:10px;font-weight:600;color:var(--ink-3)">Base</div></div></div></div>
+            <div class="ov-card"><div class="ov-card-title">Subdomain</div><input type="text" value="dps.enrollplus.in" style="width:100%;padding:10px 14px;border:1px solid var(--line-soft);border-radius:var(--r-sm);font-size:14px;font-family:var(--font);color:var(--ink);background:var(--white)" readonly></div>
+            <button class="ov-btn" style="margin:var(--s-sm) var(--s-lg)">Save Branding</button>
+          </div>
+        </div>
+
+        <!-- ID Cards -->
+        <div class="overlay" id="ov-idcards">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">ID Cards</span></div>
+          <div class="overlay-body">
+            <div class="rec-subtabs"><button class="rec-subtab active" data-ovsub="templates">Templates</button><button class="rec-subtab" data-ovsub="generate">Generate</button><button class="rec-subtab" data-ovsub="cards">Cards</button></div>
+            <div class="rec-subtab-content active" id="ovsub-templates">
+              <div class="ov-card"><div class="ov-card-title">Standard Template</div><div style="font-size:12px;color:var(--ink-3);margin-bottom:8px">Logo + photo + name + class · Front/back</div><span class="st-badge st-badge--present">Active</span></div>
+              <div class="ov-card"><div class="ov-card-title">Premium Template</div><div style="font-size:12px;color:var(--ink-3);margin-bottom:8px">Logo + photo + QR + blood group · Front/back</div><span class="st-badge st-badge--pending">Draft</span></div>
+              <button class="pp-add-btn" style="margin:var(--s-md) var(--s-lg) 0"><svg><use href="#icon-plus"/></svg> New Template</button>
+            </div>
+            <div class="rec-subtab-content" id="ovsub-generate">
+              <div class="ov-card"><div class="ov-card-title">Generate ID Cards</div>
+                <div style="display:flex;flex-direction:column;gap:12px">
+                  <div><label style="font-size:11px;font-weight:600;color:var(--ink-3);display:block;margin-bottom:4px">Class</label><input type="text" value="All Classes" style="width:100%;padding:10px 14px;border:1px solid var(--line-soft);border-radius:var(--r-sm);font-size:14px;font-family:var(--font);color:var(--ink);background:var(--white)"></div>
+                  <div><label style="font-size:11px;font-weight:600;color:var(--ink-3);display:block;margin-bottom:4px">Template</label><input type="text" value="Standard Template" style="width:100%;padding:10px 14px;border:1px solid var(--line-soft);border-radius:var(--r-sm);font-size:14px;font-family:var(--font);color:var(--ink);background:var(--white)"></div>
+                </div>
+              </div>
+              <button class="ov-btn" style="margin:var(--s-sm) var(--s-lg)"><svg><use href="#icon-file"/></svg> Generate PDF</button>
+            </div>
+            <div class="rec-subtab-content" id="ovsub-cards">
+              <div class="st-card"><div class="st-avatar st-avatar--sienna">AS</div><div class="st-info"><div class="st-name">Aarav Sharma</div><div class="st-meta">ID: DPS-2025-014 · Class 7-B</div></div><span class="st-badge st-badge--present">Printed</span></div>
+              <div class="st-card"><div class="st-avatar st-avatar--sky">RP</div><div class="st-info"><div class="st-name">Riya Patel</div><div class="st-meta">ID: DPS-2025-028 · Class 5-A</div></div><span class="st-badge st-badge--pending">Pending</span></div>
+              <div class="st-card"><div class="st-avatar st-avatar--mint">SR</div><div class="st-info"><div class="st-name">Sneha Reddy</div><div class="st-meta">ID: DPS-2025-022 · Class 8-A</div></div><span class="st-badge st-badge--present">Printed</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Library -->
+        <div class="overlay" id="ov-library">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Library</span></div>
+          <div class="overlay-body">
+            <div class="rec-subtabs"><button class="rec-subtab active" data-ovsub="libdash">Dashboard</button><button class="rec-subtab" data-ovsub="books">Books</button><button class="rec-subtab" data-ovsub="issues">Issues</button><button class="rec-subtab" data-ovsub="returns">Returns</button></div>
+            <div class="rec-subtab-content active" id="ovsub-libdash">
+              <div style="display:flex;gap:8px;margin:0 var(--s-lg) var(--s-md)">
+                <div style="flex:1;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:14px;text-align:center"><div style="font-size:22px;font-weight:900;color:var(--ink)">3,420</div><div style="font-size:10px;font-weight:600;color:var(--ink-3)">Total Books</div></div>
+                <div style="flex:1;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:14px;text-align:center"><div style="font-size:22px;font-weight:900;color:var(--sienna)">286</div><div style="font-size:10px;font-weight:600;color:var(--ink-3)">Issued</div></div>
+                <div style="flex:1;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:14px;text-align:center"><div style="font-size:22px;font-weight:900;color:var(--coral)">12</div><div style="font-size:10px;font-weight:600;color:var(--ink-3)">Overdue</div></div>
+              </div>
+              <div class="st-card"><div class="st-avatar st-avatar--sienna">BK</div><div class="st-info"><div class="st-name">The Wings of Fire</div><div class="st-meta">APJ Abdul Kalam · ISBN 978-81-7992-719</div></div><span class="st-badge st-badge--present">Available</span></div>
+              <div class="st-card"><div class="st-avatar st-avatar--sky">BK</div><div class="st-info"><div class="st-name">Wings of Fire</div><div class="st-meta">Issued to Aarav Sharma · Due Jan 20</div></div><span class="st-badge st-badge--absent">Issued</span></div>
+            </div>
+            <div class="rec-subtab-content" id="ovsub-books">
+              <div class="st-search" style="margin:var(--s-sm) var(--s-lg) var(--s-md)"><svg><use href="#icon-search"/></svg><input type="text" placeholder="Search by title, author, ISBN..."></div>
+              <div class="st-card"><div class="st-avatar st-avatar--sienna">BK</div><div class="st-info"><div class="st-name">The Wings of Fire</div><div class="st-meta">APJ Abdul Kalam · 5 copies</div></div><span class="st-badge st-badge--present">3 Avail</span></div>
+              <div class="st-card"><div class="st-avatar st-avatar--sky">BK</div><div class="st-info"><div class="st-name">Panchatantra Tales</div><div class="st-meta">Vishnu Sharma · 8 copies</div></div><span class="st-badge st-badge--present">5 Avail</span></div>
+              <div class="st-card"><div class="st-avatar st-avatar--mint">BK</div><div class="st-info"><div class="st-name">Malgudi Days</div><div class="st-meta">R.K. Narayan · 3 copies</div></div><span class="st-badge st-badge--absent">0 Avail</span></div>
+              <button class="pp-add-btn" style="margin:var(--s-md) var(--s-lg) 0"><svg><use href="#icon-plus"/></svg> Add Book</button>
+            </div>
+            <div class="rec-subtab-content" id="ovsub-issues">
+              <div class="st-card"><div class="st-avatar st-avatar--sienna">AS</div><div class="st-info"><div class="st-name">Aarav Sharma — Wings of Fire</div><div class="st-meta">Issued Jan 10 · Due Jan 20</div></div><span class="st-badge st-badge--present">On time</span></div>
+              <div class="st-card"><div class="st-avatar st-avatar--coral">RG</div><div class="st-info"><div class="st-name">Rohan Gupta — Malgudi Days</div><div class="st-meta">Issued Dec 28 · Due Jan 5</div></div><span class="st-badge st-badge--absent">Overdue 11d</span></div>
+              <button class="pp-add-btn" style="margin:var(--s-md) var(--s-lg) 0"><svg><use href="#icon-plus"/></svg> Issue Book</button>
+            </div>
+            <div class="rec-subtab-content" id="ovsub-returns">
+              <div class="st-card"><div class="st-avatar st-avatar--mint">SR</div><div class="st-info"><div class="st-name">Sneha Reddy — Panchatantra</div><div class="st-meta">Returned Jan 14 · On time</div></div><span class="st-badge st-badge--present">Returned</span></div>
+              <div class="st-card"><div class="st-avatar st-avatar--gold">VK</div><div class="st-info"><div class="st-name">Vihaan Kapoor — Discovery of India</div><div class="st-meta">Returned Jan 12 · Late 3 days · Fine ₹15</div></div><span class="st-badge st-badge--late">Fine due</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ COMMS OVERLAYS ═══ -->
+
+        <!-- Messages -->
+        <div class="overlay" id="ov-messages">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Messages</span></div>
+          <div class="overlay-body">
+            <div class="ib-search" style="margin:var(--s-sm) var(--s-lg) var(--s-md)"><svg><use href="#icon-search"/></svg><input type="text" placeholder="Search conversations..."></div>
+            <div class="ib-group">Unread</div>
+            <div class="conv-thread" data-overlay="ov-conv-detail"><div class="conv-avatar-wrap"><div class="conv-avatar conv-avatar--sienna">PS</div><div class="conv-avatar-status conv-avatar-status--online"></div></div><div class="conv-info"><div class="conv-name">Priya Sharma (Teacher)</div><div class="conv-preview">Aarav's quiz performance has improved</div></div><div class="conv-meta"><span class="conv-time">11:30</span><span class="conv-unread">1</span></div></div>
+            <div class="conv-thread"><div class="conv-avatar-wrap"><div class="conv-avatar conv-avatar--sky">SG</div></div><div class="conv-info"><div class="conv-name">Suresh Gupta (Parent)</div><div class="conv-preview">Can we schedule a meeting about Rohan?</div></div><div class="conv-meta"><span class="conv-time">10:15</span><span class="conv-unread">1</span></div></div>
+            <div class="ib-group">All</div>
+            <div class="conv-thread"><div class="conv-avatar-wrap"><div class="conv-avatar conv-avatar--mint">OF</div></div><div class="conv-info"><div class="conv-name">School Office</div><div class="conv-preview">8 fee receipts pending verification</div></div><div class="conv-meta"><span class="conv-time">2d</span></div></div>
+          </div>
+        </div>
+
+        <!-- Schedule PTM -->
+        <div class="overlay" id="ov-schedule-ptm">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Schedule PTM</span></div>
+          <div class="overlay-body">
+            <div class="ov-card"><div class="ov-card-title">New PTM Event</div>
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div><label style="font-size:11px;font-weight:600;color:var(--ink-3);display:block;margin-bottom:4px">Date</label><input type="text" value="Jan 22, 2026" style="width:100%;padding:10px 14px;border:1px solid var(--line-soft);border-radius:var(--r-sm);font-size:14px;font-family:var(--font);color:var(--ink);background:var(--white)"></div>
+                <div><label style="font-size:11px;font-weight:600;color:var(--ink-3);display:block;margin-bottom:4px">Time</label><input type="text" value="10:00 AM – 1:00 PM" style="width:100%;padding:10px 14px;border:1px solid var(--line-soft);border-radius:var(--r-sm);font-size:14px;font-family:var(--font);color:var(--ink);background:var(--white)"></div>
+                <div><label style="font-size:11px;font-weight:600;color:var(--ink-3);display:block;margin-bottom:4px">Slot Duration</label><input type="text" value="10 minutes per parent" style="width:100%;padding:10px 14px;border:1px solid var(--line-soft);border-radius:var(--r-sm);font-size:14px;font-family:var(--font);color:var(--ink);background:var(--white)"></div>
+                <div><label style="font-size:11px;font-weight:600;color:var(--ink-3);display:block;margin-bottom:4px">Class</label><input type="text" value="All Classes" style="width:100%;padding:10px 14px;border:1px solid var(--line-soft);border-radius:var(--r-sm);font-size:14px;font-family:var(--font);color:var(--ink);background:var(--white)"></div>
+              </div>
+            </div>
+            <button class="ov-btn" style="margin:var(--s-sm) var(--s-lg)">Create PTM</button>
+            <div class="ib-group" style="margin-top:var(--s-md)">Existing PTMs</div>
+            <div class="st-card"><div class="st-avatar st-avatar--plum">PTM</div><div class="st-info"><div class="st-name">Nov 15, 2025 — Term 2</div><div class="st-meta">60/65 slots booked · 92% attendance</div></div><span class="st-badge st-badge--present">Completed</span></div>
+          </div>
+        </div>
+
+        <!-- Scheduled Messages -->
+        <div class="overlay" id="ov-scheduled-msgs">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Scheduled Messages</span></div>
+          <div class="overlay-body">
+            <div class="ov-ann-item"><span class="ov-ann-cat">Holiday</span><div class="ov-ann-title">Republic Day Holiday</div><div class="ov-ann-body">Scheduled for Jan 26, 6:00 AM · All Parents</div><div class="ov-ann-time">Pending</div></div>
+            <div class="ov-ann-item" style="--sky:var(--sienna);--sky-soft:var(--sienna-soft)"><span class="ov-ann-cat" style="background:var(--sienna-soft);color:var(--sienna)">Event</span><div class="ov-ann-title">Sports Day Reminder</div><div class="ov-ann-body">Scheduled for Feb 14, 8:00 AM · Classes 6-8</div><div class="ov-ann-time">Pending</div></div>
+            <div class="rec-empty"><div class="rec-empty-title">No sent or failed messages</div></div>
+          </div>
+        </div>
+
+        <!-- ═══ HOME/RECORDS OVERLAYS ═══ -->
+
+        <!-- Analytics Dashboard -->
+        <div class="overlay" id="ov-analytics">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Analytics</span></div>
+          <div class="overlay-body">
+            <div style="display:flex;gap:8px;margin:0 var(--s-lg) var(--s-md)">
+              <div style="flex:1;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:14px;text-align:center"><div style="font-size:22px;font-weight:900;color:var(--ink)">1,312</div><div style="font-size:10px;font-weight:600;color:var(--ink-3)">Enrollment</div></div>
+              <div style="flex:1;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:14px;text-align:center"><div style="font-size:22px;font-weight:900;color:var(--mint)">95%</div><div style="font-size:10px;font-weight:600;color:var(--ink-3)">Attendance</div></div>
+              <div style="flex:1;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:14px;text-align:center"><div style="font-size:22px;font-weight:900;color:var(--sienna)">₹4.2L</div><div style="font-size:10px;font-weight:600;color:var(--ink-3)">Fees</div></div>
+            </div>
+            <div class="rec-summary"><div class="rec-summary-label">Enrollment Trend</div><div class="rec-summary-val">+8</div><div class="rec-summary-sub">New students this week</div></div>
+            <div style="background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:12px 16px;margin:0 var(--s-lg) var(--s-md)">
+              <div class="rec-bar-row"><span class="rec-bar-name">Week 1</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:60%;background:var(--sienna)"></div></div><span class="rec-bar-pct">1,304</span></div>
+              <div class="rec-bar-row"><span class="rec-bar-name">Week 2</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:72%;background:var(--sienna)"></div></div><span class="rec-bar-pct">1,308</span></div>
+              <div class="rec-bar-row"><span class="rec-bar-name">Week 3</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:85%;background:var(--sienna)"></div></div><span class="rec-bar-pct">1,312</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Daily Attendance -->
+        <div class="overlay" id="ov-daily-attendance">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Daily Attendance</span></div>
+          <div class="overlay-body">
+            <div class="rec-summary"><div class="rec-summary-label">Class 7-B · Today</div><div class="rec-summary-val">28/30</div><div class="rec-summary-sub">93% present · 2 absent</div></div>
+            <div class="st-card"><div class="st-avatar st-avatar--sienna">AS</div><div class="st-info"><div class="st-name">Aarav Sharma</div><div class="st-meta">Roll 14</div></div><span class="st-badge st-badge--present">Present</span></div>
+            <div class="st-card"><div class="st-avatar st-avatar--coral">RG</div><div class="st-info"><div class="st-name">Rohan Gupta</div><div class="st-meta">Roll 07</div></div><span class="st-badge st-badge--absent">Absent</span></div>
+            <div class="st-card"><div class="st-avatar st-avatar--mint">SR</div><div class="st-info"><div class="st-name">Sneha Reddy</div><div class="st-meta">Roll 22</div></div><span class="st-badge st-badge--present">Present</span></div>
+            <button class="ov-btn" style="margin:var(--s-md) var(--s-lg)">Save Attendance</button>
+          </div>
+        </div>
+
+        <!-- Class Performance -->
+        <div class="overlay" id="ov-class-performance">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Class Performance</span></div>
+          <div class="overlay-body">
+            <div class="rec-summary"><div class="rec-summary-label">Class 7-B · Term 3</div><div class="rec-summary-val">74%</div><div class="rec-summary-sub">Avg marks · 30 students · 24 assessments</div></div>
+            <div style="background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:12px 16px;margin:0 var(--s-lg) var(--s-md)">
+              <div class="rec-bar-row"><span class="rec-bar-name">Mathematics</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:82%;background:var(--mint)"></div></div><span class="rec-bar-pct">82%</span></div>
+              <div class="rec-bar-row"><span class="rec-bar-name">English</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:75%;background:var(--mint)"></div></div><span class="rec-bar-pct">75%</span></div>
+              <div class="rec-bar-row"><span class="rec-bar-name">Science</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:71%;background:var(--gold)"></div></div><span class="rec-bar-pct">71%</span></div>
+            </div>
+            <div class="ib-group">Top Performers</div>
+            <div class="st-card"><div class="st-avatar st-avatar--mint">1</div><div class="st-info"><div class="st-name">Sneha Reddy</div><div class="st-meta">88% avg</div></div></div>
+            <div class="st-card"><div class="st-avatar st-avatar--sienna">2</div><div class="st-info"><div class="st-name">Aarav Sharma</div><div class="st-meta">82% avg</div></div></div>
+          </div>
+        </div>
+
+        <!-- Report Publish -->
+        <div class="overlay" id="ov-report-publish">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Publish Reports</span></div>
+          <div class="overlay-body">
+            <div class="ov-card"><div class="ov-card-title">Select Class & Term</div>
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div><label style="font-size:11px;font-weight:600;color:var(--ink-3);display:block;margin-bottom:4px">Class</label><input type="text" value="Class 7-B" style="width:100%;padding:10px 14px;border:1px solid var(--line-soft);border-radius:var(--r-sm);font-size:14px;font-family:var(--font);color:var(--ink);background:var(--white)"></div>
+                <div><label style="font-size:11px;font-weight:600;color:var(--ink-3);display:block;margin-bottom:4px">Term</label><input type="text" value="Term 3" style="width:100%;padding:10px 14px;border:1px solid var(--line-soft);border-radius:var(--r-sm);font-size:14px;font-family:var(--font);color:var(--ink);background:var(--white)"></div>
+              </div>
+            </div>
+            <div class="ib-group">Report Cards Ready — 30</div>
+            <div class="st-card"><div class="st-avatar st-avatar--sienna">AS</div><div class="st-info"><div class="st-name">Aarav Sharma</div><div class="st-meta">78% avg · Grade B+</div></div><span class="st-badge st-badge--present">Ready</span></div>
+            <div class="st-card"><div class="st-avatar st-avatar--mint">SR</div><div class="st-info"><div class="st-name">Sneha Reddy</div><div class="st-meta">88% avg · Grade A</div></div><span class="st-badge st-badge--present">Ready</span></div>
+            <button class="ov-btn" style="margin:var(--s-md) var(--s-lg)">Publish All (30)</button>
+          </div>
+        </div>
+
+        <!-- Report Effectiveness -->
+        <div class="overlay" id="ov-report-effectiveness">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Report Effectiveness</span></div>
+          <div class="overlay-body">
+            <div style="display:flex;gap:8px;margin:0 var(--s-lg) var(--s-md)">
+              <div style="flex:1;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:14px;text-align:center"><div style="font-size:22px;font-weight:900;color:var(--mint)">1,298</div><div style="font-size:10px;font-weight:600;color:var(--ink-3)">Sent</div></div>
+              <div style="flex:1;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:14px;text-align:center"><div style="font-size:22px;font-weight:900;color:var(--sienna)">1,142</div><div style="font-size:10px;font-weight:600;color:var(--ink-3)">Opened</div></div>
+              <div style="flex:1;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:14px;text-align:center"><div style="font-size:22px;font-weight:900;color:var(--sky)">986</div><div style="font-size:10px;font-weight:600;color:var(--ink-3)">Acknowledged</div></div>
+            </div>
+            <div class="rec-summary"><div class="rec-summary-label">Open Rate</div><div class="rec-summary-val">88%</div><div class="rec-summary-sub">1,142 of 1,298 parents opened</div></div>
+          </div>
+        </div>
+
+        <!-- PEWS Cohort -->
+        <div class="overlay" id="ov-pews">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Early Warning System</span></div>
+          <div class="overlay-body">
+            <div class="rec-summary"><div class="rec-summary-label">Students at Risk</div><div class="rec-summary-val" style="color:var(--coral)">14</div><div class="rec-summary-sub">High: 3 · Medium: 5 · Low: 6</div></div>
+            <div class="ib-group">High Risk</div>
+            <div class="st-card" data-overlay="ov-pews-detail"><div class="st-avatar st-avatar--coral">RG</div><div class="st-info"><div class="st-name">Rohan Gupta (8-B)</div><div class="st-meta">Attendance 72% · Marks dropping</div></div><span class="st-badge st-badge--absent">High</span></div>
+            <div class="ib-group">Medium Risk</div>
+            <div class="st-card"><div class="st-avatar st-avatar--gold">AT</div><div class="st-info"><div class="st-name">Ananya Tiwari (6-B)</div><div class="st-meta">Marks declining · 2 missed homework</div></div><span class="st-badge st-badge--late">Medium</span></div>
+            <div class="st-card"><div class="st-avatar st-avatar--gold">KS</div><div class="st-info"><div class="st-name">Karan Singh (7-A)</div><div class="st-meta">Fee pending · Attendance 85%</div></div><span class="st-badge st-badge--late">Medium</span></div>
+          </div>
+        </div>
+
+        <!-- PEWS Student Detail -->
+        <div class="overlay" id="ov-pews-detail">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Risk Assessment</span></div>
+          <div class="overlay-body">
+            <div class="set-profile-card"><div class="set-profile-top"><div class="set-profile-avatar" style="background:var(--coral-soft);color:var(--coral)">RG</div><div class="set-profile-info"><div class="set-profile-name">Rohan Gupta</div><div class="set-profile-role">Class 8-B · Roll 07</div><div class="set-profile-pct" style="color:var(--coral)">Risk Score: 78/100 — High</div></div></div></div>
+            <div class="ib-group">Risk Factors</div>
+            <div style="background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:12px 16px;margin:0 var(--s-lg) var(--s-md)">
+              <div class="rec-bar-row"><span class="rec-bar-name">Attendance</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:72%;background:var(--coral)"></div></div><span class="rec-bar-pct">72%</span></div>
+              <div class="rec-bar-row"><span class="rec-bar-name">Academics</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:58%;background:var(--coral)"></div></div><span class="rec-bar-pct">58%</span></div>
+              <div class="rec-bar-row"><span class="rec-bar-name">Engagement</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:65%;background:var(--gold)"></div></div><span class="rec-bar-pct">65%</span></div>
+              <div class="rec-bar-row"><span class="rec-bar-name">Behavior</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:80%;background:var(--mint)"></div></div><span class="rec-bar-pct">80%</span></div>
+            </div>
+            <div class="ib-group">Recommended Interventions</div>
+            <div class="st-card"><div class="st-avatar st-avatar--sienna">1</div><div class="st-info"><div class="st-name">Parent-teacher meeting</div><div class="st-meta">Schedule within 1 week</div></div></div>
+            <div class="st-card"><div class="st-avatar st-avatar--sky">2</div><div class="st-info"><div class="st-name">After-school tutoring</div><div class="st-meta">Math & Science focus</div></div></div>
+            <button class="pp-add-btn" style="margin:var(--s-md) var(--s-lg) 0"><svg><use href="#icon-plus"/></svg> Log Intervention</button>
+          </div>
+        </div>
+
+        <!-- Teacher Performance -->
+        <div class="overlay" id="ov-teacher-perf">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Teacher Performance</span></div>
+          <div class="overlay-body">
+            <div class="set-profile-card"><div class="set-profile-top"><div class="set-profile-avatar" style="background:var(--sienna-soft);color:var(--sienna)">PS</div><div class="set-profile-info"><div class="set-profile-name">Priya Sharma</div><div class="set-profile-role">EMP-001 · Mathematics</div></div></div></div>
+            <div style="display:flex;gap:8px;margin:0 var(--s-lg) var(--s-md)">
+              <div style="flex:1;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:14px;text-align:center"><div style="font-size:20px;font-weight:900;color:var(--mint)">85%</div><div style="font-size:10px;font-weight:600;color:var(--ink-3)">Coverage</div></div>
+              <div style="flex:1;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:14px;text-align:center"><div style="font-size:20px;font-weight:900;color:var(--sienna)">82%</div><div style="font-size:10px;font-weight:600;color:var(--ink-3)">Class Avg</div></div>
+              <div style="flex:1;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:14px;text-align:center"><div style="font-size:20px;font-weight:900;color:var(--sky)">96%</div><div style="font-size:10px;font-weight:600;color:var(--ink-3)">Attendance</div></div>
+            </div>
+            <div class="ib-group">Class-wise Breakdown</div>
+            <div style="background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:12px 16px;margin:0 var(--s-lg) var(--s-md)">
+              <div class="rec-bar-row"><span class="rec-bar-name">7-A</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:84%;background:var(--mint)"></div></div><span class="rec-bar-pct">84%</span></div>
+              <div class="rec-bar-row"><span class="rec-bar-name">7-B</span><div class="rec-bar-track"><div class="rec-bar-fill" style="width:80%;background:var(--mint)"></div></div><span class="rec-bar-pct">80%</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ ALUMNI OVERLAYS ═══ -->
+
+        <!-- Alumni Directory -->
+        <div class="overlay" id="ov-alumni">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Alumni</span></div>
+          <div class="overlay-body">
+            <div class="st-search" style="margin:var(--s-sm) var(--s-lg) var(--s-md)"><svg><use href="#icon-search"/></svg><input type="text" placeholder="Search alumni, year, occupation..."></div>
+            <div class="st-chips"><button class="st-chip active">All</button><button class="st-chip">2024</button><button class="st-chip">2023</button><button class="st-chip">2022</button></div>
+            <div class="st-card" data-overlay="ov-alumni-detail"><div class="st-avatar st-avatar--plum">AK</div><div class="st-info"><div class="st-name">Arjun Kapoor</div><div class="st-meta">Batch 2024 · Software Engineer at Google</div></div></div>
+            <div class="st-card"><div class="st-avatar st-avatar--sienna">NS</div><div class="st-info"><div class="st-name">Neha Singh</div><div class="st-meta">Batch 2023 · Doctor · AIIMS Delhi</div></div></div>
+            <div class="st-card"><div class="st-avatar st-avatar--sky">RV</div><div class="st-info"><div class="st-name">Rahul Verma</div><div class="st-meta">Batch 2022 · Entrepreneur · Founder EduTech</div></div></div>
+            <div class="ib-group">Sub-sections</div>
+            <div class="comms-entry" data-overlay="ov-alumni-campaign"><div class="comms-entry-ic comms-entry-ic--ptm"><svg><use href="#icon-rupee"/></svg></div><div class="comms-entry-body"><div class="comms-entry-title">Donations</div><div class="comms-entry-sub">₹2.4L collected this year</div></div><svg class="set-row-chevron"><use href="#icon-chevron-right"/></svg></div>
+            <button class="pp-add-btn" style="margin:var(--s-md) var(--s-lg) 0"><svg><use href="#icon-plus"/></svg> Add Alumnus</button>
+          </div>
+        </div>
+
+        <!-- Alumni Detail -->
+        <div class="overlay" id="ov-alumni-detail">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Alumni Profile</span></div>
+          <div class="overlay-body">
+            <div class="set-profile-card"><div class="set-profile-top"><div class="set-profile-avatar" style="background:var(--plum-soft);color:var(--plum)">AK</div><div class="set-profile-info"><div class="set-profile-name">Arjun Kapoor</div><div class="set-profile-role">Batch 2024 · Software Engineer at Google</div><div class="set-profile-pct">arjun.kapoor@gmail.com · +91 98765 11111</div></div></div></div>
+            <div class="ib-group">Career</div>
+            <div class="st-card"><div class="st-avatar st-avatar--plum">G</div><div class="st-info"><div class="st-name">Google — Software Engineer</div><div class="st-meta">2024-Present · Bangalore</div></div></div>
+            <div class="ib-group">Donations</div>
+            <div class="st-card"><div class="st-avatar st-avatar--mint">₹</div><div class="st-info"><div class="st-name">₹50,000 — Annual Fund 2025</div><div class="st-meta">Contributed Dec 2025</div></div></div>
+          </div>
+        </div>
+
+        <!-- Alumni Campaign -->
+        <div class="overlay" id="ov-alumni-campaign">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Campaign</span></div>
+          <div class="overlay-body">
+            <div class="rec-summary"><div class="rec-summary-label">Annual Fund 2026</div><div class="rec-summary-val">₹2,40,000</div><div class="rec-summary-sub">Goal: ₹5,00,000 · 48% achieved</div></div>
+            <div style="background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:12px 16px;margin:0 var(--s-lg) var(--s-md)"><div class="rec-bar-track" style="height:10px"><div class="rec-bar-fill" style="width:48%;background:var(--plum)"></div></div></div>
+            <div class="ib-group">Recent Donors</div>
+            <div class="st-card"><div class="st-avatar st-avatar--plum">AK</div><div class="st-info"><div class="st-name">Arjun Kapoor</div><div class="st-meta">₹50,000 · Dec 2025</div></div></div>
+            <div class="st-card"><div class="st-avatar st-avatar--sienna">NS</div><div class="st-info"><div class="st-name">Neha Singh</div><div class="st-meta">₹25,000 · Nov 2025</div></div></div>
+            <button class="pp-add-btn" style="margin:var(--s-md) var(--s-lg) 0;background:var(--plum-soft);color:var(--plum)"><svg><use href="#icon-send"/></svg> Share Campaign</button>
+          </div>
+        </div>
+
+        <!-- ═══ REMAINING OVERLAYS ═══ -->
+
+        <!-- Create Event Wizard -->
+        <div class="overlay" id="ov-create-event">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">New Event</span></div>
+          <div class="overlay-body">
+            <div style="background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:12px 16px;margin:0 var(--s-lg) var(--s-md)"><div class="rec-bar-track" style="height:6px"><div class="rec-bar-fill" style="width:14%;background:var(--sienna)"></div></div><div style="font-size:11px;font-weight:600;color:var(--ink-3);margin-top:6px">Step 1 of 7 — Event Type</div></div>
+            <div class="st-card"><div class="st-avatar st-avatar--sienna">📅</div><div class="st-info"><div class="st-name">School Event</div><div class="st-meta">Sports day, annual function, competitions</div></div><span class="st-badge st-badge--present">Select</span></div>
+            <div class="st-card"><div class="st-avatar st-avatar--sky">📢</div><div class="st-info"><div class="st-name">Announcement</div><div class="st-meta">Holiday, notice, circular</div></div><span class="st-badge st-badge--pending">Select</span></div>
+            <div class="st-card"><div class="st-avatar st-avatar--mint">🎯</div><div class="st-info"><div class="st-name">PTM</div><div class="st-meta">Parent-teacher meeting</div></div><span class="st-badge st-badge--pending">Select</span></div>
+            <div style="display:flex;gap:8px;margin:var(--s-md) var(--s-lg)"><button class="pp-add-btn" style="margin:0;flex:1;background:var(--surface-tint);color:var(--ink-2)">Back</button><button class="pp-add-btn" style="margin:0;flex:1">Next</button></div>
+          </div>
+        </div>
+
+        <!-- Leave Requests -->
+        <div class="overlay" id="ov-leave-requests">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Leave Requests</span></div>
+          <div class="overlay-body">
+            <div class="rec-subtabs"><button class="rec-subtab active" data-ovsub="lr-pending">Pending</button><button class="rec-subtab" data-ovsub="lr-approved">Approved</button><button class="rec-subtab" data-ovsub="lr-rejected">Rejected</button></div>
+            <div class="rec-subtab-content active" id="ovsub-lr-pending">
+              <div class="inbox-item inbox-item--urgent"><div class="inbox-dot inbox-dot--urgent"></div><div class="inbox-body"><div class="inbox-title">Aarav Sharma (7-B) — 2 days</div><div class="inbox-meta">Jan 18-19 · Medical · Parent: Priya Sharma</div></div><div class="ib-approval-actions"><button class="ib-approval-btn ib-approval-btn--approve">Approve</button><button class="ib-approval-btn ib-approval-btn--reject">Reject</button></div></div>
+              <div class="inbox-item"><div class="inbox-dot"></div><div class="inbox-body"><div class="inbox-title">Sneha Reddy (8-A) — 1 day</div><div class="inbox-meta">Jan 20 · Family function · Parent: Krishna Reddy</div></div><div class="ib-approval-actions"><button class="ib-approval-btn ib-approval-btn--approve">Approve</button><button class="ib-approval-btn ib-approval-btn--reject">Reject</button></div></div>
+            </div>
+            <div class="rec-subtab-content" id="ovsub-lr-approved">
+              <div class="inbox-item"><div class="inbox-dot" style="background:var(--mint)"></div><div class="inbox-body"><div class="inbox-title">Vihaan Kapoor (6-A) — 3 days</div><div class="inbox-meta">Jan 10-12 · Medical · Approved Jan 8</div></div><span class="st-badge st-badge--present">Approved</span></div>
+              <div class="inbox-item"><div class="inbox-dot" style="background:var(--mint)"></div><div class="inbox-body"><div class="inbox-title">Ananya Tiwari (6-B) — 1 day</div><div class="inbox-meta">Jan 5 · Family · Approved Jan 3</div></div><span class="st-badge st-badge--present">Approved</span></div>
+            </div>
+            <div class="rec-subtab-content" id="ovsub-lr-rejected">
+              <div class="rec-empty"><div class="rec-empty-title">No rejected requests</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Admissions CRM -->
+        <div class="overlay" id="ov-admissions">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Admissions</span></div>
+          <div class="overlay-body">
+            <div style="display:flex;gap:8px;margin:0 var(--s-lg) var(--s-md)">
+              <div style="flex:1;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:14px;text-align:center"><div style="font-size:20px;font-weight:900;color:var(--sienna)">24</div><div style="font-size:10px;font-weight:600;color:var(--ink-3)">Inquiry</div></div>
+              <div style="flex:1;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:14px;text-align:center"><div style="font-size:20px;font-weight:900;color:var(--gold)">12</div><div style="font-size:10px;font-weight:600;color:var(--ink-3)">Applied</div></div>
+              <div style="flex:1;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:14px;text-align:center"><div style="font-size:20px;font-weight:900;color:var(--sky)">6</div><div style="font-size:10px;font-weight:600;color:var(--ink-3)">Assessment</div></div>
+              <div style="flex:1;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:14px;text-align:center"><div style="font-size:20px;font-weight:900;color:var(--mint)">3</div><div style="font-size:10px;font-weight:600;color:var(--ink-3)">Enrolled</div></div>
+            </div>
+            <div class="ib-group">Recent Inquiries</div>
+            <div class="st-card"><div class="st-avatar st-avatar--sky">RP</div><div class="st-info"><div class="st-name">Riya Patel</div><div class="st-meta">Grade 5 · Applied Jan 10 · Documents pending</div></div><span class="st-badge st-badge--pending">Applied</span></div>
+            <div class="st-card"><div class="st-avatar st-avatar--mint">VK</div><div class="st-info"><div class="st-name">Vihaan Kapoor</div><div class="st-meta">Grade 6 · Inquiry Jan 8 · Assessment scheduled</div></div><span class="st-badge st-badge--late">Assessment</span></div>
+            <button class="pp-add-btn" style="margin:var(--s-md) var(--s-lg) 0"><svg><use href="#icon-plus"/></svg> Add Inquiry</button>
+          </div>
+        </div>
+
+        <!-- Health Records -->
+        <div class="overlay" id="ov-health-records">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Health Records</span></div>
+          <div class="overlay-body">
+            <div class="set-profile-card"><div class="set-profile-top"><div class="set-profile-avatar" style="background:var(--sienna-soft);color:var(--sienna)">AS</div><div class="set-profile-info"><div class="set-profile-name">Aarav Sharma</div><div class="set-profile-role">Class 7-B · Roll 14</div></div></div></div>
+            <div class="ib-group">Health Profile</div>
+            <div style="background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:12px 16px;margin:0 var(--s-lg) var(--s-md)">
+              <div class="rec-bar-row"><span class="rec-bar-name" style="min-width:100px">Blood Group</span><span style="font-size:13px;font-weight:600;color:var(--ink-2)">O+</span></div>
+              <div class="rec-bar-row"><span class="rec-bar-name" style="min-width:100px">Allergies</span><span style="font-size:13px;font-weight:600;color:var(--ink-2)">None</span></div>
+              <div class="rec-bar-row"><span class="rec-bar-name" style="min-width:100px">Conditions</span><span style="font-size:13px;font-weight:600;color:var(--ink-2)">Asthma (mild)</span></div>
+              <div class="rec-bar-row"><span class="rec-bar-name" style="min-width:100px">Emergency</span><span style="font-size:13px;font-weight:600;color:var(--ink-2)">Priya Sharma · 9876543210</span></div>
+            </div>
+            <div class="ib-group">Incident Log</div>
+            <div class="st-card"><div class="st-avatar st-avatar--gold">!</div><div class="st-info"><div class="st-name">Asthma flare-up</div><div class="st-meta">Nov 2025 · Treated with inhaler · Rest 1hr</div></div></div>
+            <button class="pp-add-btn" style="margin:var(--s-md) var(--s-lg) 0"><svg><use href="#icon-plus"/></svg> Add Incident</button>
+          </div>
+        </div>
+
+        <!-- Class Detail -->
+        <div class="overlay" id="ov-class-detail">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Class Detail</span></div>
+          <div class="overlay-body">
+            <div class="set-profile-card"><div class="set-profile-top"><div class="set-profile-avatar" style="background:var(--sienna-soft);color:var(--sienna)">7B</div><div class="set-profile-info"><div class="set-profile-name">Class 7-B</div><div class="set-profile-role">30 students · 8 subjects</div></div></div></div>
+            <div class="rec-subtabs"><button class="rec-subtab active" data-ovsub="cd-students">Students</button><button class="rec-subtab" data-ovsub="cd-subjects">Subjects</button><button class="rec-subtab" data-ovsub="cd-timetable">Timetable</button><button class="rec-subtab" data-ovsub="cd-teachers">Teachers</button></div>
+            <div class="rec-subtab-content active" id="ovsub-cd-students">
+              <div class="st-card" data-overlay="ov-student-profile"><div class="st-avatar st-avatar--sienna">AS</div><div class="st-info"><div class="st-name">Aarav Sharma</div><div class="st-meta">Roll 14 · 96% attendance</div></div></div>
+              <div class="st-card" data-overlay="ov-student-profile"><div class="st-avatar st-avatar--mint">SR</div><div class="st-info"><div class="st-name">Sneha Reddy</div><div class="st-meta">Roll 22 · 98% attendance</div></div></div>
+              <div class="st-card" data-overlay="ov-student-profile"><div class="st-avatar st-avatar--coral">RG</div><div class="st-info"><div class="st-name">Rohan Gupta</div><div class="st-meta">Roll 07 · 72% attendance</div></div></div>
+            </div>
+            <div class="rec-subtab-content" id="ovsub-cd-subjects">
+              <div class="st-card"><div class="st-avatar st-avatar--sienna">M</div><div class="st-info"><div class="st-name">Mathematics</div><div class="st-meta">6 periods/week · Priya Sharma</div></div></div>
+              <div class="st-card"><div class="st-avatar st-avatar--sky">E</div><div class="st-info"><div class="st-name">English</div><div class="st-meta">6 periods/week · Meera Iyer</div></div></div>
+              <div class="st-card"><div class="st-avatar st-avatar--mint">S</div><div class="st-info"><div class="st-name">Science</div><div class="st-meta">7 periods/week · Rajesh Kumar</div></div></div>
+              <div class="st-card"><div class="st-avatar st-avatar--gold">SS</div><div class="st-info"><div class="st-name">Social Studies</div><div class="st-meta">5 periods/week · Anita Desai</div></div></div>
+            </div>
+            <div class="rec-subtab-content" id="ovsub-cd-timetable">
+              <div class="ov-card"><div class="ov-card-title">Monday</div>
+                <div class="rec-bar-row"><span class="rec-bar-name" style="min-width:60px">Per 1</span><span style="font-size:12px;color:var(--ink-2)">Mathematics — PS</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name" style="min-width:60px">Per 2</span><span style="font-size:12px;color:var(--ink-2)">English — MI</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name" style="min-width:60px">Per 3</span><span style="font-size:12px;color:var(--ink-2)">Science — RK</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name" style="min-width:60px">Per 4</span><span style="font-size:12px;color:var(--ink-2)">Social Studies — AD</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name" style="min-width:60px">Per 5</span><span style="font-size:12px;color:var(--ink-2)">Hindi — SN</span></div>
+                <div class="rec-bar-row"><span class="rec-bar-name" style="min-width:60px">Per 6</span><span style="font-size:12px;color:var(--ink-2)">PT — Sports</span></div>
+              </div>
+            </div>
+            <div class="rec-subtab-content" id="ovsub-cd-teachers">
+              <div class="st-card" data-overlay="ov-teacher-profile"><div class="st-avatar st-avatar--sienna">PS</div><div class="st-info"><div class="st-name">Priya Sharma</div><div class="st-meta">Mathematics · EMP-001</div></div></div>
+              <div class="st-card" data-overlay="ov-teacher-profile"><div class="st-avatar st-avatar--sky">MI</div><div class="st-info"><div class="st-name">Meera Iyer</div><div class="st-meta">English · EMP-002</div></div></div>
+              <div class="st-card" data-overlay="ov-teacher-profile"><div class="st-avatar st-avatar--mint">RK</div><div class="st-info"><div class="st-name">Rajesh Kumar</div><div class="st-meta">Science · EMP-003</div></div></div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -1184,8 +2324,8 @@ function fitPhone(){
 fitPhone();
 window.addEventListener('resize',fitPhone);
 
-const tabMap={'Home':'tab-home','Students':'tab-students','Fees':'tab-fees','Inbox':'tab-inbox','Profile':'tab-profile'};
-const navMap={'Home':0,'Students':1,'Fees':2,'Inbox':3,'Profile':4};
+const tabMap={'Home':'tab-home','People':'tab-people','Records':'tab-records','Comms':'tab-comms','Settings':'tab-settings'};
+const navMap={'Home':0,'People':1,'Records':2,'Comms':3,'Settings':4};
 const bottomNavItems=document.querySelectorAll('.bottom-nav .bn-item');
 
 function switchTab(tabName){
@@ -1255,6 +2395,51 @@ document.querySelectorAll('.conv-thread').forEach(thread=>{
 document.querySelectorAll('.ov-ann-chip').forEach(btn=>{
   btn.addEventListener('click',()=>{
     document.querySelectorAll('.ov-ann-chip').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+document.querySelectorAll('.pp-subtab').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.pp-subtab').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.pp-subtab-content').forEach(c=>c.classList.remove('active'));
+    document.getElementById('ppsub-'+btn.dataset.ppsub).classList.add('active');
+  });
+});
+document.querySelectorAll('.ov-notif-filter').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.ov-notif-filter').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+document.querySelectorAll('.rec-subtab[data-recsub]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.rec-subtab[data-recsub]').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.rec-subtab-content[id^="recsub-"]').forEach(c=>c.classList.remove('active'));
+    document.getElementById('recsub-'+btn.dataset.recsub).classList.add('active');
+  });
+});
+document.querySelectorAll('.rec-subtab[data-commsub]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.rec-subtab[data-commsub]').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.rec-subtab-content[id^="commsub-"]').forEach(c=>c.classList.remove('active'));
+    document.getElementById('commsub-'+btn.dataset.commsub).classList.add('active');
+  });
+});
+document.querySelectorAll('.rec-subtab[data-ovsub]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const overlay=btn.closest('.overlay');
+    overlay.querySelectorAll('.rec-subtab[data-ovsub]').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    overlay.querySelectorAll('.rec-subtab-content[id^="ovsub-"]').forEach(c=>c.classList.remove('active'));
+    document.getElementById('ovsub-'+btn.dataset.ovsub).classList.add('active');
+  });
+});
+document.querySelectorAll('.set-theme-opt').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.set-theme-opt').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
   });
 });

@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 
 object VMotion {
     val ease = CubicBezierEasing(0.2f, 0f, 0f, 1f)
+    val easeEmphasized = CubicBezierEasing(0.2f, 0f, 0f, 1f)
     val durFast = 150
     val durDefault = 250
     val durSlow = 400
