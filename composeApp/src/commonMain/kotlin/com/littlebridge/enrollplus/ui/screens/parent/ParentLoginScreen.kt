@@ -17,8 +17,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -26,6 +28,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,8 +42,11 @@ import com.littlebridge.enrollplus.ui.components.VDividerWithText
 import com.littlebridge.enrollplus.ui.components.VInput
 import com.littlebridge.enrollplus.ui.components.VOTPInput
 import com.littlebridge.enrollplus.ui.components.VSSOButton
+import com.littlebridge.enrollplus.ui.components.AppleIcon
+import com.littlebridge.enrollplus.ui.components.GoogleIcon
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
+import kotlinx.coroutines.launch
 
 @Composable
 fun ParentLoginScreen(
@@ -51,6 +57,8 @@ fun ParentLoginScreen(
 ) {
     val state by viewModel.state.collectAsState()
     var phone by remember { mutableStateOf("") }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     // Reset stale state when this screen enters composition
     LaunchedEffect(Unit) {
@@ -63,11 +71,15 @@ fun ParentLoginScreen(
         }
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(VColors.cream),
     ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize(),
+        ) {
         VBackHeader(onBack = onBack)
 
         Column(
@@ -100,14 +112,14 @@ fun ParentLoginScreen(
             ) {
                 VSSOButton(
                     text = "Google",
-                    icon = Icons.Default.Phone,
-                    onClick = { /* TODO: Google SSO */ },
+                    icon = GoogleIcon,
+                    onClick = { scope.launch { snackbarHostState.showSnackbar("Coming Soon") } },
                     modifier = Modifier.weight(1f),
                 )
                 VSSOButton(
                     text = "Apple",
-                    icon = Icons.Default.Phone,
-                    onClick = { /* TODO: Apple SSO */ },
+                    icon = AppleIcon,
+                    onClick = { scope.launch { snackbarHostState.showSnackbar("Coming Soon") } },
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -225,6 +237,17 @@ fun ParentLoginScreen(
                     variant = com.littlebridge.enrollplus.ui.components.VButtonVariant.Outline,
                 )
             }
+        }
+        }
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        ) { snackbarData ->
+            Snackbar(
+                snackbarData = snackbarData,
+                containerColor = VColors.ink,
+                contentColor = VColors.white,
+            )
         }
     }
 }

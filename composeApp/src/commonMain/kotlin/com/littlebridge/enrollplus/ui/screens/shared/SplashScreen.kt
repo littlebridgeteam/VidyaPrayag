@@ -1,6 +1,6 @@
 package com.littlebridge.enrollplus.ui.screens.shared
 
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,7 +16,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -31,23 +30,23 @@ import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.tokens.VMotion
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun SplashScreen(
     onTimeout: () -> Unit,
 ) {
-    val splashNameAlpha = animateFloatAsState(
-        targetValue = 1f,
-        animationSpec = tween(VMotion.durSlow, easing = VMotion.ease),
-        label = "splashName",
-    )
-    val accentWidth by animateFloatAsState(
-        targetValue = 1f,
-        animationSpec = tween(VMotion.durSlower, delayMillis = 400, easing = VMotion.ease),
-        label = "accent",
-    )
+    val splashNameAlpha = Animatable(0f)
+    val accentWidth = Animatable(0f)
 
     LaunchedEffect(Unit) {
+        launch {
+            splashNameAlpha.animateTo(1f, tween(VMotion.durSlow, easing = VMotion.ease))
+        }
+        launch {
+            delay(400)
+            accentWidth.animateTo(1f, tween(VMotion.durSlower, easing = VMotion.ease))
+        }
         delay(2000)
         onTimeout()
     }
@@ -78,7 +77,7 @@ fun SplashScreen(
             Box(
                 modifier = Modifier
                     .height(2.dp)
-                    .width(48.dp * accentWidth)
+                    .width(48.dp * accentWidth.value)
                     .background(VColors.violet, RoundedCornerShape(2.dp)),
             )
         }

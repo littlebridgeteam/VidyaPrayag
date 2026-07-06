@@ -1,7 +1,7 @@
 package com.littlebridge.enrollplus.ui.screens.shared
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -46,6 +46,7 @@ import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.tokens.VMotion
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 private data class LandingSlide(
     val accentLabel: String,
@@ -200,21 +201,28 @@ private fun LandingSlideContent(
     totalSlides: Int,
 ) {
     // Stagger animation values
-    val labelAlpha = animateFloatAsState(
-        targetValue = 1f,
-        animationSpec = tween(VMotion.durSlower, easing = VMotion.ease),
-        label = "label",
-    )
-    val headlineAlpha = animateFloatAsState(
-        targetValue = 1f,
-        animationSpec = tween(VMotion.durSlower, delayMillis = 120, easing = VMotion.ease),
-        label = "headline",
-    )
-    val subAlpha = animateFloatAsState(
-        targetValue = 1f,
-        animationSpec = tween(VMotion.durSlower, delayMillis = 240, easing = VMotion.ease),
-        label = "sub",
-    )
+    val labelAlpha = remember { Animatable(0f) }
+    val headlineAlpha = remember { Animatable(0f) }
+    val subAlpha = remember { Animatable(0f) }
+
+    LaunchedEffect(slideIndex) {
+        labelAlpha.snapTo(0f)
+        headlineAlpha.snapTo(0f)
+        subAlpha.snapTo(0f)
+        kotlinx.coroutines.coroutineScope {
+            launch {
+                labelAlpha.animateTo(1f, tween(VMotion.durSlower, easing = VMotion.ease))
+            }
+            launch {
+                delay(120)
+                headlineAlpha.animateTo(1f, tween(VMotion.durSlower, easing = VMotion.ease))
+            }
+            launch {
+                delay(240)
+                subAlpha.animateTo(1f, tween(VMotion.durSlower, easing = VMotion.ease))
+            }
+        }
+    }
 
     Column(
         modifier = Modifier

@@ -1,7 +1,7 @@
 package com.littlebridge.enrollplus.ui.screens.parent
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -26,6 +26,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,6 +36,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,9 +53,12 @@ import com.littlebridge.enrollplus.ui.components.VInput
 import com.littlebridge.enrollplus.ui.components.VOTPInput
 import com.littlebridge.enrollplus.ui.components.VProgressBar
 import com.littlebridge.enrollplus.ui.components.VSSOButton
+import com.littlebridge.enrollplus.ui.components.AppleIcon
+import com.littlebridge.enrollplus.ui.components.GoogleIcon
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.tokens.VMotion
+import kotlinx.coroutines.launch
 
 private enum class ParentSignupStep { Form, Otp, Success }
 
@@ -67,6 +74,8 @@ fun ParentSignupScreen(
     var name by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var otp by remember { mutableStateOf("") }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     // Reset stale state when this screen enters composition
     LaunchedEffect(Unit) {
@@ -93,11 +102,15 @@ fun ParentSignupScreen(
         ParentSignupStep.Success -> 1f
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(VColors.cream),
     ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize(),
+        ) {
         VBackHeader(onBack = {
             if (step == ParentSignupStep.Otp) {
                 step = ParentSignupStep.Form
@@ -140,14 +153,14 @@ fun ParentSignupScreen(
                 ) {
                     VSSOButton(
                         text = "Google",
-                        icon = Icons.Default.Check,
-                        onClick = { /* TODO: Google SSO */ },
+                        icon = GoogleIcon,
+                        onClick = { scope.launch { snackbarHostState.showSnackbar("Coming Soon") } },
                         modifier = Modifier.weight(1f),
                     )
                     VSSOButton(
                         text = "Apple",
-                        icon = Icons.Default.Check,
-                        onClick = { /* TODO: Apple SSO */ },
+                        icon = AppleIcon,
+                        onClick = { scope.launch { snackbarHostState.showSnackbar("Coming Soon") } },
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -253,11 +266,10 @@ fun ParentSignupScreen(
                 }
 
                 ParentSignupStep.Success -> {
-                    val popScale = animateFloatAsState(
-                        targetValue = 1f,
-                        animationSpec = tween(VMotion.durDefault, easing = VMotion.ease),
-                        label = "pop",
-                    )
+                    val popScale = remember { Animatable(0f) }
+                    LaunchedEffect(Unit) {
+                        popScale.animateTo(1f, tween(VMotion.durDefault, easing = VMotion.ease))
+                    }
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -320,6 +332,17 @@ fun ParentSignupScreen(
                     )
                 }
             }
+        }
+        }
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        ) { snackbarData ->
+            Snackbar(
+                snackbarData = snackbarData,
+                containerColor = VColors.ink,
+                contentColor = VColors.white,
+            )
         }
     }
 }

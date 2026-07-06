@@ -1,6 +1,6 @@
 package com.littlebridge.enrollplus.ui.screens.admin
 
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -272,11 +272,10 @@ fun AdminSignupScreen(
                 }
 
                 AdminSignupStep.Success -> {
-                    val popScale = animateFloatAsState(
-                        targetValue = 1f,
-                        animationSpec = tween(VMotion.durDefault, easing = VMotion.ease),
-                        label = "pop",
-                    )
+                    val popScale = remember { Animatable(0f) }
+                    LaunchedEffect(Unit) {
+                        popScale.animateTo(1f, tween(VMotion.durDefault, easing = VMotion.ease))
+                    }
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()

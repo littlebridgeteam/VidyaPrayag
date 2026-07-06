@@ -3,6 +3,7 @@ package com.littlebridge.enrollplus.ui.screens.admin
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,7 +15,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -22,6 +25,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,8 +40,11 @@ import com.littlebridge.enrollplus.ui.components.VButton
 import com.littlebridge.enrollplus.ui.components.VDividerWithText
 import com.littlebridge.enrollplus.ui.components.VInput
 import com.littlebridge.enrollplus.ui.components.VSSOButton
+import com.littlebridge.enrollplus.ui.components.AppleIcon
+import com.littlebridge.enrollplus.ui.components.GoogleIcon
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
+import kotlinx.coroutines.launch
 
 @Composable
 fun AdminLoginScreen(
@@ -49,6 +56,8 @@ fun AdminLoginScreen(
     val state by viewModel.state.collectAsState()
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     // Reset stale state when this screen enters composition
     LaunchedEffect(Unit) {
@@ -61,11 +70,15 @@ fun AdminLoginScreen(
         }
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(VColors.cream),
     ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize(),
+        ) {
         VBackHeader(onBack = onBack)
 
         Column(
@@ -98,14 +111,14 @@ fun AdminLoginScreen(
             ) {
                 VSSOButton(
                     text = "Google",
-                    icon = Icons.Default.Lock,
-                    onClick = { /* TODO: Google SSO */ },
+                    icon = GoogleIcon,
+                    onClick = { scope.launch { snackbarHostState.showSnackbar("Coming Soon") } },
                     modifier = Modifier.weight(1f),
                 )
                 VSSOButton(
                     text = "Apple",
-                    icon = Icons.Default.Lock,
-                    onClick = { /* TODO: Apple SSO */ },
+                    icon = AppleIcon,
+                    onClick = { scope.launch { snackbarHostState.showSnackbar("Coming Soon") } },
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -178,6 +191,17 @@ fun AdminLoginScreen(
                     variant = com.littlebridge.enrollplus.ui.components.VButtonVariant.Outline,
                 )
             }
+        }
+        }
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        ) { snackbarData ->
+            Snackbar(
+                snackbarData = snackbarData,
+                containerColor = VColors.ink,
+                contentColor = VColors.white,
+            )
         }
     }
 }
