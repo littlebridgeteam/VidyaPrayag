@@ -4,6 +4,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.ui.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.foundation.layout.Arrangement
@@ -42,8 +43,8 @@ fun VOTPInput(
     val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(100)
-        focusRequester.requestFocus()
+        kotlinx.coroutines.delay(300)
+        runCatching { focusRequester.requestFocus() }
     }
 
     Row(
@@ -93,7 +94,8 @@ fun VOTPInput(
             onValueChange(filtered)
         },
         modifier = Modifier
-            .size(0.dp)
+            .size(1.dp)
+            .alpha(0f)
             .focusRequester(focusRequester),
         textStyle = VTypography.otpBox,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
