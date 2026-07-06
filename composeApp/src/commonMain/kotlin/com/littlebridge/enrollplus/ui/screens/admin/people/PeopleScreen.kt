@@ -46,17 +46,36 @@ import com.littlebridge.enrollplus.ui.screens.admin.components.SubtabPill
 
 @Composable
 fun PeopleScreen(
-    modifier: Modifier = Modifier
+    viewModel: AdminPeopleViewModel,
+    modifier: Modifier = Modifier,
 ) {
     var activeSubtab by remember { mutableIntStateOf(0) }
     val subtabs = listOf("Teachers", "Students", "Non-teaching", "Alumni")
 
+    val teachersState by viewModel.teachersState.collectAsState()
+    val studentsState by viewModel.studentsState.collectAsState()
+    val staffState by viewModel.staffState.collectAsState()
+    val linkRequestsState by viewModel.linkRequestsState.collectAsState()
+
+    LaunchedEffect(activeSubtab) {
+        when (activeSubtab) {
+            0 -> viewModel.loadTeachers()
+            1 -> viewModel.loadStudents()
+            2 -> viewModel.loadStaff()
+        }
+    }
+    LaunchedEffect(Unit) { viewModel.loadLinkRequests() }
+
     Column(modifier = modifier.fillMaxWidth()) {
-        // Link card — 277×60, margin:0/24/16
+        // Link card
+        val linkCount = when (val s = linkRequestsState) {
+            is UiState.Success -> s.data.requests.size
+            else -> 0
+        }
         PeopleLinkCard(
             title = "Child Link Requests",
-            sub = "3 parents waiting for approval",
-            count = 3,
+            sub = if (linkCount > 0) "$linkCount parents waiting for approval" else "No pending requests",
+            count = linkCount,
             modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
         )
 
@@ -74,21 +93,27 @@ fun PeopleScreen(
                     text = "Add Teacher",
                     modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
                 )
-                val people = listOf(
-                    PersonData("Priya Sharma", "EMP-001 · Mathematics · Classes 7-A, 7-B", "PS", AvatarTint.SIENNA),
-                    PersonData("Meera Iyer", "EMP-002 · English · Classes 7-A, 6-B", "MI", AvatarTint.SKY),
-                    PersonData("Anita Desai", "EMP-003 · Social Studies · Class 8-B", "AD", AvatarTint.GOLD),
-                    PersonData("Rajesh Kumar", "EMP-004 · Science · Classes 6-A, 6-B, 7-A", "RK", AvatarTint.MINT),
-                    PersonData("Sunita Nair", "EMP-005 · Hindi · Classes 8-A, 8-B · Inactive", "SN", AvatarTint.CORAL)
-                )
-                people.forEach { person ->
-                    PersonCard(
-                        name = person.name,
-                        meta = person.meta,
-                        avatarText = person.avatarText,
-                        avatarTint = person.tint,
-                        modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 8.dp)
-                    )
+                when (val s = teachersState) {
+                    is UiState.Loading -> Text("Loading teachers...", modifier = Modifier.padding(24.dp))
+                    is UiState.Error -> Text(s.message, color = AdminColors.alertRed, modifier = Modifier.padding(24.dp))
+                    is UiState.Success -> {
+                        s.data.teachers.forEach { teacher ->
+                            val grades = teacher.academicAssignment.grades.joinToString(", ")
+                            val subjects = teacher.academicAssignment.subjects.joinToString(", ")
+                            val meta = listOfNotNull(
+                                subjects.takeIf { it.isNotBlank() },
+                                grades.takeIf { it.isNotBlank() },
+                                teacher.activity.attendancePercentage?.let { "$it% attendance" }
+                            ).joinToString(" · ")
+                            PersonCard(
+                                name = teacher.profile.name,
+                                meta = meta.ifBlank { "No assignments yet" },
+                                avatarText = teacher.profile.name.take(2).uppercase(),
+                                avatarTint = AvatarTint.SIENNA,
+                                modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 8.dp)
+                            )
+                        }
+                    }
                 }
             }
             1 -> { // Students
@@ -96,23 +121,21 @@ fun PeopleScreen(
                     text = "Add Student",
                     modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
                 )
-                val students = listOf(
-                    PersonData("Aarav Sharma", "Class 7-A · Roll 11 · Parent: Priya Sharma", "AS", AvatarTint.SIENNA),
-                    PersonData("Sneha Reddy", "Class 8-A · Roll 04 · Parent: Kavya Reddy", "SR", AvatarTint.SKY),
-                    PersonData("Rohan Gupta", "Class 8-B · Roll 22 · Parent: Vikram Gupta", "RG", AvatarTint.CORAL),
-                    PersonData("Ananya Tiwari", "Class 6-B · Roll 15 · Parent: Anil Tiwari", "AT", AvatarTint.GOLD),
-                    PersonData("Karan Singh", "Class 7-A · Roll 19 · Parent: Manjit Singh", "KS", AvatarTint.MINT),
-                    PersonData("Priya Desai", "Class 7-A · Roll 08 · Parent: Nilam Desai", "PD", AvatarTint.PLUM)
-                )
-                students.forEach { person ->
-                    PersonCard(
-                        name = person.name,
-                        meta = person.meta,
-                        avatarText = person.avatarText,
-                        avatarTint = person.tint,
-                        showAssign = false,
-                        modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 8.dp)
-                    )
+                when (val s = studentsState) {
+                    is UiState.Loading -> Text("Loading students...", modifier = Modifier.padding(24.dp))
+                    is UiState.Error -> Text(s.message, color = AdminColors.alertRed, modifier = Modifier.padding(24.dp))
+                    is UiState.Success -> {
+                        s.data.students.forEach { student ->
+                            PersonCard(
+                                name = student.fullName,
+                                meta = "Class ${student.className}-${student.section} · Roll ${student.rollNumber}",
+                                avatarText = student.fullName.take(2).uppercase(),
+                                avatarTint = AvatarTint.SKY,
+                                showAssign = false,
+                                modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 8.dp)
+                            )
+                        }
+                    }
                 }
             }
             2 -> { // Non-teaching Staff
@@ -120,22 +143,26 @@ fun PeopleScreen(
                     text = "Add Staff",
                     modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
                 )
-                val staff = listOf(
-                    PersonData("Gopal Tiwari", "Accountant · Finance · +91 98765 43210", "GT", AvatarTint.SIENNA),
-                    PersonData("Lakshmi Menon", "Librarian · Library · +91 98765 12345", "LM", AvatarTint.SKY),
-                    PersonData("Harish Verma", "Transport In-charge · Operations · +91 98450 67890", "HV", AvatarTint.GOLD),
-                    PersonData("Nisha Joshi", "Front Office · Administration · +91 98000 11111", "NJ", AvatarTint.MINT),
-                    PersonData("Ramesh Babu", "Maintenance · Facilities · +91 97000 22222", "RB", AvatarTint.CORAL)
-                )
-                staff.forEach { person ->
-                    PersonCard(
-                        name = person.name,
-                        meta = person.meta,
-                        avatarText = person.avatarText,
-                        avatarTint = person.tint,
-                        showAssign = false,
-                        modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 8.dp)
-                    )
+                when (val s = staffState) {
+                    is UiState.Loading -> Text("Loading staff...", modifier = Modifier.padding(24.dp))
+                    is UiState.Error -> Text(s.message, color = AdminColors.alertRed, modifier = Modifier.padding(24.dp))
+                    is UiState.Success -> {
+                        s.data.staff.forEach { staff ->
+                            val meta = listOfNotNull(
+                                staff.role,
+                                staff.department,
+                                staff.phone
+                            ).joinToString(" · ")
+                            PersonCard(
+                                name = staff.fullName,
+                                meta = meta.ifBlank { staff.role },
+                                avatarText = staff.fullName.take(2).uppercase(),
+                                avatarTint = AvatarTint.GOLD,
+                                showAssign = false,
+                                modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 8.dp)
+                            )
+                        }
+                    }
                 }
             }
             3 -> { // Alumni

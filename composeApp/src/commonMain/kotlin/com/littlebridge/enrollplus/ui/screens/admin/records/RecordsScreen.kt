@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -28,6 +30,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.domain.util.UiState
+import com.littlebridge.enrollplus.presentation.admin.AdminRecordsViewModel
 import com.littlebridge.enrollplus.ui.screens.admin.components.AdminColors
 import com.littlebridge.enrollplus.ui.screens.admin.components.AdminShapes
 import com.littlebridge.enrollplus.ui.screens.admin.components.AdminTypography
@@ -43,10 +47,27 @@ import com.littlebridge.enrollplus.ui.screens.admin.components.SubtabPill
 
 @Composable
 fun RecordsScreen(
-    modifier: Modifier = Modifier
+    viewModel: AdminRecordsViewModel,
+    modifier: Modifier = Modifier,
 ) {
     var activeSubtab by remember { mutableIntStateOf(0) }
     val subtabs = listOf("Coverage", "Pace", "Attendance", "Marks", "Fee", "Documents")
+
+    val coverageState by viewModel.coverageState.collectAsState()
+    val paceState by viewModel.paceState.collectAsState()
+    val attendanceState by viewModel.attendanceState.collectAsState()
+    val marksState by viewModel.marksState.collectAsState()
+    val feeState by viewModel.feeState.collectAsState()
+
+    LaunchedEffect(activeSubtab) {
+        when (activeSubtab) {
+            0 -> viewModel.loadCoverage()
+            1 -> viewModel.loadPace()
+            2 -> viewModel.loadAttendance()
+            3 -> viewModel.loadMarks()
+            4 -> viewModel.loadFees()
+        }
+    }
 
     Column(modifier = modifier.fillMaxWidth()) {
         // Subtab pill — 277×30, margin:0/24/16
@@ -60,109 +81,131 @@ fun RecordsScreen(
         // Summary card — changes per subtab
         when (activeSubtab) {
             0 -> { // Coverage
-                RecordsSummary(
-                    label = "Overall Syllabus Coverage",
-                    value = "78%",
-                    sub = "Across all classes and subjects",
-                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
-                )
-                RecordsBarChart(
-                    bars = listOf(
-                        BarData("Mathematics", 85, 131, "85%", BarFillType.GOOD),
-                        BarData("English", 82, 131, "82%", BarFillType.GOOD),
-                        BarData("Science", 74, 131, "74%", BarFillType.MID),
-                        BarData("Social Studies", 71, 123, "71%", BarFillType.MID),
-                        BarData("Hindi", 68, 131, "68%", BarFillType.LOW)
-                    ),
-                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
-                )
-                SectionLabel(
-                    text = "Alerts",
-                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 6.dp)
-                )
-                RecordsAlertCard(
-                    title = "Class 8-B Hindi — 15% behind",
-                    meta = "Unit 3 incomplete · Target was Jan 10",
-                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 8.dp)
-                )
-                RecordsAlertCard(
-                    title = "Class 6-A Science — 8% behind",
-                    meta = "Practical sessions pending",
-                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 8.dp)
-                )
+                when (val s = coverageState) {
+                    is UiState.Loading -> Text("Loading coverage...", modifier = Modifier.padding(24.dp))
+                    is UiState.Error -> Text(s.message, color = AdminColors.alertRed, modifier = Modifier.padding(24.dp))
+                    is UiState.Success -> {
+                        val data = s.data.data
+                        val avgPct = if (data.snapshots.isNotEmpty()) data.snapshots.map { it.actualPct }.average().toInt() else 0
+                        RecordsSummary(
+                            label = "Overall Syllabus Coverage",
+                            value = "$avgPct%",
+                            sub = "Across ${data.snapshots.size} classes",
+                            modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
+                        )
+                        RecordsBarChart(
+                            bars = data.snapshots.take(6).map { snap ->
+                                val pct = snap.actualPct
+                                BarData(
+                                    "${snap.className}-${snap.section}",
+                                    pct,
+                                    100,
+                                    "${pct}%",
+                                    if (pct >= 80) BarFillType.GOOD else if (pct >= 60) BarFillType.MID else BarFillType.LOW
+                                )
+                            },
+                            modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
+                        )
+                    }
+                }
             }
             1 -> { // Pace
-                RecordsSummary(
-                    label = "Pace Status — All Classes",
-                    value = "12 On Track",
-                    sub = "3 ahead · 2 behind · 12 on track",
-                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
-                )
-                RecordsAlertCard(
-                    title = "Class 8-B Hindi — Behind by 3 days",
-                    meta = "Deviation: -12% · Teacher: Sunita Nair",
-                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 8.dp)
-                )
-                RecordsAlertCard(
-                    title = "Class 6-A Science — Behind by 2 days",
-                    meta = "Deviation: -8% · Teacher: Rajesh Kumar",
-                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 8.dp)
-                )
-                RecordsAlertCard(
-                    title = "Class 7-A Mathematics — Ahead by 2 days",
-                    meta = "Deviation: +6% · Teacher: Priya Sharma",
-                    isPositive = true,
-                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 8.dp)
-                )
-                RecordsAlertCard(
-                    title = "Class 7-B English — Ahead by 1 day",
-                    meta = "Deviation: +4% · Teacher: Meera Iyer",
-                    isPositive = true,
-                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 8.dp)
-                )
+                when (val s = paceState) {
+                    is UiState.Loading -> Text("Loading pace...", modifier = Modifier.padding(24.dp))
+                    is UiState.Error -> Text(s.message, color = AdminColors.alertRed, modifier = Modifier.padding(24.dp))
+                    is UiState.Success -> {
+                        val data = s.data.data
+                        val onTrack = data.alerts.count { it.level == "AHEAD" }
+                        val behind = data.alerts.count { it.level == "BEHIND" || it.level == "CRITICAL" }
+                        RecordsSummary(
+                            label = "Pace Status — All Classes",
+                            value = "$onTrack Ahead",
+                            sub = "$behind behind · $onTrack ahead",
+                            modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
+                        )
+                        data.alerts.forEach { alert ->
+                            RecordsAlertCard(
+                                title = "${alert.className} ${alert.subject} — ${alert.level}",
+                                meta = alert.message.ifBlank { "Teacher: ${alert.teacherName}" },
+                                isPositive = alert.level == "AHEAD",
+                                modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 8.dp)
+                            )
+                        }
+                    }
+                }
             }
             2 -> { // Attendance
-                RecordsSummary(
-                    label = "Overall Attendance",
-                    value = "95%",
-                    sub = "1,247 of 1,312 present today",
-                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
-                )
-                RecordsBarChart(
-                    bars = listOf(
-                        BarData("Class 6-A", 96, 131, "96%", BarFillType.GOOD),
-                        BarData("Class 6-B", 94, 131, "94%", BarFillType.GOOD),
-                        BarData("Class 7-A", 91, 131, "91%", BarFillType.GOOD),
-                        BarData("Class 7-B", 88, 131, "88%", BarFillType.MID),
-                        BarData("Class 8-A", 85, 131, "85%", BarFillType.MID),
-                        BarData("Class 8-B", 72, 131, "72%", BarFillType.LOW)
-                    ),
-                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
-                )
+                when (val s = attendanceState) {
+                    is UiState.Loading -> Text("Loading attendance...", modifier = Modifier.padding(24.dp))
+                    is UiState.Error -> Text(s.message, color = AdminColors.alertRed, modifier = Modifier.padding(24.dp))
+                    is UiState.Success -> {
+                        val data = s.data
+                        RecordsSummary(
+                            label = "Overall Attendance",
+                            value = "${data.rate}%",
+                            sub = "${data.present} of ${data.total} present",
+                            modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
+                        )
+                        RecordsBarChart(
+                            bars = data.byClass.take(6).map { row ->
+                                BarData(
+                                    row.grade,
+                                    row.rate,
+                                    100,
+                                    "${row.rate}%",
+                                    if (row.rate >= 85) BarFillType.GOOD else if (row.rate >= 70) BarFillType.MID else BarFillType.LOW
+                                )
+                            },
+                            modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
+                        )
+                    }
+                }
             }
             3 -> { // Marks
-                RecordsSummary(
-                    label = "Overall Average — Term 3",
-                    value = "76.4%",
-                    sub = "Across 24 assessments · 1,312 students",
-                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
-                )
-                RecordsBarChart(
-                    bars = listOf(
-                        BarData("Class 6-A", 82, 131, "82%", BarFillType.GOOD),
-                        BarData("Class 6-B", 78, 131, "78%", BarFillType.GOOD),
-                        BarData("Class 7-A", 75, 131, "75%", BarFillType.MID),
-                        BarData("Class 7-B", 74, 131, "74%", BarFillType.MID),
-                        BarData("Class 8-A", 73, 131, "73%", BarFillType.MID),
-                        BarData("Class 8-B", 68, 131, "68%", BarFillType.LOW)
-                    ),
-                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
-                )
+                when (val s = marksState) {
+                    is UiState.Loading -> Text("Loading marks...", modifier = Modifier.padding(24.dp))
+                    is UiState.Error -> Text(s.message, color = AdminColors.alertRed, modifier = Modifier.padding(24.dp))
+                    is UiState.Success -> {
+                        val data = s.data
+                        RecordsSummary(
+                            label = "Overall Average",
+                            value = "${data.overallAveragePct}%",
+                            sub = "Across ${data.assessmentCount} assessments",
+                            modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
+                        )
+                        RecordsBarChart(
+                            bars = data.assessments.take(6).map { row ->
+                                val pct = if (row.maxMarks > 0) (row.average / row.maxMarks * 100).toInt() else 0
+                                BarData(
+                                    row.subject,
+                                    pct,
+                                    100,
+                                    "${pct}%",
+                                    if (pct >= 80) BarFillType.GOOD else if (pct >= 60) BarFillType.MID else BarFillType.LOW
+                                )
+                            },
+                            modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
+                        )
+                    }
+                }
             }
             4 -> { // Fee
-                FeeRecordsContent(
-                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
-                )
+                when (val s = feeState) {
+                    is UiState.Loading -> Text("Loading fees...", modifier = Modifier.padding(24.dp))
+                    is UiState.Error -> Text(s.message, color = AdminColors.alertRed, modifier = Modifier.padding(24.dp))
+                    is UiState.Success -> {
+                        val data = s.data
+                        RecordsSummary(
+                            label = "Fee Collection",
+                            value = "${data.currency} ${data.paidTotal.toInt()}",
+                            sub = "${data.paidCount} paid · ${data.dueCount} pending · ${data.overdueCount} overdue",
+                            modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
+                        )
+                        FeeRecordsContent(
+                            modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
+                        )
+                    }
+                }
             }
             5 -> { // Documents
                 RecordsDocumentsEmpty(

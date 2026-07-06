@@ -82,15 +82,15 @@ fun ParentProfileTab(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .size(120.dp)
-                    .background(VColors.violetSoft.copy(alpha = 0.3f), CircleShape)
-                    .offset(x = 30.dp, y = (-30).dp),
+                    .background(VColors.violetSoft.copy(alpha = 0.4f), CircleShape)
+                    .offset(x = 20.dp, y = (-40).dp),
             )
             Box(
                 modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                .size(80.dp)
-                .background(VColors.goldSoft.copy(alpha = 0.3f), CircleShape)
-                .offset(x = 20.dp, y = 20.dp),
+                    .align(Alignment.BottomStart)
+                    .size(80.dp)
+                    .background(VColors.coralSoft.copy(alpha = 0.3f), CircleShape)
+                    .offset(x = (-20).dp, y = 30.dp),
             )
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -98,7 +98,7 @@ fun ParentProfileTab(
                     .align(Alignment.Center)
                     .padding(24.dp),
             ) {
-                // Avatar with white ring
+                // Avatar with white ring + violet-soft outer ring
                 Box(
                     modifier = Modifier
                         .size(64.dp)
@@ -109,7 +109,8 @@ fun ParentProfileTab(
                     Box(
                         modifier = Modifier
                             .size(58.dp)
-                            .background(VColors.violetSoft, CircleShape),
+                            .background(VColors.violetSoft, CircleShape)
+                            .padding(3.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
@@ -135,6 +136,15 @@ fun ParentProfileTab(
                     color = VColors.ink3,
                     modifier = Modifier.padding(top = 4.dp),
                 )
+                // House badge
+                Box(
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .background(VColors.coralSoft, VShapes.full)
+                        .padding(horizontal = 10.dp, vertical = 3.dp),
+                ) {
+                    Text("Red House", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = VColors.coral, letterSpacing = 0.3.sp)
+                }
             }
         }
 
@@ -220,7 +230,7 @@ fun ParentProfileTab(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Icon(Icons.AutoMirrored.Rounded.Logout, contentDescription = null, tint = VColors.coral, modifier = Modifier.size(18.dp))
-                Text("Logout", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = VColors.coral)
+                Text("Logout", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VColors.coral, letterSpacing = (-0.2).sp)
             }
         }
 
@@ -266,7 +276,7 @@ private fun ProfileRow(icon: ImageVector, iconBg: Color, iconTint: Color, label:
             Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(16.dp))
         }
         Spacer(Modifier.width(12.dp))
-        Text(label, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = VColors.ink, modifier = Modifier.weight(1f))
+        Text(label, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VColors.ink, letterSpacing = (-0.2).sp, modifier = Modifier.weight(1f))
         Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(16.dp))
     }
     Spacer(Modifier.height(6.dp))

@@ -179,14 +179,14 @@ private fun ThreadCard(thread: ParentMessageThreadDto, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            modifier = Modifier.size(40.dp).background(bg, CircleShape),
+            modifier = Modifier.size(42.dp).background(bg, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            Text(initials, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = tint)
+            Text(initials, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = tint)
         }
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(thread.senderName, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = VColors.ink, letterSpacing = (-0.2).sp)
+            Text(thread.senderName, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VColors.ink, letterSpacing = (-0.2).sp)
             Text(thread.lastMessage, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = VColors.ink2, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp))
         }
         Column(horizontalAlignment = Alignment.End) {
@@ -194,10 +194,10 @@ private fun ThreadCard(thread: ParentMessageThreadDto, onClick: () -> Unit) {
             if (thread.unreadCount > 0) {
                 Spacer(Modifier.height(4.dp))
                 Box(
-                    modifier = Modifier.size(18.dp).background(VColors.coral, CircleShape),
+                    modifier = Modifier.size(18.dp).background(VColors.violet, CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(thread.unreadCount.coerceAtMost(9).toString(), fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = VColors.white)
+                    Text(thread.unreadCount.coerceAtMost(9).toString(), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = VColors.white)
                 }
             }
         }
@@ -213,24 +213,37 @@ private fun ConvAnnouncementCard(ann: ParentAnnouncementDto) {
         "holiday" -> VColors.mintSoft to VColors.success
         else -> VColors.goldSoft to VColors.gold
     }
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp)
             .background(VColors.white, VShapes.md)
             .shadow(1.dp, VShapes.md)
-            .padding(16.dp),
+            .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
+        // Left accent bar
         Box(
             modifier = Modifier
-                .background(catBg, VShapes.full)
-                .padding(horizontal = 8.dp, vertical = 2.dp),
+                .align(Alignment.CenterStart)
+                .width(3.dp)
+                .height(48.dp)
+                .background(VColors.sky, VShapes.sm)
+                .padding(start = 0.dp)
+        )
+        Column(
+            modifier = Modifier.padding(start = 12.dp),
         ) {
-            Text(ann.category, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = catColor, letterSpacing = 0.5.sp)
+            Box(
+                modifier = Modifier
+                    .background(catBg, VShapes.full)
+                    .padding(horizontal = 7.dp, vertical = 2.dp),
+            ) {
+                Text(ann.category, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = catColor, letterSpacing = 0.3.sp)
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(ann.title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VColors.ink, letterSpacing = (-0.2).sp)
+            Text(ann.description, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = VColors.ink2, lineHeight = 17.sp, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 3.dp))
+            Text(ann.date, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = VColors.ink3, modifier = Modifier.padding(top = 5.dp))
         }
-        Spacer(Modifier.height(8.dp))
-        Text(ann.title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = VColors.ink, letterSpacing = (-0.2).sp)
-        Text(ann.description, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = VColors.ink2, lineHeight = 17.sp, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp))
-        Text(ann.date, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = VColors.ink3, modifier = Modifier.padding(top = 6.dp))
     }
 }

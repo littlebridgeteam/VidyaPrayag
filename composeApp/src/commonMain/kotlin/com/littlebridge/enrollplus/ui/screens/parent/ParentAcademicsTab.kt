@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -98,15 +99,15 @@ fun ParentAcademicsTab(
         Row(
             modifier = Modifier
                 .padding(horizontal = 24.dp)
+                .horizontalScroll(rememberScrollState())
                 .background(VColors.surfaceTint, VShapes.md)
                 .padding(3.dp),
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            horizontalArrangement = Arrangement.spacedBy(0.dp),
         ) {
             AcSubTab.entries.forEach { st ->
                 val isSelected = st == subTab
                 Box(
                     modifier = Modifier
-                        .weight(1f)
                         .background(
                             if (isSelected) VColors.white else Color.Transparent,
                             VShapes.sm,
@@ -115,12 +116,12 @@ fun ParentAcademicsTab(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
                         ) { subTab = st }
-                        .padding(vertical = 7.dp),
+                        .padding(horizontal = 14.dp, vertical = 7.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text = st.label,
-                        fontSize = 10.sp,
+                        fontSize = 12.sp,
                         fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.SemiBold,
                         color = if (isSelected) VColors.ink else VColors.ink3,
                     )
@@ -161,7 +162,7 @@ private fun AcActionCard(icon: androidx.compose.ui.graphics.vector.ImageVector, 
         Box(modifier = Modifier.size(30.dp).background(iconBg, VShapes.sm), contentAlignment = Alignment.Center) {
             Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(15.dp))
         }
-        Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = VColors.ink, lineHeight = 16.sp)
+        Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = VColors.ink, lineHeight = 16.sp, letterSpacing = (-0.2).sp)
     }
 }
 
@@ -172,7 +173,7 @@ private fun AcCard(title: String, content: @Composable () -> Unit) {
             .padding(horizontal = 24.dp)
             .background(VColors.white, VShapes.md)
             .shadow(1.dp, VShapes.md)
-            .padding(16.dp),
+            .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
         Text(title, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = VColors.ink, letterSpacing = (-0.2).sp)
         Spacer(Modifier.height(12.dp))

@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -27,6 +29,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.domain.util.UiState
+import com.littlebridge.enrollplus.feature.admin.domain.model.SchoolProfileDto
+import com.littlebridge.enrollplus.feature.admin.domain.model.UserProfileResponse
+import com.littlebridge.enrollplus.presentation.admin.AdminSettingsViewModel
 import com.littlebridge.enrollplus.ui.screens.admin.components.AdminColors
 import com.littlebridge.enrollplus.ui.screens.admin.components.AdminShapes
 import com.littlebridge.enrollplus.ui.screens.admin.components.AdminTypography
@@ -41,14 +47,32 @@ import com.littlebridge.enrollplus.ui.screens.admin.components.SettingIconTint
 
 @Composable
 fun SettingsScreen(
-    modifier: Modifier = Modifier
+    viewModel: AdminSettingsViewModel,
+    onLogout: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
+    LaunchedEffect(Unit) {
+        viewModel.loadSchoolProfile()
+        viewModel.loadUserProfile()
+    }
+
+    val schoolProfileState by viewModel.schoolProfileState.collectAsState()
+    val userProfileState by viewModel.userProfileState.collectAsState()
+
     Column(modifier = modifier.fillMaxWidth()) {
-        // Profile card — 277×94, padding:20, margin:8/24/16, radius:18
+        // Profile card — from school profile + user profile
+        val (profileName, profileRole, profilePct) = when (val s = schoolProfileState) {
+            is UiState.Success -> Triple(
+                s.data.name.ifBlank { "Admin" },
+                "Principal · ${s.data.name}",
+                85
+            )
+            else -> Triple("Loading...", "Loading...", 0)
+        }
         SettingsProfileCard(
-            name = "Priya Mehta",
-            role = "Principal · Delhi Public School",
-            pct = 85,
+            name = profileName,
+            role = profileRole,
+            pct = profilePct,
             modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 16.dp)
         )
 
@@ -87,7 +111,9 @@ fun SettingsScreen(
             sub = "Sign out of the admin console",
             iconTint = SettingIconTint.NOTIF,
             iconChar = "🚪",
-            modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 6.dp)
+            modifier = Modifier
+                .padding(start = 24.dp, end = 24.dp, bottom = 6.dp)
+                .clickable { onLogout() }
         )
     }
 }

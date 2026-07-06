@@ -20,6 +20,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -31,6 +33,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.domain.util.UiState
+import com.littlebridge.enrollplus.feature.admin.domain.model.AnnouncementListResponse
+import com.littlebridge.enrollplus.feature.admin.domain.model.LeaveRequestsResponse
+import com.littlebridge.enrollplus.feature.admin.domain.model.MessageThread
+import com.littlebridge.enrollplus.feature.admin.domain.model.PtmResponse
+import com.littlebridge.enrollplus.presentation.admin.AdminCommsViewModel
 import com.littlebridge.enrollplus.ui.screens.admin.components.AdminColors
 import com.littlebridge.enrollplus.ui.screens.admin.components.AdminShapes
 import com.littlebridge.enrollplus.ui.screens.admin.components.AdminTypography
@@ -47,10 +55,25 @@ import com.littlebridge.enrollplus.ui.screens.admin.components.SubtabPill
 
 @Composable
 fun CommsScreen(
-    modifier: Modifier = Modifier
+    viewModel: AdminCommsViewModel,
+    modifier: Modifier = Modifier,
 ) {
     var activeSubtab by remember { mutableIntStateOf(0) }
     val subtabs = listOf("Announcements", "Messages", "PTM", "Notifications")
+
+    val announcementsState by viewModel.announcementsState.collectAsState()
+    val messagesState by viewModel.messagesState.collectAsState()
+    val ptmState by viewModel.ptmState.collectAsState()
+    val leaveState by viewModel.leaveState.collectAsState()
+
+    LaunchedEffect(activeSubtab) {
+        when (activeSubtab) {
+            0 -> viewModel.loadAnnouncements()
+            1 -> viewModel.loadMessages()
+            2 -> viewModel.loadPtm()
+            3 -> viewModel.loadLeaveRequests()
+        }
+    }
 
     Column(modifier = modifier.fillMaxWidth()) {
         SubtabPill(
@@ -61,10 +84,10 @@ fun CommsScreen(
         )
 
         when (activeSubtab) {
-            0 -> CommsAnnouncementsTab()
-            1 -> CommsMessagesTab()
-            2 -> CommsPTMTab()
-            3 -> CommsNotificationsTab()
+            0 -> CommsAnnouncementsTab(announcementsState)
+            1 -> CommsMessagesTab(messagesState)
+            2 -> CommsPTMTab(ptmState)
+            3 -> CommsNotificationsTab(leaveState)
         }
     }
 }
@@ -281,8 +304,8 @@ data class PulseCardData(
     val stripe: PulseStripe = PulseStripe.SIENNA
 )
 
-enum class TrendType { UP, ALERT }
-enum class PulseStripe { SIENNA, CORAL, MINT, SKY }
+enum class TrendType { UP, ALERT, DOWN, FLAT }
+enum class PulseStripe { SIENNA, CORAL, MINT, SKY, PURPLE }
 
 @Composable
 fun PulseScrollRow(
@@ -309,6 +332,7 @@ private fun PulseCard(data: PulseCardData) {
         PulseStripe.CORAL -> AdminColors.alertRed
         PulseStripe.MINT -> AdminColors.goodGreen
         PulseStripe.SKY -> AdminColors.skyBlue
+        PulseStripe.PURPLE -> AdminColors.purple
     }
     Box(
         modifier = Modifier.width(150.dp)
@@ -332,10 +356,14 @@ private fun PulseCard(data: PulseCardData) {
                 val trendBg = when (data.trend) {
                     TrendType.UP -> AdminColors.goodGreenBg
                     TrendType.ALERT -> AdminColors.alertRedBg
+                    TrendType.DOWN -> AdminColors.alertRedBg
+                    TrendType.FLAT -> AdminColors.pillBg
                 }
                 val trendColor = when (data.trend) {
                     TrendType.UP -> AdminColors.goodGreen
                     TrendType.ALERT -> AdminColors.alertRed
+                    TrendType.DOWN -> AdminColors.alertRed
+                    TrendType.FLAT -> AdminColors.inkSecondary
                 }
                 Row(
                     modifier = Modifier
@@ -356,6 +384,8 @@ private fun PulseCard(data: PulseCardData) {
                         text = when (data.trend) {
                             TrendType.UP -> "+12%"
                             TrendType.ALERT -> "Action"
+                            TrendType.DOWN -> "-8%"
+                            TrendType.FLAT -> "Steady"
                         },
                         color = trendColor,
                         style = AdminTypography.pulseTrend
@@ -731,7 +761,7 @@ private fun ActivityItemRow(
 // ═══════════════════════════════════════════════════════════════
 
 @Composable
-fun CommsAnnouncementsTab() {
+fun CommsAnnouncementsTab(state: UiState<AnnouncementListResponse>) {
     Column(modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp)) {
         // Compose button
         Box(
@@ -751,31 +781,52 @@ fun CommsAnnouncementsTab() {
         }
         Spacer(modifier = Modifier.height(16.dp))
 
-        val announcements = listOf(
-            AnnounceData("Sports Day Registration Open", "All Classes", "Jan 15, 10:30 AM", "Delivered to 1,312 parents · 847 opened", AdminColors.skyBlueBg, AdminColors.skyBlue, "📢"),
-            AnnounceData("Term 3 Fee Reminder", "All Parents", "Jan 12, 4:00 PM", "Delivered to 1,312 parents · 690 opened", AdminColors.siennaBg, AdminColors.sienna, "💰"),
-            AnnounceData("Holiday — Republic Day", "All Classes", "Jan 10, 9:00 AM", "Delivered to 1,312 parents · 1,102 opened", AdminColors.goodGreenBg, AdminColors.goodGreen, "📅"),
-            AnnounceData("PTM Notice — Jan 22", "All Parents", "Jan 8, 2:00 PM", "Delivered to 1,312 parents · 980 opened", AdminColors.purpleBg, AdminColors.purple, "📋")
-        )
-        announcements.forEach { ann ->
-            CardSurface(
-                modifier = Modifier.padding(bottom = 8.dp),
-                padding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
-                radius = 14
-            ) {
-                Row(
-                    verticalAlignment = Alignment.Top,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    IconBox(size = 36, bg = ann.iconBg, radius = 10) {
-                        Text(text = ann.iconChar, fontSize = 14.sp)
+        when (state) {
+            is UiState.Loading -> Text("Loading announcements...", color = AdminColors.inkSecondary, modifier = Modifier.padding(16.dp))
+            is UiState.Error -> Text(state.message, color = AdminColors.alertRed, modifier = Modifier.padding(16.dp))
+            is UiState.Success -> {
+                state.data.announcements.forEach { ann ->
+                    val iconChar = when (ann.type.lowercase()) {
+                        "holiday" -> "📅"
+                        "ptm" -> "📋"
+                        "fee", "reminder" -> "💰"
+                        else -> "📢"
                     }
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = ann.title, color = AdminColors.inkPrimary, style = AdminTypography.alertTitle)
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(text = "${ann.audience} · ${ann.time}", color = AdminColors.inkSecondary, style = AdminTypography.metaText)
-                        Spacer(modifier = Modifier.height(3.dp))
-                        Text(text = ann.stats, color = AdminColors.sienna, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                    val iconBg = when (ann.type.lowercase()) {
+                        "holiday" -> AdminColors.goodGreenBg
+                        "ptm" -> AdminColors.purpleBg
+                        "fee", "reminder" -> AdminColors.siennaBg
+                        else -> AdminColors.skyBlueBg
+                    }
+                    val iconColor = when (ann.type.lowercase()) {
+                        "holiday" -> AdminColors.goodGreen
+                        "ptm" -> AdminColors.purple
+                        "fee", "reminder" -> AdminColors.sienna
+                        else -> AdminColors.skyBlue
+                    }
+                    CardSurface(
+                        modifier = Modifier.padding(bottom = 8.dp),
+                        padding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
+                        radius = 14
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.Top,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            IconBox(size = 36, bg = iconBg, radius = 10) {
+                                Text(text = iconChar, fontSize = 14.sp)
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(text = ann.title, color = AdminColors.inkPrimary, style = AdminTypography.alertTitle)
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(text = "${ann.audienceType} · ${ann.date}", color = AdminColors.inkSecondary, style = AdminTypography.metaText)
+                                if (ann.subTitle != null) {
+                                    val sub = ann.subTitle!!
+                                    Spacer(modifier = Modifier.height(3.dp))
+                                    Text(text = sub, color = AdminColors.sienna, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -798,84 +849,49 @@ private data class AnnounceData(
 // ═══════════════════════════════════════════════════════════════
 
 @Composable
-fun CommsMessagesTab() {
+fun CommsMessagesTab(state: UiState<List<MessageThread>>) {
     Column(modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp)) {
-        // Pending Approvals section
-        SectionLabel(text = "Pending Approvals", modifier = Modifier.padding(bottom = 6.dp))
-        val approvals = listOf(
-            ApprovalData("Aarav Sharma (7-B)", "Leave Request", "2 days · Medical", "Urgent", AdminColors.alertRedBg, AdminColors.alertRed),
-            ApprovalData("Riya Patel (Grade 5)", "New Admission", "Application received", "New", AdminColors.skyBlueBg, AdminColors.skyBlue),
-            ApprovalData("Rohan Gupta (alum)", "Transfer Certificate", "Requested by parent", "Pending", AdminColors.goldBg, AdminColors.amber)
-        )
-        approvals.forEach { app ->
-            CardSurface(
-                modifier = Modifier.padding(bottom = 8.dp),
-                padding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                radius = 14
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = "${app.name} — ${app.type}", color = AdminColors.inkPrimary, style = AdminTypography.alertTitle)
-                        Spacer(modifier = Modifier.height(1.dp))
-                        Text(text = app.meta, color = AdminColors.inkSecondary, style = AdminTypography.metaText)
-                    }
-                    Box(
-                        modifier = Modifier
-                            .background(app.tagBg, RoundedCornerShape(50))
-                            .padding(horizontal = 8.dp, vertical = 3.dp)
-                    ) {
-                        Text(text = app.tag, color = app.tagColor, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold)
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Conversations section
         SectionLabel(text = "Conversations", modifier = Modifier.padding(bottom = 6.dp))
-        val convos = listOf(
-            ConvoData("Priya Sharma (Parent)", "About Aarav's homework", "2 min ago", "PS", AdminColors.siennaBg, AdminColors.sienna, 2),
-            ConvoData("Meera Iyer (Teacher)", "Class 7-A performance", "1 hour ago", "MI", AdminColors.skyBlueBg, AdminColors.skyBlue, 0),
-            ConvoData("Rajesh Kumar (Teacher)", "Science lab booking", "3 hours ago", "RK", AdminColors.goodGreenBg, AdminColors.goodGreen, 0),
-            ConvoData("Anita Desai (Teacher)", "Social Studies syllabus", "Yesterday", "AD", AdminColors.goldBg, AdminColors.amber, 1)
-        )
-        convos.forEach { conv ->
-            CardSurface(
-                modifier = Modifier.padding(bottom = 8.dp),
-                padding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                radius = 14
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(38.dp)
-                            .background(conv.avatarBg, RoundedCornerShape(50)),
-                        contentAlignment = Alignment.Center
+
+        when (state) {
+            is UiState.Loading -> Text("Loading messages...", color = AdminColors.inkSecondary, modifier = Modifier.padding(16.dp))
+            is UiState.Error -> Text(state.message, color = AdminColors.alertRed, modifier = Modifier.padding(16.dp))
+            is UiState.Success -> {
+                state.data.forEach { thread ->
+                    CardSurface(
+                        modifier = Modifier.padding(bottom = 8.dp),
+                        padding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                        radius = 14
                     ) {
-                        Text(text = conv.avatar, color = conv.avatarColor, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
-                    }
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = conv.name, color = AdminColors.inkPrimary, style = AdminTypography.alertTitle)
-                        Spacer(modifier = Modifier.height(1.dp))
-                        Text(text = conv.preview, color = AdminColors.inkSecondary, style = AdminTypography.metaText)
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(text = conv.time, color = AdminColors.inkTertiary, fontSize = 10.sp)
-                    }
-                    if (conv.unread > 0) {
-                        Box(
-                            modifier = Modifier
-                                .size(18.dp)
-                                .background(AdminColors.alertRed, RoundedCornerShape(50)),
-                            contentAlignment = Alignment.Center
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Text(text = conv.unread.toString(), color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold)
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .background(AdminColors.siennaBg, RoundedCornerShape(50)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(text = thread.senderName.take(2).uppercase(), color = AdminColors.sienna, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(text = "${thread.senderName} (${thread.senderRole})", color = AdminColors.inkPrimary, style = AdminTypography.alertTitle)
+                                Spacer(modifier = Modifier.height(1.dp))
+                                Text(text = thread.lastMessage, color = AdminColors.inkSecondary, style = AdminTypography.metaText)
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(text = thread.time, color = AdminColors.inkTertiary, fontSize = 10.sp)
+                            }
+                            if (thread.unreadCount > 0) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(18.dp)
+                                        .background(AdminColors.alertRed, RoundedCornerShape(50)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(text = thread.unreadCount.toString(), color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold)
+                                }
+                            }
                         }
                     }
                 }
@@ -908,64 +924,90 @@ private data class ConvoData(
 // ═══════════════════════════════════════════════════════════════
 
 @Composable
-fun CommsPTMTab() {
+fun CommsPTMTab(state: UiState<PtmResponse>) {
     Column(modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp)) {
-        // PTM hero card
-        CardSurface(
-            padding = PaddingValues(20.dp),
-            radius = 18
-        ) {
-            Column {
-                Text(text = "Next PTM", color = AdminColors.inkSecondary, style = AdminTypography.heroLabel)
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(text = "Jan 22, 10 AM — 1 PM", color = AdminColors.inkPrimary, style = AdminTypography.heroBig)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(text = "Slot booking opens Jan 18 · 60 slots available", color = AdminColors.sienna, style = AdminTypography.heroSubStrong)
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(AdminColors.sienna, RoundedCornerShape(12.dp))
-                        .padding(vertical = 12.dp),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Text(text = "Manage Slots →", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        SectionLabel(text = "Booked Slots", modifier = Modifier.padding(bottom = 6.dp))
-        val slots = listOf(
-            SlotData("10:00 — 10:15", "Priya Sharma", "Parent of Aarav (7-B)", AdminColors.goodGreenBg, AdminColors.goodGreen),
-            SlotData("10:15 — 10:30", "Kavya Reddy", "Parent of Sneha (8-A)", AdminColors.goodGreenBg, AdminColors.goodGreen),
-            SlotData("10:30 — 10:45", "Vikram Gupta", "Parent of Rohan (8-B)", AdminColors.goodGreenBg, AdminColors.goodGreen),
-            SlotData("10:45 — 11:00", "Anil Tiwari", "Parent of Ananya (6-B)", AdminColors.goodGreenBg, AdminColors.goodGreen),
-            SlotData("11:00 — 11:15", "Available", "Open slot", AdminColors.pillBg, AdminColors.inkTertiary)
-        )
-        slots.forEach { slot ->
-            CardSurface(
-                modifier = Modifier.padding(bottom = 6.dp),
-                padding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                radius = 14
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .background(slot.statusBg, RoundedCornerShape(10.dp)),
-                        contentAlignment = Alignment.Center
+        when (state) {
+            is UiState.Loading -> Text("Loading PTM...", color = AdminColors.inkSecondary, modifier = Modifier.padding(16.dp))
+            is UiState.Error -> Text(state.message, color = AdminColors.alertRed, modifier = Modifier.padding(16.dp))
+            is UiState.Success -> {
+                val ptm = state.data
+                val active = ptm.activeEvent
+                if (active != null) {
+                    CardSurface(
+                        padding = PaddingValues(20.dp),
+                        radius = 18
                     ) {
-                        Text(text = "📅", fontSize = 12.sp)
+                        Column {
+                            Text(text = "Next PTM", color = AdminColors.inkSecondary, style = AdminTypography.heroLabel)
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(text = "${active.title} — ${active.date}", color = AdminColors.inkPrimary, style = AdminTypography.heroBig)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(text = "Slot: ${active.slot} · ${active.checkedInParents}/${active.expectedParents} checked in", color = AdminColors.sienna, style = AdminTypography.heroSubStrong)
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(AdminColors.sienna, RoundedCornerShape(12.dp))
+                                    .padding(vertical = 12.dp),
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Text(text = "Manage Slots →", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
                     }
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = slot.time, color = AdminColors.inkPrimary, style = AdminTypography.alertTitle)
-                        Spacer(modifier = Modifier.height(1.dp))
-                        Text(text = "${slot.parent} · ${slot.detail}", color = AdminColors.inkSecondary, style = AdminTypography.metaText)
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                if (ptm.classProgress.isNotEmpty()) {
+                    SectionLabel(text = "Class Progress", modifier = Modifier.padding(bottom = 6.dp))
+                    ptm.classProgress.forEach { cp ->
+                        CardSurface(
+                            modifier = Modifier.padding(bottom = 6.dp),
+                            padding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                            radius = 14
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .background(AdminColors.goodGreenBg, RoundedCornerShape(10.dp)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(text = "📅", fontSize = 12.sp)
+                                }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(text = cp.className, color = AdminColors.inkPrimary, style = AdminTypography.alertTitle)
+                                    Spacer(modifier = Modifier.height(1.dp))
+                                    Text(text = "${cp.metCount}/${cp.totalCount} met · ${cp.teacherName}", color = AdminColors.inkSecondary, style = AdminTypography.metaText)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (ptm.history.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    SectionLabel(text = "History", modifier = Modifier.padding(bottom = 6.dp))
+                    ptm.history.forEach { h ->
+                        CardSurface(
+                            modifier = Modifier.padding(bottom = 6.dp),
+                            padding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                            radius = 14
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(text = "${h.title} — ${h.date}", color = AdminColors.inkPrimary, style = AdminTypography.alertTitle)
+                                    Spacer(modifier = Modifier.height(1.dp))
+                                    Text(text = "Turnout: ${h.turnout}% · ${h.totalMet} meetings", color = AdminColors.inkSecondary, style = AdminTypography.metaText)
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -986,35 +1028,40 @@ private data class SlotData(
 // ═══════════════════════════════════════════════════════════════
 
 @Composable
-fun CommsNotificationsTab() {
+fun CommsNotificationsTab(state: UiState<LeaveRequestsResponse>) {
     Column(modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp)) {
-        SectionLabel(text = "Sent Today", modifier = Modifier.padding(bottom = 6.dp))
-        val notifs = listOf(
-            NotifData("Fee Reminder", "SMS · 470 parents", "10:00 AM", AdminColors.siennaBg, AdminColors.sienna, "💰"),
-            NotifData("Sports Day Announcement", "Push · 1,312 parents", "9:30 AM", AdminColors.skyBlueBg, AdminColors.skyBlue, "📢"),
-            NotifData("Attendance Alert", "SMS · 65 parents", "9:00 AM", AdminColors.alertRedBg, AdminColors.alertRed, "⚠"),
-            NotifData("PTM Invitation", "Email + Push · 1,312 parents", "Yesterday", AdminColors.purpleBg, AdminColors.purple, "📋"),
-            NotifData("Holiday Notice", "Push · 1,312 parents", "Yesterday", AdminColors.goodGreenBg, AdminColors.goodGreen, "📅")
-        )
-        notifs.forEach { notif ->
-            CardSurface(
-                modifier = Modifier.padding(bottom = 6.dp),
-                padding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                radius = 14
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    IconBox(size = 36, bg = notif.iconBg, radius = 10) {
-                        Text(text = notif.iconChar, fontSize = 14.sp)
+        SectionLabel(text = "Leave Requests", modifier = Modifier.padding(bottom = 6.dp))
+
+        when (state) {
+            is UiState.Loading -> Text("Loading leave requests...", color = AdminColors.inkSecondary, modifier = Modifier.padding(16.dp))
+            is UiState.Error -> Text(state.message, color = AdminColors.alertRed, modifier = Modifier.padding(16.dp))
+            is UiState.Success -> {
+                if (state.data.requests.isEmpty()) {
+                    Text("No pending leave requests", color = AdminColors.inkTertiary, modifier = Modifier.padding(16.dp))
+                } else {
+                    state.data.requests.forEach { req ->
+                        CardSurface(
+                            modifier = Modifier.padding(bottom = 6.dp),
+                            padding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                            radius = 14
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                IconBox(size = 36, bg = AdminColors.alertRedBg, radius = 10) {
+                                    Text(text = "📋", fontSize = 14.sp)
+                                }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(text = req.requesterName, color = AdminColors.inkPrimary, style = AdminTypography.alertTitle)
+                                    Spacer(modifier = Modifier.height(1.dp))
+                                    Text(text = "${req.requesterRole} · ${req.dateFrom} to ${req.dateTo}", color = AdminColors.inkSecondary, style = AdminTypography.metaText)
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(text = "Reason: ${req.reason} · Status: ${req.status}", color = AdminColors.inkTertiary, fontSize = 10.sp)
+                                }
+                            }
+                        }
                     }
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = notif.title, color = AdminColors.inkPrimary, style = AdminTypography.alertTitle)
-                        Spacer(modifier = Modifier.height(1.dp))
-                        Text(text = notif.channel, color = AdminColors.inkSecondary, style = AdminTypography.metaText)
-                    }
-                    Text(text = notif.time, color = AdminColors.inkTertiary, fontSize = 10.sp)
                 }
             }
         }

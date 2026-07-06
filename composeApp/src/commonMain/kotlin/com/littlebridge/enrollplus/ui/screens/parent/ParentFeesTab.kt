@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material.icons.rounded.Campaign
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -68,7 +69,7 @@ fun ParentFeesTab(
             is UiState.Success -> {
                 val data = s.data
 
-                // Hero balance card — white with decorative circles
+                // Hero balance card — white with decorative circle
                 Box(
                     modifier = Modifier
                         .padding(horizontal = 24.dp, vertical = 8.dp)
@@ -80,19 +81,19 @@ fun ParentFeesTab(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .size(120.dp)
-                            .background(VColors.coralSoft.copy(alpha = 0.3f), CircleShape)
+                            .background(VColors.coralSoft.copy(alpha = 0.4f), CircleShape)
                             .offset(x = 30.dp, y = (-30).dp),
                     )
                     Column(
                         modifier = Modifier
-                            .padding(24.dp),
+                            .padding(horizontal = 20.dp, vertical = 24.dp),
                     ) {
                         Text(
                             "Outstanding Balance",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
                             color = VColors.ink3,
-                            letterSpacing = 0.5.sp,
+                            letterSpacing = 1.sp,
                         )
                         Spacer(Modifier.height(8.dp))
                         Text(
@@ -110,19 +111,20 @@ fun ParentFeesTab(
                             color = VColors.ink3,
                         )
                         Spacer(Modifier.height(16.dp))
-                        // Pay button — violet filled
+                        // Pay button — violet filled with shadow
                         Row(
                             modifier = Modifier
-                                .background(VColors.violet, VShapes.full)
+                                .shadow(2.dp, VShapes.md, clip = false)
+                                .background(VColors.violet, VShapes.md)
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null,
                                 ) { onPayClick() }
-                                .padding(horizontal = 20.dp, vertical = 10.dp),
+                                .padding(horizontal = 20.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Text("Pay Now", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = VColors.white)
+                            Text("Pay Now", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = VColors.white)
                             Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, tint = VColors.white, modifier = Modifier.size(16.dp))
                         }
                     }
@@ -153,41 +155,36 @@ fun ParentFeesTab(
                     letterSpacing = 1.sp,
                     modifier = Modifier.padding(start = 24.dp, top = 16.dp, bottom = 10.dp),
                 )
-                // Payment history would come from API — showing collection progress as a stat
                 Box(
                     modifier = Modifier
                         .padding(horizontal = 24.dp)
                         .background(VColors.white, VShapes.md)
                         .shadow(1.dp, VShapes.md)
-                        .padding(16.dp),
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
                 ) {
                     Column {
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Total Collected", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = VColors.ink2)
-                            Text(data.totalCollected, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = VColors.ink)
-                        }
-                        Spacer(Modifier.height(8.dp))
-                        // Progress bar
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(6.dp)
-                                .background(VColors.surfaceTint, VShapes.full),
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Box(
-                                modifier = Modifier
-                                    .fillMaxWidth(data.collectionProgress)
-                                    .height(6.dp)
-                                    .background(VColors.mint, VShapes.full),
+                                modifier = Modifier.size(34.dp).background(VColors.mintSoft, VShapes.sm),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = VColors.success, modifier = Modifier.size(15.dp))
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Total Collected", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VColors.ink, letterSpacing = (-0.2).sp)
+                                Text(data.totalCollected, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = VColors.ink3, modifier = Modifier.padding(top = 1.dp))
+                            }
+                            Text(
+                                "${(data.collectionProgress * 100).toInt()}%",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = VColors.ink,
                             )
                         }
-                        Spacer(Modifier.height(6.dp))
-                        Text(
-                            "${(data.collectionProgress * 100).toInt()}% collected",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = VColors.ink3,
-                        )
                     }
                 }
             }
@@ -210,7 +207,7 @@ private fun FeeAnnouncementCard(ann: FeeAnnouncementDto) {
             modifier = Modifier.size(34.dp).background(VColors.coralSoft, VShapes.sm),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = VColors.coral, modifier = Modifier.size(15.dp))
+            Icon(Icons.Rounded.Campaign, contentDescription = null, tint = VColors.coral, modifier = Modifier.size(15.dp))
         }
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {

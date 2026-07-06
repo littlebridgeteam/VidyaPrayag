@@ -92,14 +92,14 @@ fun HomeScreen(
                             else -> TrendType.FLAT
                         }
                         PulseCardData(
-                            icon = "�",
-                            bg = AdminColors.purpleBg,
+                            iconChar = "�",
+                            iconBg = AdminColors.purpleBg,
                             trend = trend,
-                            big = kpi.value.toString(),
-                            small = kpi.unit,
-                            title = kpi.label,
-                            sub = kpi.deltaLabel,
-                            stripe = PulseStripe.PURPLE
+                            value = kpi.value.toString(),
+                            unit = kpi.unit,
+                            label = kpi.label,
+                            subText = kpi.deltaLabel,
+                            stripe = PulseStripe.SIENNA
                         )
                     },
                     modifier = Modifier.padding(bottom = 16.dp)
