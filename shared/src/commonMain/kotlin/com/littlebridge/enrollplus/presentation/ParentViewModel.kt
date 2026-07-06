@@ -32,8 +32,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-private fun <T> NetworkResult<T>.toUiState(): UiState<T> = when (this) {
-    is NetworkResult.Success -> UiState.Success(data)
+private fun <R> NetworkResult<*>.errorState(): UiState<R> = when (this) {
+    is NetworkResult.Success -> error("errorState() called on NetworkResult.Success")
     is NetworkResult.Error -> UiState.Error(message)
     is NetworkResult.ConnectionError -> UiState.Error("No internet connection")
 }
@@ -194,7 +194,7 @@ class ParentViewModel(
                 }
                 _dashboardState.value = UiState.Success(data)
             } else {
-                _dashboardState.value = result.toUiState().let { it as UiState<ParentDashboardData> }
+                _dashboardState.value = result.errorState()
             }
         }
     }
@@ -233,7 +233,7 @@ class ParentViewModel(
         viewModelScope.launch {
             _feesState.value = UiState.Loading
             val result = parentRepository.getFees(requireToken(), childId)
-            _feesState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.toUiState().let { it as UiState<FeeData> }
+            _feesState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.errorState()
         }
     }
 
@@ -241,7 +241,7 @@ class ParentViewModel(
         viewModelScope.launch {
             _attendanceState.value = UiState.Loading
             val result = parentRepository.getChildAttendance(requireToken(), childId)
-            _attendanceState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.toUiState().let { it as UiState<ParentAttendanceData> }
+            _attendanceState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.errorState()
         }
     }
 
@@ -249,7 +249,7 @@ class ParentViewModel(
         viewModelScope.launch {
             _marksState.value = UiState.Loading
             val result = parentRepository.getChildMarks(requireToken(), childId)
-            _marksState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.toUiState().let { it as UiState<ParentMarksData> }
+            _marksState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.errorState()
         }
     }
 
@@ -257,7 +257,7 @@ class ParentViewModel(
         viewModelScope.launch {
             _syllabusState.value = UiState.Loading
             val result = parentRepository.getChildSyllabus(requireToken(), childId)
-            _syllabusState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.toUiState().let { it as UiState<ParentSyllabusData> }
+            _syllabusState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.errorState()
         }
     }
 
@@ -265,7 +265,7 @@ class ParentViewModel(
         viewModelScope.launch {
             _syllabusV2State.value = UiState.Loading
             val result = parentRepository.getSyllabusV2(requireToken(), childId)
-            _syllabusV2State.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.toUiState().let { it as UiState<ParentSyllabusV2Data> }
+            _syllabusV2State.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.errorState()
         }
     }
 
@@ -273,7 +273,7 @@ class ParentViewModel(
         viewModelScope.launch {
             _dailySummaryState.value = UiState.Loading
             val result = parentRepository.getDailySummary(requireToken(), childId, date)
-            _dailySummaryState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.toUiState().let { it as UiState<ParentDailySummaryData> }
+            _dailySummaryState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.errorState()
         }
     }
 
@@ -281,7 +281,7 @@ class ParentViewModel(
         viewModelScope.launch {
             _timetableState.value = UiState.Loading
             val result = parentRepository.getChildTimetable(requireToken(), childId)
-            _timetableState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.toUiState().let { it as UiState<ParentTimetableData> }
+            _timetableState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.errorState()
         }
     }
 
@@ -289,7 +289,7 @@ class ParentViewModel(
         viewModelScope.launch {
             _announcementsState.value = UiState.Loading
             val result = parentRepository.getAnnouncements(requireToken())
-            _announcementsState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.toUiState().let { it as UiState<ParentAnnouncementsData> }
+            _announcementsState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.errorState()
         }
     }
 
@@ -297,7 +297,7 @@ class ParentViewModel(
         viewModelScope.launch {
             _notificationsState.value = UiState.Loading
             val result = parentRepository.getNotifications(requireToken())
-            _notificationsState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.toUiState().let { it as UiState<ParentNotificationsData> }
+            _notificationsState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.errorState()
         }
     }
 
@@ -312,7 +312,7 @@ class ParentViewModel(
         viewModelScope.launch {
             _threadsState.value = UiState.Loading
             val result = parentRepository.getMessageThreads(requireToken())
-            _threadsState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.toUiState().let { it as UiState<ParentMessageThreadsData> }
+            _threadsState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.errorState()
         }
     }
 
@@ -346,7 +346,7 @@ class ParentViewModel(
         viewModelScope.launch {
             _leaveState.value = UiState.Loading
             val result = parentRepository.getLeaveRequests(requireToken())
-            _leaveState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.toUiState().let { it as UiState<ParentLeaveListData> }
+            _leaveState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.errorState()
         }
     }
 
@@ -367,7 +367,7 @@ class ParentViewModel(
         viewModelScope.launch {
             _trackProgressState.value = UiState.Loading
             val result = parentRepository.getTrackProgress(requireToken())
-            _trackProgressState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.toUiState().let { it as UiState<TrackProgressData> }
+            _trackProgressState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.errorState()
         }
     }
 
@@ -375,7 +375,7 @@ class ParentViewModel(
         viewModelScope.launch {
             _scholarshipsState.value = UiState.Loading
             val result = parentRepository.getScholarships(requireToken())
-            _scholarshipsState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.toUiState().let { it as UiState<ScholarshipsData> }
+            _scholarshipsState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.errorState()
         }
     }
 
@@ -383,7 +383,7 @@ class ParentViewModel(
         viewModelScope.launch {
             _pulseState.value = UiState.Loading
             val result = parentRepository.getLatestPulse(requireToken(), childId)
-            _pulseState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.toUiState().let { it as UiState<PulseDto> }
+            _pulseState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.errorState()
         }
     }
 
@@ -391,7 +391,7 @@ class ParentViewModel(
         viewModelScope.launch {
             _schoolSearchState.value = UiState.Loading
             val result = parentRepository.searchSchools(requireToken(), query)
-            _schoolSearchState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.toUiState().let { it as UiState<SchoolSearchData> }
+            _schoolSearchState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.errorState()
         }
     }
 
@@ -420,7 +420,7 @@ class ParentViewModel(
         viewModelScope.launch {
             _quizListState.value = UiState.Loading
             val result = parentRepository.getQuizList(requireToken(), childId)
-            _quizListState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.toUiState().let { it as UiState<ParentQuizListData> }
+            _quizListState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.errorState()
         }
     }
 
@@ -451,7 +451,7 @@ class ParentViewModel(
         viewModelScope.launch {
             _healthState.value = UiState.Loading
             val result = healthRepository.getChildHealth(requireToken(), childId)
-            _healthState.value = if (result is NetworkResult.Success) result.data.data?.let { UiState.Success(it) } ?: UiState.Error("No data") else result.toUiState().let { it as UiState<ParentHealthResponse> }
+            _healthState.value = if (result is NetworkResult.Success) result.data.data?.let { UiState.Success(it) } ?: UiState.Error("No data") else result.errorState()
         }
     }
 
@@ -459,7 +459,7 @@ class ParentViewModel(
         viewModelScope.launch {
             _transportLiveState.value = UiState.Loading
             val result = transportRepository.getLiveLocation(requireToken(), childId)
-            _transportLiveState.value = if (result is NetworkResult.Success) result.data.data?.let { UiState.Success(it) } ?: UiState.Error("No data") else result.toUiState().let { it as UiState<RouteProgress> }
+            _transportLiveState.value = if (result is NetworkResult.Success) result.data.data?.let { UiState.Success(it) } ?: UiState.Error("No data") else result.errorState()
         }
     }
 
@@ -467,7 +467,7 @@ class ParentViewModel(
         viewModelScope.launch {
             _transportRouteState.value = UiState.Loading
             val result = transportRepository.getRouteForChild(requireToken(), childId)
-            _transportRouteState.value = if (result is NetworkResult.Success) result.data.data?.let { UiState.Success(it) } ?: UiState.Error("No data") else result.toUiState().let { it as UiState<TransportRoute> }
+            _transportRouteState.value = if (result is NetworkResult.Success) result.data.data?.let { UiState.Success(it) } ?: UiState.Error("No data") else result.errorState()
         }
     }
 
@@ -475,7 +475,7 @@ class ParentViewModel(
         viewModelScope.launch {
             _idCardState.value = UiState.Loading
             val result = idCardRepository.getChildIdCard(requireToken(), childId)
-            _idCardState.value = if (result is NetworkResult.Success) result.data.data?.let { UiState.Success(it) } ?: UiState.Error("No data") else result.toUiState().let { it as UiState<IdCardDto> }
+            _idCardState.value = if (result is NetworkResult.Success) result.data.data?.let { UiState.Success(it) } ?: UiState.Error("No data") else result.errorState()
         }
     }
 
@@ -483,7 +483,7 @@ class ParentViewModel(
         viewModelScope.launch {
             _eventsState.value = UiState.Loading
             val result = eventRegistrationApi.listParentEvents(requireToken())
-            _eventsState.value = if (result is NetworkResult.Success) result.data.data?.let { UiState.Success(it.events) } ?: UiState.Error("No data") else result.toUiState().let { it as UiState<List<ParentEventDto>> }
+            _eventsState.value = if (result is NetworkResult.Success) result.data.data?.let { UiState.Success(it.events) } ?: UiState.Error("No data") else result.errorState()
         }
     }
 
@@ -493,7 +493,7 @@ class ParentViewModel(
         viewModelScope.launch {
             _librarySearchState.value = UiState.Loading
             val result = libraryRepository.parentSearchBooks(requireToken(), query, page = 1, limit = 20)
-            _librarySearchState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.toUiState().let { it as UiState<List<LibraryBookDto>> }
+            _librarySearchState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.errorState()
         }
     }
 
@@ -501,7 +501,7 @@ class ParentViewModel(
         viewModelScope.launch {
             _libraryIssuedState.value = UiState.Loading
             val result = libraryRepository.parentGetIssuedForChild(requireToken(), childId)
-            _libraryIssuedState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.toUiState().let { it as UiState<List<LibraryIssueDto>> }
+            _libraryIssuedState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.errorState()
         }
     }
 
@@ -549,7 +549,7 @@ class ParentViewModel(
         viewModelScope.launch {
             _schoolDiscoveryState.value = UiState.Loading
             val result = schoolApi.discoverSchools(requireToken())
-            _schoolDiscoveryState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data?.schools ?: emptyList()) else result.toUiState().let { it as UiState<List<DiscoveredSchoolDto>> }
+            _schoolDiscoveryState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data?.schools ?: emptyList()) else result.errorState()
         }
     }
 }
