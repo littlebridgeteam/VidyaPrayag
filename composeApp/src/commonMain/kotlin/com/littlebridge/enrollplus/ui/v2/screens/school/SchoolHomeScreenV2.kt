@@ -22,14 +22,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Campaign
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.School
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,14 +34,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardActivity
 import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardAnalytics
 import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardOverview
+import com.littlebridge.enrollplus.feature.admin.domain.model.DashboardActivity
+import com.littlebridge.enrollplus.feature.admin.domain.model.OverviewEvent
 import com.littlebridge.enrollplus.feature.admin.domain.model.OverviewInsight
 import com.littlebridge.enrollplus.feature.admin.domain.model.OverviewKpi
 import com.littlebridge.enrollplus.feature.admin.domain.model.OverviewSchoolPulse
@@ -69,13 +66,16 @@ import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
 
 // ─────────────────────────────────────────────────────────────────────────────
-// School Home — Command Center
-// Inspired by the onboarding screen's design language:
-//   • Violet hero header (like onboarding completion)
-//   • CreamCard pattern (surfaceCard + 1dp border + lg shape)
-//   • Generous 24dp padding, 16dp spacing
-//   • Strong typography hierarchy
-//   • No gradients, no gauges, no bouncy cards, no clutter
+// School Home — Morning Briefing
+//
+// Design philosophy:
+//   • Text-first. Numbers and words carry the meaning, not widgets.
+//   • No card soup. Sections separated by whitespace + background shifts.
+//   • No decorative icon-in-box patterns. Icons only where they inform.
+//   • One hero number. Rest is context.
+//   • Action items first. A principal opens the app to act.
+//   • Copywriting > gauges. "Your school is healthy" > a progress ring.
+//   • Inspired by Linear, Stripe, Notion — not by AI dashboard templates.
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
@@ -146,7 +146,6 @@ fun SchoolHomeScreenV2(
                 VEmptyState(
                     title = "Couldn't load dashboard",
                     body = error ?: "Pull down to retry.",
-                    icon = Icons.Filled.Warning,
                     actionLabel = "Retry",
                     onAction = { viewModel.refresh(); calendarViewModel.refresh() },
                 )
@@ -159,13 +158,11 @@ fun SchoolHomeScreenV2(
                 VEmptyState(
                     title = "Nothing to show yet",
                     body = "Your dashboard will appear here once data is available.",
-                    icon = Icons.Filled.School,
                 )
             }
 
-            else -> CommandCenter(
+            else -> MorningBriefing(
                 overview = overview,
-                analytics = analytics,
                 activity = activity,
                 adminName = adminName,
                 unreadCount = notifications.unreadCount,
@@ -175,7 +172,6 @@ fun SchoolHomeScreenV2(
                 onOpenPews = onOpenPews,
                 onOpenTransport = onOpenTransport,
                 onOpenReportPublish = onOpenReportPublish,
-                onOpenReportEffectiveness = onOpenReportEffectiveness,
                 onOpenEvents = onOpenEvents,
                 onCreateEvent = onCreateEvent,
                 onExit = onExit,
@@ -196,13 +192,12 @@ fun SchoolHomeScreenV2(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Command Center — the scrollable dashboard
+// Morning Briefing — the scrollable content
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun CommandCenter(
+private fun MorningBriefing(
     overview: AdminDashboardOverview,
-    analytics: AdminDashboardAnalytics?,
     activity: AdminDashboardActivity?,
     adminName: String,
     unreadCount: Int,
@@ -212,7 +207,6 @@ private fun CommandCenter(
     onOpenPews: () -> Unit,
     onOpenTransport: () -> Unit,
     onOpenReportPublish: () -> Unit,
-    onOpenReportEffectiveness: () -> Unit,
     onOpenEvents: () -> Unit,
     onCreateEvent: () -> Unit,
     onExit: () -> Unit,
@@ -223,7 +217,7 @@ private fun CommandCenter(
             .verticalScroll(rememberScrollState())
             .padding(bottom = 100.dp),
     ) {
-        HeroHeader(
+        BriefingHeader(
             overview = overview,
             fallbackName = adminName,
             unreadCount = unreadCount,
@@ -232,38 +226,37 @@ private fun CommandCenter(
         )
 
         Column(
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(28.dp),
         ) {
             val kpis = overview.kpis.filter { it.available }
             if (kpis.isNotEmpty()) {
-                FocusCard(kpis = kpis, onClick = onOpenAnalytics)
+                HeroMetric(kpis = kpis, onClick = onOpenAnalytics)
+            }
+
+            val insights = overview.insights
+            if (insights.isNotEmpty()) {
+                ActionItems(insights = insights, onOpenPews = onOpenPews)
             }
 
             QuickActions(
                 onAnnouncement = onOpenNotifications,
                 onEvent = onCreateEvent,
                 onReports = onOpenReportPublish,
-                onTransport = onOpenTransport,
             )
 
-            val insights = overview.insights
-            if (insights.isNotEmpty()) {
-                NeedsAttentionCard(insights = insights)
-            }
-
             overview.events.takeIf { it.available && it.upcoming.isNotEmpty() }?.let { ev ->
-                UpcomingCard(events = ev.upcoming, onOpenCalendar = onOpenCalendar)
+                UpcomingSection(events = ev.upcoming, onOpenCalendar = onOpenCalendar)
             }
 
             val activities = activity?.activities.orEmpty()
             if (activities.isNotEmpty()) {
-                ActivityCard(activities = activities)
+                ActivitySection(activities = activities)
             }
 
             overview.schoolPulse.let { pulse ->
                 if (pulse.score > 0) {
-                    PulseCard(pulse = pulse, onClick = onOpenAnalytics)
+                    PulseSentence(pulse = pulse, onClick = onOpenAnalytics)
                 }
             }
         }
@@ -271,11 +264,11 @@ private fun CommandCenter(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Hero Header — violet band, like onboarding completion screen
+// Briefing Header — compact violet band
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun HeroHeader(
+private fun BriefingHeader(
     overview: AdminDashboardOverview,
     fallbackName: String,
     unreadCount: Int,
@@ -294,181 +287,183 @@ private fun HeroHeader(
         }
     }
 
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .background(VColors.violet)
             .statusBarsPadding(),
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
-                .padding(top = 20.dp, bottom = 28.dp),
+                .padding(top = 20.dp, bottom = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = greeting,
-                        style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
-                        color = VColors.white.copy(alpha = 0.7f),
-                    )
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        text = name,
-                        style = VTypography.h2,
-                        color = VColors.white,
-                    )
-                }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = greeting,
+                    style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
+                    color = VColors.white.copy(alpha = 0.65f),
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = name,
+                    style = VTypography.h2,
+                    color = VColors.white,
+                )
+            }
 
-                if (unreadCount > 0) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(VColors.white.copy(alpha = 0.15f))
-                            .clickable { onNotifications() },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            Icons.Filled.Notifications,
-                            contentDescription = "Notifications",
-                            tint = VColors.white,
-                            modifier = Modifier.size(20.dp),
-                        )
-                        if (unreadCount > 0) {
-                            Box(
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .size(16.dp)
-                                    .clip(CircleShape)
-                                    .background(VColors.coral),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(
-                                    text = if (unreadCount > 9) "9+" else unreadCount.toString(),
-                                    style = VTypography.caption.copy(
-                                        fontSize = androidx.compose.ui.unit.TextUnit(9f, androidx.compose.ui.unit.TextUnitType.Sp),
-                                        fontWeight = FontWeight.Bold,
-                                    ),
-                                    color = VColors.white,
-                                )
-                            }
-                        }
-                    }
-                }
-
-                Spacer(Modifier.size(12.dp))
+            if (unreadCount > 0) {
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
+                        .size(40.dp)
                         .clip(CircleShape)
-                        .background(VColors.white.copy(alpha = 0.18f))
-                        .border(1.dp, VColors.white.copy(alpha = 0.25f), CircleShape)
-                        .clickable { onAvatar() },
+                        .background(VColors.white.copy(alpha = 0.15f))
+                        .clickable { onNotifications() },
                     contentAlignment = Alignment.Center,
                 ) {
-                    VAvatar(
-                        name = name,
-                        avatarSize = VAvatarSize.Md,
-                        imageUrl = header.adminAvatarUrl,
+                    Icon(
+                        Icons.Filled.Notifications,
+                        contentDescription = "Notifications",
+                        tint = VColors.white,
+                        modifier = Modifier.size(18.dp),
                     )
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .size(16.dp)
+                            .clip(CircleShape)
+                            .background(VColors.coral),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = if (unreadCount > 9) "9+" else unreadCount.toString(),
+                            style = VTypography.caption.copy(
+                                fontSize = TextUnit(9f, TextUnitType.Sp),
+                                fontWeight = FontWeight.Bold,
+                            ),
+                            color = VColors.white,
+                        )
+                    }
                 }
+                Spacer(Modifier.size(12.dp))
             }
 
-            Spacer(Modifier.height(16.dp))
-            Text(
-                text = schoolName,
-                style = VTypography.body,
-                color = VColors.white.copy(alpha = 0.88f),
-            )
-            if (session.isNotBlank()) {
-                Text(
-                    text = session,
-                    style = VTypography.caption,
-                    color = VColors.white.copy(alpha = 0.6f),
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(VColors.white.copy(alpha = 0.18f))
+                    .border(1.dp, VColors.white.copy(alpha = 0.25f), CircleShape)
+                    .clickable { onAvatar() },
+                contentAlignment = Alignment.Center,
+            ) {
+                VAvatar(
+                    name = name,
+                    avatarSize = VAvatarSize.Md,
+                    imageUrl = header.adminAvatarUrl,
                 )
             }
         }
-    }
-}
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Focus Card — 3 key metrics in a clean row
-// ─────────────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun FocusCard(kpis: List<OverviewKpi>, onClick: () -> Unit) {
-    CreamCard(onClick = onClick) {
         Text(
-            text = "Today's Focus",
-            style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
-            color = VColors.ink3,
+            text = schoolName,
+            style = VTypography.body,
+            color = VColors.white.copy(alpha = 0.85f),
+            modifier = Modifier.padding(horizontal = 24.dp),
         )
-        Spacer(Modifier.height(12.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            kpis.take(3).forEach { kpi ->
-                FocusMetric(
-                    label = kpi.label,
-                    value = formatKpiValue(kpi),
-                    delta = kpi.deltaLabel.takeIf { it.isNotBlank() },
-                    deltaDirection = kpi.deltaDirection,
-                )
-            }
-            if (kpis.size < 3) {
-                repeat(3 - kpis.size) {
-                    Spacer(Modifier.weight(1f))
-                }
-            }
+        if (session.isNotBlank()) {
+            Text(
+                text = session,
+                style = VTypography.caption,
+                color = VColors.white.copy(alpha = 0.55f),
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 2.dp),
+            )
         }
+        Spacer(Modifier.height(20.dp))
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Hero Metric — one big number commands attention, rest is context
+// No card border. Just text on cream background.
+// ─────────────────────────────────────────────────────────────────────────────
+
 @Composable
-private fun RowScope.FocusMetric(
-    label: String,
-    value: String,
-    delta: String?,
-    deltaDirection: String,
-) {
+private fun HeroMetric(kpis: List<OverviewKpi>, onClick: () -> Unit) {
+    val hero = kpis.firstOrNull() ?: return
+    val heroValue = formatHeroValue(hero)
+    val heroColor = when {
+        hero.key.contains("attendance", ignoreCase = true) -> {
+            when {
+                hero.value >= 90 -> VColors.success
+                hero.value >= 75 -> VColors.gold
+                else -> VColors.coral
+            }
+        }
+        hero.deltaDirection == "up" -> VColors.success
+        hero.deltaDirection == "down" -> VColors.coral
+        else -> VColors.ink
+    }
+
     Column(
-        modifier = Modifier.weight(1f),
-        horizontalAlignment = Alignment.Start,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(vertical = 4.dp),
     ) {
         Text(
-            text = value,
-            style = VTypography.h3,
-            color = VColors.ink,
-        )
-        Spacer(Modifier.height(2.dp))
-        Text(
-            text = label,
-            style = VTypography.caption,
+            text = hero.label,
+            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
             color = VColors.ink3,
-            maxLines = 1,
         )
-        if (delta != null) {
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = heroValue,
+            style = VTypography.h1.copy(fontSize = TextUnit(40f, TextUnitType.Sp)),
+            color = heroColor,
+        )
+        if (hero.deltaLabel.isNotBlank()) {
             Spacer(Modifier.height(4.dp))
             Text(
-                text = delta,
+                text = hero.deltaLabel,
                 style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
-                color = when (deltaDirection) {
+                color = when (hero.deltaDirection) {
                     "up" -> VColors.success
                     "down" -> VColors.coral
                     else -> VColors.ink3
                 },
             )
         }
+
+        val secondary = kpis.drop(1).take(2)
+        if (secondary.isNotEmpty()) {
+            Spacer(Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(24.dp),
+            ) {
+                secondary.forEach { kpi ->
+                    Column {
+                        Text(
+                            text = formatHeroValue(kpi),
+                            style = VTypography.h3.copy(fontSize = TextUnit(20f, TextUnitType.Sp)),
+                            color = VColors.ink,
+                        )
+                        Text(
+                            text = kpi.label,
+                            style = VTypography.caption,
+                            color = VColors.ink3,
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
-private fun formatKpiValue(kpi: OverviewKpi): String {
+private fun formatHeroValue(kpi: OverviewKpi): String {
     val v = kpi.value
     return when {
         kpi.unit == "%" -> "$v%"
@@ -479,158 +474,62 @@ private fun formatKpiValue(kpi: OverviewKpi): String {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Quick Actions — 2×2 grid of clean action tiles
+// Action Items — "3 things need your attention"
+// Colored dot + text. No icon-in-box. Tappable rows.
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun QuickActions(
-    onAnnouncement: () -> Unit,
-    onEvent: () -> Unit,
-    onReports: () -> Unit,
-    onTransport: () -> Unit,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        ActionTile(
-            icon = Icons.Filled.Campaign,
-            label = "Announce",
-            onClick = onAnnouncement,
-            modifier = Modifier.weight(1f),
-        )
-        ActionTile(
-            icon = Icons.Filled.CalendarMonth,
-            label = "New Event",
-            onClick = onEvent,
-            modifier = Modifier.weight(1f),
-        )
-    }
-    Spacer(Modifier.height(10.dp))
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        ActionTile(
-            icon = Icons.Filled.School,
-            label = "Reports",
-            onClick = onReports,
-            modifier = Modifier.weight(1f),
-        )
-        ActionTile(
-            icon = Icons.Filled.Person,
-            label = "Transport",
-            onClick = onTransport,
-            modifier = Modifier.weight(1f),
-        )
-    }
-}
-
-@Composable
-private fun ActionTile(
-    icon: ImageVector,
-    label: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.lg)
-            .clickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        Box(
-            modifier = Modifier
-                .size(32.dp)
-                .clip(VShapes.sm)
-                .background(VColors.violetSoft),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                tint = VColors.violet,
-                modifier = Modifier.size(18.dp),
-            )
-        }
-        Text(
-            text = label,
-            style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
-            color = VColors.ink,
-        )
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Needs Attention — insights/alerts ordered by severity
-// ─────────────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun NeedsAttentionCard(insights: List<OverviewInsight>) {
+private fun ActionItems(insights: List<OverviewInsight>, onOpenPews: () -> Unit) {
     val sorted = insights.sortedByDescending { severityWeight(it.severity) }
-    CreamCard {
+    val count = sorted.size
+
+    Column {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "Needs Attention",
+                text = if (count == 1) "1 thing needs your attention" else "$count things need your attention",
                 style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
                 color = VColors.ink,
                 modifier = Modifier.weight(1f),
             )
-            MiniBadge(
-                text = "${sorted.size}",
-                color = VColors.violet,
-                bg = VColors.violetSoft,
-            )
         }
         Spacer(Modifier.height(12.dp))
 
-        sorted.take(4).forEachIndexed { idx, insight ->
-            if (idx > 0) {
-                Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.lineSoft))
-                Spacer(Modifier.height(8.dp))
-            }
-            InsightRow(insight = insight)
-            if (idx < minOf(sorted.size, 4) - 1) {
-                Spacer(Modifier.height(8.dp))
-            }
+        sorted.take(3).forEach { insight ->
+            ActionRow(insight = insight, onClick = onOpenPews)
         }
     }
 }
 
 @Composable
-private fun InsightRow(insight: OverviewInsight) {
-    val (icon, color, bg) = insightVisuals(insight.type, insight.severity)
+private fun ActionRow(insight: OverviewInsight, onClick: () -> Unit) {
+    val dotColor = when (insight.severity.uppercase()) {
+        "HIGH" -> VColors.coral
+        "MEDIUM" -> VColors.gold
+        else -> VColors.violet
+    }
 
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(vertical = 10.dp),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Box(
+        Spacer(
             modifier = Modifier
-                .size(32.dp)
-                .clip(VShapes.sm)
-                .background(bg),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                tint = color,
-                modifier = Modifier.size(16.dp),
-            )
-        }
+                .padding(top = 6.dp)
+                .size(7.dp)
+                .clip(CircleShape)
+                .background(dotColor),
+        )
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = insight.title,
-                style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+                style = VTypography.bodySmall,
                 color = VColors.ink,
             )
             if (insight.description.isNotBlank()) {
@@ -640,15 +539,13 @@ private fun InsightRow(insight: OverviewInsight) {
                     color = VColors.ink3,
                 )
             }
-            if (insight.action.isNotBlank()) {
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = insight.action,
-                    style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
-                    color = VColors.violet,
-                )
-            }
         }
+        Icon(
+            Icons.Filled.ChevronRight,
+            contentDescription = null,
+            tint = VColors.ink3.copy(alpha = 0.4f),
+            modifier = Modifier.size(18.dp).padding(top = 4.dp),
+        )
     }
 }
 
@@ -658,41 +555,75 @@ private fun severityWeight(severity: String): Int = when (severity.uppercase()) 
     else -> 1
 }
 
-private fun insightVisuals(type: String, severity: String): Triple<ImageVector, Color, Color> {
-    return when (type.uppercase()) {
-        "ALERT" -> Triple(
-            Icons.Filled.Warning,
-            if (severity == "HIGH") VColors.coral else VColors.gold,
-            if (severity == "HIGH") VColors.coralSoft else VColors.goldSoft,
+// ─────────────────────────────────────────────────────────────────────────────
+// Quick Actions — 3 wide tappable rows on creamDeep background
+// No icon boxes. Just label + chevron. Whitespace as luxury.
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun QuickActions(
+    onAnnouncement: () -> Unit,
+    onEvent: () -> Unit,
+    onReports: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.lg)
+            .background(VColors.creamDeep)
+            .padding(vertical = 4.dp),
+    ) {
+        ActionTileRow(label = "Send Announcement", onClick = onAnnouncement)
+        DividerLine()
+        ActionTileRow(label = "Create Event", onClick = onEvent)
+        DividerLine()
+        ActionTileRow(label = "Publish Reports", onClick = onReports)
+    }
+}
+
+@Composable
+private fun ActionTileRow(label: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+            color = VColors.ink,
+            modifier = Modifier.weight(1f),
         )
-        "ACHIEVEMENT" -> Triple(
-            Icons.Filled.Check,
-            VColors.success,
-            VColors.successSoft,
-        )
-        "REMINDER" -> Triple(
-            Icons.Filled.CalendarMonth,
-            VColors.violet,
-            VColors.violetSoft,
-        )
-        else -> Triple(
-            Icons.Filled.Notifications,
-            VColors.ink3,
-            VColors.surfaceTint,
+        Icon(
+            Icons.Filled.ChevronRight,
+            contentDescription = null,
+            tint = VColors.ink3.copy(alpha = 0.4f),
+            modifier = Modifier.size(18.dp),
         )
     }
 }
 
+@Composable
+private fun DividerLine() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .height(1.dp)
+            .background(VColors.lineSoft),
+    )
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
-// Upcoming — next 2-3 events, minimal
+// Upcoming — section label + text-first event list
+// Date pill is the only visual element. No icons.
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun UpcomingCard(
-    events: List<com.littlebridge.enrollplus.feature.admin.domain.model.OverviewEvent>,
-    onOpenCalendar: () -> Unit,
-) {
-    CreamCard {
+private fun UpcomingSection(events: List<OverviewEvent>, onOpenCalendar: () -> Unit) {
+    Column {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -712,13 +643,11 @@ private fun UpcomingCard(
         }
         Spacer(Modifier.height(12.dp))
 
-        events.take(3).forEachIndexed { idx, event ->
-            if (idx > 0) {
-                Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.lineSoft))
-                Spacer(Modifier.height(10.dp))
-            }
+        events.take(3).forEach { event ->
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -747,20 +676,17 @@ private fun UpcomingCard(
                     )
                 }
             }
-            if (idx < minOf(events.size, 3) - 1) {
-                Spacer(Modifier.height(10.dp))
-            }
         }
     }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Activity — last 3 activities, minimal timeline
+// Activity — minimal timeline, text only
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun ActivityCard(activities: List<com.littlebridge.enrollplus.feature.admin.domain.model.DashboardActivity>) {
-    CreamCard {
+private fun ActivitySection(activities: List<DashboardActivity>) {
+    Column {
         Text(
             text = "Recent Activity",
             style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
@@ -768,22 +694,19 @@ private fun ActivityCard(activities: List<com.littlebridge.enrollplus.feature.ad
         )
         Spacer(Modifier.height(12.dp))
 
-        activities.take(3).forEachIndexed { idx, act ->
-            if (idx > 0) {
-                Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.lineSoft))
-                Spacer(Modifier.height(10.dp))
-            }
+        activities.take(3).forEach { act ->
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp),
                 verticalAlignment = Alignment.Top,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .padding(top = 6.dp)
-                        .clip(CircleShape)
-                        .background(VColors.violet.copy(alpha = 0.3f)),
+                Text(
+                    text = "·",
+                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                    color = VColors.ink3.copy(alpha = 0.4f),
+                    modifier = Modifier.padding(top = 1.dp),
                 )
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
@@ -803,29 +726,28 @@ private fun ActivityCard(activities: List<com.littlebridge.enrollplus.feature.ad
                     Text(
                         text = act.time,
                         style = VTypography.caption,
-                        color = VColors.ink3,
+                        color = VColors.ink3.copy(alpha = 0.6f),
                     )
                 }
-            }
-            if (idx < minOf(activities.size, 3) - 1) {
-                Spacer(Modifier.height(10.dp))
             }
         }
     }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Pulse Card — school health score, clean and simple
+// Pulse Sentence — status in words, not gauges
+// "Your school is healthy." with score as a small badge.
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun PulseCard(pulse: OverviewSchoolPulse, onClick: () -> Unit) {
-    val animatedScore by animateFloatAsState(
-        targetValue = pulse.score / 100f,
-        animationSpec = tween(600, easing = LinearEasing),
-        label = "pulse-score",
-    )
-
+private fun PulseSentence(pulse: OverviewSchoolPulse, onClick: () -> Unit) {
+    val statusText = when (pulse.status.uppercase()) {
+        "EXCELLENT" -> "Your school is excelling."
+        "HEALTHY" -> "Your school is healthy."
+        "WATCH" -> "Your school needs attention."
+        "CRITICAL" -> "Your school needs urgent attention."
+        else -> pulse.message.takeIf { it.isNotBlank() } ?: "School status unavailable."
+    }
     val statusColor = when (pulse.status.uppercase()) {
         "EXCELLENT" -> VColors.success
         "HEALTHY" -> VColors.mint
@@ -834,79 +756,27 @@ private fun PulseCard(pulse: OverviewSchoolPulse, onClick: () -> Unit) {
         else -> VColors.ink3
     }
 
-    CreamCard(onClick = onClick) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "School Pulse",
-                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                    color = VColors.ink,
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = pulse.message.takeIf { it.isNotBlank() } ?: pulse.status,
-                    style = VTypography.caption,
-                    color = VColors.ink3,
-                )
-            }
-            Text(
-                text = "${pulse.score}",
-                style = VTypography.h2.copy(fontSize = androidx.compose.ui.unit.TextUnit(32f, androidx.compose.ui.unit.TextUnitType.Sp)),
-                color = statusColor,
-            )
-        }
-        Spacer(Modifier.height(12.dp))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(6.dp)
-                .clip(VShapes.full)
-                .background(VColors.lineSoft),
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(animatedScore)
-                    .height(6.dp)
-                    .clip(VShapes.full)
-                    .background(statusColor),
-            )
-        }
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Shared UI primitives — matching onboarding's CreamCard, MiniBadge
-// ─────────────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun CreamCard(
-    modifier: Modifier = Modifier,
-    onClick: (() -> Unit)? = null,
-    content: @Composable () -> Unit,
-) {
-    val base = modifier
-        .fillMaxWidth()
-        .background(VColors.surfaceCard, VShapes.lg)
-        .border(1.dp, VColors.line, VShapes.lg)
-
-    val clickable = if (onClick != null) base.clickable { onClick() } else base
-
-    Column(
-        modifier = clickable.padding(16.dp),
-    ) { content() }
-}
-
-@Composable
-private fun MiniBadge(text: String, color: Color, bg: Color) {
-    Text(
-        text = text,
-        style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
-        color = color,
+    Row(
         modifier = Modifier
-            .background(bg, VShapes.full)
-            .padding(horizontal = 8.dp, vertical = 3.dp),
-    )
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            text = statusText,
+            style = VTypography.h3.copy(fontSize = TextUnit(20f, TextUnitType.Sp)),
+            color = VColors.ink,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            text = "${pulse.score}",
+            style = VTypography.bodySmall.copy(fontWeight = FontWeight.ExtraBold),
+            color = statusColor,
+            modifier = Modifier
+                .background(statusColor.copy(alpha = 0.1f), VShapes.full)
+                .padding(horizontal = 10.dp, vertical = 4.dp),
+        )
+    }
 }
