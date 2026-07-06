@@ -4,4 +4,4 @@ import androidx.compose.runtime.Composable
 
 /** Web — no-op (browser controls its own chrome). */
 @Composable
-actual fun VStatusBarAdapter(isDark: Boolean) { }
+fun VStatusBarAdapter(isDark: Boolean) { }
