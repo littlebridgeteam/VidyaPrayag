@@ -20,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -39,14 +40,16 @@ fun SplashScreen(
 ) {
     val splashNameAlpha = remember { Animatable(0f) }
     val accentWidth = remember { Animatable(0f) }
+    val accentAlpha = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
         launch {
-            splashNameAlpha.animateTo(1f, tween(VMotion.durSlow, easing = VMotion.ease))
+            splashNameAlpha.animateTo(1f, tween(600, easing = VMotion.ease))
         }
         launch {
             delay(400)
-            accentWidth.animateTo(1f, tween(VMotion.durSlower, easing = VMotion.ease))
+            accentWidth.animateTo(1f, tween(800, easing = VMotion.ease))
+            accentAlpha.animateTo(1f, tween(800, easing = VMotion.ease))
         }
         delay(2000)
         onTimeout()
@@ -72,13 +75,15 @@ fun SplashScreen(
                 color = VColors.ink,
                 modifier = Modifier
                     .alpha(splashNameAlpha.value)
-                    .scale(0.96f + 0.04f * splashNameAlpha.value),
+                    .scale(0.96f + 0.04f * splashNameAlpha.value)
+                    .blur((4f * (1f - splashNameAlpha.value)).dp),
             )
             Spacer(Modifier.height(14.dp))
             Box(
                 modifier = Modifier
                     .height(2.dp)
                     .width(48.dp * accentWidth.value)
+                    .alpha(accentAlpha.value)
                     .background(VColors.violet, RoundedCornerShape(2.dp)),
             )
         }

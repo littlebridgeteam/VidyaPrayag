@@ -1446,47 +1446,26 @@ body{
         <div class="ph-greeting-sub">5 classes today · 7 pending tasks · 90 students</div>
       </div>
 
-      <!-- Featured Card — Now Teaching -->
-      <div class="ph-featured" data-nav="tab:Classes">
-        <div class="ph-featured-top">
-          <div class="ph-featured-label">Now Teaching</div>
-          <div class="ph-featured-class">8-A · Mathematics</div>
-          <div class="ph-featured-sub">Room 312 · 28 students present</div>
-          <div class="ph-featured-meta">
-            <div class="ph-featured-meta-item">
-              <div class="ph-featured-meta-num">28</div>
-              <div class="ph-featured-meta-label">Present</div>
-            </div>
-            <div class="ph-featured-meta-item">
-              <div class="ph-featured-meta-num">2</div>
-              <div class="ph-featured-meta-label">Absent</div>
-            </div>
-            <div class="ph-featured-meta-item">
-              <div class="ph-featured-meta-num">7</div>
-              <div class="ph-featured-meta-label">Ungraded</div>
-            </div>
+      <!-- Now Teaching — minimal card -->
+      <div class="ph-now" data-nav="tab:Classes">
+        <div class="ph-now-row">
+          <div class="ph-now-left">
+            <div class="ph-now-status">Now Teaching</div>
+            <div class="ph-now-class">8-A · Mathematics</div>
+            <div class="ph-now-meta">Room 312 · 28 present · 2 absent</div>
           </div>
-        </div>
-        <div class="ph-featured-bottom">
-          <div class="ph-featured-time">9:00 <span class="muted">— 9:45</span></div>
-          <div class="ph-featured-cta">Take attendance <svg><use href="#icon-arrow-right"/></svg></div>
+          <div class="ph-now-right">
+            <div class="ph-now-time">9:00 — 9:45</div>
+            <div class="ph-now-cta">Take attendance <svg><use href="#icon-arrow-right"/></svg></div>
+          </div>
         </div>
       </div>
 
-      <!-- Stat Pills — compact overview -->
-      <div class="ph-stat-pills">
-        <div class="ph-stat-pill">
-          <div class="ph-stat-pill-num">5</div>
-          <div class="ph-stat-pill-label">Classes</div>
-        </div>
-        <div class="ph-stat-pill">
-          <div class="ph-stat-pill-num ph-stat-pill-num--coral">7</div>
-          <div class="ph-stat-pill-label">Pending</div>
-        </div>
-        <div class="ph-stat-pill">
-          <div class="ph-stat-pill-num ph-stat-pill-num--gold">12</div>
-          <div class="ph-stat-pill-label">Ungraded</div>
-        </div>
+      <!-- Day Summary — single line, no boxes -->
+      <div class="ph-summary">
+        <div class="ph-summary-item"><span class="ph-summary-num">5</span>classes</div>
+        <div class="ph-summary-item"><span class="ph-summary-num ph-summary-num--coral">7</span>pending</div>
+        <div class="ph-summary-item"><span class="ph-summary-num ph-summary-num--gold">12</span>ungraded</div>
       </div>
 
       <!-- Today's Schedule — clean list rows -->
@@ -1608,7 +1587,7 @@ body{
         </div>
       </div>
 
-      <!-- My Classes — sophisticated cards with accent bars -->
+      <!-- My Classes — clean cards, typography-driven -->
       <div class="ph-section">
         <div class="ph-section-head">
           <div class="ph-section-title">My Classes</div>
@@ -1616,45 +1595,37 @@ body{
             <svg><use href="#icon-arrow-right"/></svg>
           </div>
         </div>
-        <div class="ph-class ph-class--violet" data-nav="tab:Classes">
+        <div class="ph-class" data-nav="tab:Classes">
           <div class="ph-class-top">
             <div class="ph-class-name">Class 7-B</div>
             <div class="ph-class-students">32 students</div>
           </div>
           <div class="ph-class-sub">Mathematics</div>
           <div class="ph-class-bottom">
-            <span class="ph-class-pill ph-class-pill--att">
-              <svg><use href="#icon-alert"/></svg>3 pending
-            </span>
+            <span class="ph-class-pill ph-class-pill--att">3 pending</span>
             <span class="ph-class-pill ph-class-pill--hw">5 ungraded</span>
           </div>
         </div>
-        <div class="ph-class ph-class--coral" data-nav="tab:Classes">
+        <div class="ph-class" data-nav="tab:Classes">
           <div class="ph-class-top">
             <div class="ph-class-name">Class 8-A</div>
             <div class="ph-class-students">28 students</div>
           </div>
           <div class="ph-class-sub">Mathematics</div>
           <div class="ph-class-bottom">
-            <span class="ph-class-pill ph-class-pill--att">
-              <svg><use href="#icon-alert"/></svg>1 pending
-            </span>
+            <span class="ph-class-pill ph-class-pill--att">1 pending</span>
             <span class="ph-class-pill ph-class-pill--hw">7 ungraded</span>
           </div>
         </div>
-        <div class="ph-class ph-class--sky" data-nav="tab:Classes">
+        <div class="ph-class" data-nav="tab:Classes">
           <div class="ph-class-top">
             <div class="ph-class-name">Class 9-C</div>
             <div class="ph-class-students">30 students</div>
           </div>
           <div class="ph-class-sub">Algebra</div>
           <div class="ph-class-bottom">
-            <span class="ph-class-pill ph-class-pill--att">
-              <svg><use href="#icon-alert"/></svg>2 pending
-            </span>
-            <span class="ph-class-pill ph-class-pill--ok">
-              <svg><use href="#icon-check"/></svg>All graded
-            </span>
+            <span class="ph-class-pill ph-class-pill--att">2 pending</span>
+            <span class="ph-class-pill ph-class-pill--ok">All graded</span>
           </div>
         </div>
       </div>
