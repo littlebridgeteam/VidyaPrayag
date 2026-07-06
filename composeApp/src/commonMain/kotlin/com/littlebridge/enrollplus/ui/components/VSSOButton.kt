@@ -42,7 +42,7 @@ fun VSSOButton(
             .background(VColors.surfaceCard, VShapes.md)
             .border(1.5.dp, VColors.line, VShapes.md)
             .clickable(enabled = enabled) { onClick() }
-            .padding(horizontal = 24.dp, vertical = 14.dp),
+            .padding(horizontal = 16.dp, vertical = 13.dp),
     ) {
         Icon(
             imageVector = icon,
@@ -50,7 +50,7 @@ fun VSSOButton(
             tint = VColors.ink,
             modifier = Modifier.size(20.dp),
         )
-        Spacer(Modifier.width(10.dp))
+        Spacer(Modifier.width(8.dp))
         Text(
             text = text,
             style = VTypography.body.copy(fontWeight = FontWeight.Medium),

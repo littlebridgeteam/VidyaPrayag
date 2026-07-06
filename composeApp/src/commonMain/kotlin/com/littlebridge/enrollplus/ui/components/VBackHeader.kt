@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
@@ -35,12 +36,12 @@ fun VBackHeader(
         modifier = modifier
             .fillMaxWidth()
             .height(48.dp)
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 16.dp, vertical = 4.dp),
     ) {
         Box(
             modifier = Modifier
                 .size(40.dp)
-                .background(VColors.surfaceTint, VShapes.full)
+                .background(Color.Transparent, VShapes.full)
                 .clickable { onBack() },
             contentAlignment = Alignment.Center,
         ) {

@@ -7,7 +7,9 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
@@ -42,7 +44,7 @@ fun VOTPInput(
 
     Row(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         repeat(length) { index ->
@@ -53,17 +55,18 @@ fun VOTPInput(
                 isFilled -> VColors.violet
                 else -> VColors.line
             }
+            val bgColor = if (isFilled && !isError) VColors.violetSoft else VColors.surfaceCard
             Box(
                 modifier = Modifier
-                    .size(44.dp, 48.dp)
-                    .background(VColors.surfaceCard, VShapes.sm)
-                    .border(1.5.dp, borderColor, VShapes.sm),
+                    .size(48.dp, 56.dp)
+                    .background(bgColor, VShapes.md)
+                    .border(1.5.dp, borderColor, VShapes.md),
                 contentAlignment = Alignment.Center,
             ) {
                 androidx.compose.material3.Text(
                     text = char,
                     style = VTypography.otpBox,
-                    color = VColors.ink,
+                    color = if (isFilled) VColors.violetInk else VColors.ink,
                     textAlign = TextAlign.Center,
                 )
             }

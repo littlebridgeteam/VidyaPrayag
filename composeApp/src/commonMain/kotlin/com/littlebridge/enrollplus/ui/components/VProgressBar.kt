@@ -20,18 +20,18 @@ import com.littlebridge.enrollplus.ui.tokens.VColors
 fun VProgressBar(
     progress: Float,
     modifier: Modifier = Modifier,
-    barHeight: Int = 4,
+    barHeight: Int = 3,
 ) {
     val animatedProgress by animateFloatAsState(
         targetValue = progress.coerceIn(0f, 1f),
-        animationSpec = tween(300),
+        animationSpec = tween(400),
         label = "progress",
     )
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(barHeight.dp)
-            .background(VColors.lineSoft, RoundedCornerShape(50)),
+            .background(VColors.line, RoundedCornerShape(50)),
     ) {
         Box(
             modifier = Modifier
@@ -47,15 +47,15 @@ fun VProgressBarSegments(
     total: Int,
     current: Int,
     modifier: Modifier = Modifier,
-    barHeight: Int = 4,
+    barHeight: Int = 2,
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp),
+        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp),
     ) {
         repeat(total) { index ->
-            val isCompleted = index < current
-            val color = if (isCompleted) VColors.violet else VColors.lineSoft
+            val isCompleted = index <= current
+            val color = if (isCompleted) VColors.violet else VColors.line
             Box(
                 modifier = Modifier
                     .weight(1f)

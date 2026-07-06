@@ -29,11 +29,11 @@ fun VDividerWithText(
 ) {
     androidx.compose.foundation.layout.Row(
         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().padding(vertical = 4.dp),
     ) {
         HorizontalDivider(
             modifier = Modifier.weight(1f),
-            color = VColors.line,
+            color = VColors.lineSoft,
         )
         androidx.compose.material3.Text(
             text = text,
@@ -43,7 +43,7 @@ fun VDividerWithText(
         )
         HorizontalDivider(
             modifier = Modifier.weight(1f),
-            color = VColors.line,
+            color = VColors.lineSoft,
         )
     }
 }

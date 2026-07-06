@@ -114,7 +114,7 @@ fun ParentSignupScreen(
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 32.dp)
-                .padding(top = 16.dp, bottom = 48.dp),
+                .padding(top = 24.dp, bottom = 48.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
             // Header

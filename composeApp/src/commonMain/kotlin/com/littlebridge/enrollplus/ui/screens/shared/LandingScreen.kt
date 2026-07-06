@@ -114,12 +114,13 @@ fun LandingScreen(
             visible = hintVisible,
             enter = fadeIn(),
             exit = fadeOut(),
-            modifier = Modifier.align(Alignment.CenterHorizontally),
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .padding(bottom = 48.dp),
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier.padding(bottom = 48.dp),
             ) {
                 Text(
                     text = "Swipe",
@@ -218,6 +219,7 @@ private fun LandingSlideContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .padding(top = 24.dp)
             .padding(horizontal = 48.dp),
     ) {
         // Top bar — wordmark + slide counter

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.shadow
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -57,6 +58,15 @@ fun VButton(
         VButtonVariant.Destructive -> Triple(VColors.error, VColors.white, null)
     }
 
+    val shadowModifier = if (variant == VButtonVariant.Primary && enabled) {
+        Modifier.shadow(
+            elevation = 4.dp,
+            shape = VShapes.md,
+            ambientColor = VColors.violet.copy(alpha = 0.35f),
+            spotColor = VColors.violet.copy(alpha = 0.35f),
+        )
+    } else Modifier
+
     val alpha = if (enabled) 1f else 0.35f
 
     Box(
@@ -64,6 +74,7 @@ fun VButton(
             .fillMaxWidth()
             .heightIn(min = 52.dp)
             .scale(scale)
+            .then(shadowModifier)
             .background(bgColor, VShapes.md)
             .then(
                 if (borderColor != null) Modifier.border(1.5.dp, borderColor, VShapes.md)
@@ -88,21 +99,21 @@ fun VButton(
                     color = fgColor,
                 )
             } else {
-                if (icon != null) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = fgColor,
-                        modifier = Modifier.size(20.dp),
-                    )
-                    Spacer(Modifier.width(8.dp))
-                }
                 Text(
                     text = text,
                     style = VTypography.body.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold),
                     color = fgColor.copy(alpha = alpha),
                     textAlign = TextAlign.Center,
                 )
+                if (icon != null) {
+                    Spacer(Modifier.width(8.dp))
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = fgColor,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
             }
         }
     }

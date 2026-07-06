@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -22,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
@@ -51,6 +53,9 @@ fun VInput(
         isFocused -> VColors.violet
         else -> VColors.line
     }
+    val shadowModifier = if (isFocused && !isError) {
+        Modifier.shadow(0.dp, VShapes.md, ambientColor = VColors.violetSoft, spotColor = VColors.violetSoft)
+    } else Modifier
 
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
@@ -63,6 +68,7 @@ fun VInput(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 48.dp)
+                .then(shadowModifier)
                 .background(VColors.surfaceCard, VShapes.md)
                 .border(1.5.dp, borderColor, VShapes.md),
         ) {
@@ -82,7 +88,7 @@ fun VInput(
                     Box(
                         modifier = Modifier
                             .width(1.5.dp)
-                            .padding(vertical = 0.dp)
+                            .fillMaxHeight()
                             .background(VColors.line),
                     )
                 }
