@@ -13,9 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Event
@@ -86,7 +84,7 @@ fun OvError(msg: String) { Box(Modifier.fillMaxWidth().padding(24.dp), contentAl
 @Composable
 fun NotificationsOverlay(viewModel: ParentViewModel) {
     val state by viewModel.notificationsState.collectAsState()
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+    Column(Modifier.fillMaxWidth()) {
         when (val s = state) {
             is UiState.Loading -> OvLoading()
             is UiState.Error -> OvError(s.message)
@@ -122,7 +120,7 @@ private fun NotificationItem(notif: ParentNotificationDto, onClick: () -> Unit) 
 @Composable
 fun HealthOverlay(viewModel: ParentViewModel, childId: String) {
     val state by viewModel.healthState.collectAsState()
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+    Column(Modifier.fillMaxWidth()) {
         when (val s = state) {
             is UiState.Loading -> OvLoading()
             is UiState.Error -> OvError(s.message)
@@ -193,7 +191,7 @@ private fun IncidentItem(inc: HealthIncidentDto) {
 fun TransportOverlay(viewModel: ParentViewModel, childId: String) {
     val liveState by viewModel.transportLiveState.collectAsState()
     val routeState by viewModel.transportRouteState.collectAsState()
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+    Column(Modifier.fillMaxWidth()) {
         when (val s = liveState) {
             is UiState.Loading -> OvLoading()
             is UiState.Error -> OvError(s.message)
@@ -231,7 +229,7 @@ fun TransportOverlay(viewModel: ParentViewModel, childId: String) {
 @Composable
 fun DigitalIdOverlay(viewModel: ParentViewModel, childId: String) {
     val state by viewModel.idCardState.collectAsState()
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+    Column(Modifier.fillMaxWidth()) {
         when (val s = state) {
             is UiState.Loading -> OvLoading()
             is UiState.Error -> OvError(s.message)
@@ -267,7 +265,7 @@ private fun IdCardContent(card: IdCardDto) {
 @Composable
 fun EventsOverlay(viewModel: ParentViewModel) {
     val state by viewModel.eventsState.collectAsState()
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+    Column(Modifier.fillMaxWidth()) {
         when (val s = state) {
             is UiState.Loading -> OvLoading()
             is UiState.Error -> OvError(s.message)
@@ -301,7 +299,7 @@ private fun EventItem(ev: ParentEventDto) {
 @Composable
 fun ScholarshipsOverlay(viewModel: ParentViewModel) {
     val state by viewModel.scholarshipsState.collectAsState()
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+    Column(Modifier.fillMaxWidth()) {
         when (val s = state) {
             is UiState.Loading -> OvLoading()
             is UiState.Error -> OvError(s.message)
@@ -328,7 +326,7 @@ fun ScholarshipsOverlay(viewModel: ParentViewModel) {
 fun LeaveOverlay(viewModel: ParentViewModel, childId: String) {
     val state by viewModel.leaveState.collectAsState()
     var showForm by rememberSaveable { mutableStateOf(false) }
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+    Column(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.End) {
             Text(if (showForm) "Cancel" else "Apply for Leave", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VColors.violet,
                 modifier = Modifier.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { showForm = !showForm })
@@ -380,7 +378,7 @@ private fun LeaveForm(viewModel: ParentViewModel, childId: String) {
 @Composable
 fun PulseOverlay(viewModel: ParentViewModel, childId: String) {
     val state by viewModel.pulseState.collectAsState()
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+    Column(Modifier.fillMaxWidth()) {
         when (val s = state) {
             is UiState.Loading -> OvLoading()
             is UiState.Error -> OvError(s.message)
@@ -423,7 +421,7 @@ fun LinkChildOverlay(viewModel: ParentViewModel, onLinked: () -> Unit) {
     var parentPhone by rememberSaveable { mutableStateOf("") }
     var resultMsg by remember { mutableStateOf<String?>(null) }
     var isSuccess by remember { mutableStateOf(false) }
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+    Column(Modifier.fillMaxWidth()) {
         OvCard {
             Text("School ID", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = VColors.ink2)
             Box(Modifier.fillMaxWidth().background(VColors.surfaceTint, VShapes.sm).padding(12.dp)) { Text(schoolId.ifBlank { "Enter school ID" }, fontSize = 14.sp, color = if (schoolId.isBlank()) VColors.ink3 else VColors.ink) }
@@ -461,7 +459,7 @@ fun LinkChildOverlay(viewModel: ParentViewModel, onLinked: () -> Unit) {
 fun DiscoveryOverlay(viewModel: ParentViewModel) {
     var query by rememberSaveable { mutableStateOf("") }
     val state by viewModel.schoolSearchState.collectAsState()
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+    Column(Modifier.fillMaxWidth()) {
         OvCard {
             Text("Search Schools", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = VColors.ink2)
             Box(Modifier.fillMaxWidth().background(VColors.surfaceTint, VShapes.sm).padding(12.dp)) { Text(query.ifBlank { "Enter school name..." }, fontSize = 14.sp, color = if (query.isBlank()) VColors.ink3 else VColors.ink) }
@@ -495,7 +493,7 @@ fun DiscoveryOverlay(viewModel: ParentViewModel) {
 @Composable
 fun CalendarOverlay(viewModel: ParentViewModel) {
     val timetableState by viewModel.timetableState.collectAsState()
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+    Column(Modifier.fillMaxWidth()) {
         OvSectionTitle("Weekly Schedule")
         when (val s = timetableState) {
             is UiState.Loading -> OvLoading()
@@ -521,7 +519,7 @@ fun CalendarOverlay(viewModel: ParentViewModel) {
 // ── Account Settings Overlay ──
 @Composable
 fun AccountSettingsOverlay() {
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+    Column(Modifier.fillMaxWidth()) {
         OvSectionTitle("Preferences")
         OvCard { OvStatRow("Language", "English"); OvStatRow("Notifications", "Enabled"); OvStatRow("Theme", "Light") }
         OvSectionTitle("About")
@@ -535,7 +533,7 @@ fun LibraryOverlay(viewModel: ParentViewModel, childId: String) {
     var query by rememberSaveable { mutableStateOf("") }
     val searchState by viewModel.librarySearchState.collectAsState()
     val issuedState by viewModel.libraryIssuedState.collectAsState()
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+    Column(Modifier.fillMaxWidth()) {
         OvSectionTitle("Search Books")
         OvCard {
             Box(Modifier.fillMaxWidth().background(VColors.surfaceTint, VShapes.sm).padding(12.dp)) {
@@ -609,7 +607,7 @@ fun TutorChatOverlay(viewModel: ParentViewModel, childId: String) {
     val doubtState by viewModel.tutorDoubtState.collectAsState()
     var selectedSubject by rememberSaveable { mutableStateOf("") }
     var question by rememberSaveable { mutableStateOf("") }
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+    Column(Modifier.fillMaxWidth()) {
         OvSectionTitle("Select Subject")
         when (val s = subjectsState) {
             is UiState.Loading -> OvLoading()
@@ -657,7 +655,7 @@ fun TutorProgressOverlay(viewModel: ParentViewModel, childId: String) {
     val subjectsState by viewModel.tutorSubjectsState.collectAsState()
     val progressState by viewModel.tutorProgressState.collectAsState()
     var selectedSubject by rememberSaveable { mutableStateOf("") }
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+    Column(Modifier.fillMaxWidth()) {
         OvSectionTitle("Select Subject")
         when (val s = subjectsState) {
             is UiState.Loading -> OvLoading()
@@ -708,7 +706,7 @@ fun TutorProgressOverlay(viewModel: ParentViewModel, childId: String) {
 @Composable
 fun SchoolDetailOverlay(viewModel: ParentViewModel) {
     val state by viewModel.schoolDiscoveryState.collectAsState()
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+    Column(Modifier.fillMaxWidth()) {
         OvSectionTitle("Discover Schools")
         when (val s = state) {
             is UiState.Loading -> OvLoading()
