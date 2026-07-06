@@ -128,7 +128,7 @@ fun App(
             val isAuthed = !authState.token.isNullOrBlank()
             val isTeacher = authState.role?.equals("teacher", ignoreCase = true) == true
             val isParent = authState.role?.equals("parent", ignoreCase = true) == true
-            val isAdmin = authState.role?.equals("admin", ignoreCase = true) == true
+            val isAdmin = authState.role?.let { it.equals("admin", ignoreCase = true) || it.equals("school_admin", ignoreCase = true) } == true
 
             // Parse deep link once when it arrives
             val deepLinkTarget = remember(deepLink) {
