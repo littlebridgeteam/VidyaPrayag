@@ -4,8 +4,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -53,16 +51,7 @@ fun AuthNavGraph(
     AnimatedContent(
         targetState = currentRoute,
         transitionSpec = {
-            val forward = targetState.ordinal > initialState.ordinal
-            if (initialState == AuthRoute.Splash) {
-                fadeIn(tween(VMotion.durDefault)) togetherWith fadeOut(tween(VMotion.durDefault))
-            } else if (forward) {
-                slideInHorizontally(tween(VMotion.durDefault)) { it } togetherWith
-                    slideOutHorizontally(tween(VMotion.durDefault)) { -it / 3 }
-            } else {
-                slideInHorizontally(tween(VMotion.durDefault)) { -it / 3 } togetherWith
-                    slideOutHorizontally(tween(VMotion.durDefault)) { it }
-            }
+            fadeIn(tween(VMotion.durDefault)) togetherWith fadeOut(tween(VMotion.durDefault))
         },
         label = "authNav",
     ) { route ->
