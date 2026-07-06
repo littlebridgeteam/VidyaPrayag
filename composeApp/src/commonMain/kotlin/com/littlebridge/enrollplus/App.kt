@@ -24,6 +24,7 @@ import coil3.request.crossfade
 import com.littlebridge.enrollplus.feature.auth.presentation.AuthViewModel
 import com.littlebridge.enrollplus.presentation.MainViewModel
 import com.littlebridge.enrollplus.ui.navigation.AuthNavGraph
+import com.littlebridge.enrollplus.ui.screens.teacher.TeacherPortalScreen
 import com.littlebridge.enrollplus.util.Config
 import io.ktor.client.*
 import org.koin.compose.KoinContext
@@ -114,10 +115,19 @@ fun App(
                         .padding(horizontal = 8.dp, vertical = 2.dp)
                 )
             }
-            AuthNavGraph(
-                authViewModel = authViewModel,
-                onAuthSuccess = { /* Portal screens will be built in next phase */ },
-            )
+            val isAuthed = !authState.token.isNullOrBlank()
+            val isTeacher = authState.role?.equals("teacher", ignoreCase = true) == true
+
+            if (isAuthed && isTeacher) {
+                TeacherPortalScreen(
+                    onLogout = { viewModel.logout() },
+                )
+            } else {
+                AuthNavGraph(
+                    authViewModel = authViewModel,
+                    onAuthSuccess = { },
+                )
+            }
         }
     }
 }
