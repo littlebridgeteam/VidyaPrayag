@@ -604,10 +604,7 @@ fun Route.authRouting() {
                     LoginThrottle.recordFailure(clientIp, id)
                     call.fail("Invalid email or password", HttpStatusCode.Unauthorized, "INVALID_CREDENTIALS")
                 } else {
-                    // Phone path can't proceed without a user + OTP; keep the
-                    // OTP-flow wording (an unknown phone reveals nothing extra
-                    // because /send-otp must succeed first anyway).
-                    call.fail("No active OTP. Call /send-otp first.", HttpStatusCode.NotFound, "OTP_NOT_FOUND")
+                    call.fail("No account found with this phone number. Please sign up first.", HttpStatusCode.NotFound, "USER_NOT_FOUND")
                 }
                 return@post
             }

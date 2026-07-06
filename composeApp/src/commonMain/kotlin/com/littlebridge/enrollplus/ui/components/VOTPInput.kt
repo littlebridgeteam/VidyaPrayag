@@ -10,6 +10,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
@@ -47,8 +48,8 @@ fun VOTPInput(
     }
 
     Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         repeat(length) { index ->
@@ -70,7 +71,8 @@ fun VOTPInput(
             )
             Box(
                 modifier = Modifier
-                    .size(48.dp, 56.dp)
+                    .weight(1f)
+                    .height(56.dp)
                     .background(bgColor, VShapes.md)
                     .border(1.5.dp, borderColor, VShapes.md),
                 contentAlignment = Alignment.Center,
