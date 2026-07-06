@@ -8,11 +8,9 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -46,58 +44,45 @@ fun VBackHeader(
         label = "backPressScale",
     )
 
-    Column(
+    Row(
         modifier = modifier
             .fillMaxWidth()
-            .background(VColors.white),
+            .padding(horizontal = 24.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 8.dp),
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .scale(pressScale)
-                    .background(VColors.surfaceTint, VShapes.sm)
-                    .clickable(
-                        interactionSource = interactionSource,
-                        indication = null,
-                    ) { onBack() },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = VColors.ink,
-                    modifier = Modifier.size(18.dp),
-                )
-            }
-            if (title != null) {
-                Text(
-                    text = title,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = VColors.ink,
-                    letterSpacing = (-0.3).sp,
-                    modifier = Modifier.weight(1f),
-                )
-            } else {
-                Spacer(Modifier.weight(1f))
-            }
-            if (trailing != null) {
-                trailing()
-            }
-        }
-        // Bottom border line
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(VColors.lineSoft),
-        )
+                .size(32.dp)
+                .scale(pressScale)
+                .background(VColors.surfaceTint, VShapes.sm)
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                ) { onBack() },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Back",
+                tint = VColors.ink,
+                modifier = Modifier.size(18.dp),
+            )
+        }
+        if (title != null) {
+            Text(
+                text = title,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = VColors.ink,
+                letterSpacing = (-0.3).sp,
+                modifier = Modifier.weight(1f),
+            )
+        } else {
+            Spacer(Modifier.weight(1f))
+        }
+        if (trailing != null) {
+            trailing()
+        }
     }
 }
