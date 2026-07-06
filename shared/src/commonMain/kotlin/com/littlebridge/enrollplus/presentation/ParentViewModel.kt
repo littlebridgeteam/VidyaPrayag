@@ -13,10 +13,20 @@ import com.littlebridge.enrollplus.feature.health.domain.model.ParentHealthRespo
 import com.littlebridge.enrollplus.feature.health.domain.repository.HealthRepository
 import com.littlebridge.enrollplus.feature.idcard.domain.model.IdCardDto
 import com.littlebridge.enrollplus.feature.idcard.domain.repository.IdCardRepository
+import com.littlebridge.enrollplus.feature.library.domain.model.LibraryBookDto
+import com.littlebridge.enrollplus.feature.library.domain.model.LibraryIssueDto
+import com.littlebridge.enrollplus.feature.library.domain.repository.LibraryRepository
 import com.littlebridge.enrollplus.feature.parent.domain.repository.ParentRepository
+import com.littlebridge.enrollplus.feature.schools.data.remote.KtorSchoolApi
+import com.littlebridge.enrollplus.feature.schools.data.remote.DiscoveredSchoolDto
 import com.littlebridge.enrollplus.feature.transport.domain.model.RouteProgress
 import com.littlebridge.enrollplus.feature.transport.domain.model.TransportRoute
 import com.littlebridge.enrollplus.feature.transport.domain.repository.TransportRepository
+import com.littlebridge.enrollplus.feature.tutor.domain.model.DoubtRequest
+import com.littlebridge.enrollplus.feature.tutor.domain.model.DoubtResponse
+import com.littlebridge.enrollplus.feature.tutor.domain.model.ProgressCardResponse
+import com.littlebridge.enrollplus.feature.tutor.domain.model.SubjectItemDto
+import com.littlebridge.enrollplus.feature.tutor.domain.repository.TutorRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,6 +45,9 @@ class ParentViewModel(
     private val transportRepository: TransportRepository,
     private val idCardRepository: IdCardRepository,
     private val eventRegistrationApi: EventRegistrationRepository,
+    private val libraryRepository: LibraryRepository,
+    private val tutorRepository: TutorRepository,
+    private val schoolApi: KtorSchoolApi,
 ) : ViewModel() {
 
     val selectedChildId: StateFlow<String?> = selectedChildHolder.selectedChildId
@@ -140,6 +153,24 @@ class ParentViewModel(
     // ── Events ──
     private val _eventsState = MutableStateFlow<UiState<List<ParentEventDto>>>(UiState.Loading)
     val eventsState: StateFlow<UiState<List<ParentEventDto>>> = _eventsState.asStateFlow()
+
+    // ── Library ──
+    private val _librarySearchState = MutableStateFlow<UiState<List<LibraryBookDto>>>(UiState.Loading)
+    val librarySearchState: StateFlow<UiState<List<LibraryBookDto>>> = _librarySearchState.asStateFlow()
+    private val _libraryIssuedState = MutableStateFlow<UiState<List<LibraryIssueDto>>>(UiState.Loading)
+    val libraryIssuedState: StateFlow<UiState<List<LibraryIssueDto>>> = _libraryIssuedState.asStateFlow()
+
+    // ── Tutor ──
+    private val _tutorSubjectsState = MutableStateFlow<UiState<List<SubjectItemDto>>>(UiState.Loading)
+    val tutorSubjectsState: StateFlow<UiState<List<SubjectItemDto>>> = _tutorSubjectsState.asStateFlow()
+    private val _tutorDoubtState = MutableStateFlow<UiState<DoubtResponse>>(UiState.Loading)
+    val tutorDoubtState: StateFlow<UiState<DoubtResponse>> = _tutorDoubtState.asStateFlow()
+    private val _tutorProgressState = MutableStateFlow<UiState<ProgressCardResponse>>(UiState.Loading)
+    val tutorProgressState: StateFlow<UiState<ProgressCardResponse>> = _tutorProgressState.asStateFlow()
+
+    // ── School Discovery ──
+    private val _schoolDiscoveryState = MutableStateFlow<UiState<List<DiscoveredSchoolDto>>>(UiState.Loading)
+    val schoolDiscoveryState: StateFlow<UiState<List<DiscoveredSchoolDto>>> = _schoolDiscoveryState.asStateFlow()
 
     private var token: String? = null
 
@@ -453,6 +484,72 @@ class ParentViewModel(
             _eventsState.value = UiState.Loading
             val result = eventRegistrationApi.listParentEvents(requireToken())
             _eventsState.value = if (result is NetworkResult.Success) result.data.data?.let { UiState.Success(it.events) } ?: UiState.Error("No data") else result.toUiState().let { it as UiState<List<ParentEventDto>> }
+        }
+    }
+
+    // ── Library ──
+
+    fun searchLibraryBooks(query: String) {
+        viewModelScope.launch {
+            _librarySearchState.value = UiState.Loading
+            val result = libraryRepository.parentSearchBooks(requireToken(), query, page = 1, limit = 20)
+            _librarySearchState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.toUiState().let { it as UiState<List<LibraryBookDto>> }
+        }
+    }
+
+    fun loadLibraryIssued(childId: String) {
+        viewModelScope.launch {
+            _libraryIssuedState.value = UiState.Loading
+            val result = libraryRepository.parentGetIssuedForChild(requireToken(), childId)
+            _libraryIssuedState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data) else result.toUiState().let { it as UiState<List<LibraryIssueDto>> }
+        }
+    }
+
+    // ── Tutor ──
+
+    fun loadTutorSubjects(childId: String) {
+        viewModelScope.launch {
+            _tutorSubjectsState.value = UiState.Loading
+            val result = tutorRepository.getSubjects(requireToken(), childId)
+            _tutorSubjectsState.value = when (result) {
+                is NetworkResult.Success -> UiState.Success(result.data.data ?: emptyList())
+                is NetworkResult.Error -> UiState.Error(result.message)
+                is NetworkResult.ConnectionError -> UiState.Error("No internet connection")
+            }
+        }
+    }
+
+    fun askDoubt(childId: String, subjectId: String, question: String) {
+        viewModelScope.launch {
+            _tutorDoubtState.value = UiState.Loading
+            val result = tutorRepository.askDoubt(requireToken(), DoubtRequest(childId = childId, subjectId = subjectId, question = question))
+            _tutorDoubtState.value = when (result) {
+                is NetworkResult.Success -> UiState.Success(result.data)
+                is NetworkResult.Error -> UiState.Error(result.message)
+                is NetworkResult.ConnectionError -> UiState.Error("No internet connection")
+            }
+        }
+    }
+
+    fun loadTutorProgress(childId: String, subjectId: String) {
+        viewModelScope.launch {
+            _tutorProgressState.value = UiState.Loading
+            val result = tutorRepository.getProgressCard(requireToken(), childId, subjectId)
+            _tutorProgressState.value = when (result) {
+                is NetworkResult.Success -> UiState.Success(result.data)
+                is NetworkResult.Error -> UiState.Error(result.message)
+                is NetworkResult.ConnectionError -> UiState.Error("No internet connection")
+            }
+        }
+    }
+
+    // ── School Discovery ──
+
+    fun discoverSchools() {
+        viewModelScope.launch {
+            _schoolDiscoveryState.value = UiState.Loading
+            val result = schoolApi.discoverSchools(requireToken())
+            _schoolDiscoveryState.value = if (result is NetworkResult.Success) UiState.Success(result.data.data?.schools ?: emptyList()) else result.toUiState().let { it as UiState<List<DiscoveredSchoolDto>> }
         }
     }
 }

@@ -45,7 +45,10 @@ import com.littlebridge.enrollplus.feature.health.domain.model.HealthIncidentDto
 import com.littlebridge.enrollplus.feature.health.domain.model.ImmunizationDto
 import com.littlebridge.enrollplus.feature.health.domain.model.ParentHealthResponse
 import com.littlebridge.enrollplus.feature.idcard.domain.model.IdCardDto
+import com.littlebridge.enrollplus.feature.library.domain.model.LibraryBookDto
+import com.littlebridge.enrollplus.feature.library.domain.model.LibraryIssueDto
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentNotificationDto
+import com.littlebridge.enrollplus.feature.schools.data.remote.DiscoveredSchoolDto
 import com.littlebridge.enrollplus.feature.transport.domain.model.RouteProgress
 import com.littlebridge.enrollplus.presentation.ParentViewModel
 import com.littlebridge.enrollplus.ui.tokens.VColors
@@ -526,10 +529,210 @@ fun AccountSettingsOverlay() {
     }
 }
 
-// ── AI Tutor / Library / Tutor Progress / SchoolDetail — generic ──
+// ── Library Overlay ──
 @Composable
-fun GenericOverlay(msg: String) {
+fun LibraryOverlay(viewModel: ParentViewModel, childId: String) {
+    var query by rememberSaveable { mutableStateOf("") }
+    val searchState by viewModel.librarySearchState.collectAsState()
+    val issuedState by viewModel.libraryIssuedState.collectAsState()
     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-        OvCard { Text(msg, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = VColors.ink3) }
+        OvSectionTitle("Search Books")
+        OvCard {
+            Box(Modifier.fillMaxWidth().background(VColors.surfaceTint, VShapes.sm).padding(12.dp)) {
+                Text(query.ifBlank { "Search by title or author..." }, fontSize = 14.sp, color = if (query.isBlank()) VColors.ink3 else VColors.ink)
+            }
+            Spacer(Modifier.height(12.dp))
+            Box(Modifier.fillMaxWidth().background(VColors.violet, VShapes.md).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
+                if (query.isNotBlank()) viewModel.searchLibraryBooks(query)
+            }.padding(vertical = 10.dp), Alignment.Center) { Text("Search", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VColors.white) }
+        }
+        when (val s = searchState) {
+            is UiState.Loading -> OvLoading()
+            is UiState.Error -> OvError(s.message)
+            is UiState.Success -> {
+                if (s.data.isNotEmpty()) {
+                    OvSectionTitle("Results (${s.data.size})")
+                    s.data.forEach { book -> BookItem(book) }
+                }
+            }
+        }
+        OvSectionTitle("Issued Books")
+        when (val s = issuedState) {
+            is UiState.Loading -> OvLoading()
+            is UiState.Error -> OvError(s.message)
+            is UiState.Success -> {
+                if (s.data.isEmpty()) { Box(Modifier.fillMaxWidth().padding(24.dp), Alignment.Center) { Text("No books issued", color = VColors.ink3) } }
+                else s.data.forEach { issue -> IssuedBookItem(issue) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BookItem(book: LibraryBookDto) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(14.dp)) {
+        Box(Modifier.size(34.dp).background(VColors.violetSoft, VShapes.sm), Alignment.Center) { Icon(Icons.Rounded.School, null, tint = VColors.violet, modifier = Modifier.size(15.dp)) }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(book.title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = VColors.ink)
+            book.author?.let { Text(it, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = VColors.ink3) }
+            val avail = if (book.availableCopies > 0) "${book.availableCopies}/${book.totalCopies} available" else "Unavailable"
+            Text(avail, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = if (book.availableCopies > 0) VColors.success else VColors.coral)
+        }
+    }
+}
+
+@Composable
+private fun IssuedBookItem(issue: LibraryIssueDto) {
+    val isOverdue = issue.status == "issued" && issue.returnDate == null
+    Column(Modifier.fillMaxWidth().padding(vertical = 4.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(14.dp)) {
+        Text(issue.bookTitle, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = VColors.ink)
+        Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text("Issued: ${formatDate(issue.issueDate)}", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = VColors.ink3)
+            Text("Due: ${formatDate(issue.dueDate)}", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = if (isOverdue) VColors.coral else VColors.ink2)
+        }
+        if (issue.fineAmount > 0) {
+            Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Fine: ${issue.fineAmount}", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = VColors.coral)
+                val (bg, tint) = when (issue.fineStatus) { "paid" -> VColors.mintSoft to VColors.success; "waived" -> VColors.skySoft to VColors.sky; else -> VColors.coralSoft to VColors.coral }
+                Box(Modifier.background(bg, VShapes.full).padding(horizontal = 7.dp, vertical = 2.dp)) { Text(issue.fineStatus, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = tint) }
+            }
+        }
+        Box(Modifier.background(VColors.surfaceTint, VShapes.full).padding(horizontal = 7.dp, vertical = 2.dp)) { Text(issue.status, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = VColors.ink2) }
+    }
+}
+
+// ── Tutor Chat Overlay ──
+@Composable
+fun TutorChatOverlay(viewModel: ParentViewModel, childId: String) {
+    val subjectsState by viewModel.tutorSubjectsState.collectAsState()
+    val doubtState by viewModel.tutorDoubtState.collectAsState()
+    var selectedSubject by rememberSaveable { mutableStateOf("") }
+    var question by rememberSaveable { mutableStateOf("") }
+    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+        OvSectionTitle("Select Subject")
+        when (val s = subjectsState) {
+            is UiState.Loading -> OvLoading()
+            is UiState.Error -> OvError(s.message)
+            is UiState.Success -> {
+                s.data.forEach { subj ->
+                    val isSelected = selectedSubject == subj.subjectId
+                    Row(Modifier.fillMaxWidth().padding(vertical = 3.dp).background(if (isSelected) VColors.violetSoft else VColors.white, VShapes.md)
+                        .shadow(1.dp, VShapes.md).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { selectedSubject = subj.subjectId }.padding(12.dp)) {
+                        Text(subj.subjectName, fontSize = 13.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium, color = if (isSelected) VColors.violet else VColors.ink)
+                    }
+                }
+                if (s.data.isEmpty()) { Text("No subjects available", fontSize = 12.sp, color = VColors.ink3, modifier = Modifier.padding(8.dp)) }
+            }
+        }
+        if (selectedSubject.isNotBlank()) {
+            OvSectionTitle("Ask a Question")
+            OvCard {
+                Box(Modifier.fillMaxWidth().background(VColors.surfaceTint, VShapes.sm).padding(12.dp)) {
+                    Text(question.ifBlank { "Type your question..." }, fontSize = 14.sp, color = if (question.isBlank()) VColors.ink3 else VColors.ink)
+                }
+                Spacer(Modifier.height(12.dp))
+                Box(Modifier.fillMaxWidth().background(VColors.violet, VShapes.md).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
+                    if (question.isNotBlank()) viewModel.askDoubt(childId, selectedSubject, question)
+                }.padding(vertical = 12.dp), Alignment.Center) { Text("Ask AI Tutor", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = VColors.white) }
+            }
+        }
+        when (val s = doubtState) {
+            is UiState.Loading -> OvLoading()
+            is UiState.Error -> OvError(s.message)
+            is UiState.Success -> {
+                s.data.data?.turn?.studentFacing?.let { sf ->
+                    OvSectionTitle("AI Tutor Response")
+                    OvCard { Text(sf.text, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = VColors.ink, lineHeight = 19.sp) }
+                    sf.nextPrompt?.let { Text(it, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = VColors.violet, modifier = Modifier.padding(12.dp)) }
+                }
+            }
+        }
+    }
+}
+
+// ── Tutor Progress Overlay ──
+@Composable
+fun TutorProgressOverlay(viewModel: ParentViewModel, childId: String) {
+    val subjectsState by viewModel.tutorSubjectsState.collectAsState()
+    val progressState by viewModel.tutorProgressState.collectAsState()
+    var selectedSubject by rememberSaveable { mutableStateOf("") }
+    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+        OvSectionTitle("Select Subject")
+        when (val s = subjectsState) {
+            is UiState.Loading -> OvLoading()
+            is UiState.Error -> OvError(s.message)
+            is UiState.Success -> {
+                s.data.forEach { subj ->
+                    val isSelected = selectedSubject == subj.subjectId
+                    Row(Modifier.fillMaxWidth().padding(vertical = 3.dp).background(if (isSelected) VColors.violetSoft else VColors.white, VShapes.md)
+                        .shadow(1.dp, VShapes.md).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
+                            selectedSubject = subj.subjectId
+                            viewModel.loadTutorProgress(childId, subj.subjectId)
+                        }.padding(12.dp)) {
+                        Text(subj.subjectName, fontSize = 13.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium, color = if (isSelected) VColors.violet else VColors.ink)
+                    }
+                }
+            }
+        }
+        if (selectedSubject.isNotBlank()) {
+            OvSectionTitle("Progress Card")
+            when (val s = progressState) {
+                is UiState.Loading -> OvLoading()
+                is UiState.Error -> OvError(s.message)
+                is UiState.Success -> {
+                    s.data.data?.let { pc ->
+                        OvCard {
+                            OvStatRow("Doubts Resolved", "${pc.totalDoubtsResolved}")
+                            OvStatRow("Answers Given", "${pc.totalAnswersGiven}")
+                            OvStatRow("Total Sessions", "${pc.totalSessions}")
+                            OvStatRow("Safety Flags", "${pc.safetyFlags}")
+                        }
+                        if (pc.topics.isNotEmpty()) {
+                            OvSectionTitle("Topic Mastery")
+                            pc.topics.forEach { tp ->
+                                Row(Modifier.fillMaxWidth().padding(vertical = 3.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(14.dp)) {
+                                    Text(tp.topicId, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = VColors.ink, modifier = Modifier.weight(1f))
+                                    Text("${(tp.currentMastery * 100).toInt()}%", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = VColors.violet)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ── School Detail / Discovery Overlay ──
+@Composable
+fun SchoolDetailOverlay(viewModel: ParentViewModel) {
+    val state by viewModel.schoolDiscoveryState.collectAsState()
+    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+        OvSectionTitle("Discover Schools")
+        when (val s = state) {
+            is UiState.Loading -> OvLoading()
+            is UiState.Error -> OvError(s.message)
+            is UiState.Success -> {
+                if (s.data.isEmpty()) { Box(Modifier.fillMaxWidth().padding(24.dp), Alignment.Center) { Text("No schools found nearby", color = VColors.ink3) } }
+                else s.data.forEach { school -> DiscoveredSchoolItem(school) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DiscoveredSchoolItem(school: DiscoveredSchoolDto) {
+    Column(Modifier.fillMaxWidth().padding(vertical = 4.dp).background(VColors.white, VShapes.md).shadow(1.dp, VShapes.md).padding(16.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Text(school.name, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = VColors.ink, modifier = Modifier.weight(1f))
+            Box(Modifier.background(VColors.goldSoft, VShapes.full).padding(horizontal = 8.dp, vertical = 2.dp)) {
+                Text("${school.rating}", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = VColors.gold)
+            }
+        }
+        Text(school.location, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = VColors.ink3, modifier = Modifier.padding(top = 4.dp))
+        school.board?.let { Text("Board: $it", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = VColors.ink2, modifier = Modifier.padding(top = 2.dp)) }
+        school.distanceKm?.let { Text("${it} km away", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = VColors.violet, modifier = Modifier.padding(top = 2.dp)) }
+        school.medium?.let { Text("Medium: $it", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = VColors.ink3, modifier = Modifier.padding(top = 2.dp)) }
     }
 }

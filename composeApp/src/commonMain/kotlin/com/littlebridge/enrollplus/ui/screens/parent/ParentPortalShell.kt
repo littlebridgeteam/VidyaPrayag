@@ -149,11 +149,17 @@ fun ParentPortalScreen(
                     ParentOverlay.Leave -> viewModel.loadLeaveRequests()
                     ParentOverlay.Events -> viewModel.loadEvents()
                     ParentOverlay.Scholarships -> viewModel.loadScholarships()
-                    ParentOverlay.Calendar -> { selectedChildId.let { viewModel.loadTimetable(it) } }
+                    ParentOverlay.Calendar -> viewModel.loadTimetable(selectedChildId)
+                    ParentOverlay.TutorChat -> viewModel.loadTutorSubjects(selectedChildId)
+                    ParentOverlay.TutorProgress -> viewModel.loadTutorSubjects(selectedChildId)
+                    ParentOverlay.Library -> viewModel.loadLibraryIssued(selectedChildId)
                     else -> {}
                 }
             }
-            if (activeOverlay == ParentOverlay.Discovery) { /* search is on-demand */ }
+            when (activeOverlay) {
+                ParentOverlay.SchoolDetail -> viewModel.discoverSchools()
+                else -> {}
+            }
         }
         ParentOverlayContainer(
             visible = activeOverlay != null,
@@ -167,14 +173,14 @@ fun ParentPortalScreen(
                 ParentOverlay.AccountSettings -> AccountSettingsOverlay()
                 ParentOverlay.Leave -> selectedChildId?.let { LeaveOverlay(viewModel, it) } ?: OvLoading()
                 ParentOverlay.Discovery -> DiscoveryOverlay(viewModel)
-                ParentOverlay.SchoolDetail -> GenericOverlay("School details coming soon")
+                ParentOverlay.SchoolDetail -> SchoolDetailOverlay(viewModel)
                 ParentOverlay.Health -> selectedChildId?.let { HealthOverlay(viewModel, it) } ?: OvLoading()
                 ParentOverlay.Pulse -> selectedChildId?.let { PulseOverlay(viewModel, it) } ?: OvLoading()
                 ParentOverlay.Transport -> selectedChildId?.let { TransportOverlay(viewModel, it) } ?: OvLoading()
-                ParentOverlay.TutorChat -> GenericOverlay("AI Tutor chat coming soon")
-                ParentOverlay.TutorProgress -> GenericOverlay("Tutor progress coming soon")
+                ParentOverlay.TutorChat -> selectedChildId?.let { TutorChatOverlay(viewModel, it) } ?: OvLoading()
+                ParentOverlay.TutorProgress -> selectedChildId?.let { TutorProgressOverlay(viewModel, it) } ?: OvLoading()
                 ParentOverlay.DigitalIdCard -> selectedChildId?.let { DigitalIdOverlay(viewModel, it) } ?: OvLoading()
-                ParentOverlay.Library -> GenericOverlay("Library catalog coming soon")
+                ParentOverlay.Library -> selectedChildId?.let { LibraryOverlay(viewModel, it) } ?: OvLoading()
                 ParentOverlay.Events -> EventsOverlay(viewModel)
                 ParentOverlay.LinkChild -> LinkChildOverlay(viewModel) { activeOverlay = null }
                 null -> {}
