@@ -28,6 +28,7 @@ import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.tokens.VMotion
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * Premium splash — Enroll+ wordmark with a measured, confident reveal.

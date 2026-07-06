@@ -53,7 +53,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.graphicsLayer
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -76,7 +76,7 @@ import com.littlebridge.enrollplus.ui.components.FilterChip
 import com.littlebridge.enrollplus.ui.components.VBackHeader
 import com.littlebridge.enrollplus.ui.components.VButton
 import com.littlebridge.enrollplus.ui.components.VButtonVariant
-import com.littlebridge.enrollplus.ui.components.VInput
+import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.components.VProgressBar
 import com.littlebridge.enrollplus.ui.components.VProgressBarSegments
 import com.littlebridge.enrollplus.ui.tokens.VColors
@@ -166,9 +166,18 @@ fun SchoolOnboardingScreenV2(
         else -> launchError
     }
 
+    val canContinue: Boolean = when (step) {
+        1 -> legalName.isNotBlank()
+        3 -> classesBuilt.isNotEmpty()
+        4 -> subjects.isNotEmpty()
+        5 -> teachers.isNotEmpty()
+        else -> true
+    }
+
     fun continueClicked() {
         when (step) {
             1 -> {
+                if (legalName.isBlank()) return
                 basicVm.updateSchoolName(legalName)
                 basicVm.updateBoard(board)
                 basicVm.updateContact(principalMobile.replace(Regex("[^0-9]"), "").take(10))
@@ -177,10 +186,16 @@ fun SchoolOnboardingScreenV2(
             2 -> {
                 brandingVm.submit(onSuccess = { step++ })
             }
-            3, 4 -> {
+            3 -> {
+                if (classesBuilt.isEmpty()) return
+                step++
+            }
+            4 -> {
+                if (subjects.isEmpty()) return
                 step++
             }
             5 -> {
+                if (teachers.isEmpty()) return
                 val builtClasses: List<Pair<String, List<String>>> =
                     classesBuilt.map { it.name to it.sections.toList() }
                 val builtSubjects: List<Pair<String, String>> =
@@ -229,7 +244,9 @@ fun SchoolOnboardingScreenV2(
             .statusBarsPadding()
             .imePadding(),
     ) {
-        VBackHeader(onBack = onBack)
+        VBackHeader(onBack = {
+            if (step > 1 && !isSubmitting) step-- else onBack()
+        })
 
         Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp)) {
             Text(appString(StringKeys.OB_ONBOARDING), style = VTypography.caption, color = VColors.ink3)
@@ -339,7 +356,7 @@ fun SchoolOnboardingScreenV2(
                 text = if (step < 6) appString(StringKeys.OB_CONTINUE) else appString(StringKeys.OB_FINISH),
                 onClick = { continueClicked() },
                 loading = isSubmitting,
-                enabled = !isSubmitting,
+                enabled = !isSubmitting && canContinue,
                 icon = Icons.AutoMirrored.Filled.ArrowForward,
                 modifier = Modifier.weight(1f),
             )

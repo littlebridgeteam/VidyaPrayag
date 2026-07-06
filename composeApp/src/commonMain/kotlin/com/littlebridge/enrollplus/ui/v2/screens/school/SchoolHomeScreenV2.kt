@@ -126,14 +126,16 @@ fun SchoolHomeScreenV2(
     calendarViewModel: AcademicCalendarPlatformViewModel = koinViewModel(),
     permissionVm: PermissionViewModel = koinViewModel(),
 ) {
-    val adminName by viewModel.adminName.collectAsStateV2()
-    val loading by viewModel.isLoading.collectAsStateV2()
-    val error by viewModel.errorMessage.collectAsStateV2()
+    val dashboardState by viewModel.state.collectAsStateV2()
     val notifications by notificationsViewModel.state.collectAsStateV2()
-    val overview by viewModel.overview.collectAsStateV2()
-    val analytics by viewModel.analytics.collectAsStateV2()
-    val activity by viewModel.activity.collectAsStateV2()
     val calendarState by calendarViewModel.state.collectAsStateV2()
+
+    val adminName = dashboardState.adminName
+    val loading = dashboardState.isLoading
+    val error = dashboardState.errorMessage
+    val overview = dashboardState.overview
+    val analytics = dashboardState.analytics
+    val activity = dashboardState.activity
 
     val showRationale by permissionVm.showNotificationRationale.collectAsStateV2()
     val launchPermission by permissionVm.launchPermissionRequest.collectAsStateV2()
