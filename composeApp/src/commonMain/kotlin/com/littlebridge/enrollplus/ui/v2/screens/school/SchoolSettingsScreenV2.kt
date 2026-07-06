@@ -210,12 +210,12 @@ private fun SchoolSettingsContent(
                 SettingRow(
                     VIcons.Chat,
                     "Help & support",
-                    "Email ${com.littlebridge.enrollplus.ui.v2.screens.auth.SUPPORT_EMAIL}",
+                    "Email support@vidyaprayag.in",
                     false,
                     onClick = {
                         runCatching {
                             uriHandler.openUri(
-                                "mailto:${com.littlebridge.enrollplus.ui.v2.screens.auth.SUPPORT_EMAIL}" +
+                                "mailto:support@vidyaprayag.in" +
                                     "?subject=VidyaSetu%20Support",
                             )
                         }

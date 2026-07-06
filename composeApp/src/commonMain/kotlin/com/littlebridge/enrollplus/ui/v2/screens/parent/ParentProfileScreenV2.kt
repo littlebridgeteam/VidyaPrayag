@@ -190,11 +190,11 @@ private fun ParentProfileContent(
                             ProfileRow("Change password", "Keep your account secure", null),
                             ProfileRow(
                                 "Help & support",
-                                "Email ${com.littlebridge.enrollplus.ui.v2.screens.auth.SUPPORT_EMAIL}",
+                                "Email support@vidyaprayag.in",
                                 {
                                     runCatching {
                                         uriHandler.openUri(
-                                            "mailto:${com.littlebridge.enrollplus.ui.v2.screens.auth.SUPPORT_EMAIL}" +
+                                            "mailto:support@vidyaprayag.in" +
                                                 "?subject=VidyaSetu%20Support",
                                         )
                                     }
