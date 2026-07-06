@@ -1,7 +1,13 @@
 package com.littlebridge.enrollplus.ui.screens.parent
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -11,6 +17,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -22,21 +29,21 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.automirrored.rounded.Chat
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.AccountBox
 import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material.icons.rounded.Campaign
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.CurrencyRupee
 import androidx.compose.material.icons.rounded.DirectionsBus
-import androidx.compose.material.icons.rounded.Event
 import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.LocalLibrary
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.RocketLaunch
 import androidx.compose.material.icons.rounded.SportsScore
-import androidx.compose.material.icons.automirrored.rounded.TrendingDown
-import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -224,6 +231,7 @@ private fun PortalHeader(
         }
         else -> "—"
     }
+    val data = (dashboardState as? UiState.Success)?.data
 
     Row(
         modifier = Modifier
@@ -234,7 +242,7 @@ private fun PortalHeader(
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "Enroll+ Parent",
+                text = "School",
                 style = TextStyle(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
@@ -262,7 +270,7 @@ private fun PortalHeader(
                 )
                 if (children.size > 1) {
                     Icon(
-                        imageVector = if (showChildPicker) Icons.AutoMirrored.Rounded.TrendingUp else Icons.AutoMirrored.Rounded.TrendingDown,
+                        imageVector = Icons.Rounded.KeyboardArrowDown,
                         contentDescription = null,
                         tint = VColors.ink3,
                         modifier = Modifier.size(14.dp).padding(start = 4.dp),
@@ -376,37 +384,54 @@ private fun ChildHeroCard(
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
-            ) { onClick() }
-            .padding(20.dp),
+            ) { onClick() },
     ) {
-        // Decorative circles
+        // Decorative circles — violet top-right, coral bottom-right
         Box(
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .size(120.dp)
-                .background(VColors.violetSoft.copy(alpha = 0.4f), CircleShape),
+                .size(140.dp)
+                .background(VColors.violetSoft.copy(alpha = 0.35f), CircleShape)
+                .offset(x = 30.dp, y = (-30).dp),
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .size(80.dp)
+                .background(VColors.coralSoft.copy(alpha = 0.3f), CircleShape)
+                .offset(x = 20.dp, y = 20.dp),
         )
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.align(Alignment.CenterStart),
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(20.dp),
         ) {
-            // Avatar
+            // Avatar with white ring
             Box(
                 modifier = Modifier
-                    .size(52.dp)
-                    .background(VColors.violetSoft, VShapes.full),
+                    .size(56.dp)
+                    .background(VColors.white, CircleShape)
+                    .padding(3.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    text = child.name.take(2).uppercase(),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = VColors.violet,
-                )
+                Box(
+                    modifier = Modifier
+                        .size(50.dp)
+                        .background(VColors.violetSoft, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = child.name.take(2).uppercase(),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = VColors.violet,
+                    )
+                }
             }
 
-            Spacer(Modifier.width(16.dp))
+            Spacer(Modifier.width(14.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -420,10 +445,10 @@ private fun ChildHeroCard(
                         color = VColors.ink,
                     )
                     Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.TrendingUp,
+                        imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
                         contentDescription = null,
                         tint = VColors.ink3,
-                        modifier = Modifier.size(13.dp).padding(start = 6.dp),
+                        modifier = Modifier.size(14.dp).padding(start = 6.dp),
                     )
                 }
                 Text(
@@ -545,43 +570,61 @@ private fun TodayLearningSection(
                     }
                 } else {
                     val visibleEntries = if (expanded) entries else entries.take(3)
-                    Box(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(VColors.white, VShapes.md)
                             .shadow(1.dp, VShapes.md),
                     ) {
-                        Column {
-                            visibleEntries.forEach { entry ->
-                                LearningItem(entry = entry)
-                            }
+                        // Card header with title and expand hint
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = "Today's Learning",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = VColors.ink,
+                                letterSpacing = (-0.2).sp,
+                            )
                             if (entries.size > 3) {
                                 Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable(
-                                            interactionSource = remember { MutableInteractionSource() },
-                                            indication = null,
-                                        ) { expanded = !expanded }
-                                        .padding(vertical = 8.dp),
-                                    horizontalArrangement = Arrangement.Center,
+                                    modifier = Modifier.clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null,
+                                    ) { expanded = !expanded },
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     Text(
-                                        text = if (expanded) "Show less" else "Show all ${entries.size} classes",
+                                        text = if (expanded) "Show less" else "Show all ${entries.size}",
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         color = VColors.violet,
                                         letterSpacing = 0.3.sp,
                                     )
                                     Icon(
-                                        imageVector = if (expanded) Icons.AutoMirrored.Rounded.TrendingUp else Icons.AutoMirrored.Rounded.TrendingDown,
+                                        imageVector = Icons.Rounded.KeyboardArrowDown,
                                         contentDescription = null,
                                         tint = VColors.violet,
-                                        modifier = Modifier.size(12.dp).padding(start = 4.dp),
+                                        modifier = Modifier.size(14.dp).padding(start = 2.dp),
                                     )
                                 }
                             }
+                        }
+                        // Divider
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(1.dp)
+                                .background(VColors.lineSoft),
+                        )
+                        // Entries
+                        visibleEntries.forEach { entry ->
+                            LearningItem(entry = entry)
                         }
                     }
                 }
@@ -601,10 +644,22 @@ private fun LearningItem(entry: ParentDailyLogEntryDto) {
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth(),
         ) {
+            // Status dot — done (filled mint), in-progress (filled violet), upcoming (outline)
+            val dotColor = when {
+                entry.coveragePct >= 100 -> VColors.mint
+                entry.coveragePct > 0 -> VColors.violet
+                else -> VColors.surfaceTint
+            }
+            val dotBorder = when {
+                entry.coveragePct >= 100 -> VColors.mint
+                entry.coveragePct > 0 -> VColors.violet
+                else -> VColors.ink3
+            }
             Box(
                 modifier = Modifier
-                    .size(8.dp)
-                    .background(VColors.violet, CircleShape),
+                    .size(10.dp)
+                    .background(dotColor, CircleShape)
+                    .border(2.dp, dotBorder, CircleShape),
             )
             Spacer(Modifier.width(10.dp))
             Text(
@@ -629,7 +684,7 @@ private fun LearningItem(entry: ParentDailyLogEntryDto) {
                 fontWeight = FontWeight.Medium,
                 color = VColors.ink2,
                 lineHeight = 18.sp,
-                modifier = Modifier.padding(start = 18.dp, top = 6.dp),
+                modifier = Modifier.padding(start = 20.dp, top = 6.dp),
             )
         }
     }
@@ -661,8 +716,11 @@ private fun QuickInsightsRow(
             iconTint = VColors.success,
             value = if (attendanceRate > 0) "$attendanceRate%" else "—",
             label = "Attendance",
-            sub = if (totalDays > 0) "This term · $presentDays/$totalDays days" else "Loading...",
+            sub = if (totalDays > 0) "$presentDays/$totalDays days" else "Loading...",
             accentBar = VColors.mint,
+            trendBadge = if (attendanceRate > 0) "+${(attendanceRate - 90).coerceAtLeast(0)}%" else null,
+            trendBg = VColors.mintSoft,
+            trendColor = VColors.success,
             onClick = onAttendanceClick,
             modifier = Modifier.weight(1f),
         )
@@ -672,8 +730,11 @@ private fun QuickInsightsRow(
             iconTint = VColors.coral,
             value = outstandingFees,
             label = "Fees Due",
-            sub = if (overdueCount > 0) "$overdueCount overdue" else "No overdue",
+            sub = if (overdueCount > 0) "$overdueCount overdue" else "Due by term end",
             accentBar = VColors.coral,
+            trendBadge = if (overdueCount > 0) "Due" else null,
+            trendBg = VColors.coralSoft,
+            trendColor = VColors.coral,
             onClick = onFeesClick,
             modifier = Modifier.weight(1f),
         )
@@ -689,6 +750,9 @@ private fun InsightCard(
     label: String,
     sub: String,
     accentBar: Color,
+    trendBadge: String? = null,
+    trendBg: Color = VColors.surfaceTint,
+    trendColor: Color = VColors.ink3,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -719,6 +783,21 @@ private fun InsightCard(
                         tint = iconTint,
                         modifier = Modifier.size(15.dp),
                     )
+                }
+                if (trendBadge != null) {
+                    Box(
+                        modifier = Modifier
+                            .background(trendBg, VShapes.full)
+                            .padding(horizontal = 7.dp, vertical = 2.dp),
+                    ) {
+                        Text(
+                            text = trendBadge,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = trendColor,
+                            letterSpacing = 0.3.sp,
+                        )
+                    }
                 }
             }
             Spacer(Modifier.height(10.dp))
@@ -863,22 +942,62 @@ private fun TimelinePeriod(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth(),
     ) {
-        // Dot
+        // Dot with border
         val dotColor = when {
             isDone -> VColors.mint
             isNow -> VColors.violet
-            else -> VColors.line
+            else -> VColors.surfaceTint
         }
         val dotBorder = when {
             isDone -> VColors.mint
             isNow -> VColors.violet
             else -> VColors.ink3
         }
-        Box(
-            modifier = Modifier
-                .size(10.dp)
-                .background(dotColor, CircleShape),
-        )
+        // Pulse animation for "now" dot
+        if (isNow) {
+            val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+            val pulseScale by infiniteTransition.animateFloat(
+                initialValue = 1f,
+                targetValue = 1.4f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(800),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+                label = "pulseScale",
+            )
+            val pulseAlpha by infiniteTransition.animateFloat(
+                initialValue = 0.4f,
+                targetValue = 0f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(800),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+                label = "pulseAlpha",
+            )
+            Box(
+                modifier = Modifier.size(14.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(14.dp * pulseScale)
+                        .background(VColors.violet.copy(alpha = pulseAlpha), CircleShape),
+                )
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .background(dotColor, CircleShape)
+                        .border(2.dp, dotBorder, CircleShape),
+                )
+            }
+        } else {
+            Box(
+                modifier = Modifier
+                    .size(10.dp)
+                    .background(dotColor, CircleShape)
+                    .border(2.dp, dotBorder, CircleShape),
+            )
+        }
         Spacer(Modifier.width(12.dp))
         Text(
             text = period.startTime,
@@ -1215,24 +1334,31 @@ private fun AnnouncementCard(ann: ParentAnnouncementDto) {
         modifier = Modifier
             .fillMaxWidth()
             .background(VColors.white, VShapes.md)
-            .shadow(1.dp, VShapes.md)
-            .padding(14.dp),
+            .shadow(1.dp, VShapes.md),
     ) {
+        // Left accent bar
+        Box(
+            modifier = Modifier
+                .width(4.dp)
+                .height(60.dp)
+                .background(VColors.violet, VShapes.sm),
+        )
+        Spacer(Modifier.width(12.dp))
         Box(
             modifier = Modifier
                 .size(34.dp)
-                .background(VColors.skySoft, VShapes.sm),
+                .background(VColors.violetSoft, VShapes.sm),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                imageVector = Icons.Rounded.Event,
+                imageVector = Icons.Rounded.Campaign,
                 contentDescription = null,
-                tint = VColors.sky,
+                tint = VColors.violet,
                 modifier = Modifier.size(15.dp),
             )
         }
         Spacer(Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
+        Column(modifier = Modifier.weight(1f).padding(vertical = 14.dp).padding(end = 14.dp)) {
             Text(
                 text = ann.title,
                 fontSize = 13.sp,

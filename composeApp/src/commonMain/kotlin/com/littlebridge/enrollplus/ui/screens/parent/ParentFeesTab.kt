@@ -13,8 +13,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
@@ -66,19 +68,30 @@ fun ParentFeesTab(
             is UiState.Success -> {
                 val data = s.data
 
-                // Hero balance card
+                // Hero balance card — white with decorative circles
                 Box(
                     modifier = Modifier
                         .padding(horizontal = 24.dp, vertical = 8.dp)
-                        .background(VColors.violet, VShapes.lg)
-                        .padding(24.dp),
+                        .background(VColors.white, VShapes.lg)
+                        .shadow(1.dp, VShapes.lg),
                 ) {
-                    Column {
+                    // Decorative circle — coral top-right
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .size(120.dp)
+                            .background(VColors.coralSoft.copy(alpha = 0.3f), CircleShape)
+                            .offset(x = 30.dp, y = (-30).dp),
+                    )
+                    Column(
+                        modifier = Modifier
+                            .padding(24.dp),
+                    ) {
                         Text(
                             "Outstanding Balance",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = VColors.white.copy(alpha = 0.7f),
+                            color = VColors.ink3,
                             letterSpacing = 0.5.sp,
                         )
                         Spacer(Modifier.height(8.dp))
@@ -86,7 +99,7 @@ fun ParentFeesTab(
                             data.outstandingFees,
                             fontSize = 32.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = VColors.white,
+                            color = VColors.ink,
                             letterSpacing = (-1).sp,
                         )
                         Spacer(Modifier.height(6.dp))
@@ -94,13 +107,13 @@ fun ParentFeesTab(
                             if (data.overdueCount > 0) "${data.overdueCount} overdue payment(s)" else "Due by end of term",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium,
-                            color = VColors.white.copy(alpha = 0.8f),
+                            color = VColors.ink3,
                         )
                         Spacer(Modifier.height(16.dp))
-                        // Pay button
+                        // Pay button — violet filled
                         Row(
                             modifier = Modifier
-                                .background(VColors.white, VShapes.full)
+                                .background(VColors.violet, VShapes.full)
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null,
@@ -109,8 +122,8 @@ fun ParentFeesTab(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
-                            Text("Pay Now", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = VColors.violet)
-                            Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(16.dp))
+                            Text("Pay Now", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = VColors.white)
+                            Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, tint = VColors.white, modifier = Modifier.size(16.dp))
                         }
                     }
                 }

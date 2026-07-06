@@ -32,6 +32,7 @@
   --shadow-3:0 8px 24px -6px rgba(26,22,20,.1),0 2px 8px rgba(26,22,20,.04);
 }
 *{margin:0;padding:0;box-sizing:border-box}
+html{font-size:106.99%}
 html,body{height:100%}
 body{font-family:var(--font);background:#0A0910;display:flex;align-items:center;justify-content:center;overflow:hidden;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;text-rendering:optimizeLegibility}
 svg{display:block}
@@ -56,7 +57,7 @@ svg{display:block}
 .statusbar .icons{font-size:13px;letter-spacing:-.5px}
 .scroll{flex:1;overflow-y:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .scroll::-webkit-scrollbar{display:none}
-.content-pb{padding-bottom:90px}
+.content-pb{padding-bottom:var(--s-md)}
 .tab-content{display:none;flex:1;flex-direction:column;overflow:hidden}
 .tab-content.active{display:flex}
 .portal-header{display:flex;align-items:center;justify-content:space-between;padding:8px var(--s-lg) var(--s-md);flex-shrink:0}
@@ -69,9 +70,1194 @@ svg{display:block}
 .header-icon-btn:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
 .header-icon-btn svg{width:18px;height:18px;stroke:var(--ink-2);stroke-width:2;fill:none}
 .header-badge{position:absolute;top:-3px;right:-3px;min-width:17px;height:17px;border-radius:var(--r-full);background:var(--coral);color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 5px;border:2px solid var(--white)}
+
+/* ═══ ADMIN HOME — DASHBOARD ═══ */
+.ph-greeting{margin:var(--s-sm) var(--s-lg) 2px;font-size:12px;font-weight:500;color:var(--ink-3);letter-spacing:.2px}
+.ph-hero{margin:0 var(--s-lg) var(--s-md);padding:24px 20px;background:var(--white);border-radius:var(--r-lg);box-shadow:var(--shadow-1);position:relative;overflow:hidden;cursor:pointer;transition:all 300ms var(--ease)}
+.ph-hero:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
+.ph-hero::before{content:'';position:absolute;top:-40px;right:-20px;width:120px;height:120px;border-radius:50%;background:var(--sienna-soft);opacity:.4}
+.ph-hero::after{content:'';position:absolute;bottom:-30px;right:20px;width:70px;height:70px;border-radius:50%;background:var(--coral-soft);opacity:.25}
+.ph-hero-top{display:flex;align-items:flex-start;justify-content:space-between;position:relative;z-index:1}
+.ph-hero-left{flex:1}
+.ph-hero-label{font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:1px}
+.ph-hero-big{font-size:32px;font-weight:900;color:var(--ink);letter-spacing:-1px;margin-top:6px;font-variant-numeric:tabular-nums}
+.ph-hero-big .total{font-size:16px;font-weight:600;color:var(--ink-3);letter-spacing:0}
+.ph-hero-sub{font-size:13px;font-weight:500;color:var(--ink-2);margin-top:6px;line-height:1.4}
+.ph-hero-sub .strong{font-weight:800;color:var(--coral)}
+.ph-hero-ring{width:72px;height:72px;flex-shrink:0;position:relative;z-index:1}
+.ph-hero-ring svg{width:72px;height:72px;transform:rotate(-90deg)}
+.ph-hero-ring-track{fill:none;stroke:var(--surface-cl);stroke-width:6}
+.ph-hero-ring-fill{fill:none;stroke:var(--sienna);stroke-width:6;stroke-linecap:round;stroke-dasharray:176;stroke-dashoffset:8.8;transition:stroke-dashoffset 800ms var(--ease)}
+.ph-hero-ring-pct{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.ph-hero-ring-num{font-size:18px;font-weight:900;color:var(--sienna);letter-spacing:-.5px;line-height:1}
+.ph-hero-ring-sm{font-size:8px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.5px}
+.ph-hero-bars{display:flex;gap:4px;margin-top:16px;position:relative;z-index:1}
+.ph-hero-bar{flex:1;height:4px;border-radius:2px;background:var(--surface-cl);overflow:hidden}
+.ph-hero-bar-fill{height:100%;border-radius:2px;transition:width 600ms var(--ease)}
+.ph-hero-bar-fill--good{background:var(--mint)}
+.ph-hero-bar-fill--mid{background:var(--gold)}
+.ph-hero-bar-fill--low{background:var(--coral)}
+.ph-hero-bar-labels{display:flex;gap:4px;margin-top:6px;position:relative;z-index:1}
+.ph-hero-bar-lbl{flex:1;font-size:9px;font-weight:600;color:var(--ink-3);text-align:center}
+
+/* ── Quick Actions ── */
+.qa-row{display:flex;gap:8px;margin:0 var(--s-lg) var(--s-md);overflow-x:auto;scrollbar-width:none}
+.qa-row::-webkit-scrollbar{display:none}
+.qa-btn{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 12px;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);cursor:pointer;transition:all 300ms var(--ease);min-width:72px}
+.qa-btn:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
+.qa-btn:active{transform:translateY(0) scale(.97)}
+.qa-btn-ic{width:36px;height:36px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center}
+.qa-btn-ic svg{width:18px;height:18px;stroke-width:2;fill:none}
+.qa-btn-ic--remind{background:var(--sienna-soft)}.qa-btn-ic--remind svg{stroke:var(--sienna)}
+.qa-btn-ic--approve{background:var(--mint-soft)}.qa-btn-ic--approve svg{stroke:var(--success)}
+.qa-btn-ic--announce{background:var(--sky-soft)}.qa-btn-ic--announce svg{stroke:var(--sky)}
+.qa-btn-ic--calendar{background:var(--plum-soft)}.qa-btn-ic--calendar svg{stroke:var(--plum)}
+.qa-btn-ic--report{background:var(--gold-soft)}.qa-btn-ic--report svg{stroke:var(--warning)}
+.qa-btn-label{font-size:10px;font-weight:700;color:var(--ink-2);letter-spacing:.2px;text-align:center;line-height:1.2}
+
+/* ── Pulse Cards ── */
+.ph-pulse-scroll{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding:0 var(--s-lg);margin:0 calc(-1 * var(--s-lg));margin-bottom:var(--s-md)}
+.ph-pulse-scroll::-webkit-scrollbar{display:none}
+.ph-pulse-card{flex-shrink:0;width:150px;padding:16px;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);cursor:pointer;transition:all 300ms var(--ease);position:relative;overflow:hidden}
+.ph-pulse-card:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
+.ph-pulse-card:active{transform:translateY(0) scale(.98)}
+.ph-pulse-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;border-radius:0 0 var(--r-md) var(--r-md)}
+.ph-pulse-card--fee::after{background:var(--sienna);opacity:.6}
+.ph-pulse-card--alert::after{background:var(--coral);opacity:.6}
+.ph-pulse-card--adm::after{background:var(--mint);opacity:.6}
+.ph-pulse-card--col::after{background:var(--sky);opacity:.6}
+.ph-pulse-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.ph-pulse-icon{width:32px;height:32px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center}
+.ph-pulse-icon svg{width:16px;height:16px;stroke-width:2;fill:none}
+.ph-pulse-icon--fee{background:var(--sienna-soft)}.ph-pulse-icon--fee svg{stroke:var(--sienna)}
+.ph-pulse-icon--alert{background:var(--coral-soft)}.ph-pulse-icon--alert svg{stroke:var(--coral)}
+.ph-pulse-icon--adm{background:var(--mint-soft)}.ph-pulse-icon--adm svg{stroke:var(--success)}
+.ph-pulse-icon--col{background:var(--sky-soft)}.ph-pulse-icon--col svg{stroke:var(--sky)}
+.ph-pulse-trend{font-size:9px;font-weight:800;padding:2px 6px;border-radius:var(--r-full);letter-spacing:.3px;display:flex;align-items:center;gap:2px}
+.ph-pulse-trend--up{background:var(--mint-soft);color:var(--success)}
+.ph-pulse-trend--alert{background:var(--coral-soft);color:var(--coral)}
+.ph-pulse-trend svg{width:8px;height:8px;stroke:currentColor;stroke-width:3;fill:none}
+.ph-pulse-num{font-size:22px;font-weight:900;color:var(--ink);letter-spacing:-.5px;line-height:1;font-variant-numeric:tabular-nums}
+.ph-pulse-num .unit{font-size:14px;font-weight:700;color:var(--ink-2)}
+.ph-pulse-label{font-size:10px;font-weight:600;color:var(--ink-3);margin-top:5px;text-transform:uppercase;letter-spacing:.5px}
+.ph-pulse-sub{font-size:11px;font-weight:500;color:var(--ink-3);margin-top:2px}
+
+/* ── Fee Progress ── */
+.ph-fee{margin:0 var(--s-lg) var(--s-md);padding:18px 20px;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);cursor:pointer;transition:all 300ms var(--ease)}
+.ph-fee:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
+.ph-fee-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.ph-fee-title{font-size:13px;font-weight:800;color:var(--ink);letter-spacing:-.2px}
+.ph-fee-amt{font-size:18px;font-weight:900;color:var(--ink);letter-spacing:-.3px;font-variant-numeric:tabular-nums}
+.ph-fee-amt .sm{font-size:12px;font-weight:600;color:var(--ink-3)}
+.ph-fee-bar{height:8px;background:var(--surface-cl);border-radius:var(--r-full);overflow:hidden}
+.ph-fee-bar-fill{height:100%;border-radius:var(--r-full);background:var(--sienna);transition:width 800ms var(--ease)}
+.ph-fee-meta{display:flex;justify-content:space-between;margin-top:10px}
+.ph-fee-meta-item{font-size:12px;font-weight:500;color:var(--ink-3)}
+.ph-fee-meta-item .strong{font-weight:800;color:var(--ink-2)}
+
+/* ── Sections ── */
+.ph-section{margin:0 var(--s-lg) var(--s-md)}
+.ph-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.ph-section-title{font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:1px}
+.ph-section-link{font-size:12px;font-weight:600;color:var(--sienna);cursor:pointer;display:flex;align-items:center;gap:3px}
+.ph-section-link svg{width:13px;height:13px;stroke:var(--sienna);stroke-width:2;fill:none}
+
+/* ── Inbox Items with accent stripe ── */
+.inbox-item{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);margin-bottom:8px;cursor:pointer;transition:all 250ms var(--ease);position:relative;overflow:hidden}
+.inbox-item:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
+.inbox-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:0 2px 2px 0}
+.inbox-item--urgent::before{background:var(--coral)}
+.inbox-item--new::before{background:var(--sienna)}
+.inbox-item--pending::before{background:var(--gold)}
+.inbox-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-left:3px}
+.inbox-dot--urgent{background:var(--coral)}
+.inbox-dot--new{background:var(--sienna)}
+.inbox-dot--pending{background:var(--gold)}
+.inbox-body{flex:1;min-width:0}
+.inbox-title{font-size:13px;font-weight:700;color:var(--ink);letter-spacing:-.2px}
+.inbox-meta{font-size:11px;font-weight:500;color:var(--ink-3);margin-top:2px}
+.inbox-tag{font-size:9px;font-weight:800;padding:3px 8px;border-radius:var(--r-full);letter-spacing:.3px;flex-shrink:0}
+.inbox-tag--urgent{background:var(--coral-soft);color:var(--coral)}
+.inbox-tag--new{background:var(--sienna-soft);color:var(--sienna)}
+.inbox-tag--pending{background:var(--gold-soft);color:var(--warning)}
+
+/* ── Activity Timeline ── */
+.act-item{display:flex;gap:12px;padding:12px 0;position:relative}
+.act-item:not(:last-child)::after{content:'';position:absolute;left:19px;top:36px;bottom:0;width:2px;background:var(--line-soft);border-radius:1px}
+.act-ic{width:38px;height:38px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0;z-index:1}
+.act-ic svg{width:16px;height:16px;stroke-width:2;fill:none}
+.act-ic--fee{background:var(--sienna-soft)}.act-ic--fee svg{stroke:var(--sienna)}
+.act-ic--adm{background:var(--mint-soft)}.act-ic--adm svg{stroke:var(--success)}
+.act-ic--ann{background:var(--sky-soft)}.act-ic--ann svg{stroke:var(--sky)}
+.act-ic--leave{background:var(--gold-soft)}.act-ic--leave svg{stroke:var(--warning)}
+.act-ic--evt{background:var(--plum-soft)}.act-ic--evt svg{stroke:var(--plum)}
+.act-body{flex:1;min-width:0;padding-top:2px}
+.act-title{font-size:13px;font-weight:700;color:var(--ink);letter-spacing:-.2px}
+.act-meta{font-size:11px;font-weight:500;color:var(--ink-3);margin-top:2px}
+.act-time{font-size:10px;font-weight:600;color:var(--ink-3);margin-top:3px}
+
+/* ═══ BOTTOM NAV — PREMIUM FLOATING PILL ═══ */
+.bottom-nav{display:flex;align-items:center;justify-content:space-between;gap:2px;margin:0 var(--s-md) var(--s-sm);padding:6px;border-radius:var(--r-xl);background:var(--white);flex-shrink:0;box-shadow:var(--shadow-2);position:relative}
+.bn-item{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;cursor:pointer;padding:8px 10px;position:relative;transition:all var(--dur) var(--ease);border-radius:var(--r-md);flex:1}
+.bn-item:active{transform:scale(.93)}
+.bn-item-ic{width:34px;height:34px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;color:var(--ink-3);transition:all var(--dur) var(--ease)}
+.bn-item-ic svg{width:22px;height:22px;stroke:currentColor;stroke-width:2;fill:none}
+.bn-item-label{font-size:10px;font-weight:600;color:var(--ink-3);letter-spacing:.2px;transition:all var(--dur) var(--ease)}
+.bn-item.active .bn-item-ic{background:var(--sienna);color:#fff;box-shadow:0 4px 12px -2px rgba(180,83,9,.35)}
+.bn-item.active .bn-item-label{color:var(--sienna);font-weight:800}
+.bn-item:not(.active):hover .bn-item-ic{background:var(--surface-tint);color:var(--ink-2)}
+.bn-item .bn-badge{position:absolute;top:2px;right:50%;transform:translateX(20px);min-width:17px;height:17px;border-radius:var(--r-full);background:var(--coral);color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--white)}
+
+/* ═══ STUDENTS TAB ═══ */
+.st-search{margin:var(--s-sm) var(--s-lg) var(--s-md);padding:10px 14px;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);display:flex;align-items:center;gap:10px}
+.st-search svg{width:18px;height:18px;stroke:var(--ink-3);stroke-width:2;fill:none;flex-shrink:0}
+.st-search input{flex:1;border:none;outline:none;font-size:14px;font-family:var(--font);color:var(--ink);background:transparent}
+.st-search input::placeholder{color:var(--ink-3)}
+.st-chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:0 var(--s-lg);margin:0 calc(-1 * var(--s-lg)) var(--s-md)}
+.st-chips::-webkit-scrollbar{display:none}
+.st-chip{flex-shrink:0;padding:6px 14px;border-radius:var(--r-full);font-size:12px;font-weight:600;color:var(--ink-3);background:var(--white);border:none;cursor:pointer;transition:all 250ms var(--ease);box-shadow:var(--shadow-1)}
+.st-chip.active{background:var(--sienna);color:#fff;box-shadow:none}
+.st-card{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);margin:0 var(--s-lg) 8px;cursor:pointer;transition:all 250ms var(--ease)}
+.st-card:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
+.st-avatar{width:42px;height:42px;border-radius:var(--r-full);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0}
+.st-avatar--sienna{background:var(--sienna-soft);color:var(--sienna)}
+.st-avatar--sky{background:var(--sky-soft);color:var(--sky)}
+.st-avatar--coral{background:var(--coral-soft);color:var(--coral)}
+.st-avatar--mint{background:var(--mint-soft);color:var(--success)}
+.st-avatar--gold{background:var(--gold-soft);color:var(--warning)}
+.st-avatar--plum{background:var(--plum-soft);color:var(--plum)}
+.st-info{flex:1;min-width:0}
+.st-name{font-size:14px;font-weight:700;color:var(--ink);letter-spacing:-.2px}
+.st-meta{font-size:12px;font-weight:500;color:var(--ink-3);margin-top:1px}
+.st-badge{font-size:9px;font-weight:800;padding:3px 8px;border-radius:var(--r-full);letter-spacing:.3px;flex-shrink:0}
+.st-badge--present{background:var(--mint-soft);color:var(--success)}
+.st-badge--absent{background:var(--coral-soft);color:var(--coral)}
+.st-badge--late{background:var(--gold-soft);color:var(--warning)}
+.st-badge--pending{background:var(--sienna-soft);color:var(--sienna)}
+
+/* ═══ FEES TAB ═══ */
+.fees-hero{margin:var(--s-sm) var(--s-lg) var(--s-md);padding:24px 20px;background:var(--white);border-radius:var(--r-lg);box-shadow:var(--shadow-1);position:relative;overflow:hidden}
+.fees-hero::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:var(--sienna-soft);opacity:.4}
+.fees-hero-label{font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:1px;position:relative;z-index:1}
+.fees-hero-amount{font-size:32px;font-weight:900;color:var(--ink);letter-spacing:-1px;margin-top:6px;position:relative;z-index:1;font-variant-numeric:tabular-nums}
+.fees-hero-due{font-size:12px;font-weight:500;color:var(--ink-3);margin-top:4px;position:relative;z-index:1}
+.fees-hero-stats{display:flex;gap:16px;margin-top:16px;position:relative;z-index:1}
+.fees-hero-stat{flex:1}
+.fees-hero-stat-num{font-size:16px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+.fees-hero-stat-label{font-size:10px;font-weight:600;color:var(--ink-3);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+.fees-hero-btn{margin-top:16px;padding:12px 20px;background:var(--sienna);color:#fff;border:none;border-radius:var(--r-md);font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font);transition:all 250ms var(--ease);box-shadow:0 4px 12px -2px rgba(180,83,9,.3);position:relative;z-index:1;display:flex;align-items:center;gap:8px}
+.fees-hero-btn:hover{background:var(--sienna-hover);transform:translateY(-1px)}
+.fees-hero-btn svg{width:16px;height:16px;stroke:#fff;stroke-width:2;fill:none}
+.fees-pay-item{display:flex;align-items:center;gap:12px;padding:12px 0}
+.fees-pay-item:not(:last-child){border-bottom:1px solid var(--line-soft)}
+.fees-pay-icon{width:34px;height:34px;border-radius:var(--r-sm);background:var(--mint-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fees-pay-icon svg{width:15px;height:15px;stroke:var(--success);stroke-width:2;fill:none}
+.fees-pay-info{flex:1;min-width:0}
+.fees-pay-title{font-size:13px;font-weight:700;color:var(--ink);letter-spacing:-.2px}
+.fees-pay-date{font-size:11px;font-weight:500;color:var(--ink-3);margin-top:1px}
+.fees-pay-amount{font-size:14px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+.fees-pay-receipt{font-size:10px;font-weight:600;color:var(--sienna);margin-top:2px;cursor:pointer}
+
+/* ═══ INBOX TAB ═══ */
+.conv-segments{display:flex;gap:0;margin:var(--s-sm) var(--s-lg) var(--s-md);background:var(--surface-tint);border-radius:var(--r-md);padding:3px}
+.conv-seg{flex:1;padding:8px;border-radius:var(--r-sm);font-size:12px;font-weight:600;color:var(--ink-3);border:none;background:transparent;cursor:pointer;transition:all 250ms var(--ease);text-align:center}
+.conv-seg.active{background:var(--white);color:var(--ink);font-weight:800;box-shadow:var(--shadow-1)}
+.conv-seg-content{display:none}
+.conv-seg-content.active{display:block}
+.conv-thread{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);margin:0 var(--s-lg) 6px;cursor:pointer;transition:all 250ms var(--ease)}
+.conv-thread:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
+.conv-avatar{width:42px;height:42px;border-radius:var(--r-full);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0}
+.conv-avatar--sienna{background:var(--sienna-soft);color:var(--sienna)}
+.conv-avatar--sky{background:var(--sky-soft);color:var(--sky)}
+.conv-avatar--coral{background:var(--coral-soft);color:var(--coral)}
+.conv-avatar--gold{background:var(--gold-soft);color:var(--warning)}
+.conv-avatar--mint{background:var(--mint-soft);color:var(--success)}
+.conv-info{flex:1;min-width:0}
+.conv-name{font-size:13px;font-weight:700;color:var(--ink);letter-spacing:-.2px}
+.conv-preview{font-size:12px;font-weight:500;color:var(--ink-3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conv-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.conv-time{font-size:10px;font-weight:600;color:var(--ink-3)}
+.conv-unread{min-width:18px;height:18px;border-radius:var(--r-full);background:var(--sienna);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 5px}
+
+/* ═══ PROFILE TAB ═══ */
+.prof-hero{margin:var(--s-sm) var(--s-lg) var(--s-md);padding:24px 20px;background:var(--white);border-radius:var(--r-lg);box-shadow:var(--shadow-1);position:relative;overflow:hidden;text-align:center}
+.prof-hero::before{content:'';position:absolute;top:-40px;right:-20px;width:120px;height:120px;border-radius:50%;background:var(--sienna-soft);opacity:.4}
+.prof-hero::after{content:'';position:absolute;bottom:-30px;left:-20px;width:80px;height:80px;border-radius:50%;background:var(--coral-soft);opacity:.25}
+.prof-hero-avatar{width:64px;height:64px;border-radius:var(--r-full);background:var(--sienna-soft);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:var(--sienna);margin:0 auto 12px;position:relative;z-index:1;outline:3px solid var(--white);box-shadow:0 0 0 3px var(--sienna-soft)}
+.prof-hero-name{font-size:18px;font-weight:800;color:var(--ink);letter-spacing:-.4px;position:relative;z-index:1}
+.prof-hero-role{font-size:13px;font-weight:500;color:var(--ink-3);margin-top:2px;position:relative;z-index:1}
+.prof-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:0 var(--s-lg) var(--s-md)}
+.prof-stat{padding:14px;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);cursor:pointer;transition:all 250ms var(--ease)}
+.prof-stat:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
+.prof-stat-num{font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-.3px}
+.prof-stat-label{font-size:10px;font-weight:600;color:var(--ink-3);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+.prof-stat-trend{font-size:10px;font-weight:700;margin-top:2px}
+.prof-stat-trend--up{color:var(--success)}
+.prof-stat-trend--down{color:var(--coral)}
+.prof-section{margin:0 var(--s-lg) var(--s-md)}
+.prof-row{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);cursor:pointer;transition:all 250ms var(--ease);margin-bottom:6px}
+.prof-row:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
+.prof-row-icon{width:32px;height:32px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.prof-row-icon svg{width:16px;height:16px;stroke-width:2;fill:none}
+.prof-row-icon--settings{background:var(--surface-tint)}.prof-row-icon--settings svg{stroke:var(--ink-2)}
+.prof-row-icon--staff{background:var(--sienna-soft)}.prof-row-icon--staff svg{stroke:var(--sienna)}
+.prof-row-icon--report{background:var(--sky-soft)}.prof-row-icon--report svg{stroke:var(--sky)}
+.prof-row-icon--logout{background:var(--coral-soft)}.prof-row-icon--logout svg{stroke:var(--coral)}
+.prof-row-label{flex:1;font-size:13px;font-weight:700;color:var(--ink);letter-spacing:-.2px}
+.prof-row-chevron{width:16px;height:16px;stroke:var(--ink-3);stroke-width:2;fill:none;flex-shrink:0}
+.prof-logout{margin:0 var(--s-lg) var(--s-md);padding:14px;background:var(--coral-soft);border-radius:var(--r-md);box-shadow:var(--shadow-1);cursor:pointer;transition:all 250ms var(--ease);text-align:center;font-size:14px;font-weight:800;color:var(--coral);border:none;font-family:var(--font)}
+.prof-logout:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
+
+/* ═══ OVERLAY SYSTEM ═══ */
+.overlay{position:absolute;inset:0;background:var(--cream);z-index:100;transform:translateX(100%);transition:transform 300ms var(--ease);display:flex;flex-direction:column;overflow:hidden}
+.overlay.active{transform:translateX(0)}
+.overlay-header{display:flex;align-items:center;gap:12px;padding:var(--s-sm) var(--s-lg);background:var(--white);box-shadow:0 1px 0 var(--line-soft);flex-shrink:0}
+.overlay-back{width:32px;height:32px;border-radius:var(--r-sm);border:none;background:var(--surface-tint);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 200ms var(--ease);flex-shrink:0}
+.overlay-back:hover{background:var(--surface-cl)}
+.overlay-back svg{width:18px;height:18px;stroke:var(--ink);stroke-width:2;fill:none}
+.overlay-title{font-size:16px;font-weight:800;color:var(--ink);letter-spacing:-.3px}
+.overlay-body{flex:1;overflow-y:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:var(--s-lg)}
+.overlay-body::-webkit-scrollbar{display:none}
+.ov-card{background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:16px;margin:var(--s-sm) var(--s-lg)}
+.ov-card-title{font-size:13px;font-weight:800;color:var(--ink);letter-spacing:-.2px;margin-bottom:12px}
+.ov-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0}
+.ov-row:not(:last-child){border-bottom:1px solid var(--line-soft)}
+.ov-label{font-size:13px;font-weight:600;color:var(--ink-2)}
+.ov-val{font-size:13px;font-weight:700;color:var(--ink)}
+
+/* ── Notifications overlay — premium ── */
+.ov-notif-group{font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:1px;margin:var(--s-md) var(--s-lg) 6px}
+.ov-notif{display:flex;gap:12px;padding:14px 16px;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);margin:0 var(--s-lg) 6px;cursor:pointer;transition:all 250ms var(--ease);position:relative;overflow:hidden}
+.ov-notif:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
+.ov-notif::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:0 2px 2px 0}
+.ov-notif--unread::before{background:var(--sienna)}
+.ov-notif--urgent::before{background:var(--coral)}
+.ov-notif-icon{width:36px;height:36px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ov-notif-icon svg{width:16px;height:16px;stroke-width:2;fill:none}
+.ov-notif-icon--bell{background:var(--sienna-soft)}.ov-notif-icon--bell svg{stroke:var(--sienna)}
+.ov-notif-icon--fee{background:var(--mint-soft)}.ov-notif-icon--fee svg{stroke:var(--success)}
+.ov-notif-icon--msg{background:var(--sky-soft)}.ov-notif-icon--msg svg{stroke:var(--sky)}
+.ov-notif-icon--evt{background:var(--plum-soft)}.ov-notif-icon--evt svg{stroke:var(--plum)}
+.ov-notif-icon--alert{background:var(--coral-soft)}.ov-notif-icon--alert svg{stroke:var(--coral)}
+.ov-notif-info{flex:1;min-width:0}
+.ov-notif-title{font-size:13px;font-weight:700;color:var(--ink);letter-spacing:-.2px}
+.ov-notif-body{font-size:12px;font-weight:500;color:var(--ink-3);margin-top:2px;line-height:1.4}
+.ov-notif-time{font-size:10px;font-weight:600;color:var(--ink-3);margin-top:3px}
+.ov-notif-actions{display:flex;gap:6px;margin-top:8px}
+.ov-notif-btn{padding:5px 12px;border-radius:var(--r-full);font-size:11px;font-weight:700;border:none;cursor:pointer;font-family:var(--font);transition:all 200ms var(--ease)}
+.ov-notif-btn--approve{background:var(--mint-soft);color:var(--success)}
+.ov-notif-btn--approve:hover{background:var(--mint);color:#fff}
+.ov-notif-btn--reject{background:var(--surface-tint);color:var(--ink-2)}
+.ov-notif-btn--reject:hover{background:var(--coral-soft);color:var(--coral)}
+.ov-notif-btn--read{background:var(--surface-tint);color:var(--ink-2)}
+.ov-notif-btn--read:hover{background:var(--sienna-soft);color:var(--sienna)}
+.ov-notif-markall{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;margin:0 var(--s-lg) var(--s-sm);background:var(--surface-tint);border-radius:var(--r-md);font-size:12px;font-weight:700;color:var(--sienna);cursor:pointer;transition:all 200ms var(--ease);border:none;font-family:var(--font)}
+.ov-notif-markall:hover{background:var(--sienna-soft)}
+.ov-notif-markall svg{width:14px;height:14px;stroke:var(--sienna);stroke-width:2;fill:none}
+
+/* ── Conversation detail ── */
+.ov-conv-detail{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.ov-conv-header{display:flex;align-items:center;gap:10px;padding:var(--s-sm) var(--s-lg);background:var(--white);box-shadow:0 1px 0 var(--line-soft);flex-shrink:0}
+.ov-conv-avatar{width:36px;height:36px;border-radius:var(--r-full);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0}
+.ov-conv-name{font-size:14px;font-weight:800;color:var(--ink);letter-spacing:-.2px}
+.ov-conv-sub{font-size:11px;font-weight:500;color:var(--ink-3)}
+.ov-chat{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.ov-chat-msgs{flex:1;overflow-y:auto;scrollbar-width:none;padding:var(--s-sm) var(--s-lg);display:flex;flex-direction:column;gap:10px}
+.ov-chat-msgs::-webkit-scrollbar{display:none}
+.ov-bubble{max-width:80%;padding:10px 14px;border-radius:var(--r-md);font-size:13px;font-weight:500;line-height:1.5}
+.ov-bubble--tutor{background:var(--white);box-shadow:var(--shadow-1);align-self:flex-start;border-bottom-left-radius:4px;color:var(--ink)}
+.ov-bubble--user{background:var(--sienna);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.ov-chat-input{display:flex;gap:8px;padding:var(--s-sm) var(--s-lg);background:var(--white);box-shadow:0 -1px 0 var(--line-soft);flex-shrink:0}
+.ov-chat-input input{flex:1;padding:10px 14px;border:1px solid var(--line);border-radius:var(--r-md);font-size:13px;font-family:var(--font);outline:none;color:var(--ink)}
+.ov-chat-input input:focus{border-color:var(--sienna)}
+.ov-chat-send{width:38px;height:38px;border-radius:var(--r-md);background:var(--sienna);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 200ms var(--ease)}
+.ov-chat-send:hover{background:var(--sienna-hover)}
+.ov-chat-send svg{width:16px;height:16px;stroke:#fff;stroke-width:2;fill:none}
+
+/* ── Staff overlay ── */
+.ov-staff-item{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);margin:0 var(--s-lg) 8px;cursor:pointer;transition:all 250ms var(--ease)}
+.ov-staff-item:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
+.ov-staff-avatar{width:40px;height:40px;border-radius:var(--r-full);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0}
+.ov-staff-info{flex:1;min-width:0}
+.ov-staff-name{font-size:13px;font-weight:700;color:var(--ink);letter-spacing:-.2px}
+.ov-staff-role{font-size:11px;font-weight:500;color:var(--ink-3);margin-top:1px}
+.ov-staff-status{font-size:9px;font-weight:800;padding:3px 8px;border-radius:var(--r-full);letter-spacing:.3px;flex-shrink:0}
+.ov-staff-status--active{background:var(--mint-soft);color:var(--success)}
+.ov-staff-status--leave{background:var(--gold-soft);color:var(--warning)}
+
+/* ── Reports overlay ── */
+.ov-rpt-item{background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:16px;margin:0 var(--s-lg) 8px;cursor:pointer;transition:all 250ms var(--ease)}
+.ov-rpt-item:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
+.ov-rpt-name{font-size:14px;font-weight:800;color:var(--ink);letter-spacing:-.2px}
+.ov-rpt-meta{font-size:11px;font-weight:500;color:var(--ink-3);margin-top:4px}
+.ov-rpt-status{font-size:10px;font-weight:800;padding:3px 10px;border-radius:var(--r-full);letter-spacing:.3px;display:inline-block;margin-top:8px}
+.ov-rpt-status--ready{background:var(--mint-soft);color:var(--success)}
+.ov-rpt-status--gen{background:var(--sienna-soft);color:var(--sienna)}
+.ov-rpt-status--sched{background:var(--surface-tint);color:var(--ink-3)}
+
+/* ── Announcement overlay ── */
+.ov-ann-form{background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:16px;margin:var(--s-sm) var(--s-lg)}
+.ov-input{width:100%;padding:10px 14px;border:1px solid var(--line);border-radius:var(--r-md);font-size:13px;font-family:var(--font);outline:none;color:var(--ink);margin-bottom:10px}
+.ov-input:focus{border-color:var(--sienna)}
+.ov-input::placeholder{color:var(--ink-3)}
+.ov-textarea{min-height:80px;resize:vertical}
+.ov-ann-chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-bottom:10px}
+.ov-ann-chips::-webkit-scrollbar{display:none}
+.ov-ann-chip{flex-shrink:0;padding:5px 12px;border-radius:var(--r-full);font-size:11px;font-weight:600;color:var(--ink-3);background:var(--surface-tint);border:none;cursor:pointer;transition:all 200ms var(--ease)}
+.ov-ann-chip.active{background:var(--sienna);color:#fff}
+.ov-btn{width:100%;padding:12px;background:var(--sienna);color:#fff;border:none;border-radius:var(--r-md);font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font);transition:all 250ms var(--ease);display:flex;align-items:center;justify-content:center;gap:8px}
+.ov-btn:hover{background:var(--sienna-hover)}
+.ov-btn svg{width:16px;height:16px;stroke:#fff;stroke-width:2;fill:none}
+.ov-ann-item{background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:16px;margin:0 var(--s-lg) 8px;position:relative;overflow:hidden}
+.ov-ann-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--sky);border-radius:0 2px 2px 0}
+.ov-ann-cat{font-size:9px;font-weight:800;padding:2px 7px;border-radius:var(--r-full);letter-spacing:.3px;background:var(--sky-soft);color:var(--sky);display:inline-block;margin-bottom:4px}
+.ov-ann-title{font-size:13px;font-weight:700;color:var(--ink);letter-spacing:-.2px}
+.ov-ann-body{font-size:12px;font-weight:500;color:var(--ink-2);margin-top:3px;line-height:1.4}
+.ov-ann-time{font-size:10px;font-weight:600;color:var(--ink-3);margin-top:5px}
+
+/* ── Calendar overlay ── */
+.ov-cal{background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:16px;margin:var(--s-sm) var(--s-lg)}
+.ov-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin:8px 0}
+.ov-cal-day{aspect-ratio:1;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:var(--ink-3)}
+.ov-cal-day--event{background:var(--sienna-soft);color:var(--sienna);font-weight:800}
+.ov-cal-day--today{background:var(--sienna);color:#fff;font-weight:800}
+.ov-cal-day--empty{background:var(--surface-tint)}
+.ov-cal-day--header{font-size:9px;font-weight:700;color:var(--ink-3);text-transform:uppercase}
+.ov-cal-evt{display:flex;gap:10px;padding:10px 0}
+.ov-cal-evt:not(:last-child){border-bottom:1px solid var(--line-soft)}
+.ov-cal-evt-date{font-size:10px;font-weight:700;color:var(--sienna);text-transform:uppercase;letter-spacing:.5px;min-width:60px;flex-shrink:0}
+.ov-cal-evt-name{font-size:13px;font-weight:700;color:var(--ink);letter-spacing:-.2px}
+.ov-cal-evt-desc{font-size:11px;font-weight:500;color:var(--ink-3);margin-top:2px}
 </style>
 </head>
 <body>
-<!-- BODY_PLACEHOLDER -->
+<svg style="display:none">
+  <symbol id="icon-home" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 12l9-9 9 9M5 10v10h4v-6h6v6h4V10" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-users" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-rupee" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M6 3h12M6 8h12M6 13l8 8M6 13c5 0 8-3 8-5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-chat" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-user" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-bell" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-check" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-clock" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2" stroke-linecap="round"/></symbol>
+  <symbol id="icon-calendar" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18" stroke-linecap="round"/></symbol>
+  <symbol id="icon-alert" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-megaphone" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 11l18-5v12L3 14v-3zM11.6 16.8a3 3 0 1 1-5.8-1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-chevron-right" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M9 18l6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-chevron-down" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-arrow-right" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-trend-up" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M23 6l-9.5 9.5-5-5L1 18" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 6h6v6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-trend-down" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M23 18l-9.5-9.5-5 5L1 6" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 18h6v-6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-settings" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-logout" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-send" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-plus" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-search" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35" stroke-linecap="round"/></symbol>
+  <symbol id="icon-file" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-clipboard" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M9 2h6a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-download" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<!-- ═══ Shell ═══ -->
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-name">Enroll<span class="plus">+</span> <span style="color:#5A5764;font-weight:500;font-size:12px">Admin</span></div>
+    </div>
+    <nav>
+      <div class="nav-group">Tabs</div>
+      <button class="nav-item active" data-nav="tab:Home"><span class="nav-dot"></span>Home</button>
+      <button class="nav-item" data-nav="tab:Students"><span class="nav-dot"></span>Students</button>
+      <button class="nav-item" data-nav="tab:Fees"><span class="nav-dot"></span>Fees</button>
+      <button class="nav-item" data-nav="tab:Inbox"><span class="nav-dot"></span>Inbox</button>
+      <button class="nav-item" data-nav="tab:Profile"><span class="nav-dot"></span>Profile</button>
+      <div class="nav-group">Overlays</div>
+      <button class="nav-item" data-nav="overlay:ov-notifications"><span class="nav-dot"></span>Notifications</button>
+      <button class="nav-item" data-nav="overlay:ov-staff"><span class="nav-dot"></span>Staff Directory</button>
+      <button class="nav-item" data-nav="overlay:ov-reports"><span class="nav-dot"></span>Reports</button>
+      <button class="nav-item" data-nav="overlay:ov-announce"><span class="nav-dot"></span>Announcements</button>
+      <button class="nav-item" data-nav="overlay:ov-calendar"><span class="nav-dot"></span>Calendar</button>
+    </nav>
+  </aside>
+
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="island"></div>
+      <div class="home-bar"></div>
+      <div class="screen-area">
+
+        <div class="statusbar">
+          <span>9:41</span>
+          <span class="icons">●●● 5G ▮</span>
+        </div>
+
+        <div class="portal-header">
+          <div>
+            <div class="portal-header-school">Delhi Public School</div>
+            <div class="portal-header-name">
+              <span class="portal-header-name-text">Admin Dashboard</span>
+              <svg class="portal-header-chevron"><use href="#icon-chevron-down"/></svg>
+            </div>
+          </div>
+          <div class="portal-header-right">
+            <button class="header-icon-btn" data-overlay="ov-notifications">
+              <svg><use href="#icon-bell"/></svg>
+              <span class="header-badge">5</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ═══ HOME TAB ═══ -->
+        <div class="tab-content active" id="tab-home">
+          <div class="scroll content-pb">
+            <div class="ph-greeting">Good morning, Priya</div>
+
+            <!-- Hero: Attendance Snapshot -->
+            <div class="ph-hero">
+              <div class="ph-hero-top">
+                <div class="ph-hero-left">
+                  <div class="ph-hero-label">Present Today</div>
+                  <div class="ph-hero-big">1,247<span class="total"> / 1,312</span></div>
+                  <div class="ph-hero-sub"><span class="strong">65 absent</span> · 12 on leave · 4 late arrivals</div>
+                </div>
+                <div class="ph-hero-ring">
+                  <svg><circle class="ph-hero-ring-track" cx="36" cy="36" r="28"></circle><circle class="ph-hero-ring-fill" cx="36" cy="36" r="28"></circle></svg>
+                  <div class="ph-hero-ring-pct"><div class="ph-hero-ring-num">95%</div><div class="ph-hero-ring-sm">attendance</div></div>
+                </div>
+              </div>
+              <div class="ph-hero-bars">
+                <div class="ph-hero-bar"><div class="ph-hero-bar-fill ph-hero-bar-fill--good" style="width:96%"></div></div>
+                <div class="ph-hero-bar"><div class="ph-hero-bar-fill ph-hero-bar-fill--good" style="width:94%"></div></div>
+                <div class="ph-hero-bar"><div class="ph-hero-bar-fill ph-hero-bar-fill--mid" style="width:88%"></div></div>
+                <div class="ph-hero-bar"><div class="ph-hero-bar-fill ph-hero-bar-fill--good" style="width:91%"></div></div>
+                <div class="ph-hero-bar"><div class="ph-hero-bar-fill ph-hero-bar-fill--mid" style="width:85%"></div></div>
+                <div class="ph-hero-bar"><div class="ph-hero-bar-fill ph-hero-bar-fill--low" style="width:72%"></div></div>
+              </div>
+              <div class="ph-hero-bar-labels">
+                <div class="ph-hero-bar-lbl">6A</div><div class="ph-hero-bar-lbl">6B</div><div class="ph-hero-bar-lbl">7A</div><div class="ph-hero-bar-lbl">7B</div><div class="ph-hero-bar-lbl">8A</div><div class="ph-hero-bar-lbl">8B</div>
+              </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="qa-row">
+              <button class="qa-btn" data-overlay="ov-announce">
+                <div class="qa-btn-ic qa-btn-ic--announce"><svg><use href="#icon-megaphone"/></svg></div>
+                <span class="qa-btn-label">Announce</span>
+              </button>
+              <button class="qa-btn" data-overlay="ov-calendar">
+                <div class="qa-btn-ic qa-btn-ic--calendar"><svg><use href="#icon-calendar"/></svg></div>
+                <span class="qa-btn-label">Calendar</span>
+              </button>
+              <button class="qa-btn">
+                <div class="qa-btn-ic qa-btn-ic--approve"><svg><use href="#icon-check"/></svg></div>
+                <span class="qa-btn-label">Approve</span>
+              </button>
+              <button class="qa-btn">
+                <div class="qa-btn-ic qa-btn-ic--remind"><svg><use href="#icon-rupee"/></svg></div>
+                <span class="qa-btn-label">Remind</span>
+              </button>
+              <button class="qa-btn" data-overlay="ov-reports">
+                <div class="qa-btn-ic qa-btn-ic--report"><svg><use href="#icon-file"/></svg></div>
+                <span class="qa-btn-label">Reports</span>
+              </button>
+            </div>
+
+            <!-- Pulse Cards -->
+            <div class="ph-pulse-scroll">
+              <div class="ph-pulse-card ph-pulse-card--fee">
+                <div class="ph-pulse-top">
+                  <div class="ph-pulse-icon ph-pulse-icon--fee"><svg><use href="#icon-rupee"/></svg></div>
+                  <span class="ph-pulse-trend ph-pulse-trend--up"><svg><use href="#icon-trend-up"/></svg>+12%</span>
+                </div>
+                <div class="ph-pulse-num">₹4.2<span class="unit">L</span></div>
+                <div class="ph-pulse-label">Fees Collected</div>
+                <div class="ph-pulse-sub">This month · 842 paid</div>
+              </div>
+              <div class="ph-pulse-card ph-pulse-card--alert">
+                <div class="ph-pulse-top">
+                  <div class="ph-pulse-icon ph-pulse-icon--alert"><svg><use href="#icon-alert"/></svg></div>
+                  <span class="ph-pulse-trend ph-pulse-trend--alert">Action</span>
+                </div>
+                <div class="ph-pulse-num">23</div>
+                <div class="ph-pulse-label">Pending Approvals</div>
+                <div class="ph-pulse-sub">Leave · Admissions · TC</div>
+              </div>
+              <div class="ph-pulse-card ph-pulse-card--adm">
+                <div class="ph-pulse-top">
+                  <div class="ph-pulse-icon ph-pulse-icon--adm"><svg><use href="#icon-users"/></svg></div>
+                  <span class="ph-pulse-trend ph-pulse-trend--up"><svg><use href="#icon-trend-up"/></svg>+8</span>
+                </div>
+                <div class="ph-pulse-num">1,312</div>
+                <div class="ph-pulse-label">Total Students</div>
+                <div class="ph-pulse-sub">+8 new this week</div>
+              </div>
+              <div class="ph-pulse-card ph-pulse-card--col">
+                <div class="ph-pulse-top">
+                  <div class="ph-pulse-icon ph-pulse-icon--col"><svg><use href="#icon-rupee"/></svg></div>
+                  <span class="ph-pulse-trend ph-pulse-trend--alert">Due</span>
+                </div>
+                <div class="ph-pulse-num">₹6.8<span class="unit">L</span></div>
+                <div class="ph-pulse-label">Outstanding</div>
+                <div class="ph-pulse-sub">470 students · Term 3</div>
+              </div>
+            </div>
+
+            <!-- Fee Progress -->
+            <div class="ph-fee">
+              <div class="ph-fee-top">
+                <span class="ph-fee-title">Term 3 Fee Collection</span>
+                <span class="ph-fee-amt">₹4.2L <span class="sm">/ ₹11L</span></span>
+              </div>
+              <div class="ph-fee-bar"><div class="ph-fee-bar-fill" style="width:38%"></div></div>
+              <div class="ph-fee-meta">
+                <span class="ph-fee-meta-item"><span class="strong">842</span> paid · <span class="strong">470</span> pending</span>
+                <span class="ph-fee-meta-item">Due: <span class="strong">Mar 15</span></span>
+              </div>
+            </div>
+
+            <!-- Priority Inbox -->
+            <div class="ph-section">
+              <div class="ph-section-head">
+                <span class="ph-section-title">Priority Inbox</span>
+                <span class="ph-section-link">View all <svg><use href="#icon-arrow-right"/></svg></span>
+              </div>
+              <div class="inbox-item inbox-item--urgent">
+                <div class="inbox-dot inbox-dot--urgent"></div>
+                <div class="inbox-body">
+                  <div class="inbox-title">Leave Request — Aarav Sharma (7-B)</div>
+                  <div class="inbox-meta">Submitted by parent · 2 days</div>
+                </div>
+                <span class="inbox-tag inbox-tag--urgent">Urgent</span>
+              </div>
+              <div class="inbox-item inbox-item--new">
+                <div class="inbox-dot inbox-dot--new"></div>
+                <div class="inbox-body">
+                  <div class="inbox-title">New Admission — Riya Patel (Grade 5)</div>
+                  <div class="inbox-meta">Application received · 3 hours ago</div>
+                </div>
+                <span class="inbox-tag inbox-tag--new">New</span>
+              </div>
+              <div class="inbox-item inbox-item--pending">
+                <div class="inbox-dot inbox-dot--pending"></div>
+                <div class="inbox-body">
+                  <div class="inbox-title">Transfer Certificate — Rohan Gupta (alumni)</div>
+                  <div class="inbox-meta">Requested by parent · 1 day</div>
+                </div>
+                <span class="inbox-tag inbox-tag--pending">Pending</span>
+              </div>
+            </div>
+
+            <!-- Activity Timeline -->
+            <div class="ph-section">
+              <div class="ph-section-head">
+                <span class="ph-section-title">Recent Activity</span>
+              </div>
+              <div style="background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:12px 16px">
+                <div class="act-item">
+                  <div class="act-ic act-ic--fee"><svg><use href="#icon-rupee"/></svg></div>
+                  <div class="act-body">
+                    <div class="act-title">Fee payment received — ₹12,500</div>
+                    <div class="act-meta">Term 3 · Aarav Sharma (7-B) · UPI</div>
+                    <div class="act-time">10 min ago</div>
+                  </div>
+                </div>
+                <div class="act-item">
+                  <div class="act-ic act-ic--adm"><svg><use href="#icon-users"/></svg></div>
+                  <div class="act-body">
+                    <div class="act-title">New admission approved — Riya Patel</div>
+                    <div class="act-meta">Grade 5-A · Roll 28 · Parent linked</div>
+                    <div class="act-time">1 hour ago</div>
+                  </div>
+                </div>
+                <div class="act-item">
+                  <div class="act-ic act-ic--ann"><svg><use href="#icon-megaphone"/></svg></div>
+                  <div class="act-body">
+                    <div class="act-title">Announcement sent — Sports Day Registration</div>
+                    <div class="act-meta">Delivered to 1,312 parents · 847 opened</div>
+                    <div class="act-time">2 hours ago</div>
+                  </div>
+                </div>
+                <div class="act-item">
+                  <div class="act-ic act-ic--leave"><svg><use href="#icon-clipboard"/></svg></div>
+                  <div class="act-body">
+                    <div class="act-title">Leave approved — Sneha Reddy (8-A)</div>
+                    <div class="act-meta">2 days · Medical · Parent notified</div>
+                    <div class="act-time">3 hours ago</div>
+                  </div>
+                </div>
+                <div class="act-item">
+                  <div class="act-ic act-ic--evt"><svg><use href="#icon-calendar"/></svg></div>
+                  <div class="act-body">
+                    <div class="act-title">PTM scheduled — Jan 22, 10 AM to 1 PM</div>
+                    <div class="act-meta">Slot booking opens Jan 18 · 60 slots</div>
+                    <div class="act-time">5 hours ago</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ═══ STUDENTS TAB ═══ -->
+        <div class="tab-content" id="tab-students">
+          <div class="scroll content-pb">
+            <div class="st-search">
+              <svg><use href="#icon-search"/></svg>
+              <input type="text" placeholder="Search students, class, roll no...">
+            </div>
+            <div class="st-chips">
+              <button class="st-chip active">All</button>
+              <button class="st-chip">Class 6</button>
+              <button class="st-chip">Class 7</button>
+              <button class="st-chip">Class 8</button>
+              <button class="st-chip">Present</button>
+              <button class="st-chip">Absent</button>
+              <button class="st-chip">Late</button>
+            </div>
+            <div class="st-card">
+              <div class="st-avatar st-avatar--sienna">AS</div>
+              <div class="st-info">
+                <div class="st-name">Aarav Sharma</div>
+                <div class="st-meta">Class 7-B · Roll 14 · 94% attendance</div>
+              </div>
+              <span class="st-badge st-badge--present">Present</span>
+            </div>
+            <div class="st-card">
+              <div class="st-avatar st-avatar--sky">RP</div>
+              <div class="st-info">
+                <div class="st-name">Riya Patel</div>
+                <div class="st-meta">Class 5-A · Roll 28 · New admission</div>
+              </div>
+              <span class="st-badge st-badge--pending">New</span>
+            </div>
+            <div class="st-card">
+              <div class="st-avatar st-avatar--coral">RG</div>
+              <div class="st-info">
+                <div class="st-name">Rohan Gupta</div>
+                <div class="st-meta">Class 8-B · Roll 07 · 72% attendance</div>
+              </div>
+              <span class="st-badge st-badge--absent">Absent</span>
+            </div>
+            <div class="st-card">
+              <div class="st-avatar st-avatar--mint">SR</div>
+              <div class="st-info">
+                <div class="st-name">Sneha Reddy</div>
+                <div class="st-meta">Class 8-A · Roll 22 · On leave</div>
+              </div>
+              <span class="st-badge st-badge--late">Leave</span>
+            </div>
+            <div class="st-card">
+              <div class="st-avatar st-avatar--gold">MK</div>
+              <div class="st-info">
+                <div class="st-name">Mohit Kumar</div>
+                <div class="st-meta">Class 6-A · Roll 03 · 88% attendance</div>
+              </div>
+              <span class="st-badge st-badge--present">Present</span>
+            </div>
+            <div class="st-card">
+              <div class="st-avatar st-avatar--plum">PD</div>
+              <div class="st-info">
+                <div class="st-name">Priya Desai</div>
+                <div class="st-meta">Class 7-A · Roll 11 · 91% attendance</div>
+              </div>
+              <span class="st-badge st-badge--present">Present</span>
+            </div>
+            <div class="st-card">
+              <div class="st-avatar st-avatar--sienna">VK</div>
+              <div class="st-info">
+                <div class="st-name">Vikram Kapoor</div>
+                <div class="st-meta">Class 6-B · Roll 19 · Late today</div>
+              </div>
+              <span class="st-badge st-badge--late">Late</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ FEES TAB ═══ -->
+        <div class="tab-content" id="tab-fees">
+          <div class="scroll content-pb">
+            <div class="fees-hero">
+              <div class="fees-hero-label">Total Collected — Term 3</div>
+              <div class="fees-hero-amount">₹4,20,000</div>
+              <div class="fees-hero-due">Outstanding: ₹6,80,000 · Due by March 15</div>
+              <div class="fees-hero-stats">
+                <div class="fees-hero-stat">
+                  <div class="fees-hero-stat-num">842</div>
+                  <div class="fees-hero-stat-label">Paid</div>
+                </div>
+                <div class="fees-hero-stat">
+                  <div class="fees-hero-stat-num">470</div>
+                  <div class="fees-hero-stat-label">Pending</div>
+                </div>
+                <div class="fees-hero-stat">
+                  <div class="fees-hero-stat-num">38%</div>
+                  <div class="fees-hero-stat-label">Collected</div>
+                </div>
+              </div>
+              <button class="fees-hero-btn">Send Reminders <svg><use href="#icon-arrow-right"/></svg></button>
+            </div>
+            <div class="ph-section">
+              <div class="ph-section-head"><span class="ph-section-title">Recent Payments</span></div>
+              <div style="background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:12px 16px;margin:0 var(--s-lg)">
+                <div class="fees-pay-item">
+                  <div class="fees-pay-icon"><svg><use href="#icon-check"/></svg></div>
+                  <div class="fees-pay-info"><div class="fees-pay-title">Aarav Sharma (7-B)</div><div class="fees-pay-date">Paid today · UPI · TXN88421</div><div class="fees-pay-receipt">Download Receipt</div></div>
+                  <div class="fees-pay-amount">₹12,500</div>
+                </div>
+                <div class="fees-pay-item">
+                  <div class="fees-pay-icon"><svg><use href="#icon-check"/></svg></div>
+                  <div class="fees-pay-info"><div class="fees-pay-title">Sneha Reddy (8-A)</div><div class="fees-pay-date">Paid yesterday · Card · TXN88398</div><div class="fees-pay-receipt">Download Receipt</div></div>
+                  <div class="fees-pay-amount">₹14,200</div>
+                </div>
+                <div class="fees-pay-item">
+                  <div class="fees-pay-icon"><svg><use href="#icon-check"/></svg></div>
+                  <div class="fees-pay-info"><div class="fees-pay-title">Mohit Kumar (6-A)</div><div class="fees-pay-date">Paid 2 days ago · UPI · TXN88377</div><div class="fees-pay-receipt">Download Receipt</div></div>
+                  <div class="fees-pay-amount">₹11,800</div>
+                </div>
+                <div class="fees-pay-item">
+                  <div class="fees-pay-icon"><svg><use href="#icon-check"/></svg></div>
+                  <div class="fees-pay-info"><div class="fees-pay-title">Priya Desai (7-A)</div><div class="fees-pay-date">Paid 3 days ago · Net Banking · TXN88345</div><div class="fees-pay-receipt">Download Receipt</div></div>
+                  <div class="fees-pay-amount">₹13,500</div>
+                </div>
+              </div>
+            </div>
+            <div class="ph-section">
+              <div class="ph-section-head"><span class="ph-section-title">Defaulters — Top 5</span></div>
+              <div class="st-card">
+                <div class="st-avatar st-avatar--coral">RG</div>
+                <div class="st-info"><div class="st-name">Rohan Gupta (8-B)</div><div class="st-meta">₹14,200 pending · 45 days overdue</div></div>
+                <span class="st-badge st-badge--absent">Overdue</span>
+              </div>
+              <div class="st-card">
+                <div class="st-avatar st-avatar--coral">AT</div>
+                <div class="st-info"><div class="st-name">Ananya Tiwari (6-B)</div><div class="st-meta">₹12,500 pending · 30 days overdue</div></div>
+                <span class="st-badge st-badge--absent">Overdue</span>
+              </div>
+              <div class="st-card">
+                <div class="st-avatar st-avatar--coral">KS</div>
+                <div class="st-info"><div class="st-name">Karan Singh (7-A)</div><div class="st-meta">₹11,800 pending · 20 days overdue</div></div>
+                <span class="st-badge st-badge--absent">Overdue</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ INBOX TAB ═══ -->
+        <div class="tab-content" id="tab-inbox">
+          <div class="scroll content-pb">
+            <div class="conv-segments">
+              <button class="conv-seg active" data-convseg="approvals">Approvals</button>
+              <button class="conv-seg" data-convseg="messages">Messages</button>
+            </div>
+            <!-- Approvals -->
+            <div class="conv-seg-content active" id="convseg-approvals">
+              <div class="inbox-item inbox-item--urgent">
+                <div class="inbox-dot inbox-dot--urgent"></div>
+                <div class="inbox-body">
+                  <div class="inbox-title">Leave Request — Aarav Sharma (7-B)</div>
+                  <div class="inbox-meta">2 days · Medical · Parent: Priya Sharma</div>
+                </div>
+                <span class="inbox-tag inbox-tag--urgent">Urgent</span>
+              </div>
+              <div class="inbox-item inbox-item--new">
+                <div class="inbox-dot inbox-dot--new"></div>
+                <div class="inbox-body">
+                  <div class="inbox-title">New Admission — Riya Patel (Grade 5)</div>
+                  <div class="inbox-meta">Documents verified · Awaiting approval</div>
+                </div>
+                <span class="inbox-tag inbox-tag--new">New</span>
+              </div>
+              <div class="inbox-item inbox-item--pending">
+                <div class="inbox-dot inbox-dot--pending"></div>
+                <div class="inbox-body">
+                  <div class="inbox-title">Transfer Certificate — Rohan Gupta</div>
+                  <div class="inbox-meta">Alumni 2024 · Parent request</div>
+                </div>
+                <span class="inbox-tag inbox-tag--pending">Pending</span>
+              </div>
+              <div class="inbox-item inbox-item--pending">
+                <div class="inbox-dot inbox-dot--pending"></div>
+                <div class="inbox-body">
+                  <div class="inbox-title">Fee Concession — Ananya Tiwari (6-B)</div>
+                  <div class="inbox-meta">50% request · Income certificate attached</div>
+                </div>
+                <span class="inbox-tag inbox-tag--pending">Pending</span>
+              </div>
+            </div>
+            <!-- Messages -->
+            <div class="conv-seg-content" id="convseg-messages">
+              <div class="conv-thread">
+                <div class="conv-avatar conv-avatar--sienna">PS</div>
+                <div class="conv-info"><div class="conv-name">Priya Sharma (Teacher)</div><div class="conv-preview">Aarav's quiz performance has improved significantly</div></div>
+                <div class="conv-meta"><span class="conv-time">11:30</span><span class="conv-unread">1</span></div>
+              </div>
+              <div class="conv-thread">
+                <div class="conv-avatar conv-avatar--sky">MI</div>
+                <div class="conv-info"><div class="conv-name">Meera Iyer (Teacher)</div><div class="conv-preview">Need approval for field trip to Science Museum</div></div>
+                <div class="conv-meta"><span class="conv-time">10:15</span><span class="conv-unread">1</span></div>
+              </div>
+              <div class="conv-thread">
+                <div class="conv-avatar conv-avatar--gold">AD</div>
+                <div class="conv-info"><div class="conv-name">Anita Desai (Teacher)</div><div class="conv-preview">Syllabus completion report for Term 2 ready</div></div>
+                <div class="conv-meta"><span class="conv-time">Yesterday</span></div>
+              </div>
+              <div class="conv-thread">
+                <div class="conv-avatar conv-avatar--mint">OF</div>
+                <div class="conv-info"><div class="conv-name">School Office</div><div class="conv-preview">8 fee receipts pending verification</div></div>
+                <div class="conv-meta"><span class="conv-time">2d</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ PROFILE TAB ═══ -->
+        <div class="tab-content" id="tab-profile">
+          <div class="scroll content-pb">
+            <div class="prof-hero">
+              <div class="prof-hero-avatar">PM</div>
+              <div class="prof-hero-name">Priya Mehta</div>
+              <div class="prof-hero-role">Principal · Delhi Public School</div>
+            </div>
+            <div class="prof-stats">
+              <div class="prof-stat"><div class="prof-stat-num">1,312</div><div class="prof-stat-label">Students</div><div class="prof-stat-trend prof-stat-trend--up">+8 this week</div></div>
+              <div class="prof-stat"><div class="prof-stat-num">87</div><div class="prof-stat-label">Staff</div><div class="prof-stat-trend">84 active</div></div>
+              <div class="prof-stat"><div class="prof-stat-num">₹4.2L</div><div class="prof-stat-label">Fees (Month)</div><div class="prof-stat-trend prof-stat-trend--up">+12%</div></div>
+              <div class="prof-stat"><div class="prof-stat-num">95%</div><div class="prof-stat-label">Attendance</div><div class="prof-stat-trend prof-stat-trend--up">+1.2%</div></div>
+            </div>
+            <div class="prof-section">
+              <div class="ph-section-head"><span class="ph-section-title">Management</span></div>
+              <div class="prof-row" data-overlay="ov-staff">
+                <div class="prof-row-icon prof-row-icon--staff"><svg><use href="#icon-users"/></svg></div>
+                <span class="prof-row-label">Staff Directory</span>
+                <svg class="prof-row-chevron"><use href="#icon-chevron-right"/></svg>
+              </div>
+              <div class="prof-row" data-overlay="ov-reports">
+                <div class="prof-row-icon prof-row-icon--report"><svg><use href="#icon-file"/></svg></div>
+                <span class="prof-row-label">Reports & Analytics</span>
+                <svg class="prof-row-chevron"><use href="#icon-chevron-right"/></svg>
+              </div>
+              <div class="prof-row" data-overlay="ov-announce">
+                <div class="prof-row-icon prof-row-icon--settings"><svg><use href="#icon-megaphone"/></svg></div>
+                <span class="prof-row-label">Send Announcement</span>
+                <svg class="prof-row-chevron"><use href="#icon-chevron-right"/></svg>
+              </div>
+              <div class="prof-row" data-overlay="ov-calendar">
+                <div class="prof-row-icon prof-row-icon--report"><svg><use href="#icon-calendar"/></svg></div>
+                <span class="prof-row-label">School Calendar</span>
+                <svg class="prof-row-chevron"><use href="#icon-chevron-right"/></svg>
+              </div>
+              <div class="prof-row">
+                <div class="prof-row-icon prof-row-icon--settings"><svg><use href="#icon-settings"/></svg></div>
+                <span class="prof-row-label">Account Settings</span>
+                <svg class="prof-row-chevron"><use href="#icon-chevron-right"/></svg>
+              </div>
+            </div>
+            <button class="prof-logout">Logout</button>
+          </div>
+        </div>
+
+        <!-- ═══ BOTTOM NAV ═══ -->
+        <div class="bottom-nav">
+          <button class="bn-item active" data-nav="tab:Home">
+            <div class="bn-item-ic"><svg><use href="#icon-home"/></svg></div>
+            <div class="bn-item-label">Home</div>
+          </button>
+          <button class="bn-item" data-nav="tab:Students">
+            <div class="bn-item-ic"><svg><use href="#icon-users"/></svg></div>
+            <div class="bn-item-label">Students</div>
+          </button>
+          <button class="bn-item" data-nav="tab:Fees">
+            <div class="bn-item-ic"><svg><use href="#icon-rupee"/></svg></div>
+            <div class="bn-item-label">Fees</div>
+          </button>
+          <button class="bn-item" data-nav="tab:Inbox">
+            <div class="bn-item-ic"><svg><use href="#icon-chat"/></svg></div>
+            <div class="bn-item-label">Inbox</div>
+            <span class="bn-badge">5</span>
+          </button>
+          <button class="bn-item" data-nav="tab:Profile">
+            <div class="bn-item-ic"><svg><use href="#icon-user"/></svg></div>
+            <div class="bn-item-label">Profile</div>
+          </button>
+        </div>
+
+        <!-- ═══ OVERLAYS ═══ -->
+
+        <!-- Notifications -->
+        <div class="overlay" id="ov-notifications">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Notifications</span></div>
+          <div class="overlay-body">
+            <button class="ov-notif-markall"><svg><use href="#icon-check"/></svg> Mark all as read</button>
+            <div class="ov-notif-group">Today</div>
+            <div class="ov-notif ov-notif--urgent">
+              <div class="ov-notif-icon ov-notif-icon--alert"><svg><use href="#icon-alert"/></svg></div>
+              <div class="ov-notif-info">
+                <div class="ov-notif-title">Leave request requires approval</div>
+                <div class="ov-notif-body">Aarav Sharma (7-B) · 2 days · Medical</div>
+                <div class="ov-notif-time">2 hours ago</div>
+                <div class="ov-notif-actions">
+                  <button class="ov-notif-btn ov-notif-btn--approve">Approve</button>
+                  <button class="ov-notif-btn ov-notif-btn--reject">Reject</button>
+                </div>
+              </div>
+            </div>
+            <div class="ov-notif ov-notif--unread">
+              <div class="ov-notif-icon ov-notif-icon--msg"><svg><use href="#icon-chat"/></svg></div>
+              <div class="ov-notif-info">
+                <div class="ov-notif-title">New message from Priya Sharma</div>
+                <div class="ov-notif-body">Aarav's quiz performance has improved significantly</div>
+                <div class="ov-notif-time">11:30 AM</div>
+                <div class="ov-notif-actions">
+                  <button class="ov-notif-btn ov-notif-btn--read">Mark read</button>
+                  <button class="ov-notif-btn ov-notif-btn--read">Reply</button>
+                </div>
+              </div>
+            </div>
+            <div class="ov-notif ov-notif--unread">
+              <div class="ov-notif-icon ov-notif-icon--fee"><svg><use href="#icon-rupee"/></svg></div>
+              <div class="ov-notif-info">
+                <div class="ov-notif-title">Fee payment received — ₹12,500</div>
+                <div class="ov-notif-body">Aarav Sharma (7-B) · UPI · TXN88421</div>
+                <div class="ov-notif-time">10 min ago</div>
+              </div>
+            </div>
+            <div class="ov-notif ov-notif--urgent">
+              <div class="ov-notif-icon ov-notif-icon--bell"><svg><use href="#icon-users"/></svg></div>
+              <div class="ov-notif-info">
+                <div class="ov-notif-title">New admission application received</div>
+                <div class="ov-notif-body">Riya Patel · Grade 5 · Documents pending verification</div>
+                <div class="ov-notif-time">3 hours ago</div>
+                <div class="ov-notif-actions">
+                  <button class="ov-notif-btn ov-notif-btn--approve">Review</button>
+                  <button class="ov-notif-btn ov-notif-btn--reject">Decline</button>
+                </div>
+              </div>
+            </div>
+            <div class="ov-notif-group">Earlier</div>
+            <div class="ov-notif">
+              <div class="ov-notif-icon ov-notif-icon--evt"><svg><use href="#icon-calendar"/></svg></div>
+              <div class="ov-notif-info">
+                <div class="ov-notif-title">PTM slot booking opens Jan 18</div>
+                <div class="ov-notif-body">60 slots available · 10 AM to 1 PM on Jan 22</div>
+                <div class="ov-notif-time">Yesterday</div>
+              </div>
+            </div>
+            <div class="ov-notif">
+              <div class="ov-notif-icon ov-notif-icon--fee"><svg><use href="#icon-rupee"/></svg></div>
+              <div class="ov-notif-info">
+                <div class="ov-notif-title">Fee reminder sent to 470 parents</div>
+                <div class="ov-notif-body">Term 3 · Due Mar 15 · 312 delivered</div>
+                <div class="ov-notif-time">2 days ago</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Staff Directory -->
+        <div class="overlay" id="ov-staff">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Staff Directory</span></div>
+          <div class="overlay-body" style="padding-top:var(--s-sm)">
+            <div class="ov-staff-item"><div class="ov-staff-avatar conv-avatar--sienna">PS</div><div class="ov-staff-info"><div class="ov-staff-name">Priya Sharma</div><div class="ov-staff-role">Mathematics · Class 7-B</div></div><span class="ov-staff-status ov-staff-status--active">Active</span></div>
+            <div class="ov-staff-item"><div class="ov-staff-avatar conv-avatar--sky">MI</div><div class="ov-staff-info"><div class="ov-staff-name">Meera Iyer</div><div class="ov-staff-role">English · Class 7-A</div></div><span class="ov-staff-status ov-staff-status--active">Active</span></div>
+            <div class="ov-staff-item"><div class="ov-staff-avatar conv-avatar--gold">AD</div><div class="ov-staff-info"><div class="ov-staff-name">Anita Desai</div><div class="ov-staff-role">Social Studies · Class 8-B</div></div><span class="ov-staff-status ov-staff-status--active">Active</span></div>
+            <div class="ov-staff-item"><div class="ov-staff-avatar conv-avatar--coral">RK</div><div class="ov-staff-info"><div class="ov-staff-name">Rajesh Kumar</div><div class="ov-staff-role">Science · Class 7-A</div></div><span class="ov-staff-status ov-staff-status--leave">On Leave</span></div>
+            <div class="ov-staff-item"><div class="ov-staff-avatar conv-avatar--mint">SR</div><div class="ov-staff-info"><div class="ov-staff-name">Sunita Rao</div><div class="ov-staff-role">Hindi · Class 6-B</div></div><span class="ov-staff-status ov-staff-status--active">Active</span></div>
+            <div class="ov-staff-item"><div class="ov-staff-avatar conv-avatar--plum">VN</div><div class="ov-staff-info"><div class="ov-staff-name">Vikram Nair</div><div class="ov-staff-role">Physical Education</div></div><span class="ov-staff-status ov-staff-status--active">Active</span></div>
+          </div>
+        </div>
+
+        <!-- Reports -->
+        <div class="overlay" id="ov-reports">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Reports & Analytics</span></div>
+          <div class="overlay-body" style="padding-top:var(--s-sm)">
+            <div class="ov-rpt-item"><div class="ov-rpt-name">Attendance Report — January 2026</div><div class="ov-rpt-meta">1,312 students · Overall 95% · Generated Jan 15</div><span class="ov-rpt-status ov-rpt-status--ready">Ready · Download</span></div>
+            <div class="ov-rpt-item"><div class="ov-rpt-name">Fee Collection — Term 3</div><div class="ov-rpt-meta">₹4.2L collected · 842 paid · 470 pending</div><span class="ov-rpt-status ov-rpt-status--gen">Generating...</span></div>
+            <div class="ov-rpt-item"><div class="ov-rpt-name">Academic Performance — Term 2</div><div class="ov-rpt-meta">All classes · Subject-wise breakdown</div><span class="ov-rpt-status ov-rpt-status--ready">Ready · Download</span></div>
+            <div class="ov-rpt-item"><div class="ov-rpt-name">Staff Performance Review</div><div class="ov-rpt-meta">87 staff · Q4 2025-26</div><span class="ov-rpt-status ov-rpt-status--sched">Scheduled: Jan 30</span></div>
+            <div class="ov-rpt-item"><div class="ov-rpt-name">Admission Analytics 2025-26</div><div class="ov-rpt-meta">142 admissions · 18 withdrawals</div><span class="ov-rpt-status ov-rpt-status--ready">Ready · Download</span></div>
+          </div>
+        </div>
+
+        <!-- Announcements -->
+        <div class="overlay" id="ov-announce">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">Announcements</span></div>
+          <div class="overlay-body">
+            <div class="ov-ann-form">
+              <input class="ov-input" type="text" placeholder="Announcement title...">
+              <textarea class="ov-input ov-textarea" placeholder="Write your message to parents..."></textarea>
+              <div class="ov-ann-chips">
+                <button class="ov-ann-chip active">All Parents</button>
+                <button class="ov-ann-chip">Class 6</button>
+                <button class="ov-ann-chip">Class 7</button>
+                <button class="ov-ann-chip">Class 8</button>
+                <button class="ov-ann-chip">Staff Only</button>
+              </div>
+              <button class="ov-btn">Send Announcement <svg><use href="#icon-send"/></svg></button>
+            </div>
+            <div style="height:var(--s-sm)"></div>
+            <div class="ov-ann-item">
+              <span class="ov-ann-cat">Events</span>
+              <div class="ov-ann-title">Sports Day Registration Open</div>
+              <div class="ov-ann-body">Annual Sports Day on Jan 20. Register your child for track and field events by Jan 18.</div>
+              <div class="ov-ann-time">2h ago · Delivered to 1,312 · 847 opened</div>
+            </div>
+            <div class="ov-ann-item">
+              <span class="ov-ann-cat">PTM</span>
+              <div class="ov-ann-title">PTM Scheduled for Jan 22</div>
+              <div class="ov-ann-body">Parent-Teacher Meeting from 10 AM to 1 PM. Slot booking will open on Jan 18.</div>
+              <div class="ov-ann-time">5h ago · Delivered to 1,312 · 920 opened</div>
+            </div>
+            <div class="ov-ann-item">
+              <span class="ov-ann-cat">Fees</span>
+              <div class="ov-ann-title">Term 3 Fee Payment Due</div>
+              <div class="ov-ann-body">Last date for Term 3 fees is March 15. Late fee of ₹100 applies after due date.</div>
+              <div class="ov-ann-time">3d ago · Delivered to 1,312 · 1,015 opened</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Calendar -->
+        <div class="overlay" id="ov-calendar">
+          <div class="overlay-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><span class="overlay-title">School Calendar</span></div>
+          <div class="overlay-body">
+            <div class="ov-cal">
+              <div style="font-size:14px;font-weight:800;color:var(--ink);letter-spacing:-.2px;margin-bottom:8px">January 2026</div>
+              <div class="ov-cal-grid">
+                <div class="ov-cal-day ov-cal-day--header">M</div><div class="ov-cal-day ov-cal-day--header">T</div><div class="ov-cal-day ov-cal-day--header">W</div><div class="ov-cal-day ov-cal-day--header">T</div><div class="ov-cal-day ov-cal-day--header">F</div><div class="ov-cal-day ov-cal-day--header">S</div><div class="ov-cal-day ov-cal-day--header">S</div>
+                <div class="ov-cal-day ov-cal-day--empty"></div><div class="ov-cal-day ov-cal-day--empty"></div><div class="ov-cal-day ov-cal-day--empty"></div><div class="ov-cal-day">1</div><div class="ov-cal-day">2</div><div class="ov-cal-day ov-cal-day--empty">3</div><div class="ov-cal-day ov-cal-day--empty">4</div>
+                <div class="ov-cal-day">5</div><div class="ov-cal-day">6</div><div class="ov-cal-day">7</div><div class="ov-cal-day">8</div><div class="ov-cal-day">9</div><div class="ov-cal-day ov-cal-day--empty">10</div><div class="ov-cal-day ov-cal-day--empty">11</div>
+                <div class="ov-cal-day">12</div><div class="ov-cal-day">13</div><div class="ov-cal-day">14</div><div class="ov-cal-day">15</div><div class="ov-cal-day ov-cal-day--today">16</div><div class="ov-cal-day ov-cal-day--empty">17</div><div class="ov-cal-day ov-cal-day--empty">18</div>
+                <div class="ov-cal-day ov-cal-day--empty">19</div><div class="ov-cal-day ov-cal-day--event">20</div><div class="ov-cal-day">21</div><div class="ov-cal-day ov-cal-day--event">22</div><div class="ov-cal-day">23</div><div class="ov-cal-day ov-cal-day--empty">24</div><div class="ov-cal-day ov-cal-day--empty">25</div>
+                <div class="ov-cal-day ov-cal-day--empty">26</div><div class="ov-cal-day">27</div><div class="ov-cal-day">28</div><div class="ov-cal-day">29</div><div class="ov-cal-day">30</div><div class="ov-cal-day ov-cal-day--empty">31</div><div class="ov-cal-day ov-cal-day--empty"></div>
+              </div>
+            </div>
+            <div class="ov-card">
+              <div class="ov-card-title">Upcoming Events</div>
+              <div class="ov-cal-evt">
+                <div class="ov-cal-evt-date">Jan 20</div>
+                <div><div class="ov-cal-evt-name">Annual Sports Day</div><div class="ov-cal-evt-desc">Track and field events · 8 AM to 3 PM</div></div>
+              </div>
+              <div class="ov-cal-evt">
+                <div class="ov-cal-evt-date">Jan 22</div>
+                <div><div class="ov-cal-evt-name">Parent-Teacher Meeting</div><div class="ov-cal-evt-desc">10 AM to 1 PM · Slot booking opens Jan 18</div></div>
+              </div>
+              <div class="ov-cal-evt">
+                <div class="ov-cal-evt-date">Jan 26</div>
+                <div><div class="ov-cal-evt-name">Republic Day Celebration</div><div class="ov-cal-evt-desc">Cultural program and flag hoisting at 8 AM</div></div>
+              </div>
+              <div class="ov-cal-evt">
+                <div class="ov-cal-evt-date">Feb 14</div>
+                <div><div class="ov-cal-evt-name">Science Exhibition</div><div class="ov-cal-evt-desc">Class 7-B presenting on renewable energy models</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Conversation Detail -->
+        <div class="overlay" id="ov-conv-detail">
+          <div class="ov-conv-detail">
+            <div class="ov-conv-header"><button class="overlay-back" data-close-overlay><svg><use href="#icon-chevron-right"/></svg></button><div class="ov-conv-avatar conv-avatar--sienna">PS</div><div><div class="ov-conv-name">Priya Sharma</div><div class="ov-conv-sub">Mathematics Teacher · Class 7-B</div></div></div>
+            <div class="ov-chat-msgs">
+              <div class="ov-bubble ov-bubble--tutor">Good morning! Aarav did really well in today's fractions quiz. He scored 18/20!</div>
+              <div class="ov-bubble ov-bubble--user">That's wonderful to hear! Thank you for the update.</div>
+              <div class="ov-bubble ov-bubble--tutor">He's grasping the LCM method quickly. I'd suggest practicing mixed fractions at home this week.</div>
+              <div class="ov-bubble ov-bubble--user">Will do. Any specific worksheets you'd recommend?</div>
+              <div class="ov-bubble ov-bubble--tutor">I'll send a practice sheet via the app tomorrow. It covers adding and subtracting mixed numbers.</div>
+            </div>
+            <div class="ov-chat-input"><input type="text" placeholder="Type a message..."><button class="ov-chat-send"><svg><use href="#icon-send"/></svg></button></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function fitPhone(){
+  const phoneH=860,phoneW=406;
+  const vh=window.innerHeight,vw=window.innerWidth-260;
+  const scale=Math.min(vh/phoneH,vw/phoneW,1);
+  document.documentElement.style.setProperty('--phone-scale',scale);
+}
+fitPhone();
+window.addEventListener('resize',fitPhone);
+
+const tabMap={'Home':'tab-home','Students':'tab-students','Fees':'tab-fees','Inbox':'tab-inbox','Profile':'tab-profile'};
+const navMap={'Home':0,'Students':1,'Fees':2,'Inbox':3,'Profile':4};
+const bottomNavItems=document.querySelectorAll('.bottom-nav .bn-item');
+
+function switchTab(tabName){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  if(tabMap[tabName])document.getElementById(tabMap[tabName]).classList.add('active');
+  bottomNavItems.forEach(b=>b.classList.remove('active'));
+  if(navMap[tabName]!==undefined)bottomNavItems[navMap[tabName]].classList.add('active');
+  document.querySelectorAll('.sidebar .nav-item').forEach(b=>b.classList.remove('active'));
+  const sidebarBtn=document.querySelector(`.sidebar .nav-item[data-nav="tab:${tabName}"]`);
+  if(sidebarBtn)sidebarBtn.classList.add('active');
+}
+
+document.querySelectorAll('[data-nav^="tab:"]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const tab=btn.dataset.nav.replace('tab:','');
+    switchTab(tab);
+  });
+});
+
+document.querySelectorAll('.conv-seg').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.conv-seg').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.conv-seg-content').forEach(c=>c.classList.remove('active'));
+    btn.classList.add('active');
+    const seg=btn.dataset.convseg;
+    const el=document.getElementById('convseg-'+seg);
+    if(el)el.classList.add('active');
+  });
+});
+
+document.querySelectorAll('.st-chip').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.st-chip').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+function openOverlay(id){
+  const el=document.getElementById(id);
+  if(el)el.classList.add('active');
+}
+function closeOverlay(el){
+  el.classList.remove('active');
+}
+document.querySelectorAll('[data-overlay]').forEach(btn=>{
+  btn.addEventListener('click',e=>{
+    e.stopPropagation();
+    openOverlay(btn.dataset.overlay);
+  });
+});
+document.querySelectorAll('[data-close-overlay]').forEach(btn=>{
+  btn.addEventListener('click',e=>{
+    e.stopPropagation();
+    const ov=btn.closest('.overlay');
+    if(ov)closeOverlay(ov);
+  });
+});
+document.querySelectorAll('.sidebar .nav-item[data-nav^="overlay:"]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const id=btn.dataset.nav.replace('overlay:','');
+    openOverlay(id);
+  });
+});
+document.querySelectorAll('.conv-thread').forEach(thread=>{
+  thread.addEventListener('click',()=>openOverlay('ov-conv-detail'));
+});
+document.querySelectorAll('.ov-ann-chip').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.ov-ann-chip').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+</script>
 </body>
 </html>

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -54,6 +55,13 @@ fun ParentProfileTab(
     val attendanceState by viewModel.attendanceState.collectAsState()
     val selectedChildId by viewModel.selectedChildId.collectAsState()
 
+    val child = when (val s = dashboardState) {
+        is UiState.Success -> s.data.children.firstOrNull { it.id == selectedChildId }
+            ?: s.data.children.firstOrNull()
+            ?: s.data.childSummary
+        else -> null
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -61,34 +69,56 @@ fun ParentProfileTab(
             .statusBarsPadding()
             .verticalScroll(rememberScrollState()),
     ) {
-        // Hero
-        val child = when (val s = dashboardState) {
-            is UiState.Success -> s.data.children.firstOrNull { it.id == selectedChildId }
-                ?: s.data.children.firstOrNull()
-                ?: s.data.childSummary
-            else -> null
-        }
-
+        // Hero — white card with decorative circles and avatar ring
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp, vertical = 8.dp)
                 .background(VColors.white, VShapes.lg)
-                .shadow(1.dp, VShapes.lg)
-                .padding(24.dp),
-            contentAlignment = Alignment.Center,
+                .shadow(1.dp, VShapes.lg),
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            // Decorative circles
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .size(120.dp)
+                    .background(VColors.violetSoft.copy(alpha = 0.3f), CircleShape)
+                    .offset(x = 30.dp, y = (-30).dp),
+            )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                .size(80.dp)
+                .background(VColors.goldSoft.copy(alpha = 0.3f), CircleShape)
+                .offset(x = 20.dp, y = 20.dp),
+            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(24.dp),
+            ) {
+                // Avatar with white ring
                 Box(
-                    modifier = Modifier.size(60.dp).background(VColors.violetSoft, CircleShape),
+                    modifier = Modifier
+                        .size(64.dp)
+                        .background(VColors.white, CircleShape)
+                        .padding(3.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(
-                        child?.name?.take(2)?.uppercase() ?: "?",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = VColors.violet,
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(58.dp)
+                            .background(VColors.violetSoft, CircleShape),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            child?.name?.take(2)?.uppercase() ?: "?",
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = VColors.violet,
+                        )
+                    }
                 }
                 Spacer(Modifier.height(12.dp))
                 Text(

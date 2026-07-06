@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -197,12 +198,22 @@ private fun ParentBottomNav(
     notificationCount: Int,
     modifier: Modifier = Modifier,
 ) {
-    Row(
+    Column(
         modifier = modifier
-            .background(VColors.surfaceCard)
-            .padding(horizontal = 4.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceAround,
+            .background(VColors.surfaceCard),
     ) {
+        // Top border line
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(VColors.line),
+        )
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 4.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceAround,
+        ) {
         ParentTab.entries.forEach { tab ->
             val isSelected = tab == selectedTab
             val iconColor = if (isSelected) VColors.violet else VColors.ink3
@@ -266,6 +277,7 @@ private fun ParentBottomNav(
                     color = labelColor,
                 )
             }
+        }
         }
     }
 }

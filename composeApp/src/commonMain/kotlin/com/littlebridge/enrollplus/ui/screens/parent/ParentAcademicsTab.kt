@@ -94,7 +94,7 @@ fun ParentAcademicsTab(
             )
         }
 
-        // Sub-tab selector
+        // Sub-tab selector — horizontally scrollable
         Row(
             modifier = Modifier
                 .padding(horizontal = 24.dp)
@@ -120,7 +120,7 @@ fun ParentAcademicsTab(
                 ) {
                     Text(
                         text = st.label,
-                        fontSize = 11.sp,
+                        fontSize = 10.sp,
                         fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.SemiBold,
                         color = if (isSelected) VColors.ink else VColors.ink3,
                     )
@@ -244,8 +244,9 @@ private fun AcOverviewTab(
         StatRow("Homework Submitted", "—", null)
     }
     AcCard("Syllabus Coverage") {
-        syllabusSubjects.forEach { s ->
-            ProgressBar(s.subject, s.progress, VColors.violet)
+        val colors = listOf(VColors.violet, VColors.mint, VColors.gold, VColors.coral, VColors.sky)
+        syllabusSubjects.forEachIndexed { idx, s ->
+            ProgressBar(s.subject, s.progress, colors[idx % colors.size])
         }
         if (syllabusSubjects.isEmpty()) { Text("Loading syllabus...", style = VTypography.body, color = VColors.ink3) }
     }
@@ -355,8 +356,9 @@ private fun AcSyllabusTab(syllabusState: UiState<com.littlebridge.enrollplus.fea
         is UiState.Error -> AcCard("Error") { Text(s.message, style = VTypography.body, color = VColors.coral) }
         is UiState.Success -> {
             AcCard("Subject Coverage") {
-                s.data.subjects.forEach { subj ->
-                    ProgressBar(subj.subject, subj.progress, VColors.violet)
+                val colors = listOf(VColors.violet, VColors.mint, VColors.gold, VColors.coral, VColors.sky)
+                s.data.subjects.forEachIndexed { idx, subj ->
+                    ProgressBar(subj.subject, subj.progress, colors[idx % colors.size])
                 }
                 if (s.data.subjects.isEmpty()) { Text("No syllabus data", style = VTypography.body, color = VColors.ink3) }
             }
