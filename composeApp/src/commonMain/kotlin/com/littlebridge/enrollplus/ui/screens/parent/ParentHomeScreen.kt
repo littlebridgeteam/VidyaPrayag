@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.LocalLibrary
 import androidx.compose.material.icons.filled.MenuBook
@@ -48,7 +49,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -164,20 +169,18 @@ private fun ContentState(
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        PortalHeader(
-            child = state.selectedChild,
-            unreadCount = unreadCount,
-            onOpenNotifications = onOpenNotifications,
-            onSelectChild = onSelectChild,
-            children = state.children,
-            selectedChildId = state.selectedChildId,
-        )
-
-        HeroCard(
+        TopSection(
+            greeting = state.greeting,
             child = state.selectedChild,
             today = state.today,
             attendanceRate = state.attendance?.attendanceRate ?: 0,
+            overallProgress = state.selectedChild?.overallProgress ?: 0.0,
+            unreadCount = unreadCount,
+            children = state.children,
+            selectedChildId = state.selectedChildId,
+            onOpenNotifications = onOpenNotifications,
             onOpenAcademics = onOpenAcademics,
+            onSelectChild = onSelectChild,
         )
 
         if (state.todayPeriods.isNotEmpty()) {
@@ -217,120 +220,187 @@ private fun ContentState(
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// PORTAL HEADER
+// TOP SECTION — greeting + hero + child switcher + bell (all integrated)
 // ════════════════════════════════════════════════════════════════════════════
 
 @Composable
-private fun PortalHeader(
+private fun TopSection(
+    greeting: String,
     child: DashboardChildSummary?,
+    today: TodayAttendance,
+    attendanceRate: Int,
+    overallProgress: Double,
     unreadCount: Int,
-    onOpenNotifications: () -> Unit,
-    onSelectChild: (String) -> Unit,
     children: List<DashboardChildSummary>,
     selectedChildId: String?,
+    onOpenNotifications: () -> Unit,
+    onOpenAcademics: () -> Unit,
+    onSelectChild: (String) -> Unit,
 ) {
-    var switcherOpen by remember { mutableStateOf(false) }
+    if (child == null) return
 
-    Row(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 12.dp, end = 12.dp, top = 16.dp, bottom = 12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
+            .drawBehind {
+                drawRect(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            VColors.violet.copy(alpha = 0.08f),
+                            VColors.cream,
+                        ),
+                        startY = 0f,
+                        endY = size.height * 0.6f,
+                    ),
+                )
+            },
     ) {
-        Box {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 0.dp),
+        ) {
+            // ── Row 1: Child switcher (left) + Bell (right) ──
             Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .clip(VShapes.md)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                    ) { if (children.size > 1) switcherOpen = true }
-                    .padding(start = 8.dp, end = 12.dp, top = 4.dp, bottom = 4.dp),
             ) {
-                if (child != null) {
-                    ChildAvatar(child, 36.dp)
-                    Spacer(Modifier.width(10.dp))
-                }
-                Column {
-                    Text(
-                        text = formatDateDisplay(todayIso()),
-                        style = VTypography.caption,
-                        color = VColors.ink3,
-                    )
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(top = 1.dp),
-                    ) {
-                        Text(
-                            text = child?.name ?: "Parent",
-                            style = VTypography.h3,
-                            color = VColors.ink,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        if (children.size > 1) {
-                            Spacer(Modifier.width(4.dp))
-                            Icon(
-                                imageVector = Icons.Filled.ChevronRight,
-                                contentDescription = "Switch child",
-                                tint = VColors.ink3,
-                                modifier = Modifier.size(16.dp),
-                            )
-                        }
-                    }
-                }
+                ChildSwitcher(
+                    child = child,
+                    children = children,
+                    selectedChildId = selectedChildId,
+                    onSelectChild = onSelectChild,
+                )
+                NotificationBell(unreadCount = unreadCount, onClick = onOpenNotifications)
             }
 
-            DropdownMenu(
-                expanded = switcherOpen,
-                onDismissRequest = { switcherOpen = false },
-            ) {
-                children.forEach { c ->
-                    DropdownMenuItem(
-                        text = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                ChildAvatar(c, 32.dp)
-                                Spacer(Modifier.width(10.dp))
-                                Column {
-                                    Text(
-                                        text = c.name,
-                                        style = VTypography.body,
-                                        color = VColors.ink,
-                                        fontWeight = FontWeight.Bold,
-                                    )
-                                    Text(
-                                        text = "Grade ${c.currentLevel}",
-                                        style = VTypography.caption,
-                                        color = VColors.ink3,
-                                    )
-                                }
-                                if (c.id == selectedChildId) {
-                                    Spacer(Modifier.weight(1f))
-                                    Icon(
-                                        imageVector = Icons.Filled.Check,
-                                        contentDescription = null,
-                                        tint = VColors.violet,
-                                        modifier = Modifier.size(18.dp),
-                                    )
-                                }
-                            }
-                        },
-                        onClick = {
-                            onSelectChild(c.id)
-                            switcherOpen = false
-                        },
-                    )
-                }
-            }
+            Spacer(Modifier.height(20.dp))
+
+            // ── Greeting ──
+            Text(
+                text = greeting.ifBlank { "Hello" },
+                style = VTypography.caption,
+                color = VColors.ink3,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = formatDateDisplay(todayIso()),
+                style = VTypography.h2,
+                color = VColors.ink,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+
+            Spacer(Modifier.height(20.dp))
+
+            // ── Hero Card ──
+            HeroCard(
+                child = child,
+                today = today,
+                attendanceRate = attendanceRate,
+                overallProgress = overallProgress,
+                onOpenAcademics = onOpenAcademics,
+            )
+
+            Spacer(Modifier.height(8.dp))
         }
-        NotificationBell(
-            unreadCount = unreadCount,
-            onClick = onOpenNotifications,
-        )
     }
 }
+
+// ── Child Switcher ──
+
+@Composable
+private fun ChildSwitcher(
+    child: DashboardChildSummary,
+    children: List<DashboardChildSummary>,
+    selectedChildId: String?,
+    onSelectChild: (String) -> Unit,
+) {
+    var open by remember { mutableStateOf(false) }
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale = if (pressed) 0.96f else 1f
+
+    Box {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .graphicsLayer { scaleX = scale; scaleY = scale }
+                .clip(VShapes.md)
+                .background(VColors.white)
+                .shadow(1.dp, VShapes.md, ambientColor = VColors.ink.copy(alpha = 0.04f), spotColor = VColors.ink.copy(alpha = 0.06f))
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                ) { if (children.size > 1) open = true }
+                .padding(start = 6.dp, end = 10.dp, top = 6.dp, bottom = 6.dp),
+        ) {
+            ChildAvatar(child, 28.dp)
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = child.name,
+                style = VTypography.label,
+                color = VColors.ink,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (children.size > 1) {
+                Spacer(Modifier.width(4.dp))
+                Icon(
+                    imageVector = Icons.Filled.ExpandMore,
+                    contentDescription = "Switch child",
+                    tint = VColors.ink3,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+        }
+
+        DropdownMenu(
+            expanded = open,
+            onDismissRequest = { open = false },
+        ) {
+            children.forEach { c ->
+                DropdownMenuItem(
+                    text = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            ChildAvatar(c, 32.dp)
+                            Spacer(Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = c.name,
+                                    style = VTypography.body,
+                                    color = VColors.ink,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                                Text(
+                                    text = "Grade ${c.currentLevel}",
+                                    style = VTypography.caption,
+                                    color = VColors.ink3,
+                                )
+                            }
+                            if (c.id == selectedChildId) {
+                                Spacer(Modifier.weight(1f))
+                                Icon(
+                                    imageVector = Icons.Filled.Check,
+                                    contentDescription = null,
+                                    tint = VColors.violet,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            }
+                        }
+                    },
+                    onClick = {
+                        onSelectChild(c.id)
+                        open = false
+                    },
+                )
+            }
+        }
+    }
+}
+
+// ── Notification Bell ──
 
 @Composable
 private fun NotificationBell(unreadCount: Int, onClick: () -> Unit) {
@@ -340,9 +410,9 @@ private fun NotificationBell(unreadCount: Int, onClick: () -> Unit) {
 
     Box(
         modifier = Modifier
-            .size(42.dp)
+            .size(40.dp)
             .graphicsLayer { scaleX = scale; scaleY = scale }
-            .shadow(2.dp, VShapes.full, ambientColor = VColors.ink.copy(alpha = 0.06f), spotColor = VColors.ink.copy(alpha = 0.08f))
+            .shadow(1.dp, VShapes.full, ambientColor = VColors.ink.copy(alpha = 0.04f), spotColor = VColors.ink.copy(alpha = 0.06f))
             .clip(VShapes.full)
             .background(VColors.white)
             .clickable(
@@ -355,13 +425,13 @@ private fun NotificationBell(unreadCount: Int, onClick: () -> Unit) {
             imageVector = Icons.Filled.Notifications,
             contentDescription = "Notifications",
             tint = VColors.ink2,
-            modifier = Modifier.size(20.dp),
+            modifier = Modifier.size(18.dp),
         )
         if (unreadCount > 0) {
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .size(16.dp)
+                    .size(15.dp)
                     .clip(VShapes.full)
                     .background(VColors.coral),
                 contentAlignment = Alignment.Center,
@@ -377,69 +447,175 @@ private fun NotificationBell(unreadCount: Int, onClick: () -> Unit) {
     }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// HERO CARD
-// ════════════════════════════════════════════════════════════════════════════
+// ── Hero Card ──
 
 @Composable
 private fun HeroCard(
-    child: DashboardChildSummary?,
+    child: DashboardChildSummary,
     today: TodayAttendance,
     attendanceRate: Int,
+    overallProgress: Double,
     onOpenAcademics: () -> Unit,
 ) {
-    if (child == null) return
-
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
     val scale = if (pressed) 0.98f else 1f
+    val progressPct = (overallProgress * 100).toInt()
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp)
             .graphicsLayer { scaleX = scale; scaleY = scale }
-            .shadow(3.dp, VShapes.lg, ambientColor = VColors.ink.copy(alpha = 0.05f), spotColor = VColors.ink.copy(alpha = 0.08f))
-            .clip(VShapes.lg)
-            .background(VColors.white)
+            .shadow(6.dp, VShapes.xl, ambientColor = VColors.violet.copy(alpha = 0.08f), spotColor = VColors.ink.copy(alpha = 0.10f))
+            .clip(VShapes.xl)
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(
+                        VColors.violet,
+                        VColors.violetHover,
+                    ),
+                    start = Offset.Zero,
+                    end = Offset.Infinite,
+                ),
+            )
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
-            ) { onOpenAcademics() }
-            .padding(20.dp),
+            ) { onOpenAcademics() },
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth(),
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
         ) {
-            ChildAvatar(child, 52.dp)
-            Spacer(Modifier.width(14.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = child.name,
-                    style = VTypography.h3,
-                    color = VColors.ink,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+            // Top row: avatar + name/grade + arrow
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(VShapes.full)
+                        .background(VColors.white.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = child.name.split(" ").take(2).joinToString("") { it.firstOrNull()?.uppercase() ?: "" },
+                        style = VTypography.h3,
+                        color = VColors.white,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = child.name,
+                        style = VTypography.h3,
+                        color = VColors.white,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = "Grade ${child.currentLevel}",
+                        style = VTypography.caption,
+                        color = VColors.white.copy(alpha = 0.7f),
+                    )
+                }
+                Icon(
+                    imageVector = Icons.Filled.ChevronRight,
+                    contentDescription = "View academics",
+                    tint = VColors.white.copy(alpha = 0.6f),
+                    modifier = Modifier.size(20.dp),
                 )
-                Text(
-                    text = "Grade ${child.currentLevel}",
-                    style = VTypography.bodySmall,
-                    color = VColors.ink3,
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // Stat chips row
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                HeroChip(
+                    label = today.label.ifBlank { today.state.name },
+                    value = when (today.state) {
+                        AttendanceDayState.Present -> "Present"
+                        AttendanceDayState.Late -> "Late"
+                        AttendanceDayState.Absent -> "Absent"
+                        AttendanceDayState.Holiday -> "Holiday"
+                        AttendanceDayState.Vacation -> "Vacation"
+                        AttendanceDayState.Sunday -> "Sunday"
+                        AttendanceDayState.NoData -> "—"
+                    },
                 )
-                Spacer(Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    AttendanceTag(today)
-                    if (attendanceRate > 0) {
-                        TagPill(
-                            text = "$attendanceRate%",
-                            bg = VColors.mintSoft,
-                            fg = VColors.success,
+                if (attendanceRate > 0) {
+                    HeroChip(label = "Attendance", value = "$attendanceRate%")
+                }
+                if (progressPct > 0) {
+                    HeroChip(label = "Progress", value = "$progressPct%")
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // Progress bar
+            if (progressPct > 0) {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(
+                            text = "Overall Progress",
+                            style = VTypography.caption,
+                            color = VColors.white.copy(alpha = 0.6f),
+                        )
+                        Text(
+                            text = "$progressPct%",
+                            style = VTypography.caption,
+                            color = VColors.white,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(5.dp)
+                            .clip(VShapes.full)
+                            .background(VColors.white.copy(alpha = 0.15f)),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(progressPct / 100f)
+                                .height(5.dp)
+                                .clip(VShapes.full)
+                                .background(VColors.white),
                         )
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun HeroChip(label: String, value: String) {
+    Column(
+        modifier = Modifier
+            .clip(VShapes.sm)
+            .background(VColors.white.copy(alpha = 0.12f))
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+    ) {
+        Text(
+            text = label,
+            style = VTypography.caption,
+            color = VColors.white.copy(alpha = 0.5f),
+        )
+        Text(
+            text = value,
+            style = VTypography.label,
+            color = VColors.white,
+            fontWeight = FontWeight.Bold,
+        )
     }
 }
 
