@@ -1,6 +1,7 @@
 package com.littlebridge.enrollplus.ui.v2.screens.parent
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -40,6 +42,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Grade
 import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Quiz
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Spa
@@ -52,6 +55,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -67,10 +71,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.runtime.collectAsState
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentAttendanceData
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentDailySummaryData
@@ -88,17 +92,20 @@ import com.littlebridge.enrollplus.feature.parent.presentation.TrackProgressStat
 import com.littlebridge.enrollplus.feature.parent.presentation.TrackProgressViewModel
 import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizSubmitResponse
 import com.littlebridge.enrollplus.ui.components.FilterChip
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.lazy.items
 import com.littlebridge.enrollplus.ui.components.VButton
 import com.littlebridge.enrollplus.ui.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.components.VProgressBar
+import com.littlebridge.enrollplus.ui.components.VProgressBarSegments
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VMotion
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SCREEN ENTRY POINT
+// ═══════════════════════════════════════════════════════════════════════════════
 
 @Composable
 fun ParentAcademicsScreenV2(
@@ -139,6 +146,10 @@ fun ParentAcademicsScreenV2(
     )
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// CONTENT SHELL — matches onboarding's structural hierarchy
+// ═══════════════════════════════════════════════════════════════════════════════
+
 @Composable
 private fun ParentAcademicsContent(
     state: TrackProgressState,
@@ -162,11 +173,14 @@ private fun ParentAcademicsContent(
     onReportDraftIdConsumed: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
+    val visibleTabs = listOf("Overview", "Attendance", "Marks", "Syllabus", "Quizzes", "Homework")
     var tab by remember { mutableStateOf("Overview") }
+    var tabIndex by remember { mutableStateOf(0) }
 
     LaunchedEffect(initialTab) {
         if (initialTab != null) {
             tab = initialTab
+            tabIndex = visibleTabs.indexOf(initialTab).coerceAtLeast(0)
             onTabConsumed()
         }
     }
@@ -189,38 +203,57 @@ private fun ParentAcademicsContent(
             .fillMaxSize()
             .background(VColors.cream)
             .verticalScroll(rememberScrollState())
-            .padding(bottom = 130.dp),
+            .padding(bottom = 100.dp),
     ) {
-        Text(
-            "Academics",
-            style = VTypography.h2,
-            color = VColors.ink,
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
-        )
+        // ── Section header hierarchy (matches onboarding: caption → segments → h2 → subtitle) ──
+        Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp)) {
+            Text("Academic Overview", style = VTypography.caption, color = VColors.ink3)
+            Spacer(Modifier.height(8.dp))
+            VProgressBarSegments(total = visibleTabs.size, current = tabIndex + 1)
+            Spacer(Modifier.height(16.dp))
+            Text(tab, style = VTypography.h2, color = VColors.ink)
+            Text(
+                "Tab ${tabIndex + 1} of ${visibleTabs.size}",
+                style = VTypography.caption,
+                color = VColors.ink3,
+            )
+        }
 
-        val visibleTabs = listOf("Overview", "Attendance", "Marks", "Syllabus", "Quizzes", "Homework")
+        // ── Tab chips row ──
         LazyRow(
             modifier = Modifier.fillMaxWidth(),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 24.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            items(visibleTabs.size) { idx ->
+            items(visibleTabs) { label ->
                 FilterChip(
-                    label = visibleTabs[idx],
-                    selected = tab == visibleTabs[idx],
-                    onClick = { tab = visibleTabs[idx] },
+                    label = label,
+                    selected = tab == label,
+                    onClick = {
+                        tab = label
+                        tabIndex = visibleTabs.indexOf(label)
+                    },
                 )
             }
         }
 
         Spacer(Modifier.height(16.dp))
 
+        // ── Animated content (subtle slide like onboarding: it/4, not full it) ──
         AnimatedContent(
             targetState = tab,
             transitionSpec = {
-                val direction = if (targetState > initialState) 1 else -1
-                (slideInHorizontally(tween(VMotion.durDefault, easing = VMotion.ease)) { it * direction } + fadeIn(tween(VMotion.durDefault))) togetherWith
-                    (slideOutHorizontally(tween(VMotion.durDefault, easing = VMotion.ease)) { -it * direction } + fadeOut(tween(VMotion.durDefault)))
+                val forward = visibleTabs.indexOf(targetState) > visibleTabs.indexOf(initialState)
+                val dur = 280
+                val enter = slideInHorizontally(
+                    animationSpec = tween(dur),
+                    initialOffsetX = { if (forward) it / 4 else -it / 4 },
+                ) + fadeIn(tween(dur))
+                val exit = slideOutHorizontally(
+                    animationSpec = tween(dur),
+                    targetOffsetX = { if (forward) -it / 4 else it / 4 },
+                ) + fadeOut(tween(dur))
+                enter togetherWith exit
             },
             label = "academics-tab",
         ) { currentTab ->
@@ -238,6 +271,7 @@ private fun ParentAcademicsContent(
                             val childId = academics.selectedChildId
                             if (childId != null) {
                                 tab = "Report"
+                                tabIndex = visibleTabs.size
                             }
                         },
                     )
@@ -259,7 +293,7 @@ private fun ParentAcademicsContent(
                         if (childId != null) {
                             ParentReportScreen(
                                 childId = childId,
-                                onBack = { tab = "Overview" },
+                                onBack = { tab = "Overview"; tabIndex = 0 },
                                 initialDraftId = initialReportDraftId,
                                 onDraftIdConsumed = onReportDraftIdConsumed,
                             )
@@ -272,7 +306,7 @@ private fun ParentAcademicsContent(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// OVERVIEW — "Academic Pulse" premium concept
+// OVERVIEW — Full-bleed violet hero (like onboarding completion screen)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 @Composable
@@ -298,15 +332,13 @@ private fun OverviewTab(
         state.currentLevel > 0
 
     if (!hasData) {
-        EmptyState(
-            title = appString(StringKeys.PA_NO_PROGRESS),
-            body = appString(StringKeys.PA_NO_PROGRESS_DESC),
-        )
+        EmptyState("No Progress Yet", "Academic progress data will appear here once available.")
         return
     }
 
-    // ── Hero progress card ──
-    HeroProgressCard(
+    // ── Full-bleed violet hero (matches onboarding completion screen) ──
+    OverviewHero(
+        childName = state.childName.ifBlank { "Your Child" },
         progressPct = (state.overallProgress * 100f).toInt(),
         level = state.currentLevel,
         journey = state.journeyDescription,
@@ -359,21 +391,22 @@ private fun OverviewTab(
     QuickActionCard(
         icon = Icons.Filled.CalendarMonth,
         iconColor = VColors.coral,
-        title = appString(StringKeys.PA_APPLY_LEAVE),
-        subtitle = appString(StringKeys.PA_LEAVE_DESC),
+        title = "Apply Leave",
+        subtitle = "Submit a leave request",
         onClick = onOpenLeave,
     )
     QuickActionCard(
         icon = Icons.Filled.Favorite,
         iconColor = VColors.error,
-        title = appString(StringKeys.PA_HEALTH_RECORDS),
-        subtitle = appString(StringKeys.PA_HEALTH_RECORDS_DESC),
+        title = "Health Records",
+        subtitle = "View health records",
         onClick = onOpenHealth,
     )
 }
 
 @Composable
-private fun HeroProgressCard(
+private fun OverviewHero(
+    childName: String,
     progressPct: Int,
     level: Int,
     journey: String,
@@ -381,56 +414,80 @@ private fun HeroProgressCard(
     Box(
         Modifier
             .fillMaxWidth()
-            .clip(VShapes.lg)
-            .background(VColors.violetSoft)
-            .padding(24.dp),
+            .background(VColors.violet),
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(20.dp),
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(top = 32.dp, bottom = 36.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // Circular progress ring
+            // Avatar circle (matches onboarding completion screen icon circle)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                SimpleAvatar(name = childName, size = 48.dp, textColor = Color.White, bg = Color.White.copy(alpha = 0.18f))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        childName,
+                        style = VTypography.h3.copy(fontSize = 18.sp),
+                        color = Color.White,
+                        fontWeight = FontWeight.ExtraBold,
+                    )
+                    if (level > 0) {
+                        Text(
+                            "Level $level",
+                            style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
+                            color = Color.White.copy(alpha = 0.75f),
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
+
+            // Progress ring (centered, like onboarding's check circle)
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = Modifier.size(96.dp),
+                modifier = Modifier.size(120.dp),
             ) {
-                val animatedProgress by androidx.compose.animation.core.animateFloatAsState(
+                val animatedProgress by animateFloatAsState(
                     targetValue = progressPct / 100f,
                     animationSpec = tween(VMotion.durSlower, easing = VMotion.ease),
                     label = "hero-ring",
                 )
                 CanvasRing(
                     progress = animatedProgress,
-                    ringColor = VColors.violet,
-                    trackColor = VColors.line,
+                    ringColor = Color.White,
+                    trackColor = Color.White.copy(alpha = 0.2f),
                     modifier = Modifier.fillMaxSize(),
                 )
-                Text(
-                    "$progressPct%",
-                    style = VTypography.h3.copy(fontSize = 20.sp),
-                    color = VColors.ink,
-                    fontWeight = FontWeight.ExtraBold,
-                )
-            }
-
-            // Level + journey
-            Column(Modifier.weight(1f)) {
-                if (level > 0) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        "Level $level",
-                        style = VTypography.h3,
-                        color = VColors.violet,
+                        "$progressPct%",
+                        style = VTypography.h2.copy(fontSize = 28.sp),
+                        color = Color.White,
                         fontWeight = FontWeight.ExtraBold,
                     )
-                }
-                if (journey.isNotBlank()) {
-                    Spacer(Modifier.height(4.dp))
                     Text(
-                        journey,
-                        style = VTypography.body,
-                        color = VColors.ink2,
+                        "Progress",
+                        style = VTypography.caption.copy(fontSize = 10.sp),
+                        color = Color.White.copy(alpha = 0.7f),
                     )
                 }
+            }
+
+            if (journey.isNotBlank()) {
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    journey,
+                    style = VTypography.body.copy(fontSize = 13.sp),
+                    color = Color.White.copy(alpha = 0.85f),
+                    textAlign = TextAlign.Center,
+                )
             }
         }
     }
@@ -524,7 +581,7 @@ private fun StatChip(
 
 @Composable
 private fun CompetencyCard(comp: AcademicCompetency, tone: Color) {
-    SurfaceCard {
+    CreamCard {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -559,7 +616,7 @@ private fun EmotionalIntelligenceCard(
     description: String,
     metrics: Map<String, Float>,
 ) {
-    SurfaceCard {
+    CreamCard {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -595,8 +652,7 @@ private fun BadgesRow(badges: List<AchievementBadge>) {
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        items(badges.size) { idx ->
-            val badge = badges[idx]
+        items(badges) { badge ->
             BadgeChip(badge)
         }
     }
@@ -635,7 +691,7 @@ private fun BadgeChip(badge: AchievementBadge) {
             color = VColors.ink2.copy(alpha = alpha),
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            textAlign = TextAlign.Center,
         )
     }
 }
@@ -692,26 +748,29 @@ private fun AttendanceTab(academics: ParentAcademicsState, onRetry: () -> Unit) 
     val hasData = data != null && data.totalDays > 0
 
     if (hasData && data != null) {
-        SurfaceCard {
-            Column {
-                Text(appString(StringKeys.PA_THIS_TERM), style = VTypography.label, color = VColors.ink2)
-                Spacer(Modifier.height(8.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(appString(StringKeys.PA_ATTENDANCE_RATE), style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
-                    Text("${data.attendanceRate}%", style = VTypography.h3.copy(fontSize = 18.sp), color = VColors.success, fontWeight = FontWeight.ExtraBold)
+        CreamCard {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                Column(Modifier.weight(1f)) {
+                    Text("This Term", style = VTypography.label, color = VColors.ink3)
+                    Text("Attendance Rate", style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.padding(top = 2.dp))
                 }
-                Spacer(Modifier.height(10.dp))
-                VProgressBar(progress = data.attendanceRate / 100f, barHeight = 8)
-                Spacer(Modifier.height(16.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    AttendanceStat("Present", data.presentDays, VColors.success, Modifier.weight(1f))
-                    AttendanceStat("Late", data.lateDays, VColors.gold, Modifier.weight(1f))
-                    AttendanceStat("Absent", data.absentDays, VColors.error, Modifier.weight(1f))
-                }
+                Text(
+                    "${data.attendanceRate}%",
+                    style = VTypography.h3.copy(fontWeight = FontWeight.ExtraBold),
+                    color = if (data.attendanceRate >= 75) VColors.success else VColors.gold,
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            VProgressBar(progress = data.attendanceRate / 100f, barHeight = 8)
+            Spacer(Modifier.height(16.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                AttendanceStat("Present", data.presentDays, VColors.success, Modifier.weight(1f))
+                AttendanceStat("Late", data.lateDays, VColors.gold, Modifier.weight(1f))
+                AttendanceStat("Absent", data.absentDays, VColors.error, Modifier.weight(1f))
             }
         }
     } else {
-        SurfaceCard {
+        CreamCard {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -723,8 +782,8 @@ private fun AttendanceTab(academics: ParentAcademicsState, onRetry: () -> Unit) 
                     Icon(Icons.Filled.CalendarMonth, contentDescription = null, tint = VColors.success, modifier = Modifier.size(20.dp))
                 }
                 Column(Modifier.weight(1f)) {
-                    Text(appString(StringKeys.PA_NO_ATTENDANCE), style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
-                    Text(appString(StringKeys.PA_NO_ATTENDANCE_DESC), style = VTypography.caption, color = VColors.ink3)
+                    Text("No Attendance Records", style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
+                    Text("Attendance data will appear here once available.", style = VTypography.caption, color = VColors.ink3)
                 }
             }
         }
@@ -765,7 +824,7 @@ private fun MarksTab(academics: ParentAcademicsState, onRetry: () -> Unit) {
 
     val data = academics.marks
     if (data == null || data.results.isEmpty()) {
-        EmptyState(appString(StringKeys.PA_NO_MARKS), appString(StringKeys.PA_NO_MARKS_DESC))
+        EmptyState("No Marks Yet", "Exam results will appear here once published.")
         return
     }
 
@@ -780,7 +839,7 @@ private fun MarksTab(academics: ParentAcademicsState, onRetry: () -> Unit) {
         }
         val subjectColor = subjectPalette[idx % subjectPalette.size]
 
-        SurfaceCard {
+        CreamCard {
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -807,7 +866,11 @@ private fun MarksTab(academics: ParentAcademicsState, onRetry: () -> Unit) {
                         color = gradeColor,
                     )
                     if (pct != null) {
-                        Text("${pct.toInt()}%", style = VTypography.caption.copy(fontSize = 10.sp), color = VColors.ink3)
+                        MiniBadge(
+                            text = "${pct.toInt()}%",
+                            color = gradeColor,
+                            bg = gradeColor.copy(alpha = 0.12f),
+                        )
                     }
                 }
             }
@@ -839,13 +902,12 @@ private fun SyllabusTab(academics: ParentAcademicsState, onRetry: () -> Unit, on
         (legacyData == null || legacyData.subjects.isEmpty())
 
     if (isEmpty) {
-        EmptyState(appString(StringKeys.PA_NO_SYLLABUS), appString(StringKeys.PA_NO_SYLLABUS_DESC))
+        EmptyState("No Syllabus Data", "Syllabus progress will appear here once available.")
         return
     }
 
     val palette = subjectPalette
 
-    // Prefer V2 data, fall back to legacy
     if (v2Data != null && v2Data.subjects.isNotEmpty()) {
         v2Data.subjects.forEachIndexed { idx, subj ->
             val tone = palette[idx % palette.size]
@@ -898,7 +960,7 @@ private fun SyllabusSubjectCard(
     onToggle: () -> Unit,
     units: List<SyllabusUnitItem>,
 ) {
-    SurfaceCard {
+    CreamCard {
         Row(
             Modifier.fillMaxWidth()
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onToggle() },
@@ -917,7 +979,7 @@ private fun SyllabusSubjectCard(
             }
             Text(subjectName, style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
             if (isAiEstimated) {
-                Text("AI", style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 9.sp), color = VColors.violet)
+                MiniBadge(text = "AI", color = VColors.violet, bg = VColors.violetSoft)
                 Spacer(Modifier.width(4.dp))
             }
             Text("$progress%", style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = tone)
@@ -964,7 +1026,7 @@ private fun SyllabusSubjectCard(
                             }
                         }
                     } else {
-                        Text(appString(StringKeys.PA_PENDING), style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.gold)
+                        Text("Pending", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.gold)
                     }
                 }
             }
@@ -1005,12 +1067,12 @@ private fun QuizzesTab(
     }
 
     if (academics.quizzes.isEmpty()) {
-        EmptyState(appString(StringKeys.PA_NO_QUIZZES), appString(StringKeys.PA_NO_QUIZZES_DESC))
+        EmptyState("No Quizzes", "Quizzes will appear here when assigned by the teacher.")
         return
     }
 
     academics.quizzes.forEach { quiz ->
-        SurfaceCard(
+        CreamCard(
             modifier = Modifier.clickable {
                 when (quiz.status) {
                     "PUBLISHED" -> onOpenQuiz(quiz.id)
@@ -1030,23 +1092,23 @@ private fun QuizzesTab(
                     Icon(Icons.Filled.Quiz, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(20.dp))
                 }
                 Column(Modifier.weight(1f)) {
-                    Text(quiz.title.ifBlank { appString(StringKeys.PA_QUIZ) }, style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
+                    Text(quiz.title.ifBlank { "Quiz" }, style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
                     Text(
-                        appString(StringKeys.PA_QUIZ_QUESTIONS, "subject" to quiz.subject, "count" to quiz.numQuestions),
+                        "${quiz.subject} · ${quiz.numQuestions} questions",
                         style = VTypography.caption,
                         color = VColors.ink3,
                     )
                 }
                 when (quiz.status) {
                     "PUBLISHED" -> {
-                        StatusPill("Start", VColors.violet)
+                        MiniBadge(text = "Start", color = VColors.violet, bg = VColors.violetSoft)
                         Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Open", tint = VColors.violet, modifier = Modifier.size(16.dp))
                     }
                     "SUBMITTED" -> {
-                        StatusPill("View Result", VColors.violet)
+                        MiniBadge(text = "Result", color = VColors.success, bg = VColors.successSoft)
                         Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "View", tint = VColors.violet, modifier = Modifier.size(16.dp))
                     }
-                    else -> StatusPill(appString(StringKeys.PA_PENDING), VColors.ink3)
+                    else -> MiniBadge(text = "Pending", color = VColors.ink3, bg = VColors.surfaceTint)
                 }
             }
         }
@@ -1063,7 +1125,7 @@ private fun QuizDetailCard(
     val answers = remember { mutableStateMapOf<String, Int>() }
     val textAnswers = remember { mutableStateMapOf<String, String>() }
 
-    SurfaceCard {
+    CreamCard {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Box(
                 Modifier.size(32.dp).clip(CircleShape).background(VColors.creamDeep)
@@ -1087,7 +1149,7 @@ private fun QuizDetailCard(
                     val typeLabel = when (q.questionType) {
                         "TRUE_FALSE" -> " (True/False)"
                         "FILL_BLANK" -> " (Fill in the blank)"
-                        "MATCH" -> appString(StringKeys.PA_MATCH)
+                        "MATCH" -> " (Match)"
                         else -> ""
                     }
                     Text("${qIdx + 1}. ${q.question}$typeLabel", style = VTypography.body.copy(fontSize = 14.sp, fontWeight = FontWeight.SemiBold), color = VColors.ink)
@@ -1099,7 +1161,7 @@ private fun QuizDetailCard(
                                 value = textAnswers[q.id] ?: "",
                                 onValueChange = { textAnswers[q.id] = it },
                                 modifier = Modifier.fillMaxWidth(),
-                                placeholder = { Text(appString(StringKeys.PA_TYPE_ANSWER), style = VTypography.body.copy(fontSize = 13.sp), color = VColors.ink3) },
+                                placeholder = { Text("Type your answer...", style = VTypography.body.copy(fontSize = 13.sp), color = VColors.ink3) },
                                 singleLine = true,
                                 shape = VShapes.sm,
                                 colors = OutlinedTextFieldDefaults.colors(
@@ -1179,7 +1241,7 @@ private fun QuizResultCard(
 
     LaunchedEffect(result.quizId) { onLoadLeaderboard(result.quizId) }
 
-    SurfaceCard {
+    CreamCard {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
             Box(
                 Modifier.size(64.dp).clip(CircleShape).background(VColors.violetSoft),
@@ -1188,7 +1250,7 @@ private fun QuizResultCard(
                 Text("${result.percentage}%", style = VTypography.h3.copy(fontSize = 20.sp), color = VColors.violet, fontWeight = FontWeight.ExtraBold)
             }
             Spacer(Modifier.height(12.dp))
-            Text(appString(StringKeys.PA_SCORE, "score" to result.score, "total" to result.totalMarks), style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
+            Text("Score: ${result.score} / ${result.totalMarks}", style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(16.dp))
 
             Column(
@@ -1208,10 +1270,10 @@ private fun QuizResultCard(
                         }
                         Spacer(Modifier.height(6.dp))
                         if (qr.selectedAnswer.isNotBlank()) {
-                            Text(appString(StringKeys.PA_YOUR_ANSWER, "answer" to qr.selectedAnswer), style = VTypography.caption.copy(fontSize = 12.sp), color = if (qr.correct) VColors.success else VColors.error)
+                            Text("Your answer: ${qr.selectedAnswer}", style = VTypography.caption.copy(fontSize = 12.sp), color = if (qr.correct) VColors.success else VColors.error)
                         }
                         if (!qr.correct && qr.correctAnswer.isNotBlank()) {
-                            Text(appString(StringKeys.PA_CORRECT_ANSWER, "answer" to qr.correctAnswer), style = VTypography.caption.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold), color = VColors.success)
+                            Text("Correct: ${qr.correctAnswer}", style = VTypography.caption.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold), color = VColors.success)
                         }
                         val expl = qr.explanation
                         if (!expl.isNullOrBlank()) {
@@ -1225,15 +1287,15 @@ private fun QuizResultCard(
             Spacer(Modifier.height(16.dp))
 
             if (academics.leaderboardLoading) {
-                Text(appString(StringKeys.PA_LOADING_LEADERBOARD), style = VTypography.caption, color = VColors.ink3)
+                Text("Loading leaderboard...", style = VTypography.caption, color = VColors.ink3)
             } else if (academics.leaderboardError != null) {
                 Text(academics.leaderboardError!!, style = VTypography.caption, color = VColors.ink3)
             } else {
                 val lb = academics.leaderboard
                 if (lb != null && lb.entries.isNotEmpty()) {
-                    Text(appString(StringKeys.PA_LEADERBOARD), style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
+                    Text("Leaderboard", style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(4.dp))
-                    Text(appString(StringKeys.PA_PARTICIPANTS, "count" to lb.totalParticipants), style = VTypography.caption, color = VColors.ink3)
+                    Text("${lb.totalParticipants} participants", style = VTypography.caption, color = VColors.ink3)
                     Spacer(Modifier.height(10.dp))
                     Column(
                         Modifier.fillMaxWidth().heightIn(max = 300.dp).verticalScroll(rememberScrollState()),
@@ -1250,7 +1312,7 @@ private fun QuizResultCard(
                             ) {
                                 Text("#${entry.rank}", style = VTypography.body.copy(fontSize = 13.sp, fontWeight = FontWeight.Bold), color = VColors.violet)
                                 Text(
-                                    entry.studentName + if (entry.isCurrentStudent) appString(StringKeys.PA_YOU) else "",
+                                    entry.studentName + if (entry.isCurrentStudent) " (You)" else "",
                                     style = VTypography.body.copy(fontSize = 13.sp),
                                     color = VColors.ink,
                                     modifier = Modifier.weight(1f),
@@ -1264,7 +1326,7 @@ private fun QuizResultCard(
             }
 
             Spacer(Modifier.height(16.dp))
-            VButton(appString(StringKeys.PA_BACK_TO_QUIZZES), onClick = onBack, variant = VButtonVariant.Secondary)
+            VButton("Back to Quizzes", onClick = onBack, variant = VButtonVariant.Secondary)
         }
     }
 }
@@ -1286,12 +1348,12 @@ private fun HomeworkTab(academics: ParentAcademicsState, onRetry: () -> Unit) {
 
     val data = academics.dailySummary
     if (data == null || data.entries.isEmpty()) {
-        EmptyState(appString(StringKeys.PA_NO_DAILY_LOGS), appString(StringKeys.PA_NO_DAILY_LOGS_DESC))
+        EmptyState("No Homework Logs", "Daily homework summaries will appear here once available.")
         return
     }
 
     if (!data.aiSummary.isNullOrBlank()) {
-        SurfaceCard {
+        CreamCard {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Box(
                     Modifier.size(36.dp).clip(CircleShape).background(VColors.violetSoft),
@@ -1300,7 +1362,7 @@ private fun HomeworkTab(academics: ParentAcademicsState, onRetry: () -> Unit) {
                     Icon(Icons.Filled.Insights, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
                 }
                 Column(Modifier.weight(1f)) {
-                    Text(appString(StringKeys.PA_AI_SUMMARY), style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
+                    Text("AI Summary", style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
                     Text(data.aiSummary!!, style = VTypography.caption, color = VColors.ink2)
                 }
             }
@@ -1308,7 +1370,7 @@ private fun HomeworkTab(academics: ParentAcademicsState, onRetry: () -> Unit) {
     }
 
     data.entries.forEach { entry ->
-        SurfaceCard {
+        CreamCard {
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -1323,7 +1385,7 @@ private fun HomeworkTab(academics: ParentAcademicsState, onRetry: () -> Unit) {
                 Column(horizontalAlignment = Alignment.End) {
                     Text("${entry.coveragePct}%", style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = VColors.violet)
                     if (entry.isAiEstimated) {
-                        Text(appString(StringKeys.PA_AI_ESTIMATED), style = VTypography.caption.copy(fontSize = 10.sp), color = VColors.ink3)
+                        MiniBadge(text = "AI Est.", color = VColors.violet, bg = VColors.violetSoft)
                     }
                 }
             }
@@ -1334,7 +1396,7 @@ private fun HomeworkTab(academics: ParentAcademicsState, onRetry: () -> Unit) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// SHARED HELPERS
+// SHARED HELPERS — matching onboarding patterns exactly
 // ═══════════════════════════════════════════════════════════════════════════════
 
 private val subjectPalette = listOf(
@@ -1345,19 +1407,39 @@ private val subjectPalette = listOf(
 )
 
 @Composable
-private fun SurfaceCard(
+private fun CreamCard(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
     Column(
         modifier
             .fillMaxWidth()
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
+            .background(VColors.surfaceCard, VShapes.lg)
             .border(1.dp, VColors.line, VShapes.lg)
             .padding(16.dp),
     ) {
         content()
+    }
+}
+
+@Composable
+private fun MiniBadge(text: String, color: Color, bg: Color) {
+    Text(
+        text = text,
+        style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
+        color = color,
+        modifier = Modifier.background(bg, VShapes.full).padding(horizontal = 8.dp, vertical = 3.dp),
+    )
+}
+
+@Composable
+private fun SimpleAvatar(name: String, size: androidx.compose.ui.unit.Dp, textColor: Color = VColors.violet, bg: Color = VColors.violetSoft) {
+    val initials = name.split(" ").take(2).mapNotNull { it.firstOrNull()?.uppercase() }.joinToString("")
+    Box(
+        modifier = Modifier.size(size).background(bg, CircleShape),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(initials, style = VTypography.label, color = textColor)
     }
 }
 
@@ -1368,7 +1450,7 @@ private fun SectionLabel(text: String) {
 
 @Composable
 private fun TintedBar(value: Float, fill: Color, height: androidx.compose.ui.unit.Dp = 7.dp) {
-    val animated by androidx.compose.animation.core.animateFloatAsState(
+    val animated by animateFloatAsState(
         targetValue = value.coerceIn(0f, 100f) / 100f,
         animationSpec = tween(VMotion.durSlow, easing = VMotion.ease),
         label = "tinted-bar",
@@ -1385,17 +1467,6 @@ private fun TintedBar(value: Float, fill: Color, height: androidx.compose.ui.uni
 }
 
 @Composable
-private fun StatusPill(text: String, color: Color) {
-    Box(
-        Modifier.clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
-            .background(color.copy(alpha = 0.12f))
-            .padding(horizontal = 8.dp, vertical = 3.dp),
-    ) {
-        Text(text, style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 10.sp), color = color)
-    }
-}
-
-@Composable
 private fun LoadingState() {
     Box(Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) {
         CircularProgressIndicator(color = VColors.violet, strokeWidth = 2.dp, modifier = Modifier.size(32.dp))
@@ -1404,7 +1475,7 @@ private fun LoadingState() {
 
 @Composable
 private fun ErrorState(message: String, onRetry: (() -> Unit)? = null) {
-    SurfaceCard {
+    CreamCard {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -1428,7 +1499,7 @@ private fun ErrorState(message: String, onRetry: (() -> Unit)? = null) {
 
 @Composable
 private fun EmptyState(title: String, body: String) {
-    SurfaceCard {
+    CreamCard {
         Column(
             Modifier.fillMaxWidth().padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -1436,7 +1507,7 @@ private fun EmptyState(title: String, body: String) {
         ) {
             Icon(Icons.Filled.TaskAlt, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(32.dp))
             Text(title, style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
-            Text(body, style = VTypography.caption, color = VColors.ink3, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            Text(body, style = VTypography.caption, color = VColors.ink3, textAlign = TextAlign.Center)
         }
     }
 }
