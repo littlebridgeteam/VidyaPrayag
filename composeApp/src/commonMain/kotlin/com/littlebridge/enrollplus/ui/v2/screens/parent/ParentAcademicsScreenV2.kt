@@ -195,12 +195,10 @@ private fun ParentAcademicsContent(
             .verticalScroll(rememberScrollState())
             .padding(bottom = 100.dp),
     ) {
-        // ── Header ──
-        Text(
-            "Academics",
-            style = VTypography.h2,
-            color = VColors.ink,
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
+        // ── Premium header ──
+        AcademicsHeader(
+            selectedChildName = state.childName,
+            currentTab = tab,
         )
 
         // ── Tab chips row ──
@@ -283,6 +281,57 @@ private fun ParentAcademicsContent(
             }
         }
     }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PREMIUM HEADER
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun AcademicsHeader(
+    selectedChildName: String,
+    currentTab: String,
+) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .background(VColors.creamDeep)
+            .padding(horizontal = 24.dp)
+            .padding(top = 20.dp, bottom = 16.dp),
+    ) {
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Box(
+                Modifier.size(44.dp).clip(VShapes.md).background(VColors.violetSoft),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Filled.School,
+                    contentDescription = null,
+                    tint = VColors.violet,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "Academics",
+                    style = VTypography.h2.copy(fontSize = 20.sp),
+                    color = VColors.ink,
+                    fontWeight = FontWeight.Bold,
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    if (selectedChildName.isNotBlank()) "$selectedChildName · $currentTab" else currentTab,
+                    style = VTypography.caption,
+                    color = VColors.ink3,
+                )
+            }
+        }
+    }
+    HorizontalDivider(color = VColors.line, thickness = 1.dp)
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
