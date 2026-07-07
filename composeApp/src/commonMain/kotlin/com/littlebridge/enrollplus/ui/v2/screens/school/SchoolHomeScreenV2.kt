@@ -51,6 +51,11 @@ import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardActivity
 import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardOverview
 import com.littlebridge.enrollplus.feature.admin.domain.model.DashboardActivity
+import com.littlebridge.enrollplus.util.MONTH_SHORT
+import com.littlebridge.enrollplus.util.dayOfWeek
+import com.littlebridge.enrollplus.util.nowMinutesOfDay
+import com.littlebridge.enrollplus.util.parseIsoDate
+import com.littlebridge.enrollplus.util.todayIso
 import com.littlebridge.enrollplus.feature.admin.domain.model.OverviewAchievement
 import com.littlebridge.enrollplus.feature.admin.domain.model.OverviewBirthday
 import com.littlebridge.enrollplus.feature.admin.domain.model.OverviewEvent
@@ -403,7 +408,23 @@ private fun DeskHeader(
     val header = overview.header
     val name = header.adminName.takeIf { it.isNotBlank() } ?: fallbackName
     val schoolName = header.schoolName.takeIf { it.isNotBlank() } ?: "Your School"
-    val greeting = header.greeting.takeIf { it.isNotBlank() } ?: "Welcome"
+
+    // Time-based greeting
+    val hour = nowMinutesOfDay() / 60
+    val greeting = when (hour) {
+        in 5..11 -> "Good morning"
+        in 12..16 -> "Good afternoon"
+        in 17..21 -> "Good evening"
+        else -> "Welcome back"
+    }
+
+    // Today's date: "Mon, 25 Jun 2026"
+    val todayIso = todayIso()
+    val (ty, tm, td) = parseIsoDate(todayIso) ?: Triple(0, 0, 0)
+    val dowNames = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+    val dow = if (ty > 0) dowNames[dayOfWeek(ty, tm, td)] else ""
+    val monName = MONTH_SHORT.getOrNull(tm - 1) ?: ""
+    val todayStr = if (ty > 0) "$dow, $td $monName $ty" else ""
 
     // Top bar — wordmark + notification bell
     Row(
@@ -463,7 +484,7 @@ private fun DeskHeader(
 
     Spacer(Modifier.height(16.dp))
 
-    // Premium header card — school name, greeting, admin name, session chips
+    // Premium header card — school name, date, greeting, admin name, session chips
     CreamCard(tint = VColors.surfaceCard) {
         // School name overline with accent dot
         Row(
@@ -487,9 +508,19 @@ private fun DeskHeader(
             )
         }
 
-        Spacer(Modifier.height(14.dp))
+        // Today's date
+        if (todayStr.isNotBlank()) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = todayStr,
+                style = VTypography.caption,
+                color = VColors.ink3,
+            )
+        }
 
-        // Greeting — bold greeting + admin name on separate line for clarity
+        Spacer(Modifier.height(12.dp))
+
+        // Greeting — time-based, bold headline
         Text(
             text = greeting,
             style = VTypography.h2.copy(fontWeight = FontWeight.ExtraBold),
@@ -653,12 +684,7 @@ private fun RowScope.KpiMetric(kpi: OverviewKpi, modifier: Modifier = Modifier) 
         "down" -> VColors.coral
         else -> VColors.violet
     }
-    Column(
-        modifier = modifier
-            .clip(VShapes.sm)
-            .background(VColors.creamDeep)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-    ) {
+    Column(modifier = modifier) {
         Text(
             text = formatKpiValue(kpi),
             style = VTypography.h3.copy(fontWeight = FontWeight.ExtraBold),

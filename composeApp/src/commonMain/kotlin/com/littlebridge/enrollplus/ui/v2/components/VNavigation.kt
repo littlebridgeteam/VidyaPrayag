@@ -948,17 +948,16 @@ fun VBackHeader(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// VCreamBottomNav — premium floating deck navigation
+// VCreamBottomNav — premium floating dock navigation (rebuilt)
 //
 // Design DNA:
-//   • VColors.creamDeep bar — warm, tonal, floats above cream background
-//   • 1dp VColors.line border, 28dp rounded corners
-//   • Active: violet icon + 5dp violet dot indicator below
-//   • Inactive: ink3 icon, no dot
-//   • Labels always visible (10sp) — active Bold, inactive Medium
-//   • Spring scale on icon (1.0 → 1.12 → 1.0 on selection)
-//   • Coral badge for unread counts
-//   • No pill, no shadow — clean tonal elevation
+//   • VColors.surfaceCard bar (pure white) — floats above cream background
+//   • 1dp VColors.line border, 20dp rounded corners
+//   • Active: icon in a filled violet circle (28dp) + violet label
+//   • Inactive: plain icon in ink3 + ink3 label
+//   • Badge: coral dot on top-right of icon (no text, just a dot)
+//   • Clean tween animations, no springs
+//   • 56dp height — compact, premium
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
@@ -974,17 +973,17 @@ fun VCreamBottomNav(
         modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 14.dp),
+            .padding(horizontal = 16.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center,
     ) {
         Box(
             modifier = Modifier
-                .height(62.dp)
+                .height(56.dp)
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(28.dp))
-                .background(VColors.creamDeep)
-                .border(1.dp, VColors.line, RoundedCornerShape(28.dp))
-                .padding(horizontal = 4.dp),
+                .clip(RoundedCornerShape(20.dp))
+                .background(VColors.surfaceCard)
+                .border(1.dp, VColors.line, RoundedCornerShape(20.dp))
+                .padding(horizontal = 6.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxSize(),
@@ -993,75 +992,69 @@ fun VCreamBottomNav(
             ) {
                 items.forEach { item ->
                     val active = item.id == selected
-                    val tint = if (active) VColors.violet else VColors.ink3
-                    val bgAlpha by animateFloatAsState(
-                        targetValue = if (active) 1f else 0f,
-                        animationSpec = tween(200),
-                        label = "navBg_${item.id}",
-                    )
+                    val iconTint = if (active) VColors.violet else VColors.ink3
+                    val labelColor = if (active) VColors.violet else VColors.ink3
                     val interaction = remember { MutableInteractionSource() }
 
                     Column(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
-                            .clip(RoundedCornerShape(22.dp))
+                            .clip(RoundedCornerShape(16.dp))
                             .clickable(interactionSource = interaction, indication = null) {
                                 if (!active) {
                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 }
                                 onSelect(item.id)
-                            }
-                            .padding(vertical = 8.dp),
+                            },
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center,
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .clip(VShapes.sm)
-                                .background(
-                                    VColors.violetSoft.copy(alpha = bgAlpha * 0.6f),
-                                )
-                                .padding(horizontal = 10.dp, vertical = 2.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Box(contentAlignment = Alignment.TopEnd) {
+                        Box(contentAlignment = Alignment.TopEnd) {
+                            if (active) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(CircleShape)
+                                        .background(VColors.violetSoft),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(
+                                        imageVector = item.icon,
+                                        contentDescription = item.label,
+                                        tint = iconTint,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                }
+                            } else {
                                 Icon(
                                     imageVector = item.icon,
                                     contentDescription = item.label,
-                                    tint = tint,
-                                    modifier = Modifier.size(22.dp),
+                                    tint = iconTint,
+                                    modifier = Modifier.size(20.dp),
                                 )
-                                if (item.badge > 0) {
-                                    Box(
-                                        modifier = Modifier
-                                            .offset(x = 7.dp, y = (-3).dp)
-                                            .clip(CircleShape)
-                                            .background(VColors.coral)
-                                            .padding(horizontal = 4.dp, vertical = 1.dp),
-                                    ) {
-                                        Text(
-                                            text = if (item.badge > 99) "99+" else item.badge.toString(),
-                                            style = VTypography.caption.copy(
-                                                fontSize = 9.sp,
-                                                fontWeight = FontWeight.Bold,
-                                            ),
-                                            color = VColors.white,
-                                        )
-                                    }
-                                }
+                            }
+                            if (item.badge > 0) {
+                                Box(
+                                    modifier = Modifier
+                                        .offset(x = 6.dp, y = (-2).dp)
+                                        .size(7.dp)
+                                        .clip(CircleShape)
+                                        .background(VColors.coral)
+                                        .border(1.5.dp, VColors.surfaceCard, CircleShape),
+                                )
                             }
                         }
 
-                        Spacer(Modifier.height(4.dp))
+                        Spacer(Modifier.height(3.dp))
 
                         Text(
                             text = item.label,
                             style = VTypography.caption.copy(
                                 fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
-                                fontSize = 10.sp,
+                                fontSize = 9.sp,
                             ),
-                            color = tint,
+                            color = labelColor,
                         )
                     }
                 }
