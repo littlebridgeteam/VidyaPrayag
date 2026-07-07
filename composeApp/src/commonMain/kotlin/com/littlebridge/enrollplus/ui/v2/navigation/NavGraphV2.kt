@@ -219,8 +219,11 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
                     "syllabus" -> "syllabus"
                     else -> null
                 }
-                val reportDraftId = if (thirdSeg == "report-card") segments.getOrNull(3) else null
-                DeepLinkTarget.ParentTab(EntryRole.Parent, secondSeg, overlay, if (reportDraftId != null) mapOf("draftId" to reportDraftId) else emptyMap())
+                val params = parseQueryParams(queryStr).toMutableMap()
+                if (thirdSeg == "report-card") {
+                    segments.getOrNull(3)?.let { params["draftId"] = it }
+                }
+                DeepLinkTarget.ParentTab(EntryRole.Parent, secondSeg, overlay, params)
             } else {
                 // Second segment is an overlay/screen name, not a bottom-nav tab.
                 // Map it to the correct tab + overlay so the LaunchedEffect can navigate.
@@ -243,8 +246,11 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
                     "link-child" -> "profile" to "link-child"
                     else -> "home" to null
                 }
-                val reportDraftId = segments.getOrNull(2)
-                DeepLinkTarget.ParentTab(EntryRole.Parent, mappedTab, mappedOverlay, if (secondSeg == "report-card" && reportDraftId != null) mapOf("draftId" to reportDraftId) else emptyMap())
+                val params = parseQueryParams(queryStr).toMutableMap()
+                if (secondSeg == "report-card") {
+                    segments.getOrNull(2)?.let { params["draftId"] = it }
+                }
+                DeepLinkTarget.ParentTab(EntryRole.Parent, mappedTab, mappedOverlay, params)
             }
         }
         "teacher" -> {

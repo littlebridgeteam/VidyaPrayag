@@ -173,13 +173,23 @@ private fun ParentAcademicsContent(
     onReportDraftIdConsumed: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    val visibleTabs = listOf("Overview", "Attendance", "Marks", "Syllabus", "Quizzes", "Homework")
+    val staticTabs = listOf("Overview", "Attendance", "Marks", "Syllabus", "Quizzes", "Homework")
     var tab by remember { mutableStateOf("Overview") }
+    val showReport = tab == "Report" || initialReportDraftId != null
+    val visibleTabs = remember(staticTabs, showReport) {
+        staticTabs + if (showReport) listOf("Report") else emptyList()
+    }
 
     LaunchedEffect(initialTab) {
         if (initialTab != null) {
             tab = initialTab
             onTabConsumed()
+        }
+    }
+
+    LaunchedEffect(initialReportDraftId) {
+        if (initialReportDraftId != null && tab != "Report") {
+            tab = "Report"
         }
     }
 
