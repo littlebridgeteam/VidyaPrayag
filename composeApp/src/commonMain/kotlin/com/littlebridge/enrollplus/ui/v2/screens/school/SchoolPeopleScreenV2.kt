@@ -614,9 +614,9 @@ private fun TeacherCard(
                             }
                             if (teacher.actions.canDeactivate) {
                                 DropdownMenuItem(
-                                    text = { Text(appString(StringKeys.PPL_DEACTIVATE), style = VTypography.bodySmall, color = VColors.danger) },
+                                    text = { Text(appString(StringKeys.PPL_DEACTIVATE), style = VTypography.bodySmall, color = VColors.coral) },
                                     onClick = { menuOpen = false; onDeactivate() },
-                                    leadingIcon = { Icon(VIcons.Close, contentDescription = null, tint = VColors.danger, modifier = Modifier.size(16.dp)) },
+                                    leadingIcon = { Icon(VIcons.Close, contentDescription = null, tint = VColors.coral, modifier = Modifier.size(16.dp)) },
                                 )
                             }
                         }
@@ -809,8 +809,8 @@ private fun StudentsSubTab(
                 Text(appString(StringKeys.PPL_RISK_DISTRIBUTION), style = VTypography.caption, color = VColors.ink3)
                 Spacer(Modifier.height(12.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    RiskTile(appString(StringKeys.PPL_CRITICAL), analyticsState.criticalRiskCount, VColors.danger, Modifier.weight(1f))
-                    RiskTile(appString(StringKeys.PPL_MEDIUM), analyticsState.mediumRiskCount, VColors.warning, Modifier.weight(1f))
+                    RiskTile(appString(StringKeys.PPL_CRITICAL), analyticsState.criticalRiskCount, VColors.coral, Modifier.weight(1f))
+                    RiskTile(appString(StringKeys.PPL_MEDIUM), analyticsState.mediumRiskCount, VColors.gold, Modifier.weight(1f))
                     RiskTile(appString(StringKeys.PPL_LOW), analyticsState.lowRiskCount, VColors.success, Modifier.weight(1f))
                 }
             }
@@ -1213,7 +1213,7 @@ private fun AddStudentPeopleDialog(
                     keyboardType = KeyboardType.Phone,
                 )
                 if (error != null) {
-                    Text(error, style = VTypography.caption, color = VColors.danger)
+                    Text(error, style = VTypography.caption, color = VColors.coral)
                 }
                 Spacer(Modifier.height(2.dp))
                 VButton(
@@ -1273,7 +1273,7 @@ private fun ImportStudentsDialog(
                     modifier = Modifier.fillMaxWidth().height(180.dp),
                 )
                 if (error != null) {
-                    Text(error, style = VTypography.caption, color = VColors.danger)
+                    Text(error, style = VTypography.caption, color = VColors.coral)
                 }
                 Spacer(Modifier.height(2.dp))
                 VButton(
@@ -1312,8 +1312,8 @@ private fun RiskTile(label: String, count: Int, tone: Color, modifier: Modifier 
 @Composable
 private fun RiskStudentRow(s: RiskStudent) {
     val tone = when (s.riskLevel.lowercase()) {
-        "critical" -> VColors.danger
-        "medium" -> VColors.warning
+        "critical" -> VColors.coral
+        "medium" -> VColors.gold
         else -> VColors.success
     }
     val badgeTone = when (s.riskLevel.lowercase()) {

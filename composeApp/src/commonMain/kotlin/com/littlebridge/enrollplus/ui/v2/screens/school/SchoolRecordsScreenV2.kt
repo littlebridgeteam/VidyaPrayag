@@ -274,7 +274,7 @@ private fun CoverageTab(state: SyllabusCoverageState, onRetry: () -> Unit) {
                                     tone = if (d.isDelayed) VBadgeTone.Danger else VBadgeTone.Arctic,
                                 )
                                 if (d.trend.isNotBlank()) {
-                                    Text(d.trend, style = VTypography.caption, color = if (d.isDelayed) VColors.danger else VColors.ink3)
+                                    Text(d.trend, style = VTypography.caption, color = if (d.isDelayed) VColors.coral else VColors.ink3)
                                 }
                             }
                         }
@@ -290,7 +290,7 @@ private fun CoverageTab(state: SyllabusCoverageState, onRetry: () -> Unit) {
                         state.alerts.forEach { a ->
                             RecordsCreamCard {
                                 Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    Icon(VIcons.AlertCircle, contentDescription = null, tint = if (a.isCritical) VColors.danger else VColors.warning, modifier = Modifier.size(18.dp).padding(top = 2.dp))
+                                    Icon(VIcons.AlertCircle, contentDescription = null, tint = if (a.isCritical) VColors.coral else VColors.gold, modifier = Modifier.size(18.dp).padding(top = 2.dp))
                                     Column(Modifier.weight(1f)) {
                                         Text("${a.subject} • ${a.className}", style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                                         if (a.instructor.isNotBlank()) {
@@ -372,8 +372,8 @@ private fun AttendanceTab(
                 Spacer(Modifier.height(12.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     StatCell(label = appString(StringKeys.REC_PRESENT), value = data.present.toString(), tint = VColors.success)
-                    StatCell(label = appString(StringKeys.REC_ABSENT), value = data.absent.toString(), tint = VColors.danger)
-                    StatCell(label = appString(StringKeys.REC_LATE), value = data.late.toString(), tint = VColors.warning)
+                    StatCell(label = appString(StringKeys.REC_ABSENT), value = data.absent.toString(), tint = VColors.coral)
+                    StatCell(label = appString(StringKeys.REC_LATE), value = data.late.toString(), tint = VColors.gold)
                     StatCell(label = appString(StringKeys.REC_TOTAL), value = data.total.toString(), tint = VColors.ink)
                 }
             }
@@ -494,8 +494,8 @@ private fun FeeTab(
                 Spacer(Modifier.height(12.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     StatCell(label = appString(StringKeys.REC_PAID), value = formatMoney(data.paidTotal), sub = "${data.paidCount}", tint = VColors.success)
-                    StatCell(label = appString(StringKeys.REC_DUE), value = formatMoney(data.dueTotal), sub = "${data.dueCount}", tint = VColors.warning)
-                    StatCell(label = appString(StringKeys.REC_OVERDUE), value = formatMoney(data.overdueTotal), sub = "${data.overdueCount}", tint = VColors.danger)
+                    StatCell(label = appString(StringKeys.REC_DUE), value = formatMoney(data.dueTotal), sub = "${data.dueCount}", tint = VColors.gold)
+                    StatCell(label = appString(StringKeys.REC_OVERDUE), value = formatMoney(data.overdueTotal), sub = "${data.overdueCount}", tint = VColors.coral)
                 }
             }
 
@@ -614,8 +614,8 @@ private fun PaceTab(
                                         VIcons.AlertCircle,
                                         contentDescription = null,
                                         tint = when (alert.level) {
-                                            "CRITICAL" -> VColors.danger
-                                            "BEHIND" -> VColors.warning
+                                            "CRITICAL" -> VColors.coral
+                                            "BEHIND" -> VColors.gold
                                             else -> VColors.violet
                                         },
                                         modifier = Modifier.size(18.dp).padding(top = 2.dp),

@@ -879,7 +879,7 @@ private fun ImportDialog(
                         ) {
                             Box(
                                 Modifier.size(40.dp).clip(CircleShape)
-                                    .background(VColors.warning.copy(alpha = 0.3f)),
+                                    .background(VColors.gold.copy(alpha = 0.3f)),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Text("📋", style = VTypography.body)
@@ -1276,7 +1276,7 @@ private fun ExistingConfigCard(config: SchoolDayConfigDto) {
 private fun slotTypeColor(type: String): Color {
     return when (type) {
         "TEACHING" -> VColors.sky
-        "BREAK" -> VColors.warning
+        "BREAK" -> VColors.gold
         "ASSEMBLY" -> VColors.violet
         "LAB" -> VColors.violetSoft
         else -> VColors.cream
