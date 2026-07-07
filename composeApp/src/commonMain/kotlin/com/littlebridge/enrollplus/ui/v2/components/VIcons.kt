@@ -85,10 +85,21 @@ object VIcons {
 
     /** Bell (lucide) — stroke-based, crisper than Material filled Notifications. */
     val BellStroke: ImageVector by lazy {
-        materialStroke("v_bell") {
-            moveTo(6f, 8f); curveTo(6f, 4.69f, 8.69f, 2f, 12f, 2f); curveTo(15.31f, 2f, 18f, 4.69f, 18f, 8f)
-            curveTo(18f, 12f, 19f, 14f, 20f, 15f); lineTo(4f, 15f); curveTo(5f, 14f, 6f, 12f, 6f, 8f); close()
-            moveTo(10.3f, 21f); curveTo(10.72f, 21.8f, 11.55f, 22f, 12f, 22f); curveTo(12.45f, 22f, 13.28f, 21.8f, 13.7f, 21f)
+        materialStroke("v_bell_stroke") {
+            // Bell dome — arc from (6,8) to (18,8) approximated by two curves
+            moveTo(6f, 8f)
+            curveTo(6f, 4.69f, 8.69f, 2f, 12f, 2f)
+            curveTo(15.31f, 2f, 18f, 4.69f, 18f, 8f)
+            // Right side flaring out to (22,17)
+            curveTo(18f, 15f, 21f, 17f, 22f, 17f)
+            // Bottom rim
+            lineTo(2f, 17f)
+            // Left side back up to (6,8)
+            curveTo(3f, 17f, 6f, 15f, 6f, 8f)
+            // Clapper
+            moveTo(10.3f, 21f)
+            curveTo(10.72f, 21.8f, 11.55f, 22f, 12f, 22f)
+            curveTo(12.45f, 22f, 13.28f, 21.8f, 13.7f, 21f)
         }
     }
 

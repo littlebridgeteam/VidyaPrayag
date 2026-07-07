@@ -387,10 +387,8 @@ private fun CommandDesk(
 // ─────────────────────────────────────────────────────────────────────────────
 // Desk Header — premium top section
 //
-//   • Enroll+ wordmark left, notification bell right (no avatar)
-//   • School name with violet accent dot
-//   • Greeting with bold+light mix
-//   • Session info + live status pill
+//   • Enroll+ wordmark left (10% larger), notification bell right
+//   • Premium card: school name overline, greeting headline, session chips, live pill
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
@@ -406,7 +404,7 @@ private fun DeskHeader(
     val schoolName = header.schoolName.takeIf { it.isNotBlank() } ?: "Your School"
     val greeting = header.greeting.takeIf { it.isNotBlank() } ?: "Welcome"
 
-    // Top bar — wordmark + notification bell only
+    // Top bar — wordmark + notification bell
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -416,15 +414,15 @@ private fun DeskHeader(
                 append("Enroll")
                 withStyle(SpanStyle(color = VColors.violet)) { append("+") }
             },
-            style = VTypography.wordmark,
+            style = VTypography.wordmark.copy(fontSize = 17.6.sp),
             color = VColors.ink,
             modifier = Modifier.weight(1f),
         )
 
-        // Notification bell — lucide stroke icon, clean
+        // Notification bell — fixed lucide stroke icon
         Box(
             modifier = Modifier
-                .size(40.dp)
+                .size(42.dp)
                 .clip(CircleShape)
                 .background(VColors.violetSoft)
                 .clickable(
@@ -437,23 +435,23 @@ private fun DeskHeader(
                 VIcons.BellStroke,
                 contentDescription = "Notifications",
                 tint = VColors.violet,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(21.dp),
             )
             if (unreadCount > 0) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .offset(x = 2.dp, y = (-2).dp)
-                        .size(14.dp)
+                        .size(16.dp)
                         .clip(CircleShape)
                         .background(VColors.coral)
-                        .border(1.5.dp, VColors.surfaceCard, CircleShape),
+                        .border(2.dp, VColors.cream, CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text = if (unreadCount > 9) "9+" else unreadCount.toString(),
                         style = VTypography.caption.copy(
-                            fontSize = 8.sp,
+                            fontSize = 9.sp,
                             fontWeight = FontWeight.Bold,
                         ),
                         color = VColors.white,
@@ -463,83 +461,90 @@ private fun DeskHeader(
         }
     }
 
-    Spacer(Modifier.height(20.dp))
+    Spacer(Modifier.height(16.dp))
 
-    // School name with accent dot
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(7.dp),
-    ) {
-        Box(
-            modifier = Modifier
-                .size(5.dp)
-                .clip(CircleShape)
-                .background(VColors.violet),
-        )
-        Text(
-            text = schoolName,
-            style = VTypography.accentLabel,
-            color = VColors.violet,
-        )
-    }
-
-    Spacer(Modifier.height(6.dp))
-
-    // Greeting — bold + light mix
-    Text(
-        text = buildAnnotatedString {
-            withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold, color = VColors.ink)) {
-                append(greeting)
-            }
-            withStyle(SpanStyle(fontWeight = FontWeight.Normal, color = VColors.ink2)) {
-                append(", $name")
-            }
-        },
-        style = VTypography.h2,
-    )
-
-    // Session info
-    val session = buildString {
-        header.academicYear.takeIf { it.isNotBlank() }?.let { append(it) }
-        header.currentTerm.takeIf { it.isNotBlank() }?.let {
-            if (isNotEmpty()) append(" \u00B7 ")
-            append(it)
-        }
-    }
-    if (session.isNotBlank()) {
-        Spacer(Modifier.height(2.dp))
-        Text(
-            text = session,
-            style = VTypography.caption,
-            color = VColors.ink3,
-        )
-    }
-
-    // Live status pill — makes the page feel alive
-    if (header.lastUpdated.isNotBlank()) {
-        Spacer(Modifier.height(8.dp))
+    // Premium header card — school name, greeting, session info, live status
+    CreamCard(tint = VColors.surfaceWarm) {
+        // School name as uppercase overline with accent dot
         Row(
-            modifier = Modifier
-                .clip(VShapes.full)
-                .background(VColors.mintSoft)
-                .padding(horizontal = 10.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Box(
                 modifier = Modifier
-                    .size(6.dp)
+                    .size(5.dp)
                     .clip(CircleShape)
-                    .background(VColors.mint),
+                    .background(VColors.violet),
             )
             Text(
-                text = "Live \u00B7 Updated ${header.lastUpdated}",
+                text = schoolName.uppercase(),
                 style = VTypography.caption.copy(
                     fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.8.sp,
                 ),
-                color = VColors.ink2,
+                color = VColors.violet,
             )
+        }
+
+        Spacer(Modifier.height(10.dp))
+
+        // Greeting — bold + light mix
+        Text(
+            text = buildAnnotatedString {
+                withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold, color = VColors.ink)) {
+                    append(greeting)
+                }
+                withStyle(SpanStyle(fontWeight = FontWeight.Normal, color = VColors.ink2)) {
+                    append(", $name")
+                }
+            },
+            style = VTypography.h2,
+        )
+
+        // Session info — academic year + term as caption
+        val session = buildString {
+            header.academicYear.takeIf { it.isNotBlank() }?.let { append(it) }
+            header.currentTerm.takeIf { it.isNotBlank() }?.let {
+                if (isNotEmpty()) append(" \u00B7 ")
+                append(it)
+            }
+        }
+        if (session.isNotBlank()) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = session,
+                style = VTypography.caption,
+                color = VColors.ink3,
+            )
+        }
+
+        // Live status pill — makes the page feel alive
+        if (header.lastUpdated.isNotBlank()) {
+            Spacer(Modifier.height(12.dp))
+            Row(
+                modifier = Modifier
+                    .clip(VShapes.full)
+                    .background(VColors.mintSoft)
+                    .padding(horizontal = 10.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(6.dp)
+                        .clip(CircleShape)
+                        .background(VColors.mint),
+                )
+                Text(
+                    text = "Live \u00B7 Updated ${header.lastUpdated}",
+                    style = VTypography.caption.copy(
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    ),
+                    color = VColors.ink2,
+                )
+            }
         }
     }
 }
