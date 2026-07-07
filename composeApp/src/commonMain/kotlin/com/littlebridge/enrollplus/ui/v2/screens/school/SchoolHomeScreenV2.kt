@@ -40,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -419,10 +420,10 @@ private fun DeskHeader(
             modifier = Modifier.weight(1f),
         )
 
-        // Notification bell — fixed lucide stroke icon
+        // Notification bell — 15% smaller, badge positioned to overflow
         Box(
             modifier = Modifier
-                .size(42.dp)
+                .size(36.dp)
                 .clip(CircleShape)
                 .background(VColors.violetSoft)
                 .clickable(
@@ -435,37 +436,36 @@ private fun DeskHeader(
                 VIcons.BellStroke,
                 contentDescription = "Notifications",
                 tint = VColors.violet,
-                modifier = Modifier.size(21.dp),
+                modifier = Modifier.size(18.dp),
             )
-            if (unreadCount > 0) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .offset(x = 2.dp, y = (-2).dp)
-                        .size(16.dp)
-                        .clip(CircleShape)
-                        .background(VColors.coral)
-                        .border(2.dp, VColors.cream, CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = if (unreadCount > 9) "9+" else unreadCount.toString(),
-                        style = VTypography.caption.copy(
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold,
-                        ),
-                        color = VColors.white,
-                    )
-                }
+        }
+        if (unreadCount > 0) {
+            Box(
+                modifier = Modifier
+                    .offset(x = (-4).dp, y = 2.dp)
+                    .size(18.dp)
+                    .clip(CircleShape)
+                    .background(VColors.coral)
+                    .border(1.5.dp, VColors.cream, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = if (unreadCount > 9) "9+" else unreadCount.toString(),
+                    style = VTypography.caption.copy(
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Black,
+                    ),
+                    color = VColors.white,
+                )
             }
         }
     }
 
     Spacer(Modifier.height(16.dp))
 
-    // Premium header card — school name, greeting, session info, live status
+    // Premium header card — school name, greeting, session, live status
     CreamCard(tint = VColors.surfaceWarm) {
-        // School name as uppercase overline with accent dot
+        // School name overline with accent dot
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -487,9 +487,9 @@ private fun DeskHeader(
             )
         }
 
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(12.dp))
 
-        // Greeting — bold + light mix
+        // Greeting — bold + light mix, premium headline
         Text(
             text = buildAnnotatedString {
                 withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold, color = VColors.ink)) {
@@ -502,7 +502,7 @@ private fun DeskHeader(
             style = VTypography.h2,
         )
 
-        // Session info — academic year + term as caption
+        // Session chips — academic year + term as inline pills
         val session = buildString {
             header.academicYear.takeIf { it.isNotBlank() }?.let { append(it) }
             header.currentTerm.takeIf { it.isNotBlank() }?.let {
@@ -511,12 +511,33 @@ private fun DeskHeader(
             }
         }
         if (session.isNotBlank()) {
-            Spacer(Modifier.height(6.dp))
-            Text(
-                text = session,
-                style = VTypography.caption,
-                color = VColors.ink3,
-            )
+            Spacer(Modifier.height(8.dp))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                header.academicYear.takeIf { it.isNotBlank() }?.let {
+                    Text(
+                        text = it,
+                        style = VTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
+                        color = VColors.ink2,
+                        modifier = Modifier
+                            .clip(VShapes.sm)
+                            .background(VColors.creamDeep)
+                            .padding(horizontal = 8.dp, vertical = 3.dp),
+                    )
+                }
+                header.currentTerm.takeIf { it.isNotBlank() }?.let {
+                    Text(
+                        text = it,
+                        style = VTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
+                        color = VColors.violet,
+                        modifier = Modifier
+                            .clip(VShapes.sm)
+                            .background(VColors.violetSoft)
+                            .padding(horizontal = 8.dp, vertical = 3.dp),
+                    )
+                }
+            }
         }
 
         // Live status pill — makes the page feel alive
@@ -597,6 +618,39 @@ private fun SectionLabel(text: String) {
     )
 }
 
+@Composable
+private fun CardSectionHeader(
+    label: String,
+    icon: ImageVector,
+    iconTint: Color = VColors.violet,
+    iconBg: Color = VColors.violetSoft,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(26.dp)
+                .clip(VShapes.sm)
+                .background(iconBg),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = iconTint,
+                modifier = Modifier.size(14.dp),
+            )
+        }
+        Text(
+            text = label,
+            style = VTypography.label.copy(fontWeight = FontWeight.Bold),
+            color = VColors.ink,
+        )
+    }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // KPI Grid — 2-column metrics in CreamCard
 // Number in h3 ExtraBold + label in caption + delta in caption Bold colored
@@ -604,8 +658,8 @@ private fun SectionLabel(text: String) {
 
 @Composable
 private fun KpiGrid(kpis: List<OverviewKpi>, onClick: () -> Unit) {
-    CreamCard(onClick = onClick) {
-        SectionLabel("Today's Metrics")
+    CreamCard(onClick = onClick, tint = VColors.surfaceWarm) {
+        CardSectionHeader("Today's Metrics", VIcons.LayoutDashboard)
         Spacer(Modifier.height(14.dp))
         val rows = kpis.chunked(2)
         rows.forEachIndexed { rowIdx, row ->
@@ -759,8 +813,8 @@ private fun FeeAnalyticsCard(fa: OverviewFeeAnalytics, onClick: () -> Unit) {
         fa.collectionRate >= 70 -> VColors.violet
         else -> VColors.gold
     }
-    CreamCard(onClick = onClick) {
-        SectionLabel("Fee Collection")
+    CreamCard(onClick = onClick, tint = VColors.violetSoft) {
+        CardSectionHeader("Fee Collection", VIcons.Wallet, iconTint = VColors.violet)
         Spacer(Modifier.height(14.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -809,13 +863,13 @@ private fun formatAmount(v: Double): String = when {
 @Composable
 private fun ParentEngagementCard(pe: OverviewParentEngagement, onClick: () -> Unit) {
     val engagementColor = if (pe.activeParentsPct >= 70) VColors.success else VColors.gold
-    CreamCard(onClick = onClick) {
+    CreamCard(onClick = onClick, tint = VColors.skySoft) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.Top,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                SectionLabel("Parent Engagement")
+                CardSectionHeader("Parent Engagement", VIcons.UsersGroup, iconTint = VColors.sky, iconBg = VColors.skySoft)
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = "${pe.activeParentsPct}%",
@@ -872,7 +926,7 @@ private fun QuickActionsCard(
     onReports: () -> Unit,
 ) {
     CreamCard {
-        SectionLabel("Quick Actions")
+        CardSectionHeader("Quick Actions", VIcons.Sparkles, iconTint = VColors.gold, iconBg = VColors.goldSoft)
         Spacer(Modifier.height(14.dp))
         ActionRow(label = "Send Announcement", icon = VIcons.Megaphone, onClick = onAnnouncement)
         CardDivider(); Spacer(Modifier.height(4.dp))
@@ -930,8 +984,8 @@ private fun ActionRow(label: String, icon: androidx.compose.ui.graphics.vector.I
 
 @Composable
 private fun TeacherSpotlightCard(ts: OverviewTeacherSpotlight, onClick: () -> Unit) {
-    CreamCard(onClick = onClick) {
-        SectionLabel("Teacher Spotlight")
+    CreamCard(onClick = onClick, tint = VColors.surfaceWarm) {
+        CardSectionHeader("Teacher Spotlight", VIcons.GraduationCap)
         Spacer(Modifier.height(12.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -979,7 +1033,7 @@ private fun UpcomingCard(events: List<OverviewEvent>, onOpenCalendar: () -> Unit
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            SectionLabel("Upcoming")
+            CardSectionHeader("Upcoming", VIcons.Calendar)
             Spacer(Modifier.weight(1f))
             Text(
                 text = "View all",
@@ -1026,8 +1080,8 @@ private fun UpcomingCard(events: List<OverviewEvent>, onOpenCalendar: () -> Unit
 
 @Composable
 private fun AchievementsCard(achievements: List<OverviewAchievement>) {
-    CreamCard {
-        SectionLabel("Achievements")
+    CreamCard(tint = VColors.goldSoft) {
+        CardSectionHeader("Achievements", VIcons.Star, iconTint = VColors.gold, iconBg = VColors.goldSoft)
         Spacer(Modifier.height(12.dp))
         achievements.take(3).forEachIndexed { idx, ach ->
             if (idx > 0) { CardDivider(); Spacer(Modifier.height(10.dp)) }
@@ -1068,8 +1122,8 @@ private fun AchievementsCard(achievements: List<OverviewAchievement>) {
 
 @Composable
 private fun BirthdaysCard(birthdays: List<OverviewBirthday>) {
-    CreamCard {
-        SectionLabel("Birthdays")
+    CreamCard(tint = VColors.coralSoft) {
+        CardSectionHeader("Birthdays", VIcons.Heart, iconTint = VColors.coral, iconBg = VColors.coralSoft)
         Spacer(Modifier.height(12.dp))
         birthdays.take(4).forEachIndexed { idx, bd ->
             if (idx > 0) { CardDivider(); Spacer(Modifier.height(10.dp)) }
@@ -1111,7 +1165,7 @@ private fun BirthdaysCard(birthdays: List<OverviewBirthday>) {
 @Composable
 private fun ActivityCard(activities: List<DashboardActivity>) {
     CreamCard {
-        SectionLabel("Recent Activity")
+        CardSectionHeader("Recent Activity", VIcons.History, iconTint = VColors.ink3, iconBg = VColors.creamDeep)
         Spacer(Modifier.height(12.dp))
         activities.take(4).forEachIndexed { idx, act ->
             if (idx > 0) { CardDivider(); Spacer(Modifier.height(10.dp)) }
