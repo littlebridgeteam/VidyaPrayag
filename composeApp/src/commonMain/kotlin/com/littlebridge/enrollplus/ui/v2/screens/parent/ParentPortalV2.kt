@@ -56,6 +56,7 @@ import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import org.koin.core.qualifier.named
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.screens.parent.ParentHomeScreen
 
 /** Full-screen overlays a portal can push above its tab content (back returns to the tabs). */
 private enum class ParentOverlay { None, Notifications, Calendar, Scholarships, Profile, Leave, Messages, LinkChild, Discovery, Health, Pulse, Transport, TutorChat, TutorProgress, DigitalIdCard, Library, EventRegistration }
@@ -368,7 +369,7 @@ fun ParentPortalV2(
     ) { padding ->
         Box(Modifier.fillMaxSize()) {
             when (tab) {
-                "home" -> com.littlebridge.enrollplus.ui.screens.parent.ParentHomeScreen(
+                "home" -> ParentHomeScreen(
                     onDiscoverSchools = { overlay = ParentOverlay.Discovery },
                     onOpenNotifications = { overlay = ParentOverlay.Notifications },
                     onOpenFees = { tab = "fees" },
