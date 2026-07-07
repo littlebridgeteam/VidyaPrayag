@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
 import com.littlebridge.enrollplus.feature.reportcard.domain.model.ReportCardModels
 import com.littlebridge.enrollplus.feature.reportcard.presentation.ParentReportViewModel
+import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
@@ -38,6 +39,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
@@ -75,18 +77,10 @@ fun ParentReportScreen(
     }
 
     Column(
-        Modifier.fillMaxSize().background(c.background),
+        Modifier.fillMaxSize().background(VColors.cream),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        // Header
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            VButton(text = appString(StringKeys.PL_BACK), onClick = onBack, variant = VButtonVariant.Secondary, size = VButtonSize.Sm)
-            Text(appString(StringKeys.PR_AI_REPORT_CARD), style = VTheme.type.h3.colored(c.ink))
-        }
+        PremiumOverlayHeader(title = appString(StringKeys.PR_AI_REPORT_CARD), onBack = onBack)
 
         when {
             state.isLoading -> {

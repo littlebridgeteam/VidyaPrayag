@@ -1,5 +1,6 @@
 package com.littlebridge.enrollplus.ui.v2.screens.parent
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,8 +31,8 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.littlebridge.enrollplus.feature.idcard.domain.model.IdCardDto
 import com.littlebridge.enrollplus.feature.idcard.presentation.IdCardViewModel
+import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.QrCodeImage
-import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
@@ -39,6 +40,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -66,10 +68,11 @@ fun DigitalIdCardScreen(
         Column(
             modifier = modifier
                 .fillMaxSize()
+                .background(VColors.cream)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            VBackHeader(title = appString(StringKeys.DID_DIGITAL_ID_CARD), onBack = onBack)
+            PremiumOverlayHeader(title = appString(StringKeys.DID_DIGITAL_ID_CARD), onBack = onBack)
 
             Spacer(modifier = Modifier.height(24.dp))
 

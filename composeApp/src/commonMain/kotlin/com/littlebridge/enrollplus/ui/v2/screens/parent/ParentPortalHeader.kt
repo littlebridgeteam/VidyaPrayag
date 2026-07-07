@@ -15,8 +15,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.DropdownMenu
@@ -34,6 +36,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.parent.domain.model.DashboardChildSummary
@@ -257,4 +260,84 @@ fun PortalTabChip(
             ) { onClick() }
             .padding(horizontal = 16.dp, vertical = 8.dp),
     )
+}
+
+/**
+ * Shared premium header for full-screen parent overlays.
+ * Circular bordered back button, bold title, optional trailing action.
+ */
+@Composable
+fun PremiumOverlayHeader(
+    title: String,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    action: (@Composable () -> Unit)? = null,
+) {
+    Column(modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(VColors.surfaceCard)
+                        .border(1.dp, VColors.line, CircleShape)
+                        .clickable(onClick = onBack),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = VColors.ink,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+                Text(
+                    title,
+                    style = VTypography.body.copy(fontWeight = FontWeight.Bold),
+                    color = VColors.ink,
+                )
+            }
+            if (action != null) {
+                Box(Modifier.height(40.dp).wrapContentWidth(), contentAlignment = Alignment.Center) {
+                    action()
+                }
+            }
+        }
+        Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line).padding(horizontal = 24.dp))
+    }
+}
+
+/**
+ * Premium surface card used across parent overlays.
+ * White card with a subtle 1dp border — matches the Academics/Fees design language.
+ */
+@Composable
+fun PremiumCard(
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    padding: Dp = 16.dp,
+    content: @Composable () -> Unit,
+) {
+    val shape = VShapes.lg
+    var m = modifier
+        .fillMaxWidth()
+        .clip(shape)
+        .background(VColors.surfaceCard)
+        .border(1.dp, VColors.line, shape)
+    if (onClick != null) {
+        m = m.clickable(onClick = onClick)
+    }
+    Box(m.padding(padding)) {
+        content()
+    }
 }

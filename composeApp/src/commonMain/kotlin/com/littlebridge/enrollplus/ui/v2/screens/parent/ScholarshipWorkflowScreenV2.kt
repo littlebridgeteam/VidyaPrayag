@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.feature.scholarship.domain.model.ApplyScholarshipRequest
 import com.littlebridge.enrollplus.feature.scholarship.domain.model.ScholarshipScheme
 import com.littlebridge.enrollplus.feature.scholarship.presentation.ScholarshipViewModel
-import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
+import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
@@ -55,6 +55,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
@@ -84,11 +85,12 @@ fun ScholarshipWorkflowScreenV2(
     Column(
         modifier
             .fillMaxSize()
+            .background(VColors.cream)
             .statusBarsPadding()
             .imePadding()
             .navigationBarsPadding()
     ) {
-        VBackHeader(title = appString(StringKeys.SW_SCHOLARSHIPS), onBack = onBack)
+        PremiumOverlayHeader(title = appString(StringKeys.SW_SCHOLARSHIPS), onBack = onBack)
 
         VStateHost(
             loading = state.isLoading,

@@ -52,6 +52,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.components.VLabel
 import com.littlebridge.enrollplus.ui.v2.components.VTag
 import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
@@ -138,7 +139,7 @@ private fun ParentLinkChildContent(
     Column(
         modifier
             .fillMaxSize()
-            .background(c.background)
+            .background(VColors.cream)
             // §11 cross-platform safe areas (Android + iOS, common code).
             .statusBarsPadding()
             .imePadding()

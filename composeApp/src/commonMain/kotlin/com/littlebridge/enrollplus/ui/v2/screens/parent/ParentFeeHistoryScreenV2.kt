@@ -28,9 +28,9 @@ import com.littlebridge.enrollplus.feature.parent.presentation.FeeViewModel
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
-import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -53,7 +53,7 @@ fun ParentFeeHistoryScreenV2(
             .fillMaxSize()
             .background(VColors.cream),
     ) {
-        VBackHeader(title = "Fee History", onBack = onBack)
+        PremiumOverlayHeader(title = "Fee History", onBack = onBack)
 
         Column(
             Modifier

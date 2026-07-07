@@ -1,5 +1,6 @@
 package com.littlebridge.enrollplus.ui.v2.screens.parent
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentLeaveDto
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentLeaveState
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentLeaveViewModel
-import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
+import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
@@ -38,6 +39,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VDatePicker
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.components.VTag
+import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
@@ -64,8 +66,12 @@ fun ParentLeaveScreenV2(
 ) {
     val state by viewModel.state.collectAsStateV2()
 
-    Column(modifier.fillMaxSize()) {
-        VBackHeader(title = appString(StringKeys.PLV_LEAVE), onBack = onBack)
+    Column(
+        modifier
+            .fillMaxSize()
+            .background(VColors.cream),
+    ) {
+        PremiumOverlayHeader(title = appString(StringKeys.PLV_LEAVE), onBack = onBack)
         ParentLeaveContent(
             state = state,
             onSelectChild = viewModel::selectChild,

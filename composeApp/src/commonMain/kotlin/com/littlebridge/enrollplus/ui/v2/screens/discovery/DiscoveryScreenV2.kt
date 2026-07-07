@@ -42,7 +42,7 @@ import coil3.compose.AsyncImage
 import com.littlebridge.enrollplus.feature.schools.presentation.DiscoveredSchool
 import com.littlebridge.enrollplus.feature.schools.presentation.SchoolDiscoveryState
 import com.littlebridge.enrollplus.feature.schools.presentation.SchoolDiscoveryViewModel
-import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
+import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
@@ -57,6 +57,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.components.VLabel
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import com.littlebridge.enrollplus.core.locale.StringKeys
@@ -185,37 +186,22 @@ private fun DiscoveryList(
         }
     }
 
-    Column(modifier.fillMaxSize().background(c.background)) {
+    Column(modifier.fillMaxSize().background(VColors.cream)) {
         // header — when embedded inside the unlinked-parent landing the host already owns the
-        // title + tab switcher, so we drop the duplicate hero title block and the "Exit" pill and
-        // render a clean, transparent search-only header that sits flush under the segmented control.
+        // title + tab switcher, so we drop the duplicate hero title block and render a clean,
+        // transparent search-only header that sits flush under the segmented control.
+        if (!embedded) {
+            PremiumOverlayHeader(
+                title = appString(StringKeys.DISC_FIND_SCHOOL),
+                onBack = onExit,
+            )
+        }
         Column(
             Modifier
                 .fillMaxWidth()
-                .then(if (embedded) Modifier else Modifier.background(c.card))
                 .padding(horizontal = 20.dp)
-                .padding(top = if (embedded) 8.dp else 20.dp, bottom = 12.dp),
+                .padding(top = if (embedded) 8.dp else 12.dp, bottom = 12.dp),
         ) {
-            if (!embedded) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.SpaceBetween) {
-                    Column {
-                        VLabel(appString(StringKeys.DISC_DISCOVER))
-                        Text(appString(StringKeys.DISC_FIND_SCHOOL), style = VTheme.type.h2.colored(c.ink), modifier = Modifier.padding(top = 4.dp))
-                    }
-                    val exitInteraction = remember { MutableInteractionSource() }
-                    Box(
-                        Modifier
-                            .clip(RoundedCornerShape(999.dp))
-                            .background(c.cream)
-                            .clickable(interactionSource = exitInteraction, indication = null) { onExit() }
-                            .padding(horizontal = 12.dp, vertical = 6.dp),
-                    ) {
-                        // React label is "Exit" (leaves the discovery flow).
-                        Text(appString(StringKeys.DISC_EXIT), style = VTheme.type.caption.colored(c.ink2).copy(fontWeight = FontWeight.SemiBold))
-                    }
-                }
-                Spacer(Modifier.height(12.dp))
-            }
             VInput(
                 value = state.query,
                 onValueChange = onQuery,
@@ -465,10 +451,14 @@ private fun SchoolProfile(
     // React `SchoolProfile` — the "Enquire now" button opens a bottom-sheet enquiry form.
     var enquireOpen by remember { mutableStateOf(false) }
     Box(modifier.fillMaxSize()) {
-    Column(Modifier.fillMaxSize().background(c.background)) {
-        VBackHeader(title = appString(StringKeys.DISC_SCHOOL_PROFILE), onBack = onBack, action = {
-            Icon(VIcons.Share, contentDescription = appString(StringKeys.DISC_SHARE), tint = c.ink2, modifier = Modifier.size(18.dp))
-        })
+    Column(Modifier.fillMaxSize().background(VColors.cream)) {
+        PremiumOverlayHeader(
+            title = appString(StringKeys.DISC_SCHOOL_PROFILE),
+            onBack = onBack,
+            action = {
+                Icon(VIcons.Share, contentDescription = appString(StringKeys.DISC_SHARE), tint = VColors.ink2, modifier = Modifier.size(18.dp))
+            },
+        )
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
             Box(Modifier.fillMaxWidth().height(224.dp)) {
                 AsyncImage(
@@ -683,8 +673,8 @@ private fun SchoolCompare(
     )
     val bestSri = items.maxOfOrNull { it.rating } ?: 0.0
 
-    Column(modifier.fillMaxSize().background(c.background)) {
-        VBackHeader(title = appString(StringKeys.DISC_COMPARE_SCHOOLS), onBack = onBack)
+    Column(modifier.fillMaxSize().background(VColors.cream)) {
+        PremiumOverlayHeader(title = appString(StringKeys.DISC_COMPARE_SCHOOLS), onBack = onBack)
         Column(
             Modifier
                 .weight(1f)

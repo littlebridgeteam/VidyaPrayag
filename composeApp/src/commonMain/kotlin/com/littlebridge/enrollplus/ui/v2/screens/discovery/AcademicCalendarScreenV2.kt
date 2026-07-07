@@ -34,12 +34,13 @@ import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.admin.domain.model.CalendarEventDto
 import com.littlebridge.enrollplus.feature.admin.presentation.AcademicCalendarState
 import com.littlebridge.enrollplus.feature.admin.presentation.AcademicCalendarViewModel
-import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
+import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VLabel
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import com.littlebridge.enrollplus.core.locale.StringKeys
@@ -92,8 +93,8 @@ private fun AcademicCalendarContent(
     modifier: Modifier = Modifier,
 ) {
     val c = VTheme.colors
-    Column(modifier.fillMaxSize().background(c.background)) {
-        VBackHeader(title = appString(StringKeys.CAL_ACADEMIC_TITLE), onBack = onBack)
+    Column(modifier.fillMaxSize().background(VColors.cream)) {
+        PremiumOverlayHeader(title = appString(StringKeys.CAL_ACADEMIC_TITLE), onBack = onBack)
 
         VStateHost(
             loading = state.isLoading,
