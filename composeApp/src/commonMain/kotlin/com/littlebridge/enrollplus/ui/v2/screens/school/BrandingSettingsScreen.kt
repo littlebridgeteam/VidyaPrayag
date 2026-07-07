@@ -172,7 +172,7 @@ private fun BrandingSettingsContent(
     Column(
         modifier
             .fillMaxSize()
-            .background(c.background)
+            .background(VColors.cream)
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
