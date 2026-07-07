@@ -63,7 +63,9 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.tokens.VColors
@@ -262,8 +264,8 @@ private fun CoverageTab(state: SyllabusCoverageState, onRetry: () -> Unit) {
                     Text(appString(StringKeys.REC_BY_DEPARTMENT), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                     Spacer(Modifier.height(12.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        state.departmentProgress.forEach { d ->
-                            Column {
+                        state.departmentProgress.forEachIndexed { index, d ->
+                            Column(modifier = Modifier.staggeredItemEntrance(index, state.departmentProgress.isNotEmpty())) {
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                                     Text(d.name, style = VTypography.bodySmall, color = VColors.ink)
                                     Text("${(d.progress * 100).roundToInt()}%", style = VTypography.caption, color = VColors.ink2)
@@ -287,8 +289,8 @@ private fun CoverageTab(state: SyllabusCoverageState, onRetry: () -> Unit) {
                 Column {
                     Text(appString(StringKeys.REC_LAGGING_CLASSES), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.padding(bottom = 8.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        state.alerts.forEach { a ->
-                            RecordsCreamCard {
+                        state.alerts.forEachIndexed { index, a ->
+                            RecordsCreamCard(modifier = Modifier.staggeredItemEntrance(index, state.alerts.isNotEmpty())) {
                                 Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                     Icon(VIcons.AlertCircle, contentDescription = null, tint = if (a.isCritical) VColors.coral else VColors.gold, modifier = Modifier.size(18.dp).padding(top = 2.dp))
                                     Column(Modifier.weight(1f)) {
@@ -313,8 +315,8 @@ private fun CoverageTab(state: SyllabusCoverageState, onRetry: () -> Unit) {
                 Column {
                     Text(appString(StringKeys.REC_MILESTONES), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.padding(bottom = 8.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        state.milestones.forEach { m ->
-                            RecordsCreamCard {
+                        state.milestones.forEachIndexed { index, m ->
+                            RecordsCreamCard(modifier = Modifier.staggeredItemEntrance(index, state.milestones.isNotEmpty())) {
                                 Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                         Text(m.month, style = VTypography.caption, color = VColors.ink3)
@@ -383,8 +385,8 @@ private fun AttendanceTab(
                     Text(appString(StringKeys.REC_BY_CLASS), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                     Spacer(Modifier.height(12.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        data.byClass.forEach { row ->
-                            Column {
+                        data.byClass.forEachIndexed { index, row ->
+                            Column(modifier = Modifier.staggeredItemEntrance(index, data.byClass.isNotEmpty())) {
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                                     Text(row.grade, style = VTypography.bodySmall, color = VColors.ink)
                                     Text("${row.present + row.late}/${row.total} • ${row.rate}%", style = VTypography.caption, color = VColors.ink2)
@@ -438,9 +440,9 @@ private fun MarksTab(
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                data.assessments.forEach { a ->
+                data.assessments.forEachIndexed { index, a ->
                     val pct = if (a.maxMarks > 0) ((a.average / a.maxMarks) * 100).roundToInt() else 0
-                    RecordsCreamCard {
+                    RecordsCreamCard(modifier = Modifier.staggeredItemEntrance(index, data.assessments.isNotEmpty())) {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.SpaceBetween) {
                             Column(Modifier.weight(1f)) {
                                 Text("${a.subject} • ${a.assessmentName}", style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
@@ -503,8 +505,8 @@ private fun FeeTab(
                 Column {
                     Text(appString(StringKeys.REC_RECENT), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.padding(bottom = 8.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        data.recent.forEach { f ->
-                            RecordsCreamCard {
+                        data.recent.forEachIndexed { index, f ->
+                            RecordsCreamCard(modifier = Modifier.staggeredItemEntrance(index, data.recent.isNotEmpty())) {
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.SpaceBetween) {
                                     Column(Modifier.weight(1f)) {
                                         Text(f.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
@@ -561,10 +563,11 @@ private fun formatMoney(value: Double): String {
 
 @Composable
 private fun RecordsCreamCard(
+    modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(VShapes.lg)
             .background(VColors.surfaceCard)
@@ -590,6 +593,7 @@ private fun PaceTab(
         emptyBody = appString(StringKeys.REC_NO_PACE_BODY),
         emptyIcon = VIcons.BookOpen,
         onRetry = onRetry,
+        skeleton = { SkeletonList(rows = 5) },
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             // ── Recalculate button ──
@@ -607,8 +611,8 @@ private fun PaceTab(
                 Column {
                     Text(appString(StringKeys.REC_ACTIVE_ALERTS), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.padding(bottom = 8.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        state.alerts.forEach { alert ->
-                            RecordsCreamCard {
+                        state.alerts.forEachIndexed { index, alert ->
+                            RecordsCreamCard(modifier = Modifier.staggeredItemEntrance(index, state.alerts.isNotEmpty())) {
                                 Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                     Icon(
                                         VIcons.AlertCircle,
@@ -663,8 +667,8 @@ private fun PaceTab(
                 Column {
                     Text(appString(StringKeys.REC_PACE_SNAPSHOTS), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.padding(bottom = 8.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        state.snapshots.forEach { snap ->
-                            RecordsCreamCard {
+                        state.snapshots.forEachIndexed { index, snap ->
+                            RecordsCreamCard(modifier = Modifier.staggeredItemEntrance(index, state.snapshots.isNotEmpty())) {
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                     Column(Modifier.weight(1f)) {
                                         Text("${snap.subject} • ${snap.className}-${snap.section}", style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)

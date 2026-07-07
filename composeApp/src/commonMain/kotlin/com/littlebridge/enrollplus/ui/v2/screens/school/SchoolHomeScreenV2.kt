@@ -66,10 +66,10 @@ import com.littlebridge.enrollplus.feature.admin.presentation.SchoolDashboardVie
 import com.littlebridge.enrollplus.feature.parent.presentation.NotificationsViewModel
 import com.littlebridge.enrollplus.platform.rememberNotificationPermissionLauncher
 import com.littlebridge.enrollplus.presentation.PermissionViewModel
-import com.littlebridge.enrollplus.ui.components.VConfirmDialog
-import com.littlebridge.enrollplus.ui.components.VEmptyState
-import com.littlebridge.enrollplus.ui.components.VPullRefresh
-import com.littlebridge.enrollplus.ui.components.skeletons.SkeletonDashboard
+import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
+import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
@@ -156,48 +156,32 @@ fun SchoolHomeScreenV2(
         onRefresh = { viewModel.refresh(); calendarViewModel.refresh() },
         modifier = modifier.fillMaxSize().background(VColors.cream),
     ) {
-        AnimatedContent(
-            targetState = stage,
-            transitionSpec = {
-                val dur = 280
-                val enter = fadeIn(tween(dur)) + slideInHorizontally(
-                    animationSpec = tween(dur),
-                    initialOffsetX = { it / 8 },
-                )
-                val exit = fadeOut(tween(dur)) + slideOutHorizontally(
-                    animationSpec = tween(dur),
-                    targetOffsetX = { -it / 8 },
-                )
-                enter togetherWith exit
-            },
-            label = "homeStage",
-        ) { current ->
-            when (current) {
-                Stage.Loading -> LoadingState()
-                Stage.Error -> ErrorState(
-                    message = error ?: "Something went wrong.",
-                    onRetry = { viewModel.refresh(); calendarViewModel.refresh() },
-                )
-                Stage.Empty -> EmptyState()
-                Stage.Content -> {
-                    val ov = overview!!
-                    CommandDesk(
-                        overview = ov,
-                        activity = activity,
-                        adminName = adminName,
-                        unreadCount = notifications.unreadCount,
-                        onOpenNotifications = onOpenNotifications,
-                        onOpenCalendar = onOpenCalendar,
-                        onOpenAnalytics = onOpenAnalytics,
-                        onOpenPews = onOpenPews,
-                        onOpenTransport = onOpenTransport,
-                        onOpenReportPublish = onOpenReportPublish,
-                        onOpenEvents = onOpenEvents,
-                        onCreateEvent = onCreateEvent,
-                        onExit = onExit,
-                    )
-                }
-            }
+        VStateHost(
+            loading = loading && overview == null,
+            error = if (error != null && overview == null) error else null,
+            isEmpty = overview == null && !loading && error == null,
+            emptyTitle = "Nothing to show yet",
+            emptyBody = "Your dashboard will appear here once data is available.",
+            onRetry = { viewModel.refresh(); calendarViewModel.refresh() },
+            skeleton = { SkeletonDashboard() },
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            val ov = overview!!
+            CommandDesk(
+                overview = ov,
+                activity = activity,
+                adminName = adminName,
+                unreadCount = notifications.unreadCount,
+                onOpenNotifications = onOpenNotifications,
+                onOpenCalendar = onOpenCalendar,
+                onOpenAnalytics = onOpenAnalytics,
+                onOpenPews = onOpenPews,
+                onOpenTransport = onOpenTransport,
+                onOpenReportPublish = onOpenReportPublish,
+                onOpenEvents = onOpenEvents,
+                onCreateEvent = onCreateEvent,
+                onExit = onExit,
+            )
         }
     }
 
@@ -214,43 +198,6 @@ fun SchoolHomeScreenV2(
 }
 
 private enum class Stage { Loading, Content, Empty, Error }
-
-@Composable
-private fun LoadingState() {
-    Column(
-        Modifier.fillMaxSize().statusBarsPadding().padding(top = 16.dp),
-    ) { SkeletonDashboard() }
-}
-
-@Composable
-private fun ErrorState(message: String, onRetry: () -> Unit) {
-    Column(
-        Modifier.fillMaxSize().statusBarsPadding(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        VEmptyState(
-            title = "Couldn't load dashboard",
-            body = message,
-            actionLabel = "Retry",
-            onAction = onRetry,
-        )
-    }
-}
-
-@Composable
-private fun EmptyState() {
-    Column(
-        Modifier.fillMaxSize().statusBarsPadding(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        VEmptyState(
-            title = "Nothing to show yet",
-            body = "Your dashboard will appear here once data is available.",
-        )
-    }
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Command Desk — main scrollable content

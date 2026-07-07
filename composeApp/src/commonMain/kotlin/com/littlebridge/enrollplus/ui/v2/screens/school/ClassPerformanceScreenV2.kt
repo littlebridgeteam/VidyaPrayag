@@ -39,6 +39,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
@@ -105,6 +106,7 @@ private fun ClassPerformanceContent(
             emptyBody = appString(StringKeys.SCH_CLASS_PERFORMANCE_DESC),
             emptyIcon = VIcons.TrendingUp,
             onRetry = onRetry,
+            skeleton = { SkeletonDashboard() },
         ) {
             // KPI row
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

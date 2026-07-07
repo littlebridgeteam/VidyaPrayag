@@ -39,7 +39,9 @@ import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.tokens.VColors
@@ -193,13 +195,14 @@ private fun AlumniDirectoryTab(
         emptyTitle = appString(StringKeys.ALM_NO_ALUMNI),
         emptyBody = appString(StringKeys.ALM_NO_ALUMNI_BODY),
         onRetry = onRetry,
+        skeleton = { SkeletonList(rows = 5, withAvatar = true) },
     ) {
         Column(
             Modifier.fillMaxWidth().padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            state.alumni.forEach { alumni ->
-                AlumniRowCard(alumni = alumni, onClick = { onOpenAlumni(alumni.id) })
+            state.alumni.forEachIndexed { index, alumni ->
+                AlumniRowCard(alumni = alumni, onClick = { onOpenAlumni(alumni.id) }, modifier = Modifier.staggeredItemEntrance(index, state.alumni.isNotEmpty()))
             }
         }
     }
@@ -430,13 +433,14 @@ private fun AlumniPendingTab(
         emptyTitle = appString(StringKeys.ALM_NO_PENDING),
         emptyBody = appString(StringKeys.ALM_NO_PENDING_BODY),
         onRetry = onRetry,
+        skeleton = { SkeletonList(rows = 4, withAvatar = true) },
     ) {
         Column(
             Modifier.fillMaxWidth().padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            state.pendingVerifications.forEach { alumni ->
-                VCard(modifier = Modifier.fillMaxWidth()) {
+            state.pendingVerifications.forEachIndexed { index, alumni ->
+                VCard(modifier = Modifier.fillMaxWidth().staggeredItemEntrance(index, state.pendingVerifications.isNotEmpty())) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(alumni.name, style = VTypography.body, fontWeight = FontWeight.SemiBold, color = VColors.ink)
                         Text(appString(StringKeys.ALM_BATCH, "year" to alumni.graduationYear), style = VTypography.caption, color = VColors.ink3)
@@ -466,14 +470,15 @@ private fun AlumniCampaignsTab(
         emptyTitle = appString(StringKeys.ALM_NO_CAMPAIGNS),
         emptyBody = appString(StringKeys.ALM_NO_CAMPAIGNS_BODY),
         onRetry = onRetry,
+        skeleton = { SkeletonList(rows = 4) },
     ) {
         Column(
             Modifier.fillMaxWidth().padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            state.campaigns.forEach { campaign ->
+            state.campaigns.forEachIndexed { index, campaign ->
                 VCard(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().staggeredItemEntrance(index, state.campaigns.isNotEmpty()),
                     onClick = { onOpenCampaign(campaign.id) },
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -509,13 +514,14 @@ private fun AlumniDonationsTab(
         emptyTitle = appString(StringKeys.ALM_NO_DONATIONS),
         emptyBody = appString(StringKeys.ALM_NO_DONATIONS_BODY),
         onRetry = onRetry,
+        skeleton = { SkeletonList(rows = 5) },
     ) {
         Column(
             Modifier.fillMaxWidth().padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            state.donations.forEach { donation ->
-                VCard(modifier = Modifier.fillMaxWidth()) {
+            state.donations.forEachIndexed { index, donation ->
+                VCard(modifier = Modifier.fillMaxWidth().staggeredItemEntrance(index, state.donations.isNotEmpty())) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(donation.alumniName, style = VTypography.body, fontWeight = FontWeight.SemiBold, color = VColors.ink)
                         Text("₹${donation.amount.toInt()}", style = VTypography.body, color = VColors.ink)
@@ -543,6 +549,7 @@ private fun AlumniAnalyticsTab(
         isEmpty = analytics == null,
         emptyTitle = appString(StringKeys.ALM_NO_ANALYTICS),
         onRetry = onRetry,
+        skeleton = { SkeletonList(rows = 6) },
     ) {
         val a = analytics!!
         Column(
@@ -600,10 +607,11 @@ private fun AlumniMentorshipTab(
             emptyTitle = appString(StringKeys.ALM_NO_MENTORSHIPS),
             emptyBody = appString(StringKeys.ALM_NO_MENTORSHIPS_BODY),
             onRetry = onRetry,
+            skeleton = { SkeletonList(rows = 3) },
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                state.mentorships.forEach { m ->
-                    VCard(modifier = Modifier.fillMaxWidth()) {
+                state.mentorships.forEachIndexed { index, m ->
+                    VCard(modifier = Modifier.fillMaxWidth().staggeredItemEntrance(index, state.mentorships.isNotEmpty())) {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(m.alumniName, style = VTypography.body, fontWeight = FontWeight.SemiBold, color = VColors.ink)
                             Text(appString(StringKeys.ALM_MENTORING, "name" to m.studentName), style = VTypography.caption, color = VColors.ink3)
@@ -628,10 +636,11 @@ private fun AlumniMentorshipTab(
             emptyTitle = appString(StringKeys.ALM_NO_MENTOR_REQUESTS),
             emptyBody = appString(StringKeys.ALM_NO_MENTOR_REQUESTS_BODY),
             onRetry = onRetry,
+            skeleton = { SkeletonList(rows = 3) },
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                state.mentorshipRequests.forEach { r ->
-                    VCard(modifier = Modifier.fillMaxWidth()) {
+                state.mentorshipRequests.forEachIndexed { index, r ->
+                    VCard(modifier = Modifier.fillMaxWidth().staggeredItemEntrance(index, state.mentorshipRequests.isNotEmpty())) {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(r.alumniName, style = VTypography.body, fontWeight = FontWeight.SemiBold, color = VColors.ink)
                             Text(appString(StringKeys.ALM_FROM, "name" to r.studentName), style = VTypography.caption, color = VColors.ink3)
@@ -648,9 +657,9 @@ private fun AlumniMentorshipTab(
 }
 
 @Composable
-private fun AlumniRowCard(alumni: Alumni, onClick: () -> Unit) {
+private fun AlumniRowCard(alumni: Alumni, onClick: () -> Unit, modifier: Modifier = Modifier) {
     VCard(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         onClick = onClick,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {

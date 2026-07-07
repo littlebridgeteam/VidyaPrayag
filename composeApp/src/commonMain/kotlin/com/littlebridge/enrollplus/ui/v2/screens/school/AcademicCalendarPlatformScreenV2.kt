@@ -52,6 +52,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VLabel
 import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
@@ -113,6 +114,7 @@ fun AcademicCalendarPlatformScreenV2(
             emptyBody = appString(StringKeys.ACALP_EMPTY_BODY),
             emptyIcon = VIcons.Calendar,
             onRetry = { viewModel.load() },
+            skeleton = { SkeletonList(rows = 5) },
         ) {
             VPullRefresh(isRefreshing = state.isRefreshing, onRefresh = { viewModel.refresh() }) {
                 Column(

@@ -21,7 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -57,7 +57,9 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.core.locale.StringKeys
@@ -135,6 +137,7 @@ fun ScholarshipManagementScreenV2(
             },
             onRetry = { viewModel.loadSchemes() },
             modifier = Modifier.fillMaxSize(),
+            skeleton = { SkeletonList(rows = 5) },
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -143,11 +146,12 @@ fun ScholarshipManagementScreenV2(
             ) {
                 when (selectedTab) {
                     0 -> {
-                        items(state.schemes) { scheme ->
+                        itemsIndexed(state.schemes, key = { _, it -> it.id }) { index, scheme ->
                             ScholarshipSchemeCard(
                                 scheme = scheme,
                                 onEdit = { editingScheme = scheme },
                                 onDelete = { deleteScheme = scheme },
+                                modifier = Modifier.staggeredItemEntrance(index, state.schemes.isNotEmpty()),
                             )
                         }
                     }
@@ -155,7 +159,7 @@ fun ScholarshipManagementScreenV2(
                         item {
                             VSectionHeader(title = appString(StringKeys.SCH_APPLICATIONS).replace("{count}", state.applications.size.toString()))
                         }
-                        items(state.applications) { app ->
+                        itemsIndexed(state.applications, key = { _, it -> it.id }) { index, app ->
                             ScholarshipApplicationReviewCard(
                                 application = app,
                                 onApprove = { remarks, amount ->
@@ -179,6 +183,7 @@ fun ScholarshipManagementScreenV2(
                                         com.littlebridge.enrollplus.feature.scholarship.domain.model.DisburseRequest(amount, reference)
                                     )
                                 },
+                                modifier = Modifier.staggeredItemEntrance(index, state.applications.isNotEmpty()),
                             )
                         }
                     }
@@ -186,7 +191,7 @@ fun ScholarshipManagementScreenV2(
                         item {
                             VSectionHeader(title = appString(StringKeys.SCH_RENEWALS).replace("{count}", state.renewals.size.toString()))
                         }
-                        items(state.renewals) { renewal ->
+                        itemsIndexed(state.renewals, key = { _, it -> it.id }) { index, renewal ->
                             ScholarshipRenewalCard(
                                 renewal = renewal,
                                 onApprove = { remarks ->
@@ -201,6 +206,7 @@ fun ScholarshipManagementScreenV2(
                                         com.littlebridge.enrollplus.feature.scholarship.domain.model.RejectApplicationRequest(remarks)
                                     )
                                 },
+                                modifier = Modifier.staggeredItemEntrance(index, state.renewals.isNotEmpty()),
                             )
                         }
                     }
@@ -288,13 +294,14 @@ private fun ScholarshipSchemeCard(
     scheme: ScholarshipScheme,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val typeTone = when (scheme.scholarshipType) {
         "full_waiver" -> VBadgeTone.Success
         "partial_waiver" -> VBadgeTone.Warning
         else -> VBadgeTone.Accent
     }
-    VCard {
+    VCard(modifier) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -357,6 +364,7 @@ private fun ScholarshipApplicationReviewCard(
     onApprove: (String, Double?) -> Unit,
     onReject: (String) -> Unit,
     onDisburse: (Double, String) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var showActions by remember { mutableStateOf(false) }
     var remarks by remember { mutableStateOf("") }
@@ -371,7 +379,7 @@ private fun ScholarshipApplicationReviewCard(
         else -> VBadgeTone.Neutral
     }
 
-    VCard {
+    VCard(modifier) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -495,6 +503,7 @@ private fun ScholarshipRenewalCard(
     renewal: com.littlebridge.enrollplus.feature.scholarship.domain.model.ScholarshipRenewal,
     onApprove: (String) -> Unit,
     onReject: (String) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var remarks by remember { mutableStateOf("") }
     val statusTone = when (renewal.status) {
@@ -504,7 +513,7 @@ private fun ScholarshipRenewalCard(
         else -> VBadgeTone.Neutral
     }
 
-    VCard {
+    VCard(modifier) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,

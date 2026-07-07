@@ -55,9 +55,12 @@ import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.components.VLabel
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
+import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.screens.VErrorState
 import com.littlebridge.enrollplus.ui.v2.screens.library.BookCardSkeleton
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
@@ -148,21 +151,39 @@ fun SchoolLibraryScreen(
             }
         }
 
-        when (activeTab) {
-            LibraryTab.Dashboard -> DashboardTab(state, viewModel, needsOnboarding)
-            LibraryTab.Books -> BooksTab(state, viewModel)
-            LibraryTab.Copies -> CopiesTab(state, viewModel)
-            LibraryTab.Issues -> IssuesTab(state, viewModel)
-            LibraryTab.QuickIssue -> QuickIssueTab(state, viewModel)
-            LibraryTab.BulkReturn -> BulkReturnTab(state, viewModel)
-            LibraryTab.Categories -> CategoriesTab(state, viewModel)
-            LibraryTab.Audit -> AuditTab(state, viewModel)
-            LibraryTab.Announcements -> AnnouncementsTab(state, viewModel)
-            LibraryTab.Acquisition -> AcquisitionTab(state, viewModel)
-            LibraryTab.Reservations -> ReservationsTab(state, viewModel)
-            LibraryTab.History -> HistoryTab(state, viewModel)
-            LibraryTab.More -> MoreTab(state, viewModel)
-            LibraryTab.Settings -> SettingsTab(state, viewModel)
+        VPullRefresh(
+            isRefreshing = state.isLoading,
+            onRefresh = {
+                when (activeTab) {
+                    LibraryTab.Dashboard -> viewModel.loadDashboard()
+                    LibraryTab.Books -> viewModel.searchBooks(1)
+                    LibraryTab.Copies -> viewModel.loadCopies("")
+                    LibraryTab.Issues -> viewModel.loadIssues(1)
+                    LibraryTab.Categories -> viewModel.loadCategories()
+                    LibraryTab.Audit -> viewModel.loadAuditLog(1)
+                    LibraryTab.Announcements -> viewModel.loadAnnouncements(true)
+                    LibraryTab.Acquisition -> viewModel.loadAcquisitionRequests(null)
+                    LibraryTab.History -> viewModel.loadBookHistory("")
+                    else -> viewModel.loadDashboard()
+                }
+            },
+        ) {
+            when (activeTab) {
+                LibraryTab.Dashboard -> DashboardTab(state, viewModel, needsOnboarding)
+                LibraryTab.Books -> BooksTab(state, viewModel)
+                LibraryTab.Copies -> CopiesTab(state, viewModel)
+                LibraryTab.Issues -> IssuesTab(state, viewModel)
+                LibraryTab.QuickIssue -> QuickIssueTab(state, viewModel)
+                LibraryTab.BulkReturn -> BulkReturnTab(state, viewModel)
+                LibraryTab.Categories -> CategoriesTab(state, viewModel)
+                LibraryTab.Audit -> AuditTab(state, viewModel)
+                LibraryTab.Announcements -> AnnouncementsTab(state, viewModel)
+                LibraryTab.Acquisition -> AcquisitionTab(state, viewModel)
+                LibraryTab.Reservations -> ReservationsTab(state, viewModel)
+                LibraryTab.History -> HistoryTab(state, viewModel)
+                LibraryTab.More -> MoreTab(state, viewModel)
+                LibraryTab.Settings -> SettingsTab(state, viewModel)
+            }
         }
     }
 
@@ -187,8 +208,8 @@ private fun DashboardTab(state: SchoolLibraryState, viewModel: SchoolLibraryView
     LaunchedEffect(Unit) { viewModel.loadDashboard() }
 
     if (state.isLoading && state.dashboard == null) {
-        Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(36.dp))
+        Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            SkeletonDashboard()
         }
         return
     }
@@ -377,8 +398,8 @@ private fun BooksTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewMode
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.weight(1f),
         ) {
-            items(state.books, key = { it.id }) { book ->
-                VCard {
+            itemsIndexed(state.books, key = { _, it -> it.id }) { index, book ->
+                VCard(modifier = Modifier.staggeredItemEntrance(index, state.books.isNotEmpty())) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Row(
                             Modifier.fillMaxWidth(),
@@ -676,8 +697,8 @@ private fun IssuesTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewMod
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.weight(1f),
         ) {
-            items(state.issues, key = { it.id }) { issue ->
-                IssueCard(issue, state.isActionLoading, viewModel)
+            itemsIndexed(state.issues, key = { _, it -> it.id }) { index, issue ->
+                IssueCard(issue, state.isActionLoading, viewModel, modifier = Modifier.staggeredItemEntrance(index, state.issues.isNotEmpty()))
             }
             if (state.issues.size >= 20 && state.issues.size < state.issuesTotal) {
                 item {
@@ -701,12 +722,13 @@ private fun IssueCard(
     issue: LibraryIssueDto,
     isActionLoading: Boolean,
     viewModel: SchoolLibraryViewModel,
+    modifier: Modifier = Modifier,
 ) {
         var showReturnDialog by remember { mutableStateOf(false) }
     var showMarkLostConfirm by remember { mutableStateOf(false) }
     var showWaiveDialog by remember { mutableStateOf(false) }
 
-    VCard {
+    VCard(modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(issue.bookTitle, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
             Text(issue.borrowerName, style = VTypography.caption.copy(color = VColors.ink2))

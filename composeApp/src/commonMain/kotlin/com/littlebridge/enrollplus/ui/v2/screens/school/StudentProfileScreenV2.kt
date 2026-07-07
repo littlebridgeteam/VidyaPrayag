@@ -57,6 +57,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonProfile
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
@@ -131,6 +132,7 @@ private fun StudentProfileContent(
             emptyBody = appString(StringKeys.SCH_NO_STUDENT_PROFILE_DESC),
             emptyIcon = VIcons.User,
             onRetry = onRetry,
+            skeleton = { SkeletonProfile() },
         ) {
             val p = state.profile ?: return@VStateHost
             StudentProfileBody(p)

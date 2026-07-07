@@ -61,7 +61,9 @@ import com.littlebridge.enrollplus.core.locale.LocaleManager
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VMotion
 import com.littlebridge.enrollplus.ui.tokens.VShapes
@@ -233,6 +235,7 @@ private fun SchoolSettingsContent(
             error = state.errorMessage,
             isEmpty = false,
             onRetry = onRetry,
+            skeleton = { SkeletonList(rows = 6) },
         ) {
             InstitutionalProfileHealthCard(state = state, onClick = onOpenProfile)
 
@@ -265,8 +268,10 @@ private fun SchoolSettingsContent(
                 SettingRow(VIcons.Settings, appString(StringKeys.AUTH_LOGOUT), "Sign out of the admin console", false, onClick = { showLogoutConfirm = true }),
             )
             rows.forEachIndexed { idx, row ->
-                SettingsStaggeredItem(index = idx) {
-                    SettingsCreamCard(onClick = if (row.isComingSoon) null else row.onClick) {
+                SettingsCreamCard(
+                    onClick = if (row.isComingSoon) null else row.onClick,
+                    modifier = Modifier.staggeredItemEntrance(idx, true),
+                ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -296,7 +301,6 @@ private fun SchoolSettingsContent(
                             }
                         }
                     }
-                }
             }
 
             // Language picker
@@ -454,10 +458,11 @@ private data class SettingRow(
 @Composable
 private fun SettingsCreamCard(
     onClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(VShapes.lg)
             .background(VColors.surfaceCard)

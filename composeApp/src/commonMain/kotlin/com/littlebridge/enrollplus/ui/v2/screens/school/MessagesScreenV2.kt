@@ -57,8 +57,11 @@ import com.littlebridge.enrollplus.feature.admin.presentation.MessagesViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VAvatar
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
@@ -140,6 +143,7 @@ fun MessagesScreenV2(
                 modifier = Modifier.fillMaxSize(),
             )
         } else {
+            VPullRefresh(isRefreshing = isLoading && state.threads.isNotEmpty(), onRefresh = { viewModel.refresh() }) {
             ThreadListContent(
                 state = state,
                 isLoading = isLoading,
@@ -153,6 +157,7 @@ fun MessagesScreenV2(
                 onCompose = viewModel::openCompose,
                 modifier = Modifier.fillMaxSize(),
             )
+            }
         }
     }
 }
@@ -177,6 +182,7 @@ private fun ThreadListContent(
             emptyBody = "Your inbox will populate as parents and teachers reach out.",
             emptyIcon = VIcons.Chat,
             onRetry = onRetry,
+            skeleton = { SkeletonList(rows = 6, withAvatar = true) },
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -187,8 +193,8 @@ private fun ThreadListContent(
                     bottom = 80.dp,
                 ),
             ) {
-                items(state.threads, key = { it.id }) { thread ->
-                    ThreadRow(thread = thread, onClick = { onOpenThread(thread.id) })
+                itemsIndexed(state.threads, key = { _, it -> it.id }) { index, thread ->
+                    ThreadRow(thread = thread, onClick = { onOpenThread(thread.id) }, modifier = Modifier.staggeredItemEntrance(index, state.threads.isNotEmpty()))
                 }
             }
         }
@@ -216,10 +222,10 @@ private fun ThreadListContent(
 }
 
 @Composable
-private fun ThreadRow(thread: MessageThread, onClick: () -> Unit) {
+private fun ThreadRow(thread: MessageThread, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val interaction = remember { MutableInteractionSource() }
     Row(
-        Modifier
+        modifier
             .fillMaxWidth()
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
             .padding(horizontal = 20.dp, vertical = 12.dp),

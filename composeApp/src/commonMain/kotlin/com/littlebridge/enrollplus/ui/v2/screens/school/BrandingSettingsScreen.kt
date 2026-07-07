@@ -25,6 +25,7 @@ import com.littlebridge.enrollplus.feature.branding.presentation.BrandingViewMod
 import com.littlebridge.enrollplus.platform.rememberMediaPicker
 import com.littlebridge.enrollplus.ui.v2.components.*
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonProfile
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
@@ -202,6 +203,7 @@ private fun BrandingSettingsContent(
             error = state.error,
             isEmpty = branding == null && !state.isLoading,
             onRetry = onRetry,
+            skeleton = { SkeletonProfile() },
         ) {
             Column(
                 Modifier

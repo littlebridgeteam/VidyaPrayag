@@ -45,7 +45,9 @@ import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
@@ -206,10 +208,11 @@ private fun SchoolDayConfigContent(
             emptyBody = appString(StringKeys.SCH_NO_DAY_CONFIGS_DESC),
             emptyIcon = VIcons.Calendar,
             onRetry = onRetry,
+            skeleton = { SkeletonList(rows = 4) },
         ) {
             if (state.configs.isNotEmpty()) {
                 VSectionHeader(title = appString(StringKeys.SCH_CONFIGURATIONS))
-                state.configs.forEach { config ->
+                state.configs.forEachIndexed { index, config ->
                     ConfigCard(
                         config = config,
                         onDeactivate = { deactivateTargetId = it },
@@ -222,6 +225,7 @@ private fun SchoolDayConfigContent(
                             composerOpen = false
                         },
                         isSaving = state.isSaving,
+                        modifier = Modifier.staggeredItemEntrance(index, state.configs.isNotEmpty()),
                     )
                 }
             }
@@ -240,8 +244,9 @@ private fun ConfigCard(
     onDeactivate: (String) -> Unit,
     onEdit: () -> Unit,
     isSaving: Boolean,
+    modifier: Modifier = Modifier,
 ) {
-        VCard {
+        VCard(modifier) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,

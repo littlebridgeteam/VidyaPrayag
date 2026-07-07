@@ -62,6 +62,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonProfile
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -124,6 +125,7 @@ private fun PewsStudentDetailContent(
         emptyBody = appString(StringKeys.PEWS_NO_SIGNAL_DESC),
         onRetry = onRetry,
         modifier = modifier,
+        skeleton = { SkeletonProfile() },
     ) {
         val detail = state.detail ?: return@VStateHost
         val cur = detail.current ?: return@VStateHost

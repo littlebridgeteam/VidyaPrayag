@@ -25,10 +25,12 @@ import com.littlebridge.enrollplus.feature.alumni.domain.model.AlumniDonationCam
 import com.littlebridge.enrollplus.feature.alumni.domain.repository.AlumniRepository
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VCard
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.tokens.VColors
@@ -53,7 +55,8 @@ fun AlumniCampaignScreen(
     val notSignedInError = appString(StringKeys.COMMON_ERROR_UNAUTHORIZED)
     val campaignNotFoundError = appString(StringKeys.SCH_CAMPAIGN_NOT_FOUND)
 
-    LaunchedEffect(campaignId) {
+    val reload: () -> Unit = {
+        isLoading = true; error = null
         scope.launch {
             val token = prefs.getUserToken().first()
             if (token.isNullOrBlank()) { error = notSignedInError; isLoading = false; return@launch }
@@ -67,22 +70,24 @@ fun AlumniCampaignScreen(
             }
         }
     }
+    LaunchedEffect(campaignId) { reload() }
 
     Column(
         modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(bottom = 24.dp),
+            .fillMaxSize(),
     ) {
         VBackHeader(title = appString(StringKeys.SCH_CAMPAIGN_DETAIL), onBack = onBack)
-
+        VPullRefresh(isRefreshing = isLoading && campaign != null, onRefresh = reload) {
+            Column(
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
+            ) {
         val c = campaign
         VStateHost(
             loading = isLoading,
             error = error,
             isEmpty = c == null,
             emptyTitle = appString(StringKeys.SCH_CAMPAIGN_NOT_FOUND),
-            onRetry = { isLoading = true; error = null },
+            onRetry = reload,
             skeleton = { SkeletonDashboard() },
         ) {
             val data = c!!
@@ -128,8 +133,8 @@ fun AlumniCampaignScreen(
                     emptyTitle = appString(StringKeys.SCH_NO_DONATIONS_CAMPAIGN),
                     skeleton = { SkeletonList(rows = 3, withAvatar = false) },
                 ) {
-                    d!!.forEach { donation ->
-                        VCard(modifier = Modifier.fillMaxWidth()) {
+                    d!!.forEachIndexed { i, donation ->
+                        VCard(modifier = Modifier.fillMaxWidth().staggeredItemEntrance(i, d.isNotEmpty())) {
                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Text(donation.alumniName, style = VTypography.body, fontWeight = FontWeight.SemiBold, color = VColors.ink)
                                 Text("₹${donation.amount.toInt()}", style = VTypography.body, color = VColors.ink)
@@ -144,5 +149,7 @@ fun AlumniCampaignScreen(
                 }
             }
         }
+    }
+    }
     }
 }

@@ -74,6 +74,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.components.VStatusDot
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
@@ -230,6 +231,17 @@ private fun SchoolPeopleContent(
         }
     }
 
+    VPullRefresh(
+        isRefreshing = teachersState.isLoading || studentsState.isLoading || staffState.isLoading || analyticsState.isLoading,
+        onRefresh = {
+            when (subTab) {
+                PeopleSubTab.Teachers -> onTeachersRetry()
+                PeopleSubTab.Students -> { onStudentsRetry(); onAnalyticsRetry() }
+                PeopleSubTab.Staff -> onStaffRetry()
+                PeopleSubTab.Alumni -> {}
+            }
+        },
+    ) {
     Column(
         modifier
             .fillMaxSize()
@@ -326,6 +338,7 @@ private fun SchoolPeopleContent(
                 }
             }
         }
+    }
     }
 
     // ── Add-teacher dialog (RA-22) ─────────────────────────────────────────

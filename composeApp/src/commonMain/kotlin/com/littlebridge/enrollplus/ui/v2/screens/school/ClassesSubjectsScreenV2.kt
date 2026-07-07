@@ -74,7 +74,9 @@ import com.littlebridge.enrollplus.ui.v2.components.VDatePicker
 import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.locale.appString
@@ -200,6 +202,7 @@ private fun ClassesTab(
         emptyTitle = appString(StringKeys.CS_NO_CLASSES),
         emptyBody = appString(StringKeys.CS_NO_CLASSES_BODY),
         emptyIcon = VIcons.BookOpen,
+        skeleton = { SkeletonList(rows = 5) },
     ) {
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -212,12 +215,13 @@ private fun ClassesTab(
                 variant = VButtonVariant.Primary,
                 tone = VButtonTone.Teal,
             )
-            state.classes.forEach { cls ->
+            state.classes.forEachIndexed { index, cls ->
                 ClassCard(
                     cls = cls,
                     onOpen = { onOpenClass(cls) },
                     onEdit = { editingClass = cls },
                     onDelete = { deleteTarget = cls },
+                    modifier = Modifier.staggeredItemEntrance(index, state.classes.isNotEmpty()),
                 )
             }
             Spacer(Modifier.height(80.dp))
@@ -268,8 +272,9 @@ private fun ClassCard(
     onOpen: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    VCard(Modifier.fillMaxWidth()) {
+    VCard(modifier.fillMaxWidth()) {
         Column {
             Row(
                 Modifier.fillMaxWidth().clickable { onOpen() },
@@ -394,6 +399,7 @@ private fun SubjectsTab(
         emptyTitle = appString(StringKeys.CS_NO_CLASSES_AVAIL),
         emptyBody = appString(StringKeys.CS_NO_CLASSES_AVAIL_BODY),
         emptyIcon = VIcons.BookOpen,
+        skeleton = { SkeletonList(rows = 5) },
     ) {
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -427,11 +433,12 @@ private fun SubjectsTab(
                     if (subjects.isEmpty()) {
                         VEmptyState(title = appString(StringKeys.CS_NO_SUBJECTS), icon = VIcons.BookOpen, body = appString(StringKeys.CS_NO_SUBJECTS_BODY))
                     }
-                    subjects.forEach { subj ->
+                    subjects.forEachIndexed { index, subj ->
                         SubjectCard(
                             subject = subj,
                             onEdit = { editingSubject = subj },
                             onDelete = { deleteSubjectTarget = subj },
+                            modifier = Modifier.staggeredItemEntrance(index, subjects.isNotEmpty()),
                         )
                     }
                 }
@@ -483,8 +490,9 @@ private fun SubjectCard(
     subject: SchoolSubjectDto,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    VCard(Modifier.fillMaxWidth().clickable { onEdit() }) {
+    VCard(modifier.fillMaxWidth().clickable { onEdit() }) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {

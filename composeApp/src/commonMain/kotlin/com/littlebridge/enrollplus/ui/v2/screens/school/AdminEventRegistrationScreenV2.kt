@@ -18,7 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -44,7 +44,9 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
@@ -203,8 +205,8 @@ fun AdminEventRegistrationScreenV2(
                         )
                     }
                 } else {
-                    items(state.registrations) { reg ->
-                        RegistrationCard(reg = reg)
+                    itemsIndexed(state.registrations, key = { _, it -> it.id }) { index, reg ->
+                        RegistrationCard(reg = reg, modifier = Modifier.staggeredItemEntrance(index, state.registrations.isNotEmpty()))
                     }
                 }
             }
@@ -235,18 +237,20 @@ fun AdminEventRegistrationScreenV2(
                 emptyTitle = "No events with registration",
                 onRetry = { viewModel.loadEvents() },
                 modifier = Modifier.fillMaxSize(),
+                skeleton = { SkeletonList(rows = 5) },
             ) {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    items(state.events) { event ->
+                    itemsIndexed(state.events, key = { _, it -> it.id }) { index, event ->
                         AdminEventCard(
                             event = event,
                             onClick = {
                                 selectedEventId = event.id
                                 viewModel.clearMessages()
                             },
+                            modifier = Modifier.staggeredItemEntrance(index, state.events.isNotEmpty()),
                         )
                     }
                 }
@@ -510,8 +514,8 @@ private fun EventManageContent(
                     modifier = Modifier.padding(vertical = 8.dp),
                 )
             }
-            items(state.registrations) { reg ->
-                RegistrationCard(reg = reg)
+            itemsIndexed(state.registrations, key = { _, it -> it.id }) { index, reg ->
+                RegistrationCard(reg = reg, modifier = Modifier.staggeredItemEntrance(index, state.registrations.isNotEmpty()))
             }
         }
     }
@@ -521,9 +525,10 @@ private fun EventManageContent(
 private fun AdminEventCard(
     event: AdminEventDto,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
         VCard(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable { onClick() },
     ) {
@@ -551,8 +556,8 @@ private fun AdminEventCard(
 }
 
 @Composable
-private fun RegistrationCard(reg: AdminRegistrationDto) {
-        VCard(modifier = Modifier.fillMaxWidth()) {
+private fun RegistrationCard(reg: AdminRegistrationDto, modifier: Modifier = Modifier) {
+        VCard(modifier = modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = reg.eventTitle,

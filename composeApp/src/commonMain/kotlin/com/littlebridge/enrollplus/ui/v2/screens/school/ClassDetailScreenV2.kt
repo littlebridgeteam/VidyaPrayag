@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -53,7 +53,10 @@ import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.core.locale.StringKeys
@@ -161,6 +164,7 @@ private fun ClassStudentsSubTab(
         emptyBody = appString(StringKeys.CD_NO_STUDENTS_BODY).replace("{className}", className),
         emptyIcon = VIcons.Users,
         onRetry = onRetry,
+        skeleton = { SkeletonList(rows = 6, withAvatar = true) },
     ) {
         LazyColumn(
             Modifier.fillMaxSize().padding(horizontal = 16.dp),
@@ -170,10 +174,11 @@ private fun ClassStudentsSubTab(
             item {
                 VSectionHeader(appString(StringKeys.CD_STUDENTS_COUNT).replace("{count}", students.size.toString()))
             }
-            items(students) { student ->
+            itemsIndexed(students, key = { _, it -> it.id }) { index, student ->
                 StudentRowCard(
                     student = student,
                     onClick = { onOpenStudent(student.id) },
+                    modifier = Modifier.staggeredItemEntrance(index, students.isNotEmpty()),
                 )
             }
         }
@@ -184,8 +189,9 @@ private fun ClassStudentsSubTab(
 private fun StudentRowCard(
     student: StudentDto,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    VCard(Modifier.fillMaxWidth().clickable { onClick() }) {
+    VCard(modifier.fillMaxWidth().clickable { onClick() }) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -256,10 +262,11 @@ private fun ClassTeachersSubTab(
             item {
                 VSectionHeader(appString(StringKeys.CD_TEACHERS_COUNT).replace("{count}", classTeachers.size.toString()))
             }
-            items(classTeachers) { teacher ->
+            itemsIndexed(classTeachers, key = { _, it -> it.id }) { index, teacher ->
                 TeacherRowCard(
                     teacher = teacher,
                     onClick = { onOpenTeacher(teacher.id) },
+                    modifier = Modifier.staggeredItemEntrance(index, classTeachers.isNotEmpty()),
                 )
             }
         }
@@ -276,8 +283,9 @@ private data class TeacherInfo(
 private fun TeacherRowCard(
     teacher: TeacherInfo,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    VCard(Modifier.fillMaxWidth().clickable { onClick() }) {
+    VCard(modifier.fillMaxWidth().clickable { onClick() }) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -419,6 +427,7 @@ private fun ClassAnalyticsSubTab(
             emptyBody = appString(StringKeys.CD_NO_ANALYTICS_BODY),
             emptyIcon = VIcons.TrendingUp,
             onRetry = onRetry,
+            skeleton = { SkeletonDashboard() },
         ) {
             // KPI row
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

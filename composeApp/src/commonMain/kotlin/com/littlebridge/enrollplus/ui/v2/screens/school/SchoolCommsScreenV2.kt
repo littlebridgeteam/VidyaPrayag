@@ -50,12 +50,14 @@ import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
+import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VComingSoon
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.tokens.VColors
@@ -281,8 +283,9 @@ private fun AnnouncementsTab(
                 }
             }
             state.announcements.forEachIndexed { index, a ->
-                CommsStaggeredItem(index = index) {
-                    CreamCard(onClick = { onOpen(a.id) }) {
+                VCard(
+                    modifier = Modifier.fillMaxWidth().staggeredItemEntrance(index, state.announcements.isNotEmpty()).clickable { onOpen(a.id) },
+                ) {
                         Row(
                             Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.Top,
@@ -311,7 +314,6 @@ private fun AnnouncementsTab(
                                 modifier = Modifier.padding(top = 6.dp),
                             )
                         }
-                    }
                 }
             }
         }
@@ -325,7 +327,7 @@ private fun CommsEntryCard(
     description: String,
     onClick: () -> Unit,
 ) {
-    CreamCard(onClick = onClick) {
+    VCard(modifier = Modifier.fillMaxWidth().clickable { onClick() }) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Box(
                 Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(VColors.violetSoft),
@@ -415,25 +417,6 @@ private fun AnnouncementDetailV2(
 // ── Premium shared primitives ─────────────────────────────────────────────────
 
 @Composable
-private fun CreamCard(
-    onClick: () -> Unit = {},
-    content: @Composable () -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.lg)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-            ) { onClick() }
-            .padding(16.dp),
-    ) { content() }
-}
-
-@Composable
 private fun MiniBadge(text: String, color: Color, bg: Color) {
     Text(
         text = text,
@@ -446,18 +429,3 @@ private fun MiniBadge(text: String, color: Color, bg: Color) {
     )
 }
 
-@Composable
-private fun CommsStaggeredItem(index: Int, content: @Composable () -> Unit) {
-    val alpha = remember { Animatable(0f) }
-    val offsetY = remember { Animatable(24f) }
-    LaunchedEffect(Unit) {
-        delay(220 + index * 60L)
-        launch { alpha.animateTo(1f, tween(VMotion.durSlower, easing = VMotion.ease)) }
-        launch { offsetY.animateTo(0f, tween(VMotion.durSlower, easing = VMotion.ease)) }
-    }
-    Box(
-        modifier = Modifier
-            .graphicsLayer(translationY = offsetY.value)
-            .alpha(alpha.value),
-    ) { content() }
-}

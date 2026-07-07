@@ -46,6 +46,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.tokens.VColors
@@ -95,11 +96,11 @@ private fun PewsEffectivenessContent(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             state.trend?.effectiveness?.let { eff ->
-                item { EffectivenessSummaryCard(eff) }
+                item { EffectivenessSummaryCard(eff, modifier = Modifier.staggeredItemEntrance(0, true)) }
             }
             state.trend?.points?.let { points ->
                 if (points.size > 1) {
-                    item { TrendChartCard(points) }
+                    item { TrendChartCard(points, modifier = Modifier.staggeredItemEntrance(1, true)) }
                 }
             }
             item { Spacer(Modifier.height(24.dp)) }
@@ -108,12 +109,12 @@ private fun PewsEffectivenessContent(
 }
 
 @Composable
-private fun EffectivenessSummaryCard(eff: PewsEffectivenessDto) {
+private fun EffectivenessSummaryCard(eff: PewsEffectivenessDto, modifier: Modifier = Modifier) {
         val resolved = eff.done + eff.dismissed
     val total = eff.improved + eff.unchanged + eff.worsened
     val improvedRate = if (total > 0) (eff.improved * 100 / total) else 0
 
-    VCard {
+    VCard(modifier.fillMaxWidth()) {
         Text(
             appString(StringKeys.SCH_INTERVENTION_OUTCOMES),
             style = VTypography.label.copy(color = VColors.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
@@ -137,10 +138,10 @@ private fun EffectivenessSummaryCard(eff: PewsEffectivenessDto) {
 }
 
 @Composable
-private fun TrendChartCard(points: List<PewsTrendPointDto>) {
+private fun TrendChartCard(points: List<PewsTrendPointDto>, modifier: Modifier = Modifier) {
         val maxTotal = points.maxOfOrNull { it.total } ?: 0
 
-    VCard {
+    VCard(modifier.fillMaxWidth()) {
         Text(
             appString(StringKeys.SCH_RISK_TREND_30),
             style = VTypography.label.copy(color = VColors.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),

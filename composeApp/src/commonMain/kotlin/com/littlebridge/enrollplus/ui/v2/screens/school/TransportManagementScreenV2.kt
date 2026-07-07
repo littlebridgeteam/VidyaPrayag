@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
@@ -43,7 +43,9 @@ import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.core.locale.StringKeys
@@ -90,6 +92,7 @@ fun TransportManagementScreenV2(
             isEmpty = false,
             onRetry = { viewModel.loadRoutes() },
             modifier = Modifier.fillMaxSize(),
+            skeleton = { SkeletonList(rows = 6) },
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -113,10 +116,11 @@ fun TransportManagementScreenV2(
                 if (showRouteForm) {
                     item { CreateRouteForm(viewModel = viewModel) }
                 }
-                items(state.routes) { route ->
+                itemsIndexed(state.routes, key = { _, it -> it.id }) { index, route ->
                     RouteCard(
                         route = route,
                         onDelete = { viewModel.deleteRoute(route.id) },
+                        modifier = Modifier.staggeredItemEntrance(index, state.routes.isNotEmpty()),
                     )
                 }
 
@@ -138,10 +142,11 @@ fun TransportManagementScreenV2(
                 if (showVehicleForm) {
                     item { CreateVehicleForm(viewModel = viewModel, routes = state.routes) }
                 }
-                items(state.vehicles) { vehicle ->
+                itemsIndexed(state.vehicles, key = { _, it -> it.id }) { index, vehicle ->
                     VehicleCard(
                         vehicle = vehicle,
                         onDelete = { viewModel.deleteVehicle(vehicle.id) },
+                        modifier = Modifier.staggeredItemEntrance(index, state.vehicles.isNotEmpty()),
                     )
                 }
 
@@ -163,10 +168,11 @@ fun TransportManagementScreenV2(
                 if (showAssignmentForm) {
                     item { CreateAssignmentForm(viewModel = viewModel, routes = state.routes, vehicles = state.vehicles) }
                 }
-                items(state.assignments) { assignment ->
+                itemsIndexed(state.assignments, key = { _, it -> it.id }) { index, assignment ->
                     AssignmentCard(
                         assignment = assignment,
                         onDeactivate = { viewModel.deactivateAssignment(assignment.id) },
+                        modifier = Modifier.staggeredItemEntrance(index, state.assignments.isNotEmpty()),
                     )
                 }
 
@@ -424,8 +430,9 @@ private fun CreateAssignmentForm(
 private fun RouteCard(
     route: TransportRoute,
     onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    VCard(modifier = Modifier.fillMaxWidth()) {
+    VCard(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -463,8 +470,9 @@ private fun RouteCard(
 private fun VehicleCard(
     vehicle: TransportVehicle,
     onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    VCard(modifier = Modifier.fillMaxWidth()) {
+    VCard(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -500,8 +508,9 @@ private fun VehicleCard(
 private fun AssignmentCard(
     assignment: TransportAssignment,
     onDeactivate: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    VCard(modifier = Modifier.fillMaxWidth()) {
+    VCard(modifier = modifier.fillMaxWidth()) {
         Column {
             Text(
                 assignment.studentName ?: assignment.studentId,

@@ -28,7 +28,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -64,7 +64,9 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.tokens.VColors
@@ -138,6 +140,7 @@ private fun PewsCohortContent(
         emptyBody = appString(StringKeys.SCH_NO_STUDENTS_ATTENTION_DESC),
         onRetry = onRetry,
         modifier = modifier,
+        skeleton = { SkeletonList(rows = 6, withAvatar = true) },
     ) {
         val cohort = state.cohort
         val students = cohort?.students.orEmpty()
@@ -169,8 +172,8 @@ private fun PewsCohortContent(
                 // Inline "all on track" note so config/effectiveness stay reachable.
                 item { AllOnTrackNote() }
             } else {
-                items(students, key = { it.studentCode }) { s ->
-                    PewsStudentRow(s, onClick = { onOpenStudent(s.studentCode) })
+                itemsIndexed(students, key = { _, it -> it.studentCode }) { index, s ->
+                    PewsStudentRow(s, onClick = { onOpenStudent(s.studentCode) }, modifier = Modifier.staggeredItemEntrance(index, students.isNotEmpty()))
                 }
             }
             // ── Effectiveness rollup (LEARN loop) — admin parity with the web portal
@@ -605,13 +608,13 @@ private fun TrendLegend(label: String, color: androidx.compose.ui.graphics.Color
 }
 
 @Composable
-private fun PewsStudentRow(s: PewsStudentDto, onClick: () -> Unit) {
+private fun PewsStudentRow(s: PewsStudentDto, onClick: () -> Unit, modifier: Modifier = Modifier) {
         val (tone, levelLabel) = when (s.riskLevel) {
         "high" -> VBadgeTone.Danger to appString(StringKeys.SCH_HIGH)
         "medium" -> VBadgeTone.Warning to appString(StringKeys.SCH_MEDIUM)
         else -> VBadgeTone.Success to appString(StringKeys.SCH_WATCH)
     }
-    VCard(onClick = onClick) {
+    VCard(modifier = modifier, onClick = onClick) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             // initial avatar
             Box(

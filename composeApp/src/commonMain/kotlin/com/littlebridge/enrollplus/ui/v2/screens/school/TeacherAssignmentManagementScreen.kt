@@ -56,7 +56,9 @@ import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.components.VTag
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.tokens.VColors
@@ -136,6 +138,7 @@ private fun AssignmentContent(
             emptyBody = appString(StringKeys.SCH_NO_TEACHER_DESC),
             emptyIcon = VIcons.User,
             onRetry = onRetry,
+            skeleton = { SkeletonDashboard() },
         ) {
             val overview = state.overview ?: return@VStateHost
             TeacherHeader(overview)                       // 1. Teacher header
@@ -257,8 +260,8 @@ private fun CurrentAssignments(
         if (assignments.isEmpty()) {
             EmptyCard(VIcons.BookOpen, appString(StringKeys.SCH_NO_CLASSES_ASSIGNED))
         } else {
-            assignments.forEach { a ->
-                AssignmentCard(a, isRemoving = removingId == a.id, onRemove = { onRequestRemove(a.id) })
+            assignments.forEachIndexed { index, a ->
+                AssignmentCard(a, isRemoving = removingId == a.id, onRemove = { onRequestRemove(a.id) }, modifier = Modifier.staggeredItemEntrance(index, assignments.isNotEmpty()))
             }
         }
     }
@@ -269,8 +272,9 @@ private fun AssignmentCard(
     a: TeacherClassAssignmentDto,
     isRemoving: Boolean,
     onRemove: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-        VCard(padding = 16.dp) {
+        VCard(modifier = modifier, padding = 16.dp) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(VColors.sky.copy(alpha = 0.12f)),
