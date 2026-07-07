@@ -16,10 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Chat
-import androidx.compose.material.icons.filled.Payment
-import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -300,30 +296,10 @@ private fun HomeLoaded(
     ) {
         ChildSummaryCard(child = child, attendance = state.attendance)
 
-        PortalQuickActionChips(
-            chips = listOf(
-                QuickActionChipSpec(
-                    icon = Icons.Filled.Payment,
-                    iconColor = VColors.violet,
-                    iconBg = VColors.violetSoft,
-                    title = "Pay\nfees",
-                    onClick = onOpenFees,
-                ),
-                QuickActionChipSpec(
-                    icon = Icons.Filled.School,
-                    iconColor = VColors.success,
-                    iconBg = VColors.successSoft,
-                    title = "Acad-\nemics",
-                    onClick = onOpenAcademics,
-                ),
-                QuickActionChipSpec(
-                    icon = Icons.AutoMirrored.Filled.Chat,
-                    iconColor = VColors.ink,
-                    iconBg = VColors.creamDeep,
-                    title = "Mes-\nsages",
-                    onClick = onOpenMessages,
-                ),
-            ),
+        HomeQuickActions(
+            onPayFees = onOpenFees,
+            onAcademics = onOpenAcademics,
+            onMessages = onOpenMessages,
         )
 
         LearningSummaryCard(
@@ -353,57 +329,131 @@ private fun ChildSummaryCard(
     child: DashboardChildSummary?,
     attendance: ParentAttendanceData?,
 ) {
-    Column(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(VShapes.lg)
             .background(VColors.surfaceCard)
             .border(1.dp, VColors.line, VShapes.lg)
-            .padding(16.dp),
+            .padding(18.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        Box(
+            modifier = Modifier
+                .size(52.dp)
+                .clip(CircleShape)
+                .background(VColors.violetSoft),
+            contentAlignment = Alignment.Center,
         ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(VColors.violetSoft),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = child?.name?.take(1)?.uppercase() ?: "C",
-                    style = VTypography.h3.copy(fontWeight = FontWeight.Bold),
-                    color = VColors.violet,
-                )
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = child?.name ?: "Your child",
-                    style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
-                    color = VColors.ink,
-                )
-                Text(
-                    text = "Level ${child?.currentLevel ?: 1} · ${child?.attendanceStatus?.replaceFirstChar { it.uppercase() } ?: "No data"}",
-                    style = VTypography.caption,
-                    color = VColors.ink2,
-                )
-            }
-            val isPresent = child?.attendanceStatus?.lowercase() == "present"
-            Box(
-                modifier = Modifier
-                    .clip(VShapes.full)
-                    .background(if (isPresent) VColors.successSoft else VColors.creamDeep)
-                    .padding(horizontal = 10.dp, vertical = 4.dp),
-            ) {
-                Text(
-                    text = if (isPresent) "Present" else "No data",
-                    style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
-                    color = if (isPresent) VColors.success else VColors.ink3,
-                )
-            }
+            Text(
+                text = child?.name?.take(1)?.uppercase() ?: "C",
+                style = VTypography.h2.copy(fontWeight = FontWeight.Bold),
+                color = VColors.violet,
+            )
         }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = child?.name ?: "Your child",
+                style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
+                color = VColors.ink,
+            )
+            Text(
+                text = "Level ${child?.currentLevel ?: 1} · ${child?.attendanceStatus?.replaceFirstChar { it.uppercase() } ?: "No data"}",
+                style = VTypography.caption,
+                color = VColors.ink2,
+            )
+        }
+        val isPresent = child?.attendanceStatus?.lowercase() == "present"
+        Box(
+            modifier = Modifier
+                .clip(VShapes.full)
+                .background(if (isPresent) VColors.successSoft else VColors.creamDeep)
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+        ) {
+            Text(
+                text = if (isPresent) "Present" else "No data",
+                style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
+                color = if (isPresent) VColors.success else VColors.ink3,
+            )
+        }
+    }
+}
+
+@Composable
+private fun HomeQuickActions(
+    onPayFees: () -> Unit,
+    onAcademics: () -> Unit,
+    onMessages: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        QuickActionCard(
+            icon = VIcons.WalletPremium,
+            label = "Pay fees",
+            iconBg = VColors.violetSoft,
+            iconColor = VColors.violet,
+            onClick = onPayFees,
+            modifier = Modifier.weight(1f),
+        )
+        QuickActionCard(
+            icon = VIcons.Academic,
+            label = "Academics",
+            iconBg = VColors.successSoft,
+            iconColor = VColors.success,
+            onClick = onAcademics,
+            modifier = Modifier.weight(1f),
+        )
+        QuickActionCard(
+            icon = VIcons.ChatPremium,
+            label = "Messages",
+            iconBg = VColors.creamDeep,
+            iconColor = VColors.ink,
+            onClick = onMessages,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
+private fun QuickActionCard(
+    icon: ImageVector,
+    label: String,
+    iconBg: Color,
+    iconColor: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .clip(VShapes.lg)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.lg)
+            .clickable(onClick = onClick)
+            .padding(vertical = 18.dp, horizontal = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(
+            modifier = Modifier.size(46.dp).clip(CircleShape).background(iconBg),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = iconColor,
+                modifier = Modifier.size(24.dp),
+            )
+        }
+        Text(
+            text = label,
+            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
+            color = VColors.ink,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
@@ -589,11 +639,15 @@ private fun StatTile(
             text = label,
             style = VTypography.caption,
             color = VColors.ink2,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
         Text(
             text = subtext,
             style = VTypography.caption.copy(fontWeight = FontWeight.Medium),
             color = VColors.ink3,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }

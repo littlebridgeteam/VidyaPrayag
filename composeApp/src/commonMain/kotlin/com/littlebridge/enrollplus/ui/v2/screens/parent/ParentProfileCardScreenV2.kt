@@ -242,8 +242,6 @@ private fun ParentAccountCard(profile: ParentProfile?, onRetry: () -> Unit) {
             .background(VColors.surfaceCard)
             .border(1.dp, VColors.line, VShapes.lg)
             .padding(20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         if (profile == null) {
             Box(
@@ -253,35 +251,38 @@ private fun ParentAccountCard(profile: ParentProfile?, onRetry: () -> Unit) {
                 CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(28.dp))
             }
         } else {
-            Box(
-                modifier = Modifier.size(72.dp).clip(CircleShape).background(VColors.violetSoft),
-                contentAlignment = Alignment.Center,
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(18.dp),
             ) {
-                Text(
-                    text = profile.name.take(1).uppercase(),
-                    style = VTypography.h2.copy(fontWeight = FontWeight.Bold),
-                    color = VColors.violet,
-                )
-            }
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = profile.name.ifBlank { "Parent" },
-                    style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
-                    color = VColors.ink,
-                )
-                if (profile.email.isNotBlank()) {
+                Box(
+                    modifier = Modifier.size(64.dp).clip(CircleShape).background(VColors.violetSoft),
+                    contentAlignment = Alignment.Center,
+                ) {
                     Text(
-                        text = profile.email,
-                        style = VTypography.caption,
-                        color = VColors.ink2,
+                        text = profile.name.take(1).uppercase(),
+                        style = VTypography.h2.copy(fontWeight = FontWeight.Bold),
+                        color = VColors.violet,
                     )
                 }
-                if (profile.phone.isNotBlank()) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = profile.phone,
+                        text = profile.name.ifBlank { "Parent" },
+                        style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
+                        color = VColors.ink,
+                    )
+                    Text(
+                        text = "Parent account",
                         style = VTypography.caption,
                         color = VColors.ink2,
                     )
+                    if (profile.phone.isNotBlank()) {
+                        Text(
+                            text = profile.phone,
+                            style = VTypography.caption.copy(fontWeight = FontWeight.Medium),
+                            color = VColors.ink3,
+                        )
+                    }
                 }
             }
         }
@@ -383,6 +384,8 @@ private fun StatTile(
                 text = label,
                 style = VTypography.caption,
                 color = VColors.ink2,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }

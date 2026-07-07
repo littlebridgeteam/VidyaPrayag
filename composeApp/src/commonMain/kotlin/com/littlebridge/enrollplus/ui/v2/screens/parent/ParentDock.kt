@@ -27,6 +27,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.ui.tokens.VColors
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
@@ -82,17 +83,21 @@ private fun DockItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier
-            .height(56.dp)
+            .height(58.dp)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
                 onClick = onClick,
             )
             .padding(horizontal = 4.dp)
-            .padding(top = 8.dp),
+            .padding(top = 6.dp),
     ) {
         Box(
-            modifier = Modifier.size(28.dp),
+            modifier = Modifier
+                .size(34.dp)
+                .clip(CircleShape)
+                .background(if (active) VColors.violetSoft else VColors.surfaceCard)
+                .padding(4.dp),
             contentAlignment = Alignment.Center,
         ) {
             BadgedBox(
@@ -123,7 +128,7 @@ private fun DockItem(
             text = item.label,
             style = VTypography.caption.copy(
                 fontWeight = if (active) FontWeight.SemiBold else FontWeight.Medium,
-                fontSize = 10.sp,
+                fontSize = 11.sp,
             ),
             color = contentColor,
             maxLines = 1,
