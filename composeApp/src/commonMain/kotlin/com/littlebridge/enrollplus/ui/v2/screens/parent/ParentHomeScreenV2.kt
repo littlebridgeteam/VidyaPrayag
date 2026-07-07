@@ -1,13 +1,18 @@
 package com.littlebridge.enrollplus.ui.v2.screens.parent
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.Canvas
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,12 +20,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -31,59 +34,54 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.parent.domain.model.DashboardAlertDto
 import com.littlebridge.enrollplus.feature.parent.domain.model.DashboardChildSummary
+import com.littlebridge.enrollplus.feature.parent.domain.model.FeeData
+import com.littlebridge.enrollplus.feature.parent.presentation.LivePeriod
+import com.littlebridge.enrollplus.feature.parent.domain.model.ParentAttendanceData
+import com.littlebridge.enrollplus.feature.parent.domain.model.ParentDailySummaryData
+import com.littlebridge.enrollplus.feature.parent.domain.model.ParentMarkDto
 import com.littlebridge.enrollplus.feature.parent.presentation.AttendanceDayState
+import com.littlebridge.enrollplus.feature.parent.presentation.ParentAcademicsState
+import com.littlebridge.enrollplus.feature.parent.presentation.ParentAcademicsViewModel
+import com.littlebridge.enrollplus.feature.parent.presentation.ParentAnnouncementState
+import com.littlebridge.enrollplus.feature.parent.presentation.ParentAnnouncementViewModel
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentDashboardState
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentDashboardViewModel
+import com.littlebridge.enrollplus.feature.pews.domain.model.PewsParentActionDto
+import com.littlebridge.enrollplus.feature.pews.domain.model.PewsParentNudgeDto
+import com.littlebridge.enrollplus.feature.pews.presentation.ParentNudgeViewModel
+import com.littlebridge.enrollplus.presentation.PermissionViewModel
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VShapes
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VAvatar
-import com.littlebridge.enrollplus.ui.v2.components.VEmptyState
+import com.littlebridge.enrollplus.ui.v2.components.VButton
+import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.v2.screens.VErrorState
-import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.presentation.PermissionViewModel
 import com.littlebridge.enrollplus.platform.rememberNotificationPermissionLauncher
-import com.littlebridge.enrollplus.ui.v2.components.*
-import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
-import com.littlebridge.enrollplus.util.nowMinutesOfDay
 import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.math.roundToInt
 
 /**
- * ParentHomeScreenV2 — the rebuilt parent dashboard, a premium Compose adaptation of the
- * website reference (`PhoneMockup.tsx`). The website is a React/Tailwind marketing mockup; this
- * is a native KMP app, so the design language is *adapted*, not copied verbatim — same lavender
- * canvas, navy ink, violet accent, the aurora wash and the layered card stack, rendered with
- * native gestures, springs and Canvas craft.
+ * ParentHomeScreenV2 — the rebuilt parent Home tab.
  *
- * DESIGN LAW — NEVER COLLAPSE TO WHITE SPACE. Every card renders a rich, intentional, premium
- * state even when the backend returns sparse/empty data (the demo child has empty marks /
- * timetable). The screen is always full and composed: an aurora-washed hero with the child
- * identity + a live journey ring, a school-day timeline rail, then the live feature cards. No
- * card "returns" early; sparse data becomes a polished, on-brand empty state.
- *
- * NO FLOATING TOASTS (LAW): the reference mockup decorates itself with floating glass plates
- * ("Marked present", "Maths result published"). Those are presentation flourishes and are
- * intentionally surfaced natively inside the cards / the bell — never as transient overlays.
+ * Premium, calm, and information-first: a warm cream canvas with white cards,
+ * a clear child hero below the shared header, and quick access to everything a
+ * parent cares about. No sparklines, no bouncing springs, no gamification rings,
+ * no cheap effects. Real data from the dashboard, academics, and announcement VMs.
  */
 @Composable
 fun ParentHomeScreenV2(
@@ -102,36 +100,26 @@ fun ParentHomeScreenV2(
     onOpenLibrary: () -> Unit = {},
     onOpenEvents: () -> Unit = {},
     viewModel: ParentDashboardViewModel = koinViewModel(),
+    academicsViewModel: ParentAcademicsViewModel = koinViewModel(),
+    announcementsViewModel: ParentAnnouncementViewModel = koinViewModel(),
+    nudgeViewModel: ParentNudgeViewModel = koinViewModel(),
     permissionVm: PermissionViewModel = koinViewModel(),
-    nudgeViewModel: com.littlebridge.enrollplus.feature.pews.presentation.ParentNudgeViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
+    val academics by academicsViewModel.state.collectAsStateV2()
+    val announcements by announcementsViewModel.state.collectAsStateV2()
     val nudgeState by nudgeViewModel.state.collectAsStateV2()
 
-    // PEWS parent nudge — re-scope to the active child whenever it changes.
-    // The card renders only when the server returns show=true (real concern AND
-    // the school enabled parent sharing). Use the RESOLVED child id (selectedChild
-    // falls back to the first child when no explicit pick has been made yet).
     val activeChildId = state.selectedChild?.id
+
     LaunchedEffect(activeChildId) {
-        nudgeViewModel.load(activeChildId)
-    }
-    val showRationale by permissionVm.showNotificationRationale.collectAsStateV2()
-    val launchPermission by permissionVm.launchPermissionRequest.collectAsStateV2()
-
-    val permissionLauncher = rememberNotificationPermissionLauncher { granted ->
-        permissionVm.onPermissionResult(granted)
-    }
-
-    // When the ViewModel signals we should launch the system dialog, do so.
-    LaunchedEffect(launchPermission) {
-        if (launchPermission) {
-            permissionVm.consumeLaunchPermissionRequest()
-            permissionLauncher.launch()
+        activeChildId?.let {
+            academicsViewModel.loadDailySummary(it)
+            nudgeViewModel.load(it)
         }
     }
 
-    // Live clock — re-derive the time-aware greeting + period/end-of-day fields each minute.
+    // Live minute clock for the time-aware greeting and period status.
     LaunchedEffect(Unit) {
         permissionVm.checkNotificationPermission()
         while (true) {
@@ -140,9 +128,25 @@ fun ParentHomeScreenV2(
         }
     }
 
-    ParentDashboardContent(
+    val showRationale by permissionVm.showNotificationRationale.collectAsStateV2()
+    val launchPermission by permissionVm.launchPermissionRequest.collectAsStateV2()
+    val permissionLauncher = rememberNotificationPermissionLauncher { granted ->
+        permissionVm.onPermissionResult(granted)
+    }
+    LaunchedEffect(launchPermission) {
+        if (launchPermission) {
+            permissionVm.consumeLaunchPermissionRequest()
+            permissionLauncher.launch()
+        }
+    }
+
+    ParentHomeContent(
         state = state,
+        academics = academics,
+        announcements = announcements,
+        nudge = nudgeState.nudge?.takeIf { nudgeState.visible },
         onRetry = viewModel::load,
+        onDiscoverSchools = onDiscoverSchools,
         onOpenFees = onOpenFees,
         onOpenAcademics = onOpenAcademics,
         onOpenPulse = onOpenPulse,
@@ -153,13 +157,9 @@ fun ParentHomeScreenV2(
         onOpenIdCard = onOpenIdCard,
         onOpenLibrary = onOpenLibrary,
         onOpenEvents = onOpenEvents,
-        nudge = nudgeState.nudge?.takeIf { nudgeState.visible },
+        onOpenMessages = onOpenMessages,
         onNudgeAction = { action ->
-            // Acknowledge the nudge so it doesn't reappear, then route.
             nudgeViewModel.acknowledgeNudge(activeChildId)
-            // The server's deep-link targets map onto existing parent surfaces.
-            // We route by intent: anything mentioning "message"/"teacher" → the
-            // conversations surface; everything else (attendance) → academics.
             val target = action.deepLink.lowercase()
             if (target.contains("message") || target.contains("teacher") || target.contains("chat")) {
                 onOpenMessages()
@@ -167,9 +167,7 @@ fun ParentHomeScreenV2(
                 onOpenAcademics()
             }
         },
-        onNudgeDismiss = {
-            nudgeViewModel.acknowledgeNudge(activeChildId)
-        },
+        onNudgeDismiss = { nudgeViewModel.acknowledgeNudge(activeChildId) },
         modifier = modifier,
     )
 
@@ -185,355 +183,434 @@ fun ParentHomeScreenV2(
     )
 }
 
-/** Stateless body. */
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
-private fun ParentDashboardContent(
+private fun ParentHomeContent(
     state: ParentDashboardState,
+    academics: ParentAcademicsState,
+    announcements: ParentAnnouncementState,
+    nudge: PewsParentNudgeDto?,
     onRetry: () -> Unit,
+    onDiscoverSchools: () -> Unit,
     onOpenFees: () -> Unit,
     onOpenAcademics: () -> Unit,
-    onOpenPulse: () -> Unit = {},
-    onOpenTransport: () -> Unit = {},
-    onOpenTutor: () -> Unit = {},
-    onOpenTutorProgress: () -> Unit = {},
-    onOpenScholarships: () -> Unit = {},
-    onOpenIdCard: () -> Unit = {},
-    onOpenLibrary: () -> Unit = {},
-    onOpenEvents: () -> Unit = {},
-    nudge: com.littlebridge.enrollplus.feature.pews.domain.model.PewsParentNudgeDto? = null,
-    onNudgeAction: (com.littlebridge.enrollplus.feature.pews.domain.model.PewsParentActionDto) -> Unit = {},
-    onNudgeDismiss: () -> Unit = {},
+    onOpenPulse: () -> Unit,
+    onOpenTransport: () -> Unit,
+    onOpenTutor: () -> Unit,
+    onOpenTutorProgress: () -> Unit,
+    onOpenScholarships: () -> Unit,
+    onOpenIdCard: () -> Unit,
+    onOpenLibrary: () -> Unit,
+    onOpenEvents: () -> Unit,
+    onOpenMessages: () -> Unit,
+    onNudgeAction: (PewsParentActionDto) -> Unit,
+    onNudgeDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    val d = VTheme.dimens
-
-    var coveredDetailOpen by remember { mutableStateOf(false) }
-    BackHandler(enabled = coveredDetailOpen) { coveredDetailOpen = false }
-
     Box(
-        modifier
+        modifier = modifier
             .fillMaxSize()
-            // The canvas IS the website background token (#FCF8FF) — a clean near-white with the
-            // faintest lavender tint. Lavender is the brand accent, not a wall-to-wall fill, so the
-            // wash is a barely-there whisper (≤4%) top-left, exactly like the reference mockup.
-            .background(c.background)
-            .drawBehind {
-                drawRect(
-                    brush = Brush.radialGradient(
-                        colors = listOf(c.accent.copy(alpha = 0.04f), Color.Transparent),
-                        center = Offset(size.width * 0.12f, size.height * 0.02f),
-                        radius = size.width * 0.9f,
-                    ),
-                )
-            }
-            .padding(bottom = 130.dp),
+            .background(VColors.cream)
+            .padding(bottom = 140.dp),
     ) {
-        // CRITICAL LAYOUT FIX (root cause of the "cards crammed at the top, ~70% empty space" bug):
-        // the dashboard body used to live inside VStateHost, whose loading leg drives an
-        // AnimatedContent. AnimatedContent lays out Box-like (it STACKS its children so it can
-        // crossfade them), and nested inside a verticalScroll (an UNBOUNDED-height parent) the
-        // settled Content child collapsed — all ~8 sibling cards painted on top of one another at
-        // y=0, so only the last few (Fees / Results / Covered) were visible and the rest of the
-        // screen was dead space.
-        //
-        // The state legs are now resolved OUTSIDE the scroll, each in its own bounded, centered Box,
-        // and the card stack is a plain verticalScroll Column with NO AnimatedContent anywhere in
-        // its parentage. The cards therefore always lay out top-to-bottom with the intended rhythm.
         when {
-            // First load (no child resolved yet) → a centered brand-violet spinner (never the
-            // teal VLoadingState, never fillMaxSize inside a scroll).
-            state.isLoading && state.selectedChild == null ->
-                DashboardCenterState {
-                    androidx.compose.material3.CircularProgressIndicator(
-                        color = c.accent,
-                        modifier = Modifier.size(36.dp),
-                    )
-                }
-
-            // Hard error before anything could load → centered retryable error.
-            state.error != null && state.selectedChild == null ->
-                DashboardCenterState {
-                    VErrorState(
-                        message = state.error ?: "",
-                        onRetry = onRetry,
-                    )
-                }
-
-            // No child linked → centered empty state.
-            state.children.isEmpty() ->
-                DashboardCenterState {
-                    VEmptyState(
-                        icon = VIcons.User,
-                        title = appString(StringKeys.PH_NO_CHILD_LINKED),
-                        body = appString(StringKeys.PH_NO_CHILD_LINKED_DESC),
-                    )
-                }
-
-            // Content — the live dashboard. A single scrolling Column, cards top-to-bottom.
-            // NOTE: the shared ParentHeader (identity chip + child switcher + icon cluster) is
-            // rendered by ParentPortalV2 ABOVE this content on every tab — Home no longer draws a
-            // bespoke pseudo-header. The greeting + journey live in a proper white content card.
-            else -> {
-                val child = state.selectedChild
-                Column(
-                    Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp)
-                        .padding(top = 14.dp, bottom = 28.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp),
-                ) {
-                    // ── Greeting + live journey — a premium WHITE content card ───────
-                    TodayCard(
-                        child = child,
-                        className = state.timetable?.className.orEmpty(),
-                        todayState = state.today.state,
-                        statusLabel = state.today.label,
-                        contextLine = contextLineFor(state),
-                    )
-
-                    // ── Alert strip (real /dashboard alerts — populated for the demo) ─
-                    if (state.alerts.isNotEmpty()) {
-                        AlertStrip(alerts = state.alerts)
-                    }
-
-                    // ── PEWS gentle nudge (opt-in, label-free) ──────────────────────
-                    // Renders only when the school enabled parent sharing AND there's a
-                    // real concern (server returns show=true). The card is supportive,
-                    // never alarming, and deep-links into attendance / message teacher.
-                    if (nudge != null) {
-                        ParentNudgeCard(nudge = nudge, onAction = onNudgeAction, onDismiss = onNudgeDismiss)
-                    }
-
-                    // ── Weekly Pulse entry point ────────────────────────────────────
-                    PulseEntryButton(onOpenPulse = onOpenPulse)
-
-                    // ── AI Tutor entry point ────────────────────────────────────────
-                    TutorEntryButton(onOpenTutor = onOpenTutor, onOpenTutorProgress = onOpenTutorProgress)
-
-                    // ── Attendance card (primary feature) ────────────────────────────
-                    ParentAttendanceCard(
-                        today = state.today,
-                        attendance = state.attendance,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-
-                    // ── Current class card (live, swipe-to-expand) ───────────────────
-                    // Swipe left to grow from the compact "current class" verdict → the full
-                    // today timeline (every subject marked done/now/pending live) → the weekly
-                    // timetable; swipe right to collapse back. Mirrors the attendance card.
-                    ParentScheduleCard(
-                        todayPeriods = state.todayPeriods,
-                        timetable = state.timetable,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-
-                    // ── Covered today card (live + end-of-day summary) ───────────────
-                    ParentCoveredCard(
-                        coveredToday = state.coveredToday,
-                        schoolDayEnded = state.schoolDayEnded,
-                        onOpenDetail = { coveredDetailOpen = true },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-
-                    // ── Academics: latest published result + sparkline ───────────────
-                    ParentResultsCard(
-                        latestMark = state.latestMark,
-                        previousMark = state.previousMarkForSubject,
-                        trend = state.markTrend,
-                        onOpenAcademics = onOpenAcademics,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-
-                    // ── Fees ─────────────────────────────────────────────────────────
-                    ParentFeesCard(
-                        fees = state.fees,
-                        onOpenFees = onOpenFees,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-
-                    // ── Transport: track bus ────────────────────────────────────────
-                    VActionCard(
-                        title = appString(StringKeys.PH_TRACK_BUS),
-                        subtitle = appString(StringKeys.PH_TRACK_BUS_DESC),
-                        icon = VIcons.MapPin,
-                        onClick = onOpenTransport,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-
-                    // ── Scholarships ───────────────────────────────────────────────
-                    VActionCard(
-                        title = appString(StringKeys.PH_SCHOLARSHIPS),
-                        subtitle = appString(StringKeys.PH_SCHOLARSHIPS_DESC),
-                        icon = VIcons.Sparkles,
-                        onClick = onOpenScholarships,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-
-                    // ── Digital ID Card ────────────────────────────────────────────
-                    VActionCard(
-                        title = appString(StringKeys.PH_DIGITAL_ID),
-                        subtitle = appString(StringKeys.PH_DIGITAL_ID_DESC),
-                        icon = VIcons.IdCard,
-                        onClick = onOpenIdCard,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-
-                    // ── Library ───────────────────────────────────────────────────────
-                    VActionCard(
-                        title = appString(StringKeys.PL_LIBRARY),
-                        subtitle = appString(StringKeys.PH_LIBRARY_DESC),
-                        icon = VIcons.BookOpen,
-                        onClick = onOpenLibrary,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-
-                    // ── Event Registration ────────────────────────────────────────
-                    VActionCard(
-                        title = appString(StringKeys.PH_SCHOOL_EVENTS),
-                        subtitle = appString(StringKeys.PH_SCHOOL_EVENTS_DESC),
-                        icon = VIcons.Calendar,
-                        onClick = onOpenEvents,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-
-                    Spacer(Modifier.height(2.dp))
-                }
-            }
+            state.isLoading && state.selectedChild == null -> HomeSkeleton()
+            state.error != null && state.selectedChild == null -> HomeError(message = state.error ?: "", onRetry = onRetry)
+            state.children.isEmpty() -> HomeEmpty(onDiscoverSchools = onDiscoverSchools, onLinkChild = onOpenIdCard)
+            else -> HomeLoaded(
+                state = state,
+                academics = academics,
+                announcements = announcements,
+                nudge = nudge,
+                onOpenFees = onOpenFees,
+                onOpenAcademics = onOpenAcademics,
+                onOpenPulse = onOpenPulse,
+                onOpenTransport = onOpenTransport,
+                onOpenTutor = onOpenTutor,
+                onOpenTutorProgress = onOpenTutorProgress,
+                onOpenScholarships = onOpenScholarships,
+                onOpenIdCard = onOpenIdCard,
+                onOpenLibrary = onOpenLibrary,
+                onOpenEvents = onOpenEvents,
+                onOpenMessages = onOpenMessages,
+                onNudgeAction = onNudgeAction,
+                onNudgeDismiss = onNudgeDismiss,
+            )
         }
+    }
+}
 
-        ParentCoveredDetailOverlay(
-            visible = coveredDetailOpen,
-            coveredToday = state.coveredToday,
-            syllabus = state.syllabus,
-            schoolDayEnded = state.schoolDayEnded,
-            onDismiss = { coveredDetailOpen = false },
+@Composable
+private fun HomeSkeleton() {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        SkeletonCard(height = 160.dp)
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            SkeletonCard(modifier = Modifier.weight(1f), height = 90.dp)
+            SkeletonCard(modifier = Modifier.weight(1f), height = 90.dp)
+        }
+        SkeletonCard(height = 120.dp)
+        SkeletonCard(height = 180.dp)
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            repeat(2) { SkeletonCard(modifier = Modifier.weight(1f), height = 96.dp) }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            repeat(2) { SkeletonCard(modifier = Modifier.weight(1f), height = 96.dp) }
+        }
+    }
+}
+
+@Composable
+private fun SkeletonCard(height: Dp, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(VShapes.lg)
+            .background(VColors.lineSoft),
+    )
+}
+
+@Composable
+private fun HomeError(message: String, onRetry: () -> Unit) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(64.dp)
+                .clip(CircleShape)
+                .background(VColors.errorSoft),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = VIcons.AlertTriangle,
+                contentDescription = null,
+                tint = VColors.error,
+                modifier = Modifier.size(28.dp),
+            )
+        }
+        Spacer(Modifier.height(16.dp))
+        Text(
+            text = appString(StringKeys.COMMON_ERROR_GENERIC),
+            style = VTypography.h3,
+            color = VColors.ink,
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = message,
+            style = VTypography.body,
+            color = VColors.ink2,
+        )
+        Spacer(Modifier.height(20.dp))
+        VButton(
+            text = appString(StringKeys.COMMON_BUTTON_RETRY),
+            onClick = onRetry,
         )
     }
 }
 
-/**
- * A bounded, centered host for the dashboard's loading / error / empty legs. Unlike VStateHost's
- * loading leg (which uses fillMaxSize inside a scroll, plus a teal spinner) this lives OUTSIDE the
- * scroll, fills the available canvas exactly once, and centers its content on the lavender wash.
- */
 @Composable
-private fun DashboardCenterState(content: @Composable () -> Unit) {
-    Box(
+private fun HomeEmpty(onDiscoverSchools: () -> Unit, onLinkChild: () -> Unit) {
+    Column(
         Modifier
             .fillMaxSize()
-            .statusBarsPadding()
-            .padding(horizontal = 24.dp, vertical = 48.dp),
-        contentAlignment = Alignment.Center,
+            .padding(32.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        content()
+        Box(
+            modifier = Modifier
+                .size(80.dp)
+                .clip(CircleShape)
+                .background(VColors.violetSoft),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = VIcons.User,
+                contentDescription = null,
+                tint = VColors.violet,
+                modifier = Modifier.size(36.dp),
+            )
+        }
+        Spacer(Modifier.height(20.dp))
+        Text(
+            text = appString(StringKeys.PH_NO_CHILD_LINKED),
+            style = VTypography.h3,
+            color = VColors.ink,
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = appString(StringKeys.PH_NO_CHILD_LINKED_DESC),
+            style = VTypography.body,
+            color = VColors.ink2,
+        )
+        Spacer(Modifier.height(24.dp))
+        VButton(
+            text = "Link a child",
+            onClick = onLinkChild,
+        )
+        Spacer(Modifier.height(10.dp))
+        VButton(
+            text = "Discover schools",
+            onClick = onDiscoverSchools,
+            variant = com.littlebridge.enrollplus.ui.v2.components.VButtonVariant.Secondary,
+        )
     }
 }
 
-/**
- * TodayCard — the dashboard's flagship greeting card, adapting the reference's identity block to a
- * premium WHITE card on the lavender canvas (NOT a purple pseudo-header — the shared ParentHeader
- * already owns identity/switching above this).
- *
- * It carries the child's avatar (with a semantic status pip), name + class, a truthful status chip
- * (present=green, late=amber, absent=red — color is meaning), a live **journey ring** built from
- * real `overall_progress`, and a time-aware context line. Always renders rich content for a linked
- * child, so the dashboard never opens on emptiness.
- */
 @Composable
-private fun TodayCard(
+private fun HomeLoaded(
+    state: ParentDashboardState,
+    academics: ParentAcademicsState,
+    announcements: ParentAnnouncementState,
+    nudge: PewsParentNudgeDto?,
+    onOpenFees: () -> Unit,
+    onOpenAcademics: () -> Unit,
+    onOpenPulse: () -> Unit,
+    onOpenTransport: () -> Unit,
+    onOpenTutor: () -> Unit,
+    onOpenTutorProgress: () -> Unit,
+    onOpenScholarships: () -> Unit,
+    onOpenIdCard: () -> Unit,
+    onOpenLibrary: () -> Unit,
+    onOpenEvents: () -> Unit,
+    onOpenMessages: () -> Unit,
+    onNudgeAction: (PewsParentActionDto) -> Unit,
+    onNudgeDismiss: () -> Unit,
+) {
+    val child = state.selectedChild
+    val className = state.timetable?.className.orEmpty()
+
+    Column(
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp)
+            .padding(top = 16.dp, bottom = 28.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        HeroCard(
+            child = child,
+            className = className,
+            attendance = state.attendance,
+            latestMark = state.latestMark,
+            fees = state.fees,
+            todayState = state.today.state,
+            statusLabel = state.today.label,
+        )
+
+        if (state.alerts.isNotEmpty()) {
+            AlertStrip(alerts = state.alerts)
+        }
+
+        if (nudge != null) {
+            NudgeCard(nudge = nudge, onAction = onNudgeAction, onDismiss = onNudgeDismiss)
+        }
+
+        LearningSummaryCard(
+            summary = academics.dailySummary,
+            isLoading = academics.dailySummaryLoading,
+        )
+
+        InsightsRow(
+            attendance = state.attendance,
+            latestMark = state.latestMark,
+            fees = state.fees,
+            onOpenAcademics = onOpenAcademics,
+            onOpenFees = onOpenFees,
+        )
+
+        DayTimeline(
+            periods = state.todayPeriods,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        QuickAccessGrid(
+            onOpenFees = onOpenFees,
+            onOpenMessages = onOpenMessages,
+            onOpenAcademics = onOpenAcademics,
+            onOpenTransport = onOpenTransport,
+            onOpenPulse = onOpenPulse,
+            onOpenLibrary = onOpenLibrary,
+            onOpenScholarships = onOpenScholarships,
+            onOpenIdCard = onOpenIdCard,
+            onOpenEvents = onOpenEvents,
+            onOpenTutor = onOpenTutor,
+        )
+
+        AnnouncementsPreview(
+            announcements = announcements.announcements,
+            isLoading = announcements.isLoading,
+        )
+
+        Spacer(Modifier.height(4.dp))
+    }
+}
+
+@Composable
+private fun HeroCard(
     child: DashboardChildSummary?,
     className: String,
+    attendance: ParentAttendanceData?,
+    latestMark: ParentMarkDto?,
+    fees: FeeData?,
     todayState: AttendanceDayState,
     statusLabel: String,
-    contextLine: String,
 ) {
-    val c = VTheme.colors
     val name = child?.name?.ifBlank { "Your child" } ?: "Your child"
-    val level = child?.currentLevel ?: 0
-    val rawProgress = child?.overallProgress ?: 0.0
-    val progressPct = (if (rawProgress <= 1.0) rawProgress * 100.0 else rawProgress).roundToInt().coerceIn(0, 100)
     val status = statusVisualFor(todayState)
 
-    Box(
+    Column(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-            .background(c.card)
-            .border(1.dp, c.hairline, RoundedCornerShape(24.dp))
-            .padding(18.dp),
+            .clip(VShapes.xl)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.xl)
+            .padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Column {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                // Avatar with a semantic status pip (green check when present, etc.).
-                Box {
-                    VAvatar(name = name, src = child?.profilePic, size = 54.dp, ring = true)
-                    Box(
-                        Modifier
-                            .align(Alignment.BottomEnd)
-                            .size(18.dp)
-                            .clip(CircleShape)
-                            .background(c.card)
-                            .padding(2.dp)
-                            .clip(CircleShape)
-                            .background(status.color),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(status.icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(9.dp))
-                    }
-                }
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        name,
-                        style = VTheme.type.h2.colored(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold, fontSize = 19.sp),
-                        maxLines = 1,
-                    )
-                    val sub = listOfNotNull(
-                        "Level $level".takeIf { level > 0 },
-                        className.takeIf { it.isNotBlank() },
-                    ).joinToString("  ·  ")
-                    if (sub.isNotBlank()) {
-                        Text(sub, style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp))
-                    }
-                }
-                // Status chip — color carries meaning (semantic), not always violet.
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box {
+                VAvatar(name = name, src = child?.profilePic, size = 64.dp)
                 Box(
                     Modifier
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(status.softBg)
-                        .padding(horizontal = 10.dp, vertical = 5.dp),
-                ) {
-                    Text(
-                        statusLabel.ifBlank { status.word },
-                        style = VTheme.type.label.colored(status.ink).copy(fontWeight = FontWeight.Bold, fontSize = 9.5.sp),
-                    )
-                }
+                        .align(Alignment.BottomEnd)
+                        .size(20.dp)
+                        .clip(CircleShape)
+                        .background(VColors.surfaceCard)
+                        .padding(2.dp)
+                        .clip(CircleShape)
+                        .background(status.color),
+                )
             }
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = name,
+                    style = VTypography.h2,
+                    color = VColors.ink,
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = className.ifBlank { "Class not set" },
+                    style = VTypography.bodySmall,
+                    color = VColors.ink2,
+                )
+                Spacer(Modifier.height(4.dp))
+                StatusChip(text = status.label, color = status.color, softColor = status.softColor)
+            }
+        }
 
-            Spacer(Modifier.height(16.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            StatPill(
+                label = "Attendance",
+                value = "${attendance?.attendanceRate ?: 0}%",
+                color = VColors.mint,
+                softColor = VColors.mintSoft,
+                modifier = Modifier.weight(1f),
+            )
+            StatPill(
+                label = "Marks",
+                value = markDisplay(latestMark),
+                color = VColors.sky,
+                softColor = VColors.skySoft,
+                modifier = Modifier.weight(1f),
+            )
+            StatPill(
+                label = "Fees",
+                value = fees?.outstandingFees?.ifBlank { "—" } ?: "—",
+                color = if ((fees?.overdueCount ?: 0) > 0) VColors.coral else VColors.gold,
+                softColor = if ((fees?.overdueCount ?: 0) > 0) VColors.coralSoft else VColors.goldSoft,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
 
-            // Journey row: a real violet progress ring (brand accent moment) + a contextual line.
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                JourneyRing(percent = progressPct, modifier = Modifier.size(68.dp))
+@Composable
+private fun StatusChip(text: String, color: Color, softColor: Color) {
+    if (text.isBlank()) return
+    Box(
+        Modifier
+            .clip(VShapes.full)
+            .background(softColor)
+            .padding(horizontal = 10.dp, vertical = 4.dp),
+    ) {
+        Text(
+            text = text,
+            style = VTypography.label.copy(fontWeight = FontWeight.SemiBold),
+            color = color,
+        )
+    }
+}
+
+@Composable
+private fun StatPill(label: String, value: String, color: Color, softColor: Color, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .clip(VShapes.md)
+            .background(softColor)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+    ) {
+        Text(
+            text = value,
+            style = VTypography.h3.copy(fontSize = 20.sp),
+            color = color,
+        )
+        Spacer(Modifier.height(2.dp))
+        Text(
+            text = label,
+            style = VTypography.caption,
+            color = VColors.ink2,
+        )
+    }
+}
+
+@Composable
+private fun AlertStrip(alerts: List<DashboardAlertDto>) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        alerts.take(3).forEach { alert ->
+            val (color, softColor) = when (alert.type.uppercase()) {
+                "CRITICAL" -> VColors.coral to VColors.coralSoft
+                "WARNING" -> VColors.gold to VColors.goldSoft
+                else -> VColors.sky to VColors.skySoft
+            }
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(VShapes.md)
+                    .background(softColor)
+                    .border(1.dp, color.copy(alpha = 0.2f), VShapes.md)
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    Modifier
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(color),
+                )
+                Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     Text(
-                        "LEARNING JOURNEY",
-                        style = VTheme.type.label.colored(c.accentDeep).copy(
-                            fontWeight = FontWeight.ExtraBold, fontSize = 10.sp, letterSpacing = 0.9.sp,
-                        ),
+                        text = alert.title,
+                        style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
+                        color = VColors.ink,
                     )
-                    Spacer(Modifier.height(3.dp))
-                    Text(
-                        "$progressPct% of the way to the next level",
-                        style = VTheme.type.bodyStrong.colored(c.navyDeep).copy(fontSize = 14.sp, fontWeight = FontWeight.Bold),
-                    )
-                    if (contextLine.isNotBlank()) {
-                        Spacer(Modifier.height(2.dp))
+                    if (alert.value.isNotBlank()) {
                         Text(
-                            contextLine,
-                            style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp),
+                            text = alert.value,
+                            style = VTypography.caption,
+                            color = VColors.ink2,
                         )
                     }
                 }
@@ -542,67 +619,344 @@ private fun TodayCard(
     }
 }
 
-/** Violet progress ring (the brand-accent moment) with the percent centred, on a white card. */
 @Composable
-private fun JourneyRing(percent: Int, modifier: Modifier = Modifier) {
-    val c = VTheme.colors
-    val sweep by animateFloatAsState(targetValue = percent / 100f, label = "journeySweep")
-    Box(modifier, contentAlignment = Alignment.Center) {
-        Canvas(Modifier.fillMaxSize()) {
-            val stroke = 6.dp.toPx()
-            val inset = stroke / 2f
-            val arcSize = Size(size.width - stroke, size.height - stroke)
-            val topLeft = Offset(inset, inset)
-            drawArc(
-                color = c.accent.copy(alpha = 0.16f),
-                startAngle = 0f, sweepAngle = 360f, useCenter = false,
-                topLeft = topLeft, size = arcSize,
-                style = Stroke(width = stroke, cap = StrokeCap.Round),
+private fun NudgeCard(
+    nudge: PewsParentNudgeDto,
+    onAction: (PewsParentActionDto) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(VShapes.lg)
+            .background(VColors.violetSoft)
+            .border(1.dp, VColors.violet.copy(alpha = 0.15f), VShapes.lg)
+            .padding(16.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = VIcons.Heart,
+                contentDescription = null,
+                tint = VColors.violet,
+                modifier = Modifier.size(20.dp),
             )
-            drawArc(
-                brush = Brush.sweepGradient(listOf(c.accentSoft, c.accent, c.accentDeep)),
-                startAngle = -90f, sweepAngle = 360f * sweep, useCenter = false,
-                topLeft = topLeft, size = arcSize,
-                style = Stroke(width = stroke, cap = StrokeCap.Round),
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = nudge.headline,
+                style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
+                color = VColors.ink,
+                modifier = Modifier.weight(1f),
             )
         }
+        Spacer(Modifier.height(8.dp))
         Text(
-            "$percent%",
-            style = VTheme.type.dataLg.colored(c.accentDeep).copy(fontWeight = FontWeight.ExtraBold, fontSize = 17.sp),
+            text = nudge.message,
+            style = VTypography.bodySmall,
+            color = VColors.ink2,
+        )
+        Spacer(Modifier.height(12.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            nudge.actions.firstOrNull()?.let { action ->
+                VButton(
+                    text = action.label,
+                    onClick = { onAction(action) },
+                    size = com.littlebridge.enrollplus.ui.v2.components.VButtonSize.Sm,
+                )
+            }
+            VButton(
+                text = "Dismiss",
+                onClick = onDismiss,
+                variant = com.littlebridge.enrollplus.ui.v2.components.VButtonVariant.Secondary,
+                size = com.littlebridge.enrollplus.ui.v2.components.VButtonSize.Sm,
+            )
+        }
+    }
+}
+
+@Composable
+private fun LearningSummaryCard(
+    summary: ParentDailySummaryData?,
+    isLoading: Boolean,
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(VShapes.lg)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.lg)
+            .padding(16.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier
+                    .size(36.dp)
+                    .clip(VShapes.md)
+                    .background(VColors.violetSoft),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = VIcons.School,
+                    contentDescription = null,
+                    tint = VColors.violet,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = "Today's learning",
+                    style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
+                    color = VColors.ink,
+                )
+                Text(
+                    text = summary?.date?.ifBlank { "Today" } ?: "Today",
+                    style = VTypography.caption,
+                    color = VColors.ink3,
+                )
+            }
+            if (summary?.entries?.isNotEmpty() == true) {
+                Icon(
+                    imageVector = if (expanded) VIcons.ChevronUp else VIcons.ChevronDown,
+                    contentDescription = null,
+                    tint = VColors.ink3,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clickable { expanded = !expanded },
+                )
+            }
+        }
+
+        Spacer(Modifier.height(10.dp))
+
+        if (isLoading) {
+            Box(Modifier.fillMaxWidth().height(48.dp).clip(VShapes.md).background(VColors.lineSoft))
+        } else if (summary == null || summary.entries.isEmpty()) {
+            Text(
+                text = "No learning summary available yet",
+                style = VTypography.bodySmall,
+                color = VColors.ink2,
+            )
+        } else {
+            Text(
+                text = summary.aiSummary ?: summary.entries.joinToString(", ") { it.subject },
+                style = VTypography.bodySmall,
+                color = VColors.ink2,
+            )
+
+            AnimatedContent(
+                targetState = expanded,
+                transitionSpec = { fadeIn(tween(200)) togetherWith fadeOut(tween(200)) },
+                label = "learningExpand",
+            ) { show ->
+                if (show) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Spacer(Modifier.height(4.dp))
+                        summary.entries.forEach { entry ->
+                            Row(verticalAlignment = Alignment.Top) {
+                                Box(
+                                    Modifier
+                                        .size(6.dp)
+                                        .clip(CircleShape)
+                                        .background(VColors.violet)
+                                        .padding(top = 6.dp),
+                                )
+                                Spacer(Modifier.width(10.dp))
+                                Column {
+                                    Text(
+                                        text = entry.subject,
+                                        style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
+                                        color = VColors.ink,
+                                    )
+                                    if (entry.summaryText.isNotBlank()) {
+                                        Text(
+                                            text = entry.summaryText,
+                                            style = VTypography.bodySmall,
+                                            color = VColors.ink2,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    Spacer(Modifier.height(0.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun InsightsRow(
+    attendance: ParentAttendanceData?,
+    latestMark: ParentMarkDto?,
+    fees: FeeData?,
+    onOpenAcademics: () -> Unit,
+    onOpenFees: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(
+            text = "Quick insights",
+            style = VTypography.body.copy(fontWeight = FontWeight.Bold),
+            color = VColors.ink,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            InsightCard(
+                icon = VIcons.School,
+                label = "Attendance",
+                value = "${attendance?.attendanceRate ?: 0}%",
+                subtext = "${attendance?.presentDays ?: 0}/${attendance?.totalDays ?: 0} days",
+                color = VColors.mint,
+                softColor = VColors.mintSoft,
+                modifier = Modifier.weight(1f),
+                onClick = onOpenAcademics,
+            )
+            InsightCard(
+                icon = VIcons.Star,
+                label = "Latest marks",
+                value = markDisplay(latestMark),
+                subtext = latestMark?.subject?.ifBlank { "—" } ?: "—",
+                color = VColors.sky,
+                softColor = VColors.skySoft,
+                modifier = Modifier.weight(1f),
+                onClick = onOpenAcademics,
+            )
+        }
+        InsightCard(
+            icon = VIcons.Wallet,
+            label = "Fee status",
+            value = fees?.outstandingFees?.ifBlank { "₹0" } ?: "₹0",
+            subtext = if ((fees?.overdueCount ?: 0) > 0) "Overdue" else "Up to date",
+            color = if ((fees?.overdueCount ?: 0) > 0) VColors.coral else VColors.gold,
+            softColor = if ((fees?.overdueCount ?: 0) > 0) VColors.coralSoft else VColors.goldSoft,
+            modifier = Modifier.fillMaxWidth(),
+            onClick = onOpenFees,
         )
     }
 }
 
-/** A compact strip of the real dashboard alerts (e.g. "Upcoming PTM · Nov 25"). */
 @Composable
-private fun AlertStrip(alerts: List<DashboardAlertDto>) {
-    val c = VTheme.colors
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        items(alerts, key = { it.id }) { a ->
-            val (bg, fg, icon) = when (a.type.uppercase()) {
-                "CRITICAL" -> Triple(c.danger.copy(alpha = 0.5f), c.dangerInk, VIcons.AlertCircle)
-                "WARNING" -> Triple(c.warning.copy(alpha = 0.55f), c.warningInk, VIcons.AlertTriangle)
-                else -> Triple(c.accent.copy(alpha = 0.12f), c.accentDeep, VIcons.Bell)
-            }
-            Row(
-                Modifier
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(c.card)
-                    .border(1.dp, c.hairline, RoundedCornerShape(999.dp))
-                    .padding(start = 8.dp, end = 12.dp, top = 7.dp, bottom = 7.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Box(
-                    Modifier.size(24.dp).clip(CircleShape).background(bg),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(icon, contentDescription = null, tint = fg, modifier = Modifier.size(13.dp))
-                }
-                Column {
-                    Text(a.title, style = VTheme.type.label.colored(c.navyDeep).copy(fontWeight = FontWeight.Bold, fontSize = 10.5.sp))
-                    if (a.value.isNotBlank()) {
-                        Text(a.value, style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp))
+private fun InsightCard(
+    icon: ImageVector,
+    label: String,
+    value: String,
+    subtext: String,
+    color: Color,
+    softColor: Color,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {},
+) {
+    Row(
+        modifier = modifier
+            .clip(VShapes.md)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.md)
+            .clickable(onClick = onClick)
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier
+                .size(40.dp)
+                .clip(VShapes.md)
+                .background(softColor),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(22.dp),
+            )
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = label,
+                style = VTypography.caption,
+                color = VColors.ink3,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = value,
+                style = VTypography.h3.copy(fontSize = 20.sp),
+                color = color,
+            )
+            Text(
+                text = subtext,
+                style = VTypography.caption,
+                color = VColors.ink2,
+            )
+        }
+        Icon(
+            imageVector = VIcons.ChevronRight,
+            contentDescription = null,
+            tint = VColors.ink3,
+            modifier = Modifier.size(20.dp),
+        )
+    }
+}
+
+@Composable
+private fun DayTimeline(periods: List<LivePeriod>, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        Text(
+            text = "Today's schedule",
+            style = VTypography.body.copy(fontWeight = FontWeight.Bold),
+            color = VColors.ink,
+            modifier = Modifier.padding(bottom = 10.dp),
+        )
+        if (periods.isEmpty()) {
+            Text(
+                text = "No timetable available for today",
+                style = VTypography.bodySmall,
+                color = VColors.ink2,
+            )
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                periods.forEach { period ->
+                    val (color, softColor) = when (period.relation) {
+                        0 -> VColors.violet to VColors.violetSoft
+                        -1 -> VColors.mint to VColors.mintSoft
+                        else -> VColors.gold to VColors.goldSoft
+                    }
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(VShapes.md)
+                            .background(VColors.surfaceCard)
+                            .border(1.dp, if (period.relation == 0) color.copy(alpha = 0.3f) else VColors.line, VShapes.md)
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(color),
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                text = period.subject,
+                                style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
+                                color = VColors.ink,
+                            )
+                            if (period.teacherName.isNotBlank()) {
+                                Text(
+                                    text = period.teacherName,
+                                    style = VTypography.caption,
+                                    color = VColors.ink2,
+                                )
+                            }
+                        }
+                        Text(
+                            text = "${period.startTime} – ${period.endTime}",
+                            style = VTypography.caption,
+                            color = VColors.ink3,
+                        )
                     }
                 }
             }
@@ -610,232 +964,185 @@ private fun AlertStrip(alerts: List<DashboardAlertDto>) {
     }
 }
 
-/**
- * A semantic visual for the resolved today-state. COLOR CARRIES MEANING (design law): present is
- * green, late is amber, absent is red, holidays/breaks are calm navy, awaiting is the brand violet.
- */
-private data class StatusVisual(
-    val word: String,
-    val color: Color,
-    val ink: Color,
-    val softBg: Color,
-    val icon: androidx.compose.ui.graphics.vector.ImageVector,
-)
-
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun statusVisualFor(state: AttendanceDayState): StatusVisual {
-    val c = VTheme.colors
-    return when (state) {
-        AttendanceDayState.Present -> StatusVisual(
-            "Present", c.successInk, c.successInk, c.success.copy(alpha = 0.30f), VIcons.Check,
+private fun QuickAccessGrid(
+    onOpenFees: () -> Unit,
+    onOpenMessages: () -> Unit,
+    onOpenAcademics: () -> Unit,
+    onOpenTransport: () -> Unit,
+    onOpenPulse: () -> Unit,
+    onOpenLibrary: () -> Unit,
+    onOpenScholarships: () -> Unit,
+    onOpenIdCard: () -> Unit,
+    onOpenEvents: () -> Unit,
+    onOpenTutor: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(
+            text = "Quick access",
+            style = VTypography.body.copy(fontWeight = FontWeight.Bold),
+            color = VColors.ink,
         )
-        AttendanceDayState.Late -> StatusVisual(
-            "Late", c.warningInk, c.warningInk, c.warning.copy(alpha = 0.45f), VIcons.Clock,
-        )
-        AttendanceDayState.Absent -> StatusVisual(
-            "Absent", c.dangerInk, c.dangerInk, c.danger.copy(alpha = 0.45f), VIcons.Close,
-        )
-        AttendanceDayState.Holiday -> StatusVisual(
-            "Holiday", c.navy, c.navy, c.navy.copy(alpha = 0.10f), VIcons.Calendar,
-        )
-        AttendanceDayState.Vacation -> StatusVisual(
-            "Break", c.navy, c.navy, c.navy.copy(alpha = 0.10f), VIcons.Sparkles,
-        )
-        AttendanceDayState.Sunday -> StatusVisual(
-            "Sunday", c.ink3, c.ink2, c.cream, VIcons.Calendar,
-        )
-        AttendanceDayState.NoData -> StatusVisual(
-            "Awaiting", c.accent, c.accentDeep, c.accent.copy(alpha = 0.12f), VIcons.Clock,
-        )
-    }
-}
-
-/** Build the time-aware contextual line referencing the selected child. */
-private fun contextLineFor(state: ParentDashboardState): String {
-    val name = state.selectedChild?.name?.takeIf { it.isNotBlank() } ?: "your child"
-    val firstName = name.substringBefore(' ')
-    val partOfDay = when (nowMinutesOfDay() / 60) {
-        in 0..11 -> "morning"
-        in 12..16 -> "afternoon"
-        else -> "evening"
-    }
-    val tail = when (state.today.state) {
-        AttendanceDayState.Present -> "$firstName is marked present today."
-        AttendanceDayState.Late -> "$firstName arrived late today."
-        AttendanceDayState.Absent -> "$firstName is marked absent today."
-        AttendanceDayState.Holiday -> "It's a holiday — ${state.today.label}."
-        AttendanceDayState.Vacation -> "${state.today.label} — enjoy the break."
-        AttendanceDayState.Sunday -> "It's Sunday — no school today."
-        AttendanceDayState.NoData -> "Here's $firstName's day at a glance."
-    }
-    return "Good $partOfDay. $tail"
-}
-
-/**
- * PulseEntryButton — a compact, tappable card on the Home screen that opens
- * the full Parent Pulse overlay. Shows a heartbeat icon + label.
- */
-@Composable
-private fun PulseEntryButton(onOpenPulse: () -> Unit) {
-    val c = VTheme.colors
-    com.littlebridge.enrollplus.ui.v2.components.VCard(
-        modifier = Modifier.fillMaxWidth(),
-        padding = 14.dp,
-        onClick = onOpenPulse,
-    ) {
-        Row(
-            Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            maxItemsInEachRow = 2,
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Box(
-                    Modifier
-                        .size(36.dp)
-                        .clip(androidx.compose.foundation.shape.CircleShape)
-                        .background(c.accent.copy(alpha = 0.1f)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        VIcons.Activity,
-                        contentDescription = null,
-                        tint = c.accent,
-                        modifier = Modifier.size(18.dp),
-                    )
-                }
-                Column {
-                    Text(
-                        "Weekly Pulse",
-                        style = VTheme.type.h4.colored(c.ink).copy(fontWeight = FontWeight.Bold, fontSize = 14.sp),
-                    )
-                    Text(
-                        "Your child's week at a glance",
-                        style = VTheme.type.label.colored(c.ink3).copy(fontSize = 11.sp),
-                    )
-                }
+            val items = listOf(
+                "Fees" to VIcons.Wallet to onOpenFees,
+                "Messages" to VIcons.Chat to onOpenMessages,
+                "Attendance" to VIcons.School to onOpenAcademics,
+                "Transport" to VIcons.MapPin to onOpenTransport,
+                "Health" to VIcons.Heart to onOpenPulse,
+                "Library" to VIcons.BookOpen to onOpenLibrary,
+                "Scholarships" to VIcons.Sparkles to onOpenScholarships,
+                "ID Card" to VIcons.IdCard to onOpenIdCard,
+                "Events" to VIcons.Calendar to onOpenEvents,
+                "AI Tutor" to VIcons.Target to onOpenTutor,
+            )
+            items.forEach { (pair, onClick) ->
+                val (label, icon) = pair
+                QuickTile(label = label, icon = icon, onClick = onClick)
             }
+        }
+    }
+}
+
+@Composable
+private fun QuickTile(label: String, icon: ImageVector, onClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .width(150.dp)
+            .clip(VShapes.md)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.md)
+            .clickable(onClick = onClick)
+            .padding(14.dp),
+        horizontalAlignment = Alignment.Start,
+    ) {
+        Box(
+            Modifier
+                .size(38.dp)
+                .clip(VShapes.md)
+                .background(VColors.violetSoft),
+            contentAlignment = Alignment.Center,
+        ) {
             Icon(
-                VIcons.ChevronRight,
+                imageVector = icon,
                 contentDescription = null,
-                tint = c.ink3,
+                tint = VColors.violet,
                 modifier = Modifier.size(20.dp),
             )
         }
+        Spacer(Modifier.height(10.dp))
+        Text(
+            text = label,
+            style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
+            color = VColors.ink,
+        )
     }
 }
 
-/**
- * TutorEntryButton — the AI Tutor entry point on the Home screen.
- * Two tappable rows: "Ask AI Tutor" (opens Socratic doubt chat)
- * and "Tutor Progress" (opens mastery deltas + doubts resolved).
- */
 @Composable
-private fun TutorEntryButton(
-    onOpenTutor: () -> Unit,
-    onOpenTutorProgress: () -> Unit,
+private fun AnnouncementsPreview(
+    announcements: List<com.littlebridge.enrollplus.feature.parent.presentation.ParentAnnouncement>,
+    isLoading: Boolean,
 ) {
-    val c = VTheme.colors
-    com.littlebridge.enrollplus.ui.v2.components.VCard(
-        modifier = Modifier.fillMaxWidth(),
-        padding = 14.dp,
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .clickable { onOpenTutor() }
-                    .padding(vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    Box(
-                        Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(c.teal.copy(alpha = 0.12f)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            VIcons.BookOpen,
-                            contentDescription = null,
-                            tint = c.teal,
-                            modifier = Modifier.size(18.dp),
-                        )
-                    }
-                    Column {
-                        Text(
-                            "Ask AI Tutor",
-                            style = VTheme.type.h4.colored(c.ink).copy(fontWeight = FontWeight.Bold, fontSize = 14.sp),
-                        )
-                        Text(
-                            "Socratic guidance for your child's doubts",
-                            style = VTheme.type.label.colored(c.ink3).copy(fontSize = 11.sp),
-                        )
-                    }
-                }
-                Icon(
-                    VIcons.ChevronRight,
-                    contentDescription = null,
-                    tint = c.ink3,
-                    modifier = Modifier.size(20.dp),
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = "Announcements",
+                style = VTypography.body.copy(fontWeight = FontWeight.Bold),
+                color = VColors.ink,
+                modifier = Modifier.weight(1f),
+            )
+            if (announcements.isNotEmpty()) {
+                Text(
+                    text = "View all",
+                    style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
+                    color = VColors.violet,
                 )
             }
-
-            Spacer(Modifier.height(0.dp).fillMaxWidth().background(c.hairline).height(1.dp))
-
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .clickable { onOpenTutorProgress() }
-                    .padding(vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    Box(
+        }
+        if (isLoading) {
+            Box(Modifier.fillMaxWidth().height(80.dp).clip(VShapes.md).background(VColors.lineSoft))
+        } else if (announcements.isEmpty()) {
+            Text(
+                text = "No announcements yet",
+                style = VTypography.bodySmall,
+                color = VColors.ink2,
+            )
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                announcements.take(5).forEach { announcement ->
+                    Row(
                         Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(c.accent.copy(alpha = 0.1f)),
-                        contentAlignment = Alignment.Center,
+                            .fillMaxWidth()
+                            .clip(VShapes.md)
+                            .background(VColors.surfaceCard)
+                            .border(1.dp, VColors.line, VShapes.md)
+                            .padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(
-                            VIcons.TrendingUp,
-                            contentDescription = null,
-                            tint = c.accent,
-                            modifier = Modifier.size(18.dp),
-                        )
-                    }
-                    Column {
-                        Text(
-                            "Tutor Progress",
-                            style = VTheme.type.h4.colored(c.ink).copy(fontWeight = FontWeight.Bold, fontSize = 14.sp),
-                        )
-                        Text(
-                            "Mastery gains & doubts resolved",
-                            style = VTheme.type.label.colored(c.ink3).copy(fontSize = 11.sp),
-                        )
+                        Box(
+                            Modifier
+                                .size(38.dp)
+                                .clip(VShapes.md)
+                                .background(VColors.skySoft),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = VIcons.Megaphone,
+                                contentDescription = null,
+                                tint = VColors.sky,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                text = announcement.title,
+                                style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
+                                color = VColors.ink,
+                                maxLines = 1,
+                            )
+                            if (announcement.description.isNotBlank()) {
+                                Text(
+                                    text = announcement.description,
+                                    style = VTypography.caption,
+                                    color = VColors.ink2,
+                                    maxLines = 2,
+                                )
+                            }
+                        }
                     }
                 }
-                Icon(
-                    VIcons.ChevronRight,
-                    contentDescription = null,
-                    tint = c.ink3,
-                    modifier = Modifier.size(20.dp),
-                )
             }
         }
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+private data class StatusVisual(val label: String, val color: Color, val softColor: Color)
+
+private fun statusVisualFor(state: AttendanceDayState): StatusVisual = when (state) {
+    AttendanceDayState.Present -> StatusVisual("Present", VColors.mint, VColors.mintSoft)
+    AttendanceDayState.Absent -> StatusVisual("Absent", VColors.coral, VColors.coralSoft)
+    AttendanceDayState.Late -> StatusVisual("Late", VColors.gold, VColors.goldSoft)
+    AttendanceDayState.Holiday -> StatusVisual("Holiday", VColors.sky, VColors.skySoft)
+    AttendanceDayState.Sunday -> StatusVisual("Sunday", VColors.sky, VColors.skySoft)
+    AttendanceDayState.Vacation -> StatusVisual("Vacation", VColors.sky, VColors.skySoft)
+    AttendanceDayState.NoData -> StatusVisual("No update yet", VColors.ink3, VColors.lineSoft)
+}
+
+private fun markDisplay(mark: ParentMarkDto?): String {
+    if (mark == null) return "—"
+    val pct = if (mark.maxMarks > 0) ((mark.marks ?: 0.0) / mark.maxMarks * 100).roundToInt() else 0
+    return "$pct%"
+}
+
