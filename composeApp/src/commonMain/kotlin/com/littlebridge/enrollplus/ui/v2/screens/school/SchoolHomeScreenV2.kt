@@ -3,15 +3,6 @@ package com.littlebridge.enrollplus.ui.v2.screens.school
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.keyframes
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
@@ -20,7 +11,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +23,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -49,13 +40,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -89,13 +76,10 @@ import com.littlebridge.enrollplus.ui.components.VEmptyState
 import com.littlebridge.enrollplus.ui.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.components.skeletons.SkeletonDashboard
 import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VMotion
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -316,18 +300,6 @@ private fun CommandDesk(
     onCreateEvent: () -> Unit,
     onExit: () -> Unit,
 ) {
-    val headerAlpha = remember { Animatable(0f) }
-    val headerOffset = remember { Animatable(20f) }
-
-    LaunchedEffect(overview) {
-        headerAlpha.snapTo(0f); headerOffset.snapTo(20f)
-        launch {
-            delay(100)
-            headerAlpha.animateTo(1f, tween(VMotion.durSlower, easing = VMotion.ease))
-            headerOffset.animateTo(0f, tween(VMotion.durSlower, easing = VMotion.ease))
-        }
-    }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -340,9 +312,7 @@ private fun CommandDesk(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
-                .padding(top = 16.dp)
-                .graphicsLayer(translationY = headerOffset.value)
-                .alpha(headerAlpha.value),
+                .padding(top = 16.dp),
         ) {
             DeskHeader(
                 overview = overview,
@@ -353,118 +323,76 @@ private fun CommandDesk(
             )
         }
 
-        // Cards — each staggers in with 60ms cascade
+        // Cards
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            var idx = 0
             val kpis = overview.kpis.filter { it.available }
             if (kpis.isNotEmpty()) {
-                StaggeredSection(index = idx++) {
-                    KpiGrid(kpis = kpis, onClick = onOpenAnalytics)
-                }
+                KpiGrid(kpis = kpis, onClick = onOpenAnalytics)
             }
 
             val insights = overview.insights
             if (insights.isNotEmpty()) {
-                StaggeredSection(index = idx++) {
-                    AttentionCard(insights = insights, onOpen = onOpenPews)
-                }
+                AttentionCard(insights = insights, onOpen = onOpenPews)
             }
 
             overview.feeAnalytics.takeIf { it.available }?.let { fa ->
-                StaggeredSection(index = idx++) {
-                    FeeAnalyticsCard(fa = fa, onClick = onOpenAnalytics)
-                }
+                FeeAnalyticsCard(fa = fa, onClick = onOpenAnalytics)
             }
 
             overview.parentEngagement.takeIf { it.available }?.let { pe ->
-                StaggeredSection(index = idx++) {
-                    ParentEngagementCard(pe = pe, onClick = onOpenAnalytics)
-                }
+                ParentEngagementCard(pe = pe, onClick = onOpenAnalytics)
             }
 
-            StaggeredSection(index = idx++) {
-                QuickActionsCard(
-                    onAnnouncement = onOpenNotifications,
-                    onEvent = onCreateEvent,
-                    onReports = onOpenReportPublish,
-                )
-            }
+            QuickActionsCard(
+                onAnnouncement = onOpenNotifications,
+                onEvent = onCreateEvent,
+                onReports = onOpenReportPublish,
+            )
 
             overview.teacherSpotlight.takeIf { it.available }?.let { ts ->
-                StaggeredSection(index = idx++) {
-                    TeacherSpotlightCard(ts = ts, onClick = onOpenPews)
-                }
+                TeacherSpotlightCard(ts = ts, onClick = onOpenPews)
             }
 
             overview.events.takeIf { it.available && it.upcoming.isNotEmpty() }?.let { ev ->
-                StaggeredSection(index = idx++) {
-                    UpcomingCard(events = ev.upcoming, onOpenCalendar = onOpenCalendar)
-                }
+                UpcomingCard(events = ev.upcoming, onOpenCalendar = onOpenCalendar)
             }
 
             overview.achievements.takeIf { it.available && it.items.isNotEmpty() }?.let { ach ->
-                StaggeredSection(index = idx++) {
-                    AchievementsCard(achievements = ach.items)
-                }
+                AchievementsCard(achievements = ach.items)
             }
 
             overview.birthdays.takeIf { it.available }?.let { bd ->
                 if (bd.today.isNotEmpty() || bd.upcoming.isNotEmpty()) {
-                    StaggeredSection(index = idx++) {
-                        BirthdaysCard(birthdays = bd.today + bd.upcoming)
-                    }
+                    BirthdaysCard(birthdays = bd.today + bd.upcoming)
                 }
             }
 
             val activities = activity?.activities.orEmpty()
             if (activities.isNotEmpty()) {
-                StaggeredSection(index = idx++) {
-                    ActivityCard(activities = activities)
-                }
+                ActivityCard(activities = activities)
             }
 
             overview.schoolPulse.let { pulse ->
                 if (pulse.score > 0) {
-                    StaggeredSection(index = idx++) {
-                        PulseCard(pulse = pulse, onClick = onOpenAnalytics)
-                    }
+                    PulseCard(pulse = pulse, onClick = onOpenAnalytics)
                 }
             }
         }
     }
 }
 
-@Composable
-private fun StaggeredSection(
-    index: Int,
-    content: @Composable () -> Unit,
-) {
-    val alpha = remember { Animatable(0f) }
-    val offsetY = remember { Animatable(24f) }
-    LaunchedEffect(Unit) {
-        delay(220 + index * 60L)
-        launch { alpha.animateTo(1f, tween(VMotion.durSlower, easing = VMotion.ease)) }
-        launch { offsetY.animateTo(0f, tween(VMotion.durSlower, easing = VMotion.ease)) }
-    }
-    Box(
-        modifier = Modifier
-            .graphicsLayer(translationY = offsetY.value)
-            .alpha(alpha.value),
-    ) { content() }
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Desk Header — premium top section
 //
 //   • Wordmark with violet "+" (landing pattern)
-//   • Notification bell always visible with breathing coral badge
+//   • Notification bell with static coral badge
 //   • Avatar with thin violet ring (drawBehind stroke)
-//   • Press-scale spring on both icons
 //   • Accent dot + school name (landing pattern)
 //   • Greeting with bold+light mix (landing headline pattern)
 //   • Session info + last updated time
@@ -482,40 +410,6 @@ private fun DeskHeader(
     val name = header.adminName.takeIf { it.isNotBlank() } ?: fallbackName
     val schoolName = header.schoolName.takeIf { it.isNotBlank() } ?: "Your School"
     val greeting = header.greeting.takeIf { it.isNotBlank() } ?: "Welcome"
-
-    // Breathing animation for notification badge — subtle, alive, not cheap
-    val breathTransition = rememberInfiniteTransition(label = "breath")
-    val breathScale by breathTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = keyframes {
-                durationMillis = 2000
-                1f at 0
-                1.12f at 1000
-                1f at 2000
-            },
-            repeatMode = RepeatMode.Restart,
-        ),
-        label = "breathScale",
-    )
-
-    // Press states for icons
-    val bellInteraction = remember { MutableInteractionSource() }
-    val bellPressed by bellInteraction.collectIsPressedAsState()
-    val bellScale by animateFloatAsState(
-        targetValue = if (bellPressed) 0.92f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
-        label = "bellScale",
-    )
-
-    val avatarInteraction = remember { MutableInteractionSource() }
-    val avatarPressed by avatarInteraction.collectIsPressedAsState()
-    val avatarScale by animateFloatAsState(
-        targetValue = if (avatarPressed) 0.92f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
-        label = "avatarScale",
-    )
 
     // Top bar — wordmark + notification + avatar
     Row(
@@ -539,13 +433,9 @@ private fun DeskHeader(
                 .clip(CircleShape)
                 .background(VColors.violetSoft)
                 .clickable(
-                    interactionSource = bellInteraction,
+                    interactionSource = remember { MutableInteractionSource() },
                     indication = null,
-                ) { onNotifications() }
-                .graphicsLayer {
-                    scaleX = bellScale
-                    scaleY = bellScale
-                },
+                ) { onNotifications() },
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -561,11 +451,7 @@ private fun DeskHeader(
                         .offset(x = 2.dp, y = (-2).dp)
                         .size(16.dp)
                         .clip(CircleShape)
-                        .background(VColors.coral)
-                        .graphicsLayer {
-                            scaleX = breathScale
-                            scaleY = breathScale
-                        },
+                        .background(VColors.coral),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
@@ -597,13 +483,9 @@ private fun DeskHeader(
                 .clip(CircleShape)
                 .background(VColors.violetSoft)
                 .clickable(
-                    interactionSource = avatarInteraction,
+                    interactionSource = remember { MutableInteractionSource() },
                     indication = null,
-                ) { onAvatar() }
-                .graphicsLayer {
-                    scaleX = avatarScale
-                    scaleY = avatarScale
-                },
+                ) { onAvatar() },
             contentAlignment = Alignment.Center,
         ) {
             val initials = name.split(" ").take(2).mapNotNull { it.firstOrNull()?.uppercase() }.joinToString("")
@@ -705,11 +587,12 @@ private fun DeskHeader(
 private fun CreamCard(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
+    tint: Color = VColors.surfaceCard,
     content: @Composable () -> Unit,
 ) {
     val base = modifier
         .fillMaxWidth()
-        .background(VColors.surfaceCard, VShapes.lg)
+        .background(tint, VShapes.lg)
         .border(1.dp, VColors.line, VShapes.lg)
     val clickable = if (onClick != null) base.clickable(
         interactionSource = remember { MutableInteractionSource() },
@@ -736,6 +619,29 @@ private fun CardDivider() {
 }
 
 @Composable
+private fun ProgressBar(
+    fraction: Float,
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(4.dp)
+            .clip(VShapes.full)
+            .background(VColors.lineSoft),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(fraction.coerceIn(0f, 1f))
+                .height(4.dp)
+                .clip(VShapes.full)
+                .background(color),
+        )
+    }
+}
+
+@Composable
 private fun SectionLabel(text: String) {
     Text(
         text = text,
@@ -753,7 +659,7 @@ private fun SectionLabel(text: String) {
 private fun KpiGrid(kpis: List<OverviewKpi>, onClick: () -> Unit) {
     CreamCard(onClick = onClick) {
         SectionLabel("Today's Metrics")
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(14.dp))
         val rows = kpis.chunked(2)
         rows.forEachIndexed { rowIdx, row ->
             if (rowIdx > 0) Spacer(Modifier.height(14.dp))
@@ -774,7 +680,20 @@ private fun KpiGrid(kpis: List<OverviewKpi>, onClick: () -> Unit) {
 
 @Composable
 private fun RowScope.KpiMetric(kpi: OverviewKpi, modifier: Modifier = Modifier) {
+    val accentColor = when (kpi.deltaDirection) {
+        "up" -> VColors.success
+        "down" -> VColors.coral
+        else -> VColors.violet
+    }
     Column(modifier = modifier) {
+        Box(
+            modifier = Modifier
+                .width(20.dp)
+                .height(3.dp)
+                .clip(VShapes.full)
+                .background(accentColor.copy(alpha = 0.7f)),
+        )
+        Spacer(Modifier.height(8.dp))
         Text(
             text = formatKpiValue(kpi),
             style = VTypography.h3,
@@ -792,11 +711,7 @@ private fun RowScope.KpiMetric(kpi: OverviewKpi, modifier: Modifier = Modifier) 
             Text(
                 text = kpi.deltaLabel,
                 style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
-                color = when (kpi.deltaDirection) {
-                    "up" -> VColors.success
-                    "down" -> VColors.coral
-                    else -> VColors.ink3
-                },
+                color = accentColor,
             )
         }
     }
@@ -820,8 +735,12 @@ private fun formatKpiValue(kpi: OverviewKpi): String {
 private fun AttentionCard(insights: List<OverviewInsight>, onOpen: () -> Unit) {
     val sorted = insights.sortedByDescending { severityWeight(it.severity) }
     val count = sorted.size
+    val hasHigh = sorted.any { it.severity.uppercase() == "HIGH" }
 
-    CreamCard(onClick = onOpen) {
+    CreamCard(
+        onClick = onOpen,
+        tint = if (hasHigh) VColors.coralSoft else VColors.surfaceWarm,
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -836,10 +755,10 @@ private fun AttentionCard(insights: List<OverviewInsight>, onOpen: () -> Unit) {
                 color = VColors.ink,
                 modifier = Modifier.weight(1f),
             )
-            MiniBadge(text = "$count", color = VColors.coral, bg = VColors.coralSoft)
+            MiniBadge(text = "$count", color = VColors.coral, bg = VColors.white)
         }
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(14.dp))
 
         sorted.take(4).forEachIndexed { idx, insight ->
             if (idx > 0) { CardDivider(); Spacer(Modifier.height(10.dp)) }
@@ -853,8 +772,12 @@ private fun AttentionCard(insights: List<OverviewInsight>, onOpen: () -> Unit) {
                 verticalAlignment = Alignment.Top,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Spacer(
-                    modifier = Modifier.padding(top = 6.dp).size(7.dp).clip(CircleShape).background(dotColor),
+                Box(
+                    modifier = Modifier
+                        .padding(top = 5.dp)
+                        .size(7.dp)
+                        .clip(CircleShape)
+                        .background(dotColor),
                 )
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
@@ -892,9 +815,14 @@ private fun severityWeight(severity: String): Int = when (severity.uppercase()) 
 
 @Composable
 private fun FeeAnalyticsCard(fa: OverviewFeeAnalytics, onClick: () -> Unit) {
+    val rateColor = when {
+        fa.collectionRate >= 90 -> VColors.success
+        fa.collectionRate >= 70 -> VColors.violet
+        else -> VColors.gold
+    }
     CreamCard(onClick = onClick) {
         SectionLabel("Fee Collection")
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(14.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.Bottom,
@@ -903,11 +831,7 @@ private fun FeeAnalyticsCard(fa: OverviewFeeAnalytics, onClick: () -> Unit) {
                 Text(
                     text = "${fa.collectionRate}%",
                     style = VTypography.h3.copy(fontWeight = FontWeight.ExtraBold),
-                    color = when {
-                        fa.collectionRate >= 90 -> VColors.success
-                        fa.collectionRate >= 70 -> VColors.violet
-                        else -> VColors.gold
-                    },
+                    color = rateColor,
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
@@ -929,6 +853,11 @@ private fun FeeAnalyticsCard(fa: OverviewFeeAnalytics, onClick: () -> Unit) {
                 )
             }
         }
+        Spacer(Modifier.height(12.dp))
+        ProgressBar(
+            fraction = fa.collectionRate / 100f,
+            color = rateColor,
+        )
     }
 }
 
@@ -945,6 +874,7 @@ private fun formatAmount(v: Double): String = when {
 
 @Composable
 private fun ParentEngagementCard(pe: OverviewParentEngagement, onClick: () -> Unit) {
+    val engagementColor = if (pe.activeParentsPct >= 70) VColors.success else VColors.gold
     CreamCard(onClick = onClick) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -956,7 +886,7 @@ private fun ParentEngagementCard(pe: OverviewParentEngagement, onClick: () -> Un
                 Text(
                     text = "${pe.activeParentsPct}%",
                     style = VTypography.h3.copy(fontWeight = FontWeight.ExtraBold),
-                    color = if (pe.activeParentsPct >= 70) VColors.success else VColors.gold,
+                    color = engagementColor,
                 )
                 Text(
                     text = "${pe.activeParents} of ${pe.totalParents} parents active",
@@ -970,6 +900,11 @@ private fun ParentEngagementCard(pe: OverviewParentEngagement, onClick: () -> Un
                 bg = VColors.violetSoft,
             )
         }
+        Spacer(Modifier.height(10.dp))
+        ProgressBar(
+            fraction = pe.activeParentsPct / 100f,
+            color = engagementColor,
+        )
         if (pe.leaderboard.isNotEmpty()) {
             Spacer(Modifier.height(12.dp))
             CardDivider()
@@ -1009,17 +944,17 @@ private fun QuickActionsCard(
 ) {
     CreamCard {
         SectionLabel("Quick Actions")
-        Spacer(Modifier.height(12.dp))
-        ActionRow(label = "Send Announcement", onClick = onAnnouncement)
+        Spacer(Modifier.height(14.dp))
+        ActionRow(label = "Send Announcement", icon = VIcons.Megaphone, onClick = onAnnouncement)
         CardDivider(); Spacer(Modifier.height(4.dp))
-        ActionRow(label = "Create Event", onClick = onEvent)
+        ActionRow(label = "Create Event", icon = VIcons.Calendar, onClick = onEvent)
         CardDivider(); Spacer(Modifier.height(4.dp))
-        ActionRow(label = "Publish Reports", onClick = onReports)
+        ActionRow(label = "Publish Reports", icon = VIcons.FileText, onClick = onReports)
     }
 }
 
 @Composable
-private fun ActionRow(label: String, onClick: () -> Unit) {
+private fun ActionRow(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -1030,6 +965,21 @@ private fun ActionRow(label: String, onClick: () -> Unit) {
             .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(VShapes.sm)
+                .background(VColors.violetSoft),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = VColors.violet,
+                modifier = Modifier.size(16.dp),
+            )
+        }
+        Spacer(Modifier.size(12.dp))
         Text(
             text = label,
             style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
@@ -1271,15 +1221,22 @@ private fun PulseCard(pulse: OverviewSchoolPulse, onClick: () -> Unit) {
         "CRITICAL" -> "Your school needs urgent attention."
         else -> pulse.message.takeIf { it.isNotBlank() } ?: "School status unavailable."
     }
-    val (badgeColor, badgeBg) = when (pulse.status.uppercase()) {
-        "EXCELLENT" -> VColors.success to VColors.successSoft
-        "HEALTHY" -> VColors.mint to VColors.mintSoft
-        "WATCH" -> VColors.gold to VColors.goldSoft
-        "CRITICAL" -> VColors.coral to VColors.coralSoft
-        else -> VColors.ink3 to VColors.surfaceTint
+    val badgeColor = when (pulse.status.uppercase()) {
+        "EXCELLENT" -> VColors.success
+        "HEALTHY" -> VColors.mint
+        "WATCH" -> VColors.gold
+        "CRITICAL" -> VColors.coral
+        else -> VColors.ink3
+    }
+    val cardTint = when (pulse.status.uppercase()) {
+        "EXCELLENT" -> VColors.successSoft
+        "HEALTHY" -> VColors.mintSoft
+        "WATCH" -> VColors.goldSoft
+        "CRITICAL" -> VColors.coralSoft
+        else -> VColors.surfaceCard
     }
 
-    CreamCard(onClick = onClick) {
+    CreamCard(onClick = onClick, tint = cardTint) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -1291,21 +1248,26 @@ private fun PulseCard(pulse: OverviewSchoolPulse, onClick: () -> Unit) {
                 color = VColors.ink,
                 modifier = Modifier.weight(1f),
             )
-            MiniBadge(text = "${pulse.score}", color = badgeColor, bg = badgeBg)
+            MiniBadge(text = "${pulse.score}", color = badgeColor, bg = VColors.white)
         }
         if (pulse.categories.isNotEmpty()) {
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(12.dp))
             CardDivider()
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(12.dp))
             pulse.categories.filter { it.available }.take(4).forEachIndexed { idx, cat ->
-                if (idx > 0) Spacer(Modifier.height(6.dp))
+                if (idx > 0) Spacer(Modifier.height(8.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(cat.label, style = VTypography.caption, color = VColors.ink2, modifier = Modifier.weight(1f))
-                    Text("${cat.score}", style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.violet)
+                    Text("${cat.score}", style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = badgeColor)
                 }
+                Spacer(Modifier.height(4.dp))
+                ProgressBar(
+                    fraction = cat.score / 100f,
+                    color = badgeColor,
+                )
             }
         }
     }
