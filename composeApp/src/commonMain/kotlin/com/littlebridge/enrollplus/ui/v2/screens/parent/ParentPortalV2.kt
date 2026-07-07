@@ -401,7 +401,7 @@ fun ParentPortalV2(
     ) { padding ->
         Box(Modifier.fillMaxSize()) {
             when (tab) {
-                "home" -> ParentHomeScreenV2(
+                "home" -> com.littlebridge.enrollplus.ui.screens.parent.ParentHomeScreen(
                     onDiscoverSchools = { overlay = ParentOverlay.Discovery },
                     onOpenNotifications = { overlay = ParentOverlay.Notifications },
                     onOpenFees = { tab = "fees" },
@@ -410,7 +410,6 @@ fun ParentPortalV2(
                     onOpenPulse = { overlay = ParentOverlay.Pulse },
                     onOpenTransport = { overlay = ParentOverlay.Transport },
                     onOpenTutor = { overlay = ParentOverlay.TutorChat },
-                    onOpenTutorProgress = { overlay = ParentOverlay.TutorProgress },
                     onOpenScholarships = { overlay = ParentOverlay.Scholarships },
                     onOpenIdCard = { overlay = ParentOverlay.DigitalIdCard },
                     onOpenLibrary = { overlay = ParentOverlay.Library },
