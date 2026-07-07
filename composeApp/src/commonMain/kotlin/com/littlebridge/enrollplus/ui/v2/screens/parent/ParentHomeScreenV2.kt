@@ -17,6 +17,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,8 +29,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
 import com.littlebridge.enrollplus.feature.parent.domain.model.DashboardChildSummary
 import com.littlebridge.enrollplus.feature.parent.domain.model.FeeData
@@ -124,7 +127,7 @@ private fun ParentHomeContent(
             .fillMaxSize()
             .background(VColors.cream)
             .verticalScroll(rememberScrollState())
-            .padding(bottom = 110.dp),
+            .padding(bottom = 100.dp),
     ) {
         ParentPortalHeader(
             label = "Home",
@@ -151,6 +154,10 @@ private fun ParentHomeContent(
     }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// SKELETON / ERROR / EMPTY
+// ═══════════════════════════════════════════════════════════════════════════════
+
 @Composable
 private fun HomeSkeleton() {
     Column(
@@ -159,21 +166,19 @@ private fun HomeSkeleton() {
             .padding(horizontal = 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        repeat(2) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp)
-                    .clip(VShapes.lg)
-                    .background(VColors.lineSoft),
-            )
-        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(160.dp)
+                .clip(VShapes.lg)
+                .background(VColors.lineSoft),
+        )
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             repeat(2) {
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .height(100.dp)
+                        .height(90.dp)
                         .clip(VShapes.lg)
                         .background(VColors.lineSoft),
                 )
@@ -182,7 +187,7 @@ private fun HomeSkeleton() {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(160.dp)
+                .height(120.dp)
                 .clip(VShapes.lg)
                 .background(VColors.lineSoft),
         )
@@ -265,7 +270,7 @@ private fun HomeEmpty(onDiscoverSchools: () -> Unit) {
             text = "Link a child to see their day, attendance, and school updates.",
             style = VTypography.caption,
             color = VColors.ink2,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            textAlign = TextAlign.Center,
         )
         Text(
             text = "Discover schools",
@@ -275,6 +280,10 @@ private fun HomeEmpty(onDiscoverSchools: () -> Unit) {
         )
     }
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// LOADED — premium SaaS dashboard layout
+// ═══════════════════════════════════════════════════════════════════════════════
 
 @Composable
 private fun HomeLoaded(
@@ -286,7 +295,12 @@ private fun HomeLoaded(
     onOpenMessages: () -> Unit,
 ) {
     val child = state.selectedChild
-    val childName = child?.name ?: "Your child"
+    val childName = child?.name?.ifBlank { null } ?: "Your Child"
+    val attendanceRate = state.attendance?.attendanceRate
+    val feesDue = state.fees?.outstandingFees
+    val markPct = state.latestMark?.let { m ->
+        if (m.maxMarks > 0) ((m.marks ?: 0.0) / m.maxMarks * 100).roundToInt() else null
+    }
 
     Column(
         modifier = Modifier
@@ -294,27 +308,65 @@ private fun HomeLoaded(
             .padding(horizontal = 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        ChildSummaryCard(child = child, attendance = state.attendance)
-
-        HomeQuickActions(
-            onPayFees = onOpenFees,
-            onAcademics = onOpenAcademics,
-            onMessages = onOpenMessages,
+        // ── Hero snapshot card (matches AcademicSnapshotCard design) ──
+        HomeHeroCard(
+            childName = childName,
+            level = child?.currentLevel ?: 0,
+            attendanceStatus = child?.attendanceStatus ?: "",
+            attendanceRate = attendanceRate,
+            markPct = markPct,
+            feesDue = feesDue,
         )
 
-        LearningSummaryCard(
+        // ── Quick actions (2x2 grid like Academics Overview) ──
+        SectionLabel("Quick Actions")
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            QuickActionTile(
+                icon = VIcons.WalletPremium,
+                iconColor = VColors.violet,
+                title = "Pay Fees",
+                onClick = onOpenFees,
+                modifier = Modifier.weight(1f),
+            )
+            QuickActionTile(
+                icon = VIcons.Academic,
+                iconColor = VColors.gold,
+                title = "Academics",
+                onClick = onOpenAcademics,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            QuickActionTile(
+                icon = VIcons.ChatPremium,
+                iconColor = VColors.coral,
+                title = "Messages",
+                onClick = onOpenMessages,
+                modifier = Modifier.weight(1f),
+            )
+            QuickActionTile(
+                icon = VIcons.Calendar,
+                iconColor = VColors.sky,
+                title = "Timetable",
+                onClick = onOpenAcademics,
+                modifier = Modifier.weight(1f),
+            )
+        }
+
+        // ── Today's learning ──
+        TodayLearningCard(
             childName = childName,
             summary = academics.dailySummary,
             isLoading = academics.dailySummaryLoading,
         )
 
-        StatsGrid(
-            attendance = state.attendance,
-            latestMark = state.latestMark,
-            fees = state.fees,
-            quizzes = academics.quizzes,
-        )
-
+        // ── Announcements ──
         AnnouncementsCard(
             announcements = announcements.announcements,
             isLoading = announcements.isLoading,
@@ -324,141 +376,188 @@ private fun HomeLoaded(
     }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// HERO CARD — identity + inline 3-column stats (matches AcademicSnapshotCard)
+// ═══════════════════════════════════════════════════════════════════════════════
+
 @Composable
-private fun ChildSummaryCard(
-    child: DashboardChildSummary?,
-    attendance: ParentAttendanceData?,
+private fun HomeHeroCard(
+    childName: String,
+    level: Int,
+    attendanceStatus: String,
+    attendanceRate: Int?,
+    markPct: Int?,
+    feesDue: String?,
 ) {
-    Row(
-        modifier = Modifier
+    Column(
+        Modifier
             .fillMaxWidth()
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
+            .background(VColors.surfaceCard, VShapes.lg)
             .border(1.dp, VColors.line, VShapes.lg)
-            .padding(18.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+            .padding(20.dp),
     ) {
-        Box(
-            modifier = Modifier
-                .size(52.dp)
-                .clip(CircleShape)
-                .background(VColors.violetSoft),
-            contentAlignment = Alignment.Center,
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Text(
-                text = child?.name?.take(1)?.uppercase() ?: "C",
-                style = VTypography.h2.copy(fontWeight = FontWeight.Bold),
-                color = VColors.violet,
-            )
+            SimpleAvatar(name = childName, size = 44.dp)
+            Column(Modifier.weight(1f)) {
+                Text(
+                    childName,
+                    style = VTypography.h3.copy(fontSize = 16.sp),
+                    color = VColors.ink,
+                    fontWeight = FontWeight.Bold,
+                )
+                Spacer(Modifier.height(4.dp))
+                if (level > 0) {
+                    MiniBadge(text = "Level $level", color = VColors.violet, bg = VColors.violetSoft)
+                } else {
+                    Text("Daily overview", style = VTypography.caption, color = VColors.ink3)
+                }
+            }
+            val isPresent = attendanceStatus.lowercase() == "present"
+            Box(
+                modifier = Modifier
+                    .clip(VShapes.full)
+                    .background(if (isPresent) VColors.successSoft else VColors.creamDeep)
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+            ) {
+                Text(
+                    text = if (isPresent) "Present" else "—",
+                    style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 11.sp),
+                    color = if (isPresent) VColors.success else VColors.ink3,
+                )
+            }
         }
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = child?.name ?: "Your child",
-                style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
-                color = VColors.ink,
-            )
-            Text(
-                text = "Level ${child?.currentLevel ?: 1} · ${child?.attendanceStatus?.replaceFirstChar { it.uppercase() } ?: "No data"}",
-                style = VTypography.caption,
-                color = VColors.ink2,
-            )
-        }
-        val isPresent = child?.attendanceStatus?.lowercase() == "present"
-        Box(
-            modifier = Modifier
-                .clip(VShapes.full)
-                .background(if (isPresent) VColors.successSoft else VColors.creamDeep)
-                .padding(horizontal = 12.dp, vertical = 6.dp),
+
+        Spacer(Modifier.height(16.dp))
+        HorizontalDivider(color = VColors.lineSoft)
+        Spacer(Modifier.height(14.dp))
+
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
-            Text(
-                text = if (isPresent) "Present" else "No data",
-                style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
-                color = if (isPresent) VColors.success else VColors.ink3,
+            InlineStat(
+                value = attendanceRate?.let { "$it%" } ?: "—",
+                label = "Attendance",
+                modifier = Modifier.weight(1f),
+            )
+            InlineStat(
+                value = markPct?.let { "$it%" } ?: "—",
+                label = "Latest",
+                modifier = Modifier.weight(1f),
+            )
+            InlineStat(
+                value = feesDue ?: "—",
+                label = "Fees Due",
+                modifier = Modifier.weight(1f),
             )
         }
     }
 }
 
 @Composable
-private fun HomeQuickActions(
-    onPayFees: () -> Unit,
-    onAcademics: () -> Unit,
-    onMessages: () -> Unit,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+private fun SimpleAvatar(name: String, size: androidx.compose.ui.unit.Dp) {
+    Box(
+        modifier = Modifier.size(size).clip(CircleShape).background(VColors.violetSoft),
+        contentAlignment = Alignment.Center,
     ) {
-        QuickActionCard(
-            icon = VIcons.WalletPremium,
-            label = "Pay fees",
-            iconBg = VColors.violetSoft,
-            iconColor = VColors.violet,
-            onClick = onPayFees,
-            modifier = Modifier.weight(1f),
-        )
-        QuickActionCard(
-            icon = VIcons.Academic,
-            label = "Academics",
-            iconBg = VColors.successSoft,
-            iconColor = VColors.success,
-            onClick = onAcademics,
-            modifier = Modifier.weight(1f),
-        )
-        QuickActionCard(
-            icon = VIcons.ChatPremium,
-            label = "Messages",
-            iconBg = VColors.creamDeep,
-            iconColor = VColors.ink,
-            onClick = onMessages,
-            modifier = Modifier.weight(1f),
+        Text(
+            text = name.take(1).uppercase(),
+            style = VTypography.h3.copy(fontSize = 16.sp),
+            color = VColors.violet,
+            fontWeight = FontWeight.Bold,
         )
     }
 }
 
 @Composable
-private fun QuickActionCard(
+private fun MiniBadge(text: String, color: Color, bg: Color) {
+    Box(
+        modifier = Modifier
+            .clip(VShapes.sm)
+            .background(bg)
+            .padding(horizontal = 8.dp, vertical = 3.dp),
+    ) {
+        Text(
+            text = text,
+            style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
+            color = color,
+        )
+    }
+}
+
+@Composable
+private fun InlineStat(value: String, label: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            value,
+            style = VTypography.h3.copy(fontSize = 16.sp),
+            color = VColors.ink,
+            fontWeight = FontWeight.Bold,
+        )
+        Spacer(Modifier.height(2.dp))
+        Text(label, style = VTypography.caption.copy(fontSize = 10.sp), color = VColors.ink3)
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SHARED COMPONENTS — match Academics screen exactly
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun SectionLabel(text: String) {
+    Text(
+        text = text,
+        style = VTypography.label,
+        color = VColors.ink,
+        fontWeight = FontWeight.Bold,
+    )
+}
+
+@Composable
+private fun QuickActionTile(
     icon: ImageVector,
-    label: String,
-    iconBg: Color,
     iconColor: Color,
+    title: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
+        modifier
             .clip(VShapes.lg)
             .background(VColors.surfaceCard)
             .border(1.dp, VColors.line, VShapes.lg)
             .clickable(onClick = onClick)
-            .padding(vertical = 18.dp, horizontal = 10.dp),
+            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Box(
-            modifier = Modifier.size(46.dp).clip(CircleShape).background(iconBg),
+            Modifier.size(36.dp).clip(VShapes.sm).background(iconColor.copy(alpha = 0.12f)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                tint = iconColor,
-                modifier = Modifier.size(24.dp),
-            )
+            Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(18.dp))
         }
         Text(
-            text = label,
+            title,
             style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
             color = VColors.ink,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
         )
     }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// TODAY'S LEARNING — premium card with divider + entries
+// ═══════════════════════════════════════════════════════════════════════════════
+
 @Composable
-private fun LearningSummaryCard(
+private fun TodayLearningCard(
     childName: String,
     summary: ParentDailySummaryData?,
     isLoading: Boolean,
@@ -466,11 +565,9 @@ private fun LearningSummaryCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
+            .background(VColors.surfaceCard, VShapes.lg)
             .border(1.dp, VColors.line, VShapes.lg)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(20.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -478,54 +575,58 @@ private fun LearningSummaryCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "Today's learning",
-                style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
+                text = "Today's Learning",
+                style = VTypography.body.copy(fontWeight = FontWeight.Bold),
                 color = VColors.ink,
             )
-            if (summary != null) {
+            if (summary != null && summary.entries.isNotEmpty()) {
                 Text(
-                    text = summary.entries.size.toString() + " classes",
-                    style = VTypography.caption,
+                    text = "${summary.entries.size} classes",
+                    style = VTypography.caption.copy(fontSize = 11.sp),
                     color = VColors.ink3,
                 )
             }
         }
 
+        Spacer(Modifier.height(14.dp))
+        HorizontalDivider(color = VColors.lineSoft)
+        Spacer(Modifier.height(14.dp))
+
         when {
             isLoading -> Box(
-                modifier = Modifier.fillMaxWidth().height(80.dp),
+                modifier = Modifier.fillMaxWidth().height(60.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(28.dp))
+                CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(24.dp))
             }
             summary == null || summary.entries.isEmpty() -> Text(
                 text = "No classes scheduled for $childName today.",
                 style = VTypography.caption,
-                color = VColors.ink2,
+                color = VColors.ink3,
             )
-            else -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            else -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 summary.entries.take(4).forEach { entry ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         Box(
                             modifier = Modifier
                                 .size(8.dp)
                                 .clip(CircleShape)
-                                .background(VColors.success),
+                                .background(VColors.violet),
                         )
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = entry.subject ?: "Subject",
-                                style = VTypography.body.copy(fontWeight = FontWeight.Medium),
+                                style = VTypography.body.copy(fontWeight = FontWeight.Medium, fontSize = 14.sp),
                                 color = VColors.ink,
                             )
                             if (entry.summaryText.isNotBlank()) {
                                 Text(
                                     text = entry.summaryText,
-                                    style = VTypography.caption,
+                                    style = VTypography.caption.copy(fontSize = 11.sp),
                                     color = VColors.ink2,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
@@ -534,8 +635,8 @@ private fun LearningSummaryCard(
                         }
                         Text(
                             text = "${entry.coveragePct}%",
-                            style = VTypography.caption,
-                            color = VColors.ink3,
+                            style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                            color = VColors.violet,
                         )
                     }
                 }
@@ -544,113 +645,9 @@ private fun LearningSummaryCard(
     }
 }
 
-@Composable
-private fun StatsGrid(
-    attendance: ParentAttendanceData?,
-    latestMark: ParentMarkDto?,
-    fees: FeeData?,
-    quizzes: List<com.littlebridge.enrollplus.feature.parent.domain.model.ParentQuizDto>,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(
-            text = "Quick stats",
-            style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
-            color = VColors.ink,
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            StatTile(
-                label = "Attendance",
-                value = if (attendance != null) "${attendance.attendanceRate}%" else "—",
-                subtext = "This term",
-                icon = VIcons.Calendar,
-                iconBg = VColors.violetSoft,
-                iconColor = VColors.violet,
-                modifier = Modifier.weight(1f),
-            )
-            StatTile(
-                label = "Latest marks",
-                value = markDisplay(latestMark),
-                subtext = "Recent assessment",
-                icon = VIcons.Star,
-                iconBg = VColors.goldSoft,
-                iconColor = VColors.gold,
-                modifier = Modifier.weight(1f),
-            )
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            StatTile(
-                label = "Fees due",
-                value = fees?.outstandingFees ?: "₹0",
-                subtext = if ((fees?.outstandingFees ?: "₹0") == "₹0") "All clear" else "Due",
-                icon = VIcons.WalletPremium,
-                iconBg = VColors.successSoft,
-                iconColor = VColors.success,
-                modifier = Modifier.weight(1f),
-            )
-            StatTile(
-                label = "Quizzes",
-                value = quizzes.size.toString(),
-                subtext = "Pending",
-                icon = VIcons.Academic,
-                iconBg = VColors.creamDeep,
-                iconColor = VColors.ink,
-                modifier = Modifier.weight(1f),
-            )
-        }
-    }
-}
-
-@Composable
-private fun StatTile(
-    label: String,
-    value: String,
-    subtext: String,
-    icon: ImageVector,
-    iconBg: Color,
-    iconColor: Color,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.lg)
-            .padding(16.dp),
-    ) {
-        Box(
-            modifier = Modifier.size(36.dp).clip(CircleShape).background(iconBg),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = iconColor,
-                modifier = Modifier.size(18.dp),
-            )
-        }
-        Spacer(Modifier.height(12.dp))
-        Text(
-            text = value,
-            style = VTypography.h3,
-            color = VColors.ink,
-        )
-        Spacer(Modifier.height(2.dp))
-        Text(
-            text = label,
-            style = VTypography.caption,
-            color = VColors.ink2,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            text = subtext,
-            style = VTypography.caption.copy(fontWeight = FontWeight.Medium),
-            color = VColors.ink3,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
-}
+// ═══════════════════════════════════════════════════════════════════════════════
+// ANNOUNCEMENTS — premium card with divider + entries
+// ═══════════════════════════════════════════════════════════════════════════════
 
 @Composable
 private fun AnnouncementsCard(
@@ -660,30 +657,33 @@ private fun AnnouncementsCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
+            .background(VColors.surfaceCard, VShapes.lg)
             .border(1.dp, VColors.line, VShapes.lg)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(20.dp),
     ) {
         Text(
             text = "Announcements",
-            style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
+            style = VTypography.body.copy(fontWeight = FontWeight.Bold),
             color = VColors.ink,
         )
+
+        Spacer(Modifier.height(14.dp))
+        HorizontalDivider(color = VColors.lineSoft)
+        Spacer(Modifier.height(14.dp))
+
         when {
             isLoading -> Box(
-                modifier = Modifier.fillMaxWidth().height(80.dp),
+                modifier = Modifier.fillMaxWidth().height(60.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(28.dp))
+                CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(24.dp))
             }
             announcements.isEmpty() -> Text(
                 text = "No announcements yet",
                 style = VTypography.caption,
-                color = VColors.ink2,
+                color = VColors.ink3,
             )
-            else -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            else -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 announcements.take(3).forEach { announcement ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -694,20 +694,19 @@ private fun AnnouncementsCard(
                             modifier = Modifier
                                 .size(8.dp)
                                 .clip(CircleShape)
-                                .background(VColors.violet)
-                                .padding(top = 6.dp),
+                                .background(VColors.violet),
                         )
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = announcement.title,
-                                style = VTypography.body.copy(fontWeight = FontWeight.Medium),
+                                style = VTypography.body.copy(fontWeight = FontWeight.Medium, fontSize = 14.sp),
                                 color = VColors.ink,
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,
                             )
                             Text(
                                 text = announcement.description,
-                                style = VTypography.caption,
+                                style = VTypography.caption.copy(fontSize = 11.sp),
                                 color = VColors.ink2,
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,
@@ -718,10 +717,4 @@ private fun AnnouncementsCard(
             }
         }
     }
-}
-
-private fun markDisplay(mark: ParentMarkDto?): String {
-    if (mark == null) return "—"
-    val pct = if (mark.maxMarks > 0) ((mark.marks ?: 0.0) / mark.maxMarks * 100).roundToInt() else 0
-    return "$pct%"
 }

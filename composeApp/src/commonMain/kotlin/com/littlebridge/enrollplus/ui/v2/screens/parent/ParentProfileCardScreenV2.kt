@@ -17,6 +17,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,8 +30,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
-import com.littlebridge.enrollplus.feature.parent.domain.model.DashboardChildSummary
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentAcademicsState
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentAcademicsViewModel
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentProfile
@@ -92,13 +93,13 @@ private fun ProfileContent(
             .fillMaxSize()
             .background(VColors.cream)
             .verticalScroll(rememberScrollState())
-            .padding(bottom = 110.dp),
+            .padding(bottom = 100.dp),
     ) {
         ParentPortalHeader(
             label = "Profile",
             children = state.children,
             selectedChild = state.selectedChild,
-            onSelectChild = { /* profile tab does not switch child context */ },
+            onSelectChild = { },
             onOpenNotifications = {},
             unreadNotificationsCount = 0,
         )
@@ -120,6 +121,10 @@ private fun ProfileContent(
     }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// SKELETON / ERROR
+// ═══════════════════════════════════════════════════════════════════════════════
+
 @Composable
 private fun ProfileSkeleton() {
     Column(
@@ -131,25 +136,14 @@ private fun ProfileSkeleton() {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(120.dp)
+                .height(140.dp)
                 .clip(VShapes.lg)
                 .background(VColors.lineSoft),
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            repeat(2) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(80.dp)
-                        .clip(VShapes.lg)
-                        .background(VColors.lineSoft),
-                )
-            }
-        }
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(180.dp)
+                .height(200.dp)
                 .clip(VShapes.lg)
                 .background(VColors.lineSoft),
         )
@@ -199,6 +193,10 @@ private fun ProfileError(message: String, onRetry: () -> Unit) {
     }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// LOADED — premium profile layout
+// ═══════════════════════════════════════════════════════════════════════════════
+
 @Composable
 private fun ProfileLoaded(
     state: ParentDashboardState,
@@ -210,19 +208,38 @@ private fun ProfileLoaded(
     onDiscoverSchools: () -> Unit,
     onOpenAccountSettings: () -> Unit,
 ) {
+    val child = state.selectedChild
+    val childName = child?.name?.ifBlank { null } ?: "Your Child"
+    val attendanceRate = state.attendance?.attendanceRate
+    val feesDue = state.fees?.outstandingFees
+    val markPct = state.latestMark?.let { m ->
+        if (m.maxMarks > 0) ((m.marks ?: 0.0) / m.maxMarks * 100).roundToInt() else null
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        ParentAccountCard(profile = profile.profile, onRetry = onRetryProfile)
+        // ── Parent identity card (matches hero card design) ──
+        ParentIdentityCard(profile = profile.profile)
 
-        if (state.children.isNotEmpty()) {
-            ChildStatsSection(state = state, academics = academics)
+        // ── Child snapshot (matches HomeHeroCard inline stats) ──
+        if (child != null) {
+            SectionLabel("Child Overview")
+            ChildSnapshotCard(
+                childName = childName,
+                level = child.currentLevel,
+                attendanceRate = attendanceRate,
+                markPct = markPct,
+                feesDue = feesDue,
+            )
         }
 
-        AccountActions(
+        // ── Settings list (grouped card with dividers) ──
+        SectionLabel("Account")
+        SettingsCard(
             onOpenAccountSettings = onOpenAccountSettings,
             onLinkChild = onLinkChild,
             onDiscoverSchools = onDiscoverSchools,
@@ -233,166 +250,227 @@ private fun ProfileLoaded(
     }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// PARENT IDENTITY CARD
+// ═══════════════════════════════════════════════════════════════════════════════
+
 @Composable
-private fun ParentAccountCard(profile: ParentProfile?, onRetry: () -> Unit) {
+private fun ParentIdentityCard(profile: ParentProfile?) {
     Column(
-        modifier = Modifier
+        Modifier
             .fillMaxWidth()
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
+            .background(VColors.surfaceCard, VShapes.lg)
             .border(1.dp, VColors.line, VShapes.lg)
             .padding(20.dp),
     ) {
         if (profile == null) {
             Box(
-                modifier = Modifier.fillMaxWidth().height(80.dp),
+                modifier = Modifier.fillMaxWidth().height(60.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(28.dp))
+                CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(24.dp))
             }
         } else {
             Row(
+                Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(18.dp),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 Box(
-                    modifier = Modifier.size(64.dp).clip(CircleShape).background(VColors.violetSoft),
+                    modifier = Modifier.size(48.dp).clip(CircleShape).background(VColors.violetSoft),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text = profile.name.take(1).uppercase(),
-                        style = VTypography.h2.copy(fontWeight = FontWeight.Bold),
+                        style = VTypography.h3.copy(fontSize = 18.sp),
                         color = VColors.violet,
+                        fontWeight = FontWeight.Bold,
                     )
                 }
-                Column(modifier = Modifier.weight(1f)) {
+                Column(Modifier.weight(1f)) {
                     Text(
-                        text = profile.name.ifBlank { "Parent" },
-                        style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
+                        profile.name.ifBlank { "Parent" },
+                        style = VTypography.h3.copy(fontSize = 16.sp),
                         color = VColors.ink,
+                        fontWeight = FontWeight.Bold,
                     )
+                    Spacer(Modifier.height(4.dp))
                     Text(
-                        text = "Parent account",
-                        style = VTypography.caption,
-                        color = VColors.ink2,
+                        "Parent Account",
+                        style = VTypography.caption.copy(fontSize = 11.sp),
+                        color = VColors.ink3,
                     )
-                    if (profile.phone.isNotBlank()) {
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+            HorizontalDivider(color = VColors.lineSoft)
+            Spacer(Modifier.height(14.dp))
+
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+            ) {
+                ContactItem(
+                    icon = VIcons.Phone,
+                    value = profile.phone.ifBlank { "—" },
+                    label = "Phone",
+                    modifier = Modifier.weight(1f),
+                )
+                ContactItem(
+                    icon = VIcons.Mail,
+                    value = profile.email.ifBlank { "—" },
+                    label = "Email",
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ContactItem(
+    icon: ImageVector,
+    value: String,
+    label: String,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = VColors.ink3,
+            modifier = Modifier.size(16.dp),
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            value,
+            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 11.sp),
+            color = VColors.ink,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            label,
+            style = VTypography.caption.copy(fontSize = 10.sp),
+            color = VColors.ink3,
+        )
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CHILD SNAPSHOT CARD — matches HomeHeroCard inline stats
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun ChildSnapshotCard(
+    childName: String,
+    level: Int,
+    attendanceRate: Int?,
+    markPct: Int?,
+    feesDue: String?,
+) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .background(VColors.surfaceCard, VShapes.lg)
+            .border(1.dp, VColors.line, VShapes.lg)
+            .padding(20.dp),
+    ) {
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Box(
+                modifier = Modifier.size(44.dp).clip(CircleShape).background(VColors.violetSoft),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = childName.take(1).uppercase(),
+                    style = VTypography.h3.copy(fontSize = 16.sp),
+                    color = VColors.violet,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+            Column(Modifier.weight(1f)) {
+                Text(
+                    childName,
+                    style = VTypography.h3.copy(fontSize = 16.sp),
+                    color = VColors.ink,
+                    fontWeight = FontWeight.Bold,
+                )
+                Spacer(Modifier.height(4.dp))
+                if (level > 0) {
+                    Box(
+                        modifier = Modifier
+                            .clip(VShapes.sm)
+                            .background(VColors.violetSoft)
+                            .padding(horizontal = 8.dp, vertical = 3.dp),
+                    ) {
                         Text(
-                            text = profile.phone,
-                            style = VTypography.caption.copy(fontWeight = FontWeight.Medium),
-                            color = VColors.ink3,
+                            text = "Level $level",
+                            style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
+                            color = VColors.violet,
                         )
                     }
                 }
             }
         }
-    }
-}
 
-@Composable
-private fun ChildStatsSection(
-    state: ParentDashboardState,
-    academics: ParentAcademicsState,
-) {
-    val attendance = state.attendance
-    val fees = state.fees
-    val latestMark = state.latestMark
+        Spacer(Modifier.height(16.dp))
+        HorizontalDivider(color = VColors.lineSoft)
+        Spacer(Modifier.height(14.dp))
 
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(
-            text = "Child stats",
-            style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
-            color = VColors.ink,
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            StatTile(
-                label = "Attendance",
-                value = if (attendance != null) "${attendance.attendanceRate}%" else "—",
-                icon = VIcons.Calendar,
-                iconBg = VColors.violetSoft,
-                iconColor = VColors.violet,
-                modifier = Modifier.weight(1f),
-            )
-            StatTile(
-                label = "Quizzes",
-                value = academics.quizzes.size.toString(),
-                icon = VIcons.Academic,
-                iconBg = VColors.creamDeep,
-                iconColor = VColors.ink,
-                modifier = Modifier.weight(1f),
-            )
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            StatTile(
-                label = "Fees due",
-                value = fees?.outstandingFees ?: "₹0",
-                icon = VIcons.WalletPremium,
-                iconBg = VColors.successSoft,
-                iconColor = VColors.success,
-                modifier = Modifier.weight(1f),
-            )
-            StatTile(
-                label = "Latest marks",
-                value = latestMark?.let { m ->
-                    if (m.maxMarks > 0) "${((m.marks ?: 0.0) / m.maxMarks * 100).roundToInt()}%" else "—"
-                } ?: "—",
-                icon = VIcons.Star,
-                iconBg = VColors.goldSoft,
-                iconColor = VColors.gold,
-                modifier = Modifier.weight(1f),
-            )
-        }
-    }
-}
-
-@Composable
-private fun StatTile(
-    label: String,
-    value: String,
-    icon: ImageVector,
-    iconBg: Color,
-    iconColor: Color,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.lg)
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        Box(
-            modifier = Modifier.size(40.dp).clip(CircleShape).background(iconBg),
-            contentAlignment = Alignment.Center,
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = iconColor,
-                modifier = Modifier.size(20.dp),
+            InlineStat(
+                value = attendanceRate?.let { "$it%" } ?: "—",
+                label = "Attendance",
+                modifier = Modifier.weight(1f),
             )
-        }
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = value,
-                style = VTypography.h3,
-                color = VColors.ink,
+            InlineStat(
+                value = markPct?.let { "$it%" } ?: "—",
+                label = "Latest",
+                modifier = Modifier.weight(1f),
             )
-            Text(
-                text = label,
-                style = VTypography.caption,
-                color = VColors.ink2,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+            InlineStat(
+                value = feesDue ?: "—",
+                label = "Fees Due",
+                modifier = Modifier.weight(1f),
             )
         }
     }
 }
 
 @Composable
-private fun AccountActions(
+private fun InlineStat(value: String, label: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            value,
+            style = VTypography.h3.copy(fontSize = 16.sp),
+            color = VColors.ink,
+            fontWeight = FontWeight.Bold,
+        )
+        Spacer(Modifier.height(2.dp))
+        Text(label, style = VTypography.caption.copy(fontSize = 10.sp), color = VColors.ink3)
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SETTINGS CARD — grouped list with dividers (iOS-style)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun SettingsCard(
     onOpenAccountSettings: () -> Unit,
     onLinkChild: () -> Unit,
     onDiscoverSchools: () -> Unit,
@@ -401,36 +479,54 @@ private fun AccountActions(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
+            .background(VColors.surfaceCard, VShapes.lg)
             .border(1.dp, VColors.line, VShapes.lg)
-            .padding(vertical = 8.dp),
+            .padding(vertical = 4.dp),
     ) {
-        val items = listOf(
-            ActionRow("Account settings", VIcons.Settings, onOpenAccountSettings),
-            ActionRow("Link another child", VIcons.UserPlus, onLinkChild),
-            ActionRow("Discover schools", VIcons.Search, onDiscoverSchools),
-            ActionRow("Log out", VIcons.LogOut, onLogout, isDestructive = true),
+        SettingsRow(
+            icon = VIcons.Settings,
+            iconColor = VColors.ink,
+            iconBg = VColors.creamDeep,
+            label = "Account Settings",
+            onClick = onOpenAccountSettings,
         )
-        items.forEach { (label, icon, onClick, isDestructive) ->
-            ActionRowItem(
-                label = label,
-                icon = icon,
-                onClick = onClick,
-                isDestructive = isDestructive,
-            )
-        }
+        HorizontalDivider(color = VColors.lineSoft, modifier = Modifier.padding(horizontal = 16.dp))
+        SettingsRow(
+            icon = VIcons.UserPlus,
+            iconColor = VColors.violet,
+            iconBg = VColors.violetSoft,
+            label = "Link Another Child",
+            onClick = onLinkChild,
+        )
+        HorizontalDivider(color = VColors.lineSoft, modifier = Modifier.padding(horizontal = 16.dp))
+        SettingsRow(
+            icon = VIcons.Search,
+            iconColor = VColors.sky,
+            iconBg = VColors.skySoft,
+            label = "Discover Schools",
+            onClick = onDiscoverSchools,
+        )
+        HorizontalDivider(color = VColors.lineSoft, modifier = Modifier.padding(horizontal = 16.dp))
+        SettingsRow(
+            icon = VIcons.LogOut,
+            iconColor = VColors.error,
+            iconBg = VColors.errorSoft,
+            label = "Log Out",
+            onClick = onLogout,
+            isDestructive = true,
+        )
     }
 }
 
 @Composable
-private fun ActionRowItem(
-    label: String,
+private fun SettingsRow(
     icon: ImageVector,
+    iconColor: Color,
+    iconBg: Color,
+    label: String,
     onClick: () -> Unit,
     isDestructive: Boolean = false,
 ) {
-    val color = if (isDestructive) VColors.error else VColors.ink
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -440,20 +536,20 @@ private fun ActionRowItem(
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Box(
-            modifier = Modifier.size(36.dp).clip(CircleShape).background(if (isDestructive) VColors.errorSoft else VColors.creamDeep),
+            modifier = Modifier.size(32.dp).clip(VShapes.sm).background(iconBg),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = if (isDestructive) VColors.error else VColors.ink,
-                modifier = Modifier.size(18.dp),
+                tint = iconColor,
+                modifier = Modifier.size(16.dp),
             )
         }
         Text(
             text = label,
-            style = VTypography.body.copy(fontWeight = FontWeight.Medium),
-            color = color,
+            style = VTypography.body.copy(fontWeight = FontWeight.Medium, fontSize = 14.sp),
+            color = if (isDestructive) VColors.error else VColors.ink,
             modifier = Modifier.weight(1f),
         )
         Icon(
@@ -465,9 +561,16 @@ private fun ActionRowItem(
     }
 }
 
-private data class ActionRow(
-    val label: String,
-    val icon: ImageVector,
-    val onClick: () -> Unit,
-    val isDestructive: Boolean = false,
-)
+// ═══════════════════════════════════════════════════════════════════════════════
+// SHARED
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun SectionLabel(text: String) {
+    Text(
+        text = text,
+        style = VTypography.label,
+        color = VColors.ink,
+        fontWeight = FontWeight.Bold,
+    )
+}

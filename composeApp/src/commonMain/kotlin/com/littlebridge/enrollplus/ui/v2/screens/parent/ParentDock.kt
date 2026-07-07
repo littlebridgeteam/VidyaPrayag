@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
@@ -27,19 +29,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.ui.tokens.VColors
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VNavItem
 
-/**
- * ParentDock — clean, full-width bottom tab bar.
- *
- * - No floating pill, no bounce, no spring animation.
- * - Selected item shows label; unselected shows icon only.
- * - Equal-width columns so labels never truncate.
- */
 @Composable
 fun ParentDock(
     items: List<VNavItem>,
@@ -50,10 +42,10 @@ fun ParentDock(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .background(VColors.surfaceCard)
+            .background(VColors.white)
             .border(width = 1.dp, color = VColors.line, shape = RoundedCornerShape(0.dp))
             .navigationBarsPadding()
-            .padding(top = 8.dp, bottom = 12.dp),
+            .padding(top = 6.dp, bottom = 8.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -81,9 +73,9 @@ private fun DockItem(
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
         modifier = modifier
-            .height(58.dp)
+            .height(56.dp)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
@@ -94,9 +86,9 @@ private fun DockItem(
     ) {
         Box(
             modifier = Modifier
-                .size(34.dp)
+                .size(32.dp)
                 .clip(CircleShape)
-                .background(if (active) VColors.violetSoft else VColors.surfaceCard)
+                .background(if (active) VColors.violetSoft else VColors.white)
                 .padding(4.dp),
             contentAlignment = Alignment.Center,
         ) {
@@ -120,19 +112,21 @@ private fun DockItem(
                     imageVector = item.icon,
                     contentDescription = item.label,
                     tint = contentColor,
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(22.dp),
                 )
             }
         }
-        Text(
-            text = item.label,
-            style = VTypography.caption.copy(
-                fontWeight = if (active) FontWeight.SemiBold else FontWeight.Medium,
-                fontSize = 11.sp,
-            ),
-            color = contentColor,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        if (active) {
+            Text(
+                text = item.label,
+                style = VTypography.caption.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 10.sp,
+                ),
+                color = contentColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
