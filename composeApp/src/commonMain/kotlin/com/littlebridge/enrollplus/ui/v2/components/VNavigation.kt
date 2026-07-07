@@ -948,16 +948,16 @@ fun VBackHeader(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// VCreamBottomNav — premium floating dock navigation (rebuilt)
+// VCreamBottomNav — premium floating dock navigation (v2, +10% size)
 //
 // Design DNA:
 //   • VColors.surfaceCard bar (pure white) — floats above cream background
-//   • 1dp VColors.line border, 20dp rounded corners
-//   • Active: icon in a filled violet circle (28dp) + violet label
+//   • 1dp VColors.line border, 24dp rounded corners
+//   • Active: icon in a filled violet circle (36dp) + violet label
 //   • Inactive: plain icon in ink3 + ink3 label
 //   • Badge: coral dot on top-right of icon (no text, just a dot)
 //   • Clean tween animations, no springs
-//   • 56dp height — compact, premium
+//   • 62dp height — 10% larger, premium
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
@@ -973,17 +973,17 @@ fun VCreamBottomNav(
         modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = 16.dp, vertical = 11.dp),
         contentAlignment = Alignment.Center,
     ) {
         Box(
             modifier = Modifier
-                .height(56.dp)
+                .height(62.dp)
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(20.dp))
+                .clip(RoundedCornerShape(24.dp))
                 .background(VColors.surfaceCard)
-                .border(1.dp, VColors.line, RoundedCornerShape(20.dp))
-                .padding(horizontal = 6.dp),
+                .border(1.dp, VColors.line, RoundedCornerShape(24.dp))
+                .padding(horizontal = 8.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxSize(),
@@ -1000,7 +1000,7 @@ fun VCreamBottomNav(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
-                            .clip(RoundedCornerShape(16.dp))
+                            .clip(RoundedCornerShape(18.dp))
                             .clickable(interactionSource = interaction, indication = null) {
                                 if (!active) {
                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -1014,7 +1014,7 @@ fun VCreamBottomNav(
                             if (active) {
                                 Box(
                                     modifier = Modifier
-                                        .size(32.dp)
+                                        .size(36.dp)
                                         .clip(CircleShape)
                                         .background(VColors.violetSoft),
                                     contentAlignment = Alignment.Center,
@@ -1023,7 +1023,7 @@ fun VCreamBottomNav(
                                         imageVector = item.icon,
                                         contentDescription = item.label,
                                         tint = iconTint,
-                                        modifier = Modifier.size(18.dp),
+                                        modifier = Modifier.size(20.dp),
                                     )
                                 }
                             } else {
@@ -1031,14 +1031,14 @@ fun VCreamBottomNav(
                                     imageVector = item.icon,
                                     contentDescription = item.label,
                                     tint = iconTint,
-                                    modifier = Modifier.size(20.dp),
+                                    modifier = Modifier.size(22.dp),
                                 )
                             }
                             if (item.badge > 0) {
                                 Box(
                                     modifier = Modifier
-                                        .offset(x = 6.dp, y = (-2).dp)
-                                        .size(7.dp)
+                                        .offset(x = 7.dp, y = (-2).dp)
+                                        .size(8.dp)
                                         .clip(CircleShape)
                                         .background(VColors.coral)
                                         .border(1.5.dp, VColors.surfaceCard, CircleShape),
@@ -1046,13 +1046,13 @@ fun VCreamBottomNav(
                             }
                         }
 
-                        Spacer(Modifier.height(3.dp))
+                        Spacer(Modifier.height(4.dp))
 
                         Text(
                             text = item.label,
                             style = VTypography.caption.copy(
                                 fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
-                                fontSize = 9.sp,
+                                fontSize = 10.sp,
                             ),
                             color = labelColor,
                         )
