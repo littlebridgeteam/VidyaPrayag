@@ -398,6 +398,7 @@ private fun ThreadEmptyCard(
 /**
  * RA-S07 — parent compose-NEW: pick a recipient (the child's class teacher / school office),
  * type a message, send. `onSend(recipientUserId, body)` starts a real 1:1 conversation.
+ * Rebuilt with the Academics premium design language.
  */
 @Composable
 private fun ParentComposeNewContent(
@@ -410,52 +411,68 @@ private fun ParentComposeNewContent(
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
     var selected by remember { mutableStateOf<ParentRecipientDto?>(null) }
     var body by remember { mutableStateOf("") }
     val keyboard = LocalSoftwareKeyboardController.current
 
     Column(modifier) {
         Box(Modifier.weight(1f).fillMaxWidth()) {
-            VStateHost(
-                loading = loading,
-                error = error,
-                isEmpty = isEmpty,
-                emptyTitle = appString(StringKeys.PM_NO_ONE_TO_MESSAGE),
-                emptyBody = appString(StringKeys.PM_NO_ONE_TO_MESSAGE_DESC),
-                emptyIcon = VIcons.Chat,
-                onRetry = onRetry,
-            ) {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(
-                        horizontal = 20.dp,
-                        vertical = 16.dp,
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                ) {
-                    item {
-                        Text(
-                            appString(StringKeys.PM_SELECT_RECIPIENT),
-                            style = VTheme.type.label.colored(c.ink3),
-                            modifier = Modifier.padding(bottom = 8.dp),
+            when {
+                loading && recipients.isEmpty() ->
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(36.dp))
+                    }
+
+                error != null && recipients.isEmpty() ->
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        ThreadEmptyCard(
+                            title = "Couldn't load contacts",
+                            body = error,
+                            icon = VIcons.Chat,
                         )
                     }
-                    items(recipients, key = { it.id }) { recipient ->
-                        ParentRecipientRow(
-                            recipient = recipient,
-                            isSelected = selected?.id == recipient.id,
-                            onClick = { selected = recipient },
+
+                isEmpty ->
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        ThreadEmptyCard(
+                            title = "No contacts",
+                            body = "Your school hasn't added any teachers or staff to message yet.",
+                            icon = VIcons.Chat,
                         )
                     }
-                }
+
+                else ->
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        item {
+                            Text(
+                                "Select recipient",
+                                style = VTypography.caption.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    letterSpacing = 0.8.sp,
+                                ),
+                                color = VColors.ink3,
+                                modifier = Modifier.padding(bottom = 6.dp),
+                            )
+                        }
+                        items(recipients, key = { it.id }) { recipient ->
+                            ParentRecipientRow(
+                                recipient = recipient,
+                                isSelected = selected?.id == recipient.id,
+                                onClick = { selected = recipient },
+                            )
+                        }
+                    }
             }
         }
 
         ParentComposeBar(
             text = body,
             onTextChange = { body = it },
-            placeholder = if (selected == null) appString(StringKeys.PM_PICK_RECIPIENT_PH) else appString(StringKeys.PM_MESSAGE_NAME_PH, "name" to selected!!.name),
+            placeholder = if (selected == null) "Pick a recipient…" else "Message ${selected!!.name}",
             enabled = selected != null && !sending,
             sending = sending,
             onSend = {
@@ -472,16 +489,17 @@ private fun ParentComposeNewContent(
 
 @Composable
 private fun ParentRecipientRow(recipient: ParentRecipientDto, isSelected: Boolean, onClick: () -> Unit) {
-    val c = VTheme.colors
-    val interaction = remember { MutableInteractionSource() }
-    val bg = if (isSelected) c.accentTint else Color.Transparent
+    val bg = if (isSelected) VColors.violetSoft else VColors.surfaceCard
+    val borderColor = if (isSelected) VColors.violet else VColors.line
+
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
+            .clip(VShapes.lg)
             .background(bg)
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 12.dp),
+            .border(1.dp, borderColor, VShapes.lg)
+            .clickable(onClick = onClick)
+            .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
@@ -489,29 +507,33 @@ private fun ParentRecipientRow(recipient: ParentRecipientDto, isSelected: Boolea
         Column(Modifier.weight(1f)) {
             Text(
                 recipient.name,
-                style = VTheme.type.bodyStrong.colored(c.ink),
+                style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
+                color = VColors.ink,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Text(
-                recipient.subtitle,
-                style = VTheme.type.caption.colored(c.ink3),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            if (recipient.subtitle.isNotBlank()) {
+                Text(
+                    recipient.subtitle,
+                    style = VTypography.caption,
+                    color = VColors.ink2,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
         if (isSelected) {
             Box(
                 Modifier
                     .size(24.dp)
                     .clip(CircleShape)
-                    .background(c.accent),
+                    .background(VColors.violet),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     VIcons.Check,
                     contentDescription = "Selected",
-                    tint = Color.White,
+                    tint = VColors.white,
                     modifier = Modifier.size(16.dp),
                 )
             }
@@ -532,7 +554,6 @@ private fun ParentConversationContent(
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
     var reply by remember { mutableStateOf("") }
     val keyboard = LocalSoftwareKeyboardController.current
     val listState = rememberLazyListState()
@@ -545,35 +566,51 @@ private fun ParentConversationContent(
     }
 
     Column(modifier) {
-        // Chat surface — WhatsApp-style patterned background
+        // Chat surface — warm cream background, premium bubbles
         Box(
             Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .background(c.accentTint),
+                .background(VColors.cream),
         ) {
-            VStateHost(
-                loading = loading,
-                error = error,
-                isEmpty = isEmpty,
-                emptyTitle = appString(StringKeys.PM_NO_MESSAGES),
-                emptyBody = appString(StringKeys.PM_START_CONVERSATION),
-                emptyIcon = VIcons.Chat,
-                onRetry = onRetry,
-            ) {
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(
-                        horizontal = 16.dp,
-                        vertical = 12.dp,
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    items(messages, key = { it.id }) { msg ->
-                        ParentMessageBubble(msg)
+            when {
+                loading && messages.isEmpty() ->
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(36.dp))
                     }
-                }
+
+                error != null && messages.isEmpty() ->
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        ThreadEmptyCard(
+                            title = "Couldn't load conversation",
+                            body = error,
+                            icon = VIcons.Chat,
+                        )
+                    }
+
+                isEmpty ->
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        ThreadEmptyCard(
+                            title = "Start the conversation",
+                            body = "Send a message to your child's teacher or school office.",
+                            icon = VIcons.Chat,
+                        )
+                    }
+
+                else ->
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(
+                            horizontal = 16.dp,
+                            vertical = 12.dp,
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        items(messages, key = { it.id }) { msg ->
+                            ParentMessageBubble(msg)
+                        }
+                    }
             }
         }
 
@@ -587,29 +624,29 @@ private fun ParentConversationContent(
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .background(c.danger)
+                        .background(VColors.errorSoft)
                         .padding(horizontal = 16.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
                         replyError,
-                        style = VTheme.type.caption.colored(c.dangerInk),
+                        style = VTypography.caption,
+                        color = VColors.error,
                         modifier = Modifier.weight(1f),
                     )
-                    val dismissInteraction = remember { MutableInteractionSource() }
                     Box(
                         Modifier
                             .size(28.dp)
                             .clip(CircleShape)
-                            .background(c.dangerInk.copy(alpha = 0.12f))
-                            .clickable(interactionSource = dismissInteraction, indication = null, onClick = onDismissReplyError),
+                            .background(VColors.error.copy(alpha = 0.12f))
+                            .clickable(onClick = onDismissReplyError),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             VIcons.Close,
                             contentDescription = "Dismiss",
-                            tint = c.dangerInk,
+                            tint = VColors.error,
                             modifier = Modifier.size(16.dp),
                         )
                     }
@@ -617,11 +654,10 @@ private fun ParentConversationContent(
             }
         }
 
-        // WhatsApp-style compose bar
         ParentComposeBar(
             text = reply,
             onTextChange = { reply = it },
-            placeholder = appString(StringKeys.PM_TYPE_MESSAGE_PH),
+            placeholder = "Type a message…",
             enabled = !sending,
             sending = sending,
             onSend = {
@@ -637,13 +673,13 @@ private fun ParentConversationContent(
 
 @Composable
 private fun ParentMessageBubble(msg: ParentMessageDto) {
-    val c = VTheme.colors
     val isMine = msg.isMine
     val isDeleted = msg.deletedAt != null
 
-    val bubbleColor = if (isMine) c.accent else c.card
-    val textColor = if (isMine) Color.White else c.ink
-    val timeColor = if (isMine) Color.White.copy(alpha = 0.7f) else c.ink3
+    val bubbleColor = if (isMine) VColors.violet else VColors.surfaceCard
+    val textColor = if (isMine) VColors.white else VColors.ink
+    val timeColor = if (isMine) VColors.white.copy(alpha = 0.7f) else VColors.ink3
+    val bubbleBorder = if (isMine) null else VColors.line
 
     Row(
         Modifier.fillMaxWidth(),
@@ -655,24 +691,29 @@ private fun ParentMessageBubble(msg: ParentMessageDto) {
             RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp, bottomStart = 4.dp, bottomEnd = 18.dp)
         }
 
-        Column(
-            Modifier
-                .widthIn(max = 280.dp)
-                .clip(bubbleShape)
-                .background(bubbleColor)
-                .padding(horizontal = 14.dp, vertical = 10.dp),
-        ) {
+        val bubbleModifier = Modifier
+            .widthIn(max = 280.dp)
+            .clip(bubbleShape)
+            .background(bubbleColor)
+            .then(
+                if (bubbleBorder != null) Modifier.border(1.dp, bubbleBorder, bubbleShape) else Modifier
+            )
+            .padding(horizontal = 14.dp, vertical = 10.dp)
+
+        Column(bubbleModifier) {
             if (isDeleted) {
                 Text(
-                    appString(StringKeys.PM_MESSAGE_DELETED),
-                    style = VTheme.type.body.colored(textColor).copy(
+                    "This message was deleted",
+                    style = VTypography.body.copy(
                         fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
                     ),
+                    color = textColor,
                 )
             } else {
                 Text(
                     msg.body,
-                    style = VTheme.type.body.colored(textColor),
+                    style = VTypography.bodySmall,
+                    color = textColor,
                 )
             }
             Spacer(Modifier.height(4.dp))
@@ -688,14 +729,14 @@ private fun ParentMessageBubble(msg: ParentMessageDto) {
                             Icon(
                                 VIcons.Check,
                                 contentDescription = null,
-                                tint = Color.White.copy(alpha = 0.9f),
+                                tint = VColors.white.copy(alpha = 0.9f),
                                 modifier = Modifier.size(14.dp),
                             )
                             Spacer(Modifier.size(2.dp))
                             Icon(
                                 VIcons.Check,
                                 contentDescription = "Read",
-                                tint = Color.White.copy(alpha = 0.9f),
+                                tint = VColors.white.copy(alpha = 0.9f),
                                 modifier = Modifier.size(14.dp),
                             )
                         }
@@ -703,14 +744,14 @@ private fun ParentMessageBubble(msg: ParentMessageDto) {
                             Icon(
                                 VIcons.Check,
                                 contentDescription = "Delivered",
-                                tint = Color.White.copy(alpha = 0.7f),
+                                tint = VColors.white.copy(alpha = 0.7f),
                                 modifier = Modifier.size(14.dp),
                             )
                             Spacer(Modifier.size(2.dp))
                             Icon(
                                 VIcons.Check,
                                 contentDescription = null,
-                                tint = Color.White.copy(alpha = 0.7f),
+                                tint = VColors.white.copy(alpha = 0.7f),
                                 modifier = Modifier.size(14.dp),
                             )
                         }
@@ -718,7 +759,7 @@ private fun ParentMessageBubble(msg: ParentMessageDto) {
                             Icon(
                                 VIcons.Check,
                                 contentDescription = "Sent",
-                                tint = Color.White.copy(alpha = 0.5f),
+                                tint = VColors.white.copy(alpha = 0.5f),
                                 modifier = Modifier.size(14.dp),
                             )
                         }
@@ -727,14 +768,16 @@ private fun ParentMessageBubble(msg: ParentMessageDto) {
                 }
                 Text(
                     msg.time,
-                    style = VTheme.type.caption.colored(timeColor).copy(fontSize = 10.sp),
+                    style = VTypography.caption.copy(fontSize = 10.sp),
+                    color = timeColor,
                 )
                 // P2-10: Edited label
                 if (msg.editedAt != null && !isDeleted) {
                     Spacer(Modifier.size(4.dp))
                     Text(
-                        appString(StringKeys.PM_EDITED),
-                        style = VTheme.type.caption.colored(timeColor).copy(fontSize = 9.sp),
+                        "Edited",
+                        style = VTypography.caption.copy(fontSize = 9.sp),
+                        color = timeColor,
                     )
                 }
             }
@@ -743,8 +786,8 @@ private fun ParentMessageBubble(msg: ParentMessageDto) {
 }
 
 /**
- * Shared WhatsApp-style compose bar used by both the conversation and compose-new screens.
- * Rounded pill input with an embedded send button — no separate Send button row.
+ * Shared compose bar used by both the conversation and compose-new screens.
+ * Premium cream input pill with violet send button.
  */
 @Composable
 private fun ParentComposeBar(
@@ -756,16 +799,15 @@ private fun ParentComposeBar(
     onSend: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
     val canSend = text.isNotBlank() && enabled
 
     Column(
         modifier
             .fillMaxWidth()
-            .background(c.card),
+            .background(VColors.surfaceCard),
     ) {
         // Subtle top hairline
-        Box(Modifier.fillMaxWidth().height(1.dp).background(c.hairline))
+        Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
 
         Row(
             Modifier
@@ -779,7 +821,7 @@ private fun ParentComposeBar(
                 Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(22.dp))
-                    .background(c.cream)
+                    .background(VColors.creamDeep)
                     .padding(horizontal = 16.dp, vertical = 10.dp),
             ) {
                 OutlinedTextField(
@@ -789,7 +831,8 @@ private fun ParentComposeBar(
                     placeholder = {
                         Text(
                             placeholder,
-                            style = VTheme.type.body.colored(c.placeholder),
+                            style = VTypography.body,
+                            color = VColors.ink3,
                         )
                     },
                     enabled = enabled,
@@ -803,27 +846,26 @@ private fun ParentComposeBar(
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent,
                         disabledContainerColor = Color.Transparent,
-                        cursorColor = c.accent,
+                        cursorColor = VColors.violet,
                     ),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
                     keyboardActions = KeyboardActions(onSend = { if (canSend) onSend() }),
-                    textStyle = VTheme.type.body.colored(c.ink),
+                    textStyle = VTypography.body.copy(color = VColors.ink),
                 )
             }
 
-            // Circular send button — WhatsApp-style
-            val sendInteraction = remember { MutableInteractionSource() }
+            // Circular send button
             Box(
                 Modifier
                     .size(44.dp)
                     .clip(CircleShape)
-                    .background(if (canSend) c.accent else c.border2)
-                    .clickable(interactionSource = sendInteraction, indication = null, enabled = canSend, onClick = onSend),
+                    .background(if (canSend) VColors.violet else VColors.lineSoft)
+                    .clickable(enabled = canSend, onClick = onSend),
                 contentAlignment = Alignment.Center,
             ) {
                 if (sending) {
                     CircularProgressIndicator(
-                        color = Color.White,
+                        color = VColors.white,
                         strokeWidth = 2.dp,
                         modifier = Modifier.size(20.dp),
                     )
@@ -831,7 +873,7 @@ private fun ParentComposeBar(
                     Icon(
                         VIcons.Send,
                         contentDescription = "Send",
-                        tint = Color.White,
+                        tint = VColors.white,
                         modifier = Modifier.size(20.dp),
                     )
                 }
