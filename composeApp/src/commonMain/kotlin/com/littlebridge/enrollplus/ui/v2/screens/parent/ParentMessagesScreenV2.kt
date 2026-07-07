@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -55,6 +56,9 @@ import com.littlebridge.enrollplus.feature.parent.domain.model.ParentMessageDto
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentMessageThreadDto
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentRecipientDto
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentMessageViewModel
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VShapes
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VAvatar
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
@@ -215,49 +219,61 @@ private fun ParentThreadListContent(
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
     Box(modifier) {
-        VStateHost(
-            loading = loading,
-            error = error,
-            isEmpty = isEmpty,
-            emptyTitle = appString(StringKeys.PM_NO_MESSAGES),
-            emptyBody = appString(StringKeys.PM_NO_MESSAGES_DESC),
-            emptyIcon = VIcons.Chat,
-            onRetry = onRetry,
-        ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(
-                    horizontal = 0.dp,
-                    vertical = 8.dp,
-                ),
-            ) {
-                items(threads, key = { it.id }) { thread ->
-                    ParentThreadRow(
-                        thread = thread,
-                        onClick = { onOpenThread(thread) },
+        when {
+            loading && threads.isEmpty() ->
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(36.dp))
+                }
+
+            error != null && threads.isEmpty() ->
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    ThreadEmptyCard(
+                        title = "Couldn't load messages",
+                        body = error,
+                        icon = VIcons.Chat,
                     )
                 }
-            }
+
+            isEmpty ->
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    ThreadEmptyCard(
+                        title = "No messages yet",
+                        body = "Start a conversation with your child's teacher or school office.",
+                        icon = VIcons.Chat,
+                    )
+                }
+
+            else ->
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    items(threads, key = { it.id }) { thread ->
+                        ParentThreadRow(
+                            thread = thread,
+                            onClick = { onOpenThread(thread) },
+                        )
+                    }
+                }
         }
 
-        // Floating compose-new FAB — WhatsApp-style
-        val interaction = remember { MutableInteractionSource() }
+        // Floating compose-new FAB — premium violet
         Box(
             Modifier
                 .align(Alignment.BottomEnd)
                 .padding(end = 20.dp, bottom = 20.dp)
                 .size(56.dp)
                 .clip(CircleShape)
-                .background(c.accent)
-                .clickable(interactionSource = interaction, indication = null, onClick = onCompose),
+                .background(VColors.violet)
+                .clickable(onClick = onCompose),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 VIcons.Edit3,
-                contentDescription = appString(StringKeys.PM_NEW_MESSAGE),
-                tint = Color.White,
+                contentDescription = "New message",
+                tint = VColors.white,
                 modifier = Modifier.size(24.dp),
             )
         }
@@ -266,50 +282,64 @@ private fun ParentThreadListContent(
 
 @Composable
 private fun ParentThreadRow(thread: ParentMessageThreadDto, onClick: () -> Unit) {
-    val c = VTheme.colors
-    val interaction = remember { MutableInteractionSource() }
     Row(
-        Modifier
+        modifier = Modifier
             .fillMaxWidth()
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 12.dp),
+            .clip(VShapes.lg)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.lg)
+            .clickable(onClick = onClick)
+            .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        // Avatar with online-style ring for unread
-        Box(contentAlignment = Alignment.Center) {
-            VAvatar(
-                name = thread.senderName.ifBlank { "?" },
-                src = thread.senderImageUrl,
-                size = 52.dp,
-            )
-        }
+        VAvatar(
+            name = thread.senderName.ifBlank { "?" },
+            src = thread.senderImageUrl,
+            size = 52.dp,
+        )
 
         Column(Modifier.weight(1f)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(
                     thread.senderName,
-                    style = VTheme.type.bodyStrong.colored(c.ink).copy(fontWeight = if (thread.isRead) FontWeight.SemiBold else FontWeight.Bold),
+                    style = VTypography.body.copy(
+                        fontWeight = if (thread.unreadCount > 0) FontWeight.Bold else FontWeight.SemiBold,
+                    ),
+                    color = VColors.ink,
                     modifier = Modifier.weight(1f, fill = false),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     thread.time,
-                    style = VTheme.type.caption.colored(if (thread.isRead) c.ink3 else c.accent),
+                    style = VTypography.caption,
+                    color = if (thread.unreadCount > 0) VColors.violet else VColors.ink3,
                 )
             }
+
+            if (thread.senderRole.isNotBlank()) {
+                Text(
+                    thread.senderRole,
+                    style = VTypography.caption.copy(fontSize = 11.sp),
+                    color = VColors.ink3,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+
             Spacer(Modifier.height(4.dp))
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(
                     thread.lastMessage,
-                    style = VTheme.type.body.colored(if (thread.isRead) c.ink3 else c.ink2),
+                    style = VTypography.bodySmall,
+                    color = if (thread.unreadCount > 0) VColors.ink2 else VColors.ink3,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
@@ -318,18 +348,50 @@ private fun ParentThreadRow(thread: ParentMessageThreadDto, onClick: () -> Unit)
                     Box(
                         Modifier
                             .clip(CircleShape)
-                            .background(c.accent)
-                            .padding(horizontal = 7.dp, vertical = 2.dp),
+                            .background(VColors.violet)
+                            .padding(horizontal = 8.dp, vertical = 2.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
                             if (thread.unreadCount > 99) "99+" else thread.unreadCount.toString(),
-                            style = VTheme.type.caption.colored(Color.White).copy(fontWeight = FontWeight.Bold),
+                            style = VTypography.caption.copy(
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                            ),
+                            color = VColors.white,
                         )
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ThreadEmptyCard(
+    title: String,
+    body: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+) {
+    Column(
+        Modifier
+            .padding(horizontal = 32.dp)
+            .clip(VShapes.lg)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.lg)
+            .padding(28.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            Modifier.size(64.dp).clip(CircleShape).background(VColors.violetSoft),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(28.dp))
+        }
+        Spacer(Modifier.height(16.dp))
+        Text(title, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+        Spacer(Modifier.height(4.dp))
+        Text(body, style = VTypography.caption, color = VColors.ink2)
     }
 }
 
