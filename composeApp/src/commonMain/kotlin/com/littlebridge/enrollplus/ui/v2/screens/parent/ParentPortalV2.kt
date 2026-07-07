@@ -395,9 +395,20 @@ fun ParentPortalV2(
                     onReportDraftIdConsumed = { deepLinkReportDraftId = null },
                     unreadNotificationsCount = notifications.unreadCount,
                 )
-                "fees" -> ParentFeesScreenV2()
+                "fees" -> ParentFeesScreenV2(
+                    children = dashboard.children,
+                    selectedChild = dashboard.selectedChild,
+                    onSelectChild = { dashboardViewModel.selectChild(it) },
+                    onOpenNotifications = { overlay = ParentOverlay.Notifications },
+                    unreadNotificationsCount = notifications.unreadCount,
+                )
                 // Phase 3 (commit 9): the Conversations hub — messaging-first, announcements second.
                 "conversations" -> ParentConversationsScreenV2(
+                    children = dashboard.children,
+                    selectedChild = dashboard.selectedChild,
+                    onSelectChild = { dashboardViewModel.selectChild(it) },
+                    onOpenNotifications = { overlay = ParentOverlay.Notifications },
+                    unreadNotificationsCount = notifications.unreadCount,
                     messageViewModel = messageViewModel,
                     initialSegment = deepLinkSegment,
                     onSegmentConsumed = { deepLinkSegment = null },

@@ -1,52 +1,39 @@
 package com.littlebridge.enrollplus.ui.v2.screens.parent
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.backhandler.BackHandler
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.littlebridge.enrollplus.feature.parent.domain.model.DashboardChildSummary
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentMessageViewModel
-import com.littlebridge.enrollplus.ui.v2.components.VBadge
-import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
-import com.littlebridge.enrollplus.core.locale.StringKeys
-import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VMotion
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
-import com.littlebridge.enrollplus.ui.v2.theme.pressScale
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -64,6 +51,11 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun ParentConversationsScreenV2(
     modifier: Modifier = Modifier,
+    children: List<DashboardChildSummary>,
+    selectedChild: DashboardChildSummary?,
+    onSelectChild: (String) -> Unit,
+    onOpenNotifications: () -> Unit,
+    unreadNotificationsCount: Int,
     messageViewModel: ParentMessageViewModel = koinViewModel(),
     initialSegment: ConversationsSegment? = null,
     onSegmentConsumed: () -> Unit = {},
@@ -100,27 +92,59 @@ fun ParentConversationsScreenV2(
             .statusBarsPadding()
             .imePadding()
             .navigationBarsPadding()
-            .padding(horizontal = 20.dp)
-            .padding(top = 12.dp)
             .padding(bottom = 130.dp),
     ) {
-        Text(
-            appString(StringKeys.PCV_CONVERSATIONS),
-            style = VTheme.type.h1.colored(c.ink),
-            modifier = Modifier.padding(bottom = 14.dp),
+        ParentPortalHeader(
+            label = "Conversations",
+            children = children,
+            selectedChild = selectedChild,
+            onSelectChild = onSelectChild,
+            onOpenNotifications = onOpenNotifications,
+            unreadNotificationsCount = unreadNotificationsCount,
         )
 
-        ConversationsSegmentBar(
-            selected = segment,
-            messagesBadge = unreadThreads,
-            onSelect = { segment = it },
-            modifier = Modifier.padding(bottom = 16.dp),
+        PortalQuickActionChips(
+            chips = listOf(
+                QuickActionChipSpec(
+                    icon = Icons.AutoMirrored.Filled.Chat,
+                    iconColor = VColors.violet,
+                    iconBg = VColors.violetSoft,
+                    title = "New\nMessage",
+                    onClick = { messageViewModel.openCompose() },
+                ),
+                QuickActionChipSpec(
+                    icon = Icons.Filled.Campaign,
+                    iconColor = VColors.gold,
+                    iconBg = VColors.goldSoft,
+                    title = "School\nNotices",
+                    onClick = { segment = ConversationsSegment.Announcements },
+                ),
+            ),
         )
+
+        LazyRow(
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 24.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            items(ConversationsSegment.entries) { seg ->
+                PortalTabChip(
+                    label = seg.label,
+                    selected = segment == seg,
+                    onClick = { segment = seg },
+                )
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
 
         AnimatedContent(
             targetState = segment,
             transitionSpec = { VMotion.quietFade() },
-            modifier = Modifier.weight(1f).fillMaxWidth(),
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp),
             label = "conversations-segment",
         ) { seg ->
             when (seg) {
@@ -139,100 +163,11 @@ fun ParentConversationsScreenV2(
     }
 }
 
+private val ConversationsSegment.label: String
+    get() = when (this) {
+        ConversationsSegment.Messages -> "Messages"
+        ConversationsSegment.Announcements -> "Announcements"
+    }
+
 /** The two faces of the Conversations hub. Messages is primary (the tab's reason to exist). */
 enum class ConversationsSegment { Messages, Announcements }
-
-/**
- * A two-up segmented control with a spring-sliding pill behind the active label — premium,
- * native-feeling, no toast. The Messages segment carries a live unread badge.
- */
-@Composable
-private fun ConversationsSegmentBar(
-    selected: ConversationsSegment,
-    messagesBadge: Int,
-    onSelect: (ConversationsSegment) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val c = VTheme.colors
-    val density = LocalDensity.current
-
-    // Measure the track width so the pill is exactly half of it; animate its x-offset.
-    var trackWidth by remember { mutableStateOf(0.dp) }
-    val pillX by animateDpAsState(
-        targetValue = if (selected == ConversationsSegment.Messages) 0.dp else trackWidth / 2f,
-        // animateDpAsState needs an AnimationSpec<Dp>; VMotion.springSnappy is Float-typed, so use
-        // the generic snappy factory rebuilt for Dp (same stiffness/damping feel).
-        animationSpec = VMotion.snappy(),
-        label = "segment-pill-x",
-    )
-
-    Box(
-        modifier
-            .fillMaxWidth()
-            .height(44.dp)
-            .clip(RoundedCornerShape(999.dp))
-            .background(c.cream)
-            .onGloballyPositioned { trackWidth = with(density) { it.size.width.toDp() } },
-    ) {
-        // Sliding pill — half the track, padded inside.
-        if (trackWidth > 0.dp) {
-            Box(
-                Modifier
-                    .offset(x = pillX)
-                    .padding(4.dp)
-                    .width((trackWidth / 2f) - 8.dp)
-                    .fillMaxHeight()
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(c.card),
-            )
-        }
-        Row(Modifier.fillMaxSize()) {
-            SegmentTab(
-                label = appString(StringKeys.PCV_MESSAGES),
-                active = selected == ConversationsSegment.Messages,
-                badge = messagesBadge,
-                onClick = { onSelect(ConversationsSegment.Messages) },
-                modifier = Modifier.weight(1f),
-            )
-            SegmentTab(
-                label = appString(StringKeys.PCV_ANNOUNCEMENTS),
-                active = selected == ConversationsSegment.Announcements,
-                badge = 0,
-                onClick = { onSelect(ConversationsSegment.Announcements) },
-                modifier = Modifier.weight(1f),
-            )
-        }
-    }
-}
-
-@Composable
-private fun SegmentTab(
-    label: String,
-    active: Boolean,
-    badge: Int,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val c = VTheme.colors
-    val interaction = remember { MutableInteractionSource() }
-    Row(
-        modifier
-            .fillMaxHeight()
-            .clip(RoundedCornerShape(999.dp))
-            .pressScale(interaction)
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            label,
-            style = VTheme.type.bodyStrong
-                .colored(if (active) c.ink else c.ink3)
-                .copy(fontWeight = if (active) FontWeight.Bold else FontWeight.Medium),
-        )
-        if (badge > 0) {
-            Spacer(Modifier.width(6.dp))
-            VBadge(text = badge.toString(), tone = VBadgeTone.Accent)
-        }
-    }
-}
