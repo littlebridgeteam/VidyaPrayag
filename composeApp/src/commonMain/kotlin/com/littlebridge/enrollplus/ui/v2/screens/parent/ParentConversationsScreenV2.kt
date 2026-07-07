@@ -14,9 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Chat
-import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -100,25 +97,6 @@ fun ParentConversationsScreenV2(
                 onSelectChild = onSelectChild,
                 onOpenNotifications = onOpenNotifications,
                 unreadNotificationsCount = unreadNotificationsCount,
-            )
-
-            PortalQuickActionChips(
-                chips = listOf(
-                    QuickActionChipSpec(
-                        icon = Icons.AutoMirrored.Filled.Chat,
-                        iconColor = VColors.violet,
-                        iconBg = VColors.violetSoft,
-                        title = "New\nMessage",
-                        onClick = { messageViewModel.openCompose() },
-                    ),
-                    QuickActionChipSpec(
-                        icon = Icons.Filled.Campaign,
-                        iconColor = VColors.gold,
-                        iconBg = VColors.goldSoft,
-                        title = "School\nNotices",
-                        onClick = { segment = ConversationsSegment.Announcements },
-                    ),
-                ),
             )
 
             LazyRow(

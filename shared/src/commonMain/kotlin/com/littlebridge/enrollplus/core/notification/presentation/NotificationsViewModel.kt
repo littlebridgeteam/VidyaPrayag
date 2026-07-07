@@ -125,11 +125,11 @@ class NotificationsViewModel(
 
     fun clearAll() {
         _state.update { s ->
-            s.copy(notifications = s.notifications.filter { it.unread }, unreadCount = s.notifications.count { it.unread })
+            s.copy(notifications = emptyList(), unreadCount = 0)
         }
         viewModelScope.launch {
             val token = preferenceRepository.getUserToken().first() ?: return@launch
-            repository.clearReadNotifications(token)
+            repository.clearAllNotifications(token)
         }
     }
 }

@@ -144,7 +144,7 @@ private fun NotificationsContent(
             onBack = onBack,
             onMarkAll = onMarkAll,
             onClearAll = onClearAll,
-            canClear = items.any { !it.unread },
+            canClear = items.isNotEmpty(),
         )
 
         VPullRefresh(

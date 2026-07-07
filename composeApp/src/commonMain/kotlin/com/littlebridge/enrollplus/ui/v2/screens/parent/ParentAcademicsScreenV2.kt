@@ -213,26 +213,6 @@ private fun ParentAcademicsContent(
             unreadNotificationsCount = unreadNotificationsCount,
         )
 
-        // ── Quick action chips (matches screenshot) ──
-        PortalQuickActionChips(
-            chips = listOf(
-                QuickActionChipSpec(
-                    icon = Icons.Filled.CalendarMonth,
-                    iconColor = VColors.gold,
-                    iconBg = VColors.goldSoft,
-                    title = "Apply for\nLeave",
-                    onClick = onOpenLeave,
-                ),
-                QuickActionChipSpec(
-                    icon = Icons.Filled.Favorite,
-                    iconColor = VColors.coral,
-                    iconBg = VColors.coralSoft,
-                    title = "Health\nRecords",
-                    onClick = onOpenHealth,
-                ),
-            ),
-        )
-
         // ── Tab chips row (white selected pill like screenshot) ──
         LazyRow(
             modifier = Modifier.fillMaxWidth(),
