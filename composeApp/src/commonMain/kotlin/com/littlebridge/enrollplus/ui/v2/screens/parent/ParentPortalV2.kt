@@ -59,7 +59,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import com.littlebridge.enrollplus.ui.screens.parent.ParentHomeScreen
 
 /** Full-screen overlays a portal can push above its tab content (back returns to the tabs). */
-private enum class ParentOverlay { None, Notifications, Calendar, Scholarships, Profile, Leave, Messages, LinkChild, Discovery, Health, Pulse, Transport, TutorChat, TutorProgress, DigitalIdCard, Library, EventRegistration }
+private enum class ParentOverlay { None, Notifications, Calendar, Scholarships, Profile, Leave, Messages, LinkChild, Discovery, Health, Pulse, Transport, TutorChat, TutorProgress, DigitalIdCard, Library, EventRegistration, FeePayment, FeeHistory }
 
 /**
  * ParentPortalV2 — the 5-tab parent shell, a faithful copy of `Parent.tsx → ParentApp`.
@@ -329,6 +329,21 @@ fun ParentPortalV2(
             )
             return
         }
+        ParentOverlay.FeePayment -> {
+            ParentFeePaymentScreenV2(
+                onBack = { overlay = ParentOverlay.None },
+                modifier = modifier,
+                onPay = { /* TODO: invoke real payment gateway via FeeViewModel */ },
+            )
+            return
+        }
+        ParentOverlay.FeeHistory -> {
+            ParentFeeHistoryScreenV2(
+                onBack = { overlay = ParentOverlay.None },
+                modifier = modifier,
+            )
+            return
+        }
         ParentOverlay.None -> Unit
     }
 
@@ -401,6 +416,8 @@ fun ParentPortalV2(
                     onSelectChild = { dashboardViewModel.selectChild(it) },
                     onOpenNotifications = { overlay = ParentOverlay.Notifications },
                     unreadNotificationsCount = notifications.unreadCount,
+                    onPayNow = { overlay = ParentOverlay.FeePayment },
+                    onFeeHistory = { overlay = ParentOverlay.FeeHistory },
                 )
                 // Phase 3 (commit 9): the Conversations hub — messaging-first, announcements second.
                 "conversations" -> ParentConversationsScreenV2(

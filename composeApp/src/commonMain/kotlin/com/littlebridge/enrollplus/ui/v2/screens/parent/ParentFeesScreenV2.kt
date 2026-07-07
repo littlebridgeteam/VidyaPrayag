@@ -61,6 +61,8 @@ fun ParentFeesScreenV2(
     onSelectChild: (String) -> Unit,
     onOpenNotifications: () -> Unit,
     unreadNotificationsCount: Int,
+    onPayNow: () -> Unit = {},
+    onFeeHistory: () -> Unit = {},
     viewModel: FeeViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
@@ -71,6 +73,8 @@ fun ParentFeesScreenV2(
         onSelectChild = onSelectChild,
         onOpenNotifications = onOpenNotifications,
         unreadNotificationsCount = unreadNotificationsCount,
+        onPayNow = onPayNow,
+        onFeeHistory = onFeeHistory,
         modifier = modifier,
     )
 }
@@ -84,6 +88,8 @@ private fun ParentFeesContent(
     onSelectChild: (String) -> Unit,
     onOpenNotifications: () -> Unit,
     unreadNotificationsCount: Int,
+    onPayNow: () -> Unit,
+    onFeeHistory: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val c = VTheme.colors
@@ -117,14 +123,14 @@ private fun ParentFeesContent(
                     iconColor = VColors.violet,
                     iconBg = VColors.violetSoft,
                     title = "Pay\nNow",
-                    onClick = { /* TODO: wire payment flow */ },
+                    onClick = onPayNow,
                 ),
                 QuickActionChipSpec(
                     icon = Icons.Filled.History,
                     iconColor = VColors.success,
                     iconBg = VColors.successSoft,
                     title = "Fee\nHistory",
-                    onClick = { /* TODO: wire history flow */ },
+                    onClick = onFeeHistory,
                 ),
             ),
         )
