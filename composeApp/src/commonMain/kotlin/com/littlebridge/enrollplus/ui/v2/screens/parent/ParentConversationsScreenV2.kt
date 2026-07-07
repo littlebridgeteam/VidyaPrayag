@@ -70,12 +70,11 @@ fun ParentConversationsScreenV2(
 
     val messageState by messageViewModel.state.collectAsStateV2()
     val unreadThreads = messageState.threads.count { it.unreadCount > 0 }
+    val isChatOpen = messageState.openThreadId != null || messageState.composeOpen
 
-    // §11 — within the Messages segment, system/predictive back peels the drilled-in layers
-    // (compose-new → open conversation) before the portal lets back exit the tab. On the
-    // Announcements segment there is nothing to peel, so back falls through to the shell.
-    val onMessages = segment == ConversationsSegment.Messages
-    BackHandler(enabled = onMessages && (messageState.composeOpen || messageState.openThreadId != null)) {
+    // §11 — system/predictive back peels the drilled-in layers (compose-new → open conversation)
+    // before the portal lets back exit the tab. When a chat is open the shell also hides the dock.
+    BackHandler(enabled = isChatOpen) {
         when {
             messageState.composeOpen -> messageViewModel.closeCompose()
             messageState.openThreadId != null -> messageViewModel.closeThread()
@@ -89,51 +88,55 @@ fun ParentConversationsScreenV2(
             .statusBarsPadding()
             .imePadding()
             .navigationBarsPadding()
-            .padding(bottom = 130.dp),
+            .then(if (!isChatOpen) Modifier.padding(bottom = 130.dp) else Modifier),
     ) {
-        ParentPortalHeader(
-            label = "Conversations",
-            children = children,
-            selectedChild = selectedChild,
-            onSelectChild = onSelectChild,
-            onOpenNotifications = onOpenNotifications,
-            unreadNotificationsCount = unreadNotificationsCount,
-        )
+        // Hide the tab chrome when a conversation or compose is open so the chat becomes
+        // a true full-screen surface with its own premium header (WhatsApp pattern).
+        if (!isChatOpen) {
+            ParentPortalHeader(
+                label = "Conversations",
+                children = children,
+                selectedChild = selectedChild,
+                onSelectChild = onSelectChild,
+                onOpenNotifications = onOpenNotifications,
+                unreadNotificationsCount = unreadNotificationsCount,
+            )
 
-        PortalQuickActionChips(
-            chips = listOf(
-                QuickActionChipSpec(
-                    icon = Icons.AutoMirrored.Filled.Chat,
-                    iconColor = VColors.violet,
-                    iconBg = VColors.violetSoft,
-                    title = "New\nMessage",
-                    onClick = { messageViewModel.openCompose() },
+            PortalQuickActionChips(
+                chips = listOf(
+                    QuickActionChipSpec(
+                        icon = Icons.AutoMirrored.Filled.Chat,
+                        iconColor = VColors.violet,
+                        iconBg = VColors.violetSoft,
+                        title = "New\nMessage",
+                        onClick = { messageViewModel.openCompose() },
+                    ),
+                    QuickActionChipSpec(
+                        icon = Icons.Filled.Campaign,
+                        iconColor = VColors.gold,
+                        iconBg = VColors.goldSoft,
+                        title = "School\nNotices",
+                        onClick = { segment = ConversationsSegment.Announcements },
+                    ),
                 ),
-                QuickActionChipSpec(
-                    icon = Icons.Filled.Campaign,
-                    iconColor = VColors.gold,
-                    iconBg = VColors.goldSoft,
-                    title = "School\nNotices",
-                    onClick = { segment = ConversationsSegment.Announcements },
-                ),
-            ),
-        )
+            )
 
-        LazyRow(
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 24.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            items(ConversationsSegment.entries) { seg ->
-                PortalTabChip(
-                    label = seg.label,
-                    selected = segment == seg,
-                    onClick = { segment = seg },
-                )
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 24.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(ConversationsSegment.entries) { seg ->
+                    PortalTabChip(
+                        label = seg.label,
+                        selected = segment == seg,
+                        onClick = { segment = seg },
+                    )
+                }
             }
-        }
 
-        Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(16.dp))
+        }
 
         AnimatedContent(
             targetState = segment,
@@ -141,19 +144,18 @@ fun ParentConversationsScreenV2(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp),
+                .then(if (!isChatOpen) Modifier.padding(horizontal = 20.dp) else Modifier),
             label = "conversations-segment",
         ) { seg ->
             when (seg) {
                 ConversationsSegment.Messages ->
-                    // The chrome-less messaging surface — inbox → conversation → compose,
+                    // Full-screen messaging surface — inbox → conversation → compose,
                     // all driven by the SAME shared ParentMessageViewModel.
                     ParentMessagesBody(
                         viewModel = messageViewModel,
                         modifier = Modifier.fillMaxSize(),
                     )
                 ConversationsSegment.Announcements ->
-                    // The existing one-way announcement feed (its own ViewModel via koinViewModel()).
                     ParentActivityScreenV2(modifier = Modifier.fillMaxSize())
             }
         }

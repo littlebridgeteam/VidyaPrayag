@@ -23,6 +23,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,7 +50,6 @@ import com.littlebridge.enrollplus.feature.parent.presentation.NotificationsView
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
-import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
@@ -135,53 +136,15 @@ private fun NotificationsContent(
     val unread = items.count { it.unread }
     val visible = if (filterUnread) items.filter { it.unread } else items
 
-    Column(modifier.fillMaxSize().background(VColors.surface).statusBarsPadding()
+    Column(modifier.fillMaxSize().background(VColors.cream).statusBarsPadding()
         .imePadding()
         .navigationBarsPadding()) {
-        VBackHeader(
+        PremiumNotificationHeader(
             title = appString(StringKeys.NOTIF_TITLE),
             onBack = onBack,
-            // React action: `<Check 14/> Mark all` — a text+icon button in teal-deep / 700.
-            // Added `Clear` button to remove read notifications.
-            action = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Row(
-                        Modifier
-                            .clip(RoundedCornerShape(999.dp))
-                            .clickable { onMarkAll() },
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Icon(VIcons.Check, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(14.dp))
-                        Text(
-                            appString(StringKeys.NOTIF_MARK_ALL),
-                            style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
-                            color = VColors.violet,
-                            maxLines = 1,
-                        )
-                    }
-                    if (items.any { !it.unread }) {
-                        Row(
-                            Modifier
-                                .clip(RoundedCornerShape(999.dp))
-                                .clickable { onClearAll() },
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            Icon(VIcons.Close, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(14.dp))
-                            Text(
-                                "Clear",
-                                style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
-                                color = VColors.ink3,
-                                maxLines = 1,
-                            )
-                        }
-                    }
-                }
-            },
+            onMarkAll = onMarkAll,
+            onClearAll = onClearAll,
+            canClear = items.any { !it.unread },
         )
 
         VPullRefresh(
@@ -350,6 +313,93 @@ private fun NotificationsContent(
             }
         }
         }
+    }
+}
+
+@Composable
+private fun PremiumNotificationHeader(
+    title: String,
+    onBack: () -> Unit,
+    onMarkAll: () -> Unit,
+    onClearAll: () -> Unit,
+    canClear: Boolean,
+) {
+    Column(Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(VColors.surfaceCard)
+                        .border(1.dp, VColors.line, CircleShape)
+                        .clickable(onClick = onBack),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = VColors.ink,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+                Text(
+                    title,
+                    style = VTypography.body.copy(fontWeight = FontWeight.Bold),
+                    color = VColors.ink,
+                )
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Row(
+                    Modifier
+                        .clip(RoundedCornerShape(999.dp))
+                        .clickable { onMarkAll() }
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Icon(VIcons.Check, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(14.dp))
+                    Text(
+                        appString(StringKeys.NOTIF_MARK_ALL),
+                        style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
+                        color = VColors.violet,
+                        maxLines = 1,
+                    )
+                }
+                if (canClear) {
+                    Row(
+                        Modifier
+                            .clip(RoundedCornerShape(999.dp))
+                            .clickable { onClearAll() }
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Icon(VIcons.Close, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(14.dp))
+                        Text(
+                            "Clear",
+                            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
+                            color = VColors.ink3,
+                            maxLines = 1,
+                        )
+                    }
+                }
+            }
+        }
+        Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line).padding(horizontal = 24.dp))
     }
 }
 

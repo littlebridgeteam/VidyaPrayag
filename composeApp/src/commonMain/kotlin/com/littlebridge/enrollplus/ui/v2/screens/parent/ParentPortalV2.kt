@@ -361,25 +361,28 @@ fun ParentPortalV2(
         VNavItem("profile", appString(StringKeys.PPRT_PROFILE), VIcons.User),
     )
 
+    // The Parents Portal's signature premium FLOATING DOCK (ParentDock) — a detached glass
+    // bar with a liquid violet active-lozenge. The shared VBottomNav stays in place for the
+    // Admin/Teacher portals; this bespoke dock is exclusive to the parent experience.
+    //
+    // HIDDEN when the Conversations tab has an open thread or compose-new active —
+    // the conversation/compose surface needs the full screen height for its compose bar
+    // (WhatsApp pattern: no bottom nav inside a chat).
+    val hideDock = tab == "conversations" &&
+        (messageState.openThreadId != null || messageState.composeOpen)
+
     VScreenScaffold(
         modifier = modifier,
-        bottomBar = {
-            // The Parents Portal's signature premium FLOATING DOCK (ParentDock) — a detached glass
-            // bar with a liquid violet active-lozenge. The shared VBottomNav stays in place for the
-            // Admin/Teacher portals; this bespoke dock is exclusive to the parent experience.
-            //
-            // HIDDEN when the Conversations tab has an open thread or compose-new active —
-            // the conversation/compose surface needs the full screen height for its compose bar
-            // (WhatsApp pattern: no bottom nav inside a chat).
-            val hideDock = tab == "conversations" &&
-                (messageState.openThreadId != null || messageState.composeOpen)
-            if (!hideDock) {
+        bottomBar = if (!hideDock) {
+            {
                 ParentDock(
                     items = items,
                     selected = tab,
                     onSelect = { tab = it },
                 )
             }
+        } else {
+            null
         },
     ) { padding ->
         Box(Modifier.fillMaxSize()) {

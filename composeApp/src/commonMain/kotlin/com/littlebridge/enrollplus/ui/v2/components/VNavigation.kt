@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -939,7 +940,7 @@ fun VBackHeader(
                 Icon(VIcons.ChevronLeft, contentDescription = "Back", tint = c.ink, modifier = Modifier.size(20.dp))
             }
             Text(title, style = VTheme.type.h3.colored(c.ink))
-            Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+            Box(Modifier.height(40.dp).wrapContentWidth(), contentAlignment = Alignment.Center) {
                 action?.invoke()
             }
         }
