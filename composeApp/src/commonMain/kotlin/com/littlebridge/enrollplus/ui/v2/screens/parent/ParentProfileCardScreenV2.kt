@@ -26,6 +26,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -87,9 +88,10 @@ fun ParentProfileCardScreenV2(
         activeChildId?.let { academicsViewModel.loadQuizzes(it) }
     }
 
+    val themeMode by profileViewModel.themeMode.collectAsStateV2()
+
     var showLogoutConfirm by remember { mutableStateOf(false) }
     var showThemePicker by remember { mutableStateOf(false) }
-    var showLanguagePicker by remember { mutableStateOf(false) }
 
     ProfileContent(
         state = state,
@@ -102,7 +104,6 @@ fun ParentProfileCardScreenV2(
         onDiscoverSchools = onDiscoverSchools,
         onOpenAccountSettings = onOpenAccountSettings,
         onThemeTap = { showThemePicker = true },
-        onLanguageTap = { showLanguagePicker = true },
         modifier = modifier,
     )
 
@@ -117,24 +118,15 @@ fun ParentProfileCardScreenV2(
     )
 
     if (showThemePicker) {
-        ThemePickerDialog(
-            currentMode = profile.profile?.let { "" } ?: "system",
+        SingleChoiceDialog(
+            title = "Choose theme",
+            options = listOf("light" to "Light", "dark" to "Dark", "system" to "System default"),
+            selected = themeMode,
             onSelect = { mode ->
                 profileViewModel.setThemeMode(mode)
                 showThemePicker = false
             },
             onDismiss = { showThemePicker = false },
-        )
-    }
-
-    if (showLanguagePicker) {
-        LanguagePickerDialog(
-            currentLanguage = "English",
-            onSelect = { lang ->
-                // TODO: wire to locale preference when available
-                showLanguagePicker = false
-            },
-            onDismiss = { showLanguagePicker = false },
         )
     }
 }
@@ -151,7 +143,6 @@ private fun ProfileContent(
     onDiscoverSchools: () -> Unit,
     onOpenAccountSettings: () -> Unit,
     onThemeTap: () -> Unit,
-    onLanguageTap: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -180,7 +171,6 @@ private fun ProfileContent(
                 onDiscoverSchools = onDiscoverSchools,
                 onOpenAccountSettings = onOpenAccountSettings,
                 onThemeTap = onThemeTap,
-                onLanguageTap = onLanguageTap,
             )
         }
     }
@@ -321,7 +311,6 @@ private fun ProfileLoaded(
     onDiscoverSchools: () -> Unit,
     onOpenAccountSettings: () -> Unit,
     onThemeTap: () -> Unit,
-    onLanguageTap: () -> Unit,
 ) {
     val child = state.selectedChild
 
@@ -345,7 +334,6 @@ private fun ProfileLoaded(
             onOpenAccountSettings = onOpenAccountSettings,
             onLinkChild = onLinkChild,
             onDiscoverSchools = onDiscoverSchools,
-            onLanguageTap = onLanguageTap,
             onThemeTap = onThemeTap,
             onLogout = onLogout,
         )
@@ -554,7 +542,6 @@ private fun AccountActions(
     onOpenAccountSettings: () -> Unit,
     onLinkChild: () -> Unit,
     onDiscoverSchools: () -> Unit,
-    onLanguageTap: () -> Unit,
     onThemeTap: () -> Unit,
     onLogout: () -> Unit,
 ) {
@@ -570,7 +557,6 @@ private fun AccountActions(
             ActionRow("Account settings", VIcons.Settings, onOpenAccountSettings),
             ActionRow("Link another child", VIcons.UserPlus, onLinkChild),
             ActionRow("Discover schools", VIcons.Search, onDiscoverSchools),
-            ActionRow("Language", VIcons.Globe, onLanguageTap),
             ActionRow("Theme", VIcons.Palette, onThemeTap),
             ActionRow("Log out", VIcons.LogOut, onLogout, isDestructive = true),
         )
@@ -630,37 +616,65 @@ private fun ActionRowItem(
 }
 
 @Composable
-private fun ThemePickerDialog(
-    currentMode: String,
+private fun SingleChoiceDialog(
+    title: String,
+    options: List<Pair<String, String>>,
+    selected: String,
     onSelect: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val options = listOf("light" to "Light", "dark" to "Dark", "system" to "System default")
-    VConfirmDialog(
-        visible = true,
-        title = "Choose theme",
-        message = options.joinToString("\n") { (_, label) -> label },
-        confirmLabel = "Done",
-        onConfirm = onDismiss,
-        onDismiss = onDismiss,
-    )
-}
-
-@Composable
-private fun LanguagePickerDialog(
-    currentLanguage: String,
-    onSelect: (String) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val options = listOf("English", "Hindi")
-    VConfirmDialog(
-        visible = true,
-        title = "Choose language",
-        message = options.joinToString("\n"),
-        confirmLabel = "Done",
-        onConfirm = onDismiss,
-        onDismiss = onDismiss,
-    )
+    Dialog(onDismissRequest = onDismiss) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .clip(VShapes.lg)
+                .background(VColors.surfaceCard)
+                .border(1.dp, VColors.line, VShapes.lg)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = title,
+                style = VTypography.h3,
+                color = VColors.ink,
+            )
+            Spacer(Modifier.height(8.dp))
+            options.forEach { (key, label) ->
+                val isSelected = key == selected
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(VShapes.md)
+                        .background(if (isSelected) VColors.violetSoft else VColors.surfaceCard)
+                        .clickable { onSelect(key) }
+                        .padding(horizontal = 12.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = label,
+                        style = VTypography.body.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium),
+                        color = if (isSelected) VColors.violet else VColors.ink,
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (isSelected) {
+                        Icon(
+                            imageVector = VIcons.Check,
+                            contentDescription = null,
+                            tint = VColors.violet,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            VButton(
+                text = "Cancel",
+                onClick = onDismiss,
+                variant = VButtonVariant.Secondary,
+                full = true,
+            )
+        }
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

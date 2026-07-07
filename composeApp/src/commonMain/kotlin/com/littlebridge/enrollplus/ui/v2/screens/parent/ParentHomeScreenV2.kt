@@ -563,7 +563,7 @@ private fun StatPill(label: String, value: String, color: Color, softColor: Colo
     ) {
         Text(
             text = value,
-            style = VTypography.h3.copy(fontSize = 20.sp),
+            style = VTypography.h3,
             color = color,
         )
         Spacer(Modifier.height(2.dp))
@@ -881,7 +881,7 @@ private fun InsightCard(
             Spacer(Modifier.height(2.dp))
             Text(
                 text = value,
-                style = VTypography.h3.copy(fontSize = 20.sp),
+                style = VTypography.h3,
                 color = color,
             )
             Text(
@@ -1051,21 +1051,11 @@ private fun AnnouncementsPreview(
     isLoading: Boolean,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = "Announcements",
-                style = VTypography.body.copy(fontWeight = FontWeight.Bold),
-                color = VColors.ink,
-                modifier = Modifier.weight(1f),
-            )
-            if (announcements.isNotEmpty()) {
-                Text(
-                    text = "View all",
-                    style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
-                    color = VColors.violet,
-                )
-            }
-        }
+        Text(
+            text = "Announcements",
+            style = VTypography.body.copy(fontWeight = FontWeight.Bold),
+            color = VColors.ink,
+        )
         if (isLoading) {
             Box(Modifier.fillMaxWidth().height(80.dp).clip(VShapes.md).background(VColors.lineSoft))
         } else if (announcements.isEmpty()) {
