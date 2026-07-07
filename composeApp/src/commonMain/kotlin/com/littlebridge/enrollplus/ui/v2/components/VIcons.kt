@@ -561,6 +561,46 @@ object VIcons {
             moveTo(21f, 12f); lineTo(9f, 12f)
         }
     }
+
+    /** Home (lucide) — premium stroke house. */
+    val HomePremium: ImageVector by lazy {
+        materialStroke("v_home_premium") {
+            moveTo(3f, 9f); lineTo(12f, 2f); lineTo(21f, 9f)
+            moveTo(5f, 10f); lineTo(5f, 19f); curveTo(5f, 20.1f, 5.9f, 21f, 7f, 21f); lineTo(17f, 21f); curveTo(18.1f, 21f, 19f, 20.1f, 19f, 19f); lineTo(19f, 10f)
+            moveTo(9f, 21f); lineTo(9f, 13f); lineTo(15f, 13f); lineTo(15f, 21f)
+        }
+    }
+
+    /** Academic (lucide GraduationCap) — premium stroke graduation cap. */
+    val Academic: ImageVector by lazy {
+        materialStroke("v_academic") {
+            moveTo(22f, 10f); lineTo(12f, 3f); lineTo(2f, 10f); lineTo(12f, 17f); lineTo(22f, 10f)
+            moveTo(2f, 10f); lineTo(2f, 16f)
+            moveTo(6f, 12.5f); lineTo(6f, 16f); lineTo(12f, 19f); lineTo(18f, 16f); lineTo(18f, 12.5f)
+        }
+    }
+
+    /** WalletPremium (lucide Wallet) — premium stroke wallet. */
+    val WalletPremium: ImageVector by lazy {
+        materialStroke("v_wallet_premium") {
+            moveTo(19f, 7f); lineTo(19f, 4f); curveTo(19f, 2.9f, 18.1f, 2f, 17f, 2f); lineTo(5f, 2f); curveTo(3.9f, 2f, 3f, 2.9f, 3f, 4f); lineTo(3f, 18f); curveTo(3f, 19.1f, 3.9f, 20f, 5f, 20f); lineTo(20f, 20f); curveTo(21.1f, 20f, 22f, 19.1f, 22f, 18f); lineTo(22f, 10f); lineTo(17f, 10f); curveTo(15.9f, 10f, 15f, 10.9f, 15f, 12f); curveTo(15f, 13.1f, 15.9f, 14f, 17f, 14f); lineTo(22f, 14f)
+        }
+    }
+
+    /** ChatPremium (lucide MessageSquare) — premium stroke chat bubble. */
+    val ChatPremium: ImageVector by lazy {
+        materialStroke("v_chat_premium") {
+            moveTo(21f, 15f); curveTo(21f, 16.1f, 20.1f, 17f, 19f, 17f); lineTo(7f, 17f); lineTo(3f, 21f); lineTo(3f, 5f); curveTo(3f, 3.9f, 3.9f, 3f, 5f, 3f); lineTo(19f, 3f); curveTo(20.1f, 3f, 21f, 3.9f, 21f, 5f); lineTo(21f, 15f); close()
+        }
+    }
+
+    /** UserPremium (lucide User) — premium stroke person. */
+    val UserPremium: ImageVector by lazy {
+        materialStroke("v_user_premium") {
+            moveTo(20f, 21f); curveTo(20f, 17.13f, 16.42f, 14f, 12f, 14f); curveTo(7.58f, 14f, 4f, 17.13f, 4f, 21f)
+            moveTo(12f, 11f); curveTo(14.21f, 11f, 16f, 9.21f, 16f, 7f); curveTo(16f, 4.79f, 14.21f, 3f, 12f, 3f); curveTo(9.79f, 3f, 8f, 4.79f, 8f, 7f); curveTo(8f, 9.21f, 9.79f, 11f, 12f, 11f); close()
+        }
+    }
 }
 
 // ── Builders ───────────────────────────────────────────────────────────────────

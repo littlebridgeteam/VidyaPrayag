@@ -56,7 +56,7 @@ import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import org.koin.core.qualifier.named
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
-import com.littlebridge.enrollplus.ui.screens.parent.ParentHomeScreen
+import com.littlebridge.enrollplus.ui.v2.screens.parent.ParentHomeScreenV2
 
 /** Full-screen overlays a portal can push above its tab content (back returns to the tabs). */
 private enum class ParentOverlay { None, Notifications, Calendar, Scholarships, Profile, Leave, Messages, LinkChild, Discovery, Health, Pulse, Transport, TutorChat, TutorProgress, DigitalIdCard, Library, EventRegistration, FeePayment, FeeHistory }
@@ -348,17 +348,11 @@ fun ParentPortalV2(
     }
 
     val items = listOf(
-        VNavItem("home", appString(StringKeys.PPRT_HOME), VIcons.Home),
-        VNavItem("academics", appString(StringKeys.PPRT_ACADEMICS), VIcons.School),
-        VNavItem("fees", appString(StringKeys.PPRT_FEES), VIcons.Wallet),
-        // Phase 3 (commit 9): "Activity" → "Conversations". The tab now leads with real two-way
-        // messaging (Chat icon), with announcements one segment away — see ParentConversationsScreenV2.
-        // The dock badge rides the real unread notifications count so the parent always sees pending
-        // conversation activity at a glance.
-        VNavItem("conversations", appString(StringKeys.PPRT_CONVERSATIONS), VIcons.Chat, badge = notifications.unreadCount),
-        // Phase 4 (commit 10): the flagship house-colored collectible player card lives on its own
-        // tab — see ParentProfileCardScreenV2.
-        VNavItem("profile", appString(StringKeys.PPRT_PROFILE), VIcons.User),
+        VNavItem("home", "Home", VIcons.HomePremium),
+        VNavItem("academics", "Academics", VIcons.Academic),
+        VNavItem("fees", "Fees", VIcons.WalletPremium),
+        VNavItem("conversations", "Chat", VIcons.ChatPremium, badge = notifications.unreadCount),
+        VNavItem("profile", "Profile", VIcons.UserPremium),
     )
 
     // The Parents Portal's signature premium FLOATING DOCK (ParentDock) — a detached glass
@@ -387,7 +381,7 @@ fun ParentPortalV2(
     ) { padding ->
         Box(Modifier.fillMaxSize()) {
             when (tab) {
-                "home" -> ParentHomeScreen(
+                "home" -> ParentHomeScreenV2(
                     onDiscoverSchools = { overlay = ParentOverlay.Discovery },
                     onOpenNotifications = { overlay = ParentOverlay.Notifications },
                     onOpenFees = { tab = "fees" },
@@ -400,7 +394,6 @@ fun ParentPortalV2(
                     onOpenIdCard = { overlay = ParentOverlay.DigitalIdCard },
                     onOpenLibrary = { overlay = ParentOverlay.Library },
                     onOpenEvents = { overlay = ParentOverlay.EventRegistration },
-                    onOpenProfile = { overlay = ParentOverlay.Profile },
                     unreadNotificationsCount = notifications.unreadCount,
                 )
                 "academics" -> ParentAcademicsScreenV2(
