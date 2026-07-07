@@ -81,6 +81,7 @@ import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VMotion
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import kotlinx.coroutines.delay
@@ -433,15 +434,14 @@ private fun TeachersSubTab(
         val ready = filtered.isNotEmpty() && !state.isLoading
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             filtered.forEachIndexed { index, t ->
-                PeopleStaggeredItem(index = index, trigger = ready) {
-                    TeacherCard(
+                TeacherCard(
                         teacher = t,
                         isMutating = state.isMutating,
                         onViewProfile = { onOpenTeacher(t.id) },
                         onDeactivate = { onDeactivate(t.id) },
                         onAssignClass = { onAssignClass(t.id) },
+                        modifier = Modifier.staggeredItemEntrance(index, ready),
                     )
-                }
             }
 
             // Pagination: only meaningful when NOT filtering locally (a local
@@ -476,12 +476,13 @@ private fun TeacherCard(
     onViewProfile: () -> Unit,
     onDeactivate: () -> Unit,
     onAssignClass: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val isActive = teacher.profile.status.equals("ACTIVE", ignoreCase = true)
     var menuOpen by remember { mutableStateOf(false) }
     val hasOverflow = teacher.actions.canAssignClass || teacher.actions.canDeactivate
 
-    PeopleCreamCard(modifier = Modifier.fillMaxWidth()) {
+    PeopleCreamCard(modifier = modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
 
             // ── Header: avatar · name · role · status ──────────────────────
@@ -775,14 +776,13 @@ private fun StudentsSubTab(
         val ready = filtered.isNotEmpty() && !state.isLoading
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             filtered.forEachIndexed { index, s ->
-                PeopleStaggeredItem(index = index, trigger = ready) {
-                    PersonRow(
+                PersonRow(
                         name = s.fullName,
                         subtitle = "${s.className} · Sec ${s.section} · Roll ${s.rollNumber}",
                         src = s.profilePhotoUrl,
                         onClick = { onOpenStudent(s.id) },
+                        modifier = Modifier.staggeredItemEntrance(index, ready),
                     )
-                }
             }
         }
     }
@@ -966,14 +966,13 @@ private fun StaffSubTab(
         val ready = state.staff.isNotEmpty() && !state.isLoading
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             state.staff.forEachIndexed { index, s ->
-                PeopleStaggeredItem(index = index, trigger = ready) {
-                    PersonRow(
+                PersonRow(
                         name = s.fullName,
                         subtitle = listOfNotNull(s.role, s.department?.takeIf { it.isNotBlank() }).joinToString(" · "),
                         src = s.photoUrl,
                         onClick = { onOpenStaff(s.id) },
+                        modifier = Modifier.staggeredItemEntrance(index, ready),
                     )
-                }
             }
         }
     }
@@ -991,8 +990,9 @@ private fun PersonRow(
     subtitle: String,
     src: String? = null,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    PeopleCreamCard(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)) {
+    PeopleCreamCard(modifier = modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
