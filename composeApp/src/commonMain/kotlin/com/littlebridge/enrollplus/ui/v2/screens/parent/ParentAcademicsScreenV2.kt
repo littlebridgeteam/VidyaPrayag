@@ -39,10 +39,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Grade
 import androidx.compose.material.icons.filled.Insights
-import androidx.compose.material.icons.filled.MenuBook
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Quiz
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Spa
@@ -64,12 +61,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -95,7 +88,6 @@ import com.littlebridge.enrollplus.ui.components.FilterChip
 import com.littlebridge.enrollplus.ui.components.VButton
 import com.littlebridge.enrollplus.ui.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.components.VProgressBar
-import com.littlebridge.enrollplus.ui.components.VProgressBarSegments
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VMotion
 import com.littlebridge.enrollplus.ui.tokens.VShapes
@@ -175,12 +167,10 @@ private fun ParentAcademicsContent(
 ) {
     val visibleTabs = listOf("Overview", "Attendance", "Marks", "Syllabus", "Quizzes", "Homework")
     var tab by remember { mutableStateOf("Overview") }
-    var tabIndex by remember { mutableStateOf(0) }
 
     LaunchedEffect(initialTab) {
         if (initialTab != null) {
             tab = initialTab
-            tabIndex = visibleTabs.indexOf(initialTab).coerceAtLeast(0)
             onTabConsumed()
         }
     }
@@ -205,19 +195,13 @@ private fun ParentAcademicsContent(
             .verticalScroll(rememberScrollState())
             .padding(bottom = 100.dp),
     ) {
-        // ── Section header hierarchy (matches onboarding: caption → segments → h2 → subtitle) ──
-        Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp)) {
-            Text("Academic Overview", style = VTypography.caption, color = VColors.ink3)
-            Spacer(Modifier.height(8.dp))
-            VProgressBarSegments(total = visibleTabs.size, current = tabIndex + 1)
-            Spacer(Modifier.height(16.dp))
-            Text(tab, style = VTypography.h2, color = VColors.ink)
-            Text(
-                "Tab ${tabIndex + 1} of ${visibleTabs.size}",
-                style = VTypography.caption,
-                color = VColors.ink3,
-            )
-        }
+        // ── Header ──
+        Text(
+            "Academics",
+            style = VTypography.h2,
+            color = VColors.ink,
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
+        )
 
         // ── Tab chips row ──
         LazyRow(
@@ -229,10 +213,7 @@ private fun ParentAcademicsContent(
                 FilterChip(
                     label = label,
                     selected = tab == label,
-                    onClick = {
-                        tab = label
-                        tabIndex = visibleTabs.indexOf(label)
-                    },
+                    onClick = { tab = label },
                 )
             }
         }
@@ -271,7 +252,6 @@ private fun ParentAcademicsContent(
                             val childId = academics.selectedChildId
                             if (childId != null) {
                                 tab = "Report"
-                                tabIndex = visibleTabs.size
                             }
                         },
                     )
@@ -293,7 +273,7 @@ private fun ParentAcademicsContent(
                         if (childId != null) {
                             ParentReportScreen(
                                 childId = childId,
-                                onBack = { tab = "Overview"; tabIndex = 0 },
+                                onBack = { tab = "Overview" },
                                 initialDraftId = initialReportDraftId,
                                 onDraftIdConsumed = onReportDraftIdConsumed,
                             )
@@ -306,7 +286,7 @@ private fun ParentAcademicsContent(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// OVERVIEW — Full-bleed violet hero (like onboarding completion screen)
+// OVERVIEW — Premium academic snapshot
 // ═══════════════════════════════════════════════════════════════════════════════
 
 @Composable
@@ -336,22 +316,22 @@ private fun OverviewTab(
         return
     }
 
-    // ── Full-bleed violet hero (matches onboarding completion screen) ──
-    OverviewHero(
+    val attendanceRate = academics.attendance?.attendanceRate
+    val averageScore = academics.marks?.results?.mapNotNull { m ->
+        m.marks?.let { if (m.maxMarks > 0) (it / m.maxMarks * 100).toInt() else null }
+    }?.average()?.toInt()
+    val syllabusProgress = academics.syllabusV2?.subjects?.map { it.progress }?.average()?.toInt()
+        ?: academics.syllabus?.subjects?.map { it.progress }?.average()?.toInt()
+
+    // ── Academic Snapshot Card (premium identity + progress + stats in one) ──
+    AcademicSnapshotCard(
         childName = state.childName.ifBlank { "Your Child" },
         progressPct = (state.overallProgress * 100f).toInt(),
         level = state.currentLevel,
         journey = state.journeyDescription,
-    )
-
-    // ── Quick stats row ──
-    QuickStatsRow(
-        attendanceRate = academics.attendance?.attendanceRate,
-        averageScore = academics.marks?.results?.mapNotNull { m ->
-            m.marks?.let { if (m.maxMarks > 0) (it / m.maxMarks * 100).toInt() else null }
-        }?.average()?.toInt(),
-        syllabusProgress = academics.syllabusV2?.subjects?.map { it.progress }?.average()?.toInt()
-            ?: academics.syllabus?.subjects?.map { it.progress }?.average()?.toInt(),
+        attendanceRate = attendanceRate,
+        averageScore = averageScore,
+        syllabusProgress = syllabusProgress,
     )
 
     // ── Academic competencies ──
@@ -379,203 +359,177 @@ private fun OverviewTab(
         BadgesRow(state.badges)
     }
 
-    // ── Quick actions ──
+    // ── Quick actions (2-column grid, not stacked list) ──
     SectionLabel("Quick Actions")
-    QuickActionCard(
-        icon = Icons.Filled.Description,
-        iconColor = VColors.violet,
-        title = "Report Card",
-        subtitle = "View AI-generated report card",
-        onClick = onOpenReport,
-    )
-    QuickActionCard(
-        icon = Icons.Filled.CalendarMonth,
-        iconColor = VColors.coral,
-        title = "Apply Leave",
-        subtitle = "Submit a leave request",
-        onClick = onOpenLeave,
-    )
-    QuickActionCard(
-        icon = Icons.Filled.Favorite,
-        iconColor = VColors.error,
-        title = "Health Records",
-        subtitle = "View health records",
-        onClick = onOpenHealth,
-    )
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        QuickActionTile(
+            icon = Icons.Filled.Description,
+            iconColor = VColors.violet,
+            title = "Report Card",
+            onClick = onOpenReport,
+            modifier = Modifier.weight(1f),
+        )
+        QuickActionTile(
+            icon = Icons.Filled.CalendarMonth,
+            iconColor = VColors.coral,
+            title = "Apply Leave",
+            onClick = onOpenLeave,
+            modifier = Modifier.weight(1f),
+        )
+    }
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        QuickActionTile(
+            icon = Icons.Filled.Favorite,
+            iconColor = VColors.error,
+            title = "Health Records",
+            onClick = onOpenHealth,
+            modifier = Modifier.weight(1f),
+        )
+        QuickActionTile(
+            icon = Icons.Filled.School,
+            iconColor = VColors.gold,
+            title = "Syllabus",
+            onClick = { },
+            modifier = Modifier.weight(1f),
+        )
+    }
 }
 
 @Composable
-private fun OverviewHero(
+private fun AcademicSnapshotCard(
     childName: String,
     progressPct: Int,
     level: Int,
     journey: String,
+    attendanceRate: Int?,
+    averageScore: Int?,
+    syllabusProgress: Int?,
 ) {
-    Box(
+    Column(
         Modifier
             .fillMaxWidth()
-            .background(VColors.violet),
+            .background(VColors.surfaceCard, VShapes.lg)
+            .border(1.dp, VColors.line, VShapes.lg)
+            .padding(20.dp),
     ) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(top = 32.dp, bottom = 36.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+        // ── Identity row ──
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            // Avatar circle (matches onboarding completion screen icon circle)
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                SimpleAvatar(name = childName, size = 48.dp, textColor = Color.White, bg = Color.White.copy(alpha = 0.18f))
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        childName,
-                        style = VTypography.h3.copy(fontSize = 18.sp),
-                        color = Color.White,
-                        fontWeight = FontWeight.ExtraBold,
-                    )
-                    if (level > 0) {
-                        Text(
-                            "Level $level",
-                            style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
-                            color = Color.White.copy(alpha = 0.75f),
-                        )
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(24.dp))
-
-            // Progress ring (centered, like onboarding's check circle)
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.size(120.dp),
-            ) {
-                val animatedProgress by animateFloatAsState(
-                    targetValue = progressPct / 100f,
-                    animationSpec = tween(VMotion.durSlower, easing = VMotion.ease),
-                    label = "hero-ring",
-                )
-                CanvasRing(
-                    progress = animatedProgress,
-                    ringColor = Color.White,
-                    trackColor = Color.White.copy(alpha = 0.2f),
-                    modifier = Modifier.fillMaxSize(),
-                )
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        "$progressPct%",
-                        style = VTypography.h2.copy(fontSize = 28.sp),
-                        color = Color.White,
-                        fontWeight = FontWeight.ExtraBold,
-                    )
-                    Text(
-                        "Progress",
-                        style = VTypography.caption.copy(fontSize = 10.sp),
-                        color = Color.White.copy(alpha = 0.7f),
-                    )
-                }
-            }
-
-            if (journey.isNotBlank()) {
-                Spacer(Modifier.height(16.dp))
+            SimpleAvatar(name = childName, size = 44.dp)
+            Column(Modifier.weight(1f)) {
                 Text(
-                    journey,
-                    style = VTypography.body.copy(fontSize = 13.sp),
-                    color = Color.White.copy(alpha = 0.85f),
-                    textAlign = TextAlign.Center,
+                    childName,
+                    style = VTypography.h3.copy(fontSize = 16.sp),
+                    color = VColors.ink,
+                    fontWeight = FontWeight.Bold,
                 )
+                Spacer(Modifier.height(4.dp))
+                if (level > 0) {
+                    MiniBadge(text = "Level $level", color = VColors.violet, bg = VColors.violetSoft)
+                } else {
+                    Text("Academic Overview", style = VTypography.caption, color = VColors.ink3)
+                }
             }
+            Text(
+                "$progressPct%",
+                style = VTypography.h2.copy(fontSize = 24.sp),
+                color = VColors.violet,
+                fontWeight = FontWeight.ExtraBold,
+            )
+        }
+
+        // ── Progress bar ──
+        Spacer(Modifier.height(14.dp))
+        VProgressBar(progress = progressPct / 100f, barHeight = 6)
+
+        // ── Journey description ──
+        if (journey.isNotBlank()) {
+            Spacer(Modifier.height(12.dp))
+            Text(
+                journey,
+                style = VTypography.body.copy(fontSize = 13.sp),
+                color = VColors.ink2,
+            )
+        }
+
+        // ── Inline mini-stats (divider + 3-column row) ──
+        Spacer(Modifier.height(16.dp))
+        HorizontalDivider(color = VColors.lineSoft)
+        Spacer(Modifier.height(14.dp))
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+        ) {
+            InlineStat(
+                value = attendanceRate?.let { "$it%" } ?: "—",
+                label = "Attendance",
+                modifier = Modifier.weight(1f),
+            )
+            InlineStat(
+                value = averageScore?.let { "$it%" } ?: "—",
+                label = "Avg Score",
+                modifier = Modifier.weight(1f),
+            )
+            InlineStat(
+                value = syllabusProgress?.let { "$it%" } ?: "—",
+                label = "Syllabus",
+                modifier = Modifier.weight(1f),
+            )
         }
     }
 }
 
 @Composable
-private fun CanvasRing(
-    progress: Float,
-    ringColor: Color,
-    trackColor: Color,
-    modifier: Modifier = Modifier,
-) {
-    androidx.compose.foundation.Canvas(modifier = modifier) {
-        val stroke = 8.dp.toPx()
-        val diameter = size.minDimension - stroke
-        val topLeft = Offset((size.width - diameter) / 2f, (size.height - diameter) / 2f)
-        val arcSize = Size(diameter, diameter)
-        drawArc(
-            color = trackColor,
-            startAngle = 0f,
-            sweepAngle = 360f,
-            useCenter = false,
-            topLeft = topLeft,
-            size = arcSize,
-            style = Stroke(width = stroke, cap = StrokeCap.Round),
-        )
-        drawArc(
-            color = ringColor,
-            startAngle = -90f,
-            sweepAngle = 360f * progress,
-            useCenter = false,
-            topLeft = topLeft,
-            size = arcSize,
-            style = Stroke(width = stroke, cap = StrokeCap.Round),
-        )
-    }
-}
-
-@Composable
-private fun QuickStatsRow(
-    attendanceRate: Int?,
-    averageScore: Int?,
-    syllabusProgress: Int?,
-) {
-    Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+private fun InlineStat(value: String, label: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        StatChip(
-            icon = Icons.Filled.CalendarMonth,
-            value = attendanceRate?.let { "$it%" } ?: "—",
-            label = "Attendance",
-            modifier = Modifier.weight(1f),
+        Text(
+            value,
+            style = VTypography.h3.copy(fontSize = 16.sp),
+            color = VColors.ink,
+            fontWeight = FontWeight.Bold,
         )
-        StatChip(
-            icon = Icons.Filled.Grade,
-            value = averageScore?.let { "$it%" } ?: "—",
-            label = "Avg Score",
-            modifier = Modifier.weight(1f),
-        )
-        StatChip(
-            icon = Icons.Filled.MenuBook,
-            value = syllabusProgress?.let { "$it%" } ?: "—",
-            label = "Syllabus",
-            modifier = Modifier.weight(1f),
-        )
+        Spacer(Modifier.height(2.dp))
+        Text(label, style = VTypography.caption.copy(fontSize = 10.sp), color = VColors.ink3)
     }
 }
 
 @Composable
-private fun StatChip(
+private fun QuickActionTile(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
-    value: String,
-    label: String,
+    iconColor: Color,
+    title: String,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier
-            .clip(VShapes.md)
+            .clip(VShapes.lg)
             .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.md)
-            .padding(12.dp),
+            .border(1.dp, VColors.line, VShapes.lg)
+            .clickable(onClick = onClick)
+            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Icon(icon, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
-        Text(value, style = VTypography.h3.copy(fontSize = 18.sp), color = VColors.ink, fontWeight = FontWeight.ExtraBold)
-        Text(label, style = VTypography.caption, color = VColors.ink3)
+        Box(
+            Modifier.size(36.dp).clip(VShapes.sm).background(iconColor.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(18.dp))
+        }
+        Text(title, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
     }
 }
 
@@ -693,39 +647,6 @@ private fun BadgeChip(badge: AchievementBadge) {
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,
         )
-    }
-}
-
-@Composable
-private fun QuickActionCard(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    iconColor: Color,
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit,
-) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.lg)
-            .clickable(onClick = onClick)
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        Box(
-            Modifier.size(40.dp).clip(VShapes.sm).background(iconColor.copy(alpha = 0.12f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(20.dp))
-        }
-        Column(Modifier.weight(1f)) {
-            Text(title, style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
-            Text(subtitle, style = VTypography.caption, color = VColors.ink3)
-        }
-        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(20.dp))
     }
 }
 
