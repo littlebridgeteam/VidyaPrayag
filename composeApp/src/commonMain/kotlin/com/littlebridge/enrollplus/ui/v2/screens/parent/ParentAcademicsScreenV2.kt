@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -47,6 +48,8 @@ import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Spa
 import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
@@ -75,6 +78,7 @@ import com.littlebridge.enrollplus.feature.parent.domain.model.ParentAttendanceD
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentDailySummaryData
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentMarksData
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentQuizDetailData
+import com.littlebridge.enrollplus.feature.parent.domain.model.DashboardChildSummary
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentQuizDto
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentSyllabusData
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentSyllabusV2Data
@@ -131,6 +135,7 @@ fun ParentAcademicsScreenV2(
         onSubmitQuiz = { id, ans, txt -> academicsViewModel.submitQuiz(id, ans, txt) },
         onClearQuizResult = { academicsViewModel.clearQuizResult() },
         onLoadLeaderboard = { academicsViewModel.loadLeaderboard(it) },
+        onSelectChild = { academicsViewModel.selectChild(it) },
         onOpenLeave = onOpenLeave,
         onOpenHealth = onOpenHealth,
         onOpenNotifications = onOpenNotifications,
@@ -162,6 +167,7 @@ private fun ParentAcademicsContent(
     onSubmitQuiz: (String, List<Pair<String, Int>>, Map<String, String>) -> Unit,
     onClearQuizResult: () -> Unit,
     onLoadLeaderboard: (String) -> Unit,
+    onSelectChild: (String) -> Unit = {},
     onOpenLeave: () -> Unit = {},
     onOpenHealth: () -> Unit = {},
     onOpenNotifications: () -> Unit = {},
@@ -204,7 +210,9 @@ private fun ParentAcademicsContent(
     ) {
         // ── Premium header (matches screenshot) ──
         AcademicsHeader(
-            childName = state.childName,
+            children = academics.children,
+            selectedChild = academics.selectedChild,
+            onSelectChild = onSelectChild,
             onOpenNotifications = onOpenNotifications,
             unreadNotificationsCount = unreadNotificationsCount,
         )
@@ -303,15 +311,21 @@ private fun ParentAcademicsContent(
 
 @Composable
 private fun AcademicsHeader(
-    childName: String,
+    children: List<DashboardChildSummary>,
+    selectedChild: DashboardChildSummary?,
+    onSelectChild: (String) -> Unit,
     onOpenNotifications: () -> Unit,
     unreadNotificationsCount: Int,
 ) {
+    var expanded by remember { mutableStateOf(false) }
+    val childName = selectedChild?.name?.ifBlank { null } ?: "Your Child"
+
     Column(
         Modifier
             .fillMaxWidth()
+            .statusBarsPadding()
             .padding(horizontal = 24.dp)
-            .padding(top = 16.dp, bottom = 14.dp),
+            .padding(top = 8.dp, bottom = 14.dp),
     ) {
         Row(
             Modifier.fillMaxWidth(),
@@ -332,19 +346,49 @@ private fun AcademicsHeader(
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    modifier = Modifier.clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        enabled = children.size > 1,
+                    ) { expanded = true },
                 ) {
                     Text(
-                        childName.ifBlank { "Your Child" },
+                        childName,
                         style = VTypography.h2.copy(fontSize = 20.sp),
                         color = VColors.ink,
                         fontWeight = FontWeight.Bold,
                     )
-                    Icon(
-                        Icons.Filled.KeyboardArrowDown,
-                        contentDescription = null,
-                        tint = VColors.ink3,
-                        modifier = Modifier.size(20.dp),
-                    )
+                    if (children.size > 1) {
+                        Icon(
+                            Icons.Filled.KeyboardArrowDown,
+                            contentDescription = "Select child",
+                            tint = VColors.ink3,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                }
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    containerColor = VColors.white,
+                    shape = VShapes.lg,
+                ) {
+                    children.forEach { child ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    child.name,
+                                    style = VTypography.body,
+                                    color = if (child.id == selectedChild?.id) VColors.violet else VColors.ink,
+                                    fontWeight = if (child.id == selectedChild?.id) FontWeight.SemiBold else FontWeight.Normal,
+                                )
+                            },
+                            onClick = {
+                                onSelectChild(child.id)
+                                expanded = false
+                            },
+                        )
+                    }
                 }
             }
 
@@ -516,7 +560,7 @@ private fun OverviewTab(
 
     // ── Academic Snapshot Card (premium identity + progress + stats in one) ──
     AcademicSnapshotCard(
-        childName = state.childName.ifBlank { "Your Child" },
+        childName = academics.selectedChild?.name?.ifBlank { null } ?: "Your Child",
         progressPct = (state.overallProgress * 100f).toInt(),
         level = state.currentLevel,
         journey = state.journeyDescription,
