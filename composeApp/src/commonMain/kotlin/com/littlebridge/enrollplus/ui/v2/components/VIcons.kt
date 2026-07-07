@@ -518,6 +518,49 @@ object VIcons {
             close()
         }
     }
+
+    /** UserPlus (lucide) — person + plus sign. */
+    val UserPlus: ImageVector by lazy {
+        materialStroke("v_user_plus") {
+            // body + head
+            moveTo(16f, 21f); curveTo(16f, 18f, 14f, 16f, 12f, 16f); curveTo(10f, 16f, 8f, 18f, 8f, 21f)
+            moveTo(12f, 11f); curveTo(9.5f, 11f, 7.5f, 9f, 7.5f, 6.5f); curveTo(7.5f, 4f, 9.5f, 2f, 12f, 2f); curveTo(14.5f, 2f, 16.5f, 4f, 16.5f, 6.5f); curveTo(16.5f, 9f, 14.5f, 11f, 12f, 11f)
+            // plus sign
+            moveTo(19f, 8f); lineTo(19f, 14f)
+            moveTo(16f, 11f); lineTo(22f, 11f)
+        }
+    }
+
+    /** Globe (lucide) — sphere with meridians and equator. */
+    val Globe: ImageVector by lazy {
+        materialStroke("v_globe") {
+            moveTo(12f, 2f); curveTo(6.48f, 2f, 2f, 6.48f, 2f, 12f); curveTo(2f, 17.52f, 6.48f, 22f, 12f, 22f); curveTo(17.52f, 22f, 22f, 17.52f, 22f, 12f); curveTo(22f, 6.48f, 17.52f, 2f, 12f, 2f); close()
+            moveTo(2f, 12f); lineTo(22f, 12f)
+            moveTo(12f, 2f); curveTo(15f, 5.5f, 15f, 18.5f, 12f, 22f)
+            moveTo(12f, 2f); curveTo(9f, 5.5f, 9f, 18.5f, 12f, 22f)
+        }
+    }
+
+    /** Palette (lucide) — artist palette with paint wells. */
+    val Palette: ImageVector by lazy {
+        materialStroke("v_palette") {
+            // palette body
+            moveTo(12f, 2f); curveTo(6.48f, 2f, 2f, 6.48f, 2f, 12f); curveTo(2f, 17.52f, 6.48f, 22f, 12f, 22f); curveTo(13.5f, 22f, 14.5f, 20.5f, 14f, 19f); curveTo(13.5f, 17.5f, 15f, 16f, 16.5f, 16f); curveTo(19.5f, 16f, 22f, 13.5f, 22f, 10f); curveTo(22f, 5f, 17.5f, 2f, 12f, 2f); close()
+            // wells
+            moveTo(7f, 12f); arcTo(1f, 1f, 0f, false, true, 9f, 12f); arcTo(1f, 1f, 0f, false, true, 7f, 12f); close()
+            moveTo(11f, 7f); arcTo(1f, 1f, 0f, false, true, 13f, 7f); arcTo(1f, 1f, 0f, false, true, 11f, 7f); close()
+            moveTo(15f, 12f); arcTo(1f, 1f, 0f, false, true, 17f, 12f); arcTo(1f, 1f, 0f, false, true, 15f, 12f); close()
+        }
+    }
+
+    /** LogOut (lucide) — arrow exiting a box. */
+    val LogOut: ImageVector by lazy {
+        materialStroke("v_log_out") {
+            moveTo(9f, 21f); lineTo(5f, 21f); curveTo(3.9f, 21f, 3f, 20.1f, 3f, 19f); lineTo(3f, 5f); curveTo(3f, 3.9f, 3.9f, 3f, 5f, 3f); lineTo(9f, 3f)
+            moveTo(16f, 17f); lineTo(21f, 12f); lineTo(16f, 7f)
+            moveTo(21f, 12f); lineTo(9f, 12f)
+        }
+    }
 }
 
 // ── Builders ───────────────────────────────────────────────────────────────────
