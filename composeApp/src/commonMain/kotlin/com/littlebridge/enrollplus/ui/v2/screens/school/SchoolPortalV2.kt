@@ -568,11 +568,11 @@ fun SchoolPortalV2(
         }
 
         val items = listOf(
-            VNavItem("home", "Home", VIcons.Home),
+            VNavItem("home", "Home", VIcons.HomeStroke),
             VNavItem("people", "People", VIcons.UsersGroup),
             VNavItem("records", "Records", VIcons.ClipboardList),
-            VNavItem("comms", "Comms", VIcons.Megaphone, badge = commsBadge),
-            VNavItem("settings", "Settings", VIcons.Settings),
+            VNavItem("comms", "Comms", VIcons.MegaphoneStroke, badge = commsBadge),
+            VNavItem("settings", "Settings", VIcons.SettingsStroke),
         )
 
         VScreenScaffold(

@@ -479,6 +479,45 @@ object VIcons {
             moveTo(5f, 12f); lineTo(19f, 12f)
         }
     }
+
+    /** Home (lucide) — stroke-based house with door. */
+    val HomeStroke: ImageVector by lazy {
+        materialStroke("v_home_stroke") {
+            moveTo(3f, 10f); lineTo(12f, 3f); lineTo(21f, 10f)
+            moveTo(5f, 9f); lineTo(5f, 20f); lineTo(19f, 20f); lineTo(19f, 9f)
+            moveTo(9f, 20f); lineTo(9f, 14f); lineTo(15f, 14f); lineTo(15f, 20f)
+        }
+    }
+
+    /** Megaphone (lucide) — stroke-based loudspeaker. */
+    val MegaphoneStroke: ImageVector by lazy {
+        materialStroke("v_megaphone_stroke") {
+            moveTo(3f, 11f); lineTo(21f, 4f); lineTo(21f, 20f); lineTo(3f, 13f); close()
+            moveTo(11.6f, 16.8f); curveTo(11.2f, 18f, 10f, 19f, 8.5f, 19f)
+            curveTo(7f, 19f, 6f, 18f, 6f, 16.5f); curveTo(6f, 15f, 7f, 14f, 8.5f, 14f)
+        }
+    }
+
+    /** Settings (lucide) — stroke-based gear with center circle. */
+    val SettingsStroke: ImageVector by lazy {
+        materialStroke("v_settings_stroke") {
+            // Gear teeth — 8 spokes
+            moveTo(12f, 2.5f); lineTo(12f, 5.5f)
+            moveTo(12f, 18.5f); lineTo(12f, 21.5f)
+            moveTo(2.5f, 12f); lineTo(5.5f, 12f)
+            moveTo(18.5f, 12f); lineTo(21.5f, 12f)
+            moveTo(5.3f, 5.3f); lineTo(7.4f, 7.4f)
+            moveTo(16.6f, 16.6f); lineTo(18.7f, 18.7f)
+            moveTo(5.3f, 18.7f); lineTo(7.4f, 16.6f)
+            moveTo(16.6f, 7.4f); lineTo(18.7f, 5.3f)
+            // Inner circle
+            moveTo(12f, 8f); curveTo(9.79f, 8f, 8f, 9.79f, 8f, 12f)
+            curveTo(8f, 14.21f, 9.79f, 16f, 12f, 16f)
+            curveTo(14.21f, 16f, 16f, 14.21f, 16f, 12f)
+            curveTo(16f, 9.79f, 14.21f, 8f, 12f, 8f)
+            close()
+        }
+    }
 }
 
 // ── Builders ───────────────────────────────────────────────────────────────────
