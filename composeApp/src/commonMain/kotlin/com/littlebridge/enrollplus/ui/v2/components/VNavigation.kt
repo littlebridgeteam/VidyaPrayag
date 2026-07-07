@@ -64,6 +64,7 @@ import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -978,7 +979,7 @@ fun VCreamBottomNav(
     ) {
         Box(
             modifier = Modifier
-                .height(64.dp)
+                .height(62.dp)
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(28.dp))
                 .background(VColors.creamDeep)
@@ -993,29 +994,10 @@ fun VCreamBottomNav(
                 items.forEach { item ->
                     val active = item.id == selected
                     val tint = if (active) VColors.violet else VColors.ink3
-                    val scale by animateFloatAsState(
-                        targetValue = if (active) 1.12f else 1f,
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessMediumLow,
-                        ),
-                        label = "deckScale_${item.id}",
-                    )
-                    val dotAlpha by animateFloatAsState(
+                    val bgAlpha by animateFloatAsState(
                         targetValue = if (active) 1f else 0f,
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessMedium,
-                        ),
-                        label = "deckDot_${item.id}",
-                    )
-                    val dotScale by animateFloatAsState(
-                        targetValue = if (active) 1f else 0.3f,
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessMedium,
-                        ),
-                        label = "deckDotScale_${item.id}",
+                        animationSpec = tween(200),
+                        label = "navBg_${item.id}",
                     )
                     val interaction = remember { MutableInteractionSource() }
 
@@ -1034,34 +1016,39 @@ fun VCreamBottomNav(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center,
                     ) {
-                        Box(contentAlignment = Alignment.TopEnd) {
-                            Icon(
-                                imageVector = item.icon,
-                                contentDescription = item.label,
-                                tint = tint,
-                                modifier = Modifier
-                                    .size(22.dp)
-                                    .graphicsLayer {
-                                        scaleX = scale
-                                        scaleY = scale
-                                    },
-                            )
-                            if (item.badge > 0) {
-                                Box(
-                                    modifier = Modifier
-                                        .offset(x = 7.dp, y = (-3).dp)
-                                        .clip(CircleShape)
-                                        .background(VColors.coral)
-                                        .padding(horizontal = 4.dp, vertical = 1.dp),
-                                ) {
-                                    Text(
-                                        text = if (item.badge > 99) "99+" else item.badge.toString(),
-                                        style = VTypography.caption.copy(
-                                            fontSize = 9.sp,
-                                            fontWeight = FontWeight.Bold,
-                                        ),
-                                        color = VColors.white,
-                                    )
+                        Box(
+                            modifier = Modifier
+                                .clip(VShapes.sm)
+                                .background(
+                                    VColors.violetSoft.copy(alpha = bgAlpha * 0.6f),
+                                )
+                                .padding(horizontal = 10.dp, vertical = 2.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Box(contentAlignment = Alignment.TopEnd) {
+                                Icon(
+                                    imageVector = item.icon,
+                                    contentDescription = item.label,
+                                    tint = tint,
+                                    modifier = Modifier.size(22.dp),
+                                )
+                                if (item.badge > 0) {
+                                    Box(
+                                        modifier = Modifier
+                                            .offset(x = 7.dp, y = (-3).dp)
+                                            .clip(CircleShape)
+                                            .background(VColors.coral)
+                                            .padding(horizontal = 4.dp, vertical = 1.dp),
+                                    ) {
+                                        Text(
+                                            text = if (item.badge > 99) "99+" else item.badge.toString(),
+                                            style = VTypography.caption.copy(
+                                                fontSize = 9.sp,
+                                                fontWeight = FontWeight.Bold,
+                                            ),
+                                            color = VColors.white,
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -1075,21 +1062,6 @@ fun VCreamBottomNav(
                                 fontSize = 10.sp,
                             ),
                             color = tint,
-                        )
-
-                        Spacer(Modifier.height(3.dp))
-
-                        // Active dot indicator — springs in/out
-                        Box(
-                            modifier = Modifier
-                                .size(5.dp)
-                                .clip(CircleShape)
-                                .background(VColors.violet)
-                                .graphicsLayer {
-                                    this.alpha = dotAlpha
-                                    this.scaleX = dotScale
-                                    this.scaleY = dotScale
-                                },
                         )
                     }
                 }

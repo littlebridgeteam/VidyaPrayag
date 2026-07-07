@@ -23,14 +23,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,7 +39,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -220,7 +217,7 @@ fun SchoolHomeScreenV2(
         onConfirm = permissionVm::requestNotificationPermission,
         onDismiss = permissionVm::declineNotifications,
         cancelLabel = appString(StringKeys.HOME_NOTIF_NOT_NOW),
-        icon = Icons.Filled.Notifications,
+        icon = VIcons.Bell,
     )
 }
 
@@ -390,12 +387,10 @@ private fun CommandDesk(
 // ─────────────────────────────────────────────────────────────────────────────
 // Desk Header — premium top section
 //
-//   • Wordmark with violet "+" (landing pattern)
-//   • Notification bell with static coral badge
-//   • Avatar with thin violet ring (drawBehind stroke)
-//   • Accent dot + school name (landing pattern)
-//   • Greeting with bold+light mix (landing headline pattern)
-//   • Session info + last updated time
+//   • Enroll+ wordmark left, notification bell right (no avatar)
+//   • School name with violet accent dot
+//   • Greeting with bold+light mix
+//   • Session info + live status pill
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
@@ -411,7 +406,7 @@ private fun DeskHeader(
     val schoolName = header.schoolName.takeIf { it.isNotBlank() } ?: "Your School"
     val greeting = header.greeting.takeIf { it.isNotBlank() } ?: "Welcome"
 
-    // Top bar — wordmark + notification + avatar
+    // Top bar — wordmark + notification bell only
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -426,10 +421,10 @@ private fun DeskHeader(
             modifier = Modifier.weight(1f),
         )
 
-        // Notification bell — always visible, premium lucide icon
+        // Notification bell — lucide stroke icon, clean
         Box(
             modifier = Modifier
-                .size(42.dp)
+                .size(40.dp)
                 .clip(CircleShape)
                 .background(VColors.violetSoft)
                 .clickable(
@@ -439,7 +434,7 @@ private fun DeskHeader(
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                VIcons.Bell,
+                VIcons.BellStroke,
                 contentDescription = "Notifications",
                 tint = VColors.violet,
                 modifier = Modifier.size(20.dp),
@@ -449,15 +444,16 @@ private fun DeskHeader(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .offset(x = 2.dp, y = (-2).dp)
-                        .size(16.dp)
+                        .size(14.dp)
                         .clip(CircleShape)
-                        .background(VColors.coral),
+                        .background(VColors.coral)
+                        .border(1.5.dp, VColors.surfaceCard, CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text = if (unreadCount > 9) "9+" else unreadCount.toString(),
                         style = VTypography.caption.copy(
-                            fontSize = 9.sp,
+                            fontSize = 8.sp,
                             fontWeight = FontWeight.Bold,
                         ),
                         color = VColors.white,
@@ -465,41 +461,11 @@ private fun DeskHeader(
                 }
             }
         }
-
-        Spacer(Modifier.size(10.dp))
-
-        // Avatar with violet ring — premium, onboarding SimpleAvatar pattern elevated
-        Box(
-            modifier = Modifier
-                .size(46.dp)
-                .drawBehind {
-                    drawCircle(
-                        color = VColors.violet,
-                        radius = size.minDimension / 2f,
-                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx()),
-                    )
-                }
-                .padding(2.dp)
-                .clip(CircleShape)
-                .background(VColors.violetSoft)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                ) { onAvatar() },
-            contentAlignment = Alignment.Center,
-        ) {
-            val initials = name.split(" ").take(2).mapNotNull { it.firstOrNull()?.uppercase() }.joinToString("")
-            Text(
-                text = initials,
-                style = VTypography.label.copy(fontWeight = FontWeight.ExtraBold),
-                color = VColors.violet,
-            )
-        }
     }
 
     Spacer(Modifier.height(20.dp))
 
-    // Accent dot + school name (landing pattern)
+    // School name with accent dot
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(7.dp),
@@ -517,9 +483,9 @@ private fun DeskHeader(
         )
     }
 
-    Spacer(Modifier.height(8.dp))
+    Spacer(Modifier.height(6.dp))
 
-    // Greeting — bold + light mix (landing headline pattern, h2 size)
+    // Greeting — bold + light mix
     Text(
         text = buildAnnotatedString {
             withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold, color = VColors.ink)) {
@@ -532,7 +498,7 @@ private fun DeskHeader(
         style = VTypography.h2,
     )
 
-    // Session info (onboarding "Step X of Y" pattern)
+    // Session info
     val session = buildString {
         header.academicYear.takeIf { it.isNotBlank() }?.let { append(it) }
         header.currentTerm.takeIf { it.isNotBlank() }?.let {
@@ -549,34 +515,33 @@ private fun DeskHeader(
         )
     }
 
-    // Last updated — makes the page feel alive
+    // Live status pill — makes the page feel alive
     if (header.lastUpdated.isNotBlank()) {
-        Spacer(Modifier.height(1.dp))
+        Spacer(Modifier.height(8.dp))
         Row(
+            modifier = Modifier
+                .clip(VShapes.full)
+                .background(VColors.mintSoft)
+                .padding(horizontal = 10.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
             Box(
                 modifier = Modifier
-                    .size(4.dp)
+                    .size(6.dp)
                     .clip(CircleShape)
                     .background(VColors.mint),
             )
             Text(
-                text = "Updated ${header.lastUpdated}",
-                style = VTypography.caption.copy(fontSize = 11.sp),
-                color = VColors.ink3.copy(alpha = 0.7f),
+                text = "Live \u00B7 Updated ${header.lastUpdated}",
+                style = VTypography.caption.copy(
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                ),
+                color = VColors.ink2,
             )
         }
     }
-
-    Spacer(Modifier.height(6.dp))
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(1.dp)
-            .background(VColors.lineSoft),
-    )
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -616,29 +581,6 @@ private fun CardDivider() {
     Box(
         modifier = Modifier.fillMaxWidth().height(1.dp).background(VColors.lineSoft),
     )
-}
-
-@Composable
-private fun ProgressBar(
-    fraction: Float,
-    color: Color,
-    modifier: Modifier = Modifier,
-) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(4.dp)
-            .clip(VShapes.full)
-            .background(VColors.lineSoft),
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(fraction.coerceIn(0f, 1f))
-                .height(4.dp)
-                .clip(VShapes.full)
-                .background(color),
-        )
-    }
 }
 
 @Composable
@@ -686,18 +628,10 @@ private fun RowScope.KpiMetric(kpi: OverviewKpi, modifier: Modifier = Modifier) 
         else -> VColors.violet
     }
     Column(modifier = modifier) {
-        Box(
-            modifier = Modifier
-                .width(20.dp)
-                .height(3.dp)
-                .clip(VShapes.full)
-                .background(accentColor.copy(alpha = 0.7f)),
-        )
-        Spacer(Modifier.height(8.dp))
         Text(
             text = formatKpiValue(kpi),
-            style = VTypography.h3,
-            color = VColors.ink,
+            style = VTypography.h3.copy(fontWeight = FontWeight.ExtraBold),
+            color = accentColor,
         )
         Spacer(Modifier.height(2.dp))
         Text(
@@ -853,11 +787,6 @@ private fun FeeAnalyticsCard(fa: OverviewFeeAnalytics, onClick: () -> Unit) {
                 )
             }
         }
-        Spacer(Modifier.height(12.dp))
-        ProgressBar(
-            fraction = fa.collectionRate / 100f,
-            color = rateColor,
-        )
     }
 }
 
@@ -900,11 +829,6 @@ private fun ParentEngagementCard(pe: OverviewParentEngagement, onClick: () -> Un
                 bg = VColors.violetSoft,
             )
         }
-        Spacer(Modifier.height(10.dp))
-        ProgressBar(
-            fraction = pe.activeParentsPct / 100f,
-            color = engagementColor,
-        )
         if (pe.leaderboard.isNotEmpty()) {
             Spacer(Modifier.height(12.dp))
             CardDivider()
@@ -1263,11 +1187,6 @@ private fun PulseCard(pulse: OverviewSchoolPulse, onClick: () -> Unit) {
                     Text(cat.label, style = VTypography.caption, color = VColors.ink2, modifier = Modifier.weight(1f))
                     Text("${cat.score}", style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = badgeColor)
                 }
-                Spacer(Modifier.height(4.dp))
-                ProgressBar(
-                    fraction = cat.score / 100f,
-                    color = badgeColor,
-                )
             }
         }
     }

@@ -53,7 +53,7 @@ object VIcons {
     val User get() = Icons.Filled.Person                     // User
     val Users get() = Icons.Filled.Person                    // Users (fallback to Person)
     val Search get() = Icons.Filled.Search                   // Search
-    val Bell get() = Icons.Filled.Notifications              // Bell
+    val Bell get() = Icons.Filled.Notifications              // Bell (Material fallback)
     val Calendar get() = Icons.Filled.CalendarMonth          // Calendar
     val Megaphone get() = Icons.Filled.Campaign              // Megaphone
     val School get() = Icons.Filled.School                   // (school plate)
@@ -82,6 +82,15 @@ object VIcons {
     val IdCard get() = Icons.Filled.Person                   // ID Card (fallback to Person)
 
     // ── Hand-authored Material-style vectors (no safe core equivalent) ──────────
+
+    /** Bell (lucide) — stroke-based, crisper than Material filled Notifications. */
+    val BellStroke: ImageVector by lazy {
+        materialStroke("v_bell") {
+            moveTo(6f, 8f); curveTo(6f, 4.69f, 8.69f, 2f, 12f, 2f); curveTo(15.31f, 2f, 18f, 4.69f, 18f, 8f)
+            curveTo(18f, 12f, 19f, 14f, 20f, 15f); lineTo(4f, 15f); curveTo(5f, 14f, 6f, 12f, 6f, 8f); close()
+            moveTo(10.3f, 21f); curveTo(10.72f, 21.8f, 11.55f, 22f, 12f, 22f); curveTo(12.45f, 22f, 13.28f, 21.8f, 13.7f, 21f)
+        }
+    }
 
     /** Indeterminate loading spinner (¾ ring) used by [VButton]'s loading phase. */
     val Spinner: ImageVector by lazy {
