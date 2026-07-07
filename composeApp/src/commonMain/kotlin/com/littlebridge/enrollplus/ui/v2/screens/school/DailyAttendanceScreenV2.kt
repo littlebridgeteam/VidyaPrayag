@@ -48,7 +48,6 @@ import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
 
