@@ -1,7 +1,11 @@
 package com.littlebridge.enrollplus.ui.v2.screens.school
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,30 +20,36 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.admin.presentation.Announcement
 import com.littlebridge.enrollplus.feature.admin.presentation.SchoolAnnouncementsState
 import com.littlebridge.enrollplus.feature.admin.presentation.SchoolAnnouncementsViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
-import com.littlebridge.enrollplus.ui.v2.components.VBadge
-import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
-import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VComingSoon
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
@@ -48,9 +58,12 @@ import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
-import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VMotion
+import com.littlebridge.enrollplus.ui.tokens.VShapes
+import com.littlebridge.enrollplus.ui.tokens.VTypography
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -98,11 +111,9 @@ private fun SchoolCommsContent(
     onOpenScheduledMessages: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
     var tab by remember { mutableStateOf("Announcements") }
     var openAnnouncement by remember { mutableStateOf<String?>(null) }
 
-    // Mirror React `Comms`: tapping a card opens an AnnouncementDetail leaf.
     openAnnouncement?.let { id ->
         AnnouncementDetailV2(
             announcement = state.announcements.find { it.id == id }
@@ -113,64 +124,102 @@ private fun SchoolCommsContent(
         return
     }
 
-    // Feature 7 — pull-to-refresh on this scrollable list screen. `isRefreshing`
-    // tracks the load flag; `onRefresh` re-runs the announcements fetch. On
-    // completion the announcement cards re-enter via the Feature 5 staggered
-    // ladder already wired below.
+    // Stagger entrance
+    val headerAlpha = remember { Animatable(0f) }
+    val headerOffset = remember { Animatable(20f) }
+    LaunchedEffect(Unit) {
+        headerAlpha.snapTo(0f); headerOffset.snapTo(20f)
+        launch {
+            delay(100)
+            headerAlpha.animateTo(1f, tween(VMotion.durSlower, easing = VMotion.ease))
+            headerOffset.animateTo(0f, tween(VMotion.durSlower, easing = VMotion.ease))
+        }
+    }
+
     VPullRefresh(
         isRefreshing = state.isLoading,
         onRefresh = onRetry,
         modifier = modifier.fillMaxSize(),
     ) {
-    Column(
-        Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp)
-            .padding(top = 24.dp, bottom = 140.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Text(appString(StringKeys.SCH_COMMUNICATIONS), style = VTheme.type.h1.colored(c.ink))
-        val tabLabels = listOf(
-            appString(StringKeys.SCH_ANNOUNCEMENTS),
-            appString(StringKeys.SCH_MESSAGES),
-            appString(StringKeys.SCH_PTM),
-            appString(StringKeys.SCH_NOTIFICATIONS),
-        )
-        VTopTabs(
-            tabs = tabLabels,
-            selected = tab,
-            onSelect = { tab = it },
-        )
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            when (tab) {
-                tabLabels[0] -> AnnouncementsTab(
-                    state = state,
-                    onRetry = onRetry,
-                    onSelectCategory = onSelectCategory,
-                    onOpen = { openAnnouncement = it },
-                    onCreateEvent = onCreateEvent,
-                    onOpenScheduledMessages = onOpenScheduledMessages,
-                )
-                tabLabels[1] -> CommsEntryCard(
-                    icon = VIcons.Chat,
-                    title = appString(StringKeys.SCH_PARENT_MESSAGES),
-                    description = appString(StringKeys.SCH_PARENT_MESSAGES_DESC),
-                    onClick = onOpenMessages,
-                )
-                tabLabels[2] -> CommsEntryCard(
-                    icon = VIcons.Calendar,
-                    title = appString(StringKeys.SCH_PARENT_TEACHER_MEETINGS),
-                    description = appString(StringKeys.SCH_PARENT_TEACHER_MEETINGS_DESC),
-                    onClick = onOpenPtm,
-                )
-                tabLabels[3] -> VComingSoon(
-                    title = appString(StringKeys.SCH_DELIVERY_LOG),
-                    description = appString(StringKeys.SCH_DELIVERY_LOG_DESC),
+        Column(
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp)
+                .padding(top = 16.dp, bottom = 140.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            // Premium header
+            Column(
+                modifier = Modifier
+                    .graphicsLayer(translationY = headerOffset.value)
+                    .alpha(headerAlpha.value),
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(7.dp),
+                ) {
+                    Box(Modifier.size(5.dp).clip(CircleShape).background(VColors.violet))
+                    Text(
+                        appString(StringKeys.SCH_COMMUNICATIONS),
+                        style = VTypography.accentLabel,
+                        color = VColors.violet,
+                    )
+                }
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = buildAnnotatedString {
+                        withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold, color = VColors.ink)) {
+                            append("Comms")
+                        }
+                        withStyle(SpanStyle(fontWeight = FontWeight.Normal, color = VColors.ink2)) {
+                            append(" Hub")
+                        }
+                    },
+                    style = VTypography.h2,
                 )
             }
+
+            val tabLabels = listOf(
+                appString(StringKeys.SCH_ANNOUNCEMENTS),
+                appString(StringKeys.SCH_MESSAGES),
+                appString(StringKeys.SCH_PTM),
+                appString(StringKeys.SCH_NOTIFICATIONS),
+            )
+            VTopTabs(
+                tabs = tabLabels,
+                selected = tab,
+                onSelect = { tab = it },
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                when (tab) {
+                    tabLabels[0] -> AnnouncementsTab(
+                        state = state,
+                        onRetry = onRetry,
+                        onSelectCategory = onSelectCategory,
+                        onOpen = { openAnnouncement = it },
+                        onCreateEvent = onCreateEvent,
+                        onOpenScheduledMessages = onOpenScheduledMessages,
+                    )
+                    tabLabels[1] -> CommsEntryCard(
+                        icon = VIcons.Chat,
+                        title = appString(StringKeys.SCH_PARENT_MESSAGES),
+                        description = appString(StringKeys.SCH_PARENT_MESSAGES_DESC),
+                        onClick = onOpenMessages,
+                    )
+                    tabLabels[2] -> CommsEntryCard(
+                        icon = VIcons.Calendar,
+                        title = appString(StringKeys.SCH_PARENT_TEACHER_MEETINGS),
+                        description = appString(StringKeys.SCH_PARENT_TEACHER_MEETINGS_DESC),
+                        onClick = onOpenPtm,
+                    )
+                    tabLabels[3] -> VComingSoon(
+                        title = appString(StringKeys.SCH_DELIVERY_LOG),
+                        description = appString(StringKeys.SCH_DELIVERY_LOG_DESC),
+                    )
+                }
+            }
         }
-    }
     }
 }
 
@@ -183,16 +232,12 @@ private fun AnnouncementsTab(
     onCreateEvent: () -> Unit,
     onOpenScheduledMessages: () -> Unit,
 ) {
-    val c = VTheme.colors
-
-    // Compose button lives ABOVE the state host so an admin can post the very
-    // first announcement even when the list is empty (RA-23). Frozen primitives.
     Row(
         Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(appString(StringKeys.SCH_ANNOUNCEMENTS), style = VTheme.type.h3.colored(c.ink))
+        Text(appString(StringKeys.SCH_ANNOUNCEMENTS), style = VTypography.label, color = VColors.ink3)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             VButton(
                 text = appString(StringKeys.SCH_SCHEDULED),
@@ -224,7 +269,6 @@ private fun AnnouncementsTab(
         skeleton = { com.littlebridge.enrollplus.ui.v2.screens.SkeletonAnnouncements() },
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            // Category filter chips derived from the loaded data.
             val categories = remember(state.allAnnouncements) {
                 state.allAnnouncements.map { it.category }.filter { it.isNotBlank() }.distinct()
             }
@@ -236,29 +280,34 @@ private fun AnnouncementsTab(
                     }
                 }
             }
-            // Feature 5 — staggered list entrance for announcement cards once
-            // VStateHost flips from skeleton → content. `ready` only flips on
-            // the *initial* data-load; subsequent refreshes keep it true so
-            // items never re-animate (RULE-2: no jank).
-            val ready = state.announcements.isNotEmpty() && !state.isLoading
             state.announcements.forEachIndexed { index, a ->
-                Box(modifier = Modifier.staggeredItemEntrance(index = index, trigger = ready)) {
-                    VCard(onClick = { onOpen(a.id) }) {
-                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(a.title, style = VTheme.type.bodyStrong.colored(c.ink), modifier = Modifier.weight(1f))
+                CommsStaggeredItem(index = index) {
+                    CreamCard(onClick = { onOpen(a.id) }) {
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.Top,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Text(
+                                a.title,
+                                style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                                color = VColors.ink,
+                                modifier = Modifier.weight(1f),
+                            )
                             if (a.isCalendarOnly) {
-                                VBadge(text = appString(StringKeys.SCH_CALENDAR_ONLY), tone = VBadgeTone.Warning)
+                                MiniBadge(text = appString(StringKeys.SCH_CALENDAR_ONLY), color = VColors.gold, bg = VColors.goldSoft)
                             } else if (a.category.isNotBlank()) {
-                                VBadge(text = a.category, tone = VBadgeTone.Arctic)
+                                MiniBadge(text = a.category, color = VColors.violet, bg = VColors.violetSoft)
                             }
                         }
                         if (a.date.isNotBlank()) {
-                            Text(a.date, style = VTheme.type.caption.colored(c.ink2), modifier = Modifier.padding(top = 2.dp))
+                            Text(a.date, style = VTypography.caption, color = VColors.ink3, modifier = Modifier.padding(top = 2.dp))
                         }
                         if (a.description.isNotBlank()) {
                             Text(
                                 a.description,
-                                style = VTheme.type.caption.colored(c.ink2),
+                                style = VTypography.caption,
+                                color = VColors.ink2,
                                 modifier = Modifier.padding(top = 6.dp),
                             )
                         }
@@ -269,10 +318,6 @@ private fun AnnouncementsTab(
     }
 }
 
-/**
- * RA-24: tappable entry card opening an existing, backend-backed Comms screen
- * (Messages / PTM). Frozen V* primitives only.
- */
 @Composable
 private fun CommsEntryCard(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -280,35 +325,37 @@ private fun CommsEntryCard(
     description: String,
     onClick: () -> Unit,
 ) {
-    val c = VTheme.colors
-    VCard(onClick = onClick) {
+    CreamCard(onClick = onClick) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Box(
-                Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(c.teal.copy(alpha = 0.16f)),
+                Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(VColors.violetSoft),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(18.dp))
+                Icon(icon, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
             }
             Column(Modifier.weight(1f)) {
-                Text(title, style = VTheme.type.bodyStrong.colored(c.ink))
-                Text(description, style = VTheme.type.caption.colored(c.ink2))
+                Text(title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                Text(description, style = VTypography.caption, color = VColors.ink3)
             }
-            Icon(VIcons.ChevronRight, contentDescription = null, tint = c.ink3, modifier = Modifier.size(18.dp))
+            Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.ink3.copy(alpha = 0.4f), modifier = Modifier.size(18.dp))
         }
     }
 }
 
 @Composable
 private fun FilterChip(label: String, active: Boolean, onClick: () -> Unit) {
-    val c = VTheme.colors
-    val (bg, fg) = if (active) c.teal.copy(alpha = 0.16f) to c.tealDeep else c.cream to c.ink2
+    val (bg, fg) = if (active) VColors.violetSoft to VColors.violet else VColors.creamDeep to VColors.ink3
     Text(
         label,
-        style = VTheme.type.label.colored(fg),
+        style = VTypography.caption.copy(fontWeight = if (active) FontWeight.Bold else FontWeight.Medium),
+        color = fg,
         modifier = Modifier
-            .clip(RoundedCornerShape(999.dp))
+            .clip(RoundedCornerShape(50))
             .background(bg)
-            .clickable { onClick() }
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ) { onClick() }
             .padding(horizontal = 12.dp, vertical = 6.dp),
     )
 }
@@ -324,33 +371,93 @@ private fun AnnouncementDetailV2(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
     Column(modifier.fillMaxSize()) {
         VBackHeader(title = appString(StringKeys.SCH_ANNOUNCEMENT), onBack = onBack)
         if (announcement == null) {
-            Column(Modifier.fillMaxSize().padding(20.dp)) {
-                Text(appString(StringKeys.SCH_ANNOUNCEMENT_UNAVAILABLE), style = VTheme.type.h3.colored(c.ink))
+            Column(Modifier.fillMaxSize().padding(24.dp)) {
+                Text(appString(StringKeys.SCH_ANNOUNCEMENT_UNAVAILABLE), style = VTypography.h3, color = VColors.ink)
             }
             return
         }
         Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(vertical = 20.dp),
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp).padding(vertical = 20.dp),
         ) {
-            Text(announcement.title, style = VTheme.type.h2.colored(c.ink))
+            // Accent dot + category
+            if (announcement.category.isNotBlank()) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(7.dp),
+                ) {
+                    Box(Modifier.size(5.dp).clip(CircleShape).background(VColors.violet))
+                    Text(announcement.category, style = VTypography.accentLabel, color = VColors.violet)
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+            Text(announcement.title, style = VTypography.h2, color = VColors.ink)
             Text(
                 appString(StringKeys.SCH_POSTED_BY, "date" to announcement.date),
-                style = VTheme.type.caption.colored(c.ink2),
+                style = VTypography.caption,
+                color = VColors.ink3,
                 modifier = Modifier.padding(top = 4.dp),
             )
             Spacer(Modifier.height(16.dp))
-            if (announcement.category.isNotBlank()) {
-                VBadge(text = announcement.category, tone = VBadgeTone.Arctic)
-            }
+            Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.lineSoft))
+            Spacer(Modifier.height(16.dp))
             Text(
                 announcement.description,
-                style = VTheme.type.body.colored(c.ink2).copy(lineHeight = 22.4.sp),
-                modifier = Modifier.padding(top = 16.dp),
+                style = VTypography.bodySmall.copy(lineHeight = 22.4.sp),
+                color = VColors.ink2,
             )
         }
     }
+}
+
+// ── Premium shared primitives ─────────────────────────────────────────────────
+
+@Composable
+private fun CreamCard(
+    onClick: () -> Unit = {},
+    content: @Composable () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.lg)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.lg)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ) { onClick() }
+            .padding(16.dp),
+    ) { content() }
+}
+
+@Composable
+private fun MiniBadge(text: String, color: Color, bg: Color) {
+    Text(
+        text = text,
+        style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+        color = color,
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(bg)
+            .padding(horizontal = 8.dp, vertical = 3.dp),
+    )
+}
+
+@Composable
+private fun CommsStaggeredItem(index: Int, content: @Composable () -> Unit) {
+    val alpha = remember { Animatable(0f) }
+    val offsetY = remember { Animatable(24f) }
+    LaunchedEffect(Unit) {
+        delay(220 + index * 60L)
+        launch { alpha.animateTo(1f, tween(VMotion.durSlower, easing = VMotion.ease)) }
+        launch { offsetY.animateTo(0f, tween(VMotion.durSlower, easing = VMotion.ease)) }
+    }
+    Box(
+        modifier = Modifier
+            .graphicsLayer(translationY = offsetY.value)
+            .alpha(alpha.value),
+    ) { content() }
 }

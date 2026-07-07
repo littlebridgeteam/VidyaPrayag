@@ -40,9 +40,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
-import com.littlebridge.enrollplus.ui.v2.theme.shapeInput
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -133,13 +132,12 @@ private fun StatusFilterRow(
 
 @Composable
 private fun StatusChip(label: String, active: Boolean, onClick: () -> Unit) {
-    val c = VTheme.colors
-    val shape = VTheme.dimens.shapeInput
-    val bg = if (active) c.teal.copy(alpha = 0.16f) else c.cream
-    val fg = if (active) c.tealDeep else c.ink2
+        val shape = RoundedCornerShape(12.dp)
+    val bg = if (active) VColors.sky.copy(alpha = 0.16f) else VColors.cream
+    val fg = if (active) VColors.sky else VColors.ink2
     Text(
         text = label,
-        style = VTheme.type.label.colored(fg),
+        style = VTypography.label.copy(color = fg),
         modifier = Modifier
             .clip(shape)
             .background(bg)
@@ -154,8 +152,7 @@ private fun ScheduledMessageCard(
     onCancel: () -> Unit,
     onDispatchNow: () -> Unit,
 ) {
-    val c = VTheme.colors
-    val (badgeText, badgeTone) = statusBadge(message.status)
+        val (badgeText, badgeTone) = statusBadge(message.status)
 
     VCard(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -166,7 +163,7 @@ private fun ScheduledMessageCard(
             ) {
                 Text(
                     text = message.title ?: message.messageType,
-                    style = VTheme.type.h3.colored(c.ink),
+                    style = VTypography.h3.copy(color = VColors.ink),
                     modifier = Modifier.weight(1f),
                 )
                 VBadge(text = badgeText, tone = badgeTone)
@@ -175,7 +172,7 @@ private fun ScheduledMessageCard(
             message.bodyPreview?.let {
                 Text(
                     text = it,
-                    style = VTheme.type.body.colored(c.ink2),
+                    style = VTypography.body.copy(color = VColors.ink2),
                     maxLines = 2,
                 )
             }
@@ -185,15 +182,15 @@ private fun ScheduledMessageCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                Icon(VIcons.Clock, contentDescription = null, tint = c.ink3, modifier = Modifier.size(14.dp))
+                Icon(VIcons.Clock, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(14.dp))
                 Text(
                     text = formatScheduledTime(message.scheduledAt),
-                    style = VTheme.type.caption.colored(c.ink3),
+                    style = VTypography.caption.copy(color = VColors.ink3),
                 )
                 message.audienceLabel?.let {
                     Spacer(Modifier.size(8.dp))
-                    Icon(VIcons.Users, contentDescription = null, tint = c.ink3, modifier = Modifier.size(14.dp))
-                    Text(it, style = VTheme.type.caption.colored(c.ink3))
+                    Icon(VIcons.Users, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(14.dp))
+                    Text(it, style = VTypography.caption.copy(color = VColors.ink3))
                 }
             }
 
@@ -222,7 +219,7 @@ private fun ScheduledMessageCard(
             message.lastError?.let {
                 Text(
                     text = "Error: $it",
-                    style = VTheme.type.caption.colored(c.dangerInk),
+                    style = VTypography.caption.copy(color = VColors.error),
                 )
             }
         }

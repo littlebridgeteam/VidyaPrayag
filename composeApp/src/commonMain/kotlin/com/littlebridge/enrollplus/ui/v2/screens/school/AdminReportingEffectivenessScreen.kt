@@ -43,8 +43,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 
 /**
  * AdminReportingEffectivenessScreen — shows the Learn/Flywheel data:
@@ -56,14 +56,13 @@ fun AdminReportingEffectivenessScreen(
     viewModel: AdminReportEffectivenessViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
-    val c = VTheme.colors
-    var currentTerm by remember { mutableStateOf("Term 2") }
+        var currentTerm by remember { mutableStateOf("Term 2") }
     var previousTerm by remember { mutableStateOf("Term 1") }
 
     LaunchedEffect(Unit) { viewModel.loadEffectiveness() }
 
     Column(
-        Modifier.fillMaxSize().background(c.background),
+        Modifier.fillMaxSize().background(VColors.surface),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         // Header
@@ -73,13 +72,13 @@ fun AdminReportingEffectivenessScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             VButton(text = appString(StringKeys.COMMON_BUTTON_BACK), onClick = onBack, variant = VButtonVariant.Secondary, size = VButtonSize.Sm)
-            Text(appString(StringKeys.SCH_REPORTING_EFFECTIVENESS), style = VTheme.type.h3.colored(c.ink))
+            Text(appString(StringKeys.SCH_REPORTING_EFFECTIVENESS), style = VTypography.h3.copy(color = VColors.ink))
         }
 
         // Flywheel trigger
         VCard(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(appString(StringKeys.SCH_RUN_FLYWHEEL), style = VTheme.type.label.colored(c.ink).copy(fontWeight = FontWeight.Bold))
+                Text(appString(StringKeys.SCH_RUN_FLYWHEEL), style = VTypography.label.copy(color = VColors.ink).copy(fontWeight = FontWeight.Bold))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     OutlinedTextField(
                         value = currentTerm,
@@ -109,8 +108,8 @@ fun AdminReportingEffectivenessScreen(
             Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                 VCard(Modifier.fillMaxWidth()) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Icon(VIcons.Check, contentDescription = null, tint = c.success, modifier = Modifier.size(16.dp))
-                        Text(appString(StringKeys.SCH_FLYWHEEL_COMPLETE, "count" to results.size.toString()), style = VTheme.type.body.colored(c.ink))
+                        Icon(VIcons.Check, contentDescription = null, tint = VColors.success, modifier = Modifier.size(16.dp))
+                        Text(appString(StringKeys.SCH_FLYWHEEL_COMPLETE, "count" to results.size.toString()), style = VTypography.body.copy(color = VColors.ink))
                     }
                 }
             }
@@ -119,12 +118,12 @@ fun AdminReportingEffectivenessScreen(
         when {
             state.isLoading -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = c.accent)
+                    CircularProgressIndicator(color = VColors.violet)
                 }
             }
             state.error != null -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(state.error!!, style = VTheme.type.body.colored(c.danger))
+                    Text(state.error!!, style = VTypography.body.copy(color = VColors.error))
                 }
             }
             else -> {
@@ -143,11 +142,10 @@ fun AdminReportingEffectivenessScreen(
 
 @Composable
 private fun EffectivenessCard(eff: ReportCardModels.EffectivenessReport) {
-    val c = VTheme.colors
-    val scoreColor = when {
-        eff.effectivenessScore >= 0.7 -> c.success
-        eff.effectivenessScore >= 0.4 -> c.warning
-        else -> c.danger
+        val scoreColor = when {
+        eff.effectivenessScore >= 0.7 -> VColors.success
+        eff.effectivenessScore >= 0.4 -> VColors.gold
+        else -> VColors.error
     }
     VCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -156,12 +154,12 @@ private fun EffectivenessCard(eff: ReportCardModels.EffectivenessReport) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(eff.focusArea, style = VTheme.type.body.colored(c.ink).copy(fontWeight = FontWeight.Medium))
-                Text("${(eff.effectivenessScore * 100).toInt()}%", style = VTheme.type.h3.colored(scoreColor).copy(fontSize = 16.sp))
+                Text(eff.focusArea, style = VTypography.body.copy(color = VColors.ink).copy(fontWeight = FontWeight.Medium))
+                Text("${(eff.effectivenessScore * 100).toInt()}%", style = VTypography.h3.copy(color = scoreColor).copy(fontSize = 16.sp))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(appString(StringKeys.SCH_N_IMPROVED, "improved" to eff.studentsImproved.toString(), "targeted" to eff.studentsTargeted.toString()),
-                    style = VTheme.type.caption.colored(c.ink2))
+                    style = VTypography.caption.copy(color = VColors.ink2))
                 VBadge(text = eff.confidence, tone = when (eff.confidence) {
                     "high" -> VBadgeTone.Success
                     "medium" -> VBadgeTone.Arctic

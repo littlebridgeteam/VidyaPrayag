@@ -40,8 +40,8 @@ import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -92,8 +92,7 @@ private fun StaffProfileContent(
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    var confirmRemove by remember { mutableStateOf(false) }
+        var confirmRemove by remember { mutableStateOf(false) }
 
     Column(
         modifier
@@ -117,8 +116,8 @@ private fun StaffProfileContent(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     VAvatar(name = m.fullName, src = m.photoUrl, size = 56.dp)
                     Column(Modifier.weight(1f)) {
-                        Text(m.fullName, style = VTheme.type.h3.colored(c.ink))
-                        Text(m.role, style = VTheme.type.caption.colored(c.ink2))
+                        Text(m.fullName, style = VTypography.h3.copy(color = VColors.ink))
+                        Text(m.role, style = VTypography.caption.copy(color = VColors.ink2))
                     }
                     m.department?.takeIf { it.isNotBlank() }?.let {
                         VBadge(text = it, tone = VBadgeTone.Neutral)
@@ -131,19 +130,19 @@ private fun StaffProfileContent(
                 val phone = m.phone?.takeIf { it.isNotBlank() }
                 val email = m.email?.takeIf { it.isNotBlank() }
                 if (phone == null && email == null) {
-                    Text(appString(StringKeys.SCH_NO_CONTACT_DETAILS), style = VTheme.type.body.colored(c.ink2))
+                    Text(appString(StringKeys.SCH_NO_CONTACT_DETAILS), style = VTypography.body.copy(color = VColors.ink2))
                 } else {
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         phone?.let {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Icon(VIcons.Phone, contentDescription = null, tint = c.ink3, modifier = Modifier.size(16.dp))
-                                Text(it, style = VTheme.type.body.colored(c.ink))
+                                Icon(VIcons.Phone, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(16.dp))
+                                Text(it, style = VTypography.body.copy(color = VColors.ink))
                             }
                         }
                         email?.let {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Icon(VIcons.Mail, contentDescription = null, tint = c.ink3, modifier = Modifier.size(16.dp))
-                                Text(it, style = VTheme.type.body.colored(c.ink))
+                                Icon(VIcons.Mail, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(16.dp))
+                                Text(it, style = VTypography.body.copy(color = VColors.ink))
                             }
                         }
                     }

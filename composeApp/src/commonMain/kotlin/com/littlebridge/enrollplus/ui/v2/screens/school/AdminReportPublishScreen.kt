@@ -41,8 +41,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 
 /**
  * AdminReportPublishScreen — admin oversight for report card generation
@@ -55,13 +55,12 @@ fun AdminReportPublishScreen(
     viewModel: AdminReportPublishViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
-    val c = VTheme.colors
-    var termInput by remember { mutableStateOf("Term 1") }
+        var termInput by remember { mutableStateOf("Term 1") }
 
     LaunchedEffect(Unit) { viewModel.loadTermConfig() }
 
     Column(
-        Modifier.fillMaxSize().background(c.background),
+        Modifier.fillMaxSize().background(VColors.surface),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         // Header
@@ -71,7 +70,7 @@ fun AdminReportPublishScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             VButton(text = appString(StringKeys.COMMON_BUTTON_BACK), onClick = onBack, variant = VButtonVariant.Secondary, size = VButtonSize.Sm)
-            Text(appString(StringKeys.SCH_REPORT_CARD_PUBLISHING), style = VTheme.type.h3.colored(c.ink))
+            Text(appString(StringKeys.SCH_REPORT_CARD_PUBLISHING), style = VTypography.h3.copy(color = VColors.ink))
         }
 
         // Term input + load
@@ -110,8 +109,8 @@ fun AdminReportPublishScreen(
             Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                 VCard(Modifier.fillMaxWidth()) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Icon(VIcons.Check, contentDescription = null, tint = c.success, modifier = Modifier.size(16.dp))
-                        Text(appString(StringKeys.SCH_N_REPORTS_PUBLISHED, "count" to count.toString()), style = VTheme.type.body.colored(c.ink))
+                        Icon(VIcons.Check, contentDescription = null, tint = VColors.success, modifier = Modifier.size(16.dp))
+                        Text(appString(StringKeys.SCH_N_REPORTS_PUBLISHED, "count" to count.toString()), style = VTypography.body.copy(color = VColors.ink))
                     }
                 }
             }
@@ -120,12 +119,12 @@ fun AdminReportPublishScreen(
         when {
             state.isLoading -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = c.accent)
+                    CircularProgressIndicator(color = VColors.violet)
                 }
             }
             state.error != null -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(state.error!!, style = VTheme.type.body.colored(c.danger))
+                    Text(state.error!!, style = VTypography.body.copy(color = VColors.error))
                 }
             }
             state.oversight != null -> {
@@ -148,10 +147,9 @@ fun AdminReportPublishScreen(
 
 @Composable
 private fun ConfigChip(label: String, value: String) {
-    val c = VTheme.colors
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, style = VTheme.type.body.colored(c.ink).copy(fontWeight = FontWeight.Medium, fontSize = 13.sp))
-        Text(label, style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp))
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(value, style = VTypography.body.copy(color = VColors.ink).copy(fontWeight = FontWeight.Medium, fontSize = 13.sp))
+        Text(label, style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 10.sp))
     }
 }
 
@@ -161,23 +159,22 @@ private fun OversightClassCard(
     publishing: Boolean,
     onPublish: () -> Unit,
 ) {
-    val c = VTheme.colors
-    VCard(Modifier.fillMaxWidth()) {
+        VCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("${row.className} ${row.section}", style = VTheme.type.h3.colored(c.ink).copy(fontSize = 15.sp))
-                Text("${row.totalDrafts} " + appString(StringKeys.SCH_DRAFTS), style = VTheme.type.caption.colored(c.ink2))
+                Text("${row.className} ${row.section}", style = VTypography.h3.copy(color = VColors.ink).copy(fontSize = 15.sp))
+                Text("${row.totalDrafts} " + appString(StringKeys.SCH_DRAFTS), style = VTypography.caption.copy(color = VColors.ink2))
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                StatusChip(appString(StringKeys.SCH_DRAFT), row.draftCount, c.warning)
-                StatusChip(appString(StringKeys.SCH_FLAGGED), row.flaggedCount, c.danger)
-                StatusChip(appString(StringKeys.SCH_APPROVED), row.approvedCount, c.success)
-                StatusChip(appString(StringKeys.SCH_PUBLISHED), row.publishedCount, c.accent)
+                StatusChip(appString(StringKeys.SCH_DRAFT), row.draftCount, VColors.gold)
+                StatusChip(appString(StringKeys.SCH_FLAGGED), row.flaggedCount, VColors.error)
+                StatusChip(appString(StringKeys.SCH_APPROVED), row.approvedCount, VColors.success)
+                StatusChip(appString(StringKeys.SCH_PUBLISHED), row.publishedCount, VColors.violet)
             }
 
             if (row.approvedCount > 0 && row.publishedCount == 0) {
@@ -194,13 +191,12 @@ private fun OversightClassCard(
 
 @Composable
 private fun StatusChip(label: String, count: Int, color: androidx.compose.ui.graphics.Color) {
-    val c = VTheme.colors
-    Row(
+        Row(
         Modifier.clip(RoundedCornerShape(6.dp)).background(color.copy(alpha = 0.1f)).padding(horizontal = 8.dp, vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Text("$count", style = VTheme.type.body.colored(color).copy(fontWeight = FontWeight.Bold, fontSize = 12.sp))
-        Text(label, style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp))
+        Text("$count", style = VTypography.body.copy(color = color).copy(fontWeight = FontWeight.Bold, fontSize = 12.sp))
+        Text(label, style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 10.sp))
     }
 }

@@ -43,8 +43,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -125,7 +125,7 @@ fun EditSchoolProfileScreenV2(
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth(),
 
-            color = VTheme.colors.card,
+            color = VColors.surfaceCard,
 
             shadowElevation = 12.dp
         ) {
@@ -186,8 +186,7 @@ private fun EditSchoolProfileContent(
     modifier: Modifier = Modifier,
 ) {
 
-    val c = VTheme.colors
-
+    
 
     Column(
         modifier
@@ -227,8 +226,8 @@ private fun EditSchoolProfileContent(
                     text = "School profile",
 
                     style =
-                        VTheme.type.h2
-                            .colored(c.ink)
+                        VTypography.h2
+                            .copy(color = VColors.ink)
                 )
 
 
@@ -237,8 +236,8 @@ private fun EditSchoolProfileContent(
                         "Keep your school's information accurate for parents, students and documents.",
 
                     style =
-                        VTheme.type.body
-                            .colored(c.ink3)
+                        VTypography.body
+                            .copy(color = VColors.ink3)
                 )
             }
 
@@ -441,8 +440,8 @@ private fun EditSchoolProfileContent(
                 Text(
                     it,
                     style =
-                        VTheme.type.body
-                            .colored(c.dangerInk)
+                        VTypography.body
+                            .copy(color = VColors.error)
                 )
             }
 
@@ -452,8 +451,8 @@ private fun EditSchoolProfileContent(
                 Text(
                     it,
                     style =
-                        VTheme.type.body
-                            .colored(c.successInk)
+                        VTypography.body
+                            .copy(color = VColors.success)
                 )
             }
 
@@ -507,13 +506,13 @@ private fun EditSection(
                     Text(
                         title,
                         style =
-                            VTheme.type.body
+                            VTypography.body
                     )
 
                     Text(
                         subtitle,
                         style =
-                            VTheme.type.caption
+                            VTypography.caption
                     )
                 }
             }

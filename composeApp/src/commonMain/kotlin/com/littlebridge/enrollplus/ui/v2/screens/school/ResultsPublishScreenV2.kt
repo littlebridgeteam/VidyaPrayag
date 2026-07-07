@@ -37,8 +37,10 @@ import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -86,8 +88,7 @@ private fun ResultsContent(
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    Column(
+        Column(
         modifier
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp)
@@ -117,9 +118,9 @@ private fun ResultsContent(
             VCard {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     Column(Modifier.weight(1f)) {
-                        Text(appString(StringKeys.SCH_CLASS_AVERAGE), style = VTheme.type.label.colored(c.ink3))
+                        Text(appString(StringKeys.SCH_CLASS_AVERAGE), style = VTypography.label.copy(color = VColors.ink3))
                         Spacer(Modifier.height(4.dp))
-                        Text(state.classAverage, style = VTheme.type.dataLg.colored(c.ink))
+                        Text(state.classAverage, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink))
                     }
                     VBadge(text = state.averageTrend, tone = VBadgeTone.Arctic)
                 }
@@ -144,9 +145,8 @@ private fun FilterRow(
     selected: String,
     onSelect: (String) -> Unit,
 ) {
-    val c = VTheme.colors
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(label, style = VTheme.type.label.colored(c.ink3))
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(label, style = VTypography.label.copy(color = VColors.ink3))
         Row(
             Modifier.horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -160,9 +160,8 @@ private fun FilterRow(
 
 @Composable
 private fun MiniCount(label: String, value: String, tone: VBadgeTone) {
-    val c = VTheme.colors
-    Column {
-        Text(label, style = VTheme.type.label.colored(c.ink3))
+        Column {
+        Text(label, style = VTypography.label.copy(color = VColors.ink3))
         Spacer(Modifier.height(4.dp))
         VBadge(text = value, tone = tone)
     }
@@ -170,8 +169,7 @@ private fun MiniCount(label: String, value: String, tone: VBadgeTone) {
 
 @Composable
 private fun StudentResultCard(s: StudentResult) {
-    val c = VTheme.colors
-    val statusTone = when (s.status.lowercase()) {
+        val statusTone = when (s.status.lowercase()) {
         "exceeding" -> VBadgeTone.Success
         "meeting" -> VBadgeTone.Arctic
         "below" -> VBadgeTone.Danger
@@ -188,7 +186,7 @@ private fun StudentResultCard(s: StudentResult) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         s.name,
-                        style = VTheme.type.bodyStrong.colored(c.ink),
+                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink),
                         modifier = Modifier.weight(1f, fill = false),
                     )
                     VBadge(text = s.status, tone = statusTone)
@@ -196,11 +194,11 @@ private fun StudentResultCard(s: StudentResult) {
                 Spacer(Modifier.height(2.dp))
                 Text(
                     appString(StringKeys.SCH_SCORE_ATTENDANCE, "score" to s.score, "attendance" to s.attendance),
-                    style = VTheme.type.dataSm.colored(c.ink2),
+                    style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2),
                 )
                 if (s.trend.isNotBlank()) {
                     Spacer(Modifier.height(2.dp))
-                    Text(s.trend, style = VTheme.type.caption.colored(c.ink3))
+                    Text(s.trend, style = VTypography.caption.copy(color = VColors.ink3))
                 }
             }
         }

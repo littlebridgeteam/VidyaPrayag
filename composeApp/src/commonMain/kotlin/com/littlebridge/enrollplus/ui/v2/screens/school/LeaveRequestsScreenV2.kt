@@ -38,8 +38,10 @@ import com.littlebridge.enrollplus.ui.v2.components.VTag
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -89,8 +91,7 @@ private fun LeaveRequestsContent(
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    Column(
+        Column(
         modifier
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp)
@@ -148,11 +149,10 @@ private fun LeaveRequestsContent(
 
 @Composable
 private fun KpiCard(label: String, value: String) {
-    val c = VTheme.colors
-    VCard {
-        Text(label, style = VTheme.type.label.colored(c.ink3))
+        VCard {
+        Text(label, style = VTypography.label.copy(color = VColors.ink3))
         Spacer(Modifier.height(4.dp))
-        Text(value, style = VTheme.type.dataLg.colored(c.ink))
+        Text(value, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink))
     }
 }
 
@@ -162,8 +162,7 @@ private fun LeaveRequestCard(
     onApprove: () -> Unit,
     onReject: () -> Unit,
 ) {
-    val c = VTheme.colors
-    val isPending = req.status.equals("Pending", ignoreCase = true)
+        val isPending = req.status.equals("Pending", ignoreCase = true)
     VCard {
         Row(
             Modifier.fillMaxWidth(),
@@ -175,7 +174,7 @@ private fun LeaveRequestCard(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         req.requesterName,
-                        style = VTheme.type.bodyStrong.colored(c.ink),
+                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink),
                         modifier = Modifier.weight(1f, fill = false),
                     )
                     if (!isPending) {
@@ -188,10 +187,10 @@ private fun LeaveRequestCard(
                     }
                 }
                 Spacer(Modifier.height(2.dp))
-                Text(req.dateRange, style = VTheme.type.caption.colored(c.ink3))
+                Text(req.dateRange, style = VTypography.caption.copy(color = VColors.ink3))
                 if (req.reason.isNotBlank()) {
                     Spacer(Modifier.height(6.dp))
-                    Text(req.reason, style = VTheme.type.body.colored(c.ink2))
+                    Text(req.reason, style = VTypography.body.copy(color = VColors.ink2))
                 }
             }
         }

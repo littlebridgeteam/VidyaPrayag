@@ -38,8 +38,10 @@ import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -81,8 +83,7 @@ private fun TeacherPerformanceContent(
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    Column(
+        Column(
         modifier
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp)
@@ -105,9 +106,9 @@ private fun TeacherPerformanceContent(
             VCard {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     Column(Modifier.weight(1f)) {
-                        Text(appString(StringKeys.SCH_AGGREGATE_COMPLIANCE), style = VTheme.type.label.colored(c.ink3))
+                        Text(appString(StringKeys.SCH_AGGREGATE_COMPLIANCE), style = VTypography.label.copy(color = VColors.ink3))
                         Spacer(Modifier.height(4.dp))
-                        Text(state.aggregateCompliance.ifBlank { "—" }, style = VTheme.type.dataLg.colored(c.ink))
+                        Text(state.aggregateCompliance.ifBlank { "—" }, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink))
                     }
                     if (state.complianceTrend.isNotBlank()) {
                         VBadge(text = state.complianceTrend, tone = VBadgeTone.Arctic)
@@ -120,7 +121,7 @@ private fun TeacherPerformanceContent(
                 VSectionHeader(title = appString(StringKeys.SCH_STAR_FACULTY))
                 VCard {
                     state.starFaculty.forEachIndexed { i, t ->
-                        if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(c.border1))
+                        if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
                         StarRow(t)
                     }
                 }
@@ -148,8 +149,7 @@ private fun TeacherPerformanceContent(
 
 @Composable
 private fun StarRow(t: StarTeacher) {
-    val c = VTheme.colors
-    Row(
+        Row(
         Modifier.fillMaxWidth().padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -157,21 +157,20 @@ private fun StarRow(t: StarTeacher) {
         VBadge(text = "#${t.rank}", tone = if (t.rank == 1) VBadgeTone.Warning else VBadgeTone.Arctic)
         VAvatar(name = t.name.ifBlank { "?" }, src = t.imageUrl.ifBlank { null }, size = 36.dp)
         Column(Modifier.weight(1f)) {
-            Text(t.name, style = VTheme.type.bodyStrong.colored(c.ink))
+            Text(t.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
             Spacer(Modifier.height(2.dp))
-            Text(t.department, style = VTheme.type.caption.colored(c.ink3))
+            Text(t.department, style = VTypography.caption.copy(color = VColors.ink3))
         }
         Text(
             t.score.toString().take(5),
-            style = VTheme.type.dataSm.colored(c.ink2),
+            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2),
         )
     }
 }
 
 @Composable
 private fun AccountabilityCard(f: FacultyAccountability) {
-    val c = VTheme.colors
-    val riskTone = when (f.riskCorrelation.lowercase()) {
+        val riskTone = when (f.riskCorrelation.lowercase()) {
         "high risk" -> VBadgeTone.Danger
         "watching" -> VBadgeTone.Warning
         "stable" -> VBadgeTone.Success
@@ -188,13 +187,13 @@ private fun AccountabilityCard(f: FacultyAccountability) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         f.name,
-                        style = VTheme.type.bodyStrong.colored(c.ink),
+                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink),
                         modifier = Modifier.weight(1f, fill = false),
                     )
                     VBadge(text = f.riskCorrelation, tone = riskTone)
                 }
                 Spacer(Modifier.height(2.dp))
-                Text(f.department, style = VTheme.type.caption.colored(c.ink3))
+                Text(f.department, style = VTypography.caption.copy(color = VColors.ink3))
             }
         }
         Spacer(Modifier.height(10.dp))
@@ -208,21 +207,19 @@ private fun AccountabilityCard(f: FacultyAccountability) {
 
 @Composable
 private fun MiniStat(label: String, value: String) {
-    val c = VTheme.colors
-    Column {
-        Text(label, style = VTheme.type.label.colored(c.ink3))
+        Column {
+        Text(label, style = VTypography.label.copy(color = VColors.ink3))
         Spacer(Modifier.height(2.dp))
-        Text(value, style = VTheme.type.dataSm.colored(c.ink))
+        Text(value, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
     }
 }
 
 @Composable
 private fun DeptRow(d: DeptEfficiency) {
-    val c = VTheme.colors
-    Column {
+        Column {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(d.name, style = VTheme.type.bodyStrong.colored(c.ink))
-            Text("${d.percentage}%", style = VTheme.type.dataSm.colored(c.ink2))
+            Text(d.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+            Text("${d.percentage}%", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2))
         }
         Spacer(Modifier.height(6.dp))
         VProgressBar(value = d.percentage.toFloat().coerceIn(0f, 100f))

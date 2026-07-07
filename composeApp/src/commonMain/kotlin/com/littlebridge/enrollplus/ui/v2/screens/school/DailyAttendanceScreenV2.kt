@@ -46,8 +46,10 @@ import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -99,8 +101,7 @@ private fun DailyAttendanceContent(
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    val isStudents = state.attendanceType.equals("Students", ignoreCase = true)
+        val isStudents = state.attendanceType.equals("Students", ignoreCase = true)
 
     Column(
         modifier
@@ -147,11 +148,11 @@ private fun DailyAttendanceContent(
             VCard {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     Column(Modifier.weight(1f)) {
-                        Text(appString(StringKeys.SCH_PRESENT_TODAY), style = VTheme.type.label.colored(c.ink3))
+                        Text(appString(StringKeys.SCH_PRESENT_TODAY), style = VTypography.label.copy(color = VColors.ink3))
                         Spacer(Modifier.height(4.dp))
                         Text(
                             "${state.presentCount} / ${state.totalCount}",
-                            style = VTheme.type.dataLg.colored(c.ink),
+                            style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink),
                         )
                     }
                     VBadge(text = state.attendancePercentage, tone = VBadgeTone.Arctic)
@@ -162,7 +163,7 @@ private fun DailyAttendanceContent(
 
             VCard {
                 state.attendees.forEachIndexed { i, a ->
-                    if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(c.border1))
+                    if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
                     AttendeeRow(attendee = a, onSetStatus = { onUpdateStatus(a.id, it) })
                 }
             }
@@ -175,40 +176,38 @@ private fun AttendeeRow(
     attendee: Attendee,
     onSetStatus: (AttendanceStatus) -> Unit,
 ) {
-    val c = VTheme.colors
-    Row(
+        Row(
         Modifier.fillMaxWidth().padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         VAvatar(name = attendee.name.ifBlank { attendee.initials.ifBlank { "?" } }, src = attendee.imageUrl, size = 36.dp)
         Column(Modifier.weight(1f)) {
-            Text(attendee.name, style = VTheme.type.bodyStrong.colored(c.ink))
-            Text(attendee.initials, style = VTheme.type.caption.colored(c.ink3))
+            Text(attendee.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+            Text(attendee.initials, style = VTypography.caption.copy(color = VColors.ink3))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            StatusPill("P", attendee.status == AttendanceStatus.PRESENT, c.success) { onSetStatus(AttendanceStatus.PRESENT) }
-            StatusPill("A", attendee.status == AttendanceStatus.ABSENT, c.danger) { onSetStatus(AttendanceStatus.ABSENT) }
-            StatusPill("L", attendee.status == AttendanceStatus.LATE, c.warning) { onSetStatus(AttendanceStatus.LATE) }
+            StatusPill("P", attendee.status == AttendanceStatus.PRESENT, VColors.success) { onSetStatus(AttendanceStatus.PRESENT) }
+            StatusPill("A", attendee.status == AttendanceStatus.ABSENT, VColors.error) { onSetStatus(AttendanceStatus.ABSENT) }
+            StatusPill("L", attendee.status == AttendanceStatus.LATE, VColors.gold) { onSetStatus(AttendanceStatus.LATE) }
         }
     }
 }
 
 @Composable
 private fun StatusPill(letter: String, active: Boolean, tone: Color, onClick: () -> Unit) {
-    val c = VTheme.colors
-    val interaction = remember { MutableInteractionSource() }
+        val interaction = remember { MutableInteractionSource() }
     Box(
         Modifier
             .clip(RoundedCornerShape(999.dp))
-            .background(if (active) tone else c.ink.copy(alpha = 0.06f))
+            .background(if (active) tone else VColors.ink.copy(alpha = 0.06f))
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
             .padding(horizontal = 10.dp, vertical = 6.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             letter,
-            style = VTheme.type.label.colored(if (active) c.background else c.ink3).copy(fontWeight = FontWeight.SemiBold),
+            style = VTypography.label.copy(color = if (active) VColors.surface else VColors.ink3).copy(fontWeight = FontWeight.SemiBold),
         )
     }
 }

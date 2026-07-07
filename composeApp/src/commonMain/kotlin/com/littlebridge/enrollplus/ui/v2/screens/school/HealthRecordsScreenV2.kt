@@ -53,8 +53,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
@@ -109,8 +109,7 @@ private fun HealthRecordsContent(
     onMarkNotified: (String) -> Unit,
     onClearMessages: () -> Unit,
 ) {
-    val c = VTheme.colors
-    val tabKeys = listOf(StringKeys.HLTH_TAB_PROFILE, StringKeys.HLTH_TAB_IMMUNIZATIONS, StringKeys.HLTH_TAB_INCIDENTS)
+        val tabKeys = listOf(StringKeys.HLTH_TAB_PROFILE, StringKeys.HLTH_TAB_IMMUNIZATIONS, StringKeys.HLTH_TAB_INCIDENTS)
     var tabIdx by remember { mutableStateOf(0) }
     val tabLabels = tabKeys.map { appString(it) }
 
@@ -125,12 +124,12 @@ private fun HealthRecordsContent(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(if (isError) c.danger.copy(alpha = 0.1f) else c.teal.copy(alpha = 0.1f))
+                    .background(if (isError) VColors.error.copy(alpha = 0.1f) else VColors.sky.copy(alpha = 0.1f))
                     .padding(12.dp),
             ) {
                 Text(
                     msg ?: "",
-                    style = VTheme.type.caption.colored(if (isError) c.dangerInk else c.tealDeep),
+                    style = VTypography.caption.copy(color = if (isError) VColors.error else VColors.sky),
                 )
             }
             LaunchedEffect(msg) {
@@ -172,8 +171,7 @@ private fun ProfileTab(
     isSaving: Boolean,
     onSave: (UpsertHealthProfileRequest) -> Unit,
 ) {
-    val c = VTheme.colors
-    var bloodGroup by remember(profile?.id) { mutableStateOf(profile?.bloodGroup.orEmpty()) }
+        var bloodGroup by remember(profile?.id) { mutableStateOf(profile?.bloodGroup.orEmpty()) }
     var heightCm by remember(profile?.id) { mutableStateOf(profile?.heightCm?.toString().orEmpty()) }
     var weightKg by remember(profile?.id) { mutableStateOf(profile?.weightKg?.toString().orEmpty()) }
     var allergies by remember(profile?.id) { mutableStateOf(profile?.allergies ?: "[]") }
@@ -279,8 +277,7 @@ private fun ImmunizationsTab(
     isSaving: Boolean,
     onAdd: (AddImmunizationRequest) -> Unit,
 ) {
-    val c = VTheme.colors
-    var showAdd by remember { mutableStateOf(false) }
+        var showAdd by remember { mutableStateOf(false) }
     var vaccineName by remember { mutableStateOf("") }
     var doseNumber by remember { mutableStateOf("1") }
     var dateAdministered by remember { mutableStateOf("") }
@@ -355,20 +352,20 @@ private fun ImmunizationsTab(
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         Column(Modifier.weight(1f)) {
-                            Text(imm.vaccineName, style = VTheme.type.bodyStrong.colored(c.ink))
-                            Text(appString(StringKeys.HLTH_DOSE, "number" to imm.doseNumber.toString(), "date" to imm.dateAdministered), style = VTheme.type.caption.colored(c.ink2))
+                            Text(imm.vaccineName, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                            Text(appString(StringKeys.HLTH_DOSE, "number" to imm.doseNumber.toString(), "date" to imm.dateAdministered), style = VTypography.caption.copy(color = VColors.ink2))
                             if (!imm.administeredBy.isNullOrBlank()) {
-                                Text(appString(StringKeys.HLTH_BY, "name" to imm.administeredBy), style = VTheme.type.caption.colored(c.ink3))
+                                Text(appString(StringKeys.HLTH_BY, "name" to imm.administeredBy), style = VTypography.caption.copy(color = VColors.ink3))
                             }
                             if (!imm.nextDueDate.isNullOrBlank()) {
-                                Text(appString(StringKeys.HLTH_NEXT_DUE_LABEL, "date" to imm.nextDueDate), style = VTheme.type.caption.colored(c.tealDeep))
+                                Text(appString(StringKeys.HLTH_NEXT_DUE_LABEL, "date" to imm.nextDueDate), style = VTypography.caption.copy(color = VColors.sky))
                             }
                         }
                         Box(
-                            Modifier.size(36.dp).clip(CircleShape).background(c.teal.copy(alpha = 0.1f)),
+                            Modifier.size(36.dp).clip(CircleShape).background(VColors.sky.copy(alpha = 0.1f)),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Icon(VIcons.Heart, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(18.dp))
+                            Icon(VIcons.Heart, contentDescription = null, tint = VColors.sky, modifier = Modifier.size(18.dp))
                         }
                     }
                 }
@@ -388,8 +385,7 @@ private fun IncidentsTab(
     onLog: (LogIncidentRequest) -> Unit,
     onMarkNotified: (String) -> Unit,
 ) {
-    val c = VTheme.colors
-    var showAdd by remember { mutableStateOf(false) }
+        var showAdd by remember { mutableStateOf(false) }
     var date by remember { mutableStateOf("") }
     var time by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
@@ -471,7 +467,7 @@ private fun IncidentsTab(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
-                            Text(inc.date, style = VTheme.type.bodyStrong.colored(c.ink))
+                            Text(inc.date, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
                             val pair = when (inc.severity) {
                                 "major" -> appString(StringKeys.HLTH_SEVERITY_MAJOR) to VBadgeTone.Danger
                                 "moderate" -> appString(StringKeys.HLTH_SEVERITY_MODERATE) to VBadgeTone.Warning
@@ -479,15 +475,15 @@ private fun IncidentsTab(
                             }
                             VBadge(text = pair.first, tone = pair.second)
                         }
-                        Text(inc.description, style = VTheme.type.body.colored(c.ink))
+                        Text(inc.description, style = VTypography.body.copy(color = VColors.ink))
                         if (!inc.treatment.isNullOrBlank()) {
-                            Text(appString(StringKeys.HLTH_TREATMENT_LABEL, "treatment" to inc.treatment), style = VTheme.type.caption.colored(c.ink2))
+                            Text(appString(StringKeys.HLTH_TREATMENT_LABEL, "treatment" to inc.treatment), style = VTypography.caption.copy(color = VColors.ink2))
                         }
                         if (!inc.medicationGiven.isNullOrBlank()) {
-                            Text(appString(StringKeys.HLTH_MEDICATION_LABEL, "medication" to inc.medicationGiven), style = VTheme.type.caption.colored(c.ink2))
+                            Text(appString(StringKeys.HLTH_MEDICATION_LABEL, "medication" to inc.medicationGiven), style = VTypography.caption.copy(color = VColors.ink2))
                         }
                         if (!inc.time.isNullOrBlank()) {
-                            Text(appString(StringKeys.HLTH_TIME_LABEL, "time" to inc.time), style = VTheme.type.caption.colored(c.ink3))
+                            Text(appString(StringKeys.HLTH_TIME_LABEL, "time" to inc.time), style = VTypography.caption.copy(color = VColors.ink3))
                         }
                         Row(
                             Modifier.fillMaxWidth().padding(top = 4.dp),
@@ -496,8 +492,8 @@ private fun IncidentsTab(
                         ) {
                             if (inc.parentNotified) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Icon(VIcons.Check, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(14.dp))
-                                    Text(appString(StringKeys.HLTH_PARENT_NOTIFIED), style = VTheme.type.caption.colored(c.tealDeep))
+                                    Icon(VIcons.Check, contentDescription = null, tint = VColors.sky, modifier = Modifier.size(14.dp))
+                                    Text(appString(StringKeys.HLTH_PARENT_NOTIFIED), style = VTypography.caption.copy(color = VColors.sky))
                                 }
                             } else {
                                 VButton(
@@ -519,11 +515,10 @@ private fun IncidentsTab(
 
 @Composable
 private fun VEmptyHealthState(message: String) {
-    val c = VTheme.colors
-    Box(
+        Box(
         Modifier.fillMaxWidth().padding(vertical = 32.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(message, style = VTheme.type.caption.colored(c.ink3))
+        Text(message, style = VTypography.caption.copy(color = VColors.ink3))
     }
 }

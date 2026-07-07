@@ -59,8 +59,9 @@ import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VShapes
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -167,7 +168,6 @@ private fun ThreadListContent(
     onCompose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
     Box(modifier) {
         VStateHost(
             loading = isLoading,
@@ -201,7 +201,7 @@ private fun ThreadListContent(
                 .padding(end = 20.dp, bottom = 20.dp)
                 .size(56.dp)
                 .clip(CircleShape)
-                .background(c.accent)
+                .background(VColors.violet)
                 .clickable(interactionSource = interaction, indication = null, onClick = onCompose),
             contentAlignment = Alignment.Center,
         ) {
@@ -217,7 +217,6 @@ private fun ThreadListContent(
 
 @Composable
 private fun ThreadRow(thread: MessageThread, onClick: () -> Unit) {
-    val c = VTheme.colors
     val interaction = remember { MutableInteractionSource() }
     Row(
         Modifier
@@ -235,15 +234,18 @@ private fun ThreadRow(thread: MessageThread, onClick: () -> Unit) {
             ) {
                 Text(
                     thread.senderName,
-                    style = VTheme.type.bodyStrong.colored(c.ink)
-                        .copy(fontWeight = if (thread.isRead) FontWeight.SemiBold else FontWeight.Bold),
+                    style = VTypography.bodySmall.copy(
+                        fontWeight = if (thread.isRead) FontWeight.SemiBold else FontWeight.Bold,
+                    ),
+                    color = VColors.ink,
                     modifier = Modifier.weight(1f, fill = false),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     thread.time,
-                    style = VTheme.type.caption.colored(if (thread.isRead) c.ink3 else c.accent),
+                    style = VTypography.caption,
+                    color = if (thread.isRead) VColors.ink3 else VColors.violet,
                 )
             }
             Spacer(Modifier.height(4.dp))
@@ -253,7 +255,8 @@ private fun ThreadRow(thread: MessageThread, onClick: () -> Unit) {
             ) {
                 Text(
                     thread.lastMessage,
-                    style = VTheme.type.body.colored(if (thread.isRead) c.ink3 else c.ink2),
+                    style = VTypography.body,
+                    color = if (thread.isRead) VColors.ink3 else VColors.ink2,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
@@ -262,13 +265,14 @@ private fun ThreadRow(thread: MessageThread, onClick: () -> Unit) {
                     Box(
                         Modifier
                             .clip(CircleShape)
-                            .background(c.accent)
+                            .background(VColors.violet)
                             .padding(horizontal = 7.dp, vertical = 2.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
                             if (thread.unreadCount > 99) "99+" else thread.unreadCount.toString(),
-                            style = VTheme.type.caption.colored(Color.White).copy(fontWeight = FontWeight.Bold),
+                            style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
+                            color = Color.White,
                         )
                     }
                 }
@@ -285,7 +289,6 @@ private fun ConversationContent(
     onMarkRead: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
     var reply by remember { mutableStateOf("") }
     val keyboard = LocalSoftwareKeyboardController.current
     val listState = rememberLazyListState()
@@ -308,7 +311,7 @@ private fun ConversationContent(
             Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .background(c.accentTint),
+                .background(VColors.cream),
         ) {
             VStateHost(
                 loading = conversation.isLoading,
@@ -378,7 +381,6 @@ private fun ComposeNewContent(
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
     var selected by remember { mutableStateOf<MessageRecipient?>(null) }
     var body by remember { mutableStateOf("") }
     val keyboard = LocalSoftwareKeyboardController.current
@@ -403,7 +405,8 @@ private fun ComposeNewContent(
                     item {
                         Text(
                             "Select recipient",
-                            style = VTheme.type.label.colored(c.ink3),
+                            style = VTypography.label,
+                            color = VColors.ink3,
                             modifier = Modifier.padding(bottom = 8.dp),
                         )
                     }
@@ -439,9 +442,8 @@ private fun ComposeNewContent(
 
 @Composable
 private fun RecipientRow(recipient: MessageRecipient, isSelected: Boolean, onClick: () -> Unit) {
-    val c = VTheme.colors
     val interaction = remember { MutableInteractionSource() }
-    val bg = if (isSelected) c.accentTint else Color.Transparent
+    val bg = if (isSelected) VColors.violetSoft else Color.Transparent
     Row(
         Modifier
             .fillMaxWidth()
@@ -456,13 +458,15 @@ private fun RecipientRow(recipient: MessageRecipient, isSelected: Boolean, onCli
         Column(Modifier.weight(1f)) {
             Text(
                 recipient.name,
-                style = VTheme.type.bodyStrong.colored(c.ink),
+                style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+                color = VColors.ink,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
                 recipient.subtitle,
-                style = VTheme.type.caption.colored(c.ink3),
+                style = VTypography.caption,
+                color = VColors.ink3,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -472,7 +476,7 @@ private fun RecipientRow(recipient: MessageRecipient, isSelected: Boolean, onCli
                 Modifier
                     .size(24.dp)
                     .clip(CircleShape)
-                    .background(c.accent),
+                    .background(VColors.violet),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -488,13 +492,12 @@ private fun RecipientRow(recipient: MessageRecipient, isSelected: Boolean, onCli
 
 @Composable
 private fun MessageBubble(msg: Message, isGroupStart: Boolean = true) {
-    val c = VTheme.colors
     val isMine = msg.isMine
     val isDeleted = msg.deletedAt != null
 
-    val bubbleColor = if (isMine) c.accent else c.card
-    val textColor = if (isMine) Color.White else c.ink
-    val timeColor = if (isMine) Color.White.copy(alpha = 0.7f) else c.ink3
+    val bubbleColor = if (isMine) VColors.violet else VColors.surfaceCard
+    val textColor = if (isMine) Color.White else VColors.ink
+    val timeColor = if (isMine) Color.White.copy(alpha = 0.7f) else VColors.ink3
 
     Row(
         Modifier.fillMaxWidth(),
@@ -527,14 +530,16 @@ private fun MessageBubble(msg: Message, isGroupStart: Boolean = true) {
                 // P2-10: Tombstone display
                 Text(
                     "This message was deleted",
-                    style = VTheme.type.body.colored(textColor).copy(
+                    style = VTypography.body.copy(
                         fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
                     ),
+                    color = textColor,
                 )
             } else {
                 Text(
                     msg.body,
-                    style = VTheme.type.body.colored(textColor),
+                    style = VTypography.body,
+                    color = textColor,
                 )
             }
             Spacer(Modifier.height(4.dp))
@@ -589,14 +594,16 @@ private fun MessageBubble(msg: Message, isGroupStart: Boolean = true) {
                 }
                 Text(
                     msg.time,
-                    style = VTheme.type.caption.colored(timeColor).copy(fontSize = 10.sp),
+                    style = VTypography.caption.copy(fontSize = 10.sp),
+                    color = timeColor,
                 )
                 // P2-10: Edited label
                 if (msg.editedAt != null && !isDeleted) {
                     Spacer(Modifier.size(4.dp))
                     Text(
                         "edited",
-                        style = VTheme.type.caption.colored(timeColor).copy(fontSize = 9.sp),
+                        style = VTypography.caption.copy(fontSize = 9.sp),
+                        color = timeColor,
                     )
                 }
             }
@@ -607,7 +614,6 @@ private fun MessageBubble(msg: Message, isGroupStart: Boolean = true) {
 /** P1-7: Date header for message grouping by date. */
 @Composable
 private fun DateHeader(date: String) {
-    val c = VTheme.colors
     Box(
         Modifier.fillMaxWidth().padding(vertical = 8.dp),
         contentAlignment = Alignment.Center,
@@ -615,12 +621,13 @@ private fun DateHeader(date: String) {
         Box(
             Modifier
                 .clip(RoundedCornerShape(8.dp))
-                .background(c.border2)
+                .background(VColors.line)
                 .padding(horizontal = 10.dp, vertical = 4.dp),
         ) {
             Text(
                 date,
-                style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp),
+                style = VTypography.caption.copy(fontSize = 11.sp),
+                color = VColors.ink3,
             )
         }
     }
@@ -640,15 +647,14 @@ private fun SharedComposeBar(
     onSend: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
     val canSend = text.isNotBlank() && enabled
 
     Column(
         modifier
             .fillMaxWidth()
-            .background(c.card),
+            .background(VColors.surfaceCard),
     ) {
-        Box(Modifier.fillMaxWidth().height(1.dp).background(c.hairline))
+        Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
 
         Row(
             Modifier
@@ -661,7 +667,7 @@ private fun SharedComposeBar(
                 Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(22.dp))
-                    .background(c.cream)
+                    .background(VColors.cream)
                     .padding(horizontal = 16.dp, vertical = 10.dp),
             ) {
                 OutlinedTextField(
@@ -671,7 +677,8 @@ private fun SharedComposeBar(
                     placeholder = {
                         Text(
                             placeholder,
-                            style = VTheme.type.body.colored(c.placeholder),
+                            style = VTypography.body,
+                            color = VColors.ink3,
                         )
                     },
                     enabled = enabled,
@@ -685,11 +692,11 @@ private fun SharedComposeBar(
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent,
                         disabledContainerColor = Color.Transparent,
-                        cursorColor = c.accent,
+                        cursorColor = VColors.violet,
                     ),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
                     keyboardActions = KeyboardActions(onSend = { if (canSend) onSend() }),
-                    textStyle = VTheme.type.body.colored(c.ink),
+                    textStyle = VTypography.body.copy(color = VColors.ink),
                 )
             }
 
@@ -698,7 +705,7 @@ private fun SharedComposeBar(
                 Modifier
                     .size(44.dp)
                     .clip(CircleShape)
-                    .background(if (canSend) c.accent else c.border2)
+                    .background(if (canSend) VColors.violet else VColors.line)
                     .clickable(interactionSource = sendInteraction, indication = null, enabled = canSend, onClick = onSend),
                 contentAlignment = Alignment.Center,
             ) {

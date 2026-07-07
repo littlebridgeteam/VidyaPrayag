@@ -37,8 +37,10 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.math.roundToInt
 
@@ -90,8 +92,7 @@ private fun AdmissionsCrmContent(
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    Column(
+        Column(
         modifier
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp)
@@ -126,11 +127,11 @@ private fun AdmissionsCrmContent(
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Column(Modifier.weight(1f)) {
-                        Text("Conversion rate", style = VTheme.type.label.colored(c.ink3))
+                        Text("Conversion rate", style = VTypography.label.copy(color = VColors.ink3))
                         Spacer(Modifier.height(4.dp))
                         Text(
                             "${state.conversionRate.roundToInt()}%",
-                            style = VTheme.type.dataLg.colored(c.ink),
+                            style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink),
                         )
                     }
                     VBadge(text = state.efficiencyLabel, tone = VBadgeTone.Arctic)
@@ -143,7 +144,7 @@ private fun AdmissionsCrmContent(
                 VCard {
                     Text(
                         "No recent enquiries to display.",
-                        style = VTheme.type.caption.colored(c.ink3),
+                        style = VTypography.caption.copy(color = VColors.ink3),
                     )
                 }
             } else {
@@ -157,11 +158,10 @@ private fun AdmissionsCrmContent(
 
 @Composable
 private fun KpiTile(label: String, value: String) {
-    val c = VTheme.colors
-    VCard {
-        Text(label, style = VTheme.type.label.colored(c.ink3))
+        VCard {
+        Text(label, style = VTypography.label.copy(color = VColors.ink3))
         Spacer(Modifier.height(4.dp))
-        Text(value, style = VTheme.type.dataLg.colored(c.ink))
+        Text(value, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink))
     }
 }
 
@@ -170,8 +170,7 @@ private fun EnquiryCard(
     enquiry: Enquiry,
     onUpdateStatus: (String, String) -> Unit,
 ) {
-    val c = VTheme.colors
-    val id = enquiry.id ?: return
+        val id = enquiry.id ?: return
     val (badgeText, badgeTone) = when (enquiry.status) {
         Enquiry.STATUS_NEW -> "New" to VBadgeTone.Arctic
         Enquiry.STATUS_FOLLOWUP -> "Follow-up" to VBadgeTone.Warning
@@ -190,7 +189,7 @@ private fun EnquiryCard(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         enquiry.studentName,
-                        style = VTheme.type.bodyStrong.colored(c.ink),
+                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink),
                         modifier = Modifier.weight(1f, fill = false),
                     )
                     VBadge(text = badgeText, tone = badgeTone)
@@ -198,10 +197,10 @@ private fun EnquiryCard(
                 Spacer(Modifier.height(2.dp))
                 Text(
                     "${enquiry.parentName} · ${enquiry.className}",
-                    style = VTheme.type.caption.colored(c.ink2),
+                    style = VTypography.caption.copy(color = VColors.ink2),
                 )
                 Spacer(Modifier.height(2.dp))
-                Text(enquiry.date, style = VTheme.type.caption.colored(c.ink3))
+                Text(enquiry.date, style = VTypography.caption.copy(color = VColors.ink3))
             }
         }
 

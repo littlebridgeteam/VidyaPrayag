@@ -43,8 +43,10 @@ import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -86,8 +88,7 @@ private fun AnalyticsContent(
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    Column(
+        Column(
         modifier
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp)
@@ -110,9 +111,9 @@ private fun AnalyticsContent(
                 VCard {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                         Column(Modifier.weight(1f)) {
-                            Text(appString(StringKeys.SCH_PERFORMANCE_TREND), style = VTheme.type.label.colored(c.ink3))
+                            Text(appString(StringKeys.SCH_PERFORMANCE_TREND), style = VTypography.label.copy(color = VColors.ink3))
                             Spacer(Modifier.height(4.dp))
-                            Text(state.currentGrowth, style = VTheme.type.dataLg.colored(c.ink))
+                            Text(state.currentGrowth, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink))
                         }
                         VBadge(text = appString(StringKeys.SCH_OVERVIEW), tone = VBadgeTone.Arctic)
                     }
@@ -151,8 +152,7 @@ private fun AnalyticsContent(
 
 @Composable
 private fun TrendChart(values: List<Float>, labels: List<String>) {
-    val c = VTheme.colors
-    Column {
+        Column {
         Canvas(
             modifier = Modifier
                 .fillMaxWidth()
@@ -171,21 +171,21 @@ private fun TrendChart(values: List<Float>, labels: List<String>) {
             }
             drawPath(
                 path = path,
-                color = c.teal,
+                color = VColors.sky,
                 style = Stroke(width = 3f),
             )
             // dots
             values.forEachIndexed { i, v ->
                 val x = stepX * i
                 val y = size.height - ((v - min) / range) * size.height
-                drawCircle(color = c.tealDeep, radius = 4f, center = Offset(x, y))
+                drawCircle(color = VColors.sky, radius = 4f, center = Offset(x, y))
             }
         }
         if (labels.isNotEmpty()) {
             Spacer(Modifier.height(6.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 labels.forEach { l ->
-                    Text(l, style = VTheme.type.caption.colored(c.ink3))
+                    Text(l, style = VTypography.caption.copy(color = VColors.ink3))
                 }
             }
         }
@@ -194,14 +194,13 @@ private fun TrendChart(values: List<Float>, labels: List<String>) {
 
 @Composable
 private fun AnalyticsCard(card: AnalyticsCardData) {
-    val c = VTheme.colors
-    VCard {
-        Text(card.title, style = VTheme.type.label.colored(c.ink3))
+        VCard {
+        Text(card.title, style = VTypography.label.copy(color = VColors.ink3))
         Spacer(Modifier.height(4.dp))
-        Text(card.value, style = VTheme.type.dataLg.colored(c.ink))
+        Text(card.value, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink))
         if (card.subValue.isNotBlank()) {
             Spacer(Modifier.height(2.dp))
-            Text(card.subValue, style = VTheme.type.caption.colored(c.ink2))
+            Text(card.subValue, style = VTypography.caption.copy(color = VColors.ink2))
         }
         val trend = card.trend
         if (!trend.isNullOrBlank()) {
@@ -213,8 +212,7 @@ private fun AnalyticsCard(card: AnalyticsCardData) {
 
 @Composable
 private fun InsightCard(item: InsightItem) {
-    val c = VTheme.colors
-    VCard {
+        VCard {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Box(
                 Modifier
@@ -231,10 +229,10 @@ private fun InsightCard(item: InsightItem) {
                 )
             }
             Column(Modifier.weight(1f)) {
-                Text(item.title, style = VTheme.type.bodyStrong.colored(c.ink))
+                Text(item.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
                 if (item.description.isNotBlank()) {
                     Spacer(Modifier.height(2.dp))
-                    Text(item.description, style = VTheme.type.caption.colored(c.ink2))
+                    Text(item.description, style = VTypography.caption.copy(color = VColors.ink2))
                 }
             }
         }

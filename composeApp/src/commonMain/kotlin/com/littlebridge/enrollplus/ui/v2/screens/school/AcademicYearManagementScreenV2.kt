@@ -41,8 +41,8 @@ import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -59,14 +59,13 @@ fun AcademicYearManagementScreenV2(
     viewModel: AcademicYearViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
-    val c = VTheme.colors
-
+    
     var showCreate by remember { mutableStateOf(false) }
     var name by remember { mutableStateOf("") }
     var start by remember { mutableStateOf("") }
     var end by remember { mutableStateOf("") }
 
-    Column(modifier.fillMaxSize().background(c.background).statusBarsPadding().imePadding().navigationBarsPadding()) {
+    Column(modifier.fillMaxSize().background(VColors.surface).statusBarsPadding().imePadding().navigationBarsPadding()) {
         VBackHeader(
             title = appString(StringKeys.SCH_ACADEMIC_YEAR),
             onBack = onBack,
@@ -161,12 +160,11 @@ private fun YearCard(
     onActivate: () -> Unit,
     onArchive: () -> Unit,
 ) {
-    val c = VTheme.colors
-    VCard {
+        VCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text(year.name, style = VTheme.type.h3.colored(c.ink))
-                Text("${year.startDate} → ${year.endDate}", style = VTheme.type.caption.colored(c.ink2))
+                Text(year.name, style = VTypography.h3.copy(color = VColors.ink))
+                Text("${year.startDate} → ${year.endDate}", style = VTypography.caption.copy(color = VColors.ink2))
             }
             VBadge(
                 text = year.status,
@@ -180,8 +178,8 @@ private fun YearCard(
         if (year.academicDays != null || year.holidayDays != null) {
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                year.academicDays?.let { Text(appString(StringKeys.SCH_SCHOOL_DAYS, "count" to it.toString()), style = VTheme.type.caption.colored(c.ink3)) }
-                year.holidayDays?.let { Text(appString(StringKeys.SCH_HOLIDAYS, "count" to it.toString()), style = VTheme.type.caption.colored(c.ink3)) }
+                year.academicDays?.let { Text(appString(StringKeys.SCH_SCHOOL_DAYS, "count" to it.toString()), style = VTypography.caption.copy(color = VColors.ink3)) }
+                year.holidayDays?.let { Text(appString(StringKeys.SCH_HOLIDAYS, "count" to it.toString()), style = VTypography.caption.copy(color = VColors.ink3)) }
             }
         }
         Spacer(Modifier.height(12.dp))

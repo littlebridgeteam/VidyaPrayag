@@ -30,8 +30,8 @@ import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
@@ -97,11 +97,11 @@ fun AlumniDetailScreen(
                     ) {
                         VCard(modifier = Modifier.fillMaxWidth()) {
                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text(data.name, style = VTheme.type.h2, color = VTheme.colors.ink)
-                                Text(appString(StringKeys.SCH_BATCH_YEAR, "year" to data.graduationYear), style = VTheme.type.body, color = VTheme.colors.ink3)
-                                if (data.isFeatured) Text(appString(StringKeys.SCH_FEATURED), style = VTheme.type.caption, color = VTheme.colors.accent)
+                                Text(data.name, style = VTypography.h2, color = VColors.ink)
+                                Text(appString(StringKeys.SCH_BATCH_YEAR, "year" to data.graduationYear), style = VTypography.body, color = VColors.ink3)
+                                if (data.isFeatured) Text(appString(StringKeys.SCH_FEATURED), style = VTypography.caption, color = VColors.violet)
                                 if (data.verificationStatus != "approved") {
-                                    Text(appString(StringKeys.SCH_STATUS_COLON, "status" to data.verificationStatus), style = VTheme.type.caption, color = VTheme.colors.danger)
+                                    Text(appString(StringKeys.SCH_STATUS_COLON, "status" to data.verificationStatus), style = VTypography.caption, color = VColors.error)
                                 }
                             }
                         }
@@ -142,15 +142,15 @@ fun AlumniDetailScreen(
                             data.careerHistory.forEach { career ->
                                 VCard(modifier = Modifier.fillMaxWidth()) {
                                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        Text(career.jobTitle, style = VTheme.type.body, fontWeight = FontWeight.SemiBold, color = VTheme.colors.ink)
-                                        Text(career.company, style = VTheme.type.body, color = VTheme.colors.ink3)
-                                        career.industry?.let { Text(it, style = VTheme.type.caption, color = VTheme.colors.ink3) }
+                                        Text(career.jobTitle, style = VTypography.body, fontWeight = FontWeight.SemiBold, color = VColors.ink)
+                                        Text(career.company, style = VTypography.body, color = VColors.ink3)
+                                        career.industry?.let { Text(it, style = VTypography.caption, color = VColors.ink3) }
                                         val dateRange = buildString {
                                             career.startDate?.let { append(it) }
                                             append(" — ")
                                             if (career.isCurrent) append(appString(StringKeys.SCH_PRESENT)) else career.endDate?.let { append(it) }
                                         }
-                                        Text(dateRange, style = VTheme.type.caption, color = VTheme.colors.ink3)
+                                        Text(dateRange, style = VTypography.caption, color = VColors.ink3)
                                     }
                                 }
                             }
@@ -184,12 +184,12 @@ fun AlumniDetailScreen(
                             donations!!.forEach { donation ->
                                 VCard(modifier = Modifier.fillMaxWidth()) {
                                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        Text("₹${donation.amount.toInt()}", style = VTheme.type.body, fontWeight = FontWeight.SemiBold, color = VTheme.colors.ink)
-                                        Text(appString(StringKeys.SCH_DATE_COLON, "date" to donation.donationDate), style = VTheme.type.caption, color = VTheme.colors.ink3)
-                                        donation.campaignTitle?.let { Text(appString(StringKeys.SCH_CAMPAIGN_COLON, "title" to it), style = VTheme.type.caption, color = VTheme.colors.ink3) }
-                                        donation.paymentMode?.let { Text(appString(StringKeys.SCH_MODE_COLON, "mode" to it), style = VTheme.type.caption, color = VTheme.colors.ink3) }
+                                        Text("₹${donation.amount.toInt()}", style = VTypography.body, fontWeight = FontWeight.SemiBold, color = VColors.ink)
+                                        Text(appString(StringKeys.SCH_DATE_COLON, "date" to donation.donationDate), style = VTypography.caption, color = VColors.ink3)
+                                        donation.campaignTitle?.let { Text(appString(StringKeys.SCH_CAMPAIGN_COLON, "title" to it), style = VTypography.caption, color = VColors.ink3) }
+                                        donation.paymentMode?.let { Text(appString(StringKeys.SCH_MODE_COLON, "mode" to it), style = VTypography.caption, color = VColors.ink3) }
                                         if (donation.is80gEligible) {
-                                            Text(appString(StringKeys.SCH_80G_ELIGIBLE_RECEIPT, "receipt" to (donation.receiptNumber ?: appString(StringKeys.SCH_PENDING))), style = VTheme.type.caption, color = VTheme.colors.accent)
+                                            Text(appString(StringKeys.SCH_80G_ELIGIBLE_RECEIPT, "receipt" to (donation.receiptNumber ?: appString(StringKeys.SCH_PENDING))), style = VTypography.caption, color = VColors.violet)
                                         }
                                     }
                                 }
@@ -206,8 +206,8 @@ fun AlumniDetailScreen(
 private fun DetailRow(label: String, value: String) {
     VCard(modifier = Modifier.fillMaxWidth()) {
         Column {
-            Text(label, style = VTheme.type.caption, color = VTheme.colors.ink3)
-            Text(value, style = VTheme.type.body, color = VTheme.colors.ink)
+            Text(label, style = VTypography.caption, color = VColors.ink3)
+            Text(value, style = VTypography.body, color = VColors.ink)
         }
     }
 }
