@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
@@ -58,10 +57,16 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun ParentProfileCardScreenV2(
     modifier: Modifier = Modifier,
+    parentName: String = "",
+    children: List<DashboardChildSummary> = emptyList(),
+    selectedChild: DashboardChildSummary? = null,
+    onSelectChild: (String) -> Unit = {},
     onLogout: () -> Unit = {},
     onLinkChild: () -> Unit = {},
     onDiscoverSchools: () -> Unit = {},
     onOpenAccountSettings: () -> Unit = {},
+    onOpenNotifications: () -> Unit = {},
+    unreadNotificationsCount: Int = 0,
     viewModel: ParentDashboardViewModel = koinViewModel(),
     profileViewModel: ParentProfileViewModel = koinViewModel(),
     academicsViewModel: ParentAcademicsViewModel = koinViewModel(),
@@ -87,12 +92,18 @@ fun ParentProfileCardScreenV2(
         profile = profile,
         academics = academics,
         track = track,
+        parentName = parentName,
+        children = children,
+        selectedChild = selectedChild,
+        onSelectChild = onSelectChild,
         onRetry = viewModel::load,
         onRetryProfile = profileViewModel::load,
         onLogout = onLogout,
         onLinkChild = onLinkChild,
         onDiscoverSchools = onDiscoverSchools,
         onOpenAccountSettings = onOpenAccountSettings,
+        onOpenNotifications = onOpenNotifications,
+        unreadNotificationsCount = unreadNotificationsCount,
         modifier = modifier,
     )
 }
@@ -103,12 +114,18 @@ private fun ProfileContent(
     profile: ParentProfileState,
     academics: com.littlebridge.enrollplus.feature.parent.presentation.ParentAcademicsState,
     track: TrackProgressState,
+    parentName: String,
+    children: List<DashboardChildSummary>,
+    selectedChild: DashboardChildSummary?,
+    onSelectChild: (String) -> Unit,
     onRetry: () -> Unit,
     onRetryProfile: () -> Unit,
     onLogout: () -> Unit,
     onLinkChild: () -> Unit,
     onDiscoverSchools: () -> Unit,
     onOpenAccountSettings: () -> Unit,
+    onOpenNotifications: () -> Unit,
+    unreadNotificationsCount: Int,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -118,8 +135,14 @@ private fun ProfileContent(
             .verticalScroll(rememberScrollState())
             .padding(bottom = 100.dp),
     ) {
-        ProfileHeader(
-            onOpenAccountSettings = onOpenAccountSettings,
+        PortalTopHeader(
+            parentName = parentName,
+            childName = selectedChild?.name?.ifBlank { null } ?: state.selectedChild?.name?.ifBlank { null } ?: "Your Child",
+            children = children,
+            selectedChild = selectedChild,
+            onSelectChild = onSelectChild,
+            onOpenNotifications = onOpenNotifications,
+            unreadNotificationsCount = unreadNotificationsCount,
         )
 
         when {
@@ -135,46 +158,6 @@ private fun ProfileContent(
                 onLinkChild = onLinkChild,
                 onDiscoverSchools = onDiscoverSchools,
                 onOpenAccountSettings = onOpenAccountSettings,
-            )
-        }
-    }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// HEADER
-// ═══════════════════════════════════════════════════════════════════════════════
-
-@Composable
-private fun ProfileHeader(
-    onOpenAccountSettings: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .statusBarsPadding()
-            .padding(horizontal = 24.dp)
-            .padding(top = 12.dp, bottom = 18.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = "Profile",
-            style = VTypography.h3.copy(fontSize = 20.sp),
-            color = VColors.ink,
-            fontWeight = FontWeight.ExtraBold,
-        )
-        Box(
-            modifier = Modifier
-                .size(44.dp)
-                .clip(CircleShape)
-                .clickable(onClick = onOpenAccountSettings),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = VIcons.Settings,
-                contentDescription = "Settings",
-                tint = VColors.ink,
-                modifier = Modifier.size(24.dp),
             )
         }
     }

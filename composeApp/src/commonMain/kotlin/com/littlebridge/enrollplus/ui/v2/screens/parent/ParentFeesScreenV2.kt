@@ -52,6 +52,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun ParentFeesScreenV2(
     modifier: Modifier = Modifier,
+    parentName: String = "",
     children: List<DashboardChildSummary>,
     selectedChild: DashboardChildSummary?,
     onSelectChild: (String) -> Unit,
@@ -64,6 +65,7 @@ fun ParentFeesScreenV2(
     val state by viewModel.state.collectAsStateV2()
     ParentFeesContent(
         state = state,
+        parentName = parentName,
         children = children,
         selectedChild = selectedChild,
         onSelectChild = onSelectChild,
@@ -79,6 +81,7 @@ fun ParentFeesScreenV2(
 @Composable
 private fun ParentFeesContent(
     state: FeeState,
+    parentName: String,
     children: List<DashboardChildSummary>,
     selectedChild: DashboardChildSummary?,
     onSelectChild: (String) -> Unit,
@@ -99,8 +102,9 @@ private fun ParentFeesContent(
             .verticalScroll(rememberScrollState())
             .padding(bottom = 130.dp),
     ) {
-        ParentPortalHeader(
-            label = "Fees",
+        PortalTopHeader(
+            parentName = parentName,
+            childName = selectedChild?.name?.ifBlank { null } ?: "Your Child",
             children = children,
             selectedChild = selectedChild,
             onSelectChild = onSelectChild,

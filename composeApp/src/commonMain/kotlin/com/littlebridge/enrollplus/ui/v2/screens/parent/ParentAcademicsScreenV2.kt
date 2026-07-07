@@ -102,6 +102,10 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun ParentAcademicsScreenV2(
     modifier: Modifier = Modifier,
+    parentName: String = "",
+    children: List<DashboardChildSummary> = emptyList(),
+    selectedChild: DashboardChildSummary? = null,
+    onSelectChild: (String) -> Unit = {},
     onOpenLeave: () -> Unit = {},
     onOpenHealth: () -> Unit = {},
     onOpenNotifications: () -> Unit = {},
@@ -119,6 +123,13 @@ fun ParentAcademicsScreenV2(
     ParentAcademicsContent(
         state = state,
         academics = academics,
+        parentName = parentName,
+        children = children,
+        selectedChild = selectedChild,
+        onSelectChild = {
+            onSelectChild(it)
+            academicsViewModel.selectChild(it)
+        },
         onLoadAttendance = { academicsViewModel.loadAttendance() },
         onLoadMarks = { academicsViewModel.loadMarks() },
         onLoadSyllabus = { academicsViewModel.loadSyllabus() },
@@ -130,7 +141,6 @@ fun ParentAcademicsScreenV2(
         onSubmitQuiz = { id, ans, txt -> academicsViewModel.submitQuiz(id, ans, txt) },
         onClearQuizResult = { academicsViewModel.clearQuizResult() },
         onLoadLeaderboard = { academicsViewModel.loadLeaderboard(it) },
-        onSelectChild = { academicsViewModel.selectChild(it) },
         onOpenLeave = onOpenLeave,
         onOpenHealth = onOpenHealth,
         onOpenNotifications = onOpenNotifications,
@@ -151,6 +161,9 @@ fun ParentAcademicsScreenV2(
 private fun ParentAcademicsContent(
     state: TrackProgressState,
     academics: ParentAcademicsState,
+    parentName: String,
+    children: List<DashboardChildSummary>,
+    selectedChild: DashboardChildSummary?,
     onLoadAttendance: () -> Unit,
     onLoadMarks: () -> Unit,
     onLoadSyllabus: () -> Unit,
@@ -213,11 +226,12 @@ private fun ParentAcademicsContent(
             .verticalScroll(rememberScrollState())
             .padding(bottom = 100.dp),
     ) {
-        // ── Premium header (matches screenshot) ──
-        ParentPortalHeader(
-            label = "Academics",
-            children = academics.children,
-            selectedChild = academics.selectedChild,
+        // ── Shared portal header (same as Home) ──
+        PortalTopHeader(
+            parentName = parentName,
+            childName = selectedChild?.name?.ifBlank { null } ?: "Your Child",
+            children = children,
+            selectedChild = selectedChild,
             onSelectChild = onSelectChild,
             onOpenNotifications = onOpenNotifications,
             unreadNotificationsCount = unreadNotificationsCount,
@@ -274,6 +288,7 @@ private fun ParentAcademicsContent(
                                 tab = "Report"
                             }
                         },
+                        onOpenSyllabus = { tab = "Syllabus" },
                     )
                     "Attendance" -> AttendanceTab(academics, onLoadAttendance)
                     "Marks" -> MarksTab(academics, onLoadMarks)
@@ -316,6 +331,7 @@ private fun OverviewTab(
     onOpenLeave: () -> Unit,
     onOpenHealth: () -> Unit,
     onOpenReport: () -> Unit,
+    onOpenSyllabus: () -> Unit,
 ) {
     if (state.isLoading) {
         LoadingState()
@@ -415,7 +431,7 @@ private fun OverviewTab(
             icon = Icons.Filled.School,
             iconColor = VColors.gold,
             title = "Syllabus",
-            onClick = { },
+            onClick = onOpenSyllabus,
             modifier = Modifier.weight(1f),
         )
     }

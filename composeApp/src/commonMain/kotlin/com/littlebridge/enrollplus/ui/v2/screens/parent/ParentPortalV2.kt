@@ -397,6 +397,10 @@ fun ParentPortalV2(
                     unreadNotificationsCount = notifications.unreadCount,
                 )
                 "academics" -> ParentAcademicsScreenV2(
+                    parentName = progress.accountName,
+                    children = dashboard.children,
+                    selectedChild = dashboard.selectedChild,
+                    onSelectChild = { dashboardViewModel.selectChild(it) },
                     onOpenLeave = { overlay = ParentOverlay.Leave },
                     onOpenHealth = { overlay = ParentOverlay.Health },
                     onOpenNotifications = { overlay = ParentOverlay.Notifications },
@@ -407,6 +411,7 @@ fun ParentPortalV2(
                     unreadNotificationsCount = notifications.unreadCount,
                 )
                 "fees" -> ParentFeesScreenV2(
+                    parentName = progress.accountName,
                     children = dashboard.children,
                     selectedChild = dashboard.selectedChild,
                     onSelectChild = { dashboardViewModel.selectChild(it) },
@@ -417,6 +422,7 @@ fun ParentPortalV2(
                 )
                 // Phase 3 (commit 9): the Conversations hub — messaging-first, announcements second.
                 "conversations" -> ParentConversationsScreenV2(
+                    parentName = progress.accountName,
                     children = dashboard.children,
                     selectedChild = dashboard.selectedChild,
                     onSelectChild = { dashboardViewModel.selectChild(it) },
@@ -429,6 +435,10 @@ fun ParentPortalV2(
                 // Phase 4 (commits 10–11): the flagship collectible player card, with a
                 // swipe-down account-options reveal (logout / link child / discover schools).
                 "profile" -> ParentProfileCardScreenV2(
+                    parentName = progress.accountName,
+                    children = dashboard.children,
+                    selectedChild = dashboard.selectedChild,
+                    onSelectChild = { dashboardViewModel.selectChild(it) },
                     onLogout = onLogout,
                     onLinkChild = { overlay = ParentOverlay.LinkChild },
                     onDiscoverSchools = { overlay = ParentOverlay.Discovery },

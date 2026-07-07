@@ -46,6 +46,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun ParentConversationsScreenV2(
     modifier: Modifier = Modifier,
+    parentName: String = "",
     children: List<DashboardChildSummary>,
     selectedChild: DashboardChildSummary?,
     onSelectChild: (String) -> Unit,
@@ -90,8 +91,9 @@ fun ParentConversationsScreenV2(
         // Hide the tab chrome when a conversation or compose is open so the chat becomes
         // a true full-screen surface with its own premium header (WhatsApp pattern).
         if (!isChatOpen) {
-            ParentPortalHeader(
-                label = "Conversations",
+            PortalTopHeader(
+                parentName = parentName,
+                childName = selectedChild?.name?.ifBlank { null } ?: "Your Child",
                 children = children,
                 selectedChild = selectedChild,
                 onSelectChild = onSelectChild,
