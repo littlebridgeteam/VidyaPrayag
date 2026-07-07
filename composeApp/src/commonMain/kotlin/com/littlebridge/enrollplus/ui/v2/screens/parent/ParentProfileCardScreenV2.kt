@@ -13,6 +13,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -21,24 +24,30 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
-import com.littlebridge.enrollplus.feature.parent.presentation.ParentAcademicsState
+import com.littlebridge.enrollplus.feature.parent.domain.model.DashboardChildSummary
+import com.littlebridge.enrollplus.feature.parent.domain.model.ParentMarkDto
+import com.littlebridge.enrollplus.feature.parent.presentation.AchievementBadge
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentAcademicsViewModel
-import com.littlebridge.enrollplus.feature.parent.presentation.ParentProfile
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentDashboardState
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentDashboardViewModel
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentProfileState
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentProfileViewModel
+import com.littlebridge.enrollplus.feature.parent.presentation.TrackProgressState
+import com.littlebridge.enrollplus.feature.parent.presentation.TrackProgressViewModel
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
@@ -56,15 +65,28 @@ fun ParentProfileCardScreenV2(
     viewModel: ParentDashboardViewModel = koinViewModel(),
     profileViewModel: ParentProfileViewModel = koinViewModel(),
     academicsViewModel: ParentAcademicsViewModel = koinViewModel(),
+    trackViewModel: TrackProgressViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
     val profile by profileViewModel.state.collectAsStateV2()
     val academics by academicsViewModel.state.collectAsStateV2()
+    val track by trackViewModel.state.collectAsStateV2()
+
+    LaunchedEffect(Unit) {
+        if (state.children.isEmpty()) viewModel.load()
+    }
+
+    LaunchedEffect(state.selectedChild?.id) {
+        state.selectedChild?.id?.let {
+            academicsViewModel.selectChild(it)
+        }
+    }
 
     ProfileContent(
         state = state,
         profile = profile,
         academics = academics,
+        track = track,
         onRetry = viewModel::load,
         onRetryProfile = profileViewModel::load,
         onLogout = onLogout,
@@ -79,7 +101,8 @@ fun ParentProfileCardScreenV2(
 private fun ProfileContent(
     state: ParentDashboardState,
     profile: ParentProfileState,
-    academics: ParentAcademicsState,
+    academics: com.littlebridge.enrollplus.feature.parent.presentation.ParentAcademicsState,
+    track: TrackProgressState,
     onRetry: () -> Unit,
     onRetryProfile: () -> Unit,
     onLogout: () -> Unit,
@@ -95,13 +118,8 @@ private fun ProfileContent(
             .verticalScroll(rememberScrollState())
             .padding(bottom = 100.dp),
     ) {
-        ParentPortalHeader(
-            label = "Profile",
-            children = state.children,
-            selectedChild = state.selectedChild,
-            onSelectChild = { },
-            onOpenNotifications = {},
-            unreadNotificationsCount = 0,
+        ProfileHeader(
+            onOpenAccountSettings = onOpenAccountSettings,
         )
 
         when {
@@ -111,11 +129,52 @@ private fun ProfileContent(
                 state = state,
                 profile = profile,
                 academics = academics,
+                track = track,
                 onRetryProfile = onRetryProfile,
                 onLogout = onLogout,
                 onLinkChild = onLinkChild,
                 onDiscoverSchools = onDiscoverSchools,
                 onOpenAccountSettings = onOpenAccountSettings,
+            )
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// HEADER
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun ProfileHeader(
+    onOpenAccountSettings: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(horizontal = 24.dp)
+            .padding(top = 12.dp, bottom = 18.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = "Profile",
+            style = VTypography.h3.copy(fontSize = 20.sp),
+            color = VColors.ink,
+            fontWeight = FontWeight.ExtraBold,
+        )
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clip(CircleShape)
+                .clickable(onClick = onOpenAccountSettings),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = VIcons.Settings,
+                contentDescription = "Settings",
+                tint = VColors.ink,
+                modifier = Modifier.size(24.dp),
             )
         }
     }
@@ -136,14 +195,25 @@ private fun ProfileSkeleton() {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(140.dp)
-                .clip(VShapes.lg)
+                .height(180.dp)
+                .clip(VShapes.xxl)
                 .background(VColors.lineSoft),
         )
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            repeat(2) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(100.dp)
+                        .clip(VShapes.lg)
+                        .background(VColors.lineSoft),
+                )
+            }
+        }
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp)
+                .height(120.dp)
                 .clip(VShapes.lg)
                 .background(VColors.lineSoft),
         )
@@ -194,14 +264,15 @@ private fun ProfileError(message: String, onRetry: () -> Unit) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// LOADED — premium profile layout
+// LOADED
 // ═══════════════════════════════════════════════════════════════════════════════
 
 @Composable
 private fun ProfileLoaded(
     state: ParentDashboardState,
     profile: ParentProfileState,
-    academics: ParentAcademicsState,
+    academics: com.littlebridge.enrollplus.feature.parent.presentation.ParentAcademicsState,
+    track: TrackProgressState,
     onRetryProfile: () -> Unit,
     onLogout: () -> Unit,
     onLinkChild: () -> Unit,
@@ -211,7 +282,6 @@ private fun ProfileLoaded(
     val child = state.selectedChild
     val childName = child?.name?.ifBlank { null } ?: "Your Child"
     val attendanceRate = state.attendance?.attendanceRate
-    val feesDue = state.fees?.outstandingFees
     val markPct = state.latestMark?.let { m ->
         if (m.maxMarks > 0) ((m.marks ?: 0.0) / m.maxMarks * 100).roundToInt() else null
     }
@@ -222,24 +292,25 @@ private fun ProfileLoaded(
             .padding(horizontal = 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // ── Parent identity card (matches hero card design) ──
-        ParentIdentityCard(profile = profile.profile)
+        ProfileHeroCard(
+            childName = childName,
+            level = child?.currentLevel ?: track.currentLevel,
+            overallProgress = track.overallProgress,
+        )
 
-        // ── Child snapshot (matches HomeHeroCard inline stats) ──
-        if (child != null) {
-            SectionLabel("Child Overview")
-            ChildSnapshotCard(
-                childName = childName,
-                level = child.currentLevel,
-                attendanceRate = attendanceRate,
-                markPct = markPct,
-                feesDue = feesDue,
-            )
-        }
+        SectionHeader(title = "Stats")
+        StatsGrid(
+            attendanceRate = attendanceRate,
+            markPct = markPct,
+            xpPoints = (track.overallProgress * 5000).roundToInt(),
+            quizzesDone = academics.quizzes.size,
+        )
 
-        // ── Settings list (grouped card with dividers) ──
-        SectionLabel("Account")
-        SettingsCard(
+        SectionHeader(title = "Badges", action = "All", onAction = {})
+        BadgesRow(badges = track.badges)
+
+        SectionHeader(title = "Account")
+        AccountCard(
             onOpenAccountSettings = onOpenAccountSettings,
             onLinkChild = onLinkChild,
             onDiscoverSchools = onDiscoverSchools,
@@ -251,197 +322,164 @@ private fun ProfileLoaded(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// PARENT IDENTITY CARD
+// PROFILE HERO
 // ═══════════════════════════════════════════════════════════════════════════════
 
 @Composable
-private fun ParentIdentityCard(profile: ParentProfile?) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .background(VColors.surfaceCard, VShapes.lg)
-            .border(1.dp, VColors.line, VShapes.lg)
-            .padding(20.dp),
-    ) {
-        if (profile == null) {
-            Box(
-                modifier = Modifier.fillMaxWidth().height(60.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(24.dp))
-            }
-        } else {
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                Box(
-                    modifier = Modifier.size(48.dp).clip(CircleShape).background(VColors.violetSoft),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = profile.name.take(1).uppercase(),
-                        style = VTypography.h3.copy(fontSize = 18.sp),
-                        color = VColors.violet,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        profile.name.ifBlank { "Parent" },
-                        style = VTypography.h3.copy(fontSize = 16.sp),
-                        color = VColors.ink,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        "Parent Account",
-                        style = VTypography.caption.copy(fontSize = 11.sp),
-                        color = VColors.ink3,
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(16.dp))
-            HorizontalDivider(color = VColors.lineSoft)
-            Spacer(Modifier.height(14.dp))
-
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-            ) {
-                ContactItem(
-                    icon = VIcons.Phone,
-                    value = profile.phone.ifBlank { "—" },
-                    label = "Phone",
-                    modifier = Modifier.weight(1f),
-                )
-                ContactItem(
-                    icon = VIcons.Mail,
-                    value = profile.email.ifBlank { "—" },
-                    label = "Email",
-                    modifier = Modifier.weight(1f),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ContactItem(
-    icon: ImageVector,
-    value: String,
-    label: String,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = VColors.ink3,
-            modifier = Modifier.size(16.dp),
-        )
-        Spacer(Modifier.height(6.dp))
-        Text(
-            value,
-            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 11.sp),
-            color = VColors.ink,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            label,
-            style = VTypography.caption.copy(fontSize = 10.sp),
-            color = VColors.ink3,
-        )
-    }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// CHILD SNAPSHOT CARD — matches HomeHeroCard inline stats
-// ═══════════════════════════════════════════════════════════════════════════════
-
-@Composable
-private fun ChildSnapshotCard(
+private fun ProfileHeroCard(
     childName: String,
     level: Int,
-    attendanceRate: Int?,
-    markPct: Int?,
-    feesDue: String?,
+    overallProgress: Float,
 ) {
+    val xp = (overallProgress * 5000).roundToInt()
+    val xpMax = 5000
+
     Column(
-        Modifier
+        modifier = Modifier
             .fillMaxWidth()
-            .background(VColors.surfaceCard, VShapes.lg)
-            .border(1.dp, VColors.line, VShapes.lg)
-            .padding(20.dp),
+            .clip(VShapes.xxl)
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(
+                        VColors.violet,
+                        Color(0xFF4A30C4),
+                        VColors.violetInk,
+                    ),
+                    start = androidx.compose.ui.geometry.Offset(0f, 0f),
+                    end = androidx.compose.ui.geometry.Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
+                )
+            )
+            .padding(24.dp),
     ) {
         Row(
-            Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Box(
-                modifier = Modifier.size(44.dp).clip(CircleShape).background(VColors.violetSoft),
+                modifier = Modifier
+                    .size(72.dp)
+                    .clip(VShapes.xl)
+                    .background(VColors.white.copy(alpha = 0.2f))
+                    .border(2.dp, VColors.white.copy(alpha = 0.25f), VShapes.xl),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = childName.take(1).uppercase(),
-                    style = VTypography.h3.copy(fontSize = 16.sp),
-                    color = VColors.violet,
-                    fontWeight = FontWeight.Bold,
+                    style = VTypography.h2.copy(fontSize = 30.sp),
+                    color = VColors.white,
+                    fontWeight = FontWeight.ExtraBold,
                 )
             }
-            Column(Modifier.weight(1f)) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     childName,
-                    style = VTypography.h3.copy(fontSize = 16.sp),
-                    color = VColors.ink,
-                    fontWeight = FontWeight.Bold,
+                    style = VTypography.h3.copy(fontSize = 20.sp),
+                    color = VColors.white,
+                    fontWeight = FontWeight.ExtraBold,
                 )
                 Spacer(Modifier.height(4.dp))
-                if (level > 0) {
-                    Box(
-                        modifier = Modifier
-                            .clip(VShapes.sm)
-                            .background(VColors.violetSoft)
-                            .padding(horizontal = 8.dp, vertical = 3.dp),
-                    ) {
-                        Text(
-                            text = "Level $level",
-                            style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
-                            color = VColors.violet,
-                        )
-                    }
+                Text(
+                    text = "Student",
+                    style = VTypography.caption.copy(fontSize = 13.sp),
+                    color = VColors.white.copy(alpha = 0.7f),
+                    fontWeight = FontWeight.Medium,
+                )
+                Spacer(Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .clip(VShapes.full)
+                        .background(VColors.white.copy(alpha = 0.2f))
+                        .padding(horizontal = 12.dp, vertical = 5.dp),
+                ) {
+                    Text(
+                        text = "🏆 Level $level Scholar",
+                        style = VTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
+                        color = VColors.white,
+                    )
                 }
             }
         }
 
-        Spacer(Modifier.height(16.dp))
-        HorizontalDivider(color = VColors.lineSoft)
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(20.dp))
 
         Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            InlineStat(
+            Text(
+                text = "Level $level — Scholar",
+                style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
+                color = VColors.white,
+            )
+            Text(
+                text = "$xp / $xpMax XP",
+                style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
+                color = VColors.white.copy(alpha = 0.8f),
+            )
+        }
+
+        Spacer(Modifier.height(8.dp))
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .clip(VShapes.full)
+                .background(VColors.white.copy(alpha = 0.2f)),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth((overallProgress).coerceIn(0f, 1f))
+                    .height(8.dp)
+                    .clip(VShapes.full)
+                    .background(VColors.mint),
+            )
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STATS GRID
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun StatsGrid(
+    attendanceRate: Int?,
+    markPct: Int?,
+    xpPoints: Int,
+    quizzesDone: Int,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            StatCard(
                 value = attendanceRate?.let { "$it%" } ?: "—",
                 label = "Attendance",
+                trend = "↑ 2% this month",
+                trendColor = VColors.mint,
                 modifier = Modifier.weight(1f),
             )
-            InlineStat(
+            StatCard(
                 value = markPct?.let { "$it%" } ?: "—",
-                label = "Latest",
+                label = "Avg Marks",
+                trend = "↑ 5% this term",
+                trendColor = VColors.mint,
                 modifier = Modifier.weight(1f),
             )
-            InlineStat(
-                value = feesDue ?: "—",
-                label = "Fees Due",
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            StatCard(
+                value = formatCompact(xpPoints),
+                label = "XP Points",
+                trend = "↑ ${formatCompact((xpPoints * 0.12f).roundToInt())} this week",
+                trendColor = VColors.mint,
+                modifier = Modifier.weight(1f),
+            )
+            StatCard(
+                value = quizzesDone.toString(),
+                label = "Quizzes Done",
+                trend = "↑ 3 this week",
+                trendColor = VColors.mint,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -449,28 +487,139 @@ private fun ChildSnapshotCard(
 }
 
 @Composable
-private fun InlineStat(value: String, label: String, modifier: Modifier = Modifier) {
+private fun StatCard(
+    value: String,
+    label: String,
+    trend: String,
+    trendColor: Color,
+    modifier: Modifier = Modifier,
+) {
     Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier
+            .clip(VShapes.lg)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.lg)
+            .padding(18.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Text(
             value,
-            style = VTypography.h3.copy(fontSize = 16.sp),
+            style = VTypography.h2.copy(fontSize = 24.sp),
             color = VColors.ink,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.ExtraBold,
         )
-        Spacer(Modifier.height(2.dp))
-        Text(label, style = VTypography.caption.copy(fontSize = 10.sp), color = VColors.ink3)
+        Text(
+            label.uppercase(),
+            style = VTypography.caption.copy(fontSize = 10.sp),
+            color = VColors.ink3,
+            fontWeight = FontWeight.SemiBold,
+            letterSpacing = 0.4.sp,
+        )
+        Text(
+            trend,
+            style = VTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
+            color = trendColor,
+        )
     }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// SETTINGS CARD — grouped list with dividers (iOS-style)
+// BADGES
 // ═══════════════════════════════════════════════════════════════════════════════
 
 @Composable
-private fun SettingsCard(
+private fun BadgesRow(badges: List<AchievementBadge>) {
+    if (badges.isEmpty()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(VShapes.xl)
+                .background(VColors.surfaceCard)
+                .border(1.dp, VColors.line, VShapes.xl)
+                .padding(28.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = "No badges yet",
+                style = VTypography.caption,
+                color = VColors.ink3,
+            )
+        }
+    } else {
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            items(badges.size) { idx ->
+                val badge = badges[idx]
+                BadgeCard(badge = badge)
+            }
+        }
+    }
+}
+
+@Composable
+private fun BadgeCard(badge: AchievementBadge) {
+    Column(
+        modifier = Modifier
+            .width(152.dp)
+            .clip(VShapes.xl)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.xl)
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(64.dp)
+                .clip(CircleShape)
+                .background(if (badge.isLocked) VColors.lineSoft else VColors.violetSoft)
+                .border(
+                    width = if (badge.isLocked) 0.dp else 3.dp,
+                    brush = if (badge.isLocked) Brush.linearGradient(listOf(VColors.lineSoft, VColors.lineSoft)) else Brush.linearGradient(listOf(VColors.violet, VColors.mint, VColors.violet)),
+                    shape = CircleShape,
+                )
+                .padding(14.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = pickBadgeIcon(badge.iconName),
+                contentDescription = null,
+                tint = if (badge.isLocked) VColors.ink3 else VColors.violet,
+                modifier = Modifier.size(26.dp),
+            )
+        }
+        Text(
+            badge.title,
+            style = VTypography.body.copy(fontWeight = FontWeight.ExtraBold, fontSize = 14.sp),
+            color = VColors.ink,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            text = if (badge.isLocked) "Locked" else "Earned",
+            style = VTypography.caption.copy(fontWeight = FontWeight.ExtraBold, fontSize = 10.sp),
+            color = if (badge.isLocked) VColors.ink3 else VColors.mint,
+            letterSpacing = 0.5.sp,
+        )
+    }
+}
+
+private fun pickBadgeIcon(iconName: String): ImageVector = when (iconName.lowercase()) {
+    "book", "bookopen", "book-open" -> VIcons.Bookmark
+    "zap", "flash" -> VIcons.Sparkles
+    "target", "bullseye" -> VIcons.Target
+    "check", "checkcircle" -> VIcons.Check
+    "clipboard" -> VIcons.ClipboardList
+    else -> VIcons.Star
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ACCOUNT OPTIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun AccountCard(
     onOpenAccountSettings: () -> Unit,
     onLinkChild: () -> Unit,
     onDiscoverSchools: () -> Unit,
@@ -479,39 +628,36 @@ private fun SettingsCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(VColors.surfaceCard, VShapes.lg)
-            .border(1.dp, VColors.line, VShapes.lg)
-            .padding(vertical = 4.dp),
+            .clip(VShapes.xl)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.xl)
+            .padding(vertical = 8.dp),
     ) {
-        SettingsRow(
-            icon = VIcons.Settings,
-            iconColor = VColors.ink,
+        AccountRow(
+            icon = VIcons.User,
             iconBg = VColors.creamDeep,
             label = "Account Settings",
             onClick = onOpenAccountSettings,
         )
         HorizontalDivider(color = VColors.lineSoft, modifier = Modifier.padding(horizontal = 16.dp))
-        SettingsRow(
-            icon = VIcons.UserPlus,
-            iconColor = VColors.violet,
+        AccountRow(
+            icon = VIcons.Plus,
             iconBg = VColors.violetSoft,
             label = "Link Another Child",
             onClick = onLinkChild,
         )
         HorizontalDivider(color = VColors.lineSoft, modifier = Modifier.padding(horizontal = 16.dp))
-        SettingsRow(
+        AccountRow(
             icon = VIcons.Search,
-            iconColor = VColors.sky,
-            iconBg = VColors.skySoft,
+            iconBg = VColors.mintSoft,
             label = "Discover Schools",
             onClick = onDiscoverSchools,
         )
         HorizontalDivider(color = VColors.lineSoft, modifier = Modifier.padding(horizontal = 16.dp))
-        SettingsRow(
+        AccountRow(
             icon = VIcons.LogOut,
-            iconColor = VColors.error,
             iconBg = VColors.errorSoft,
-            label = "Log Out",
+            label = "Logout",
             onClick = onLogout,
             isDestructive = true,
         )
@@ -519,9 +665,8 @@ private fun SettingsCard(
 }
 
 @Composable
-private fun SettingsRow(
+private fun AccountRow(
     icon: ImageVector,
-    iconColor: Color,
     iconBg: Color,
     label: String,
     onClick: () -> Unit,
@@ -536,19 +681,22 @@ private fun SettingsRow(
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Box(
-            modifier = Modifier.size(32.dp).clip(VShapes.sm).background(iconBg),
+            modifier = Modifier
+                .size(42.dp)
+                .clip(VShapes.md)
+                .background(iconBg),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = iconColor,
-                modifier = Modifier.size(16.dp),
+                tint = if (isDestructive) VColors.error else VColors.ink,
+                modifier = Modifier.size(20.dp),
             )
         }
         Text(
             text = label,
-            style = VTypography.body.copy(fontWeight = FontWeight.Medium, fontSize = 14.sp),
+            style = VTypography.body.copy(fontWeight = FontWeight.Medium, fontSize = 15.sp),
             color = if (isDestructive) VColors.error else VColors.ink,
             modifier = Modifier.weight(1f),
         )
@@ -556,7 +704,7 @@ private fun SettingsRow(
             imageVector = VIcons.ChevronRight,
             contentDescription = null,
             tint = VColors.ink3,
-            modifier = Modifier.size(20.dp),
+            modifier = Modifier.size(22.dp),
         )
     }
 }
@@ -566,11 +714,51 @@ private fun SettingsRow(
 // ═══════════════════════════════════════════════════════════════════════════════
 
 @Composable
-private fun SectionLabel(text: String) {
-    Text(
-        text = text,
-        style = VTypography.label,
-        color = VColors.ink,
-        fontWeight = FontWeight.Bold,
-    )
+private fun SectionHeader(
+    title: String,
+    action: String? = null,
+    onAction: () -> Unit = {},
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 4.dp, bottom = 2.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = title,
+            style = VTypography.h3.copy(fontSize = 20.sp),
+            color = VColors.ink,
+            fontWeight = FontWeight.ExtraBold,
+        )
+        if (action != null) {
+            Text(
+                text = action,
+                style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
+                color = VColors.violet,
+                modifier = Modifier.clickable(onClick = onAction),
+            )
+        }
+    }
+}
+
+private fun formatCompact(value: Int): String {
+    return when {
+        value >= 1000 -> "${(value / 1000f).roundToInt()}K"
+        else -> value.toString()
+    }
+}
+
+private fun markDisplayGrade(mark: ParentMarkDto?): String {
+    if (mark == null) return "—"
+    val pct = if (mark.maxMarks > 0) ((mark.marks ?: 0.0) / mark.maxMarks * 100).roundToInt() else 0
+    return when {
+        pct >= 90 -> "A+"
+        pct >= 80 -> "A"
+        pct >= 70 -> "B+"
+        pct >= 60 -> "B"
+        pct >= 50 -> "C"
+        else -> "D"
+    }
 }
