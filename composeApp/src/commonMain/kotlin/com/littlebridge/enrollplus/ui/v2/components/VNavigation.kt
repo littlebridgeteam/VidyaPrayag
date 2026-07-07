@@ -44,6 +44,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
+import androidx.compose.foundation.border
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -61,6 +62,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 
 // ─────────────────────────────────────────────────────────────────────────────
 // VTopTabs — horizontally scrollable underline tab bar
@@ -939,5 +942,161 @@ fun VBackHeader(
             }
         }
         VDivider()
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// VCreamBottomNav — cream/violet bottom navigation matching onboarding aesthetic
+//
+// Design DNA:
+//   • VColors.cream background (like onboarding screen)
+//   • VColors.surfaceCard bar with VShapes.xxl floating pill
+//   • VColors.violet active tint, VColors.ink3 inactive
+//   • VColors.violetSoft active pill background
+//   • VTypography.caption for labels
+//   • VColors.line top border (like onboarding lineSoft divider)
+//   • No shadows, no gradients — tonal surface elevation
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+fun VCreamBottomNav(
+    items: List<VNavItem>,
+    selected: String,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val density = LocalDensity.current
+    val haptic = LocalHapticFeedback.current
+
+    val itemPositions = remember { mutableStateMapOf<String, Dp>() }
+    val itemWidths = remember { mutableStateMapOf<String, Dp>() }
+
+    val pillX by animateDpAsState(
+        targetValue = itemPositions[selected] ?: 0.dp,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow,
+        ),
+        label = "creamPillX",
+    )
+    val pillWidth by animateDpAsState(
+        targetValue = itemWidths[selected] ?: 0.dp,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow,
+        ),
+        label = "creamPillWidth",
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(horizontal = 20.dp, vertical = 12.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .height(60.dp)
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(30.dp))
+                .background(VColors.surfaceCard)
+                .border(1.dp, VColors.line, RoundedCornerShape(30.dp))
+                .padding(horizontal = 6.dp),
+        ) {
+            // Active pill
+            if (pillWidth > 0.dp) {
+                Box(
+                    modifier = Modifier
+                        .offset(x = pillX)
+                        .width(pillWidth)
+                        .height(48.dp)
+                        .align(Alignment.CenterStart)
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(VColors.violetSoft),
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                items.forEach { item ->
+                    val active = item.id == selected
+                    val tint = if (active) VColors.violet else VColors.ink3
+                    val scale by animateFloatAsState(
+                        targetValue = if (active) 1.1f else 1f,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessMediumLow,
+                        ),
+                        label = "creamIconScale_${item.id}",
+                    )
+                    val interaction = remember { MutableInteractionSource() }
+
+                    Column(
+                        modifier = Modifier
+                            .onGloballyPositioned {
+                                itemPositions[item.id] = with(density) { it.boundsInParent().left.toDp() }
+                                itemWidths[item.id] = with(density) { it.size.width.toDp() }
+                            }
+                            .clip(RoundedCornerShape(24.dp))
+                            .clickable(interactionSource = interaction, indication = null) {
+                                if (!active) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                }
+                                onSelect(item.id)
+                            }
+                            .padding(horizontal = 14.dp, vertical = 8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Box {
+                            Icon(
+                                imageVector = item.icon,
+                                contentDescription = item.label,
+                                tint = tint,
+                                modifier = Modifier
+                                    .size(22.dp)
+                                    .graphicsLayer {
+                                        scaleX = scale
+                                        scaleY = scale
+                                    },
+                            )
+                            if (item.badge > 0) {
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .offset(x = 6.dp, y = (-3).dp)
+                                        .clip(CircleShape)
+                                        .background(VColors.coral)
+                                        .padding(horizontal = 4.dp, vertical = 1.dp),
+                                ) {
+                                    Text(
+                                        text = if (item.badge > 99) "99+" else item.badge.toString(),
+                                        style = VTypography.caption.copy(
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                        ),
+                                        color = VColors.white,
+                                    )
+                                }
+                            }
+                        }
+                        AnimatedVisibility(visible = active) {
+                            Text(
+                                text = item.label,
+                                style = VTypography.caption.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 10.sp,
+                                ),
+                                color = tint,
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
