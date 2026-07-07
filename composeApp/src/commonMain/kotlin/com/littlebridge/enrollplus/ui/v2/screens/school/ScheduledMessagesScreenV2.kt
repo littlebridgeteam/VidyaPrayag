@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -40,7 +41,9 @@ import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
@@ -81,16 +84,18 @@ fun ScheduledMessagesScreenV2(
                 emptyBody = "Schedule announcements and broadcasts to send later.",
                 emptyIcon = VIcons.Clock,
                 onRetry = { viewModel.load() },
+                skeleton = { SkeletonList(rows = 5, withAvatar = false) },
             ) {
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp),
                 ) {
-                    items(state.messages) { msg ->
+                    itemsIndexed(state.messages) { i, msg ->
                         ScheduledMessageCard(
                             message = msg,
                             onCancel = { viewModel.cancelScheduledMessage(msg.id) },
                             onDispatchNow = { viewModel.dispatchNow(msg.id) },
+                            modifier = Modifier.staggeredItemEntrance(i, state.messages.isNotEmpty()),
                         )
                     }
                 }
@@ -152,10 +157,11 @@ private fun ScheduledMessageCard(
     message: ScheduledMessageDto,
     onCancel: () -> Unit,
     onDispatchNow: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
         val (badgeText, badgeTone) = statusBadge(message.status)
 
-    VCard(modifier = Modifier.fillMaxWidth()) {
+    VCard(modifier.fillMaxWidth()) {
         Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(
                 Modifier.fillMaxWidth(),

@@ -29,6 +29,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonProfile
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
@@ -81,6 +82,7 @@ fun AlumniDetailScreen(
             isEmpty = a == null,
             emptyTitle = appString(StringKeys.SCH_ALUMNI_NOT_FOUND),
             onRetry = { isLoading = true; error = null },
+            skeleton = { SkeletonProfile() },
         ) {
             val data = a!!
             VTopTabs(
@@ -180,6 +182,7 @@ fun AlumniDetailScreen(
                             error = null,
                             isEmpty = donations.isNullOrEmpty(),
                             emptyTitle = appString(StringKeys.SCH_NO_DONATIONS_RECORDED),
+                            skeleton = { com.littlebridge.enrollplus.ui.v2.screens.SkeletonList(rows = 3, withAvatar = false) },
                         ) {
                             donations!!.forEach { donation ->
                                 VCard(modifier = Modifier.fillMaxWidth()) {

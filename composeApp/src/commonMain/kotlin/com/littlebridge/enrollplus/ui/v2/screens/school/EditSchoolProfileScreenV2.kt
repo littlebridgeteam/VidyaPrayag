@@ -42,6 +42,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonProfile
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
@@ -212,6 +213,7 @@ private fun EditSchoolProfileContent(
             error = state.loadError,
             isEmpty = false,
             onRetry = onRetry,
+            skeleton = { SkeletonProfile() },
         ) {
 
 

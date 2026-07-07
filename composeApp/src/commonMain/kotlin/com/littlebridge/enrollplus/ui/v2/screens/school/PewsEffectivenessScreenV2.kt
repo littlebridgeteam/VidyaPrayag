@@ -42,7 +42,9 @@ import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
@@ -60,11 +62,13 @@ fun PewsEffectivenessScreenV2(
 
     Column(modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
         VBackHeader(title = appString(StringKeys.SCH_EFFECTIVENESS), onBack = onBack)
-        PewsEffectivenessContent(
-            state = state,
-            onRetry = viewModel::load,
-            modifier = Modifier.fillMaxSize(),
-        )
+        VPullRefresh(isRefreshing = state.isLoading && !state.isEmpty, onRefresh = { viewModel.load() }) {
+            PewsEffectivenessContent(
+                state = state,
+                onRetry = viewModel::load,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 }
 
@@ -83,6 +87,7 @@ private fun PewsEffectivenessContent(
         emptyBody = appString(StringKeys.SCH_EFFECTIVENESS_DESC),
         onRetry = onRetry,
         modifier = modifier,
+        skeleton = { SkeletonDashboard() },
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),

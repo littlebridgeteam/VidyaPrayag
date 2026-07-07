@@ -41,9 +41,12 @@ import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VTag
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.tokens.VColors
@@ -80,14 +83,16 @@ fun DailyAttendanceScreenV2(
         .imePadding()
         .navigationBarsPadding()) {
         VBackHeader(title = appString(StringKeys.SCH_DAILY_ATTENDANCE), onBack = onBack)
-        DailyAttendanceContent(
-            state = state,
-            onTypeChange = viewModel::setAttendanceType,
-            onClassChange = viewModel::selectClass,
-            onUpdateStatus = viewModel::updateStatus,
-            onRetry = { viewModel.setAttendanceType(state.attendanceType) },
-            modifier = Modifier.fillMaxSize(),
-        )
+        VPullRefresh(isRefreshing = state.isLoading && state.attendees.isNotEmpty(), onRefresh = { viewModel.setAttendanceType(state.attendanceType) }) {
+            DailyAttendanceContent(
+                state = state,
+                onTypeChange = viewModel::setAttendanceType,
+                onClassChange = viewModel::selectClass,
+                onUpdateStatus = viewModel::updateStatus,
+                onRetry = { viewModel.setAttendanceType(state.attendanceType) },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 }
 
@@ -142,6 +147,7 @@ private fun DailyAttendanceContent(
                 appString(StringKeys.SCH_NO_FACULTY_ROSTER),
             emptyIcon = VIcons.Users,
             onRetry = onRetry,
+            skeleton = { SkeletonList(rows = 8, withAvatar = true) },
         ) {
             // Summary
             VCard {
@@ -160,7 +166,7 @@ private fun DailyAttendanceContent(
 
             VSectionHeader(title = if (isStudents) appString(StringKeys.SCH_STUDENTS_HEADER) else appString(StringKeys.SCH_FACULTY_HEADER))
 
-            VCard {
+            VCard(Modifier.staggeredItemEntrance(0, true)) {
                 state.attendees.forEachIndexed { i, a ->
                     if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
                     AttendeeRow(attendee = a, onSetStatus = { onUpdateStatus(a.id, it) })

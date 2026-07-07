@@ -34,9 +34,12 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import androidx.compose.ui.text.font.FontWeight
@@ -72,14 +75,16 @@ fun AdmissionsCrmScreenV2(
         .imePadding()
         .navigationBarsPadding()) {
         VBackHeader(title = "Admissions CRM", onBack = onBack)
-        AdmissionsCrmContent(
-            state = state,
-            isLoading = isLoading,
-            error = errorMessage,
-            onUpdateStatus = viewModel::updateEnquiryStatus,
-            onRetry = viewModel::refresh,
-            modifier = Modifier.fillMaxSize(),
-        )
+        VPullRefresh(isRefreshing = isLoading && state.totalEnquiries > 0, onRefresh = { viewModel.refresh() }) {
+            AdmissionsCrmContent(
+                state = state,
+                isLoading = isLoading,
+                error = errorMessage,
+                onUpdateStatus = viewModel::updateEnquiryStatus,
+                onRetry = viewModel::refresh,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 }
 
@@ -108,6 +113,7 @@ private fun AdmissionsCrmContent(
             emptyBody = "New admission enquiries from your website / referrals will appear here.",
             emptyIcon = VIcons.Users,
             onRetry = onRetry,
+            skeleton = { SkeletonDashboard() },
         ) {
             // KPI grid (2x2)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -148,8 +154,8 @@ private fun AdmissionsCrmContent(
                     )
                 }
             } else {
-                state.recentEnquiries.forEach { e ->
-                    EnquiryCard(enquiry = e, onUpdateStatus = onUpdateStatus)
+                state.recentEnquiries.forEachIndexed { i, e ->
+                    EnquiryCard(enquiry = e, onUpdateStatus = onUpdateStatus, modifier = Modifier.staggeredItemEntrance(i, state.recentEnquiries.isNotEmpty()))
                 }
             }
         }
@@ -169,6 +175,7 @@ private fun KpiTile(label: String, value: String) {
 private fun EnquiryCard(
     enquiry: Enquiry,
     onUpdateStatus: (String, String) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
         val id = enquiry.id ?: return
     val (badgeText, badgeTone) = when (enquiry.status) {
@@ -178,7 +185,7 @@ private fun EnquiryCard(
         Enquiry.STATUS_REJECTED -> "Rejected" to VBadgeTone.Danger
         else -> enquiry.status to VBadgeTone.Neutral
     }
-    VCard {
+    VCard(modifier.fillMaxWidth()) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.Top,

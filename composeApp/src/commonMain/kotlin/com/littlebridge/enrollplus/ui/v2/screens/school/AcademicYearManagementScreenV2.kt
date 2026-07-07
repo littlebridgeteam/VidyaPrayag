@@ -37,8 +37,11 @@ import com.littlebridge.enrollplus.ui.v2.components.VDatePicker
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.components.VLabel
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.tokens.VColors
@@ -79,16 +82,18 @@ fun AcademicYearManagementScreenV2(
             },
         )
 
-        VStateHost(
-            loading = state.isLoading,
-            error = state.errorMessage,
-            isEmpty = state.isEmpty && !showCreate,
-            modifier = Modifier.weight(1f).fillMaxWidth(),
-            emptyTitle = appString(StringKeys.SCH_NO_ACADEMIC_YEARS),
-            emptyBody = appString(StringKeys.SCH_NO_ACADEMIC_YEARS_DESC),
-            emptyIcon = VIcons.Calendar,
-            onRetry = { viewModel.load() },
-        ) {
+        VPullRefresh(isRefreshing = state.isLoading && !state.isEmpty, onRefresh = { viewModel.load() }) {
+            VStateHost(
+                loading = state.isLoading,
+                error = state.errorMessage,
+                isEmpty = state.isEmpty && !showCreate,
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                emptyTitle = appString(StringKeys.SCH_NO_ACADEMIC_YEARS),
+                emptyBody = appString(StringKeys.SCH_NO_ACADEMIC_YEARS_DESC),
+                emptyIcon = VIcons.Calendar,
+                onRetry = { viewModel.load() },
+                skeleton = { SkeletonList(rows = 4, withAvatar = false) },
+            ) {
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp, vertical = 16.dp),
@@ -139,12 +144,13 @@ fun AcademicYearManagementScreenV2(
                 val historical = state.historicalYears
                 if (historical.isNotEmpty()) {
                     VLabel(appString(StringKeys.SCH_HISTORICAL_DRAFTS))
-                    historical.forEach { y ->
+                    historical.forEachIndexed { i, y ->
                         YearCard(
                             y,
                             isActive = false,
                             onActivate = { viewModel.activate(y.id) },
                             onArchive = { viewModel.archive(y.id) },
+                            modifier = Modifier.staggeredItemEntrance(i, historical.isNotEmpty()),
                         )
                     }
                 }
@@ -159,8 +165,9 @@ private fun YearCard(
     isActive: Boolean,
     onActivate: () -> Unit,
     onArchive: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-        VCard {
+        VCard(modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(year.name, style = VTypography.h3.copy(color = VColors.ink))

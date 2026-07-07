@@ -35,9 +35,12 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VTag
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import androidx.compose.ui.text.font.FontWeight
@@ -71,14 +74,16 @@ fun LeaveRequestsScreenV2(
         .imePadding()
         .navigationBarsPadding()) {
         VBackHeader(title = "Leave Requests", onBack = onBack)
-        LeaveRequestsContent(
-            state = state,
-            onTypeChange = viewModel::setRequestType,
-            onApprove = viewModel::approveRequest,
-            onReject = viewModel::rejectRequest,
-            onRetry = { viewModel.loadRequests() },
-            modifier = Modifier.fillMaxSize(),
-        )
+        VPullRefresh(isRefreshing = state.isLoading && state.requests.isNotEmpty(), onRefresh = { viewModel.loadRequests() }) {
+            LeaveRequestsContent(
+                state = state,
+                onTypeChange = viewModel::setRequestType,
+                onApprove = viewModel::approveRequest,
+                onReject = viewModel::rejectRequest,
+                onRetry = { viewModel.loadRequests() },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 }
 
@@ -135,12 +140,14 @@ private fun LeaveRequestsContent(
             emptyBody = "There are no ${state.requestType.lowercase()} leave requests right now.",
             emptyIcon = VIcons.ClipboardList,
             onRetry = onRetry,
+            skeleton = { SkeletonList(rows = 5, withAvatar = true) },
         ) {
-            state.requests.forEach { req ->
+            state.requests.forEachIndexed { i, req ->
                 LeaveRequestCard(
                     req = req,
                     onApprove = { onApprove(req.id) },
                     onReject = { onReject(req.id) },
+                    modifier = Modifier.staggeredItemEntrance(i, state.requests.isNotEmpty()),
                 )
             }
         }
@@ -161,9 +168,10 @@ private fun LeaveRequestCard(
     req: LeaveRequestItem,
     onApprove: () -> Unit,
     onReject: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
         val isPending = req.status.equals("Pending", ignoreCase = true)
-    VCard {
+    VCard(modifier.fillMaxWidth()) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.Top,

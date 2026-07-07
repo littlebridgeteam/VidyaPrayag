@@ -37,6 +37,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonProfile
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
@@ -109,6 +110,7 @@ private fun StaffProfileContent(
             emptyBody = appString(StringKeys.SCH_NO_PROFILE_DESC),
             emptyIcon = VIcons.User,
             onRetry = onRetry,
+            skeleton = { SkeletonProfile() },
         ) {
             val m = member ?: return@VStateHost
 

@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -42,7 +41,11 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 
@@ -117,22 +120,20 @@ fun AdminReportingEffectivenessScreen(
 
         when {
             state.isLoading -> {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = VColors.violet)
-                }
+                SkeletonList(rows = 5, withAvatar = false)
             }
             state.error != null -> {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(state.error!!, style = VTypography.body.copy(color = VColors.error))
-                }
+                VStateHost(loading = false, error = state.error, isEmpty = false, onRetry = { viewModel.loadEffectiveness() }) {}
             }
             else -> {
-                LazyColumn(
-                    Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    items(state.effectiveness) { eff ->
-                        EffectivenessCard(eff)
+                VPullRefresh(isRefreshing = state.runningFlywheel, onRefresh = { viewModel.loadEffectiveness() }) {
+                    LazyColumn(
+                        Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        items(state.effectiveness) { eff ->
+                            EffectivenessCard(eff, modifier = Modifier.staggeredItemEntrance(state.effectiveness.indexOf(eff), state.effectiveness.isNotEmpty()))
+                        }
                     }
                 }
             }
@@ -141,13 +142,13 @@ fun AdminReportingEffectivenessScreen(
 }
 
 @Composable
-private fun EffectivenessCard(eff: ReportCardModels.EffectivenessReport) {
+private fun EffectivenessCard(eff: ReportCardModels.EffectivenessReport, modifier: Modifier = Modifier) {
         val scoreColor = when {
         eff.effectivenessScore >= 0.7 -> VColors.success
         eff.effectivenessScore >= 0.4 -> VColors.gold
         else -> VColors.error
     }
-    VCard(Modifier.fillMaxWidth()) {
+    VCard(modifier.fillMaxWidth()) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(
                 Modifier.fillMaxWidth(),

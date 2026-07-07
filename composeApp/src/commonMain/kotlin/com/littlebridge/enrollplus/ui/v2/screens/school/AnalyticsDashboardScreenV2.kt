@@ -38,9 +38,12 @@ import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.tokens.VColors
@@ -74,11 +77,13 @@ fun AnalyticsDashboardScreenV2(
         .imePadding()
         .navigationBarsPadding()) {
         VBackHeader(title = appString(StringKeys.SCH_ANALYTICS), onBack = onBack)
-        AnalyticsContent(
-            state = state,
-            onRetry = viewModel::loadOverview,
-            modifier = Modifier.fillMaxSize(),
-        )
+        VPullRefresh(isRefreshing = state.isLoading && state.cards.isNotEmpty(), onRefresh = { viewModel.loadOverview() }) {
+            AnalyticsContent(
+                state = state,
+                onRetry = viewModel::loadOverview,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 }
 
@@ -105,6 +110,7 @@ private fun AnalyticsContent(
             emptyBody = appString(StringKeys.SCH_NO_ANALYTICS_DESC),
             emptyIcon = VIcons.TrendingUp,
             onRetry = onRetry,
+            skeleton = { SkeletonDashboard() },
         ) {
             // Performance trend
             if (state.performanceTrend.isNotEmpty()) {
@@ -129,8 +135,8 @@ private fun AnalyticsContent(
             if (state.cards.isNotEmpty()) {
                 VSectionHeader(title = appString(StringKeys.SCH_OVERVIEW))
                 val pairs = state.cards.chunked(2)
-                pairs.forEach { pair ->
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                pairs.forEachIndexed { i, pair ->
+                    Row(Modifier.fillMaxWidth().staggeredItemEntrance(i, pairs.isNotEmpty()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Box(Modifier.weight(1f)) { AnalyticsCard(pair[0]) }
                         if (pair.size > 1) {
                             Box(Modifier.weight(1f)) { AnalyticsCard(pair[1]) }
@@ -144,7 +150,7 @@ private fun AnalyticsContent(
             // Insights
             if (state.insights.isNotEmpty()) {
                 VSectionHeader(title = appString(StringKeys.SCH_INSIGHTS))
-                state.insights.forEach { item -> InsightCard(item) }
+                state.insights.forEachIndexed { i, item -> InsightCard(item, modifier = Modifier.staggeredItemEntrance(i, state.insights.isNotEmpty())) }
             }
         }
     }
@@ -211,8 +217,8 @@ private fun AnalyticsCard(card: AnalyticsCardData) {
 }
 
 @Composable
-private fun InsightCard(item: InsightItem) {
-        VCard {
+private fun InsightCard(item: InsightItem, modifier: Modifier = Modifier) {
+    VCard(modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Box(
                 Modifier

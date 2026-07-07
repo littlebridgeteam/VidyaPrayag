@@ -34,9 +34,12 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VTag
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import androidx.compose.ui.text.font.FontWeight
@@ -65,14 +68,16 @@ fun LinkRequestsScreenV2(
         .imePadding()
         .navigationBarsPadding()) {
         VBackHeader(title = "Child Link Requests", onBack = onBack)
-        LinkRequestsContent(
-            state = state,
-            onApprove = viewModel::approve,
-            onReject = viewModel::reject,
-            onRetry = viewModel::load,
-            onSelectTab = viewModel::selectTab,
-            modifier = Modifier.fillMaxSize(),
-        )
+        VPullRefresh(isRefreshing = state.isLoading && state.requests.isNotEmpty(), onRefresh = { viewModel.load() }) {
+            LinkRequestsContent(
+                state = state,
+                onApprove = viewModel::approve,
+                onReject = viewModel::reject,
+                onRetry = viewModel::load,
+                onSelectTab = viewModel::selectTab,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 }
 
@@ -140,13 +145,15 @@ private fun LinkRequestsContent(
             },
             emptyIcon = VIcons.ClipboardList,
             onRetry = onRetry,
+            skeleton = { SkeletonList(rows = 5, withAvatar = true) },
         ) {
-            state.requests.forEach { req ->
+            state.requests.forEachIndexed { i, req ->
                 LinkRequestCard(
                     req = req,
                     acting = state.actingIds.contains(req.id),
                     onApprove = { onApprove(req.id) },
                     onReject = { onReject(req.id) },
+                    modifier = Modifier.staggeredItemEntrance(i, state.requests.isNotEmpty()),
                 )
             }
         }
@@ -159,9 +166,10 @@ private fun LinkRequestCard(
     acting: Boolean,
     onApprove: () -> Unit,
     onReject: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
         val childName = req.childName?.takeIf { it.isNotBlank() } ?: "Unknown student"
-    VCard {
+    VCard(modifier.fillMaxWidth()) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.Top,

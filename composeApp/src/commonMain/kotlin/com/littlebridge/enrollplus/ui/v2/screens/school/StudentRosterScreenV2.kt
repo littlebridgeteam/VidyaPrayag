@@ -48,11 +48,13 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import androidx.compose.ui.text.font.FontWeight
@@ -93,13 +95,15 @@ fun StudentRosterScreenV2(
                 )
             },
         )
-        StudentRosterContent(
-            state = state,
-            onRetry = viewModel::load,
-            onOpenStudent = onOpenStudent,
-            onRemoveClick = { pendingRemoval = it },
-            modifier = Modifier.fillMaxSize(),
-        )
+        VPullRefresh(isRefreshing = state.isLoading && state.students.isNotEmpty(), onRefresh = { viewModel.load() }) {
+            StudentRosterContent(
+                state = state,
+                onRetry = viewModel::load,
+                onOpenStudent = onOpenStudent,
+                onRemoveClick = { pendingRemoval = it },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 
     // Auto-close the add dialog once a student is successfully added.
@@ -159,12 +163,13 @@ private fun StudentRosterContent(
             onRetry = onRetry,
             skeleton = { com.littlebridge.enrollplus.ui.v2.screens.SkeletonList(rows = 8) },
         ) {
-            state.students.forEach { s ->
+            state.students.forEachIndexed { i, s ->
                 StudentCard(
                     student = s,
                     removing = state.removingIds.contains(s.id),
                     onOpen = { onOpenStudent(s.id) },
                     onRemove = { onRemoveClick(s) },
+                    modifier = Modifier.staggeredItemEntrance(i, state.students.isNotEmpty()),
                 )
             }
         }
@@ -183,11 +188,12 @@ private fun StudentCard(
     removing: Boolean,
     onOpen: () -> Unit,
     onRemove: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
         var menuOpen by remember { mutableStateOf(false) }
     val lowAttendance = student.attendancePercent in 0.1f..74.9f
 
-    VCard(modifier = Modifier.fillMaxWidth(), padding = 16.dp, onClick = onOpen) {
+    VCard(modifier = modifier.fillMaxWidth(), padding = 16.dp, onClick = onOpen) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             VAvatar(name = student.fullName, src = student.profilePhotoUrl, size = 48.dp)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {

@@ -32,9 +32,12 @@ import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VTag
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.tokens.VColors
@@ -68,14 +71,16 @@ fun ResultsPublishScreenV2(
         .imePadding()
         .navigationBarsPadding()) {
         VBackHeader(title = appString(StringKeys.SCH_RESULTS), onBack = onBack)
-        ResultsContent(
-            state = state,
-            onSelectTest = viewModel::selectTest,
-            onSelectClass = viewModel::selectClass,
-            onSelectSubject = viewModel::selectSubject,
-            onRetry = { viewModel.loadResults() },
-            modifier = Modifier.fillMaxSize(),
-        )
+        VPullRefresh(isRefreshing = state.isLoading && state.students.isNotEmpty(), onRefresh = { viewModel.loadResults() }) {
+            ResultsContent(
+                state = state,
+                onSelectTest = viewModel::selectTest,
+                onSelectClass = viewModel::selectClass,
+                onSelectSubject = viewModel::selectSubject,
+                onRetry = { viewModel.loadResults() },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 }
 
@@ -113,6 +118,7 @@ private fun ResultsContent(
             emptyBody = appString(StringKeys.SCH_NO_RESULTS_DESC),
             emptyIcon = VIcons.ClipboardList,
             onRetry = onRetry,
+            skeleton = { SkeletonDashboard() },
         ) {
             // Class summary
             VCard {
@@ -133,7 +139,7 @@ private fun ResultsContent(
             }
 
             VSectionHeader(title = appString(StringKeys.SCH_STUDENTS_HEADER))
-            state.students.forEach { s -> StudentResultCard(s) }
+            state.students.forEachIndexed { i, s -> StudentResultCard(s, modifier = Modifier.staggeredItemEntrance(i, state.students.isNotEmpty())) }
         }
     }
 }
@@ -168,14 +174,14 @@ private fun MiniCount(label: String, value: String, tone: VBadgeTone) {
 }
 
 @Composable
-private fun StudentResultCard(s: StudentResult) {
+private fun StudentResultCard(s: StudentResult, modifier: Modifier = Modifier) {
         val statusTone = when (s.status.lowercase()) {
         "exceeding" -> VBadgeTone.Success
         "meeting" -> VBadgeTone.Arctic
         "below" -> VBadgeTone.Danger
         else -> VBadgeTone.Neutral
     }
-    VCard {
+    VCard(modifier.fillMaxWidth()) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,

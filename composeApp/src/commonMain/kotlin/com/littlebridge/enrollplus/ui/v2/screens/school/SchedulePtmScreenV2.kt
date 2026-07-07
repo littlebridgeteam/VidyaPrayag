@@ -44,9 +44,12 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VDatePicker
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.tokens.VColors
@@ -81,13 +84,15 @@ fun SchedulePtmScreenV2(
         .imePadding()
         .navigationBarsPadding()) {
         VBackHeader(title = appString(StringKeys.SCH_SCHEDULE_PTM), onBack = onBack)
-        SchedulePtmContent(
-            state = state,
-            onCreate = { title, date, slot, onDone -> viewModel.createPtm(title, date, slot, onDone) },
-            onRetry = viewModel::loadPtm,
-            onClearMessages = viewModel::clearMessages,
-            modifier = Modifier.fillMaxSize(),
-        )
+        VPullRefresh(isRefreshing = state.isLoading && state.activeEventTitle.isNotBlank(), onRefresh = { viewModel.loadPtm() }) {
+            SchedulePtmContent(
+                state = state,
+                onCreate = { title, date, slot, onDone -> viewModel.createPtm(title, date, slot, onDone) },
+                onRetry = viewModel::loadPtm,
+                onClearMessages = viewModel::clearMessages,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 }
 
@@ -122,6 +127,7 @@ private fun SchedulePtmContent(
             emptyBody = appString(StringKeys.SCH_NO_PTMS_DESC),
             emptyIcon = VIcons.Calendar,
             onRetry = onRetry,
+            skeleton = { SkeletonDashboard() },
         ) {
             // Schedule new PTM CTA / composer
             if (composerOpen) {
@@ -220,7 +226,7 @@ private fun SchedulePtmContent(
                 VCard {
                     state.history.forEachIndexed { i, h ->
                         if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
-                        HistoryRow(h)
+                        HistoryRow(h, modifier = Modifier.staggeredItemEntrance(i, state.history.isNotEmpty()))
                     }
                 }
             }
@@ -228,7 +234,7 @@ private fun SchedulePtmContent(
             // Per-class progress
             if (state.classProgress.isNotEmpty()) {
                 VSectionHeader(title = appString(StringKeys.SCH_CLASS_PROGRESS))
-                state.classProgress.forEach { cp -> ClassProgressCard(cp) }
+                state.classProgress.forEachIndexed { i, cp -> ClassProgressCard(cp, modifier = Modifier.staggeredItemEntrance(i, state.classProgress.isNotEmpty())) }
             }
         }
     }
@@ -249,9 +255,9 @@ private fun KpiTile(label: String, value: String) {
 }
 
 @Composable
-private fun HistoryRow(h: PTMHistoryItem) {
-        Row(
-        Modifier.fillMaxWidth().padding(vertical = 10.dp),
+private fun HistoryRow(h: PTMHistoryItem, modifier: Modifier = Modifier) {
+    Row(
+        modifier.fillMaxWidth().padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -268,8 +274,8 @@ private fun HistoryRow(h: PTMHistoryItem) {
 }
 
 @Composable
-private fun ClassProgressCard(cp: ClassPTMProgress) {
-        VCard {
+private fun ClassProgressCard(cp: ClassPTMProgress, modifier: Modifier = Modifier) {
+    VCard(modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
             Column(Modifier.weight(1f)) {
                 Text(cp.className, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))

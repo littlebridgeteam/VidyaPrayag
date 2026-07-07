@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -40,7 +39,11 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 
@@ -118,28 +121,30 @@ fun AdminReportPublishScreen(
 
         when {
             state.isLoading -> {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = VColors.violet)
-                }
+                SkeletonList(rows = 4, withAvatar = false)
             }
             state.error != null -> {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(state.error!!, style = VTypography.body.copy(color = VColors.error))
-                }
+                VStateHost(loading = false, error = state.error, isEmpty = false, onRetry = { viewModel.loadOversight(termInput) }) {}
             }
             state.oversight != null -> {
-                LazyColumn(
-                    Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    items(state.oversight!!.classes) { row ->
-                        OversightClassCard(
-                            row = row,
-                            publishing = state.publishing,
-                            onPublish = { viewModel.publishClass(row.className, row.section, row.term) },
-                        )
+                VPullRefresh(isRefreshing = state.publishing, onRefresh = { viewModel.loadOversight(termInput) }) {
+                    LazyColumn(
+                        Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        items(state.oversight!!.classes) { row ->
+                            OversightClassCard(
+                                row = row,
+                                publishing = state.publishing,
+                                onPublish = { viewModel.publishClass(row.className, row.section, row.term) },
+                                modifier = Modifier.staggeredItemEntrance(state.oversight!!.classes.indexOf(row), state.oversight!!.classes.isNotEmpty()),
+                            )
+                        }
                     }
                 }
+            }
+            else -> {
+                VStateHost(loading = false, error = null, isEmpty = true, emptyTitle = appString(StringKeys.SCH_NO_DATA_YET), onRetry = { viewModel.loadOversight(termInput) }) {}
             }
         }
     }
@@ -158,8 +163,9 @@ private fun OversightClassCard(
     row: ReportCardModels.ClassOversightRow,
     publishing: Boolean,
     onPublish: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-        VCard(Modifier.fillMaxWidth()) {
+    VCard(modifier.fillMaxWidth()) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(
                 Modifier.fillMaxWidth(),

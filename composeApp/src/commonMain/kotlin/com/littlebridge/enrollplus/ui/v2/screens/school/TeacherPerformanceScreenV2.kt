@@ -33,9 +33,12 @@ import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.tokens.VColors
@@ -69,11 +72,13 @@ fun TeacherPerformanceScreenV2(
         .imePadding()
         .navigationBarsPadding()) {
         VBackHeader(title = appString(StringKeys.SCH_TEACHER_PERFORMANCE), onBack = onBack)
-        TeacherPerformanceContent(
-            state = state,
-            onRetry = viewModel::load,
-            modifier = Modifier.fillMaxSize(),
-        )
+        VPullRefresh(isRefreshing = state.isLoading && state.aggregateCompliance.isNotBlank(), onRefresh = { viewModel.load() }) {
+            TeacherPerformanceContent(
+                state = state,
+                onRetry = viewModel::load,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 }
 
@@ -101,6 +106,7 @@ private fun TeacherPerformanceContent(
             emptyBody = appString(StringKeys.SCH_TEACHER_PERFORMANCE_DESC),
             emptyIcon = VIcons.Users,
             onRetry = onRetry,
+            skeleton = { SkeletonDashboard() },
         ) {
             // Aggregate compliance
             VCard {
@@ -122,7 +128,7 @@ private fun TeacherPerformanceContent(
                 VCard {
                     state.starFaculty.forEachIndexed { i, t ->
                         if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
-                        StarRow(t)
+                        StarRow(t, modifier = Modifier.staggeredItemEntrance(i, state.starFaculty.isNotEmpty()))
                     }
                 }
             }
@@ -130,7 +136,7 @@ private fun TeacherPerformanceContent(
             // Accountability matrix
             if (state.accountabilityMatrix.isNotEmpty()) {
                 VSectionHeader(title = appString(StringKeys.SCH_ACCOUNTABILITY_MATRIX))
-                state.accountabilityMatrix.forEach { f -> AccountabilityCard(f) }
+                state.accountabilityMatrix.forEachIndexed { i, f -> AccountabilityCard(f, modifier = Modifier.staggeredItemEntrance(i, state.accountabilityMatrix.isNotEmpty())) }
             }
 
             // Department efficiencies
@@ -139,7 +145,7 @@ private fun TeacherPerformanceContent(
                 VCard {
                     state.deptEfficiencies.forEachIndexed { i, d ->
                         if (i > 0) Spacer(Modifier.height(10.dp))
-                        DeptRow(d)
+                        DeptRow(d, modifier = Modifier.staggeredItemEntrance(i, state.deptEfficiencies.isNotEmpty()))
                     }
                 }
             }
@@ -148,9 +154,9 @@ private fun TeacherPerformanceContent(
 }
 
 @Composable
-private fun StarRow(t: StarTeacher) {
-        Row(
-        Modifier.fillMaxWidth().padding(vertical = 10.dp),
+private fun StarRow(t: StarTeacher, modifier: Modifier = Modifier) {
+    Row(
+        modifier.fillMaxWidth().padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -169,14 +175,14 @@ private fun StarRow(t: StarTeacher) {
 }
 
 @Composable
-private fun AccountabilityCard(f: FacultyAccountability) {
-        val riskTone = when (f.riskCorrelation.lowercase()) {
+private fun AccountabilityCard(f: FacultyAccountability, modifier: Modifier = Modifier) {
+    val riskTone = when (f.riskCorrelation.lowercase()) {
         "high risk" -> VBadgeTone.Danger
         "watching" -> VBadgeTone.Warning
         "stable" -> VBadgeTone.Success
         else -> VBadgeTone.Neutral
     }
-    VCard {
+    VCard(modifier.fillMaxWidth()) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -215,8 +221,8 @@ private fun MiniStat(label: String, value: String) {
 }
 
 @Composable
-private fun DeptRow(d: DeptEfficiency) {
-        Column {
+private fun DeptRow(d: DeptEfficiency, modifier: Modifier = Modifier) {
+    Column(modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(d.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
             Text("${d.percentage}%", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2))

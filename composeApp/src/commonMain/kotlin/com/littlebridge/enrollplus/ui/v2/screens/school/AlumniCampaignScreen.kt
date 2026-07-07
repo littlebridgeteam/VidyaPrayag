@@ -27,6 +27,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.tokens.VColors
@@ -81,6 +83,7 @@ fun AlumniCampaignScreen(
             isEmpty = c == null,
             emptyTitle = appString(StringKeys.SCH_CAMPAIGN_NOT_FOUND),
             onRetry = { isLoading = true; error = null },
+            skeleton = { SkeletonDashboard() },
         ) {
             val data = c!!
             Column(
@@ -123,6 +126,7 @@ fun AlumniCampaignScreen(
                     error = null,
                     isEmpty = d.isNullOrEmpty(),
                     emptyTitle = appString(StringKeys.SCH_NO_DONATIONS_CAMPAIGN),
+                    skeleton = { SkeletonList(rows = 3, withAvatar = false) },
                 ) {
                     d!!.forEach { donation ->
                         VCard(modifier = Modifier.fillMaxWidth()) {
