@@ -32,8 +32,6 @@ import com.littlebridge.enrollplus.feature.parent.presentation.ParentMessageView
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VMotion
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -60,7 +58,6 @@ fun ParentConversationsScreenV2(
     initialSegment: ConversationsSegment? = null,
     onSegmentConsumed: () -> Unit = {},
 ) {
-    val c = VTheme.colors
     var segment by remember { mutableStateOf(ConversationsSegment.Messages) }
 
     // Apply deep-link initial segment once.
@@ -88,7 +85,7 @@ fun ParentConversationsScreenV2(
     Column(
         modifier
             .fillMaxSize()
-            .background(c.background)
+            .background(VColors.cream)
             .statusBarsPadding()
             .imePadding()
             .navigationBarsPadding()

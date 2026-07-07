@@ -31,6 +31,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.filled.Campaign
+import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
@@ -55,6 +61,7 @@ import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentMessageDto
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentMessageThreadDto
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentRecipientDto
+import com.littlebridge.enrollplus.feature.parent.presentation.ParentMessageState
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentMessageViewModel
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
@@ -62,12 +69,7 @@ import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VAvatar
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
-import com.littlebridge.enrollplus.core.locale.StringKeys
-import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -76,8 +78,8 @@ import org.koin.compose.viewmodel.koinViewModel
  * the parent endpoints. Wired to the real [ParentMessageViewModel]
  * (`GET /api/v1/parent/messages/threads`, `…/{id}/messages`, `POST /parent/messages`).
  *
- * No MockV2 — replaces the old hardcoded fake-thread stub. Three states via
- * [VStateHost] (LAW 3) for both the list and the open conversation.
+ * No MockV2 — replaces the old hardcoded fake-thread stub. Inline loading/error/empty states
+ * for both the list and the open conversation.
  */
 @Composable
 fun ParentMessagesScreenV2(
@@ -109,19 +111,97 @@ fun ParentMessagesScreenV2(
             else -> onBack()
         }
     }
+    Column(
+        modifier
+            .fillMaxSize()
+            .background(VColors.cream)
+            .statusBarsPadding()
+            .imePadding()
+            .navigationBarsPadding(),
+    ) {
+        PremiumMessageHeader(
+            state = state,
+            onBack = backHandler,
+        )
+
+        ParentMessagesBody(
+            viewModel = viewModel,
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            showInnerHeaders = false,
+        )
+    }
+}
+
+@Composable
+private fun PremiumMessageHeader(
+    state: ParentMessageState,
+    onBack: () -> Unit,
+) {
     val title = when {
-        state.composeOpen -> appString(StringKeys.PM_NEW_MESSAGE)
-        state.openThreadId != null -> state.openThreadName.ifBlank { appString(StringKeys.PM_CONVERSATION) }
-        else -> appString(StringKeys.PM_MESSAGES)
+        state.composeOpen -> "New Message"
+        state.openThreadId != null -> state.openThreadName.ifBlank { "Conversation" }
+        else -> "Messages"
+    }
+    val subtitle = if (state.openThreadId != null && !state.composeOpen) {
+        state.threads.firstOrNull { it.id == state.openThreadId }?.senderRole ?: ""
+    } else {
+        ""
     }
 
-    Column(modifier.fillMaxSize().statusBarsPadding()
-        .imePadding()
-        .navigationBarsPadding()) {
-        VBackHeader(title = title, onBack = backHandler)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(VColors.surfaceCard)
+                .border(1.dp, VColors.line, CircleShape)
+                .clickable(onClick = onBack),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Back",
+                tint = VColors.ink,
+                modifier = Modifier.size(20.dp),
+            )
+        }
 
-        ParentMessagesBody(viewModel = viewModel, modifier = Modifier.weight(1f).fillMaxWidth())
+        if (state.openThreadId != null && !state.composeOpen) {
+            val thread = state.threads.firstOrNull { it.id == state.openThreadId }
+            VAvatar(
+                name = thread?.senderName?.ifBlank { "?" } ?: "?",
+                src = thread?.senderImageUrl,
+                size = 44.dp,
+            )
+        }
+
+        Column(Modifier.weight(1f)) {
+            Text(
+                title,
+                style = VTypography.body.copy(fontWeight = FontWeight.Bold),
+                color = VColors.ink,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (subtitle.isNotBlank()) {
+                Text(
+                    subtitle,
+                    style = VTypography.caption,
+                    color = VColors.ink3,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
     }
+
+    Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line).padding(horizontal = 24.dp))
 }
 
 /**
@@ -137,6 +217,7 @@ fun ParentMessagesScreenV2(
 fun ParentMessagesBody(
     viewModel: ParentMessageViewModel,
     modifier: Modifier = Modifier,
+    showInnerHeaders: Boolean = true,
 ) {
     val state by viewModel.state.collectAsStateV2()
 
@@ -153,10 +234,12 @@ fun ParentMessagesBody(
             // RA-S07: compose-new is the topmost layer (back closes it first).
             state.composeOpen -> {
                 Column(Modifier.fillMaxSize()) {
-                    VBackHeader(
-                        title = appString(StringKeys.PM_NEW_MESSAGE),
-                        onBack = viewModel::closeCompose,
-                    )
+                    if (showInnerHeaders) {
+                        VBackHeader(
+                            title = "New Message",
+                            onBack = viewModel::closeCompose,
+                        )
+                    }
                     ParentComposeNewContent(
                         recipients = state.composeRecipients,
                         loading = state.composeLoadingRecipients,
@@ -171,10 +254,12 @@ fun ParentMessagesBody(
             }
             state.openThreadId != null -> {
                 Column(Modifier.fillMaxSize()) {
-                    VBackHeader(
-                        title = state.openThreadName.ifBlank { appString(StringKeys.PM_CONVERSATION) },
-                        onBack = viewModel::closeThread,
-                    )
+                    if (showInnerHeaders) {
+                        VBackHeader(
+                            title = state.openThreadName.ifBlank { "Conversation" },
+                            onBack = viewModel::closeThread,
+                        )
+                    }
                     ParentConversationContent(
                         messages = state.messages,
                         loading = state.conversationLoading,
@@ -722,42 +807,28 @@ private fun ParentMessageBubble(msg: ParentMessageDto) {
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                // P2-5: Status ticks for own messages
+                // Premium read receipts: single tick = sent, double tick = delivered, blue double tick = read
                 if (isMine && !isDeleted) {
                     when (msg.status?.uppercase()) {
                         "READ" -> {
                             Icon(
-                                VIcons.Check,
-                                contentDescription = null,
-                                tint = VColors.white.copy(alpha = 0.9f),
-                                modifier = Modifier.size(14.dp),
-                            )
-                            Spacer(Modifier.size(2.dp))
-                            Icon(
-                                VIcons.Check,
+                                Icons.Filled.DoneAll,
                                 contentDescription = "Read",
-                                tint = VColors.white.copy(alpha = 0.9f),
+                                tint = VColors.white.copy(alpha = 0.95f),
                                 modifier = Modifier.size(14.dp),
                             )
                         }
                         "DELIVERED" -> {
                             Icon(
-                                VIcons.Check,
+                                Icons.Filled.DoneAll,
                                 contentDescription = "Delivered",
-                                tint = VColors.white.copy(alpha = 0.7f),
-                                modifier = Modifier.size(14.dp),
-                            )
-                            Spacer(Modifier.size(2.dp))
-                            Icon(
-                                VIcons.Check,
-                                contentDescription = null,
-                                tint = VColors.white.copy(alpha = 0.7f),
+                                tint = VColors.white.copy(alpha = 0.6f),
                                 modifier = Modifier.size(14.dp),
                             )
                         }
                         "SENT" -> {
                             Icon(
-                                VIcons.Check,
+                                Icons.Filled.Done,
                                 contentDescription = "Sent",
                                 tint = VColors.white.copy(alpha = 0.5f),
                                 modifier = Modifier.size(14.dp),
