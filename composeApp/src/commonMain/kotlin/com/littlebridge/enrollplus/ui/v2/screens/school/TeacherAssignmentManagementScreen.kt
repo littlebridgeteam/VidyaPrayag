@@ -35,6 +35,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
 import com.littlebridge.enrollplus.feature.admin.domain.model.TeacherAssignmentOverviewDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.TeacherClassAssignmentDto
 import com.littlebridge.enrollplus.feature.admin.presentation.TeacherAssignmentUiState
@@ -278,7 +280,7 @@ private fun AssignmentCard(
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(a.subject, style = VTypography.h4.copy(color = VColors.ink))
+                Text(a.subject, style = VTypography.h3.copy(color = VColors.ink))
                 Text(
                     appString(StringKeys.SCH_CLASS_SECTION_LABEL, "className" to a.className, "section" to a.section),
                     style = VTypography.caption.copy(color = VColors.ink2),

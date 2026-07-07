@@ -156,6 +156,7 @@ fun AcademicYearManagementScreenV2(
                 }
             }
         }
+        }
     }
 }
 

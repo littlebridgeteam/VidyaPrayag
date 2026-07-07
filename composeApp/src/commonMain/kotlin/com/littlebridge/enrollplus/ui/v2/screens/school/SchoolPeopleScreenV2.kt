@@ -69,6 +69,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
+import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
@@ -482,7 +483,7 @@ private fun TeacherCard(
     var menuOpen by remember { mutableStateOf(false) }
     val hasOverflow = teacher.actions.canAssignClass || teacher.actions.canDeactivate
 
-    PeopleCreamCard(modifier = modifier.fillMaxWidth()) {
+    VCard(modifier = modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
 
             // ── Header: avatar · name · role · status ──────────────────────
@@ -805,7 +806,7 @@ private fun StudentsSubTab(
         skeleton = { com.littlebridge.enrollplus.ui.v2.screens.SkeletonList(rows = 4) },
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            PeopleCreamCard {
+            VCard {
                 Text(appString(StringKeys.PPL_RISK_DISTRIBUTION), style = VTypography.caption, color = VColors.ink3)
                 Spacer(Modifier.height(12.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -823,7 +824,7 @@ private fun StudentsSubTab(
                 }
             }
             if (analyticsState.subjectEngagements.isNotEmpty()) {
-                PeopleCreamCard {
+                VCard {
                     Text(appString(StringKeys.PPL_SUBJECT_ENGAGEMENT), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                     Spacer(Modifier.height(12.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -848,7 +849,7 @@ private fun StudentsSubTab(
                 }
             }
             if (analyticsState.cohortComparison.isNotEmpty()) {
-                PeopleCreamCard {
+                VCard {
                     Text(appString(StringKeys.PPL_COHORT_COMPARISON), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                     Spacer(Modifier.height(12.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -874,7 +875,7 @@ private fun StudentsSubTab(
         var gradYear by remember { mutableStateOf("") }
         val currentYear = 2026
         Dialog(onDismissRequest = { showGraduate = false }) {
-            PeopleCreamCard {
+            VCard {
                 Text(appString(StringKeys.PPL_MARK_ALUMNI), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                 Spacer(Modifier.height(8.dp))
                 Text(
@@ -992,7 +993,7 @@ private fun PersonRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    PeopleCreamCard(modifier = modifier.fillMaxWidth().clickable(onClick = onClick)) {
+    VCard(modifier = modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -1032,7 +1033,7 @@ private fun AddTeacherDialog(
         !isSubmitting
 
     Dialog(onDismissRequest = onDismiss) {
-        PeopleCreamCard(modifier = Modifier.fillMaxWidth()) {
+        VCard(modifier = Modifier.fillMaxWidth()) {
             Column(
                 Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -1111,7 +1112,7 @@ private fun AddStaffDialog(
     val canSubmit = name.isNotBlank() && role.isNotBlank() && !isSubmitting
 
     Dialog(onDismissRequest = onDismiss) {
-        PeopleCreamCard(modifier = Modifier.fillMaxWidth()) {
+        VCard(modifier = Modifier.fillMaxWidth()) {
             Column(
                 Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -1198,7 +1199,7 @@ private fun AddStudentPeopleDialog(
         phoneOk && !isSubmitting
 
     Dialog(onDismissRequest = onDismiss) {
-        PeopleCreamCard(modifier = Modifier.fillMaxWidth()) {
+        VCard(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(appString(StringKeys.PPL_ADD_STUDENT), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                 VInput(name, { name = it }, label = appString(StringKeys.PPL_FULL_NAME), placeholder = appString(StringKeys.PPL_NAME_PH_STUDENT), leadingIcon = VIcons.User)
@@ -1256,7 +1257,7 @@ private fun ImportStudentsDialog(
     val canSubmit = csv.lineSequence().drop(1).any { it.isNotBlank() } && !isSubmitting
 
     Dialog(onDismissRequest = onDismiss) {
-        PeopleCreamCard(modifier = Modifier.fillMaxWidth()) {
+        VCard(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(appString(StringKeys.PPL_IMPORT_STUDENTS_CSV), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                 Text(
@@ -1321,7 +1322,7 @@ private fun RiskStudentRow(s: RiskStudent) {
         "medium" -> VBadgeTone.Warning
         else -> VBadgeTone.Success
     }
-    PeopleCreamCard {
+    VCard {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             VAvatar(name = s.name, src = s.imageUrl.ifBlank { null }, size = 42.dp)
             Column(Modifier.weight(1f)) {
