@@ -303,7 +303,6 @@ private fun ParentAcademicsContent(
 
 @Composable
 private fun AcademicsHeader(
-    schoolName: String,
     childName: String,
     onOpenNotifications: () -> Unit,
     unreadNotificationsCount: Int,
@@ -321,7 +320,7 @@ private fun AcademicsHeader(
         ) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    schoolName.uppercase().ifBlank { "SCHOOL" },
+                    "ACADEMICS",
                     style = VTypography.caption.copy(
                         fontSize = 10.sp,
                         letterSpacing = 1.2.sp,
