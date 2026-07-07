@@ -40,6 +40,8 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Insights
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Quiz
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Spa
@@ -84,7 +86,6 @@ import com.littlebridge.enrollplus.feature.parent.presentation.ParentAcademicsVi
 import com.littlebridge.enrollplus.feature.parent.presentation.TrackProgressState
 import com.littlebridge.enrollplus.feature.parent.presentation.TrackProgressViewModel
 import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizSubmitResponse
-import com.littlebridge.enrollplus.ui.components.FilterChip
 import com.littlebridge.enrollplus.ui.components.VButton
 import com.littlebridge.enrollplus.ui.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.components.VProgressBar
@@ -104,10 +105,12 @@ fun ParentAcademicsScreenV2(
     modifier: Modifier = Modifier,
     onOpenLeave: () -> Unit = {},
     onOpenHealth: () -> Unit = {},
+    onOpenNotifications: () -> Unit = {},
     initialTab: String? = null,
     onTabConsumed: () -> Unit = {},
     initialReportDraftId: String? = null,
     onReportDraftIdConsumed: () -> Unit = {},
+    unreadNotificationsCount: Int = 0,
     viewModel: TrackProgressViewModel = koinViewModel(),
     academicsViewModel: ParentAcademicsViewModel = koinViewModel(),
 ) {
@@ -130,6 +133,8 @@ fun ParentAcademicsScreenV2(
         onLoadLeaderboard = { academicsViewModel.loadLeaderboard(it) },
         onOpenLeave = onOpenLeave,
         onOpenHealth = onOpenHealth,
+        onOpenNotifications = onOpenNotifications,
+        unreadNotificationsCount = unreadNotificationsCount,
         initialTab = initialTab,
         onTabConsumed = onTabConsumed,
         initialReportDraftId = initialReportDraftId,
@@ -159,6 +164,8 @@ private fun ParentAcademicsContent(
     onLoadLeaderboard: (String) -> Unit,
     onOpenLeave: () -> Unit = {},
     onOpenHealth: () -> Unit = {},
+    onOpenNotifications: () -> Unit = {},
+    unreadNotificationsCount: Int = 0,
     initialTab: String? = null,
     onTabConsumed: () -> Unit = {},
     initialReportDraftId: String? = null,
@@ -195,20 +202,27 @@ private fun ParentAcademicsContent(
             .verticalScroll(rememberScrollState())
             .padding(bottom = 100.dp),
     ) {
-        // ── Premium header ──
+        // ── Premium header (matches screenshot) ──
         AcademicsHeader(
-            selectedChildName = state.childName,
-            currentTab = tab,
+            childName = state.childName,
+            onOpenNotifications = onOpenNotifications,
+            unreadNotificationsCount = unreadNotificationsCount,
         )
 
-        // ── Tab chips row ──
+        // ── Quick action chips (matches screenshot) ──
+        QuickActionChips(
+            onOpenLeave = onOpenLeave,
+            onOpenHealth = onOpenHealth,
+        )
+
+        // ── Tab chips row (white selected pill like screenshot) ──
         LazyRow(
             modifier = Modifier.fillMaxWidth(),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 24.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(visibleTabs) { label ->
-                FilterChip(
+                AcademicsTabChip(
                     label = label,
                     selected = tab == label,
                     onClick = { tab = label },
@@ -289,49 +303,178 @@ private fun ParentAcademicsContent(
 
 @Composable
 private fun AcademicsHeader(
-    selectedChildName: String,
-    currentTab: String,
+    schoolName: String,
+    childName: String,
+    onOpenNotifications: () -> Unit,
+    unreadNotificationsCount: Int,
 ) {
     Column(
         Modifier
             .fillMaxWidth()
-            .background(VColors.creamDeep)
             .padding(horizontal = 24.dp)
-            .padding(top = 20.dp, bottom = 16.dp),
+            .padding(top = 16.dp, bottom = 14.dp),
     ) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    schoolName.uppercase().ifBlank { "SCHOOL" },
+                    style = VTypography.caption.copy(
+                        fontSize = 10.sp,
+                        letterSpacing = 1.2.sp,
+                    ),
+                    color = VColors.ink3,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Spacer(Modifier.height(2.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    Text(
+                        childName.ifBlank { "Your Child" },
+                        style = VTypography.h2.copy(fontSize = 20.sp),
+                        color = VColors.ink,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Icon(
+                        Icons.Filled.KeyboardArrowDown,
+                        contentDescription = null,
+                        tint = VColors.ink3,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
+
+            // Notification bell with badge
             Box(
-                Modifier.size(44.dp).clip(VShapes.md).background(VColors.violetSoft),
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(VShapes.full)
+                    .background(VColors.white)
+                    .border(1.dp, VColors.line, VShapes.full)
+                    .clickable(onClick = onOpenNotifications),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    Icons.Filled.School,
-                    contentDescription = null,
-                    tint = VColors.violet,
-                    modifier = Modifier.size(22.dp),
+                    Icons.Filled.Notifications,
+                    contentDescription = "Notifications",
+                    tint = VColors.ink,
+                    modifier = Modifier.size(20.dp),
                 )
-            }
-            Column(Modifier.weight(1f)) {
-                Text(
-                    "Academics",
-                    style = VTypography.h2.copy(fontSize = 20.sp),
-                    color = VColors.ink,
-                    fontWeight = FontWeight.Bold,
-                )
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    if (selectedChildName.isNotBlank()) "$selectedChildName · $currentTab" else currentTab,
-                    style = VTypography.caption,
-                    color = VColors.ink3,
-                )
+                if (unreadNotificationsCount > 0) {
+                    Box(
+                        Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(top = 6.dp, end = 6.dp)
+                            .size(16.dp)
+                            .clip(CircleShape)
+                            .background(VColors.error),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            unreadNotificationsCount.coerceAtMost(99).toString(),
+                            style = VTypography.caption.copy(fontSize = 9.sp),
+                            color = VColors.white,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                }
             }
         }
     }
-    HorizontalDivider(color = VColors.line, thickness = 1.dp)
+}
+
+@Composable
+private fun QuickActionChips(
+    onOpenLeave: () -> Unit,
+    onOpenHealth: () -> Unit,
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp)
+            .padding(bottom = 14.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        QuickActionChip(
+            icon = Icons.Filled.CalendarMonth,
+            iconColor = VColors.gold,
+            iconBg = VColors.goldSoft,
+            title = "Apply for\nLeave",
+            onClick = onOpenLeave,
+            modifier = Modifier.weight(1f),
+        )
+        QuickActionChip(
+            icon = Icons.Filled.Favorite,
+            iconColor = VColors.coral,
+            iconBg = VColors.coralSoft,
+            title = "Health\nRecords",
+            onClick = onOpenHealth,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
+private fun QuickActionChip(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconColor: Color,
+    iconBg: Color,
+    title: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .clip(VShapes.lg)
+            .background(VColors.white)
+            .border(1.dp, VColors.line, VShapes.lg)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(
+            Modifier.size(36.dp).clip(VShapes.sm).background(iconBg),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(18.dp))
+        }
+        Text(
+            title,
+            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, lineHeight = 16.sp),
+            color = VColors.ink,
+        )
+    }
+}
+
+@Composable
+private fun AcademicsTabChip(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val bg = if (selected) VColors.white else VColors.surfaceTint
+    val fg = if (selected) VColors.ink else VColors.ink3
+
+    Text(
+        text = label,
+        fontSize = 13.sp,
+        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+        color = fg,
+        modifier = Modifier
+            .background(bg, VShapes.full)
+            .border(1.dp, if (selected) VColors.line else VColors.lineSoft, VShapes.full)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ) { onClick() }
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+    )
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

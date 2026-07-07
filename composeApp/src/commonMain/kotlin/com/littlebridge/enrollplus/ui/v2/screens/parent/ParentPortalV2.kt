@@ -388,10 +388,12 @@ fun ParentPortalV2(
                 "academics" -> ParentAcademicsScreenV2(
                     onOpenLeave = { overlay = ParentOverlay.Leave },
                     onOpenHealth = { overlay = ParentOverlay.Health },
+                    onOpenNotifications = { overlay = ParentOverlay.Notifications },
                     initialTab = deepLinkAcademicsTab,
                     onTabConsumed = { deepLinkAcademicsTab = null },
                     initialReportDraftId = deepLinkReportDraftId,
                     onReportDraftIdConsumed = { deepLinkReportDraftId = null },
+                    unreadNotificationsCount = notifications.unreadCount,
                 )
                 "fees" -> ParentFeesScreenV2()
                 // Phase 3 (commit 9): the Conversations hub — messaging-first, announcements second.

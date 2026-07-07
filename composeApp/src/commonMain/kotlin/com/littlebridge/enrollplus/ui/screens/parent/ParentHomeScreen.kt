@@ -1,13 +1,14 @@
 package com.littlebridge.enrollplus.ui.screens.parent
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,26 +16,23 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Badge
-import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.LocalLibrary
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material.icons.filled.School
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Whatsapp
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -49,11 +47,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -62,16 +59,13 @@ import com.littlebridge.enrollplus.feature.parent.domain.model.DashboardChildSum
 import com.littlebridge.enrollplus.feature.parent.domain.model.FeeData
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentMarkDto
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentMessageThreadDto
-import com.littlebridge.enrollplus.feature.parent.presentation.AttendanceDayState
 import com.littlebridge.enrollplus.feature.parent.presentation.LivePeriod
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentDashboardState
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentDashboardViewModel
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentMessageViewModel
-import com.littlebridge.enrollplus.feature.parent.presentation.TodayAttendance
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
-import com.littlebridge.enrollplus.util.formatDateDisplay
 import com.littlebridge.enrollplus.util.todayIso
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -103,51 +97,39 @@ fun ParentHomeScreen(
         modifier = Modifier.fillMaxSize(),
     ) { padding ->
         when {
-            state.isLoading && state.children.isEmpty() -> {
-                LoadingState(Modifier.padding(padding))
-            }
-            state.error != null && state.children.isEmpty() -> {
-                ErrorState(
-                    message = state.error!!,
-                    onRetry = { dashboardViewModel.load() },
-                    modifier = Modifier.padding(padding),
-                )
-            }
-            state.children.isEmpty() && !state.isLoading -> {
-                EmptyState(
-                    onDiscoverSchools = onDiscoverSchools,
-                    modifier = Modifier.padding(padding),
-                )
-            }
-            else -> {
-                ContentState(
-                    state = state,
-                    messageThreads = messageState.threads.take(3),
-                    unreadCount = unreadCount,
-                    unreadNotificationsCount = unreadNotificationsCount,
-                    onOpenNotifications = onOpenNotifications,
-                    onOpenFees = onOpenFees,
-                    onOpenAcademics = onOpenAcademics,
-                    onOpenMessages = onOpenMessages,
-                    onOpenEvents = onOpenEvents,
-                    onOpenScholarships = onOpenScholarships,
-                    onOpenTransport = onOpenTransport,
-                    onOpenTutor = onOpenTutor,
-                    onOpenPulse = onOpenPulse,
-                    onOpenLibrary = onOpenLibrary,
-                    onOpenIdCard = onOpenIdCard,
-                    onOpenProfile = onOpenProfile,
-                    onSelectChild = { dashboardViewModel.selectChild(it) },
-                    modifier = Modifier.padding(padding),
-                )
-            }
+            state.isLoading && state.children.isEmpty() -> LoadingState(Modifier.padding(padding))
+            state.error != null && state.children.isEmpty() -> ErrorState(
+                message = state.error!!,
+                onRetry = { dashboardViewModel.load() },
+                modifier = Modifier.padding(padding),
+            )
+            state.children.isEmpty() && !state.isLoading -> EmptyState(
+                onDiscoverSchools = onDiscoverSchools,
+                modifier = Modifier.padding(padding),
+            )
+            else -> ContentState(
+                state = state,
+                messageThreads = messageState.threads.take(3),
+                unreadCount = unreadCount,
+                unreadNotificationsCount = unreadNotificationsCount,
+                onOpenNotifications = onOpenNotifications,
+                onOpenFees = onOpenFees,
+                onOpenAcademics = onOpenAcademics,
+                onOpenMessages = onOpenMessages,
+                onOpenPulse = onOpenPulse,
+                onOpenEvents = onOpenEvents,
+                onOpenScholarships = onOpenScholarships,
+                onOpenTransport = onOpenTransport,
+                onOpenTutor = onOpenTutor,
+                onOpenLibrary = onOpenLibrary,
+                onOpenIdCard = onOpenIdCard,
+                onOpenProfile = onOpenProfile,
+                onSelectChild = { dashboardViewModel.selectChild(it) },
+                modifier = Modifier.padding(padding),
+            )
         }
     }
 }
-
-// ════════════════════════════════════════════════════════════════════════════
-// CONTENT
-// ════════════════════════════════════════════════════════════════════════════
 
 @Composable
 private fun ContentState(
@@ -159,11 +141,11 @@ private fun ContentState(
     onOpenFees: () -> Unit,
     onOpenAcademics: () -> Unit,
     onOpenMessages: () -> Unit,
+    onOpenPulse: () -> Unit,
     onOpenEvents: () -> Unit,
     onOpenScholarships: () -> Unit,
     onOpenTransport: () -> Unit,
     onOpenTutor: () -> Unit,
-    onOpenPulse: () -> Unit,
     onOpenLibrary: () -> Unit,
     onOpenIdCard: () -> Unit,
     onOpenProfile: () -> Unit,
@@ -175,40 +157,49 @@ private fun ContentState(
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        HeroSection(
+        TopBar(
             child = state.selectedChild,
             children = state.children,
             selectedChildId = state.selectedChildId,
-            today = state.today,
-            periods = state.todayPeriods,
-            schoolDayEnded = state.schoolDayEnded,
-            unreadNotificationsCount = unreadNotificationsCount,
+            unreadCount = unreadNotificationsCount,
             onSelectChild = onSelectChild,
             onOpenNotifications = onOpenNotifications,
+            onOpenMessages = onOpenMessages,
             onOpenProfile = onOpenProfile,
-            onOpenAcademics = onOpenAcademics,
         )
+
+        Spacer(Modifier.height(8.dp))
+
+        Text(
+            text = state.greeting.ifBlank { "Good morning" },
+            style = VTypography.body,
+            color = VColors.ink3,
+            modifier = Modifier.padding(horizontal = 20.dp),
+        )
+
+        Spacer(Modifier.height(16.dp))
+
+        state.selectedChild?.let { child ->
+            ChildCard(
+                child = child,
+                attendanceRate = state.attendance?.attendanceRate ?: 0,
+                onOpenAcademics = onOpenAcademics,
+            )
+        }
 
         if (state.alerts.isNotEmpty()) {
             AlertStrip(alerts = state.alerts, onOpenPulse = onOpenPulse)
         }
 
-        MetricRow(
-            attendanceRate = state.attendance?.attendanceRate ?: 0,
-            fees = state.fees,
-            latestMark = state.latestMark,
-            onOpenAcademics = onOpenAcademics,
-            onOpenFees = onOpenFees,
-        )
-
         if (state.todayPeriods.isNotEmpty()) {
-            ScheduleSection(
+            ScheduleCard(
                 periods = state.todayPeriods,
                 schoolDayEnded = state.schoolDayEnded,
+                onOpenAcademics = onOpenAcademics,
             )
         }
 
-        QuickActionsSection(
+        QuickActionsRow(
             onOpenAcademics = onOpenAcademics,
             onOpenMessages = onOpenMessages,
             onOpenTransport = onOpenTransport,
@@ -226,192 +217,57 @@ private fun ContentState(
             onOpenMessages = onOpenMessages,
         )
 
-        Spacer(Modifier.height(100.dp))
+        Spacer(Modifier.height(96.dp))
     }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// HERO — full-bleed dark violet with integrated child switcher + live status
+// TOP BAR
 // ════════════════════════════════════════════════════════════════════════════
 
 @Composable
-private fun HeroSection(
+private fun TopBar(
     child: DashboardChildSummary?,
     children: List<DashboardChildSummary>,
     selectedChildId: String?,
-    today: TodayAttendance,
-    periods: List<LivePeriod>,
-    schoolDayEnded: Boolean,
-    unreadNotificationsCount: Int,
+    unreadCount: Int,
     onSelectChild: (String) -> Unit,
     onOpenNotifications: () -> Unit,
+    onOpenMessages: () -> Unit,
     onOpenProfile: () -> Unit,
-    onOpenAcademics: () -> Unit,
 ) {
-    if (child == null) return
-
-    val currentPeriod = periods.firstOrNull { it.relation == 0 }
-    val nextPeriod = periods.firstOrNull { it.relation == 1 }
-
-    Box(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .drawBehind {
-                drawRect(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            VColors.violetInk,
-                            VColors.violet,
-                            VColors.violetHover,
-                        ),
-                        startY = 0f,
-                        endY = size.height,
-                    ),
-                )
-            },
+            .statusBarsPadding()
+            .padding(horizontal = 20.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp),
-        ) {
-            // ── Row 1: Child switcher + Bell ──
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                ChildSwitcher(
-                    child = child,
-                    children = children,
-                    selectedChildId = selectedChildId,
-                    onSelectChild = onSelectChild,
-                )
-                BellButton(
-                    unreadCount = unreadNotificationsCount,
-                    onClick = onOpenNotifications,
-                )
-            }
-
-            Spacer(Modifier.height(24.dp))
-
-            // ── Greeting ──
-            Text(
-                text = formatDateDisplay(todayIso()),
-                style = VTypography.caption,
-                color = VColors.white.copy(alpha = 0.6f),
-                fontWeight = FontWeight.SemiBold,
+        ChildSwitcher(
+            child = child,
+            children = children,
+            selectedChildId = selectedChildId,
+            onSelectChild = onSelectChild,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            IconButton(
+                icon = Icons.Filled.Whatsapp,
+                badge = unreadCount,
+                onClick = onOpenMessages,
             )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = child.name,
-                style = VTypography.h2,
-                color = VColors.white,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+            IconButton(
+                icon = Icons.Filled.Notifications,
+                badge = unreadCount,
+                onClick = onOpenNotifications,
             )
-            Text(
-                text = "Grade ${child.currentLevel}",
-                style = VTypography.bodySmall,
-                color = VColors.white.copy(alpha = 0.7f),
-            )
-
-            Spacer(Modifier.height(20.dp))
-
-            // ── Live status pill ──
-            val statusLabel = when {
-                schoolDayEnded -> "School ended"
-                currentPeriod != null -> "In class now"
-                nextPeriod != null -> "On break"
-                today.state == AttendanceDayState.Holiday -> "Holiday"
-                today.state == AttendanceDayState.Vacation -> "Vacation"
-                today.state == AttendanceDayState.Sunday -> "No school"
-                else -> "No schedule"
-            }
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .clip(VShapes.full)
-                    .background(VColors.white.copy(alpha = 0.15f))
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(7.dp)
-                        .clip(VShapes.full)
-                        .background(
-                            when {
-                                currentPeriod != null -> VColors.mint
-                                schoolDayEnded -> VColors.white.copy(alpha = 0.5f)
-                                nextPeriod != null -> VColors.gold
-                                else -> VColors.white.copy(alpha = 0.5f)
-                            },
-                        ),
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = statusLabel,
-                    style = VTypography.caption,
-                    color = VColors.white,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-
-            // ── Current/next class detail ──
-            if (currentPeriod != null) {
-                Spacer(Modifier.height(16.dp))
-                LiveClassRow(
-                    label = "NOW",
-                    subject = currentPeriod.subject,
-                    detail = currentPeriod.teacherName,
-                    time = "${currentPeriod.startTime} – ${currentPeriod.endTime}",
-                    room = currentPeriod.room,
-                    onClick = onOpenAcademics,
-                )
-            } else if (nextPeriod != null) {
-                Spacer(Modifier.height(16.dp))
-                LiveClassRow(
-                    label = "NEXT",
-                    subject = nextPeriod.subject,
-                    detail = nextPeriod.teacherName,
-                    time = "Starts ${nextPeriod.startTime}",
-                    room = nextPeriod.room,
-                    onClick = onOpenAcademics,
-                )
-            }
-
-            // ── Period progress dots ──
-            if (periods.isNotEmpty()) {
-                Spacer(Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(3.dp),
-                ) {
-                    periods.forEach { p ->
-                        val color = when (p.relation) {
-                            -1 -> VColors.mint.copy(alpha = 0.6f)
-                            0 -> VColors.white
-                            else -> VColors.white.copy(alpha = 0.2f)
-                        }
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(3.dp)
-                                .clip(VShapes.full)
-                                .background(color),
-                        )
-                    }
-                }
-            }
         }
     }
 }
 
 @Composable
 private fun ChildSwitcher(
-    child: DashboardChildSummary,
+    child: DashboardChildSummary?,
     children: List<DashboardChildSummary>,
     selectedChildId: String?,
     onSelectChild: (String) -> Unit,
@@ -420,7 +276,7 @@ private fun ChildSwitcher(
     val canSwitch = children.size > 1
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
-    val scale = if (pressed) 0.96f else 1f
+    val scale = if (pressed) 0.97f else 1f
 
     Box {
         Row(
@@ -428,31 +284,27 @@ private fun ChildSwitcher(
             modifier = Modifier
                 .graphicsLayer { scaleX = scale; scaleY = scale }
                 .clip(VShapes.full)
-                .background(VColors.white.copy(alpha = 0.15f))
                 .clickable(
                     interactionSource = interactionSource,
                     indication = null,
                     enabled = canSwitch,
                 ) { if (canSwitch) open = true }
-                .padding(start = 4.dp, end = 10.dp, top = 4.dp, bottom = 4.dp),
+                .padding(vertical = 6.dp),
         ) {
-            ChildAvatar(child, 28.dp, dark = true)
-            Spacer(Modifier.width(8.dp))
             Text(
-                text = child.name,
-                style = VTypography.label,
-                color = VColors.white,
+                text = child?.name?.ifBlank { "Your child" } ?: "Your child",
+                style = VTypography.body,
+                color = VColors.ink,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             if (canSwitch) {
-                Spacer(Modifier.width(2.dp))
                 Icon(
                     imageVector = Icons.Filled.ExpandMore,
                     contentDescription = "Switch child",
-                    tint = VColors.white.copy(alpha = 0.7f),
-                    modifier = Modifier.size(16.dp),
+                    tint = VColors.ink3,
+                    modifier = Modifier.size(20.dp),
                 )
             }
         }
@@ -465,7 +317,7 @@ private fun ChildSwitcher(
                 DropdownMenuItem(
                     text = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            ChildAvatar(c, 32.dp, dark = false)
+                            Avatar(name = c.name, size = 32.dp)
                             Spacer(Modifier.width(10.dp))
                             Column {
                                 Text(
@@ -502,17 +354,22 @@ private fun ChildSwitcher(
 }
 
 @Composable
-private fun BellButton(unreadCount: Int, onClick: () -> Unit) {
+private fun IconButton(
+    icon: ImageVector,
+    badge: Int,
+    onClick: () -> Unit,
+) {
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
-    val scale = if (pressed) 0.92f else 1f
+    val scale = if (pressed) 0.9f else 1f
 
     Box(
         modifier = Modifier
             .size(40.dp)
             .graphicsLayer { scaleX = scale; scaleY = scale }
             .clip(VShapes.full)
-            .background(VColors.white.copy(alpha = 0.15f))
+            .background(VColors.white)
+            .shadow(2.dp, VShapes.full, ambientColor = VColors.ink.copy(alpha = 0.04f), spotColor = VColors.ink.copy(alpha = 0.06f))
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
@@ -520,23 +377,23 @@ private fun BellButton(unreadCount: Int, onClick: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         Icon(
-            imageVector = Icons.Filled.Notifications,
-            contentDescription = "Notifications",
-            tint = VColors.white,
-            modifier = Modifier.size(18.dp),
+            imageVector = icon,
+            contentDescription = null,
+            tint = VColors.ink,
+            modifier = Modifier.size(20.dp),
         )
-        if (unreadCount > 0) {
+        if (badge > 0) {
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .size(15.dp)
+                    .padding(6.dp)
+                    .size(16.dp)
                     .clip(VShapes.full)
-                    .background(VColors.coral)
-                    .border(1.5.dp, VColors.violet, VShapes.full),
+                    .background(VColors.coral),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = if (unreadCount > 9) "9+" else unreadCount.toString(),
+                    text = if (badge > 9) "9+" else badge.toString(),
                     style = VTypography.caption,
                     color = VColors.white,
                     fontWeight = FontWeight.Bold,
@@ -546,80 +403,83 @@ private fun BellButton(unreadCount: Int, onClick: () -> Unit) {
     }
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// CHILD CARD
+// ════════════════════════════════════════════════════════════════════════════
+
 @Composable
-private fun LiveClassRow(
-    label: String,
-    subject: String,
-    detail: String,
-    time: String,
-    room: String,
-    onClick: () -> Unit,
+private fun ChildCard(
+    child: DashboardChildSummary,
+    attendanceRate: Int,
+    onOpenAcademics: () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
     val scale = if (pressed) 0.98f else 1f
 
     Row(
-        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
+            .padding(horizontal = 20.dp)
             .graphicsLayer { scaleX = scale; scaleY = scale }
-            .clip(VShapes.lg)
-            .background(VColors.white.copy(alpha = 0.1f))
+            .clip(VShapes.xl)
+            .background(VColors.white)
+            .shadow(3.dp, VShapes.xl, ambientColor = VColors.ink.copy(alpha = 0.05f), spotColor = VColors.ink.copy(alpha = 0.07f))
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
-            ) { onClick() }
-            .padding(horizontal = 14.dp, vertical = 12.dp),
+            ) { onOpenAcademics() }
+            .padding(18.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier
-                .clip(VShapes.sm)
-                .background(VColors.white.copy(alpha = 0.2f))
-                .padding(horizontal = 8.dp, vertical = 4.dp),
-        ) {
-            Text(
-                text = label,
-                style = VTypography.caption,
-                color = VColors.white,
-                fontWeight = FontWeight.ExtraBold,
-            )
-        }
-        Spacer(Modifier.width(12.dp))
+        Avatar(name = child.name, size = 56.dp)
+        Spacer(Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = subject,
-                style = VTypography.body,
-                color = VColors.white,
-                fontWeight = FontWeight.Bold,
+                text = child.name,
+                style = VTypography.h3,
+                color = VColors.ink,
+                fontWeight = FontWeight.ExtraBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            if (detail.isNotBlank()) {
-                Text(
-                    text = detail,
-                    style = VTypography.caption,
-                    color = VColors.white.copy(alpha = 0.6f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        }
-        Column(horizontalAlignment = Alignment.End) {
+            Spacer(Modifier.height(2.dp))
             Text(
-                text = time,
-                style = VTypography.caption,
-                color = VColors.white.copy(alpha = 0.8f),
-                fontWeight = FontWeight.SemiBold,
+                text = "Grade ${child.currentLevel}",
+                style = VTypography.bodySmall,
+                color = VColors.ink3,
             )
-            if (room.isNotBlank()) {
-                Text(
-                    text = "Room $room",
-                    style = VTypography.caption,
-                    color = VColors.white.copy(alpha = 0.5f),
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Badge(
+                    text = child.attendanceStatus.replaceFirstChar { it.uppercase() },
+                    bg = VColors.coralSoft,
+                    textColor = VColors.coral,
+                )
+                Badge(
+                    text = if (attendanceRate > 0) "$attendanceRate% Attendance" else "Attendance N/A",
+                    bg = VColors.mintSoft,
+                    textColor = VColors.mint,
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun Badge(text: String, bg: Color, textColor: Color) {
+    Box(
+        modifier = Modifier
+            .clip(VShapes.full)
+            .background(bg)
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+    ) {
+        Text(
+            text = text,
+            style = VTypography.caption,
+            color = textColor,
+            fontWeight = FontWeight.Bold,
+        )
     }
 }
 
@@ -657,9 +517,8 @@ private fun AlertCard(alert: DashboardAlertDto, onClick: () -> Unit) {
     val scale = if (pressed) 0.97f else 1f
 
     Row(
-        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .width(280.dp)
+            .width(260.dp)
             .graphicsLayer { scaleX = scale; scaleY = scale }
             .clip(VShapes.lg)
             .background(bg)
@@ -668,14 +527,9 @@ private fun AlertCard(alert: DashboardAlertDto, onClick: () -> Unit) {
                 indication = null,
             ) { onClick() }
             .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(
-            imageVector = Icons.Filled.Warning,
-            contentDescription = null,
-            tint = fg,
-            modifier = Modifier.size(18.dp),
-        )
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(4.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = alert.title,
@@ -693,126 +547,29 @@ private fun AlertCard(alert: DashboardAlertDto, onClick: () -> Unit) {
                 overflow = TextOverflow.Ellipsis,
             )
         }
-    }
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-// METRIC ROW — 3 compact stat cards
-// ════════════════════════════════════════════════════════════════════════════
-
-@Composable
-private fun MetricRow(
-    attendanceRate: Int,
-    fees: FeeData?,
-    latestMark: ParentMarkDto?,
-    onOpenAcademics: () -> Unit,
-    onOpenFees: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 20.dp, end = 20.dp, top = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        MetricCard(
-            label = "ATTENDANCE",
-            value = if (attendanceRate > 0) "$attendanceRate%" else "—",
-            sub = "This term",
-            accent = VColors.mint,
-            onClick = onOpenAcademics,
-            modifier = Modifier.weight(1f),
-        )
-        MetricCard(
-            label = "FEES DUE",
-            value = fees?.outstandingFees?.takeIf { it.isNotBlank() } ?: "₹0",
-            sub = fees?.takeIf { it.overdueCount > 0 }?.let { "${it.overdueCount} overdue" } ?: "All clear",
-            accent = if (fees?.overdueCount?.let { it > 0 } == true) VColors.coral else VColors.mint,
-            onClick = onOpenFees,
-            modifier = Modifier.weight(1f),
-        )
-        MetricCard(
-            label = "LATEST",
-            value = latestMark?.let { "${it.marks?.toInt() ?: 0}/${it.maxMarks}" } ?: "—",
-            sub = latestMark?.subject ?: "No marks",
-            accent = VColors.violet,
-            onClick = onOpenAcademics,
-            modifier = Modifier.weight(1f),
-        )
-    }
-}
-
-@Composable
-private fun MetricCard(
-    label: String,
-    value: String,
-    sub: String,
-    accent: Color,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val pressed by interactionSource.collectIsPressedAsState()
-    val scale = if (pressed) 0.97f else 1f
-
-    Column(
-        modifier = modifier
-            .graphicsLayer { scaleX = scale; scaleY = scale }
-            .shadow(2.dp, VShapes.lg, ambientColor = VColors.ink.copy(alpha = 0.05f), spotColor = VColors.ink.copy(alpha = 0.07f))
-            .clip(VShapes.lg)
-            .background(VColors.white)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-            ) { onClick() }
-            .padding(12.dp),
-    ) {
-        Text(
-            text = label,
-            style = VTypography.caption,
-            color = VColors.ink3,
-            fontWeight = FontWeight.Bold,
-        )
-        Spacer(Modifier.height(6.dp))
-        Text(
-            text = value,
-            style = VTypography.h3,
-            color = VColors.ink,
-            fontWeight = FontWeight.ExtraBold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Spacer(Modifier.height(2.dp))
-        Text(
-            text = sub,
-            style = VTypography.caption,
-            color = VColors.ink3,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Spacer(Modifier.height(8.dp))
         Box(
             modifier = Modifier
-                .fillMaxWidth(0.3f)
-                .height(3.dp)
+                .size(8.dp)
                 .clip(VShapes.full)
-                .background(accent),
+                .background(fg),
         )
     }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// SCHEDULE — horizontal scroll of period cards
+// SCHEDULE CARD
 // ════════════════════════════════════════════════════════════════════════════
 
 @Composable
-private fun ScheduleSection(
+private fun ScheduleCard(
     periods: List<LivePeriod>,
     schoolDayEnded: Boolean,
+    onOpenAcademics: () -> Unit,
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 20.dp, end = 20.dp, top = 16.dp),
+            .padding(horizontal = 20.dp, vertical = 16.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -820,92 +577,184 @@ private fun ScheduleSection(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = if (schoolDayEnded) "Today's Classes" else "Schedule",
+                text = "Today's Learning",
                 style = VTypography.label,
                 color = VColors.ink,
                 fontWeight = FontWeight.Bold,
             )
-            Text(
-                text = "${periods.size} periods",
-                style = VTypography.caption,
-                color = VColors.ink3,
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .clip(VShapes.sm)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                    ) { onOpenAcademics() }
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+            ) {
+                Text(
+                    text = "Swipe to expand",
+                    style = VTypography.caption,
+                    color = VColors.ink3,
+                )
+                Icon(
+                    imageVector = Icons.Filled.ExpandMore,
+                    contentDescription = null,
+                    tint = VColors.ink3,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
         }
+
         Spacer(Modifier.height(10.dp))
-        LazyRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(VShapes.xl)
+                .background(VColors.white)
+                .shadow(3.dp, VShapes.xl, ambientColor = VColors.ink.copy(alpha = 0.05f), spotColor = VColors.ink.copy(alpha = 0.07f))
+                .padding(horizontal = 16.dp, vertical = 12.dp),
         ) {
-            items(periods) { period ->
-                PeriodCard(period = period)
+            periods.take(4).forEachIndexed { index, period ->
+                PeriodRow(
+                    period = period,
+                    isLast = index == periods.take(4).lastIndex,
+                )
+            }
+            if (periods.size > 4) {
+                Spacer(Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(VShapes.sm)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                        ) { onOpenAcademics() }
+                        .padding(vertical = 8.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "Show all ${periods.size} classes",
+                        style = VTypography.caption,
+                        color = VColors.violet,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
             }
         }
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun PeriodCard(period: LivePeriod) {
-    val (bg, statusText, statusColor) = when (period.relation) {
-        -1 -> Triple(VColors.mintSoft, "Done", VColors.success)
-        0 -> Triple(VColors.violetSoft, "Now", VColors.violet)
-        else -> Triple(VColors.white, "Next", VColors.ink3)
+private fun PeriodRow(
+    period: LivePeriod,
+    isLast: Boolean,
+) {
+    val dotColor = when (period.relation) {
+        -1 -> VColors.mint
+        0 -> VColors.violet
+        else -> VColors.line
     }
 
-    Column(
-        modifier = Modifier
-            .width(120.dp)
-            .clip(VShapes.md)
-            .background(bg)
-            .padding(12.dp),
-    ) {
-        Text(
-            text = period.startTime,
-            style = VTypography.caption,
-            color = VColors.ink2,
-            fontWeight = FontWeight.Bold,
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = period.subject,
-            style = VTypography.bodySmall,
-            color = VColors.ink,
-            fontWeight = FontWeight.Bold,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
-        if (period.teacherName.isNotBlank()) {
-            Spacer(Modifier.height(2.dp))
-            Text(
-                text = period.teacherName,
-                style = VTypography.caption,
-                color = VColors.ink3,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        Spacer(Modifier.height(8.dp))
-        Box(
-            modifier = Modifier
-                .clip(VShapes.full)
-                .background(statusColor.copy(alpha = 0.15f))
-                .padding(horizontal = 8.dp, vertical = 2.dp),
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+            verticalAlignment = Alignment.Top,
         ) {
-            Text(
-                text = statusText,
-                style = VTypography.caption,
-                color = statusColor,
-                fontWeight = FontWeight.Bold,
+            Box(
+                modifier = Modifier
+                    .padding(top = 6.dp)
+                    .size(8.dp)
+                    .clip(VShapes.full)
+                    .background(dotColor),
+            )
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        text = period.subject,
+                        style = VTypography.body,
+                        color = VColors.ink,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        text = "${period.startTime} — ${period.endTime}",
+                        style = VTypography.caption,
+                        color = VColors.ink3,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+                if (period.teacherName.isNotBlank() || period.room.isNotBlank()) {
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = buildString {
+                            if (period.teacherName.isNotBlank()) append(period.teacherName)
+                            if (period.teacherName.isNotBlank() && period.room.isNotBlank()) append(" · ")
+                            if (period.room.isNotBlank()) append("Room ${period.room}")
+                        },
+                        style = VTypography.caption,
+                        color = VColors.ink2,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Spacer(Modifier.height(6.dp))
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    val tags = listOfNotNull(
+                        period.room.takeIf { it.isNotBlank() },
+                        when (period.relation) {
+                            -1 -> "Completed"
+                            0 -> "Happening now"
+                            else -> "Upcoming"
+                        },
+                    )
+                    tags.forEach { tag ->
+                        PeriodTag(tag)
+                    }
+                }
+            }
+        }
+        if (!isLast) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .padding(start = 20.dp)
+                    .background(VColors.lineSoft),
             )
         }
     }
 }
 
+@Composable
+private fun PeriodTag(text: String) {
+    Box(
+        modifier = Modifier
+            .clip(VShapes.sm)
+            .background(VColors.surfaceTint)
+            .padding(horizontal = 8.dp, vertical = 3.dp),
+    ) {
+        Text(
+            text = text,
+            style = VTypography.caption,
+            color = VColors.ink2,
+            fontWeight = FontWeight.SemiBold,
+        )
+    }
+}
+
 // ════════════════════════════════════════════════════════════════════════════
-// QUICK ACTIONS — horizontal scroll
+// QUICK ACTIONS
 // ════════════════════════════════════════════════════════════════════════════
 
 @Composable
-private fun QuickActionsSection(
+private fun QuickActionsRow(
     onOpenAcademics: () -> Unit,
     onOpenMessages: () -> Unit,
     onOpenTransport: () -> Unit,
@@ -920,7 +769,7 @@ private fun QuickActionsSection(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 20.dp, end = 20.dp, top = 16.dp),
+            .padding(horizontal = 20.dp),
     ) {
         Text(
             text = "Quick Actions",
@@ -931,18 +780,18 @@ private fun QuickActionsSection(
         Spacer(Modifier.height(10.dp))
         LazyRow(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             items(
                 listOf(
                     ActionTile("Academics", Icons.Filled.School, VColors.violet, VColors.violetSoft,
-                        latestMark?.let { "${it.subject.take(3)} ${it.marks?.toInt() ?: 0}/${it.maxMarks}" } ?: "View progress",
+                        latestMark?.let { "${it.marks?.toInt() ?: 0}/${it.maxMarks} ${it.subject}" } ?: "View progress",
                         onOpenAcademics),
-                    ActionTile("Messages", Icons.Filled.Notifications, VColors.sky, VColors.skySoft,
+                    ActionTile("Messages", Icons.Filled.Whatsapp, VColors.sky, VColors.skySoft,
                         if (unreadCount > 0) "$unreadCount unread" else "Inbox", onOpenMessages),
                     ActionTile("Transport", Icons.Filled.DirectionsBus, VColors.mint, VColors.mintSoft,
                         "Track bus", onOpenTransport),
-                    ActionTile("AI Tutor", Icons.Filled.Insights, VColors.violet, VColors.violetSoft,
+                    ActionTile("AI Tutor", Icons.Filled.Payment, VColors.violet, VColors.violetSoft,
                         "Ask AI", onOpenTutor),
                     ActionTile("Scholarships", Icons.Filled.Payment, VColors.gold, VColors.goldSoft,
                         "Apply now", onOpenScholarships),
@@ -962,7 +811,7 @@ private fun QuickActionsSection(
 
 private data class ActionTile(
     val label: String,
-    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val icon: ImageVector,
     val iconTint: Color,
     val iconBg: Color,
     val subText: String,
@@ -977,7 +826,7 @@ private fun ActionTileCard(tile: ActionTile) {
 
     Column(
         modifier = Modifier
-            .width(100.dp)
+            .width(96.dp)
             .graphicsLayer { scaleX = scale; scaleY = scale }
             .clip(VShapes.lg)
             .background(VColors.white)
@@ -1032,7 +881,7 @@ private fun MessagesSection(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 20.dp, end = 20.dp, top = 16.dp),
+            .padding(horizontal = 20.dp, vertical = 16.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -1065,7 +914,7 @@ private fun MessagesSection(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(VShapes.lg)
+                    .clip(VShapes.xl)
                     .background(VColors.white)
                     .padding(16.dp),
             ) {
@@ -1080,8 +929,10 @@ private fun MessagesSection(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(VShapes.lg)
-                    .background(VColors.white),
+                    .clip(VShapes.xl)
+                    .background(VColors.white)
+                    .shadow(2.dp, VShapes.xl, ambientColor = VColors.ink.copy(alpha = 0.04f), spotColor = VColors.ink.copy(alpha = 0.06f))
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
             ) {
                 threads.forEachIndexed { index, thread ->
                     MessageRow(
@@ -1114,26 +965,11 @@ private fun MessageRow(
                     interactionSource = interactionSource,
                     indication = null,
                 ) { onClick() }
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+                .padding(vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(VShapes.full)
-                    .background(VColors.violetSoft),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = thread.senderName.firstOrNull()?.uppercase() ?: "",
-                    style = VTypography.label,
-                    color = VColors.violet,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-
-            Spacer(Modifier.width(10.dp))
-
+            Avatar(name = thread.senderName, size = 38.dp)
+            Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = thread.senderName,
@@ -1151,7 +987,6 @@ private fun MessageRow(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-
             Column(horizontalAlignment = Alignment.End) {
                 Text(
                     text = thread.time,
@@ -1176,13 +1011,12 @@ private fun MessageRow(
                 }
             }
         }
-
         if (!isLast) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(1.dp)
-                    .padding(start = 60.dp)
+                    .padding(start = 50.dp)
                     .background(VColors.lineSoft),
             )
         }
@@ -1190,27 +1024,24 @@ private fun MessageRow(
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// SHARED
+// SHARED AVATAR
 // ════════════════════════════════════════════════════════════════════════════
 
 @Composable
-private fun ChildAvatar(
-    child: DashboardChildSummary,
-    size: androidx.compose.ui.unit.Dp,
-    dark: Boolean = false,
-) {
-    val initials = child.name.split(" ").take(2).joinToString("") { it.firstOrNull()?.uppercase() ?: "" }
+private fun Avatar(name: String, size: androidx.compose.ui.unit.Dp) {
+    val initials = name.split(" ").take(2).joinToString("") { it.firstOrNull()?.uppercase() ?: "" }
+        .ifBlank { "?" }
     Box(
         modifier = Modifier
             .size(size)
             .clip(VShapes.full)
-            .background(if (dark) VColors.white.copy(alpha = 0.2f) else VColors.violetSoft),
+            .background(VColors.violetSoft),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = initials,
             style = VTypography.label,
-            color = if (dark) VColors.white else VColors.violet,
+            color = VColors.violet,
             fontWeight = FontWeight.Bold,
         )
     }
@@ -1229,13 +1060,9 @@ private fun LoadingState(modifier: Modifier = Modifier) {
             .verticalScroll(rememberScrollState()),
     ) {
         Spacer(Modifier.height(12.dp))
-        Box(Modifier.fillMaxWidth().height(200.dp).clip(VShapes.xl).background(VColors.lineSoft))
-        Spacer(Modifier.height(12.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Box(Modifier.weight(1f).height(100.dp).clip(VShapes.lg).background(VColors.lineSoft))
-            Box(Modifier.weight(1f).height(100.dp).clip(VShapes.lg).background(VColors.lineSoft))
-            Box(Modifier.weight(1f).height(100.dp).clip(VShapes.lg).background(VColors.lineSoft))
-        }
+        Box(Modifier.fillMaxWidth().height(120.dp).clip(VShapes.xl).background(VColors.lineSoft))
+        Spacer(Modifier.height(16.dp))
+        Box(Modifier.fillMaxWidth().height(180.dp).clip(VShapes.xl).background(VColors.lineSoft))
     }
 }
 
@@ -1331,3 +1158,4 @@ private fun EmptyState(
         }
     }
 }
+
