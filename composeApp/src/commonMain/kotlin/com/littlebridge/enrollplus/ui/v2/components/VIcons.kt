@@ -419,6 +419,40 @@ object VIcons {
         }
     }
 
+    /** Users (lucide) — three persons group. */
+    val UsersGroup: ImageVector by lazy {
+        materialStroke("v_users_group") {
+            moveTo(17f, 21f)
+            curveTo(17f, 19.67f, 16.33f, 18.67f, 15f, 18f)
+            curveTo(13.67f, 17.33f, 12.33f, 17f, 11f, 17f)
+            curveTo(9.67f, 17f, 8.33f, 17.33f, 7f, 18f)
+            curveTo(5.67f, 18.67f, 5f, 19.67f, 5f, 21f)
+            moveTo(11f, 11f)
+            curveTo(9.34f, 11f, 8f, 9.66f, 8f, 8f)
+            curveTo(8f, 6.34f, 9.34f, 5f, 11f, 5f)
+            curveTo(12.66f, 5f, 14f, 6.34f, 14f, 8f)
+            curveTo(14f, 9.66f, 12.66f, 11f, 11f, 11f)
+            close()
+            moveTo(17f, 11f)
+            curveTo(17f, 9.34f, 16f, 8f, 14.5f, 8f)
+            moveTo(21f, 21f)
+            curveTo(21f, 19.67f, 20.5f, 18.67f, 19.5f, 18f)
+            moveTo(14.5f, 5f)
+            curveTo(15f, 4.84f, 15.5f, 4.5f, 16f, 4f)
+            curveTo(16.5f, 3.5f, 16.75f, 2.75f, 16.75f, 2f)
+        }
+    }
+
+    /** LayoutDashboard (lucide) — 4-quadrant grid. */
+    val LayoutDashboard: ImageVector by lazy {
+        materialStroke("v_layout_dashboard") {
+            moveTo(3f, 3f); lineTo(11f, 3f); lineTo(11f, 11f); lineTo(3f, 11f); close()
+            moveTo(13f, 3f); lineTo(21f, 3f); lineTo(21f, 8f); lineTo(13f, 8f); close()
+            moveTo(13f, 10f); lineTo(21f, 10f); lineTo(21f, 21f); lineTo(13f, 21f); close()
+            moveTo(3f, 13f); lineTo(11f, 13f); lineTo(11f, 21f); lineTo(3f, 21f); close()
+        }
+    }
+
     /** Minus (lucide) — horizontal line. */
     val Minus: ImageVector by lazy {
         materialStroke("v_minus") {

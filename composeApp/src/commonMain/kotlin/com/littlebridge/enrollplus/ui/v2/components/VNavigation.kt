@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -946,16 +947,17 @@ fun VBackHeader(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// VCreamBottomNav — cream/violet bottom navigation matching onboarding aesthetic
+// VCreamBottomNav — premium floating deck navigation
 //
 // Design DNA:
-//   • VColors.cream background (like onboarding screen)
-//   • VColors.surfaceCard bar with VShapes.xxl floating pill
-//   • VColors.violet active tint, VColors.ink3 inactive
-//   • VColors.violetSoft active pill background
-//   • VTypography.caption for labels
-//   • VColors.line top border (like onboarding lineSoft divider)
-//   • No shadows, no gradients — tonal surface elevation
+//   • VColors.creamDeep bar — warm, tonal, floats above cream background
+//   • 1dp VColors.line border, 28dp rounded corners
+//   • Active: violet icon + 5dp violet dot indicator below
+//   • Inactive: ink3 icon, no dot
+//   • Labels always visible (10sp) — active Bold, inactive Medium
+//   • Spring scale on icon (1.0 → 1.12 → 1.0 on selection)
+//   • Coral badge for unread counts
+//   • No pill, no shadow — clean tonal elevation
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
@@ -965,58 +967,24 @@ fun VCreamBottomNav(
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val density = LocalDensity.current
     val haptic = LocalHapticFeedback.current
-
-    val itemPositions = remember { mutableStateMapOf<String, Dp>() }
-    val itemWidths = remember { mutableStateMapOf<String, Dp>() }
-
-    val pillX by animateDpAsState(
-        targetValue = itemPositions[selected] ?: 0.dp,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow,
-        ),
-        label = "creamPillX",
-    )
-    val pillWidth by animateDpAsState(
-        targetValue = itemWidths[selected] ?: 0.dp,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow,
-        ),
-        label = "creamPillWidth",
-    )
 
     Box(
         modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 12.dp),
+            .padding(horizontal = 20.dp, vertical = 14.dp),
         contentAlignment = Alignment.Center,
     ) {
         Box(
             modifier = Modifier
-                .height(60.dp)
+                .height(64.dp)
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(30.dp))
-                .background(VColors.surfaceCard)
-                .border(1.dp, VColors.line, RoundedCornerShape(30.dp))
-                .padding(horizontal = 6.dp),
+                .clip(RoundedCornerShape(28.dp))
+                .background(VColors.creamDeep)
+                .border(1.dp, VColors.line, RoundedCornerShape(28.dp))
+                .padding(horizontal = 4.dp),
         ) {
-            // Active pill
-            if (pillWidth > 0.dp) {
-                Box(
-                    modifier = Modifier
-                        .offset(x = pillX)
-                        .width(pillWidth)
-                        .height(48.dp)
-                        .align(Alignment.CenterStart)
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(VColors.violetSoft),
-                )
-            }
-
             Row(
                 modifier = Modifier.fillMaxSize(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
@@ -1026,33 +994,47 @@ fun VCreamBottomNav(
                     val active = item.id == selected
                     val tint = if (active) VColors.violet else VColors.ink3
                     val scale by animateFloatAsState(
-                        targetValue = if (active) 1.1f else 1f,
+                        targetValue = if (active) 1.12f else 1f,
                         animationSpec = spring(
                             dampingRatio = Spring.DampingRatioMediumBouncy,
                             stiffness = Spring.StiffnessMediumLow,
                         ),
-                        label = "creamIconScale_${item.id}",
+                        label = "deckScale_${item.id}",
+                    )
+                    val dotAlpha by animateFloatAsState(
+                        targetValue = if (active) 1f else 0f,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessMedium,
+                        ),
+                        label = "deckDot_${item.id}",
+                    )
+                    val dotScale by animateFloatAsState(
+                        targetValue = if (active) 1f else 0.3f,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessMedium,
+                        ),
+                        label = "deckDotScale_${item.id}",
                     )
                     val interaction = remember { MutableInteractionSource() }
 
                     Column(
                         modifier = Modifier
-                            .onGloballyPositioned {
-                                itemPositions[item.id] = with(density) { it.boundsInParent().left.toDp() }
-                                itemWidths[item.id] = with(density) { it.size.width.toDp() }
-                            }
-                            .clip(RoundedCornerShape(24.dp))
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(22.dp))
                             .clickable(interactionSource = interaction, indication = null) {
                                 if (!active) {
                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 }
                                 onSelect(item.id)
                             }
-                            .padding(horizontal = 14.dp, vertical = 8.dp),
+                            .padding(vertical = 8.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center,
                     ) {
-                        Box {
+                        Box(contentAlignment = Alignment.TopEnd) {
                             Icon(
                                 imageVector = item.icon,
                                 contentDescription = item.label,
@@ -1067,8 +1049,7 @@ fun VCreamBottomNav(
                             if (item.badge > 0) {
                                 Box(
                                     modifier = Modifier
-                                        .align(Alignment.TopEnd)
-                                        .offset(x = 6.dp, y = (-3).dp)
+                                        .offset(x = 7.dp, y = (-3).dp)
                                         .clip(CircleShape)
                                         .background(VColors.coral)
                                         .padding(horizontal = 4.dp, vertical = 1.dp),
@@ -1084,16 +1065,32 @@ fun VCreamBottomNav(
                                 }
                             }
                         }
-                        AnimatedVisibility(visible = active) {
-                            Text(
-                                text = item.label,
-                                style = VTypography.caption.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 10.sp,
-                                ),
-                                color = tint,
-                            )
-                        }
+
+                        Spacer(Modifier.height(4.dp))
+
+                        Text(
+                            text = item.label,
+                            style = VTypography.caption.copy(
+                                fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
+                                fontSize = 10.sp,
+                            ),
+                            color = tint,
+                        )
+
+                        Spacer(Modifier.height(3.dp))
+
+                        // Active dot indicator — springs in/out
+                        Box(
+                            modifier = Modifier
+                                .size(5.dp)
+                                .clip(CircleShape)
+                                .background(VColors.violet)
+                                .graphicsLayer {
+                                    this.alpha = dotAlpha
+                                    this.scaleX = dotScale
+                                    this.scaleY = dotScale
+                                },
+                        )
                     }
                 }
             }

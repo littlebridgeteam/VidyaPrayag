@@ -4,6 +4,14 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
@@ -12,6 +20,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +30,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -41,7 +51,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -79,6 +92,7 @@ import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VMotion
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -278,9 +292,12 @@ private fun EmptyState() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Command Desk — scrollable content with stagger entrance
-// Animation: onboarding step transition pattern (280ms slide+fade via AnimatedContent)
-// Stagger: header 100ms, cards 220ms — landing screen pattern with VMotion.durSlower
+// Command Desk — scrollable content with per-card stagger entrance
+//
+// Animation:
+//   • Header: 100ms delay, VMotion.durSlower (700ms) fade+slide
+//   • Each card: 220ms + index*60ms delay, VMotion.durSlower fade+slide
+//   • Cards cascade in one-by-one — feels alive, not cheap
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
@@ -301,23 +318,13 @@ private fun CommandDesk(
 ) {
     val headerAlpha = remember { Animatable(0f) }
     val headerOffset = remember { Animatable(20f) }
-    val cardsAlpha = remember { Animatable(0f) }
-    val cardsOffset = remember { Animatable(20f) }
 
     LaunchedEffect(overview) {
         headerAlpha.snapTo(0f); headerOffset.snapTo(20f)
-        cardsAlpha.snapTo(0f); cardsOffset.snapTo(20f)
-        kotlinx.coroutines.coroutineScope {
-            launch {
-                delay(100)
-                headerAlpha.animateTo(1f, tween(VMotion.durSlower, easing = VMotion.ease))
-                headerOffset.animateTo(0f, tween(VMotion.durSlower, easing = VMotion.ease))
-            }
-            launch {
-                delay(220)
-                cardsAlpha.animateTo(1f, tween(VMotion.durSlower, easing = VMotion.ease))
-                cardsOffset.animateTo(0f, tween(VMotion.durSlower, easing = VMotion.ease))
-            }
+        launch {
+            delay(100)
+            headerAlpha.animateTo(1f, tween(VMotion.durSlower, easing = VMotion.ease))
+            headerOffset.animateTo(0f, tween(VMotion.durSlower, easing = VMotion.ease))
         }
     }
 
@@ -328,6 +335,7 @@ private fun CommandDesk(
             .statusBarsPadding()
             .padding(bottom = 120.dp),
     ) {
+        // Header
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -345,75 +353,121 @@ private fun CommandDesk(
             )
         }
 
+        // Cards — each staggers in with 60ms cascade
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 16.dp)
-                .graphicsLayer(translationY = cardsOffset.value)
-                .alpha(cardsAlpha.value),
+                .padding(horizontal = 24.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            var idx = 0
             val kpis = overview.kpis.filter { it.available }
             if (kpis.isNotEmpty()) {
-                KpiGrid(kpis = kpis, onClick = onOpenAnalytics)
+                StaggeredSection(index = idx++) {
+                    KpiGrid(kpis = kpis, onClick = onOpenAnalytics)
+                }
             }
 
             val insights = overview.insights
             if (insights.isNotEmpty()) {
-                AttentionCard(insights = insights, onOpen = onOpenPews)
+                StaggeredSection(index = idx++) {
+                    AttentionCard(insights = insights, onOpen = onOpenPews)
+                }
             }
 
             overview.feeAnalytics.takeIf { it.available }?.let { fa ->
-                FeeAnalyticsCard(fa = fa, onClick = onOpenAnalytics)
+                StaggeredSection(index = idx++) {
+                    FeeAnalyticsCard(fa = fa, onClick = onOpenAnalytics)
+                }
             }
 
             overview.parentEngagement.takeIf { it.available }?.let { pe ->
-                ParentEngagementCard(pe = pe, onClick = onOpenAnalytics)
+                StaggeredSection(index = idx++) {
+                    ParentEngagementCard(pe = pe, onClick = onOpenAnalytics)
+                }
             }
 
-            QuickActionsCard(
-                onAnnouncement = onOpenNotifications,
-                onEvent = onCreateEvent,
-                onReports = onOpenReportPublish,
-            )
+            StaggeredSection(index = idx++) {
+                QuickActionsCard(
+                    onAnnouncement = onOpenNotifications,
+                    onEvent = onCreateEvent,
+                    onReports = onOpenReportPublish,
+                )
+            }
 
             overview.teacherSpotlight.takeIf { it.available }?.let { ts ->
-                TeacherSpotlightCard(ts = ts, onClick = onOpenPews)
+                StaggeredSection(index = idx++) {
+                    TeacherSpotlightCard(ts = ts, onClick = onOpenPews)
+                }
             }
 
             overview.events.takeIf { it.available && it.upcoming.isNotEmpty() }?.let { ev ->
-                UpcomingCard(events = ev.upcoming, onOpenCalendar = onOpenCalendar)
+                StaggeredSection(index = idx++) {
+                    UpcomingCard(events = ev.upcoming, onOpenCalendar = onOpenCalendar)
+                }
             }
 
             overview.achievements.takeIf { it.available && it.items.isNotEmpty() }?.let { ach ->
-                AchievementsCard(achievements = ach.items)
+                StaggeredSection(index = idx++) {
+                    AchievementsCard(achievements = ach.items)
+                }
             }
 
             overview.birthdays.takeIf { it.available }?.let { bd ->
                 if (bd.today.isNotEmpty() || bd.upcoming.isNotEmpty()) {
-                    BirthdaysCard(birthdays = bd.today + bd.upcoming)
+                    StaggeredSection(index = idx++) {
+                        BirthdaysCard(birthdays = bd.today + bd.upcoming)
+                    }
                 }
             }
 
             val activities = activity?.activities.orEmpty()
             if (activities.isNotEmpty()) {
-                ActivityCard(activities = activities)
+                StaggeredSection(index = idx++) {
+                    ActivityCard(activities = activities)
+                }
             }
 
             overview.schoolPulse.let { pulse ->
                 if (pulse.score > 0) {
-                    PulseCard(pulse = pulse, onClick = onOpenAnalytics)
+                    StaggeredSection(index = idx++) {
+                        PulseCard(pulse = pulse, onClick = onOpenAnalytics)
+                    }
                 }
             }
         }
     }
 }
 
+@Composable
+private fun StaggeredSection(
+    index: Int,
+    content: @Composable () -> Unit,
+) {
+    val alpha = remember { Animatable(0f) }
+    val offsetY = remember { Animatable(24f) }
+    LaunchedEffect(Unit) {
+        delay(220 + index * 60L)
+        launch { alpha.animateTo(1f, tween(VMotion.durSlower, easing = VMotion.ease)) }
+        launch { offsetY.animateTo(0f, tween(VMotion.durSlower, easing = VMotion.ease)) }
+    }
+    Box(
+        modifier = Modifier
+            .graphicsLayer(translationY = offsetY.value)
+            .alpha(alpha.value),
+    ) { content() }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
-// Desk Header — wordmark + avatar (landing top bar pattern)
-//              accent dot + school name (landing accent label pattern)
-//              greeting with bold+light mix (landing headline pattern)
-//              SimpleAvatar from onboarding step 6 (violetSoft bg + violet initials)
+// Desk Header — premium top section
+//
+//   • Wordmark with violet "+" (landing pattern)
+//   • Notification bell always visible with breathing coral badge
+//   • Avatar with thin violet ring (drawBehind stroke)
+//   • Press-scale spring on both icons
+//   • Accent dot + school name (landing pattern)
+//   • Greeting with bold+light mix (landing headline pattern)
+//   • Session info + last updated time
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
@@ -429,7 +483,41 @@ private fun DeskHeader(
     val schoolName = header.schoolName.takeIf { it.isNotBlank() } ?: "Your School"
     val greeting = header.greeting.takeIf { it.isNotBlank() } ?: "Welcome"
 
-    // Top bar — wordmark + notification + avatar (landing pattern)
+    // Breathing animation for notification badge — subtle, alive, not cheap
+    val breathTransition = rememberInfiniteTransition(label = "breath")
+    val breathScale by breathTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = keyframes {
+                durationMillis = 2000
+                1f at 0
+                1.12f at 1000
+                1f at 2000
+            },
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "breathScale",
+    )
+
+    // Press states for icons
+    val bellInteraction = remember { MutableInteractionSource() }
+    val bellPressed by bellInteraction.collectIsPressedAsState()
+    val bellScale by animateFloatAsState(
+        targetValue = if (bellPressed) 0.92f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+        label = "bellScale",
+    )
+
+    val avatarInteraction = remember { MutableInteractionSource() }
+    val avatarPressed by avatarInteraction.collectIsPressedAsState()
+    val avatarScale by animateFloatAsState(
+        targetValue = if (avatarPressed) 0.92f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+        label = "avatarScale",
+    )
+
+    // Top bar — wordmark + notification + avatar
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -444,30 +532,40 @@ private fun DeskHeader(
             modifier = Modifier.weight(1f),
         )
 
-        if (unreadCount > 0) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(VColors.violetSoft)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                    ) { onNotifications() },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    Icons.Filled.Notifications,
-                    contentDescription = "Notifications",
-                    tint = VColors.violet,
-                    modifier = Modifier.size(18.dp),
-                )
+        // Notification bell — always visible, premium lucide icon
+        Box(
+            modifier = Modifier
+                .size(42.dp)
+                .clip(CircleShape)
+                .background(VColors.violetSoft)
+                .clickable(
+                    interactionSource = bellInteraction,
+                    indication = null,
+                ) { onNotifications() }
+                .graphicsLayer {
+                    scaleX = bellScale
+                    scaleY = bellScale
+                },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                VIcons.Bell,
+                contentDescription = "Notifications",
+                tint = VColors.violet,
+                modifier = Modifier.size(20.dp),
+            )
+            if (unreadCount > 0) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
+                        .offset(x = 2.dp, y = (-2).dp)
                         .size(16.dp)
                         .clip(CircleShape)
-                        .background(VColors.coral),
+                        .background(VColors.coral)
+                        .graphicsLayer {
+                            scaleX = breathScale
+                            scaleY = breathScale
+                        },
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
@@ -480,19 +578,32 @@ private fun DeskHeader(
                     )
                 }
             }
-            Spacer(Modifier.size(10.dp))
         }
 
-        // SimpleAvatar pattern from onboarding step 6 — violetSoft bg + violet initials
+        Spacer(Modifier.size(10.dp))
+
+        // Avatar with violet ring — premium, onboarding SimpleAvatar pattern elevated
         Box(
             modifier = Modifier
-                .size(44.dp)
+                .size(46.dp)
+                .drawBehind {
+                    drawCircle(
+                        color = VColors.violet,
+                        radius = size.minDimension / 2f,
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx()),
+                    )
+                }
+                .padding(2.dp)
                 .clip(CircleShape)
                 .background(VColors.violetSoft)
                 .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
+                    interactionSource = avatarInteraction,
                     indication = null,
-                ) { onAvatar() },
+                ) { onAvatar() }
+                .graphicsLayer {
+                    scaleX = avatarScale
+                    scaleY = avatarScale
+                },
             contentAlignment = Alignment.Center,
         ) {
             val initials = name.split(" ").take(2).mapNotNull { it.firstOrNull()?.uppercase() }.joinToString("")
@@ -556,7 +667,28 @@ private fun DeskHeader(
         )
     }
 
-    Spacer(Modifier.height(4.dp))
+    // Last updated — makes the page feel alive
+    if (header.lastUpdated.isNotBlank()) {
+        Spacer(Modifier.height(1.dp))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(4.dp)
+                    .clip(CircleShape)
+                    .background(VColors.mint),
+            )
+            Text(
+                text = "Updated ${header.lastUpdated}",
+                style = VTypography.caption.copy(fontSize = 11.sp),
+                color = VColors.ink3.copy(alpha = 0.7f),
+            )
+        }
+    }
+
+    Spacer(Modifier.height(6.dp))
     Box(
         modifier = Modifier
             .fillMaxWidth()

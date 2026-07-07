@@ -568,10 +568,10 @@ fun SchoolPortalV2(
         }
 
         val items = listOf(
-            VNavItem("home", "Home", VIcons.Home),
-            VNavItem("people", "People", VIcons.Users),
-            VNavItem("records", "Records", VIcons.Bookmark),
-            VNavItem("comms", "Comms", VIcons.Megaphone, badge = commsBadge),
+            VNavItem("home", "Home", VIcons.LayoutDashboard),
+            VNavItem("people", "People", VIcons.UsersGroup),
+            VNavItem("records", "Records", VIcons.ClipboardList),
+            VNavItem("comms", "Comms", VIcons.Send, badge = commsBadge),
             VNavItem("settings", "Settings", VIcons.Settings),
         )
 
