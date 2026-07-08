@@ -18,7 +18,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,16 +34,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.feature.teacher.domain.model.TeacherClassSummaryDto
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherClassesViewModel
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VShapes
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
 
 /** The five scoped tools the Update tab fronts. */
@@ -54,13 +57,14 @@ enum class UpdateTool(val labelKey: String, val icon: ImageVector) {
 }
 
 /**
- * TeacherUpdateScreenV2 — the UPDATE tab. A segmented switch chooses the tool (Attendance · Marks ·
- * Syllabus · Homework); each tool first asks the teacher to pick ONE of their allocations (the scope
- * gate → assignmentId), then hands off to the tool's scoped sub-screen. A back affordance returns to
- * the scope gate so the teacher can switch class without leaving the tab.
+ * TeacherUpdateScreenV2 — the UPDATE tab. A tool grid chooses the active write plane
+ * (Attendance · Marks · Syllabus · Homework · Lesson Plan); each tool first asks the teacher
+ * to pick one of their allocations (the scope gate → assignmentId), then hands off to the
+ * tool's scoped sub-screen. A back affordance returns to the scope gate so the teacher can
+ * switch class without leaving the tab.
  *
- * [initialAssignmentId]/[initialScopeLabel]/[initialTool] let a Home deep-link (e.g. "mark this
- * class now") jump straight into a pre-scoped tool.
+ * [initialAssignmentId]/[initialScopeLabel]/[initialTool] let a Home deep-link jump straight
+ * into a pre-scoped tool.
  */
 @Composable
 fun TeacherUpdateScreenV2(
@@ -70,53 +74,39 @@ fun TeacherUpdateScreenV2(
     initialTool: UpdateTool = UpdateTool.Attendance,
     classesViewModel: TeacherClassesViewModel = koinViewModel(),
 ) {
-    val c = VTheme.colors
     val classesState by classesViewModel.state.collectAsStateV2()
 
     var tool by rememberSaveable { mutableStateOf(initialTool) }
-    // The picked scope per tool session. null = show the scope gate.
     var pickedAssignment by rememberSaveable { mutableStateOf(initialAssignmentId) }
     var pickedLabel by rememberSaveable { mutableStateOf(initialScopeLabel) }
 
-    Column(modifier.fillMaxSize().background(c.background)) {
-        // ── Tool segmented switch ──
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 14.dp, bottom = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            UpdateTool.entries.forEach { t ->
-                ToolChip(
-                    tool = t,
-                    active = t == tool,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    tool = t
-                    // Switching tool returns to its scope gate (each tool re-scopes deliberately).
-                    pickedAssignment = null
-                    pickedLabel = ""
-                }
-            }
-        }
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(VColors.cream)
+            .verticalScroll(rememberScrollState())
+            .padding(top = 12.dp, bottom = 120.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        UpdateHeader()
+        ToolGrid(
+            selected = tool,
+            onSelect = {
+                tool = it
+                pickedAssignment = null
+                pickedLabel = ""
+            },
+        )
 
-        Box(Modifier.weight(1f).fillMaxWidth()) {
+        Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
             val asg = pickedAssignment
             if (asg == null) {
-                // Scope gate.
-                when {
-                    classesState.isLoading && classesState.classes.isEmpty() -> TeacherCenterState { TeacherSpinner() }
-                    classesState.error != null && classesState.classes.isEmpty() -> TeacherCenterState {
-                        Text(classesState.error ?: appString(StringKeys.TC_COULDNT_LOAD_CLASSES), style = VTheme.type.body.colored(c.ink2))
-                    }
-                    classesState.classes.isEmpty() -> TeacherCenterState {
-                        Text(appString(StringKeys.TC_NO_ALLOCATIONS), style = VTheme.type.body.colored(c.ink2))
-                    }
-                    else -> ScopeGate(tool, classesState.classes) { cls ->
-                        pickedAssignment = cls.assignmentId
-                        pickedLabel = scopeLabelFor(cls)
-                    }
+                ScopeGate(tool = tool, classes = classesState.classes) { cls ->
+                    pickedAssignment = cls.assignmentId
+                    pickedLabel = scopeLabelFor(cls)
                 }
             } else {
-                Column(Modifier.fillMaxSize()) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     ScopeBar(label = pickedLabel, onChange = { pickedAssignment = null; pickedLabel = "" })
                     AnimatedContent(
                         targetState = tool,
@@ -137,81 +127,154 @@ fun TeacherUpdateScreenV2(
     }
 }
 
-private fun scopeLabelFor(cls: TeacherClassSummaryDto): String {
-    val classLabel = if (cls.section.isBlank()) cls.className else "${cls.className}-${cls.section}"
-    return "$classLabel · ${cls.subject}"
+@Composable
+private fun UpdateHeader() {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            text = "Update",
+            style = VTypography.h2,
+            color = VColors.ink,
+        )
+        Text(
+            text = "Mark & publish",
+            style = VTypography.bodySmall,
+            color = VColors.ink2,
+        )
+    }
 }
 
 @Composable
-private fun ToolChip(tool: UpdateTool, active: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    val c = VTheme.colors
+private fun ToolGrid(
+    selected: UpdateTool,
+    onSelect: (UpdateTool) -> Unit,
+) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            UpdateTool.entries.take(3).forEach { t ->
+                ToolChip(
+                    tool = t,
+                    active = t == selected,
+                    modifier = Modifier.weight(1f),
+                    onClick = { onSelect(t) },
+                )
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)) {
+            UpdateTool.entries.drop(3).forEach { t ->
+                ToolChip(
+                    tool = t,
+                    active = t == selected,
+                    modifier = Modifier.weight(1f),
+                    onClick = { onSelect(t) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ToolChip(
+    tool: UpdateTool,
+    active: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
     val ix = remember { MutableInteractionSource() }
     Column(
-        modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(if (active) c.accent.copy(alpha = 0.14f) else c.card)
-            .border(1.dp, if (active) c.accent.copy(alpha = 0.5f) else c.hairline, RoundedCornerShape(16.dp))
+        modifier = modifier
+            .clip(VShapes.lg)
+            .background(if (active) VColors.violetSoft else VColors.surfaceCard)
+            .border(
+                1.dp,
+                if (active) VColors.violet.copy(alpha = 0.5f) else VColors.outlineSoft,
+                VShapes.lg,
+            )
             .clickable(interactionSource = ix, indication = null) { onClick() }
-            .padding(vertical = 10.dp),
+            .padding(vertical = 14.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Icon(tool.icon, contentDescription = appString(tool.labelKey), tint = if (active) c.accentDeep else c.ink3, modifier = Modifier.size(18.dp))
+        Icon(
+            imageVector = tool.icon,
+            contentDescription = appString(tool.labelKey),
+            tint = if (active) VColors.violet else VColors.ink2,
+            modifier = Modifier.size(22.dp),
+        )
         Text(
-            appString(tool.labelKey),
-            style = VTheme.type.label.colored(if (active) c.accentDeep else c.ink3).copy(fontSize = 9.5.sp, fontWeight = FontWeight.Bold),
+            text = appString(tool.labelKey),
+            style = VTypography.label,
+            color = if (active) VColors.violet else VColors.ink2,
+            textAlign = TextAlign.Center,
             maxLines = 1,
         )
     }
 }
 
 @Composable
-private fun ScopeGate(tool: UpdateTool, classes: List<TeacherClassSummaryDto>, onPick: (TeacherClassSummaryDto) -> Unit) {
-    Column(Modifier.fillMaxSize().padding(horizontal = 16.dp).padding(top = 12.dp)) {
-        TeacherScopeSelector(
-            classes = classes,
-            onPick = onPick,
-            title = appString(StringKeys.TC_WHICH_CLASS),
-            caption = appString(StringKeys.TC_PICK_CLASS_FOR, "tool" to appString(tool.labelKey).lowercase()),
-        )
-    }
+private fun ScopeGate(
+    tool: UpdateTool,
+    classes: List<TeacherClassSummaryDto>,
+    onPick: (TeacherClassSummaryDto) -> Unit,
+) {
+    TeacherScopeSelector(
+        classes = classes,
+        onPick = onPick,
+        title = appString(StringKeys.TC_WHICH_CLASS),
+        caption = appString(StringKeys.TC_PICK_CLASS_FOR, "tool" to appString(tool.labelKey).lowercase()),
+    )
 }
 
 @Composable
 private fun ScopeBar(label: String, onChange: () -> Unit) {
-    val c = VTheme.colors
+    val ix = remember { MutableInteractionSource() }
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .padding(top = 10.dp, bottom = 2.dp),
+            .clip(VShapes.xl)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.outlineSoft, VShapes.xl)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        Icon(VIcons.School, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
+        Text(
+            text = label,
+            style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+            color = VColors.ink,
+            modifier = Modifier.weight(1f),
+            maxLines = 1,
+        )
         Row(
             Modifier
-                .weight(1f)
-                .clip(RoundedCornerShape(999.dp))
-                .background(c.accent.copy(alpha = 0.10f))
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Icon(VIcons.School, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(15.dp))
-            Text(label, style = VTheme.type.bodyStrong.colored(c.accentDeep).copy(fontSize = 13.sp, fontWeight = FontWeight.Bold), maxLines = 1)
-        }
-        val ix = remember { MutableInteractionSource() }
-        Row(
-            Modifier
-                .clip(RoundedCornerShape(999.dp))
-                .background(c.cream)
+                .clip(VShapes.full)
+                .background(VColors.violetSoft)
                 .clickable(interactionSource = ix, indication = null) { onChange() }
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(horizontal = 10.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Icon(VIcons.ArrowLeft, contentDescription = null, tint = c.ink2, modifier = Modifier.size(13.dp))
-            Text(appString(StringKeys.TC_CHANGE), style = VTheme.type.label.colored(c.ink2).copy(fontSize = 10.sp, fontWeight = FontWeight.Bold))
+            Icon(VIcons.ArrowLeft, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(14.dp))
+            Text(
+                text = appString(StringKeys.TC_CHANGE),
+                style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
+                color = VColors.violet,
+            )
         }
     }
+}
+
+private fun scopeLabelFor(cls: TeacherClassSummaryDto): String {
+    val classLabel = if (cls.section.isBlank()) cls.className else "${cls.className}-${cls.section}"
+    return "$classLabel · ${cls.subject}"
 }

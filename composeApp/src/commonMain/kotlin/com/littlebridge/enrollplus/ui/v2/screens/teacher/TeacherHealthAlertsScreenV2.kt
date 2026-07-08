@@ -47,10 +47,12 @@ fun TeacherHealthAlertsScreenV2(
     viewModel: TeacherHealthAlertsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
+    val c = VTheme.colors
 
     Column(
         modifier
             .fillMaxSize()
+            .background(c.cream)
             .statusBarsPadding()
             .navigationBarsPadding(),
     ) {
@@ -114,7 +116,7 @@ private fun TeacherHealthAlertsContent(alerts: List<HealthAlertDto>) {
                 }
             }
         }
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(120.dp))
     }
 }
 

@@ -79,8 +79,9 @@ fun TeacherPewsScreenV2(
     viewModel: TeacherPewsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
+    val c = VTheme.colors
 
-    Column(modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
+    Column(modifier.fillMaxSize().background(c.cream).statusBarsPadding().navigationBarsPadding()) {
         VBackHeader(title = appString(StringKeys.TC_NEEDS_ATTENTION), onBack = onBack)
         TeacherPewsContent(
             state = state,
@@ -143,7 +144,7 @@ private fun TeacherPewsContent(
                     onClearDraft = onClearDraft,
                 )
             }
-            item { Spacer(Modifier.height(24.dp)) }
+            item { Spacer(Modifier.height(120.dp)) }
         }
     }
 }
