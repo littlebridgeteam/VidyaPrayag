@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -47,68 +47,71 @@ fun VOTPInput(
         runCatching { focusRequester.requestFocus() }
     }
 
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        repeat(length) { index ->
-            val char = value.getOrNull(index)?.toString() ?: ""
-            val isFilled = char.isNotEmpty()
-            val borderColor by animateColorAsState(
-                targetValue = when {
-                    isError -> VColors.error
-                    isFilled -> VColors.violet
-                    else -> VColors.line
-                },
-                animationSpec = tween(200),
-                label = "otpBorder$index",
-            )
-            val bgColor by animateColorAsState(
-                targetValue = if (isFilled && !isError) VColors.violetSoft else VColors.surfaceCard,
-                animationSpec = tween(200),
-                label = "otpBg$index",
-            )
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(56.dp)
-                    .background(bgColor, VShapes.md)
-                    .border(1.5.dp, borderColor, VShapes.md),
-                contentAlignment = Alignment.Center,
-            ) {
-                androidx.compose.material3.Text(
-                    text = char,
-                    style = VTypography.otpBox,
-                    color = if (isFilled) VColors.violetInk else VColors.ink,
-                    textAlign = TextAlign.Center,
+    Box(modifier = modifier.fillMaxWidth()) {
+        // Display row — visual only, no click handling
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            repeat(length) { index ->
+                val char = value.getOrNull(index)?.toString() ?: ""
+                val isFilled = char.isNotEmpty()
+                val borderColor by animateColorAsState(
+                    targetValue = when {
+                        isError -> VColors.error
+                        isFilled -> VColors.violet
+                        else -> VColors.line
+                    },
+                    animationSpec = tween(200),
+                    label = "otpBorder$index",
                 )
+                val bgColor by animateColorAsState(
+                    targetValue = if (isFilled && !isError) VColors.violetSoft else VColors.surfaceCard,
+                    animationSpec = tween(200),
+                    label = "otpBg$index",
+                )
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(56.dp)
+                        .background(bgColor, VShapes.md)
+                        .border(1.5.dp, borderColor, VShapes.md),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    androidx.compose.material3.Text(
+                        text = char,
+                        style = VTypography.otpBox,
+                        color = if (isFilled) VColors.violetInk else VColors.ink,
+                        textAlign = TextAlign.Center,
+                    )
+                }
             }
         }
-    }
 
-    // Hidden TextField to capture keyboard input
-    TextField(
-        value = value,
-        onValueChange = { newValue ->
-            val filtered = newValue.filter { it.isDigit() }.take(length)
-            onValueChange(filtered)
-        },
-        modifier = Modifier
-            .size(1.dp)
-            .alpha(0f)
-            .focusRequester(focusRequester),
-        textStyle = VTypography.otpBox,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-        singleLine = true,
-        colors = TextFieldDefaults.colors(
-            focusedContainerColor = Color.Transparent,
-            unfocusedContainerColor = Color.Transparent,
-            disabledContainerColor = Color.Transparent,
-            focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent,
-            disabledIndicatorColor = Color.Transparent,
-            cursorColor = VColors.violet,
-        ),
-    )
+        // Transparent TextField overlay — captures all touch + keyboard input
+        TextField(
+            value = value,
+            onValueChange = { newValue ->
+                val filtered = newValue.filter { it.isDigit() }.take(length)
+                onValueChange(filtered)
+            },
+            modifier = Modifier
+                .matchParentSize()
+                .alpha(0f)
+                .focusRequester(focusRequester),
+            textStyle = VTypography.otpBox,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+            singleLine = true,
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                disabledContainerColor = Color.Transparent,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                disabledIndicatorColor = Color.Transparent,
+                cursorColor = VColors.violet,
+            ),
+        )
+    }
 }
