@@ -53,9 +53,13 @@ object VtC {
     val navyDeep: Color get() = VColors.ink           // primary heading ink
     val accent: Color get() = VColors.violet
     val accentDeep: Color get() = VColors.violetInk
+    val accentTint: Color get() = VColors.violetSoft
     val teal: Color get() = VColors.mint              // positive / coverage
     val tealDeep: Color get() = VColors.success
     val success: Color get() = VColors.success
+    val successInk: Color get() = VColors.success
+    val border2: Color get() = VColors.lineSoft
+    val placeholder: Color get() = VColors.ink3
     val warning: Color get() = VColors.gold
     val warningInk: Color get() = VColors.gold
     val danger: Color get() = VColors.error
