@@ -121,6 +121,7 @@ fun ParentUnlinkedScreenV2(
             when (current) {
                 UnlinkedStep.Carousel -> ParentFeatureCarousel(
                     onLaunchMarketplace = { step = UnlinkedStep.Marketplace },
+                    onLaunchLinkChild = { step = UnlinkedStep.LinkChild },
                     modifier = Modifier.fillMaxSize(),
                 )
                 UnlinkedStep.Marketplace -> DiscoveryScreenV2(
@@ -150,6 +151,7 @@ private data class FeatureSlide(
 @Composable
 private fun ParentFeatureCarousel(
     onLaunchMarketplace: () -> Unit,
+    onLaunchLinkChild: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val slides = remember {
@@ -244,6 +246,7 @@ private fun ParentFeatureCarousel(
                 slide = slides[page],
                 isLast = page == slides.lastIndex,
                 onLaunchMarketplace = onLaunchMarketplace,
+                onLaunchLinkChild = onLaunchLinkChild,
                 pageOffset = ((page - pagerState.currentPage) + pagerState.currentPageOffsetFraction).coerceIn(-1f, 1f),
             )
         }
@@ -265,7 +268,7 @@ private fun ParentFeatureCarousel(
                 if (last) {
                     VButton(
                         text = "Link your child",
-                        onClick = onLaunchMarketplace,
+                        onClick = onLaunchLinkChild,
                         variant = VButtonVariant.Primary,
                         tone = VButtonTone.Lavender,
                         size = VButtonSize.Lg,
@@ -292,6 +295,7 @@ private fun FeatureSlideCard(
     slide: FeatureSlide,
     isLast: Boolean,
     onLaunchMarketplace: () -> Unit,
+    onLaunchLinkChild: () -> Unit,
     pageOffset: Float,
     modifier: Modifier = Modifier,
 ) {
@@ -317,7 +321,7 @@ private fun FeatureSlideCard(
                 this.scaleY = scale
                 this.alpha = alpha
             }
-            .clickable(enabled = isLast, onClick = onLaunchMarketplace)
+            .clickable(enabled = isLast, onClick = onLaunchLinkChild)
             .padding(20.dp),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
