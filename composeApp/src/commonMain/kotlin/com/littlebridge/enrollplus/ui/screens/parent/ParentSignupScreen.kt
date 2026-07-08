@@ -257,7 +257,7 @@ fun ParentSignupScreen(
                                     text = "Resend OTP",
                                     style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
                                     color = VColors.violet,
-                                    modifier = Modifier.clickable { viewModel.resendOtp() },
+                                    modifier = Modifier.clickable { otp = ""; viewModel.clearError(); viewModel.resendOtp() },
                                 )
                             }
                         }
