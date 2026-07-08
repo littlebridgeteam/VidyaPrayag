@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.matchParentSize
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -97,7 +97,7 @@ fun VOTPInput(
                 onValueChange(filtered)
             },
             modifier = Modifier
-                .matchParentSize()
+                .fillMaxSize()
                 .alpha(0f)
                 .focusRequester(focusRequester),
             textStyle = VTypography.otpBox,
