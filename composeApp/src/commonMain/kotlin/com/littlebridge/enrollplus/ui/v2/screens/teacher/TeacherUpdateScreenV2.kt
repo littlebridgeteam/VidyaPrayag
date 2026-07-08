@@ -15,8 +15,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.material3.Icon
@@ -66,21 +68,22 @@ enum class UpdateTool(
  * TeacherUpdateScreenV2 — the UPDATE tab, rebuilt from scratch on the premium
  * cream/violet token system.
  *
- * Structure (top → bottom, all fixed-height chrome except the workspace):
- *   1. [TeacherPremiumHeader]  — the shared portal header ("let's update").
- *   2. Tool rail               — a horizontal pill rail (Attendance · Marks ·
- *                                Homework · Syllabus · Lesson Plan). The active
- *                                tool wears a violet gradient; the rest are clean
- *                                white pills with the tool's accent glyph.
- *   3. Workspace (weight 1f)   — either the scope gate (no class chosen) showing a
- *                                premium "pick a class" intro + [TeacherScopeSelector],
- *                                or the scoped tool with a sticky scope bar on top.
+ * TWO layout modes:
  *
- * CRASH-SAFETY: the body is NEVER wrapped in a verticalScroll. The scope gate and
- * every scoped tool sub-screen host their own scrollable LazyColumn; nesting them
- * inside a Column(verticalScroll) hands the inner list an infinite max-height and
- * crashes at measure time. Header + rail stay fixed; the workspace fills the
- * remaining bounded height via weight(1f).
+ *  A) SCOPE-GATE mode (no class chosen yet) — the WHOLE screen scrolls as one
+ *     [LazyColumn], exactly like the Classes tab: header → tool rail → tool intro
+ *     → "which class" heading → the scope rows. There is no nested scroll here, so
+ *     the entire page glides under one finger.
+ *
+ *  B) SCOPED-TOOL mode (a class is chosen) — the header + sticky scope bar stay as
+ *     fixed chrome and the active tool sub-screen fills the remaining BOUNDED height
+ *     via weight(1f). Each sub-screen (Attendance/Marks/…) owns its own LazyColumn.
+ *
+ * CRASH-SAFETY: a child LazyColumn is NEVER nested inside a Column(verticalScroll)
+ * or another parent-owned scroll — that hands the inner list an infinite max-height
+ * and crashes at measure time. In mode A the single LazyColumn owns the scroll and
+ * the rows are emitted flat via [scopeSelectorItems] (no nested list). In mode B the
+ * sub-screen lives in a weight(1f) box (bounded height), so its own LazyColumn is safe.
  *
  * [initialAssignmentId]/[initialScopeLabel]/[initialTool] let a Home CTA jump
  * straight into a pre-scoped tool. Signature is otherwise PRESERVED.
@@ -102,74 +105,119 @@ fun TeacherUpdateScreenV2(
     var pickedAssignment by rememberSaveable { mutableStateOf(initialAssignmentId) }
     var pickedLabel by rememberSaveable { mutableStateOf(initialScopeLabel) }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(VColors.cream)
-            .statusBarsPadding()
-            .padding(top = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        // 1 — shared premium header (fixed chrome).
-        TeacherPremiumHeader(
-            teacherName = teacherName,
-            lead = appString(StringKeys.TC_LETS),
-            accent = appString(StringKeys.TC_UPDATE_ACCENT),
-            unreadCount = unreadCount,
-            onOpenNotifications = onOpenNotifications,
-            modifier = Modifier.padding(horizontal = 20.dp),
-        )
+    val asg = pickedAssignment
 
-        // 2 — tool rail.
-        ToolRail(
-            selected = tool,
-            onSelect = {
-                tool = it
-                pickedAssignment = null
-                pickedLabel = ""
-            },
-        )
-
-        // 3 — workspace (bounded height; owns its own scroll).
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .padding(horizontal = 16.dp),
+    if (asg == null) {
+        // ── MODE A: scope gate — the WHOLE screen is a single scroll (like Classes).
+        LazyColumn(
+            modifier = modifier
+                .fillMaxSize()
+                .background(VColors.cream)
+                .statusBarsPadding(),
+            contentPadding = PaddingValues(top = 12.dp, bottom = TeacherDockClearance),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            val asg = pickedAssignment
-            if (asg == null) {
-                ScopeGate(
-                    tool = tool,
-                    classes = classesState.classes,
-                    onPick = { cls ->
-                        pickedAssignment = cls.assignmentId
-                        pickedLabel = scopeLabelFor(cls)
+            // 1 — shared premium header.
+            item {
+                TeacherPremiumHeader(
+                    teacherName = teacherName,
+                    lead = appString(StringKeys.TC_LETS),
+                    accent = appString(StringKeys.TC_UPDATE_ACCENT),
+                    unreadCount = unreadCount,
+                    onOpenNotifications = onOpenNotifications,
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                )
+            }
+
+            // 2 — tool rail (horizontal scroll is fine inside a vertical LazyColumn).
+            item {
+                ToolRail(
+                    selected = tool,
+                    onSelect = {
+                        tool = it
+                        pickedAssignment = null
+                        pickedLabel = ""
                     },
                 )
-            } else {
-                Column(
-                    Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    ScopeBar(
-                        tool = tool,
-                        label = pickedLabel,
-                        onChange = { pickedAssignment = null; pickedLabel = "" },
+            }
+
+            // 3 — tool intro hero.
+            item {
+                Box(Modifier.padding(horizontal = 16.dp)) { ToolIntroCard(tool) }
+            }
+
+            // 4 — "which class" heading.
+            item {
+                Box(Modifier.padding(horizontal = 16.dp)) {
+                    ScopeSelectorHeading(
+                        title = appString(StringKeys.TC_WHICH_CLASS),
+                        caption = appString(
+                            StringKeys.TC_PICK_CLASS_FOR,
+                            "tool" to appString(tool.labelKey).lowercase(),
+                        ),
                     )
-                    Box(Modifier.fillMaxWidth().weight(1f)) {
-                        AnimatedContent(
-                            targetState = tool,
-                            transitionSpec = { fadeIn() togetherWith fadeOut() },
-                            label = "updateTool",
-                        ) { active ->
-                            when (active) {
-                                UpdateTool.Attendance -> TeacherAttendanceScreenV2(asg, pickedLabel)
-                                UpdateTool.Marks -> TeacherMarksScreenV2(asg, pickedLabel)
-                                UpdateTool.Syllabus -> TeacherSyllabusScreenV2(asg, pickedLabel)
-                                UpdateTool.Homework -> TeacherHomeworkScreenV2(asg, pickedLabel)
-                                UpdateTool.LessonPlan -> TeacherLessonPlanScreenV2(asg, pickedLabel)
-                            }
+                }
+            }
+
+            // 5 — the scope rows, emitted flat into THIS list (no nested scroll).
+            scopeSelectorItems(
+                classes = classesState.classes,
+                onPick = { cls ->
+                    pickedAssignment = cls.assignmentId
+                    pickedLabel = scopeLabelFor(cls)
+                },
+                horizontalPadding = 16.dp,
+            )
+        }
+    } else {
+        // ── MODE B: scoped tool — fixed header + scope bar, bounded sub-screen.
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .background(VColors.cream)
+                .statusBarsPadding()
+                .padding(top = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            TeacherPremiumHeader(
+                teacherName = teacherName,
+                lead = appString(StringKeys.TC_LETS),
+                accent = appString(StringKeys.TC_UPDATE_ACCENT),
+                unreadCount = unreadCount,
+                onOpenNotifications = onOpenNotifications,
+                modifier = Modifier.padding(horizontal = 20.dp),
+            )
+
+            ToolRail(
+                selected = tool,
+                onSelect = {
+                    tool = it
+                    pickedAssignment = null
+                    pickedLabel = ""
+                },
+            )
+
+            Column(
+                Modifier.fillMaxWidth().weight(1f).padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                ScopeBar(
+                    tool = tool,
+                    label = pickedLabel,
+                    onChange = { pickedAssignment = null; pickedLabel = "" },
+                )
+                Box(Modifier.fillMaxWidth().weight(1f)) {
+                    AnimatedContent(
+                        targetState = tool,
+                        transitionSpec = { fadeIn() togetherWith fadeOut() },
+                        label = "updateTool",
+                    ) { active ->
+                        when (active) {
+                            UpdateTool.Attendance -> TeacherAttendanceScreenV2(asg, pickedLabel)
+                            UpdateTool.Marks -> TeacherMarksScreenV2(asg, pickedLabel)
+                            UpdateTool.Syllabus -> TeacherSyllabusScreenV2(asg, pickedLabel)
+                            UpdateTool.Homework -> TeacherHomeworkScreenV2(asg, pickedLabel)
+                            UpdateTool.LessonPlan -> TeacherLessonPlanScreenV2(asg, pickedLabel)
                         }
                     }
                 }
@@ -245,34 +293,9 @@ private fun ToolPill(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Scope gate — a premium "pick a class" intro + the shared scope selector.
+// Scope gate pieces — a premium "pick a class" intro + the shared scope rows.
+// (The rows themselves are emitted by scopeSelectorItems into the tab's LazyColumn.)
 // ─────────────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun ScopeGate(
-    tool: UpdateTool,
-    classes: List<TeacherClassSummaryDto>,
-    onPick: (TeacherClassSummaryDto) -> Unit,
-) {
-    Column(
-        Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        ToolIntroCard(tool)
-        // The selector owns the remaining bounded height + its own scroll.
-        Box(Modifier.fillMaxWidth().weight(1f)) {
-            TeacherScopeSelector(
-                classes = classes,
-                onPick = onPick,
-                title = appString(StringKeys.TC_WHICH_CLASS),
-                caption = appString(
-                    StringKeys.TC_PICK_CLASS_FOR,
-                    "tool" to appString(tool.labelKey).lowercase(),
-                ),
-            )
-        }
-    }
-}
 
 /** A soft accent hero explaining the active write plane. */
 @Composable

@@ -1724,6 +1724,13 @@ object StringKeys {
     const val TC_ACCOUNT_ACCENT                        = "tc.account_accent"
     const val TC_CLASSES_ACCENT                        = "tc.classes_accent"
     const val TC_AT_RISK                               = "tc.at_risk"
+    const val TC_SEC_TIME_OFF                          = "tc.sec_time_off"
+    const val TC_SEC_SECURITY                          = "tc.sec_security"
+    const val TC_SEC_PREFERENCES                       = "tc.sec_preferences"
+    const val TC_APPEARANCE                            = "tc.appearance"
+    const val TC_STAT_SUBJECTS                         = "tc.stat_subjects"
+    const val TC_STAT_CLASSES                          = "tc.stat_classes"
+    const val TC_VIEW_PROFILE_DETAILS                  = "tc.view_profile_details"
     const val TC_NO_PERIOD_RIGHT_NOW                   = "tc.no_period_right_now"
     const val TC_NO_ACTIVE_HOMEWORK                    = "tc.no_active_homework"
     const val TC_NO_ACTIVE_HOMEWORK_CLASS              = "tc.no_active_homework_class"
@@ -4699,6 +4706,13 @@ object AppStrings {
         StringKeys.TC_ACCOUNT_ACCENT                        to "account",
         StringKeys.TC_CLASSES_ACCENT                        to "classes",
         StringKeys.TC_AT_RISK                               to "At risk",
+        StringKeys.TC_SEC_TIME_OFF                          to "Time off",
+        StringKeys.TC_SEC_SECURITY                          to "Security",
+        StringKeys.TC_SEC_PREFERENCES                       to "Preferences",
+        StringKeys.TC_APPEARANCE                            to "Appearance",
+        StringKeys.TC_STAT_SUBJECTS                         to "Subjects",
+        StringKeys.TC_STAT_CLASSES                          to "Classes",
+        StringKeys.TC_VIEW_PROFILE_DETAILS                  to "View full details",
         StringKeys.TC_NO_PERIOD_RIGHT_NOW                   to "No class right now",
         StringKeys.TC_NO_ACTIVE_HOMEWORK                    to "No active homework",
         StringKeys.TC_NO_ACTIVE_HOMEWORK_CLASS              to "No active homework for this class",
@@ -7653,6 +7667,13 @@ object AppStrings {
         StringKeys.TC_ACCOUNT_ACCENT                        to "खाता",
         StringKeys.TC_CLASSES_ACCENT                        to "कक्षाएँ",
         StringKeys.TC_AT_RISK                               to "जोखिम में",
+        StringKeys.TC_SEC_TIME_OFF                          to "छुट्टी",
+        StringKeys.TC_SEC_SECURITY                          to "सुरक्षा",
+        StringKeys.TC_SEC_PREFERENCES                       to "प्राथमिकताएँ",
+        StringKeys.TC_APPEARANCE                            to "रूप-रंग",
+        StringKeys.TC_STAT_SUBJECTS                         to "विषय",
+        StringKeys.TC_STAT_CLASSES                          to "कक्षाएँ",
+        StringKeys.TC_VIEW_PROFILE_DETAILS                  to "पूरा विवरण देखें",
         StringKeys.TC_NO_PERIOD_RIGHT_NOW                   to "अभी कोई कक्षा नहीं",
         StringKeys.TC_NO_ACTIVE_HOMEWORK                    to "No active homework",
         StringKeys.TC_NO_ACTIVE_HOMEWORK_CLASS              to "No active homework for this class",
