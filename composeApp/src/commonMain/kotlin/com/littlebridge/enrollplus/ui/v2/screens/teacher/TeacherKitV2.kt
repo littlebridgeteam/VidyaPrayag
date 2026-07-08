@@ -74,8 +74,10 @@ object VtT {
     val h3: TextStyle get() = VTypography.h3
     val body: TextStyle get() = VTypography.body
     val bodyStrong: TextStyle get() = VTypography.body
+    val bodySmall: TextStyle get() = VTypography.bodySmall
     val caption: TextStyle get() = VTypography.caption
     val label: TextStyle get() = VTypography.label
+    val dataLg: TextStyle get() = VTypography.h2       // large numeric figure
 }
 
 /** Local `colored` extension so migrated screens keep `style.colored(c.x)` calls. */
