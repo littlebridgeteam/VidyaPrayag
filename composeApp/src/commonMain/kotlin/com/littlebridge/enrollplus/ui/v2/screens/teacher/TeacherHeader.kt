@@ -25,10 +25,15 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VShapes
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VAvatar
 import com.littlebridge.enrollplus.ui.v2.components.VDivider
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VStatusDot
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 
 /**
  * TeacherHeader — THE single canonical header for the whole rebuilt Teacher Portal, rendered
@@ -117,6 +122,91 @@ fun TeacherHeader(
         }
         Spacer(Modifier.height(10.dp))
         VDivider()
+    }
+}
+
+/**
+ * TeacherPremiumHeader — THE single premium header rendered identically on every
+ * teacher tab (Home · Update · Classes · Timetable · Profile), so the whole portal
+ * shares one chrome. Directly on the cream/violet token system (§4-§7):
+ *
+ *   • "Enroll+" wordmark in violet (top-left).
+ *   • A notification bell (top-right) with a live unread dot.
+ *   • "Hi {name}" eyebrow in violet.
+ *   • A big two-tone greeting line — a neutral lead word + a violet accent word —
+ *     that each tab customises to its own context (e.g. "here's your day" on Home,
+ *     "let's update" on Update, "your week" on Timetable).
+ *
+ * It sits inside the scrolling content of each tab (NOT the scaffold topBar) so the
+ * greeting scrolls away like the parent portal — identical everywhere.
+ */
+@Composable
+fun TeacherPremiumHeader(
+    teacherName: String,
+    lead: String,
+    accent: String,
+    unreadCount: Int,
+    onOpenNotifications: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val name = teacherName.trim().substringBefore(" ")
+        .ifBlank { teacherName.ifBlank { appString(StringKeys.TEACHER_TITLE) } }
+
+    Column(modifier.fillMaxWidth()) {
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = "Enroll+",
+                style = VTypography.wordmark.copy(color = VColors.violet),
+            )
+
+            val ix = remember { MutableInteractionSource() }
+            Box(
+                Modifier
+                    .size(40.dp)
+                    .clip(VShapes.full)
+                    .clickable(interactionSource = ix, indication = null) { onOpenNotifications() },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = VIcons.BellStroke,
+                    contentDescription = appString(StringKeys.TC_MESSAGES),
+                    tint = VColors.ink,
+                    modifier = Modifier.size(24.dp),
+                )
+                if (unreadCount > 0) {
+                    VStatusDot(
+                        color = VColors.coral,
+                        size = 8.dp,
+                        modifier = Modifier.align(Alignment.TopEnd).padding(top = 6.dp, end = 6.dp),
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        Text(
+            text = "Hi $name",
+            style = VTypography.caption.copy(
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = VColors.violet,
+            ),
+        )
+
+        Spacer(Modifier.height(2.dp))
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(text = lead, style = VTypography.h2.copy(color = VColors.ink))
+            Text(text = accent, style = VTypography.h2.copy(color = VColors.violet))
+        }
     }
 }
 

@@ -274,9 +274,10 @@ fun TeacherPortalV2(
     VScreenScaffold(
         modifier = modifier,
         topBar = {
-            // HOME owns its own greeting hero, so the slim canonical header only
-            // mounts on the other three tabs (no double chrome).
-            if (tab != "home") {
+            // HOME, UPDATE, TIMETABLE and PROFILE now each render the shared
+            // TeacherPremiumHeader inside their own scrolling content, so the slim
+            // canonical header only mounts on CLASSES (no double chrome anywhere).
+            if (tab == "classes") {
                 TeacherHeader(
                     teacherName = teacherName.ifBlank { "Teacher" },
                     subline = subline,
@@ -334,6 +335,7 @@ fun TeacherPortalV2(
                     onOpenEvents = { overlay = TeacherOverlay.EventRegistration },
                     onOpenMessages = { overlay = TeacherOverlay.Messages },
                     onOpenNotifications = { overlay = TeacherOverlay.Notifications },
+                    unreadCount = notifications.unreadCount,
                 )
 
                 "update" -> key(updateScopeNonce) {
@@ -341,14 +343,26 @@ fun TeacherPortalV2(
                         initialAssignmentId = updateAssignmentId,
                         initialScopeLabel = updateScopeLabel,
                         initialTool = updateInitialTool,
+                        teacherName = teacherName,
+                        unreadCount = notifications.unreadCount,
+                        onOpenNotifications = { overlay = TeacherOverlay.Notifications },
                     )
                 }
 
                 "classes" -> TeacherClassesScreenV2()
 
-                "timetable" -> TeacherTimetableScreenV2()
+                "timetable" -> TeacherTimetableScreenV2(
+                    teacherName = teacherName,
+                    unreadCount = notifications.unreadCount,
+                    onOpenNotifications = { overlay = TeacherOverlay.Notifications },
+                )
 
-                "profile" -> TeacherProfileScreenV2(onLogout = onLogout)
+                "profile" -> TeacherProfileScreenV2(
+                    onLogout = onLogout,
+                    teacherName = teacherName,
+                    unreadCount = notifications.unreadCount,
+                    onOpenNotifications = { overlay = TeacherOverlay.Notifications },
+                )
             }
         }
     }

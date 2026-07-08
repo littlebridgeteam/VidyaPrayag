@@ -1710,6 +1710,18 @@ object StringKeys {
     const val TC_PENDING_ACTIONS                       = "tc.pending_actions"
     const val TC_UPCOMING_EVENTS                       = "tc.upcoming_events"
     const val TC_YOUR_DAY                              = "tc.your_day"
+    const val TC_LETS                                  = "tc.lets"
+    const val TC_UPDATE_ACCENT                         = "tc.update_accent"
+    const val TC_UPDATE_BLURB_ATTENDANCE               = "tc.update_blurb_attendance"
+    const val TC_UPDATE_BLURB_MARKS                    = "tc.update_blurb_marks"
+    const val TC_UPDATE_BLURB_HOMEWORK                 = "tc.update_blurb_homework"
+    const val TC_UPDATE_BLURB_SYLLABUS                 = "tc.update_blurb_syllabus"
+    const val TC_UPDATE_BLURB_LESSON                   = "tc.update_blurb_lesson"
+    const val TC_YOUR                                  = "tc.your"
+    const val TC_WEEK_ACCENT                           = "tc.week_accent"
+    const val TC_SCHEDULE_TAB                          = "tc.schedule_tab"
+    const val TC_REQUESTS_TAB                          = "tc.requests_tab"
+    const val TC_ACCOUNT_ACCENT                        = "tc.account_accent"
     const val TC_NO_PERIOD_RIGHT_NOW                   = "tc.no_period_right_now"
     const val TC_NO_ACTIVE_HOMEWORK                    = "tc.no_active_homework"
     const val TC_NO_ACTIVE_HOMEWORK_CLASS              = "tc.no_active_homework_class"
@@ -4671,6 +4683,18 @@ object AppStrings {
         StringKeys.TC_PENDING_ACTIONS                       to "Pending actions",
         StringKeys.TC_UPCOMING_EVENTS                         to "Upcoming events",
         StringKeys.TC_YOUR_DAY                              to "your day",
+        StringKeys.TC_LETS                                  to "let's",
+        StringKeys.TC_UPDATE_ACCENT                         to "update",
+        StringKeys.TC_UPDATE_BLURB_ATTENDANCE               to "Mark who's present in a few taps and keep the register up to date.",
+        StringKeys.TC_UPDATE_BLURB_MARKS                    to "Record scores and grades for a class, subject by subject.",
+        StringKeys.TC_UPDATE_BLURB_HOMEWORK                 to "Assign homework and set due dates so students know what's next.",
+        StringKeys.TC_UPDATE_BLURB_SYLLABUS                 to "Track syllabus progress and tick off topics as you teach them.",
+        StringKeys.TC_UPDATE_BLURB_LESSON                   to "Plan your lessons and outline what each period will cover.",
+        StringKeys.TC_YOUR                                  to "your",
+        StringKeys.TC_WEEK_ACCENT                           to "week",
+        StringKeys.TC_SCHEDULE_TAB                          to "Schedule",
+        StringKeys.TC_REQUESTS_TAB                          to "Requests",
+        StringKeys.TC_ACCOUNT_ACCENT                        to "account",
         StringKeys.TC_NO_PERIOD_RIGHT_NOW                   to "No class right now",
         StringKeys.TC_NO_ACTIVE_HOMEWORK                    to "No active homework",
         StringKeys.TC_NO_ACTIVE_HOMEWORK_CLASS              to "No active homework for this class",
@@ -7611,6 +7635,18 @@ object AppStrings {
         StringKeys.TC_PENDING_ACTIONS                       to "लंबित कार्य",
         StringKeys.TC_UPCOMING_EVENTS                         to "आगामी कार्यक्रम",
         StringKeys.TC_YOUR_DAY                              to "आपका दिन",
+        StringKeys.TC_LETS                                  to "चलिए",
+        StringKeys.TC_UPDATE_ACCENT                         to "अपडेट करें",
+        StringKeys.TC_UPDATE_BLURB_ATTENDANCE               to "कुछ ही टैप में हाज़िरी लगाएँ और रजिस्टर अपडेट रखें।",
+        StringKeys.TC_UPDATE_BLURB_MARKS                    to "किसी कक्षा के लिए विषयवार अंक और ग्रेड दर्ज करें।",
+        StringKeys.TC_UPDATE_BLURB_HOMEWORK                 to "गृहकार्य दें और नियत तिथि तय करें ताकि छात्र जानें कि आगे क्या है।",
+        StringKeys.TC_UPDATE_BLURB_SYLLABUS                 to "पाठ्यक्रम की प्रगति देखें और पढ़ाए गए विषयों को चिह्नित करें।",
+        StringKeys.TC_UPDATE_BLURB_LESSON                   to "अपने पाठों की योजना बनाएँ और हर पीरियड की रूपरेखा तय करें।",
+        StringKeys.TC_YOUR                                  to "आपका",
+        StringKeys.TC_WEEK_ACCENT                           to "सप्ताह",
+        StringKeys.TC_SCHEDULE_TAB                          to "समय-सारणी",
+        StringKeys.TC_REQUESTS_TAB                          to "अनुरोध",
+        StringKeys.TC_ACCOUNT_ACCENT                        to "खाता",
         StringKeys.TC_NO_PERIOD_RIGHT_NOW                   to "अभी कोई कक्षा नहीं",
         StringKeys.TC_NO_ACTIVE_HOMEWORK                    to "No active homework",
         StringKeys.TC_NO_ACTIVE_HOMEWORK_CLASS              to "No active homework for this class",

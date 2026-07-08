@@ -2,7 +2,6 @@ package com.littlebridge.enrollplus.ui.v2.screens.teacher
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -57,22 +56,30 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
- * PROFILE tab — the teacher's account home, rebuilt from scratch in the
- * Parents-Portal vocabulary. Five movements:
+ * PROFILE tab — the teacher's account home, rebuilt from scratch on the premium
+ * cream/violet token system. It now opens with the SAME [TeacherPremiumHeader]
+ * every other tab uses ("your account"), then flows through five movements:
  *   1. Identity card (avatar, name, username, school, subjects, classes).
  *   2. My leave — apply (date range + reason) and a live status list.
  *   3. Change password.
- *   4. Theme switch (Warm / Light / Night) — REAL, writes the global pref the
- *      portal reads to drive its tone (the shell re-themes live).
+ *   4. Appearance (theme) + Language.
  *   5. Logout.
  *
+ * The whole tab is one [LazyColumn] that reserves [TeacherDockClearance] at the
+ * bottom so nothing hides behind the floating dock.
+ *
  * Identity comes from the read-only [TeacherProfileViewModel]; the actionable
- * parts (leave / password / theme) from [TeacherProfileActionsViewModel].
+ * parts (leave / password / theme) from [TeacherProfileActionsViewModel]. Both
+ * view-models and the public signature are PRESERVED — only the shared-header
+ * params ([teacherName]/[unreadCount]/[onOpenNotifications]) are added.
  */
 @Composable
 fun TeacherProfileScreenV2(
     onLogout: () -> Unit,
     modifier: Modifier = Modifier,
+    teacherName: String = "",
+    unreadCount: Int = 0,
+    onOpenNotifications: () -> Unit = {},
     profileViewModel: TeacherProfileViewModel = koinViewModel(),
     actionsViewModel: TeacherProfileActionsViewModel = koinViewModel(),
 ) {
@@ -81,11 +88,13 @@ fun TeacherProfileScreenV2(
     val leave by actionsViewModel.leave.collectAsStateV2()
     val applyResult by actionsViewModel.apply.collectAsStateV2()
     val passwordResult by actionsViewModel.password.collectAsStateV2()
-    val themeName by actionsViewModel.themeName.collectAsStateV2()
     val themeMode by actionsViewModel.themeMode.collectAsStateV2()
     val customThemeId by actionsViewModel.customThemeId.collectAsStateV2()
     val localeManager = koinInject<LocaleManager>()
     val currentLocale by localeManager.currentLocale.collectAsStateV2()
+
+    // Fall back to the loaded profile name if the shell didn't pass one.
+    val headerName = teacherName.ifBlank { profileState.profile?.name ?: "" }
 
     var showLeaveComposer by remember { mutableStateOf(false) }
     var showPasswordForm by remember { mutableStateOf(false) }
@@ -93,11 +102,18 @@ fun TeacherProfileScreenV2(
 
     LazyColumn(
         modifier = modifier.fillMaxSize().background(c.cream),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 120.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = TeacherDockClearance),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            Text(appString(StringKeys.TC_PROFILE), style = VtT.h2.coloredV(c.navyDeep))
+            TeacherPremiumHeader(
+                teacherName = headerName,
+                lead = appString(StringKeys.TC_YOUR),
+                accent = appString(StringKeys.TC_ACCOUNT_ACCENT),
+                unreadCount = unreadCount,
+                onOpenNotifications = onOpenNotifications,
+                modifier = Modifier.padding(horizontal = 4.dp),
+            )
             Spacer(Modifier.height(4.dp))
         }
 
@@ -515,54 +531,5 @@ private fun PasswordForm(
             loading = inFlight,
             enabled = new0.isNotBlank() && confirm.isNotBlank() && !inFlight,
         )
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 4 — THEME
-// ─────────────────────────────────────────────────────────────────────────────
-
-private data class ThemeOption(val key: String, val label: String, val caption: String, val icon: ImageVector)
-
-@Composable
-private fun ThemeCard(current: String, onSelect: (String) -> Unit) {
-    val c = VtC
-    val options = listOf(
-        ThemeOption("WARM", "Warm", "Cream & lavender", VIcons.Sparkles),
-        ThemeOption("LIGHT", "Light", "Crisp & bright", VIcons.Star),
-        ThemeOption("NIGHT", "Night", "Easy on the eyes", VIcons.Bookmark),
-    )
-    TCard {
-        Column {
-            Text("Appearance", style = VtT.h3.coloredV(c.navyDeep))
-            Spacer(Modifier.height(10.dp))
-            options.forEachIndexed { i, opt ->
-                if (i > 0) Spacer(Modifier.height(8.dp))
-                val active = current.equals(opt.key, ignoreCase = true)
-                val ix = remember { MutableInteractionSource() }
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(if (active) c.accentTint else c.cream)
-                        .border(1.dp, if (active) c.accent.copy(alpha = 0.35f) else c.hairline, RoundedCornerShape(14.dp))
-                        .clickable(interactionSource = ix, indication = null) { onSelect(opt.key) }
-                        .padding(horizontal = 12.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    TIconDisc(opt.icon, if (active) c.accentDeep else c.ink2, if (active) c.accent.copy(alpha = 0.15f) else c.card)
-                    Spacer(Modifier.width(12.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(opt.label, style = VtT.bodyStrong.coloredV(if (active) c.accentDeep else c.navyDeep))
-                        Text(opt.caption, style = VtT.caption.coloredV(c.ink3))
-                    }
-                    if (active) {
-                        Box(Modifier.size(22.dp).clip(CircleShape).background(c.accentDeep), contentAlignment = Alignment.Center) {
-                            Icon(VIcons.Check, contentDescription = "Selected", tint = c.card, modifier = Modifier.size(14.dp))
-                        }
-                    }
-                }
-            }
-        }
     }
 }
