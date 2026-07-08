@@ -49,13 +49,10 @@ import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherClassesVi
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
-import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -79,7 +76,7 @@ fun TeacherClassesScreenV2(
     viewModel: TeacherClassesViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
-    val c = VTheme.colors
+    val c = VtC
 
     // Student-profile drill-down lives here (over the class detail).
     var openStudentId by remember { mutableStateOf<String?>(null) }
@@ -124,14 +121,14 @@ private fun ClassListPane(
     onOpenClass: (String) -> Unit,
     onRefresh: () -> Unit,
 ) {
-    val c = VTheme.colors
+    val c = VtC
     when {
         state.isLoading && state.classes.isEmpty() -> TeacherCenterState { TeacherSpinner() }
         state.error != null && state.classes.isEmpty() -> TeacherCenterState {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(appString(StringKeys.TC_COULDNT_LOAD_CLASSES), style = VTheme.type.bodyStrong.colored(c.navyDeep))
+                Text(appString(StringKeys.TC_COULDNT_LOAD_CLASSES), style = VtT.bodyStrong.coloredV(c.navyDeep))
                 Spacer(Modifier.height(4.dp))
-                Text(state.error ?: "", style = VTheme.type.caption.colored(c.ink3))
+                Text(state.error ?: "", style = VtT.caption.coloredV(c.ink3))
                 Spacer(Modifier.height(14.dp))
                 VButton(appString(StringKeys.COMMON_BUTTON_TRY_AGAIN), onClick = onRefresh, size = VButtonSize.Sm, tone = VButtonTone.Lavender)
             }
@@ -143,11 +140,11 @@ private fun ClassListPane(
         ) {
             item {
                 Column {
-                    Text(appString(StringKeys.TC_CLASSES), style = VTheme.type.h2.colored(c.navyDeep))
+                    Text(appString(StringKeys.TC_CLASSES), style = VtT.h2.coloredV(c.navyDeep))
                     Spacer(Modifier.height(2.dp))
                     Text(
                         appString(StringKeys.TC_CLASSES_YOU_TEACH, "count" to state.classes.size.toString(), "plural" to if (state.classes.size == 1) "class" else "classes"),
-                        style = VTheme.type.body.colored(c.ink3),
+                        style = VtT.body.coloredV(c.ink3),
                     )
                     Spacer(Modifier.height(12.dp))
                     VInput(
@@ -164,9 +161,9 @@ private fun ClassListPane(
                 item {
                     TCard {
                         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                            Text(appString(StringKeys.TC_NO_CLASSES_MATCH), style = VTheme.type.bodyStrong.colored(c.navyDeep))
+                            Text(appString(StringKeys.TC_NO_CLASSES_MATCH), style = VtT.bodyStrong.coloredV(c.navyDeep))
                             Spacer(Modifier.height(4.dp))
-                            Text(appString(StringKeys.TC_TRY_DIFFERENT_SEARCH), style = VTheme.type.caption.colored(c.ink3))
+                            Text(appString(StringKeys.TC_TRY_DIFFERENT_SEARCH), style = VtT.caption.coloredV(c.ink3))
                         }
                     }
                 }
@@ -181,7 +178,7 @@ private fun ClassListPane(
 
 @Composable
 private fun FilterChipRow(filter: Boolean?, onCycle: () -> Unit) {
-    val c = VTheme.colors
+    val c = VtC
     val (label, active) = when (filter) {
         null -> appString(StringKeys.TC_ALL_CLASSES) to false
         true -> appString(StringKeys.TC_CLASS_TEACHER) to true
@@ -201,16 +198,16 @@ private fun FilterChipRow(filter: Boolean?, onCycle: () -> Unit) {
         Icon(VIcons.Filter, contentDescription = null, tint = if (active) c.accentDeep else c.ink3, modifier = Modifier.size(15.dp))
         Text(
             label,
-            style = VTheme.type.label.colored(if (active) c.accentDeep else c.ink2).copy(fontWeight = FontWeight.Bold),
+            style = VtT.label.coloredV(if (active) c.accentDeep else c.ink2).copy(fontWeight = FontWeight.Bold),
         )
-        Text(appString(StringKeys.TC_TAP_TO_SWITCH), style = VTheme.type.label.colored(c.ink3).copy(fontSize = 9.sp))
+        Text(appString(StringKeys.TC_TAP_TO_SWITCH), style = VtT.label.coloredV(c.ink3).copy(fontSize = 9.sp))
     }
 }
 
 @Composable
 private fun ClassCard(cls: TeacherClassSummaryDto, onClick: () -> Unit) {
-    val c = VTheme.colors
-    val subjectColor = teacherSubjectColor(c, cls.subject)
+    val c = VtC
+    val subjectColor = vtSubjectColor(cls.subject)
     TCard(onClick = onClick) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -226,14 +223,14 @@ private fun ClassCard(cls: TeacherClassSummaryDto, onClick: () -> Unit) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
                             "${cls.className} · ${cls.section}",
-                            style = VTheme.type.h3.colored(c.navyDeep),
+                            style = VtT.h3.coloredV(c.navyDeep),
                         )
                         if (cls.isClassTeacher) {
                             TPill(appString(StringKeys.TC_CLASS_TEACHER), c.accentTint, c.accentDeep)
                         }
                     }
                     Spacer(Modifier.height(2.dp))
-                    Text(cls.subject, style = VTheme.type.body.colored(subjectColor).copy(fontWeight = FontWeight.SemiBold))
+                    Text(cls.subject, style = VtT.body.coloredV(subjectColor).copy(fontWeight = FontWeight.SemiBold))
                 }
                 Icon(VIcons.ChevronRight, contentDescription = null, tint = c.ink3, modifier = Modifier.size(20.dp))
             }
@@ -255,7 +252,7 @@ private fun ClassCard(cls: TeacherClassSummaryDto, onClick: () -> Unit) {
                     Icon(VIcons.Clock, contentDescription = null, tint = c.ink3, modifier = Modifier.size(13.dp))
                     Text(
                         nextPeriodLabel(np.dayLabel, np.startTime, np.endTime, np.room, np.isToday),
-                        style = VTheme.type.caption.colored(c.ink2),
+                        style = VtT.caption.coloredV(c.ink2),
                     )
                 }
             }
@@ -267,8 +264,8 @@ private fun ClassCard(cls: TeacherClassSummaryDto, onClick: () -> Unit) {
 private fun MetaChip(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     text: String,
-    tint: Color = VTheme.colors.ink2,
-    bg: Color = VTheme.colors.cream,
+    tint: Color = VtC.ink2,
+    bg: Color = VtC.cream,
 ) {
     Row(
         Modifier.clip(RoundedCornerShape(999.dp)).background(bg).padding(horizontal = 9.dp, vertical = 5.dp),
@@ -276,7 +273,7 @@ private fun MetaChip(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(12.dp))
-        Text(text, style = VTheme.type.label.colored(tint).copy(fontWeight = FontWeight.SemiBold, fontSize = 10.sp))
+        Text(text, style = VtT.label.coloredV(tint).copy(fontWeight = FontWeight.SemiBold, fontSize = 10.sp))
     }
 }
 
@@ -297,7 +294,7 @@ private fun ClassDetailPane(
     onRetry: () -> Unit,
     onOpenStudent: (String) -> Unit,
 ) {
-    val c = VTheme.colors
+    val c = VtC
     val detail = state.detail
     Column(Modifier.fillMaxSize()) {
         TeacherSubHeader(
@@ -309,9 +306,9 @@ private fun ClassDetailPane(
             state.detailLoading -> TeacherCenterState { TeacherSpinner() }
             state.detailError != null -> TeacherCenterState {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(appString(StringKeys.TC_COULDNT_LOAD_CLASS), style = VTheme.type.bodyStrong.colored(c.navyDeep))
+                    Text(appString(StringKeys.TC_COULDNT_LOAD_CLASS), style = VtT.bodyStrong.coloredV(c.navyDeep))
                     Spacer(Modifier.height(4.dp))
-                    Text(state.detailError ?: "", style = VTheme.type.caption.colored(c.ink3))
+                    Text(state.detailError ?: "", style = VtT.caption.coloredV(c.ink3))
                     Spacer(Modifier.height(14.dp))
                     VButton(appString(StringKeys.COMMON_BUTTON_TRY_AGAIN), onClick = onRetry, size = VButtonSize.Sm, tone = VButtonTone.Lavender)
                 }
@@ -324,8 +321,8 @@ private fun ClassDetailPane(
 
 @Composable
 private fun ClassDetailBody(detail: ClassDetailData, onOpenStudent: (String) -> Unit) {
-    val c = VTheme.colors
-    val subjectColor = teacherSubjectColor(c, detail.header.subject)
+    val c = VtC
+    val subjectColor = vtSubjectColor(detail.header.subject)
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
@@ -357,8 +354,8 @@ private fun ClassDetailBody(detail: ClassDetailData, onOpenStudent: (String) -> 
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Text(appString(StringKeys.TC_STUDENTS), style = VTheme.type.h3.colored(c.navyDeep))
-                Text("${detail.roster.size}", style = VTheme.type.bodyStrong.colored(c.ink3))
+                Text(appString(StringKeys.TC_STUDENTS), style = VtT.h3.coloredV(c.navyDeep))
+                Text("${detail.roster.size}", style = VtT.bodyStrong.coloredV(c.ink3))
             }
         }
         items(detail.roster, key = { it.studentId }) { student ->
@@ -367,7 +364,7 @@ private fun ClassDetailBody(detail: ClassDetailData, onOpenStudent: (String) -> 
         if (detail.roster.isEmpty()) {
             item {
                 TCard {
-                    Text(appString(StringKeys.TC_NO_STUDENTS_ENROLLED), style = VTheme.type.body.colored(c.ink3), modifier = Modifier.fillMaxWidth())
+                    Text(appString(StringKeys.TC_NO_STUDENTS_ENROLLED), style = VtT.body.coloredV(c.ink3), modifier = Modifier.fillMaxWidth())
                 }
             }
         }
@@ -376,14 +373,14 @@ private fun ClassDetailBody(detail: ClassDetailData, onOpenStudent: (String) -> 
 
 @Composable
 private fun NextClassCard(detail: ClassDetailData, subjectColor: Color) {
-    val c = VTheme.colors
+    val c = VtC
     TCard {
         Column {
             TEyebrow(appString(StringKeys.TC_NEXT_CLASS), dot = subjectColor)
             Spacer(Modifier.height(10.dp))
             val np = detail.nextPeriod
             if (np == null) {
-                Text(appString(StringKeys.TC_NO_UPCOMING_PERIOD), style = VTheme.type.body.colored(c.ink2))
+                Text(appString(StringKeys.TC_NO_UPCOMING_PERIOD), style = VtT.body.coloredV(c.ink2))
             } else {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     TIconDisc(VIcons.Clock, subjectColor, subjectColor.copy(alpha = 0.12f), size = 44.dp, glyph = 20.dp)
@@ -391,7 +388,7 @@ private fun NextClassCard(detail: ClassDetailData, subjectColor: Color) {
                     Column(Modifier.weight(1f)) {
                         Text(
                             if (np.isToday) appString(StringKeys.TC_TODAY) else np.dayLabel,
-                            style = VTheme.type.h3.colored(c.navyDeep),
+                            style = VtT.h3.coloredV(c.navyDeep),
                         )
                         Spacer(Modifier.height(2.dp))
                         Text(
@@ -399,7 +396,7 @@ private fun NextClassCard(detail: ClassDetailData, subjectColor: Color) {
                                 append("${np.startTime}–${np.endTime}")
                                 if (np.room.isNotBlank()) append(" · ${np.room}")
                             },
-                            style = VTheme.type.body.colored(c.ink2),
+                            style = VtT.body.coloredV(c.ink2),
                         )
                     }
                     if (np.isToday) TPill(appString(StringKeys.TC_TODAY), c.accentTint, c.accentDeep)
@@ -411,7 +408,7 @@ private fun NextClassCard(detail: ClassDetailData, subjectColor: Color) {
 
 @Composable
 private fun AttendanceSnapshotCard(detail: ClassDetailData) {
-    val c = VTheme.colors
+    val c = VtC
     val a = detail.attendanceSummary
     val total = (a.presentToday + a.absentToday + a.lateToday + a.leaveToday).coerceAtLeast(1)
     val presentPct = ((a.presentToday + a.lateToday).toFloat() / total * 100f).toInt()
@@ -460,7 +457,7 @@ private fun AttendanceSnapshotCard(detail: ClassDetailData) {
 
 @Composable
 private fun TimetableCard(periods: List<WeeklyPeriodDto>) {
-    val c = VTheme.colors
+    val c = VtC
     TCard {
         Column {
             TEyebrow(appString(StringKeys.TC_WEEKLY_TIMETABLE))
@@ -477,17 +474,17 @@ private fun TimetableCard(periods: List<WeeklyPeriodDto>) {
                 ) {
                     Text(
                         p.dayLabel,
-                        style = VTheme.type.bodyStrong.colored(if (p.isToday) c.accentDeep else c.navyDeep),
+                        style = VtT.bodyStrong.coloredV(if (p.isToday) c.accentDeep else c.navyDeep),
                         modifier = Modifier.width(48.dp),
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         "${p.startTime}–${p.endTime}",
-                        style = VTheme.type.body.colored(c.ink2),
+                        style = VtT.body.coloredV(c.ink2),
                         modifier = Modifier.weight(1f),
                     )
                     if (p.room.isNotBlank()) {
-                        Text(p.room, style = VTheme.type.caption.colored(c.ink3))
+                        Text(p.room, style = VtT.caption.coloredV(c.ink3))
                     }
                     if (p.isToday) {
                         Spacer(Modifier.width(8.dp))
@@ -501,7 +498,7 @@ private fun TimetableCard(periods: List<WeeklyPeriodDto>) {
 
 @Composable
 private fun AssessmentScheduleCard(items: List<ClassAssessmentDto>) {
-    val c = VTheme.colors
+    val c = VtC
     TCard {
         Column {
             TEyebrow(appString(StringKeys.TC_SCHEDULED_TESTS))
@@ -512,14 +509,14 @@ private fun AssessmentScheduleCard(items: List<ClassAssessmentDto>) {
                     TIconDisc(VIcons.GraduationCap, c.navy, c.navy.copy(alpha = 0.10f), size = 38.dp, glyph = 18.dp)
                     Spacer(Modifier.width(10.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(a.name, style = VTheme.type.bodyStrong.colored(c.navyDeep))
+                        Text(a.name, style = VtT.bodyStrong.coloredV(c.navyDeep))
                         Spacer(Modifier.height(2.dp))
                         Text(
                             buildString {
                                 append(a.type)
                                 if (!a.examDate.isNullOrBlank()) append(" · ${prettyDateShort(a.examDate)}")
                             },
-                            style = VTheme.type.caption.colored(c.ink3),
+                            style = VtT.caption.coloredV(c.ink3),
                         )
                     }
                     AssessmentStatusPill(a.status)
@@ -531,7 +528,7 @@ private fun AssessmentScheduleCard(items: List<ClassAssessmentDto>) {
 
 @Composable
 private fun AssessmentStatusPill(status: String) {
-    val c = VTheme.colors
+    val c = VtC
     val (bg, fg, label) = when (status.lowercase()) {
         "published" -> Triple(c.success.copy(alpha = 0.16f), c.successInk, "PUBLISHED")
         "graded", "completed" -> Triple(c.teal.copy(alpha = 0.18f), c.tealDeep, "GRADED")
@@ -543,7 +540,7 @@ private fun AssessmentStatusPill(status: String) {
 
 @Composable
 private fun ActiveHomeworkCard(items: List<ClassHomeworkDto>) {
-    val c = VTheme.colors
+    val c = VtC
     TCard {
         Column {
             TEyebrow(appString(StringKeys.TC_ACTIVE_HOMEWORK))
@@ -556,14 +553,14 @@ private fun ActiveHomeworkCard(items: List<ClassHomeworkDto>) {
                     TRing(percent = pct, accent = c.teal, modifier = Modifier.size(42.dp), labelSize = 11.sp)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(h.title, style = VTheme.type.bodyStrong.colored(c.navyDeep))
+                        Text(h.title, style = VtT.bodyStrong.coloredV(c.navyDeep))
                         Spacer(Modifier.height(2.dp))
                         Text(
                             buildString {
                                 append(appString(StringKeys.TC_N_TURNED_IN, "submitted" to h.submittedCount.toString(), "total" to total.toString()))
                                 if (!h.dueDate.isNullOrBlank()) append(" · ${appString(StringKeys.TC_DUE_LABEL, "date" to prettyDateShort(h.dueDate))}")
                             },
-                            style = VTheme.type.caption.colored(c.ink3),
+                            style = VtT.caption.coloredV(c.ink3),
                         )
                     }
                 }
@@ -574,7 +571,7 @@ private fun ActiveHomeworkCard(items: List<ClassHomeworkDto>) {
 
 @Composable
 private fun RosterRow(student: RosterStudentDto, onClick: () -> Unit) {
-    val c = VTheme.colors
+    val c = VtC
     val flag = primaryFlag(student.flags)
     TCard(onClick = onClick, padding = 12.dp) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -585,19 +582,19 @@ private fun RosterRow(student: RosterStudentDto, onClick: () -> Unit) {
             ) {
                 Text(
                     student.roll?.toString() ?: student.name.take(1).uppercase(),
-                    style = VTheme.type.bodyStrong.colored(c.accentDeep),
+                    style = VtT.bodyStrong.coloredV(c.accentDeep),
                 )
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(student.name, style = VTheme.type.bodyStrong.colored(c.navyDeep))
+                Text(student.name, style = VtT.bodyStrong.coloredV(c.navyDeep))
                 Spacer(Modifier.height(2.dp))
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     student.attendanceRate?.let {
-                        Text(appString(StringKeys.TC_N_PERCENT_PRESENT, "pct" to (it * 100).toInt().toString()), style = VTheme.type.caption.colored(c.ink3))
+                        Text(appString(StringKeys.TC_N_PERCENT_PRESENT, "pct" to (it * 100).toInt().toString()), style = VtT.caption.coloredV(c.ink3))
                     }
                     student.latestMark?.let { m ->
-                        Text("${fmt1(m.marks.toFloat())}/${m.max} · ${m.name}", style = VTheme.type.caption.colored(c.ink3))
+                        Text("${fmt1(m.marks.toFloat())}/${m.max} · ${m.name}", style = VtT.caption.coloredV(c.ink3))
                     }
                 }
             }
@@ -613,7 +610,7 @@ private fun RosterRow(student: RosterStudentDto, onClick: () -> Unit) {
 /** Map a student's flag codes (Doc 09 §5) to a severity dot colour; null if benign. */
 @Composable
 private fun primaryFlag(flags: List<String>): Color? {
-    val c = VTheme.colors
+    val c = VtC
     return when {
         flags.any { it in DANGER_FLAGS } -> c.danger
         flags.any { it in WARNING_FLAGS } -> c.warning
