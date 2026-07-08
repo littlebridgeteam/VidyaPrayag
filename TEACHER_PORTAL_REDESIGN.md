@@ -629,7 +629,7 @@ Also reference the HTML prototype if available:
 | `TeacherReportReviewQueueScreen.kt` | ✅ Cream tokens (VtC/VtT bridge) |
 | `TeacherReportDraftEditorScreen.kt` | ✅ Cream tokens (VtC/VtT bridge) |
 | `TeacherHeatmapScreen.kt` | ✅ Cream tokens (VtC/VtT bridge) |
-| `TeacherPtmEventRegistrationScreenV2.kt` | ✅ Cream tokens (VtC/VtT bridge) |
+| `TeacherPtmEventRegistrationScreenV2.kt` | ✅ Cream tokens (VtC/VtT bridge) + list bottom clearance |
 | `TeacherMessagesScreenV2.kt` | ✅ Cream tokens (VtC/VtT bridge) |
 | `NotificationsScreenV2.kt` | ✅ Already token-based (shared) |
 | `DigitalIdCardScreen.kt` | ✅ Cream tokens (shared) |
@@ -680,3 +680,35 @@ this teacher-portal document** and may still use the legacy theme.
 ---
 
 *Last updated: 2026-07-08 — Teacher Portal token migration completed.*
+
+---
+
+## 15. Verification Pass (2026-07-08)
+
+A follow-up verification pass was run against §12 (Non-Negotiable Rules):
+
+- **Rule 2 (no raw values):** `grep` for `Color(0x…)` across every teacher
+  screen returns **0 matches** outside the `TeacherKit*` bridge files, where a
+  single harmonious subject-colour rotation is documented. ✅
+- **Rule 5 (dock clearance):** every *tab* content list ends on the shared
+  `TeacherDockClearance` constant (`= 120.dp`, defined once in
+  `TeacherKitV2.kt`). Overlays with a `VBackHeader` correctly use
+  `24.dp`/`navigationBarsPadding()` instead of dock clearance because the
+  floating dock is not rendered above an overlay. The PTM Event Registration
+  overlay was the one list without explicit bottom padding; it now carries a
+  `contentPadding` bottom inset so the final card is never flush against the
+  system nav bar. ✅
+- **Legacy `VTheme`:** portal-wide grep confirms the only remaining `VTheme`
+  occurrences are KDoc comments plus the unrelated `VThemePicker` component. ✅
+- **Strings:** all nine new `TC_*` home-section keys resolve in both the
+  English and Hindi maps of `AppStrings.kt`. ✅
+- **Rule 10 (compile):** the canonical build task
+  `:composeApp:compileDevDebugKotlinAndroid` requires AGP 9.2.1 / Kotlin 2.2.10
+  / compileSdk 36, whose Gradle + Kotlin daemons need ~3–4 GB of heap. The CI
+  sandbox used for this pass has only ~1 GB of RAM, so the full Android build
+  OOMs during project configuration and cannot be completed there — this is an
+  environment limit, not a source defect. Every changed file was instead
+  validated with a standalone Kotlin parse/analysis run (no syntax or
+  structural errors) and a brace/paren balance sweep across all 26 teacher
+  source files (0 mismatches). The full Gradle build should be run on a
+  developer machine or a CI runner with ≥6 GB RAM before release.

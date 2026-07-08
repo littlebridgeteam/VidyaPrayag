@@ -27,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.feature.event.domain.model.SlotBookingDto
 import com.littlebridge.enrollplus.feature.event.domain.model.TeacherPtmEventDto
@@ -104,6 +105,7 @@ fun TeacherPtmEventRegistrationScreenV2(
             ) {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                    contentPadding = PaddingValues(top = 4.dp, bottom = 32.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     items(state.events) { event ->
@@ -131,6 +133,7 @@ private fun PtmDetailContent(
     val c = VtC
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+        contentPadding = PaddingValues(top = 4.dp, bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         item {
