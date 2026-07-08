@@ -60,10 +60,13 @@ object VtC {
     val warningInk: Color get() = VColors.gold
     val danger: Color get() = VColors.error
     val dangerInk: Color get() = VColors.error
+    val warmOrange: Color get() = VColors.coral       // legacy warm accent
+    val sky: Color get() = VColors.sky
 }
 
 /** Typography twin for the [VtC] bridge — maps legacy VTheme.type.* names. */
 object VtT {
+    val h2: TextStyle get() = VTypography.h2
     val h3: TextStyle get() = VTypography.h3
     val body: TextStyle get() = VTypography.body
     val bodyStrong: TextStyle get() = VTypography.body
