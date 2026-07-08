@@ -316,6 +316,13 @@ fun TeacherPortalV2(
                         updateScopeNonce++
                         tab = "update"
                     },
+                    onOpenUpdateTool = { tool ->
+                        updateAssignmentId = null
+                        updateScopeLabel = ""
+                        updateInitialTool = tool
+                        updateScopeNonce++
+                        tab = "update"
+                    },
                     onOpenClasses = { tab = "classes" },
                     onOpenHealthAlerts = { overlay = TeacherOverlay.HealthAlerts },
                     onOpenTransportAttendance = { overlay = TeacherOverlay.TransportAttendance },
@@ -326,6 +333,7 @@ fun TeacherPortalV2(
                     onOpenScheduledMessages = { overlay = TeacherOverlay.ScheduledMessages },
                     onOpenEvents = { overlay = TeacherOverlay.EventRegistration },
                     onOpenMessages = { overlay = TeacherOverlay.Messages },
+                    onOpenNotifications = { overlay = TeacherOverlay.Notifications },
                 )
 
                 "update" -> key(updateScopeNonce) {
