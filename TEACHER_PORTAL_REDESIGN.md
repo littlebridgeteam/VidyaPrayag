@@ -625,35 +625,58 @@ Also reference the HTML prototype if available:
 | `TeacherProfileScreenV2.kt` | ✅ Cream + clearance + header |
 | `TeacherHealthAlertsScreenV2.kt` | ✅ Cream + clearance |
 | `TeacherPewsScreenV2.kt` | ✅ Cream + clearance |
-| `TransportAttendanceScreenV2.kt` | ⏳ Pending |
-| `TeacherReportReviewQueueScreen.kt` | ⏳ Pending |
-| `TeacherReportDraftEditorScreen.kt` | ⏳ Pending |
-| `TeacherHeatmapScreen.kt` | ⏳ Pending |
-| `TeacherPtmEventRegistrationScreenV2.kt` | ⏳ Pending |
-| `TeacherMessagesScreenV2.kt` | ⏳ Pending |
-| `NotificationsScreenV2.kt` | ⏳ Pending (shared) |
-| `DigitalIdCardScreen.kt` | ⏳ Pending (shared) |
-| `ScheduledMessagesScreenV2.kt` | ⏳ Pending (shared) |
-| `AcademicCalendarScreenV2.kt` | ⏳ Pending (shared) |
-| `TeacherAttendanceScreenV2.kt` | ⏳ Pending (tool sub-screen) |
-| `TeacherMarksScreenV2.kt` | ⏳ Pending (tool sub-screen) |
-| `TeacherHomeworkScreenV2.kt` | ⏳ Pending (tool sub-screen) |
-| `TeacherSyllabusScreenV2.kt` | ⏳ Pending (tool sub-screen) |
-| `TeacherLessonPlanScreenV2.kt` | ⏳ Pending (tool sub-screen) |
+| `TransportAttendanceScreenV2.kt` | ✅ Cream tokens |
+| `TeacherReportReviewQueueScreen.kt` | ✅ Cream tokens (VtC/VtT bridge) |
+| `TeacherReportDraftEditorScreen.kt` | ✅ Cream tokens (VtC/VtT bridge) |
+| `TeacherHeatmapScreen.kt` | ✅ Cream tokens (VtC/VtT bridge) |
+| `TeacherPtmEventRegistrationScreenV2.kt` | ✅ Cream tokens (VtC/VtT bridge) |
+| `TeacherMessagesScreenV2.kt` | ✅ Cream tokens (VtC/VtT bridge) |
+| `NotificationsScreenV2.kt` | ✅ Already token-based (shared) |
+| `DigitalIdCardScreen.kt` | ✅ Cream tokens (shared) |
+| `ScheduledMessagesScreenV2.kt` | ✅ Already token-based (shared) |
+| `AcademicCalendarScreenV2.kt` | ✅ Cream tokens (shared) |
+| `TeacherAttendanceScreenV2.kt` | ✅ Cream tokens (tool sub-screen) |
+| `TeacherMarksScreenV2.kt` | ✅ Cream tokens (tool sub-screen) |
+| `TeacherHomeworkScreenV2.kt` | ✅ Cream tokens (tool sub-screen) |
+| `TeacherSyllabusScreenV2.kt` | ✅ Cream tokens (tool sub-screen) |
+| `TeacherLessonPlanScreenV2.kt` | ✅ Cream tokens (tool sub-screen) |
+
+### 13.1 Shell / shared components (§3.3 reconciliation)
+
+| File | Status |
+|------|--------|
+| `TeacherKit.kt` | ✅ Legacy `T*` atoms retargeted to cream tokens via `KitC` bridge |
+| `TeacherKitV2.kt` | ✅ Central `VtC` / `VtT` / `coloredV` bridge + `Vt*` token atoms + `vtSubjectColor` |
+| `TeacherPortalV2.kt` | ✅ Token-based shell (no legacy `VTheme` wrapper) |
+| `TeacherHeader.kt` | ✅ Cream tokens (VtC/VtT bridge) |
+| `TeacherDock.kt` | ✅ Cream tokens (VtC/VtT bridge) |
+| `TeacherDialogs.kt` | ✅ Cream tokens (VtC/VtT bridge) |
+| `TeacherCheckInPopup.kt` | ✅ Cream tokens (VtC/VtT bridge) |
+| `TeacherScopeSelector.kt` | ✅ Cream tokens (VtC/VtT bridge) |
+| `TeacherStudentProfileScreenV2.kt` | ✅ Cream tokens (VtC/VtT bridge) |
+
+**Migration status:** the entire Teacher Portal package now renders on the
+cream/violet token system. A portal-wide grep confirms **zero functional
+`VTheme` code references** remain in `ui/v2/screens/teacher/` (only KDoc
+comments in `TeacherKitV2.kt` mention the legacy name to document the bridge).
+
+> The **migration bridge pattern** (`val c = VtC`, `VtT.*`, `.coloredV(...)`,
+> `vtSubjectColor(...)`) preserves 100% of each screen's layout and branch
+> logic while retiring the legacy lavender `VTheme` dependency. `VtC`/`VtT`
+> map every legacy accessor name onto the new `VColors`/`VTypography` tokens,
+> so consumers migrate with minimal churn and no behavioural change.
 
 ---
 
 ## 14. How to Continue
 
-1. Pick the next file from the checklist.
-2. Read it end-to-end.
-3. Identify old layout patterns, hardcoded values, missing cream background, oversized text, or insufficient dock clearance.
-4. Rebuild the screen using the tokens and vocabulary above.
-5. Add missing string keys.
-6. Compile.
-7. Update this file's checklist.
-8. Commit.
+The teacher-portal migration described in this document is **complete**. Any
+future screen should use the token system directly
+(`com.littlebridge.enrollplus.ui.tokens` — `VColors` / `VTypography` /
+`VShapes`) or the `VtC` / `VtT` bridge, following the vocabulary above. Note
+that `parent/`, `discovery/`, and `auth/` V2 screens are **outside the scope of
+this teacher-portal document** and may still use the legacy theme.
 
 ---
 
-*Last updated: 2026-07-08 during active redesign of the Teacher Portal.*
+*Last updated: 2026-07-08 — Teacher Portal token migration completed.*

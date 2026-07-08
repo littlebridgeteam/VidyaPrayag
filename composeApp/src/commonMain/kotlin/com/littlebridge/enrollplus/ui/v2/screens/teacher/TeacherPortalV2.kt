@@ -54,10 +54,10 @@ private enum class TeacherOverlay { None, Notifications, HealthAlerts, Transport
  * The signature `TeacherPortalV2(onLogout, modifier)` is PRESERVED — it is the only
  * external reference (NavGraphV2 line 309).
  *
- * Live theme: the Profile → Appearance switch writes the global theme pref; this
- * shell reads `getThemeName()` and wraps content in a nested [VTheme] so the tone
- * (Warm / Light / Night) flips immediately without a relaunch. Default is Warm —
- * the teacher portal's canonical lavender look.
+ * Theme: the portal now renders on the shared cream/violet token system
+ * (com.littlebridge.enrollplus.ui.tokens — VColors / VTypography / VShapes) via
+ * the VtC / VtT bridge, so every tab and overlay inherits the same warm cream
+ * canvas and deep-violet accent. No legacy VTheme wrapper is used.
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
