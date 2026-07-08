@@ -66,6 +66,11 @@ object VtC {
     val dangerInk: Color get() = VColors.error
     val warmOrange: Color get() = VColors.coral       // legacy warm accent
     val sky: Color get() = VColors.sky
+    val navy: Color get() = VColors.ink               // legacy deep navy -> ink
+    val accentSoft: Color get() = VColors.violetSoft
+    val lavenderLight: Color get() = VColors.surfaceTint
+    /** Legacy dark-mode flag; the cream system is a single light theme. */
+    val isNight: Boolean get() = false
 }
 
 /** Typography twin for the [VtC] bridge — maps legacy VTheme.type.* names. */
@@ -78,6 +83,7 @@ object VtT {
     val caption: TextStyle get() = VTypography.caption
     val label: TextStyle get() = VTypography.label
     val dataLg: TextStyle get() = VTypography.h2       // large numeric figure
+    val dataSm: TextStyle get() = VTypography.label    // small numeric figure
 }
 
 /** Local `colored` extension so migrated screens keep `style.colored(c.x)` calls. */
