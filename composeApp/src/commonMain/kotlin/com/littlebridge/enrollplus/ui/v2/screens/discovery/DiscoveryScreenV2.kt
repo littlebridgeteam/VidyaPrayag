@@ -37,12 +37,15 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.littlebridge.enrollplus.feature.schools.presentation.DiscoveredSchool
 import com.littlebridge.enrollplus.feature.schools.presentation.SchoolDiscoveryState
 import com.littlebridge.enrollplus.feature.schools.presentation.SchoolDiscoveryViewModel
 import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
@@ -57,6 +60,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.components.VLabel
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.screens.parent.PortalTopHeaderMinimal
 import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
@@ -178,19 +182,40 @@ private fun DiscoveryList(
     // Client-side query filter (substring against name + location). The endpoint already
     // supports `city=` for proper server-side filtering — Phase D will switch this over
     // once the design specifies per-key behaviour.
-    val filtered = remember(state.schools, state.query) {
+    var activeFilter by remember { mutableStateOf("All") }
+    var sortBy by remember { mutableStateOf("name") }
+
+    val filtered = remember(state.schools, state.query, activeFilter, sortBy) {
         val q = state.query.trim()
-        if (q.isBlank()) state.schools
-        else state.schools.filter {
+        var list = if (q.isBlank()) state.schools else state.schools.filter {
             it.name.contains(q, ignoreCase = true) || it.location.contains(q, ignoreCase = true)
         }
+        list = when (activeFilter) {
+            "CBSE" -> list.filter { it.board.equals("CBSE", ignoreCase = true) }
+            "English" -> list.filter { it.medium.equals("English", ignoreCase = true) }
+            "Co-ed" -> list.filter { it.schoolGender.equals("co_ed", ignoreCase = true) }
+            "Top rated" -> list.filter { it.rating >= 4.0 }
+            "Nearby" -> list.filter { it.distanceLabel != null }
+            else -> list
+        }
+        list = when (sortBy) {
+            "rating" -> list.sortedByDescending { it.rating }
+            "distance" -> list.sortedBy { it.distanceLabel ?: "999 km" }
+            else -> list.sortedBy { it.name }
+        }
+        list
     }
 
     Column(modifier.fillMaxSize().background(VColors.cream)) {
-        // header — when embedded inside the unlinked-parent landing the host already owns the
-        // title + tab switcher, so we drop the duplicate hero title block and render a clean,
-        // transparent search-only header that sits flush under the segmented control.
-        if (!embedded) {
+        // Shared portal header when embedded inside the unlinked-parent carousel flow; standalone
+        // unauth flow keeps the full overlay header.
+        if (embedded) {
+            PortalTopHeaderMinimal(
+                onOpenNotifications = {},
+                unreadNotificationsCount = 0,
+                modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 4.dp),
+            )
+        } else {
             PremiumOverlayHeader(
                 title = appString(StringKeys.DISC_FIND_SCHOOL),
                 onBack = onExit,
@@ -200,8 +225,17 @@ private fun DiscoveryList(
             Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp)
-                .padding(top = if (embedded) 8.dp else 12.dp, bottom = 12.dp),
+                .padding(top = if (embedded) 4.dp else 12.dp, bottom = 12.dp),
         ) {
+            Text(
+                text = appString(StringKeys.DISC_FIND_SCHOOL),
+                style = VTheme.type.h2.colored(c.ink),
+            )
+            Text(
+                text = "Search, filter and compare the best schools for your child.",
+                style = VTheme.type.caption.colored(c.ink2),
+            )
+            Spacer(Modifier.height(12.dp))
             VInput(
                 value = state.query,
                 onValueChange = onQuery,
@@ -210,14 +244,27 @@ private fun DiscoveryList(
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(12.dp))
-            // Tag chips are unfiltered today — they will become real filter pills once the
-            // server-side filter contract for board / fee-range / SRI is finalised (Phase D).
-            // Keeping the visual affordance preserves the React fidelity per LAW 5.
+            // Functional filter pills. Filters applied client-side against real server fields;
+            // server-side filtering can be wired later without changing the UI contract.
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                // Clean, premium text pills (no emoji glyphs — those read cheap). Active chip uses
-                // the Parents Portal lavender accent, consistent with every other filter row.
-                listOf(appString(StringKeys.DISC_WITHIN_3KM), appString(StringKeys.DISC_CBSE), appString(StringKeys.DISC_FEE_RANGE), appString(StringKeys.DISC_TYPE), appString(StringKeys.DISC_SRI_RATING)).forEachIndexed { i, f ->
-                    com.littlebridge.enrollplus.ui.v2.components.VTag(text = f, active = i == 0, accentActive = true)
+                listOf("All", "CBSE", "English", "Co-ed", "Top rated", "Nearby").forEach { f ->
+                    com.littlebridge.enrollplus.ui.v2.components.VTag(
+                        text = f,
+                        active = activeFilter == f,
+                        onClick = { activeFilter = f },
+                        accentActive = true,
+                    )
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("Name" to "name", "Rating" to "rating", "Distance" to "distance").forEach { (label, key) ->
+                    com.littlebridge.enrollplus.ui.v2.components.VTag(
+                        text = label,
+                        active = sortBy == key,
+                        onClick = { sortBy = key },
+                        accentActive = true,
+                    )
                 }
             }
         }
@@ -298,17 +345,45 @@ private fun SchoolCard(
                 .height(144.dp)
                 .clip(RoundedCornerShape(12.dp)),
         ) {
-            AsyncImage(
-                model = s.image,
-                contentDescription = s.name,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
-            Box(
-                Modifier.fillMaxSize().background(
-                    Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.35f))),
-                ),
-            )
+            if (s.image != null) {
+                AsyncImage(
+                    model = s.image,
+                    contentDescription = s.name,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+                Box(
+                    Modifier.fillMaxSize().background(
+                        Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.35f))),
+                    ),
+                )
+            } else {
+                Box(
+                    modifier = Modifier.fillMaxSize().background(VColors.creamDeep),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = VIcons.School,
+                        contentDescription = null,
+                        tint = VColors.ink3,
+                        modifier = Modifier.size(48.dp),
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                        .background(VColors.white.copy(alpha = 0.92f))
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                ) {
+                    Text(
+                        text = "No real photo available yet. School administration will upload soon.",
+                        style = VTypography.caption.copy(fontSize = 11.sp, color = VColors.ink3),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
             // Distance pill — only shown when the server populated `distance_km`
             // (i.e. when lat/lng were available). LAW 6: don't fabricate "1.8 km" otherwise.
             s.distanceLabel?.let { dist ->
@@ -461,13 +536,41 @@ private fun SchoolProfile(
         )
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
             Box(Modifier.fillMaxWidth().height(224.dp)) {
-                AsyncImage(
-                    model = school.image,
-                    contentDescription = school.name,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-                Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.5f)))))
+                if (school.image != null) {
+                    AsyncImage(
+                        model = school.image,
+                        contentDescription = school.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.5f)))))
+                } else {
+                    Box(
+                        modifier = Modifier.fillMaxSize().background(VColors.creamDeep),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = VIcons.School,
+                            contentDescription = null,
+                            tint = VColors.ink3,
+                            modifier = Modifier.size(64.dp),
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.BottomCenter)
+                            .background(VColors.white.copy(alpha = 0.92f))
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                    ) {
+                        Text(
+                            text = "No real photo available yet. School administration will upload soon.",
+                            style = VTypography.caption.copy(fontSize = 12.sp, color = VColors.ink3),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
             }
             Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Column {

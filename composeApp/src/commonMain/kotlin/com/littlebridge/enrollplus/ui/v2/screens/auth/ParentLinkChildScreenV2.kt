@@ -1,7 +1,11 @@
 package com.littlebridge.enrollplus.ui.v2.screens.auth
 
-import androidx.compose.animation.Crossfade
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -53,7 +57,10 @@ import com.littlebridge.enrollplus.ui.v2.components.VLabel
 import com.littlebridge.enrollplus.ui.v2.components.VTag
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.ui.components.VBackHeader
+import com.littlebridge.enrollplus.ui.components.VProgressBarSegments
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
@@ -140,261 +147,281 @@ private fun ParentLinkChildContent(
         modifier
             .fillMaxSize()
             .background(VColors.cream)
-            // §11 cross-platform safe areas (Android + iOS, common code).
             .statusBarsPadding()
             .imePadding()
-            .navigationBarsPadding()
-            .padding(horizontal = 24.dp)
-            .verticalScroll(rememberScrollState()),
+            .navigationBarsPadding(),
     ) {
-        Spacer(Modifier.height(40.dp))
-        // §5: React `Label` component = labelStrong (uppercase 11/700/0.10em).
-        VLabel(appString(StringKeys.LINK_STEP_OF).replace("{step}", step.toString()).replace("{total}", total.toString()))
-        Spacer(Modifier.height(d.sm))
-        StepBars(current = step, total = total)
+        VBackHeader(
+            onBack = {
+                if (step > 1 && !state.isSearching && !state.isLinking) step-- else onBack()
+            },
+        )
 
-        // §13.2 — Crossfade step content for a smooth swap (no slide inside a verticalScroll,
-        // which would break the parent's height measurement). 240ms tween matches the React
-        // step indicator timing.
-        Crossfade(targetState = step, animationSpec = tween(240), label = "linkStep") { current ->
-        Column {
-        when (current) {
-            1 -> {
-                Spacer(Modifier.height(d.lg))
-                Text(appString(StringKeys.LINK_STEP1_TITLE), style = VTheme.type.h1.colored(c.ink))
-                Text(
-                    appString(StringKeys.LINK_STEP1_SUB),
-                    style = VTheme.type.body.colored(c.ink2),
-                )
-                Spacer(Modifier.height(d.lg))
-                VInput(
-                    value = fullName,
-                    onValueChange = onFullNameChange,
-                    label = appString(StringKeys.LINK_FULL_NAME),
-                    placeholder = appString(StringKeys.LINK_FULL_NAME_PH),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(d.md))
-                VLabel(appString(StringKeys.LINK_PREF_LANG))
-                Spacer(Modifier.height(d.sm))
-                Row(horizontalArrangement = Arrangement.spacedBy(d.sm)) {
-                    VTag(text = "English", active = language == "English", onClick = { onLanguageChange("English") })
-                    VTag(text = "हिन्दी", active = language == "हिन्दी", onClick = { onLanguageChange("हिन्दी") })
-                }
-            }
+        Column(
+            Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp),
+        ) {
+            Spacer(Modifier.height(16.dp))
+            VLabel(appString(StringKeys.LINK_STEP_OF).replace("{step}", step.toString()).replace("{total}", total.toString()))
+            Spacer(Modifier.height(8.dp))
+            VProgressBarSegments(total = total, current = step)
+            Spacer(Modifier.height(16.dp))
 
-            2 -> {
-                Spacer(Modifier.height(d.lg))
-                Text(appString(StringKeys.LINK_STEP2_TITLE), style = VTheme.type.h1.colored(c.ink))
-                Text(
-                    appString(StringKeys.LINK_STEP2_SUB),
-                    style = VTheme.type.body.colored(c.ink2),
-                )
-                Spacer(Modifier.height(d.lg))
-                VInput(
-                    value = schoolQuery,
-                    onValueChange = onSchoolQueryChange,
-                    placeholder = appString(StringKeys.LINK_SEARCH_PH),
-                    leadingIcon = VIcons.Search,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(d.sm))
-                // §5: search action — runs the real GET /schools/search.
-                VButton(
-                    text = if (state.isSearching) appString(StringKeys.LINK_SEARCHING) else appString(StringKeys.LINK_SEARCH),
-                    onClick = onSearch,
-                    full = true,
-                    size = VButtonSize.Md,
-                    tone = VButtonTone.Navy,
-                    soft = true,
-                    enabled = !state.isSearching && schoolQuery.isNotBlank(),
-                )
-                Spacer(Modifier.height(d.sm))
-                when {
-                    state.searchError != null -> {
-                        Text(
-                            state.searchError ?: appString(StringKeys.LINK_SEARCH_ERR),
-                            style = VTheme.type.caption.colored(Color(0xFF7A1C18)),
-                        )
-                    }
-                    state.matches.isEmpty() -> {
-                        Text(
-                            appString(StringKeys.LINK_SEARCH_PROMPT),
-                            style = VTheme.type.caption.colored(c.ink2),
-                        )
-                    }
-                    else -> {
-                        // ROOT FIX: when several schools match, the parent MUST pick
-                        // their child's school — tapping a card selects it. Auto-select
-                        // only happens for a single result (see LinkChildViewModel).
-                        if (state.matches.size > 1) {
-                            Text(
-                                appString(StringKeys.LINK_TAP_SELECT),
-                                style = VTheme.type.caption.colored(c.ink2),
+            val titles = listOf(
+                appString(StringKeys.LINK_STEP1_TITLE),
+                appString(StringKeys.LINK_STEP2_TITLE),
+                appString(StringKeys.LINK_STEP3_TITLE),
+            )
+            val subtitles = listOf(
+                appString(StringKeys.LINK_STEP1_SUB),
+                appString(StringKeys.LINK_STEP2_SUB),
+                appString(StringKeys.LINK_STEP3_SUB).replace("{school}", state.selectedSchool?.name ?: theSchoolStr),
+            )
+            Text(titles[step - 1], style = VTypography.h2.copy(color = c.ink))
+            Text(subtitles[step - 1], style = VTypography.caption.copy(color = c.ink2))
+            Spacer(Modifier.height(24.dp))
+
+            AnimatedContent(
+                targetState = step,
+                transitionSpec = {
+                    val forward = targetState > initialState
+                    val dur = 280
+                    val enter = slideInHorizontally(
+                        animationSpec = tween(dur),
+                        initialOffsetX = { if (forward) it / 4 else -it / 4 },
+                    ) + fadeIn(tween(dur))
+                    val exit = slideOutHorizontally(
+                        animationSpec = tween(dur),
+                        targetOffsetX = { if (forward) -it / 4 else it / 4 },
+                    ) + fadeOut(tween(dur))
+                    enter togetherWith exit
+                },
+                label = "linkStep",
+                modifier = Modifier.fillMaxWidth(),
+            ) { current ->
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    when (current) {
+                        1 -> {
+                            Spacer(Modifier.height(d.md))
+                            VInput(
+                                value = fullName,
+                                onValueChange = onFullNameChange,
+                                label = appString(StringKeys.LINK_FULL_NAME),
+                                placeholder = appString(StringKeys.LINK_FULL_NAME_PH),
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            Spacer(Modifier.height(d.md))
+                            VLabel(appString(StringKeys.LINK_PREF_LANG))
+                            Spacer(Modifier.height(d.sm))
+                            Row(horizontalArrangement = Arrangement.spacedBy(d.sm)) {
+                                VTag(text = "English", active = language == "English", onClick = { onLanguageChange("English") })
+                                VTag(text = "हिन्दी", active = language == "हिन्दी", onClick = { onLanguageChange("हिन्दी") })
+                            }
+                        }
+
+                        2 -> {
+                            Spacer(Modifier.height(d.md))
+                            VInput(
+                                value = schoolQuery,
+                                onValueChange = onSchoolQueryChange,
+                                placeholder = appString(StringKeys.LINK_SEARCH_PH),
+                                leadingIcon = VIcons.Search,
+                                modifier = Modifier.fillMaxWidth(),
                             )
                             Spacer(Modifier.height(d.sm))
-                        }
-                        state.matches.forEach { match ->
-                            val selected = state.selectedSchool?.id == match.id
-                            VCard(
-                                modifier = Modifier.fillMaxWidth(),
-                                onClick = { onSelectSchool(match) },
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    // §5: React match-icon circle = solid var(--arctic)=teal, dark glyph (Auth.tsx L294).
-                                    Box(
-                                        Modifier
-                                            .size(40.dp)
-                                            .clip(CircleShape)
-                                            .background(c.teal),
-                                        contentAlignment = Alignment.Center,
-                                    ) {
-                                        Icon(VIcons.GraduationCap, contentDescription = null, tint = c.ink, modifier = Modifier.size(18.dp))
-                                    }
-                                    Spacer(Modifier.width(d.md))
-                                    Column(Modifier.weight(1f)) {
-                                        Text(match.name, style = VTheme.type.bodyStrong.colored(c.ink))
-                                        Text("${match.city} • ${match.board}", style = VTheme.type.caption.colored(c.ink2))
-                                    }
-                                    if (selected) {
-                                        VBadge(text = appString(StringKeys.LINK_MATCH), tone = VBadgeTone.Arctic)
-                                    }
-                                }
-                            }
+                            // §5: search action — runs the real GET /schools/search.
+                            VButton(
+                                text = if (state.isSearching) appString(StringKeys.LINK_SEARCHING) else appString(StringKeys.LINK_SEARCH),
+                                onClick = onSearch,
+                                full = true,
+                                size = VButtonSize.Md,
+                                tone = VButtonTone.Navy,
+                                soft = true,
+                                enabled = !state.isSearching && schoolQuery.isNotBlank(),
+                            )
                             Spacer(Modifier.height(d.sm))
-                        }
-                    }
-                }
-            }
-
-            else -> {
-                Spacer(Modifier.height(d.lg))
-                Text(appString(StringKeys.LINK_STEP3_TITLE), style = VTheme.type.h1.colored(c.ink))
-                Text(
-                    appString(StringKeys.LINK_STEP3_SUB).replace("{school}", state.selectedSchool?.name ?: theSchoolStr),
-                    style = VTheme.type.body.colored(c.ink2),
-                )
-                Spacer(Modifier.height(d.lg))
-                // ISSUE 2c: guided, real-time-formatted inputs (school already chosen).
-                // 1) Child's name.
-                VInput(
-                    value = state.childName,
-                    onValueChange = onChildNameChange,
-                    label = appString(StringKeys.LINK_CHILD_NAME),
-                    placeholder = appString(StringKeys.LINK_CHILD_NAME_PH),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(d.md))
-                // 2) Class + Section on one row (the VM auto-peels a trailing
-                //    section letter typed into the class field into Section).
-                Row(horizontalArrangement = Arrangement.spacedBy(d.md)) {
-                    VInput(
-                        value = state.className,
-                        onValueChange = onClassNameChange,
-                        label = appString(StringKeys.LINK_CLASS),
-                        placeholder = appString(StringKeys.LINK_CLASS_PH),
-                        modifier = Modifier.weight(2f),
-                    )
-                    VInput(
-                        value = state.section,
-                        onValueChange = onSectionChange,
-                        label = appString(StringKeys.LINK_SECTION),
-                        placeholder = appString(StringKeys.LINK_SECTION_PH),
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                Spacer(Modifier.height(d.md))
-                // 3) Roll / admission number.
-                VInput(
-                    value = rollNo,
-                    onValueChange = onRollNumberChange,
-                    label = appString(StringKeys.LINK_ROLL),
-                    placeholder = appString(StringKeys.LINK_ROLL_PH),
-                    keyboardType = KeyboardType.Number,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(d.md))
-                // 4) Parent phone — used to verify against the student's record.
-                //    Optional: if your school doesn't have your number on record,
-                //    you can leave this blank. A school admin will still review the request.
-                VInput(
-                    value = state.parentPhone,
-                    onValueChange = onParentPhoneChange,
-                    label = appString(StringKeys.LINK_PHONE_OPT),
-                    placeholder = appString(StringKeys.LINK_PHONE_PH),
-                    keyboardType = KeyboardType.Phone,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(d.md))
-                val linked = state.linkedChild
-                when {
-                    state.linkError != null -> {
-                        Text(
-                            state.linkError ?: appString(StringKeys.LINK_ERR),
-                            style = VTheme.type.caption.colored(Color(0xFF7A1C18)),
-                        )
-                    }
-                    // RA-48: a submitted request that the school admin must approve.
-                    // We DON'T route into the dashboard; we confirm it's awaiting review.
-                    state.linkPending && linked != null -> {
-                        VCard(modifier = Modifier.fillMaxWidth()) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                VAvatar(name = linked.childName, src = linked.profilePhotoUrl, size = 48.dp)
-                                Spacer(Modifier.width(d.md))
-                                Column(Modifier.weight(1f)) {
-                                    Text(linked.childName, style = VTheme.type.bodyStrong.colored(c.ink))
-                                    // ISSUE 2d: a phone mismatch lands in the school's
-                                    // "needs review" queue — say so explicitly so the
-                                    // parent knows it may take an extra check.
-                                    // Prefer the school the SERVER matched the child to
-                                    // (linked.schoolName). The matcher can self-heal a
-                                    // wrong/duplicate school pick by binding to the
-                                    // student's REAL school, so this name is authoritative
-                                    // over the one the parent tapped in step 2.
-                                    val matchedSchool = linked.schoolName.takeIf { it.isNotBlank() }
-                                        ?: state.selectedSchool?.name ?: theSchoolStr
-                                    val msg = if (state.linkNeedsReview) {
-                                        appString(StringKeys.LINK_REVIEW_MSG).replace("{school}", matchedSchool)
-                                    } else {
-                                        appString(StringKeys.LINK_PENDING_MSG).replace("{school}", matchedSchool)
-                                    }
-                                    Text(msg, style = VTheme.type.caption.colored(c.ink2))
-                                }
-                                Icon(VIcons.Clock, contentDescription = null, tint = Color(0xFFB7791F), modifier = Modifier.size(18.dp))
-                            }
-                        }
-                    }
-                    linked != null -> {
-                        // §5: resolved-child preview — only shown once the backend confirms the link.
-                        VCard(modifier = Modifier.fillMaxWidth()) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                VAvatar(name = linked.childName, src = linked.profilePhotoUrl, size = 48.dp)
-                                Spacer(Modifier.width(d.md))
-                                Column(Modifier.weight(1f)) {
-                                    Text(linked.childName, style = VTheme.type.bodyStrong.colored(c.ink))
+                            when {
+                                state.searchError != null -> {
                                     Text(
-                                        appString(StringKeys.LINK_CLASS_ROLL).replace("{class}", linked.className).replace("{roll}", linked.roll),
+                                        state.searchError ?: appString(StringKeys.LINK_SEARCH_ERR),
+                                        style = VTheme.type.caption.colored(Color(0xFF7A1C18)),
+                                    )
+                                }
+                                state.matches.isEmpty() -> {
+                                    Text(
+                                        appString(StringKeys.LINK_SEARCH_PROMPT),
                                         style = VTheme.type.caption.colored(c.ink2),
                                     )
                                 }
-                                // §5: React resolved-child check = #155e3a (Auth.tsx L319).
-                                Icon(VIcons.Check, contentDescription = null, tint = Color(0xFF155E3A), modifier = Modifier.size(18.dp))
+                                else -> {
+                                    // ROOT FIX: when several schools match, the parent MUST pick
+                                    // their child's school — tapping a card selects it. Auto-select
+                                    // only happens for a single result (see LinkChildViewModel).
+                                    if (state.matches.size > 1) {
+                                        Text(
+                                            appString(StringKeys.LINK_TAP_SELECT),
+                                            style = VTheme.type.caption.colored(c.ink2),
+                                        )
+                                        Spacer(Modifier.height(d.sm))
+                                    }
+                                    state.matches.forEach { match ->
+                                        val selected = state.selectedSchool?.id == match.id
+                                        VCard(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            onClick = { onSelectSchool(match) },
+                                        ) {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                // §5: React match-icon circle = solid var(--arctic)=teal, dark glyph (Auth.tsx L294).
+                                                Box(
+                                                    Modifier
+                                                        .size(40.dp)
+                                                        .clip(CircleShape)
+                                                        .background(c.teal),
+                                                    contentAlignment = Alignment.Center,
+                                                ) {
+                                                    Icon(VIcons.GraduationCap, contentDescription = null, tint = c.ink, modifier = Modifier.size(18.dp))
+                                                }
+                                                Spacer(Modifier.width(d.md))
+                                                Column(Modifier.weight(1f)) {
+                                                    Text(match.name, style = VTheme.type.bodyStrong.colored(c.ink))
+                                                    Text("${match.city} • ${match.board}", style = VTheme.type.caption.colored(c.ink2))
+                                                }
+                                                if (selected) {
+                                                    VBadge(text = appString(StringKeys.LINK_MATCH), tone = VBadgeTone.Arctic)
+                                                }
+                                            }
+                                        }
+                                        Spacer(Modifier.height(d.sm))
+                                    }
+                                }
                             }
                         }
-                    }
-                    else -> {
-                        Text(
-                            appString(StringKeys.LINK_MATCH_PROMPT).replace("{school}", state.selectedSchool?.name ?: yourSchoolStr),
-                            style = VTheme.type.caption.colored(c.ink2),
-                        )
+
+                        else -> {
+                            Spacer(Modifier.height(d.md))
+                            // ISSUE 2c: guided, real-time-formatted inputs (school already chosen).
+                            // 1) Child's name.
+                            VInput(
+                                value = state.childName,
+                                onValueChange = onChildNameChange,
+                                label = appString(StringKeys.LINK_CHILD_NAME),
+                                placeholder = appString(StringKeys.LINK_CHILD_NAME_PH),
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            Spacer(Modifier.height(d.md))
+                            // 2) Class + Section on one row (the VM auto-peels a trailing
+                            //    section letter typed into the class field into Section).
+                            Row(horizontalArrangement = Arrangement.spacedBy(d.md)) {
+                                VInput(
+                                    value = state.className,
+                                    onValueChange = onClassNameChange,
+                                    label = appString(StringKeys.LINK_CLASS),
+                                    placeholder = appString(StringKeys.LINK_CLASS_PH),
+                                    modifier = Modifier.weight(2f),
+                                )
+                                VInput(
+                                    value = state.section,
+                                    onValueChange = onSectionChange,
+                                    label = appString(StringKeys.LINK_SECTION),
+                                    placeholder = appString(StringKeys.LINK_SECTION_PH),
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                            Spacer(Modifier.height(d.md))
+                            // 3) Roll / admission number.
+                            VInput(
+                                value = rollNo,
+                                onValueChange = onRollNumberChange,
+                                label = appString(StringKeys.LINK_ROLL),
+                                placeholder = appString(StringKeys.LINK_ROLL_PH),
+                                keyboardType = KeyboardType.Number,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            Spacer(Modifier.height(d.md))
+                            // 4) Parent phone — used to verify against the student's record.
+                            //    Optional: if your school doesn't have your number on record,
+                            //    you can leave this blank. A school admin will still review the request.
+                            VInput(
+                                value = state.parentPhone,
+                                onValueChange = onParentPhoneChange,
+                                label = appString(StringKeys.LINK_PHONE_OPT),
+                                placeholder = appString(StringKeys.LINK_PHONE_PH),
+                                keyboardType = KeyboardType.Phone,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            Spacer(Modifier.height(d.md))
+                            val linked = state.linkedChild
+                            when {
+                                state.linkError != null -> {
+                                    Text(
+                                        state.linkError ?: appString(StringKeys.LINK_ERR),
+                                        style = VTheme.type.caption.colored(Color(0xFF7A1C18)),
+                                    )
+                                }
+                                // RA-48: a submitted request that the school admin must approve.
+                                // We DON'T route into the dashboard; we confirm it's awaiting review.
+                                state.linkPending && linked != null -> {
+                                    VCard(modifier = Modifier.fillMaxWidth()) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            VAvatar(name = linked.childName, src = linked.profilePhotoUrl, size = 48.dp)
+                                            Spacer(Modifier.width(d.md))
+                                            Column(Modifier.weight(1f)) {
+                                                Text(linked.childName, style = VTheme.type.bodyStrong.colored(c.ink))
+                                                // ISSUE 2d: a phone mismatch lands in the school's
+                                                // "needs review" queue — say so explicitly so the
+                                                // parent knows it may take an extra check.
+                                                // Prefer the school the SERVER matched the child to
+                                                // (linked.schoolName). The matcher can self-heal a
+                                                // wrong/duplicate school pick by binding to the
+                                                // student's REAL school, so this name is authoritative
+                                                // over the one the parent tapped in step 2.
+                                                val matchedSchool = linked.schoolName.takeIf { it.isNotBlank() }
+                                                    ?: state.selectedSchool?.name ?: theSchoolStr
+                                                val msg = if (state.linkNeedsReview) {
+                                                    appString(StringKeys.LINK_REVIEW_MSG).replace("{school}", matchedSchool)
+                                                } else {
+                                                    appString(StringKeys.LINK_PENDING_MSG).replace("{school}", matchedSchool)
+                                                }
+                                                Text(msg, style = VTheme.type.caption.colored(c.ink2))
+                                            }
+                                            Icon(VIcons.Clock, contentDescription = null, tint = Color(0xFFB7791F), modifier = Modifier.size(18.dp))
+                                        }
+                                    }
+                                }
+                                linked != null -> {
+                                    // §5: resolved-child preview — only shown once the backend confirms the link.
+                                    VCard(modifier = Modifier.fillMaxWidth()) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            VAvatar(name = linked.childName, src = linked.profilePhotoUrl, size = 48.dp)
+                                            Spacer(Modifier.width(d.md))
+                                            Column(Modifier.weight(1f)) {
+                                                Text(linked.childName, style = VTheme.type.bodyStrong.colored(c.ink))
+                                                Text(
+                                                    appString(StringKeys.LINK_CLASS_ROLL).replace("{class}", linked.className).replace("{roll}", linked.roll),
+                                                    style = VTheme.type.caption.colored(c.ink2),
+                                                )
+                                            }
+                                            // §5: React resolved-child check = #155e3a (Auth.tsx L319).
+                                            Icon(VIcons.Check, contentDescription = null, tint = Color(0xFF155E3A), modifier = Modifier.size(18.dp))
+                                        }
+                                    }
+                                }
+                                else -> {
+                                    Text(
+                                        appString(StringKeys.LINK_MATCH_PROMPT).replace("{school}", state.selectedSchool?.name ?: yourSchoolStr),
+                                        style = VTheme.type.caption.colored(c.ink2),
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
-        }
-        }
 
-        Spacer(Modifier.height(d.xl))
         // §5: React has a SINGLE CTA (Continue / Finish) with a trailing ArrowRight; no Back button.
         // Step 2 requires a selected school before advancing; step 3 links via the backend and only
         // calls onDone() once the link is confirmed (handled in the VM's onSuccess callback).
@@ -413,51 +440,33 @@ private fun ParentLinkChildContent(
             // ISSUE 2c: every guided field (name + class + roll + valid phone) is required.
             else -> !state.isLinking && state.step3Valid
         }
-        VButton(
-            text = ctaText,
-            onClick = {
-                when {
-                    step < total -> step++
-                    // RA-48: a pending request returns the parent to wherever onDone
-                    // routes (typically the parent home), where they'll see no child
-                    // yet and the "awaiting approval" empty state.
-                    state.linkPending -> onDone()
-                    else -> onLink(onDone)
-                }
-            },
-            full = true,
-            size = VButtonSize.Lg,
-            tone = VButtonTone.Teal,
-            soft = false,
-            enabled = ctaEnabled,
-            trailing = { Icon(VIcons.ArrowRight, contentDescription = null, modifier = Modifier.size(16.dp)) },
-        )
-        Spacer(Modifier.height(d.xl))
-    }
-}
-
-@Composable
-private fun StepBars(current: Int, total: Int) {
-    val c = VTheme.colors
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(d6())) {
-        repeat(total) { i ->
-            // §13.2 — animate the bar fill instead of swapping colors instantly.
-            val active = i + 1 <= current
-            val targetColor by animateColorAsState(
-                targetValue = if (active) c.teal else Color(0x14080808),
-                animationSpec = tween(durationMillis = 250),
-                label = "linkStepBar$i",
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp),
+        ) {
+            Spacer(Modifier.height(d.xl))
+            VButton(
+                text = ctaText,
+                onClick = {
+                    when {
+                        step < total -> step++
+                        // RA-48: a pending request returns the parent to wherever onDone
+                        // routes (typically the parent home), where they'll see no child
+                        // yet and the "awaiting approval" empty state.
+                        state.linkPending -> onDone()
+                        else -> onLink(onDone)
+                    }
+                },
+                full = true,
+                size = VButtonSize.Lg,
+                tone = VButtonTone.Teal,
+                soft = false,
+                enabled = ctaEnabled,
+                trailing = { Icon(VIcons.ArrowRight, contentDescription = null, modifier = Modifier.size(16.dp)) },
             )
-            Box(
-                Modifier
-                    .weight(1f)
-                    // React: h-1 (4dp) bar — filled var(--arctic)=teal, empty rgba(8,8,8,0.08).
-                    .height(4.dp)
-                    .clip(CircleShape)
-                    .background(targetColor),
-            )
+            Spacer(Modifier.height(d.xl))
         }
     }
 }
 
-private fun d6() = 6.dp
