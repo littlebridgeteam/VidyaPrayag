@@ -180,6 +180,7 @@ private fun ParentHomeContent(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .background(VColors.cream)
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = 120.dp),
         ) {
