@@ -27,8 +27,6 @@ import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
 
 /**
  * TeacherConfirmDialog — a calm, on-brand confirm sheet used for the deliberate, irreversible
@@ -45,7 +43,7 @@ fun TeacherConfirmDialog(
     modifier: Modifier = Modifier,
     destructive: Boolean = false,
 ) {
-    val c = VTheme.colors
+    val c = VtC
     Box(
         modifier
             .fillMaxSize()
@@ -63,9 +61,9 @@ fun TeacherConfirmDialog(
                 .padding(20.dp),
         ) {
             Column {
-                Text(title, style = VTheme.type.h3.colored(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold))
+                Text(title, style = VtT.h3.coloredV(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold))
                 Spacer(Modifier.height(8.dp))
-                Text(body, style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.5.sp))
+                Text(body, style = VtT.body.coloredV(c.ink2).copy(fontSize = 13.5.sp))
                 Spacer(Modifier.height(18.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     VButton(

@@ -33,8 +33,6 @@ import com.littlebridge.enrollplus.feature.teacher.domain.model.TeacherClassSumm
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
 
 /**
  * TeacherScopeSelector — the scope gate that fronts every UPDATE sub-screen (Attendance, Marks,
@@ -54,7 +52,7 @@ fun TeacherScopeSelector(
     title: String = appString(StringKeys.TC_PICK_CLASS),
     caption: String = appString(StringKeys.TC_PICK_ALLOCATION_DESC),
 ) {
-    val c = VTheme.colors
+    val c = VtC
     var query by remember { mutableStateOf("") }
     val filtered = remember(classes, query) {
         if (query.isBlank()) classes
@@ -62,11 +60,11 @@ fun TeacherScopeSelector(
     }
 
     Column(modifier.fillMaxWidth()) {
-        TEyebrow(appString(StringKeys.SCH_SELECT_SCOPE), dot = c.accent)
+        VtEyebrow(appString(StringKeys.SCH_SELECT_SCOPE), dot = c.accent)
         Spacer(Modifier.height(6.dp))
-        Text(title, style = VTheme.type.h2.colored(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold))
+        Text(title, style = VtT.h2.coloredV(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold))
         Spacer(Modifier.height(2.dp))
-        Text(caption, style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.sp))
+        Text(caption, style = VtT.body.coloredV(c.ink2).copy(fontSize = 13.sp))
         Spacer(Modifier.height(14.dp))
 
         if (classes.size > 6) {
@@ -84,7 +82,7 @@ fun TeacherScopeSelector(
 
 @Composable
 private fun ScopeSearchField(value: String, onChange: (String) -> Unit) {
-    val c = VTheme.colors
+    val c = VtC
     Row(
         Modifier
             .fillMaxWidth()
@@ -100,11 +98,11 @@ private fun ScopeSearchField(value: String, onChange: (String) -> Unit) {
             value = value,
             onValueChange = onChange,
             singleLine = true,
-            textStyle = VTheme.type.body.colored(c.ink).copy(fontSize = 14.sp),
+            textStyle = VtT.body.coloredV(c.ink).copy(fontSize = 14.sp),
             cursorBrush = androidx.compose.ui.graphics.SolidColor(c.accent),
             decorationBox = { inner ->
                 Box {
-                    if (value.isBlank()) Text(appString(StringKeys.TC_SEARCH_CLASSES), style = VTheme.type.body.colored(c.ink3).copy(fontSize = 14.sp))
+                    if (value.isBlank()) Text(appString(StringKeys.TC_SEARCH_CLASSES), style = VtT.body.coloredV(c.ink3).copy(fontSize = 14.sp))
                     inner()
                 }
             },
@@ -115,7 +113,7 @@ private fun ScopeSearchField(value: String, onChange: (String) -> Unit) {
 
 @Composable
 private fun ScopeRow(cls: TeacherClassSummaryDto, onPick: (TeacherClassSummaryDto) -> Unit) {
-    val c = VTheme.colors
+    val c = VtC
     val accent = teacherSubjectColor(c, cls.subject.ifBlank { cls.className })
     val ix = remember { MutableInteractionSource() }
     Row(
@@ -129,25 +127,25 @@ private fun ScopeRow(cls: TeacherClassSummaryDto, onPick: (TeacherClassSummaryDt
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        TIconDisc(VIcons.School, tint = accent, bg = accent.copy(alpha = 0.12f), size = 44.dp, glyph = 22.dp)
+        VtIconDisc(VIcons.School, tint = accent, bg = accent.copy(alpha = 0.12f), size = 44.dp, glyph = 22.dp)
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     if (cls.section.isBlank()) cls.className else "${cls.className}-${cls.section}",
-                    style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 15.sp, fontWeight = FontWeight.ExtraBold),
+                    style = VtT.bodyStrong.coloredV(c.ink).copy(fontSize = 15.sp, fontWeight = FontWeight.ExtraBold),
                 )
                 if (cls.isClassTeacher) {
-                    TPill(appString(StringKeys.TC_CLASS_TEACHER), bg = c.accent.copy(alpha = 0.12f), fg = c.accentDeep)
+                    VtPill(appString(StringKeys.TC_CLASS_TEACHER), bg = c.accent.copy(alpha = 0.12f), fg = c.accentDeep)
                 }
             }
             Spacer(Modifier.height(2.dp))
             Text(
                 appString(StringKeys.TC_STUDENTS_COUNT, "subject" to cls.subject.ifBlank { "—" }, "count" to cls.studentCount.toString()),
-                style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp),
+                style = VtT.caption.coloredV(c.ink2).copy(fontSize = 12.sp),
             )
         }
         if (cls.todayAttendanceMarked) {
-            TIconDisc(VIcons.Check, tint = c.successInk, bg = c.success.copy(alpha = 0.18f), size = 28.dp, glyph = 15.dp)
+            VtIconDisc(VIcons.Check, tint = c.successInk, bg = c.success.copy(alpha = 0.18f), size = 28.dp, glyph = 15.dp)
         } else {
             Icon(VIcons.ChevronRight, contentDescription = null, tint = c.ink3, modifier = Modifier.size(20.dp))
         }

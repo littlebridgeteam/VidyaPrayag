@@ -45,8 +45,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.ui.v2.components.VNavItem
 import com.littlebridge.enrollplus.ui.v2.theme.VElevationLevel
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
 import com.littlebridge.enrollplus.ui.v2.theme.vElevation
 
 /**
@@ -67,7 +65,7 @@ fun TeacherDock(
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
+    val c = VtC
     val density = LocalDensity.current
     val haptic = LocalHapticFeedback.current
     val accent = c.accentDeep
@@ -170,7 +168,7 @@ private fun DockItem(
     accent: Color,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
+    val c = VtC
     val tint = if (active) accent else c.ink3
     val iconScale by animateFloatAsState(
         targetValue = if (active) 1.08f else 1f,
@@ -218,7 +216,7 @@ private fun DockItem(
                 ) {
                     Text(
                         if (item.badge > 9) "9+" else item.badge.toString(),
-                        style = VTheme.type.dataSm.colored(Color.White).copy(fontSize = 8.5.sp, fontWeight = FontWeight.Bold),
+                        style = VtT.dataSm.coloredV(Color.White).copy(fontSize = 8.5.sp, fontWeight = FontWeight.Bold),
                     )
                 }
             }
@@ -228,7 +226,7 @@ private fun DockItem(
             Text(
                 item.label,
                 maxLines = 1,
-                style = VTheme.type.label.colored(accent).copy(
+                style = VtT.label.coloredV(accent).copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp,
                 ),

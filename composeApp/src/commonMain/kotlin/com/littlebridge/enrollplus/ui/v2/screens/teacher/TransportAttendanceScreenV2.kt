@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -33,12 +32,11 @@ import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
-import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -49,7 +47,6 @@ fun TransportAttendanceScreenV2(
     viewModel: TransportViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
-    val c = VTheme.colors
     var today by remember { mutableStateOf("") }
     var selectedRouteId by remember { mutableStateOf(routeId) }
 
@@ -107,13 +104,13 @@ fun TransportAttendanceScreenV2(
                                 Column {
                                     Text(
                                         route.name,
-                                        style = VTheme.type.h3,
-                                        color = c.ink,
+                                        style = VTypography.h3,
+                                        color = VColors.ink,
                                     )
                                     Text(
                                         "${route.stops.size} stops",
-                                        style = VTheme.type.caption,
-                                        color = c.ink2,
+                                        style = VTypography.caption,
+                                        color = VColors.ink2,
                                     )
                                 }
                                 VBadge(
@@ -180,7 +177,6 @@ private fun AttendanceCard(
     onPickup: () -> Unit,
     onDrop: () -> Unit,
 ) {
-    val c = VTheme.colors
     VCard(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -189,8 +185,8 @@ private fun AttendanceCard(
         ) {
             Text(
                 record.studentName ?: record.studentId,
-                style = VTheme.type.h3,
-                color = c.ink,
+                style = VTypography.h3,
+                color = VColors.ink,
             )
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 record.pickupStatus?.let {

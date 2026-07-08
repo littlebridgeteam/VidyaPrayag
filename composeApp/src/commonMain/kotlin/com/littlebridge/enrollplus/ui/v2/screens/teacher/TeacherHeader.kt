@@ -29,8 +29,6 @@ import com.littlebridge.enrollplus.ui.v2.components.VAvatar
 import com.littlebridge.enrollplus.ui.v2.components.VDivider
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VStatusDot
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
 
 /**
  * TeacherHeader — THE single canonical header for the whole rebuilt Teacher Portal, rendered
@@ -54,7 +52,7 @@ fun TeacherHeader(
     modifier: Modifier = Modifier,
     onOpenNotifications: (() -> Unit)? = null,
 ) {
-    val c = VTheme.colors
+    val c = VtC
     Column(
         modifier
             .fillMaxWidth()
@@ -82,12 +80,12 @@ fun TeacherHeader(
                 Column {
                     Text(
                         subline,
-                        style = VTheme.type.label.colored(c.ink3)
+                        style = VtT.label.coloredV(c.ink3)
                             .copy(fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.4.sp),
                     )
                     Text(
                         teacherName.ifBlank { "Teacher" },
-                        style = VTheme.type.bodyStrong.colored(c.ink)
+                        style = VtT.bodyStrong.coloredV(c.ink)
                             .copy(fontSize = 15.sp, fontWeight = FontWeight.ExtraBold),
                     )
                 }
@@ -131,7 +129,7 @@ fun TeacherSubHeader(
     subtitle: String? = null,
     trailing: (@Composable () -> Unit)? = null,
 ) {
-    val c = VTheme.colors
+    val c = VtC
     Column(
         modifier
             .fillMaxWidth()
@@ -149,11 +147,11 @@ fun TeacherSubHeader(
             Column(Modifier.weight(1f)) {
                 Text(
                     title,
-                    style = VTheme.type.h3.colored(c.ink).copy(fontWeight = FontWeight.ExtraBold),
+                    style = VtT.h3.coloredV(c.ink).copy(fontWeight = FontWeight.ExtraBold),
                     maxLines = 1,
                 )
                 if (!subtitle.isNullOrBlank()) {
-                    Text(subtitle, style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp), maxLines = 1)
+                    Text(subtitle, style = VtT.caption.coloredV(c.ink3).copy(fontSize = 11.sp), maxLines = 1)
                 }
             }
             trailing?.invoke()
@@ -166,7 +164,7 @@ fun TeacherSubHeader(
 /** A circular header action button — cream surface, navy glyph, no ripple. */
 @Composable
 private fun HeaderIconButton(icon: ImageVector, label: String, onClick: () -> Unit) {
-    val c = VTheme.colors
+    val c = VtC
     val ix = remember { MutableInteractionSource() }
     Box(
         Modifier

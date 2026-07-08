@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -35,7 +34,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.feature.admin.domain.model.TimetableChangeRequestDto
-import com.littlebridge.enrollplus.feature.teacher.domain.model.ResolvedDayDto
 import com.littlebridge.enrollplus.feature.teacher.domain.model.ResolvedPeriodDto
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherTimetableViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
@@ -49,10 +47,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
 
 private val WEEKDAY_LABELS = mapOf(
@@ -66,7 +61,7 @@ fun TeacherTimetableScreenV2(
     viewModel: TeacherTimetableViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
-    val c = VTheme.colors
+    val c = VtC
     val thisWeekLabel = appString(StringKeys.TC_THIS_WEEK)
     var activeTab by remember { mutableStateOf(thisWeekLabel) }
     var selectedDay by remember { mutableStateOf(1) }
@@ -141,10 +136,10 @@ fun TeacherTimetableScreenV2(
                     )
 
                     state.infoMessage?.let {
-                        Text(it, style = VTheme.type.caption.colored(VTheme.colors.successInk))
+                        Text(it, style = VtT.caption.coloredV(VtC.successInk))
                     }
                     state.errorMessage?.let {
-                        Text(it, style = VTheme.type.caption.colored(VTheme.colors.dangerInk))
+                        Text(it, style = VtT.caption.coloredV(VtC.dangerInk))
                     }
 
                     Spacer(Modifier.height(120.dp))
@@ -203,7 +198,7 @@ private fun TeacherPeriodCard(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    val c = VTheme.colors
+    val c = VtC
     VCard(Modifier.fillMaxWidth()) {
         Row(
             Modifier.fillMaxWidth(),
@@ -215,9 +210,9 @@ private fun TeacherPeriodCard(
                 Modifier.width(64.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(period.startTime, style = VTheme.type.bodyStrong.colored(c.ink))
-                Text("↓", style = VTheme.type.caption.colored(c.ink3))
-                Text(period.endTime, style = VTheme.type.body.colored(c.ink2))
+                Text(period.startTime, style = VtT.bodyStrong.coloredV(c.ink))
+                Text("↓", style = VtT.caption.coloredV(c.ink3))
+                Text(period.endTime, style = VtT.body.coloredV(c.ink2))
             }
 
             Box(Modifier.width(1.dp).height(40.dp).background(c.hairline))
@@ -229,9 +224,9 @@ private fun TeacherPeriodCard(
                     if (period.section.isNotBlank()) VBadge(text = period.section, tone = VBadgeTone.Accent)
                 }
                 Spacer(Modifier.height(2.dp))
-                Text(period.subject, style = VTheme.type.bodyStrong.colored(c.ink))
+                Text(period.subject, style = VtT.bodyStrong.coloredV(c.ink))
                 if (period.room.isNotBlank()) {
-                    Text(appString(StringKeys.TC_ROOM_N, "n" to period.room), style = VTheme.type.caption.colored(c.ink3))
+                    Text(appString(StringKeys.TC_ROOM_N, "n" to period.room), style = VtT.caption.coloredV(c.ink3))
                 }
             }
 
@@ -258,7 +253,7 @@ private fun TeacherPeriodCard(
 
 @Composable
 private fun ChangeRequestItemCard(req: TimetableChangeRequestDto) {
-    val c = VTheme.colors
+    val c = VtC
     VCard(Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(
@@ -269,11 +264,11 @@ private fun ChangeRequestItemCard(req: TimetableChangeRequestDto) {
                 Column(Modifier.weight(1f)) {
                     Text(
                         "${req.className} · ${req.subject}",
-                        style = VTheme.type.bodyStrong.colored(c.ink),
+                        style = VtT.bodyStrong.coloredV(c.ink),
                     )
                     Text(
                         "${WEEKDAY_LABELS[req.weekday] ?: ""} ${req.startTime ?: ""}–${req.endTime ?: ""}",
-                        style = VTheme.type.caption.colored(c.ink2),
+                        style = VtT.caption.coloredV(c.ink2),
                     )
                 }
                 VBadge(
@@ -292,10 +287,10 @@ private fun ChangeRequestItemCard(req: TimetableChangeRequestDto) {
             }
 
             if (req.reason.isNotBlank()) {
-                Text(appString(StringKeys.TC_REASON_COLON, "reason" to req.reason), style = VTheme.type.caption.colored(c.ink3))
+                Text(appString(StringKeys.TC_REASON_COLON, "reason" to req.reason), style = VtT.caption.coloredV(c.ink3))
             }
             if (req.adminNote.isNotBlank()) {
-                Text(appString(StringKeys.TC_ADMIN_NOTE_COLON, "note" to req.adminNote), style = VTheme.type.caption.colored(c.ink3))
+                Text(appString(StringKeys.TC_ADMIN_NOTE_COLON, "note" to req.adminNote), style = VtT.caption.coloredV(c.ink3))
             }
         }
     }
@@ -332,18 +327,18 @@ private fun ChangeRequestDialog(
                         "DELETE_PERIOD" -> appString(StringKeys.TC_REQUEST_PERIOD_DELETION)
                         else -> appString(StringKeys.TC_CHANGE_REQUEST)
                     },
-                    style = VTheme.type.h3, fontWeight = FontWeight.Bold, color = VTheme.colors.ink,
+                    style = VtT.h3, fontWeight = FontWeight.Bold, color = VtC.ink,
                 )
                 Text(
                     appString(StringKeys.TC_SENT_TO_ADMIN_FOR_APPROVAL),
-                    style = VTheme.type.caption.colored(VTheme.colors.ink2),
+                    style = VtT.caption.coloredV(VtC.ink2),
                 )
 
                 if (kind == "NEW_PERIOD") {
                     // Assignment selector
-                    Text(appString(StringKeys.TC_CLASS_SUBJECT), style = VTheme.type.caption.colored(VTheme.colors.ink2))
+                    Text(appString(StringKeys.TC_CLASS_SUBJECT), style = VtT.caption.coloredV(VtC.ink2))
                     if (assignments.isEmpty()) {
-                        Text(appString(StringKeys.TC_NO_ASSIGNMENTS_FOUND), style = VTheme.type.caption.colored(VTheme.colors.ink3))
+                        Text(appString(StringKeys.TC_NO_ASSIGNMENTS_FOUND), style = VtT.caption.coloredV(VtC.ink3))
                     } else {
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             assignments.forEach { asg ->
@@ -359,15 +354,15 @@ private fun ChangeRequestDialog(
                     // Show period info for UPDATE/DELETE
                     VCard(Modifier.fillMaxWidth()) {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("${period.className}-${period.section} ${period.subject}", style = VTheme.type.bodyStrong.colored(VTheme.colors.ink))
-                            Text("${period.startTime}–${period.endTime} · ${appString(StringKeys.TC_ROOM_N, "n" to period.room)}", style = VTheme.type.caption.colored(VTheme.colors.ink2))
+                            Text("${period.className}-${period.section} ${period.subject}", style = VtT.bodyStrong.coloredV(VtC.ink))
+                            Text("${period.startTime}–${period.endTime} · ${appString(StringKeys.TC_ROOM_N, "n" to period.room)}", style = VtT.caption.coloredV(VtC.ink2))
                         }
                     }
                 }
 
                 // Weekday selector
                 if (kind != "DELETE_PERIOD") {
-                    Text(appString(StringKeys.TC_DAY), style = VTheme.type.caption.colored(VTheme.colors.ink2))
+                    Text(appString(StringKeys.TC_DAY), style = VtT.caption.coloredV(VtC.ink2))
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         (1..6).forEach { day ->
                             VBadge(

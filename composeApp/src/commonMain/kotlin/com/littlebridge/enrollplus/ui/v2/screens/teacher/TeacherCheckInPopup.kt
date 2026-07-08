@@ -48,8 +48,6 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
 import kotlinx.coroutines.launch
 
 /**
@@ -70,7 +68,7 @@ fun TeacherCheckInPopup(
     onCheckIn: (method: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
+    val c = VtC
     val authenticator = rememberBiometricAuthenticator()
     val scope = rememberCoroutineScope()
     var working by remember { mutableStateOf(false) }
@@ -139,7 +137,7 @@ fun TeacherCheckInPopup(
                         Spacer(Modifier.height(14.dp))
                         Text(
                             "Check in for today",
-                            style = VTheme.type.h2.colored(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold),
+                            style = VtT.h2.coloredV(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold),
                             textAlign = TextAlign.Center,
                         )
                         Spacer(Modifier.height(6.dp))
@@ -150,13 +148,13 @@ fun TeacherCheckInPopup(
                         }
                         Text(
                             body,
-                            style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.5.sp),
+                            style = VtT.body.coloredV(c.ink2).copy(fontSize = 13.5.sp),
                             textAlign = TextAlign.Center,
                         )
                         val errorText = state.error
                         if (errorText != null) {
                             Spacer(Modifier.height(8.dp))
-                            Text(errorText, style = VTheme.type.caption.colored(c.dangerInk).copy(fontSize = 12.sp), textAlign = TextAlign.Center)
+                            Text(errorText, style = VtT.caption.coloredV(c.dangerInk).copy(fontSize = 12.sp), textAlign = TextAlign.Center)
                         }
                         Spacer(Modifier.height(18.dp))
 

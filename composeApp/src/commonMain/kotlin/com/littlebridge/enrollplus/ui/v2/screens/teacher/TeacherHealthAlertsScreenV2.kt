@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -24,7 +23,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.feature.health.domain.model.HealthAlertDto
 import com.littlebridge.enrollplus.feature.health.presentation.TeacherHealthAlertsViewModel
@@ -33,11 +31,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -47,7 +42,7 @@ fun TeacherHealthAlertsScreenV2(
     viewModel: TeacherHealthAlertsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
-    val c = VTheme.colors
+    val c = VtC
 
     Column(
         modifier
@@ -75,7 +70,7 @@ fun TeacherHealthAlertsScreenV2(
 
 @Composable
 private fun TeacherHealthAlertsContent(alerts: List<HealthAlertDto>) {
-    val c = VTheme.colors
+    val c = VtC
     Column(
         Modifier
             .fillMaxSize()
@@ -85,7 +80,7 @@ private fun TeacherHealthAlertsContent(alerts: List<HealthAlertDto>) {
     ) {
         Text(
             appString(StringKeys.TC_HEALTH_ALERTS_LIST_DESC),
-            style = VTheme.type.caption.colored(c.ink2),
+            style = VtT.caption.coloredV(c.ink2),
         )
 
         alerts.forEach { alert ->
@@ -102,15 +97,15 @@ private fun TeacherHealthAlertsContent(alerts: List<HealthAlertDto>) {
                         Icon(VIcons.AlertTriangle, contentDescription = null, tint = c.dangerInk, modifier = Modifier.size(20.dp))
                     }
                     Column(Modifier.weight(1f)) {
-                        Text(alert.studentName, style = VTheme.type.bodyStrong.colored(c.ink))
-                        Text("${alert.className} - ${alert.section}", style = VTheme.type.caption.colored(c.ink3))
+                        Text(alert.studentName, style = VtT.bodyStrong.coloredV(c.ink))
+                        Text("${alert.className} - ${alert.section}", style = VtT.caption.coloredV(c.ink3))
                         val allergies = parseJsonArray(alert.allergies)
                         val conditions = parseJsonArray(alert.chronicConditions)
                         if (allergies.isNotEmpty()) {
-                            Text(appString(StringKeys.TC_ALLERGIES_LABEL, "list" to allergies.joinToString(", ")), style = VTheme.type.caption.colored(c.dangerInk))
+                            Text(appString(StringKeys.TC_ALLERGIES_LABEL, "list" to allergies.joinToString(", ")), style = VtT.caption.coloredV(c.dangerInk))
                         }
                         if (conditions.isNotEmpty()) {
-                            Text(appString(StringKeys.TC_CONDITIONS_LABEL, "list" to conditions.joinToString(", ")), style = VTheme.type.caption.colored(c.ink2))
+                            Text(appString(StringKeys.TC_CONDITIONS_LABEL, "list" to conditions.joinToString(", ")), style = VtT.caption.coloredV(c.ink2))
                         }
                     }
                 }

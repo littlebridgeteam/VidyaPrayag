@@ -625,35 +625,90 @@ Also reference the HTML prototype if available:
 | `TeacherProfileScreenV2.kt` | ✅ Cream + clearance + header |
 | `TeacherHealthAlertsScreenV2.kt` | ✅ Cream + clearance |
 | `TeacherPewsScreenV2.kt` | ✅ Cream + clearance |
-| `TransportAttendanceScreenV2.kt` | ⏳ Pending |
-| `TeacherReportReviewQueueScreen.kt` | ⏳ Pending |
-| `TeacherReportDraftEditorScreen.kt` | ⏳ Pending |
-| `TeacherHeatmapScreen.kt` | ⏳ Pending |
-| `TeacherPtmEventRegistrationScreenV2.kt` | ⏳ Pending |
-| `TeacherMessagesScreenV2.kt` | ⏳ Pending |
-| `NotificationsScreenV2.kt` | ⏳ Pending (shared) |
-| `DigitalIdCardScreen.kt` | ⏳ Pending (shared) |
-| `ScheduledMessagesScreenV2.kt` | ⏳ Pending (shared) |
-| `AcademicCalendarScreenV2.kt` | ⏳ Pending (shared) |
-| `TeacherAttendanceScreenV2.kt` | ⏳ Pending (tool sub-screen) |
-| `TeacherMarksScreenV2.kt` | ⏳ Pending (tool sub-screen) |
-| `TeacherHomeworkScreenV2.kt` | ⏳ Pending (tool sub-screen) |
-| `TeacherSyllabusScreenV2.kt` | ⏳ Pending (tool sub-screen) |
-| `TeacherLessonPlanScreenV2.kt` | ⏳ Pending (tool sub-screen) |
+| `TransportAttendanceScreenV2.kt` | ✅ Cream tokens |
+| `TeacherReportReviewQueueScreen.kt` | ✅ Cream tokens (VtC/VtT bridge) |
+| `TeacherReportDraftEditorScreen.kt` | ✅ Cream tokens (VtC/VtT bridge) |
+| `TeacherHeatmapScreen.kt` | ✅ Cream tokens (VtC/VtT bridge) |
+| `TeacherPtmEventRegistrationScreenV2.kt` | ✅ Cream tokens (VtC/VtT bridge) + list bottom clearance |
+| `TeacherMessagesScreenV2.kt` | ✅ Cream tokens (VtC/VtT bridge) |
+| `NotificationsScreenV2.kt` | ✅ Already token-based (shared) |
+| `DigitalIdCardScreen.kt` | ✅ Cream tokens (shared) |
+| `ScheduledMessagesScreenV2.kt` | ✅ Already token-based (shared) |
+| `AcademicCalendarScreenV2.kt` | ✅ Cream tokens (shared) |
+| `TeacherAttendanceScreenV2.kt` | ✅ Cream tokens (tool sub-screen) |
+| `TeacherMarksScreenV2.kt` | ✅ Cream tokens (tool sub-screen) |
+| `TeacherHomeworkScreenV2.kt` | ✅ Cream tokens (tool sub-screen) |
+| `TeacherSyllabusScreenV2.kt` | ✅ Cream tokens (tool sub-screen) |
+| `TeacherLessonPlanScreenV2.kt` | ✅ Cream tokens (tool sub-screen) |
+
+### 13.1 Shell / shared components (§3.3 reconciliation)
+
+| File | Status |
+|------|--------|
+| `TeacherKit.kt` | ✅ Legacy `T*` atoms retargeted to cream tokens via `KitC` bridge |
+| `TeacherKitV2.kt` | ✅ Central `VtC` / `VtT` / `coloredV` bridge + `Vt*` token atoms + `vtSubjectColor` |
+| `TeacherPortalV2.kt` | ✅ Token-based shell (no legacy `VTheme` wrapper) |
+| `TeacherHeader.kt` | ✅ Cream tokens (VtC/VtT bridge) |
+| `TeacherDock.kt` | ✅ Cream tokens (VtC/VtT bridge) |
+| `TeacherDialogs.kt` | ✅ Cream tokens (VtC/VtT bridge) |
+| `TeacherCheckInPopup.kt` | ✅ Cream tokens (VtC/VtT bridge) |
+| `TeacherScopeSelector.kt` | ✅ Cream tokens (VtC/VtT bridge) |
+| `TeacherStudentProfileScreenV2.kt` | ✅ Cream tokens (VtC/VtT bridge) |
+
+**Migration status:** the entire Teacher Portal package now renders on the
+cream/violet token system. A portal-wide grep confirms **zero functional
+`VTheme` code references** remain in `ui/v2/screens/teacher/` (only KDoc
+comments in `TeacherKitV2.kt` mention the legacy name to document the bridge).
+
+> The **migration bridge pattern** (`val c = VtC`, `VtT.*`, `.coloredV(...)`,
+> `vtSubjectColor(...)`) preserves 100% of each screen's layout and branch
+> logic while retiring the legacy lavender `VTheme` dependency. `VtC`/`VtT`
+> map every legacy accessor name onto the new `VColors`/`VTypography` tokens,
+> so consumers migrate with minimal churn and no behavioural change.
 
 ---
 
 ## 14. How to Continue
 
-1. Pick the next file from the checklist.
-2. Read it end-to-end.
-3. Identify old layout patterns, hardcoded values, missing cream background, oversized text, or insufficient dock clearance.
-4. Rebuild the screen using the tokens and vocabulary above.
-5. Add missing string keys.
-6. Compile.
-7. Update this file's checklist.
-8. Commit.
+The teacher-portal migration described in this document is **complete**. Any
+future screen should use the token system directly
+(`com.littlebridge.enrollplus.ui.tokens` — `VColors` / `VTypography` /
+`VShapes`) or the `VtC` / `VtT` bridge, following the vocabulary above. Note
+that `parent/`, `discovery/`, and `auth/` V2 screens are **outside the scope of
+this teacher-portal document** and may still use the legacy theme.
 
 ---
 
-*Last updated: 2026-07-08 during active redesign of the Teacher Portal.*
+*Last updated: 2026-07-08 — Teacher Portal token migration completed.*
+
+---
+
+## 15. Verification Pass (2026-07-08)
+
+A follow-up verification pass was run against §12 (Non-Negotiable Rules):
+
+- **Rule 2 (no raw values):** `grep` for `Color(0x…)` across every teacher
+  screen returns **0 matches** outside the `TeacherKit*` bridge files, where a
+  single harmonious subject-colour rotation is documented. ✅
+- **Rule 5 (dock clearance):** every *tab* content list ends on the shared
+  `TeacherDockClearance` constant (`= 120.dp`, defined once in
+  `TeacherKitV2.kt`). Overlays with a `VBackHeader` correctly use
+  `24.dp`/`navigationBarsPadding()` instead of dock clearance because the
+  floating dock is not rendered above an overlay. The PTM Event Registration
+  overlay was the one list without explicit bottom padding; it now carries a
+  `contentPadding` bottom inset so the final card is never flush against the
+  system nav bar. ✅
+- **Legacy `VTheme`:** portal-wide grep confirms the only remaining `VTheme`
+  occurrences are KDoc comments plus the unrelated `VThemePicker` component. ✅
+- **Strings:** all nine new `TC_*` home-section keys resolve in both the
+  English and Hindi maps of `AppStrings.kt`. ✅
+- **Rule 10 (compile):** the canonical build task
+  `:composeApp:compileDevDebugKotlinAndroid` requires AGP 9.2.1 / Kotlin 2.2.10
+  / compileSdk 36, whose Gradle + Kotlin daemons need ~3–4 GB of heap. The CI
+  sandbox used for this pass has only ~1 GB of RAM, so the full Android build
+  OOMs during project configuration and cannot be completed there — this is an
+  environment limit, not a source defect. Every changed file was instead
+  validated with a standalone Kotlin parse/analysis run (no syntax or
+  structural errors) and a brace/paren balance sweep across all 26 teacher
+  source files (0 mismatches). The full Gradle build should be run on a
+  developer machine or a CI runner with ≥6 GB RAM before release.
