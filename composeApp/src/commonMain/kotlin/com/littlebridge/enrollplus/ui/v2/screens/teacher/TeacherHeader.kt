@@ -152,6 +152,12 @@ fun TeacherPremiumHeader(
     val name = teacherName.trim().substringBefore(" ")
         .ifBlank { teacherName.ifBlank { appString(StringKeys.TEACHER_TITLE) } }
 
+    // Greeting line is 10% larger than the base h2 (24sp → 26.4sp) for a bolder,
+    // more premium masthead while staying comfortable. The "Hi {name}" eyebrow is
+    // bumped proportionately (14sp → ~15.4sp).
+    val greetingSize = 26.4.sp
+    val eyebrowSize = 15.4.sp
+
     Column(modifier.fillMaxWidth()) {
         Row(
             Modifier.fillMaxWidth(),
@@ -160,14 +166,15 @@ fun TeacherPremiumHeader(
         ) {
             Text(
                 text = "Enroll+",
-                style = VTypography.wordmark.copy(color = VColors.violet),
+                style = VTypography.wordmark.copy(color = VColors.violet, fontSize = 17.sp),
             )
 
             val ix = remember { MutableInteractionSource() }
             Box(
                 Modifier
-                    .size(40.dp)
+                    .size(42.dp)
                     .clip(VShapes.full)
+                    .background(VColors.surfaceCard)
                     .clickable(interactionSource = ix, indication = null) { onOpenNotifications() },
                 contentAlignment = Alignment.Center,
             ) {
@@ -181,7 +188,7 @@ fun TeacherPremiumHeader(
                     VStatusDot(
                         color = VColors.coral,
                         size = 8.dp,
-                        modifier = Modifier.align(Alignment.TopEnd).padding(top = 6.dp, end = 6.dp),
+                        modifier = Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 8.dp),
                     )
                 }
             }
@@ -192,20 +199,26 @@ fun TeacherPremiumHeader(
         Text(
             text = "Hi $name",
             style = VTypography.caption.copy(
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
+                fontSize = eyebrowSize,
+                fontWeight = FontWeight.SemiBold,
                 color = VColors.violet,
             ),
         )
 
-        Spacer(Modifier.height(2.dp))
+        Spacer(Modifier.height(3.dp))
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(7.dp),
         ) {
-            Text(text = lead, style = VTypography.h2.copy(color = VColors.ink))
-            Text(text = accent, style = VTypography.h2.copy(color = VColors.violet))
+            Text(
+                text = lead,
+                style = VTypography.h2.copy(color = VColors.ink, fontSize = greetingSize),
+            )
+            Text(
+                text = accent,
+                style = VTypography.h2.copy(color = VColors.violet, fontSize = greetingSize),
+            )
         }
     }
 }

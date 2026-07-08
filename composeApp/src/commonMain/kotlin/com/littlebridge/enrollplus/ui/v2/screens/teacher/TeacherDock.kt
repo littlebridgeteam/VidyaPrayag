@@ -43,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.VNavItem
 import com.littlebridge.enrollplus.ui.v2.theme.VElevationLevel
 import com.littlebridge.enrollplus.ui.v2.theme.vElevation
@@ -89,6 +90,17 @@ fun TeacherDock(
     Box(
         modifier
             .fillMaxWidth()
+            // Paint the same warm cream the tabs use across the WHOLE dock band
+            // (including the system navigation-bar inset) so the lavender scaffold
+            // background never bleeds through as a purple bar behind the floating
+            // dock. A soft top-fade blends the band into the scrolling content.
+            .background(
+                Brush.verticalGradient(
+                    0f to VColors.cream.copy(alpha = 0f),
+                    0.45f to VColors.cream,
+                    1f to VColors.cream,
+                ),
+            )
             .navigationBarsPadding()
             .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 12.dp),
         contentAlignment = Alignment.Center,

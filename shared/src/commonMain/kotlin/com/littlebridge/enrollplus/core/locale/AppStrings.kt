@@ -1722,6 +1722,8 @@ object StringKeys {
     const val TC_SCHEDULE_TAB                          = "tc.schedule_tab"
     const val TC_REQUESTS_TAB                          = "tc.requests_tab"
     const val TC_ACCOUNT_ACCENT                        = "tc.account_accent"
+    const val TC_CLASSES_ACCENT                        = "tc.classes_accent"
+    const val TC_AT_RISK                               = "tc.at_risk"
     const val TC_NO_PERIOD_RIGHT_NOW                   = "tc.no_period_right_now"
     const val TC_NO_ACTIVE_HOMEWORK                    = "tc.no_active_homework"
     const val TC_NO_ACTIVE_HOMEWORK_CLASS              = "tc.no_active_homework_class"
@@ -4695,6 +4697,8 @@ object AppStrings {
         StringKeys.TC_SCHEDULE_TAB                          to "Schedule",
         StringKeys.TC_REQUESTS_TAB                          to "Requests",
         StringKeys.TC_ACCOUNT_ACCENT                        to "account",
+        StringKeys.TC_CLASSES_ACCENT                        to "classes",
+        StringKeys.TC_AT_RISK                               to "At risk",
         StringKeys.TC_NO_PERIOD_RIGHT_NOW                   to "No class right now",
         StringKeys.TC_NO_ACTIVE_HOMEWORK                    to "No active homework",
         StringKeys.TC_NO_ACTIVE_HOMEWORK_CLASS              to "No active homework for this class",
@@ -7647,6 +7651,8 @@ object AppStrings {
         StringKeys.TC_SCHEDULE_TAB                          to "समय-सारणी",
         StringKeys.TC_REQUESTS_TAB                          to "अनुरोध",
         StringKeys.TC_ACCOUNT_ACCENT                        to "खाता",
+        StringKeys.TC_CLASSES_ACCENT                        to "कक्षाएँ",
+        StringKeys.TC_AT_RISK                               to "जोखिम में",
         StringKeys.TC_NO_PERIOD_RIGHT_NOW                   to "अभी कोई कक्षा नहीं",
         StringKeys.TC_NO_ACTIVE_HOMEWORK                    to "No active homework",
         StringKeys.TC_NO_ACTIVE_HOMEWORK_CLASS              to "No active homework for this class",

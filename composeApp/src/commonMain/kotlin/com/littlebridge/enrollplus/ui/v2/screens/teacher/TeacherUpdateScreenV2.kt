@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.material3.Icon
@@ -105,6 +106,7 @@ fun TeacherUpdateScreenV2(
         modifier = modifier
             .fillMaxSize()
             .background(VColors.cream)
+            .statusBarsPadding()
             .padding(top = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {

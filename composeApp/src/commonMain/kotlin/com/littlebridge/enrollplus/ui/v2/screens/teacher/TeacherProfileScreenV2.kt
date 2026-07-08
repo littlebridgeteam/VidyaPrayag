@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -40,6 +41,7 @@ import com.littlebridge.enrollplus.feature.teacher.presentation.ActionResult
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherProfile
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherProfileActionsViewModel
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherProfileViewModel
+import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
@@ -101,7 +103,7 @@ fun TeacherProfileScreenV2(
     var confirmLogout by remember { mutableStateOf(false) }
 
     LazyColumn(
-        modifier = modifier.fillMaxSize().background(c.cream),
+        modifier = modifier.fillMaxSize().background(VColors.cream).statusBarsPadding(),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = TeacherDockClearance),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
