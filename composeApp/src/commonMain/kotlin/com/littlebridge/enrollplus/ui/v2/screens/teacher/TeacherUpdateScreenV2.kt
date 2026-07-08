@@ -12,15 +12,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -80,12 +76,19 @@ fun TeacherUpdateScreenV2(
     var pickedAssignment by rememberSaveable { mutableStateOf(initialAssignmentId) }
     var pickedLabel by rememberSaveable { mutableStateOf(initialScopeLabel) }
 
+    // IMPORTANT: this screen must NOT wrap its body in a verticalScroll. The scope
+    // gate ([TeacherScopeSelector]) and every scoped tool sub-screen (Attendance,
+    // Marks, Syllabus, Homework, Lesson Plan) each host their own vertically
+    // scrollable LazyColumn. Nesting them inside a Column(verticalScroll) hands the
+    // inner LazyColumn an infinite max-height constraint and crashes at measure time
+    // (IllegalStateException: "Vertically scrollable component was measured with an
+    // infinity maximum height constraints"). Instead the header + tool grid stay
+    // fixed at the top, and the body fills the remaining bounded height with weight(1f).
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(VColors.cream)
-            .verticalScroll(rememberScrollState())
-            .padding(top = 12.dp, bottom = 120.dp),
+            .padding(top = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         UpdateHeader()
@@ -98,7 +101,12 @@ fun TeacherUpdateScreenV2(
             },
         )
 
-        Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .padding(horizontal = 16.dp),
+        ) {
             val asg = pickedAssignment
             if (asg == null) {
                 ScopeGate(tool = tool, classes = classesState.classes) { cls ->
@@ -106,19 +114,26 @@ fun TeacherUpdateScreenV2(
                     pickedLabel = scopeLabelFor(cls)
                 }
             } else {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(
+                    Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
                     ScopeBar(label = pickedLabel, onChange = { pickedAssignment = null; pickedLabel = "" })
-                    AnimatedContent(
-                        targetState = tool,
-                        transitionSpec = { fadeIn() togetherWith fadeOut() },
-                        label = "updateTool",
-                    ) { active ->
-                        when (active) {
-                            UpdateTool.Attendance -> TeacherAttendanceScreenV2(asg, pickedLabel)
-                            UpdateTool.Marks -> TeacherMarksScreenV2(asg, pickedLabel)
-                            UpdateTool.Syllabus -> TeacherSyllabusScreenV2(asg, pickedLabel)
-                            UpdateTool.Homework -> TeacherHomeworkScreenV2(asg, pickedLabel)
-                            UpdateTool.LessonPlan -> TeacherLessonPlanScreenV2(asg, pickedLabel)
+                    // The scoped tool screen owns the remaining bounded height and its
+                    // own LazyColumn/scroll — hence weight(1f) here, never verticalScroll.
+                    Box(Modifier.fillMaxWidth().weight(1f)) {
+                        AnimatedContent(
+                            targetState = tool,
+                            transitionSpec = { fadeIn() togetherWith fadeOut() },
+                            label = "updateTool",
+                        ) { active ->
+                            when (active) {
+                                UpdateTool.Attendance -> TeacherAttendanceScreenV2(asg, pickedLabel)
+                                UpdateTool.Marks -> TeacherMarksScreenV2(asg, pickedLabel)
+                                UpdateTool.Syllabus -> TeacherSyllabusScreenV2(asg, pickedLabel)
+                                UpdateTool.Homework -> TeacherHomeworkScreenV2(asg, pickedLabel)
+                                UpdateTool.LessonPlan -> TeacherLessonPlanScreenV2(asg, pickedLabel)
+                            }
                         }
                     }
                 }
