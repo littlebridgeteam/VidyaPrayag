@@ -2,6 +2,9 @@ package com.littlebridge.enrollplus.feature.teacher.data.repository
 
 import com.littlebridge.enrollplus.core.model.ApiResponse
 import com.littlebridge.enrollplus.core.network.NetworkResult
+import com.littlebridge.enrollplus.feature.admin.domain.model.ChangeRequestListResponse
+import com.littlebridge.enrollplus.feature.admin.domain.model.CreateChangeRequestRequest
+import com.littlebridge.enrollplus.feature.admin.domain.model.TimetableChangeRequestDto
 import com.littlebridge.enrollplus.feature.teacher.data.remote.TeacherApi
 import com.littlebridge.enrollplus.feature.teacher.domain.model.*
 import com.littlebridge.enrollplus.feature.teacher.domain.repository.TeacherRepository
@@ -119,6 +122,38 @@ class TeacherRepositoryImpl(
     override suspend fun broadcastToClass(token: String, request: TeacherClassBroadcastRequest): NetworkResult<TeacherClassBroadcastResponse> =
         api.broadcastToClass(token, request)
 
+    // Read Receipts: teacher 1:1 messaging.
+    override suspend fun getMessageThreads(token: String): NetworkResult<TeacherMessageThreadsResponse> =
+        api.getMessageThreads(token)
+
+    override suspend fun getThreadMessages(token: String, threadId: String): NetworkResult<TeacherThreadMessagesResponse> =
+        api.getThreadMessages(token, threadId)
+
+    override suspend fun markThreadRead(token: String, threadId: String): NetworkResult<Unit> =
+        when (val r = api.markThreadRead(token, threadId)) {
+            is NetworkResult.Success -> {
+                val envelope = r.data
+                if (!envelope.success) NetworkResult.Error(envelope.message.ifBlank { "Failed to mark thread as read" })
+                else NetworkResult.Success(Unit)
+            }
+            is NetworkResult.Error -> NetworkResult.Error(r.message, r.code)
+            is NetworkResult.ConnectionError -> NetworkResult.ConnectionError
+        }
+
+    override suspend fun getUnreadCount(token: String): NetworkResult<Int> =
+        when (val r = api.getUnreadCount(token)) {
+            is NetworkResult.Success -> {
+                val dto = r.data
+                if (!dto.success) NetworkResult.Error("Failed to fetch unread count")
+                else NetworkResult.Success(dto.data?.unreadCount ?: 0)
+            }
+            is NetworkResult.Error -> NetworkResult.Error(r.message, r.code)
+            is NetworkResult.ConnectionError -> NetworkResult.ConnectionError
+        }
+
+    override suspend fun sendMessage(token: String, request: TeacherSendMessageRequest): NetworkResult<TeacherSendMessageResponse> =
+        api.sendMessage(token, request)
+
     // Lesson Planning (LESSON_PLANNING_SPEC.md — P1-20)
     override suspend fun listLessonPlans(
         token: String, assignmentId: String, status: String?,
@@ -158,4 +193,75 @@ class TeacherRepositoryImpl(
 
     override suspend fun instantiateLessonFromTemplate(token: String, templateId: String, request: InstantiateFromTemplateRequest): NetworkResult<LessonPlanSingleResponse> =
         api.instantiateLessonFromTemplate(token, templateId, request)
+
+    override suspend fun getTimetableChangeRequests(token: String): NetworkResult<ChangeRequestListResponse> =
+        api.getTimetableChangeRequests(token)
+
+    override suspend fun submitTimetableChangeRequest(token: String, request: CreateChangeRequestRequest): NetworkResult<ApiResponse<TimetableChangeRequestDto>> =
+        api.submitTimetableChangeRequest(token, request)
+
+    // ── Agentic Syllabus — parse, daily log, popup prefs, quiz, delete ────────
+    override suspend fun parseSyllabus(token: String, request: SylParseRequest): NetworkResult<SylParseResponse> =
+        api.parseSyllabus(token, request)
+
+    override suspend fun confirmParsedSyllabus(token: String, request: SylParseConfirmRequest): NetworkResult<SylParseConfirmResponse> =
+        api.confirmParsedSyllabus(token, request)
+
+    override suspend fun createDailyLog(token: String, request: SylDailyLogRequest): NetworkResult<SylDailyLogResponse> =
+        api.createDailyLog(token, request)
+
+    override suspend fun listDailyLogs(token: String, assignmentId: String): NetworkResult<SylDailyLogListResponse> =
+        api.listDailyLogs(token, assignmentId)
+
+    override suspend fun shouldShowDailyLogPopup(token: String): NetworkResult<SylShouldShowResponse> =
+        api.shouldShowDailyLogPopup(token)
+
+    override suspend fun setPopupPrefs(token: String, request: SylPopupPrefsRequest): NetworkResult<SylPopupPrefsResponse> =
+        api.setPopupPrefs(token, request)
+
+    override suspend fun getPopupPrefs(token: String): NetworkResult<SylPopupPrefsResponse> =
+        api.getPopupPrefs(token)
+
+    override suspend fun deleteSyllabusUnit(token: String, assignmentId: String, unitId: String): NetworkResult<SylDeleteUnitResponse> =
+        api.deleteSyllabusUnit(token, assignmentId, unitId)
+
+    override suspend fun generateQuiz(token: String, request: QuizGenerateRequest): NetworkResult<QuizGenerateResponse> =
+        api.generateQuiz(token, request)
+
+    override suspend fun publishQuiz(token: String, quizId: String): NetworkResult<QuizPublishResponse> =
+        api.publishQuiz(token, quizId)
+
+    override suspend fun listQuizzes(token: String, assignmentId: String): NetworkResult<QuizListResponse> =
+        api.listQuizzes(token, assignmentId)
+
+    override suspend fun getQuizResults(token: String, quizId: String): NetworkResult<QuizListResponse> =
+        api.getQuizResults(token, quizId)
+
+    override suspend fun getQuizLeaderboard(token: String, quizId: String): NetworkResult<TeacherQuizLeaderboardResponse> =
+        api.getQuizLeaderboard(token, quizId)
+
+    override suspend fun updateQuizQuestion(token: String, quizId: String, questionId: String, request: QuizUpdateQuestionRequest): NetworkResult<QuizUpdateQuestionResponse> =
+        api.updateQuizQuestion(token, quizId, questionId, request)
+
+    override suspend fun addQuizQuestion(token: String, quizId: String, request: QuizUpdateQuestionRequest): NetworkResult<QuizUpdateQuestionResponse> =
+        api.addQuizQuestion(token, quizId, request)
+
+    override suspend fun regenerateQuiz(token: String, quizId: String): NetworkResult<QuizRegenerateResponse> =
+        api.regenerateQuiz(token, quizId)
+
+    // ── NCERT Auto-fill + Approval + Pace ───────────────────────────────────
+    override suspend fun autoFillSyllabus(token: String, request: SylAutoFillRequest): NetworkResult<SylAutoFillResponse> =
+        api.autoFillSyllabus(token, request)
+
+    override suspend fun confirmAutoFillSyllabus(token: String, assignmentId: String, chapters: List<SylAutoFillChapter>): NetworkResult<SylParseConfirmResponse> =
+        api.confirmAutoFillSyllabus(token, assignmentId, chapters)
+
+    override suspend fun approveSyllabus(token: String, request: SylApproveRequest): NetworkResult<SylApproveResponse> =
+        api.approveSyllabus(token, request)
+
+    override suspend fun rejectSyllabus(token: String, request: SylApproveRequest): NetworkResult<SylApproveResponse> =
+        api.rejectSyllabus(token, request)
+
+    override suspend fun getPaceWarning(token: String, assignmentId: String): NetworkResult<ApiResponse<SylPaceWarning>> =
+        api.getPaceWarning(token, assignmentId)
 }

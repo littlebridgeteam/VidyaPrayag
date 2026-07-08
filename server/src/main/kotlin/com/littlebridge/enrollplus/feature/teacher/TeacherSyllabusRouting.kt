@@ -53,11 +53,22 @@ import com.littlebridge.enrollplus.core.TeacherContext
 import com.littlebridge.enrollplus.core.created
 import com.littlebridge.enrollplus.core.fail
 import com.littlebridge.enrollplus.core.ok
+import com.littlebridge.enrollplus.core.okMessage
 import com.littlebridge.enrollplus.core.requireOwnedAssignment
 import com.littlebridge.enrollplus.core.requireTeacherContext
 import com.littlebridge.enrollplus.db.CurriculumUnitsTable
+import com.littlebridge.enrollplus.db.DailyClassLogTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
+import com.littlebridge.enrollplus.db.SyllabusPopupPrefsTable
 import com.littlebridge.enrollplus.db.SyllabusProgressTable
+import com.littlebridge.enrollplus.db.SyllabusSourcesTable
+import com.littlebridge.enrollplus.feature.ai.NcertReferenceService
+import com.littlebridge.enrollplus.feature.ai.SyllabusAiService
+import com.littlebridge.enrollplus.feature.ai.SyllabusPaceService
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.request.get
+import io.ktor.client.statement.readRawBytes
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -65,16 +76,22 @@ import io.ktor.server.request.receive
 import io.ktor.server.routing.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonPrimitive
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.greaterEq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.lessEq
 import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
+import org.slf4j.LoggerFactory
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Server-side DTOs — mirror shared/.../teacher/domain/model/TeacherModels.kt
@@ -94,6 +111,7 @@ data class SylNodeDto(
     @SerialName("is_covered") val isCovered: Boolean = false,
     @SerialName("covered_on") val coveredOn: String? = null,
     val note: String? = null,
+    @SerialName("approval_status") val approvalStatus: String = "APPROVED",
 )
 
 @Serializable
@@ -127,11 +145,175 @@ data class SylToggleProgressRequest(
     @SerialName("is_covered") val isCovered: Boolean = false,
     @SerialName("covered_on") val coveredOn: String? = null,
     val note: String? = null,
+    @SerialName("coverage_percent") val coveragePercent: Int? = null,
 )
 
 // (SylMutationData removed — unit create/update/toggle now return the SylNodeDto directly
 //  via call.ok/created, letting the canonical envelope provide the single
 //  { success, message, data } layer the client's SyllabusUnitMutationResponse expects.)
+
+// ── Agentic Syllabus: Parse DTOs ────────────────────────────────────────────
+
+@Serializable
+data class SylParseRequest(
+    @SerialName("assignment_id") val assignmentId: String = "",
+    @SerialName("source_type") val sourceType: String = "",  // IMAGE | TEXT
+    @SerialName("source_url") val sourceUrl: String? = null,
+    @SerialName("raw_text") val rawText: String? = null,
+)
+
+@Serializable
+data class SylParsedSubtopicDto(
+    val title: String,
+)
+
+@Serializable
+data class SylParsedTopicDto(
+    val title: String,
+    val subtopics: List<SylParsedSubtopicDto> = emptyList(),
+)
+
+@Serializable
+data class SylParsedChapterDto(
+    val title: String,
+    val topics: List<SylParsedTopicDto> = emptyList(),
+)
+
+@Serializable
+data class SylParseResultDto(
+    val chapters: List<SylParsedChapterDto> = emptyList(),
+    @SerialName("ai_provider") val aiProvider: String = "",
+)
+
+@Serializable
+data class SylParseConfirmRequest(
+    @SerialName("assignment_id") val assignmentId: String = "",
+    val chapters: List<SylParsedChapterDto> = emptyList(),
+)
+
+@Serializable
+data class SylParseConfirmResultDto(
+    @SerialName("units_created") val unitsCreated: Int = 0,
+)
+
+// ── Agentic Syllabus: Auto-fill & Approval DTOs ─────────────────────────────
+
+@Serializable
+data class SylAutoFillRequest(
+    @SerialName("assignment_id") val assignmentId: String = "",
+)
+
+@Serializable
+data class SylAutoFillChapterDto(
+    val title: String,
+    val topics: List<SylAutoFillTopicDto> = emptyList(),
+)
+
+@Serializable
+data class SylAutoFillTopicDto(
+    val title: String,
+    val subtopics: List<SylAutoFillSubtopicDto> = emptyList(),
+)
+
+@Serializable
+data class SylAutoFillSubtopicDto(
+    val title: String,
+)
+
+@Serializable
+data class SylAutoFillResultDto(
+    val found: Boolean = false,
+    val source: String = "",
+    @SerialName("class_level") val classLevel: String = "",
+    val subject: String = "",
+    val chapters: List<SylAutoFillChapterDto> = emptyList(),
+)
+
+@Serializable
+data class SylAutoFillConfirmRequest(
+    @SerialName("assignment_id") val assignmentId: String = "",
+    val chapters: List<SylAutoFillChapterDto> = emptyList(),
+)
+
+@Serializable
+data class SylApproveRequest(
+    @SerialName("assignment_id") val assignmentId: String = "",
+    @SerialName("unit_ids") val unitIds: List<String> = emptyList(),
+)
+
+@Serializable
+data class SylApproveResultDto(
+    @SerialName("approved_count") val approvedCount: Int = 0,
+)
+
+@Serializable
+data class SylRejectRequest(
+    @SerialName("assignment_id") val assignmentId: String = "",
+    @SerialName("unit_ids") val unitIds: List<String> = emptyList(),
+)
+
+@Serializable
+data class SylPaceWarningDto(
+    val level: String = "ON_TRACK",
+    @SerialName("expected_pct") val expectedPct: Int = 0,
+    @SerialName("actual_pct") val actualPct: Int = 0,
+    @SerialName("deviation_pct") val deviationPct: Int = 0,
+    val message: String = "",
+    @SerialName("weekly_periods") val weeklyPeriods: Int = 0,
+    @SerialName("classes_elapsed") val classesElapsed: Int = 0,
+    @SerialName("classes_remaining") val classesRemaining: Int = 0,
+    @SerialName("estimated_completion_date") val estimatedCompletionDate: String = "",
+    @SerialName("topics_per_class") val topicsPerClass: Double = 0.0,
+    @SerialName("holiday_days_counted") val holidayDaysCounted: Int = 0,
+    @SerialName("avg_coverage_per_class") val avgCoveragePerClass: Double = 0.0,
+)
+
+// ── Agentic Syllabus: Daily Log DTOs ────────────────────────────────────────
+
+@Serializable
+data class SylDailyLogRequest(
+    @SerialName("assignment_id") val assignmentId: String = "",
+    val date: String = "",  // YYYY-MM-DD
+    @SerialName("topic_ids") val topicIds: List<String> = emptyList(),
+    @SerialName("summary_text") val summaryText: String = "",
+    @SerialName("coverage_pct") val coveragePct: Int = 0,
+)
+
+@Serializable
+data class SylDailyLogDto(
+    val id: String,
+    val date: String,
+    @SerialName("topic_ids") val topicIds: List<String> = emptyList(),
+    @SerialName("summary_text") val summaryText: String = "",
+    @SerialName("coverage_pct") val coveragePct: Int = 0,
+    val source: String = "TEACHER",
+    @SerialName("is_ai_estimated") val isAiEstimated: Boolean = false,
+)
+
+@Serializable
+data class SylDailyLogListDto(
+    val logs: List<SylDailyLogDto> = emptyList(),
+)
+
+@Serializable
+data class SylShouldShowPopupDto(
+    @SerialName("should_show") val shouldShow: Boolean = false,
+    val reason: String = "",
+)
+
+// ── Agentic Syllabus: Popup Prefs DTOs ──────────────────────────────────────
+
+@Serializable
+data class SylPopupPrefsRequest(
+    @SerialName("assignment_id") val assignmentId: String = "",
+    @SerialName("suppress_mode") val suppressMode: String = "off",  // off | week | permanent
+)
+
+@Serializable
+data class SylPopupPrefsDto(
+    @SerialName("suppress_mode") val suppressMode: String = "off",
+    @SerialName("suppressed_until") val suppressedUntil: String? = null,
+)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers.
@@ -214,11 +396,13 @@ private suspend fun loadSyllabusNodes(asg: OwnedAssignment): List<SylNodeDto> {
                 isCovered = prog?.get(SyllabusProgressTable.isCovered) ?: false,
                 coveredOn = prog?.get(SyllabusProgressTable.coveredOn)?.toString(),
                 note = prog?.get(SyllabusProgressTable.note),
+                approvalStatus = row[CurriculumUnitsTable.approvalStatus],
             )
         }
 
-        // Chapters in order, each followed by its topics in order. Orphan topics
-        // (parent missing/inactive) sink to the end so nothing is silently dropped.
+        // Chapters in order, each followed by its topics in order, each topic
+        // followed by its subtopics in order. 3-level hierarchy (depth 0/1/2).
+        // Orphan units (parent missing/inactive) sink to the end.
         val byParent = units.groupBy { it[CurriculumUnitsTable.parentId] }
         val chapters = (byParent[null] ?: emptyList())
             .sortedBy { it[CurriculumUnitsTable.position] }
@@ -226,15 +410,21 @@ private suspend fun loadSyllabusNodes(asg: OwnedAssignment): List<SylNodeDto> {
         for (chapter in chapters) {
             result += nodeOf(chapter, depth = 0)
             val cid = chapter[CurriculumUnitsTable.id].value
-            (byParent[cid] ?: emptyList())
+            val topics = (byParent[cid] ?: emptyList())
                 .sortedBy { it[CurriculumUnitsTable.position] }
-                .forEach { result += nodeOf(it, depth = 1) }
+            for (topic in topics) {
+                result += nodeOf(topic, depth = 1)
+                val tid = topic[CurriculumUnitsTable.id].value
+                (byParent[tid] ?: emptyList())
+                    .sortedBy { it[CurriculumUnitsTable.position] }
+                    .forEach { result += nodeOf(it, depth = 2) }
+            }
         }
         // Topics whose parent isn't an active chapter in this scope → append flat.
         val placed = result.map { it.id }.toSet()
         units.filter { it[CurriculumUnitsTable.id].value.toString() !in placed }
             .sortedBy { it[CurriculumUnitsTable.position] }
-            .forEach { result += nodeOf(it, depth = if (it[CurriculumUnitsTable.parentId] == null) 0 else 1) }
+            .forEach { result += nodeOf(it, depth = it[CurriculumUnitsTable.depth]) }
         result
     }
 }
@@ -254,11 +444,12 @@ private suspend fun nodeForUnit(asg: OwnedAssignment, unitId: UUID): SylNodeDto?
         parentId = row[CurriculumUnitsTable.parentId]?.toString(),
         title = row[CurriculumUnitsTable.title],
         position = row[CurriculumUnitsTable.position],
-        depth = if (row[CurriculumUnitsTable.parentId] == null) 0 else 1,
+        depth = row[CurriculumUnitsTable.depth],
         isChapter = row[CurriculumUnitsTable.parentId] == null,
         isCovered = prog?.get(SyllabusProgressTable.isCovered) ?: false,
         coveredOn = prog?.get(SyllabusProgressTable.coveredOn)?.toString(),
         note = prog?.get(SyllabusProgressTable.note),
+        approvalStatus = row[CurriculumUnitsTable.approvalStatus],
     )
 }
 
@@ -272,7 +463,20 @@ fun Route.teacherSyllabusRouting() {
             syllabusLoad()
             syllabusCreateUnit()
             syllabusUpdateUnit()
+            syllabusDeleteUnit()
             syllabusToggleProgress()
+            syllabusParse()
+            syllabusParseConfirm()
+            syllabusAutoFill()
+            syllabusAutoFillConfirm()
+            syllabusApprove()
+            syllabusReject()
+            syllabusPaceWarning()
+            syllabusDailyLogCreate()
+            syllabusDailyLogList()
+            syllabusDailyLogShouldShow()
+            syllabusPopupPrefsSet()
+            syllabusPopupPrefsGet()
         }
     }
 }
@@ -461,14 +665,15 @@ private fun Route.syllabusToggleProgress() {
                     call.fail("covered_on must be YYYY-MM-DD", HttpStatusCode.BadRequest, "BAD_DATE")
                     return@patch
                 }
-            } ?: LocalDate.now()
+            } ?: todayIst()
         }
         // A future covered_on is nonsensical (you can't have covered it tomorrow).
-        if (coveredOn != null && coveredOn.isAfter(LocalDate.now())) {
+        if (coveredOn != null && coveredOn.isAfter(todayIst())) {
             call.fail("covered_on cannot be in the future", HttpStatusCode.BadRequest, "DATE_FUTURE")
             return@patch
         }
         val note = req.note?.takeIf { it.isNotBlank() }
+        val coveragePct = req.coveragePercent?.coerceIn(0, 100) ?: if (req.isCovered) 100 else 0
         val now = Instant.now()
 
         dbQuery {
@@ -486,6 +691,7 @@ private fun Route.syllabusToggleProgress() {
                     it[SyllabusProgressTable.coveredOn] = coveredOn
                     it[coveredBy] = if (req.isCovered) ctx.userId else null
                     if (note != null || !req.isCovered) it[SyllabusProgressTable.note] = note
+                    it[coveragePercent] = coveragePct
                     it[updatedAt] = now
                 }
             } else {
@@ -498,8 +704,92 @@ private fun Route.syllabusToggleProgress() {
                     it[SyllabusProgressTable.coveredOn] = coveredOn
                     it[coveredBy] = if (req.isCovered) ctx.userId else null
                     it[SyllabusProgressTable.note] = note
+                    it[coveragePercent] = coveragePct
                     it[createdAt] = now
                     it[updatedAt] = now
+                }
+            }
+
+            // ── Parent-child propagation ──────────────────────────────────
+            // 1) If this is a PARENT (chapter) marked covered → mark all children
+            //    (topics) covered too.
+            // 2) If this is a CHILD (topic) unmarked → unmark its parent (chapter)
+            //    so the chapter doesn't show covered when a topic isn't.
+            val parentId = unitRow[CurriculumUnitsTable.parentId]
+            if (parentId == null && req.isCovered) {
+                // Parent marked covered → cover all children
+                val childIds = CurriculumUnitsTable.selectAll().where {
+                    (CurriculumUnitsTable.parentId eq unitId) and
+                        (CurriculumUnitsTable.isActive eq true)
+                }.map { it[CurriculumUnitsTable.id].value }
+
+                val existingProg = if (childIds.isEmpty()) emptyMap() else
+                    SyllabusProgressTable.selectAll().where {
+                        (SyllabusProgressTable.unitId inList childIds) and
+                            (SyllabusProgressTable.section eq section) and
+                            (SyllabusProgressTable.assignmentId eq asg.assignmentId)
+                    }.associateBy { it[SyllabusProgressTable.unitId] }
+
+                childIds.forEach { childId ->
+                    val childProg = existingProg[childId]
+
+                    if (childProg != null) {
+                        SyllabusProgressTable.update({
+                            SyllabusProgressTable.id eq childProg[SyllabusProgressTable.id]
+                        }) {
+                            it[isCovered] = true
+                            it[SyllabusProgressTable.coveredOn] = coveredOn
+                            it[coveredBy] = ctx.userId
+                            it[coveragePercent] = 100
+                            it[updatedAt] = now
+                        }
+                    } else {
+                        SyllabusProgressTable.insert {
+                            it[id] = UUID.randomUUID()
+                            it[SyllabusProgressTable.unitId] = childId
+                            it[SyllabusProgressTable.section] = section
+                            it[assignmentId] = asg.assignmentId
+                            it[isCovered] = true
+                            it[SyllabusProgressTable.coveredOn] = coveredOn
+                            it[coveredBy] = ctx.userId
+                            it[coveragePercent] = 100
+                            it[createdAt] = now
+                            it[updatedAt] = now
+                        }
+                    }
+                }
+            } else if (parentId != null && !req.isCovered) {
+                // Child unmarked → unmark parent
+                val parentProg = SyllabusProgressTable.selectAll().where {
+                    (SyllabusProgressTable.unitId eq parentId) and
+                        (SyllabusProgressTable.section eq section) and
+                        (SyllabusProgressTable.assignmentId eq asg.assignmentId)
+                }.singleOrNull()
+
+                if (parentProg != null && parentProg[SyllabusProgressTable.isCovered]) {
+                    SyllabusProgressTable.update({
+                        SyllabusProgressTable.id eq parentProg[SyllabusProgressTable.id]
+                    }) {
+                        it[isCovered] = false
+                        it[SyllabusProgressTable.coveredOn] = null
+                        it[coveredBy] = null
+                        it[coveragePercent] = 0
+                        it[updatedAt] = now
+                    }
+                } else if (parentProg == null) {
+                    // Parent had no progress row yet — insert as uncovered
+                    SyllabusProgressTable.insert {
+                        it[id] = UUID.randomUUID()
+                        it[SyllabusProgressTable.unitId] = parentId
+                        it[SyllabusProgressTable.section] = section
+                        it[assignmentId] = asg.assignmentId
+                        it[isCovered] = false
+                        it[SyllabusProgressTable.coveredOn] = null
+                        it[coveredBy] = null
+                        it[coveragePercent] = 0
+                        it[createdAt] = now
+                        it[updatedAt] = now
+                    }
                 }
             }
         }
@@ -513,5 +803,919 @@ private fun Route.syllabusToggleProgress() {
             node,
             message = if (req.isCovered) "Marked covered" else "Marked not covered",
         )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DELETE /api/v1/teacher/syllabus/units/{id}   (soft-delete: isActive = false)
+// ─────────────────────────────────────────────────────────────────────────────
+private fun Route.syllabusDeleteUnit() {
+    delete("/units/{id}") {
+        val ctx = call.requireTeacherContext() ?: return@delete
+        val assignmentParam = call.request.queryParameters["assignmentId"]
+            ?: call.request.queryParameters["assignment_id"]
+        val asg = call.requireOwnedAssignment(ctx, assignmentParam) ?: return@delete
+        val unitRow = call.requireOwnedUnit(asg, ctx.schoolId, call.parameters["id"]) ?: return@delete
+        val unitId = unitRow[CurriculumUnitsTable.id].value
+
+        dbQuery {
+            // Soft-delete the unit and cascade to all descendants (children + grandchildren)
+            val childIds = CurriculumUnitsTable.selectAll().where {
+                (CurriculumUnitsTable.parentId eq unitId) and
+                    (CurriculumUnitsTable.isActive eq true)
+            }.map { it[CurriculumUnitsTable.id].value }
+
+            val grandchildIds = if (childIds.isNotEmpty()) {
+                CurriculumUnitsTable.selectAll().where {
+                    (CurriculumUnitsTable.parentId inList childIds) and
+                        (CurriculumUnitsTable.isActive eq true)
+                }.map { it[CurriculumUnitsTable.id].value }
+            } else emptyList()
+
+            val allIds = listOf(unitId) + childIds + grandchildIds
+            val entityIdList = allIds.map { org.jetbrains.exposed.dao.id.EntityID(it, CurriculumUnitsTable) }
+            CurriculumUnitsTable.update({ CurriculumUnitsTable.id inList entityIdList }) {
+                it[isActive] = false
+                it[updatedAt] = Instant.now()
+            }
+        }
+        call.okMessage("Unit deleted")
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/v1/teacher/syllabus/parse   (AI parse syllabus image or text)
+// ─────────────────────────────────────────────────────────────────────────────
+private fun Route.syllabusParse() {
+    post("/parse") {
+        val ctx = call.requireTeacherContext() ?: return@post
+        val req = runCatching { call.receive<SylParseRequest>() }.getOrNull()
+        if (req == null) {
+            call.fail("Invalid request body", HttpStatusCode.BadRequest, "BAD_REQUEST"); return@post
+        }
+        val asg = call.requireOwnedAssignment(ctx, req.assignmentId) ?: return@post
+
+        val sourceType = req.sourceType.uppercase()
+        if (sourceType != "IMAGE" && sourceType != "TEXT") {
+            call.fail("source_type must be IMAGE or TEXT", HttpStatusCode.BadRequest, "BAD_SOURCE_TYPE"); return@post
+        }
+        if (sourceType == "IMAGE" && req.sourceUrl.isNullOrBlank()) {
+            call.fail("source_url is required for IMAGE parse", HttpStatusCode.BadRequest, "MISSING_URL"); return@post
+        }
+        if (sourceType == "TEXT" && req.rawText.isNullOrBlank()) {
+            call.fail("raw_text is required for TEXT parse", HttpStatusCode.BadRequest, "MISSING_TEXT"); return@post
+        }
+
+        val classLevel = asg.className
+        val subject = asg.subject
+        val parsed = if (sourceType == "IMAGE") {
+            val imageBase64 = fetchImageAsBase64(req.sourceUrl!!)
+            if (imageBase64 == null) {
+                call.fail("Could not fetch image from URL", HttpStatusCode.BadGateway, "IMAGE_FETCH_FAILED"); return@post
+            }
+            val mimeType = guessMimeType(req.sourceUrl)
+            SyllabusAiService.parseSyllabusImage(imageBase64, mimeType, classLevel, subject, ctx.schoolId)
+        } else {
+            SyllabusAiService.parseSyllabusText(req.rawText!!, classLevel, subject, ctx.schoolId)
+        }
+
+        if (parsed == null) {
+            call.fail("AI is currently unavailable. Please try again or enter units manually.", HttpStatusCode.ServiceUnavailable, "AI_UNAVAILABLE"); return@post
+        }
+
+        val now = Instant.now()
+        val parsedJsonStr = kotlinx.serialization.json.Json.encodeToString(
+            kotlinx.serialization.builtins.ListSerializer(SylParsedChapterDto.serializer()),
+            parsed.chapters.map { ch ->
+                SylParsedChapterDto(
+                    title = ch.title,
+                    topics = ch.topics.map { tp ->
+                        SylParsedTopicDto(
+                            title = tp.title,
+                            subtopics = tp.subtopics.map { st -> SylParsedSubtopicDto(st.title) }
+                        )
+                    }
+                )
+            }
+        )
+        dbQuery {
+            SyllabusSourcesTable.insert {
+                it[id] = UUID.randomUUID()
+                it[schoolId] = ctx.schoolId
+                it[assignmentId] = asg.assignmentId
+                it[SyllabusSourcesTable.sourceType] = sourceType
+                it[sourceUrl] = req.sourceUrl
+                it[rawText] = req.rawText
+                it[parsedJson] = parsedJsonStr
+                it[aiProvider] = parsed.providerUsed
+                it[createdAt] = now
+                it[updatedAt] = now
+            }
+        }
+
+        call.ok(
+            SylParseResultDto(
+                chapters = parsed.chapters.map { ch ->
+                    SylParsedChapterDto(
+                        title = ch.title,
+                        topics = ch.topics.map { tp ->
+                            SylParsedTopicDto(
+                                title = tp.title,
+                                subtopics = tp.subtopics.map { st -> SylParsedSubtopicDto(st.title) }
+                            )
+                        }
+                    )
+                },
+                aiProvider = parsed.providerUsed,
+            ),
+            message = "Syllabus parsed",
+        )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/v1/teacher/syllabus/parse/confirm   (create curriculum_units from parsed hierarchy)
+// ─────────────────────────────────────────────────────────────────────────────
+private fun Route.syllabusParseConfirm() {
+    post("/parse/confirm") {
+        val ctx = call.requireTeacherContext() ?: return@post
+        val req = runCatching { call.receive<SylParseConfirmRequest>() }.getOrNull()
+        if (req == null) {
+            call.fail("Invalid request body", HttpStatusCode.BadRequest, "BAD_REQUEST"); return@post
+        }
+        val asg = call.requireOwnedAssignment(ctx, req.assignmentId) ?: return@post
+        val scopeClassId = asg.classId
+        val scopeSubjectId = asg.subjectId
+        if (scopeClassId == null || scopeSubjectId == null) {
+            call.fail("This class is not fully configured yet", HttpStatusCode.Conflict, "CLASS_NOT_CONFIGURED"); return@post
+        }
+        if (req.chapters.isEmpty()) {
+            call.fail("At least one chapter is required", HttpStatusCode.BadRequest, "EMPTY_HIERARCHY"); return@post
+        }
+
+        var unitsCreated = 0
+        val now = Instant.now()
+        dbQuery {
+            var chapterPos = CurriculumUnitsTable.selectAll().where {
+                (CurriculumUnitsTable.classId eq scopeClassId) and
+                    (CurriculumUnitsTable.subjectId eq scopeSubjectId) and
+                    (CurriculumUnitsTable.isActive eq true) and
+                    CurriculumUnitsTable.parentId.isNull()
+            }.maxOfOrNull { it[CurriculumUnitsTable.position] } ?: -1
+
+            for (chapter in req.chapters) {
+                val chapterId = UUID.randomUUID()
+                chapterPos++
+                CurriculumUnitsTable.insert {
+                    it[id] = chapterId
+                    it[schoolId] = ctx.schoolId
+                    it[classId] = scopeClassId
+                    it[subjectId] = scopeSubjectId
+                    it[parentId] = null
+                    it[CurriculumUnitsTable.title] = chapter.title.trim()
+                    it[position] = chapterPos
+                    it[isActive] = true
+                    it[depth] = 0
+                    it[approvalStatus] = "DRAFT"
+                    it[createdAt] = now
+                    it[updatedAt] = now
+                }
+                unitsCreated++
+
+                var topicPos = -1
+                for (topic in chapter.topics) {
+                    val topicId = UUID.randomUUID()
+                    topicPos++
+                    CurriculumUnitsTable.insert {
+                        it[id] = topicId
+                        it[schoolId] = ctx.schoolId
+                        it[classId] = scopeClassId
+                        it[subjectId] = scopeSubjectId
+                        it[parentId] = chapterId
+                        it[CurriculumUnitsTable.title] = topic.title.trim()
+                        it[position] = topicPos
+                        it[isActive] = true
+                        it[depth] = 1
+                        it[approvalStatus] = "DRAFT"
+                        it[createdAt] = now
+                        it[updatedAt] = now
+                    }
+                    unitsCreated++
+
+                    var subtopicPos = -1
+                    for (subtopic in topic.subtopics) {
+                        subtopicPos++
+                        CurriculumUnitsTable.insert {
+                            it[id] = UUID.randomUUID()
+                            it[schoolId] = ctx.schoolId
+                            it[classId] = scopeClassId
+                            it[subjectId] = scopeSubjectId
+                            it[parentId] = topicId
+                            it[CurriculumUnitsTable.title] = subtopic.title.trim()
+                            it[position] = subtopicPos
+                            it[isActive] = true
+                            it[depth] = 2
+                            it[approvalStatus] = "DRAFT"
+                            it[createdAt] = now
+                            it[updatedAt] = now
+                        }
+                        unitsCreated++
+                    }
+                }
+            }
+        }
+        call.ok(SylParseConfirmResultDto(unitsCreated = unitsCreated), message = "$unitsCreated units created as DRAFT — review and approve")
+
+        // Initialize pace plan for this assignment
+        SyllabusPaceService.recalcForAssignment(asg.assignmentId, ctx.schoolId)
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/v1/teacher/syllabus/auto-fill   (look up NCERT reference for class+subject)
+// ─────────────────────────────────────────────────────────────────────────────
+private fun Route.syllabusAutoFill() {
+    post("/auto-fill") {
+        val ctx = call.requireTeacherContext() ?: return@post
+        val req = runCatching { call.receive<SylAutoFillRequest>() }.getOrNull()
+        if (req == null) {
+            call.fail("Invalid request body", HttpStatusCode.BadRequest, "BAD_REQUEST"); return@post
+        }
+        val asg = call.requireOwnedAssignment(ctx, req.assignmentId) ?: return@post
+
+        val className = asg.className
+        val subject = asg.subject
+
+        log.info("Auto-fill lookup: className='{}' subject='{}'", className, subject)
+
+        val ncertSyllabus = NcertReferenceService.getSyllabus(className, subject)
+        if (ncertSyllabus == null || ncertSyllabus.chapters.isEmpty()) {
+            log.info("Auto-fill: no NCERT reference found for '{}' '{}'", className, subject)
+            call.ok(SylAutoFillResultDto(found = false, source = "", classLevel = className, subject = subject),
+                message = "No NCERT reference found for $className $subject")
+            return@post
+        }
+
+        val chaptersDto = ncertSyllabus.chapters.map { ch ->
+            SylAutoFillChapterDto(
+                title = ch.title,
+                topics = ch.topics.map { t ->
+                    SylAutoFillTopicDto(
+                        title = t.title,
+                        subtopics = t.subtopics.map { st -> SylAutoFillSubtopicDto(st.title) },
+                    )
+                },
+            )
+        }
+        call.ok(
+            SylAutoFillResultDto(
+                found = true,
+                source = "NCERT",
+                classLevel = ncertSyllabus.classLevel,
+                subject = ncertSyllabus.subjectName,
+                chapters = chaptersDto,
+            ),
+            message = "Found ${chaptersDto.size} chapters from NCERT reference",
+        )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/v1/teacher/syllabus/auto-fill/confirm   (create DRAFT units from NCERT ref)
+// ─────────────────────────────────────────────────────────────────────────────
+private fun Route.syllabusAutoFillConfirm() {
+    post("/auto-fill/confirm") {
+        val ctx = call.requireTeacherContext() ?: return@post
+        val req = runCatching { call.receive<SylAutoFillConfirmRequest>() }.getOrNull()
+        if (req == null) {
+            call.fail("Invalid request body", HttpStatusCode.BadRequest, "BAD_REQUEST"); return@post
+        }
+        val asg = call.requireOwnedAssignment(ctx, req.assignmentId) ?: return@post
+        val scopeClassId = asg.classId
+        val scopeSubjectId = asg.subjectId
+        if (scopeClassId == null || scopeSubjectId == null) {
+            call.fail("This class is not fully configured yet", HttpStatusCode.Conflict, "CLASS_NOT_CONFIGURED"); return@post
+        }
+        if (req.chapters.isEmpty()) {
+            call.fail("At least one chapter is required", HttpStatusCode.BadRequest, "EMPTY_HIERARCHY"); return@post
+        }
+
+        var unitsCreated = 0
+        val now = Instant.now()
+        dbQuery {
+            var chapterPos = CurriculumUnitsTable.selectAll().where {
+                (CurriculumUnitsTable.classId eq scopeClassId) and
+                    (CurriculumUnitsTable.subjectId eq scopeSubjectId) and
+                    (CurriculumUnitsTable.isActive eq true) and
+                    CurriculumUnitsTable.parentId.isNull()
+            }.maxOfOrNull { it[CurriculumUnitsTable.position] } ?: -1
+
+            for (chapter in req.chapters) {
+                val chapterId = UUID.randomUUID()
+                chapterPos++
+                CurriculumUnitsTable.insert {
+                    it[id] = chapterId
+                    it[schoolId] = ctx.schoolId
+                    it[classId] = scopeClassId
+                    it[subjectId] = scopeSubjectId
+                    it[parentId] = null
+                    it[CurriculumUnitsTable.title] = chapter.title.trim()
+                    it[position] = chapterPos
+                    it[isActive] = true
+                    it[depth] = 0
+                    it[approvalStatus] = "DRAFT"
+                    it[createdAt] = now
+                    it[updatedAt] = now
+                }
+                unitsCreated++
+
+                var topicPos = -1
+                for (topic in chapter.topics) {
+                    val topicId = UUID.randomUUID()
+                    topicPos++
+                    CurriculumUnitsTable.insert {
+                        it[id] = topicId
+                        it[schoolId] = ctx.schoolId
+                        it[classId] = scopeClassId
+                        it[subjectId] = scopeSubjectId
+                        it[parentId] = chapterId
+                        it[CurriculumUnitsTable.title] = topic.title.trim()
+                        it[position] = topicPos
+                        it[isActive] = true
+                        it[depth] = 1
+                        it[approvalStatus] = "DRAFT"
+                        it[createdAt] = now
+                        it[updatedAt] = now
+                    }
+                    unitsCreated++
+
+                    var subtopicPos = -1
+                    for (subtopic in topic.subtopics) {
+                        val subtopicId = UUID.randomUUID()
+                        subtopicPos++
+                        CurriculumUnitsTable.insert {
+                            it[id] = subtopicId
+                            it[schoolId] = ctx.schoolId
+                            it[classId] = scopeClassId
+                            it[subjectId] = scopeSubjectId
+                            it[parentId] = topicId
+                            it[CurriculumUnitsTable.title] = subtopic.title.trim()
+                            it[position] = subtopicPos
+                            it[isActive] = true
+                            it[depth] = 2
+                            it[approvalStatus] = "DRAFT"
+                            it[createdAt] = now
+                            it[updatedAt] = now
+                        }
+                        unitsCreated++
+                    }
+                }
+            }
+        }
+        call.ok(SylParseConfirmResultDto(unitsCreated = unitsCreated),
+            message = "$unitsCreated units created as DRAFT — review and approve")
+
+        SyllabusPaceService.recalcForAssignment(asg.assignmentId, ctx.schoolId)
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/v1/teacher/syllabus/approve   (DRAFT → APPROVED, visible to parents)
+// ─────────────────────────────────────────────────────────────────────────────
+private fun Route.syllabusApprove() {
+    post("/approve") {
+        val ctx = call.requireTeacherContext() ?: return@post
+        val req = runCatching { call.receive<SylApproveRequest>() }.getOrNull()
+        if (req == null) {
+            call.fail("Invalid request body", HttpStatusCode.BadRequest, "BAD_REQUEST"); return@post
+        }
+        val asg = call.requireOwnedAssignment(ctx, req.assignmentId) ?: return@post
+        val scopeClassId = asg.classId
+        val scopeSubjectId = asg.subjectId
+        if (scopeClassId == null || scopeSubjectId == null) {
+            call.fail("This class is not fully configured yet", HttpStatusCode.Conflict, "CLASS_NOT_CONFIGURED"); return@post
+        }
+
+        val now = Instant.now()
+        val approvedCount = dbQuery {
+            if (req.unitIds.isEmpty()) {
+                // Approve ALL draft units for this class+subject
+                CurriculumUnitsTable.update({
+                    (CurriculumUnitsTable.classId eq scopeClassId) and
+                        (CurriculumUnitsTable.subjectId eq scopeSubjectId) and
+                        (CurriculumUnitsTable.isActive eq true) and
+                        (CurriculumUnitsTable.approvalStatus eq "DRAFT")
+                }) {
+                    it[approvalStatus] = "APPROVED"
+                    it[updatedAt] = now
+                }
+            } else {
+                // Approve specific unit IDs (must be in scope)
+                val ids = req.unitIds.mapNotNull { runCatching { UUID.fromString(it) }.getOrNull() }
+                CurriculumUnitsTable.update({
+                    (CurriculumUnitsTable.classId eq scopeClassId) and
+                        (CurriculumUnitsTable.subjectId eq scopeSubjectId) and
+                        (CurriculumUnitsTable.isActive eq true) and
+                        (CurriculumUnitsTable.approvalStatus eq "DRAFT") and
+                        (CurriculumUnitsTable.id inList ids.map { org.jetbrains.exposed.dao.id.EntityID(it, CurriculumUnitsTable) })
+                }) {
+                    it[approvalStatus] = "APPROVED"
+                    it[updatedAt] = now
+                }
+            }
+        }
+        call.ok(SylApproveResultDto(approvedCount = approvedCount),
+            message = "$approvedCount units approved and now visible to parents")
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/v1/teacher/syllabus/reject   (DRAFT → REJECTED, soft delete)
+// ─────────────────────────────────────────────────────────────────────────────
+private fun Route.syllabusReject() {
+    post("/reject") {
+        val ctx = call.requireTeacherContext() ?: return@post
+        val req = runCatching { call.receive<SylRejectRequest>() }.getOrNull()
+        if (req == null) {
+            call.fail("Invalid request body", HttpStatusCode.BadRequest, "BAD_REQUEST"); return@post
+        }
+        val asg = call.requireOwnedAssignment(ctx, req.assignmentId) ?: return@post
+        val scopeClassId = asg.classId
+        val scopeSubjectId = asg.subjectId
+        if (scopeClassId == null || scopeSubjectId == null) {
+            call.fail("This class is not fully configured yet", HttpStatusCode.Conflict, "CLASS_NOT_CONFIGURED"); return@post
+        }
+
+        val now = Instant.now()
+        val rejectedCount = dbQuery {
+            if (req.unitIds.isEmpty()) {
+                // Reject ALL draft units (mark REJECTED + soft delete)
+                CurriculumUnitsTable.update({
+                    (CurriculumUnitsTable.classId eq scopeClassId) and
+                        (CurriculumUnitsTable.subjectId eq scopeSubjectId) and
+                        (CurriculumUnitsTable.isActive eq true) and
+                        (CurriculumUnitsTable.approvalStatus eq "DRAFT")
+                }) {
+                    it[approvalStatus] = "REJECTED"
+                    it[isActive] = false
+                    it[updatedAt] = now
+                }
+            } else {
+                val ids = req.unitIds.mapNotNull { runCatching { UUID.fromString(it) }.getOrNull() }
+                CurriculumUnitsTable.update({
+                    (CurriculumUnitsTable.classId eq scopeClassId) and
+                        (CurriculumUnitsTable.subjectId eq scopeSubjectId) and
+                        (CurriculumUnitsTable.isActive eq true) and
+                        (CurriculumUnitsTable.approvalStatus eq "DRAFT") and
+                        (CurriculumUnitsTable.id inList ids.map { org.jetbrains.exposed.dao.id.EntityID(it, CurriculumUnitsTable) })
+                }) {
+                    it[approvalStatus] = "REJECTED"
+                    it[isActive] = false
+                    it[updatedAt] = now
+                }
+            }
+        }
+        call.ok(SylApproveResultDto(approvedCount = rejectedCount),
+            message = "$rejectedCount units rejected and removed")
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/v1/teacher/syllabus/pace-warning?assignmentId=   (inline pace check)
+// ─────────────────────────────────────────────────────────────────────────────
+private fun Route.syllabusPaceWarning() {
+    get("/pace-warning") {
+        val ctx = call.requireTeacherContext() ?: return@get
+        val assignmentParam = call.request.queryParameters["assignmentId"]
+        if (assignmentParam.isNullOrBlank()) {
+            call.fail("assignmentId is required", HttpStatusCode.BadRequest, "BAD_REQUEST"); return@get
+        }
+        val assignmentId = runCatching { UUID.fromString(assignmentParam) }.getOrNull() ?: run {
+            call.fail("Invalid assignmentId", HttpStatusCode.BadRequest, "BAD_REQUEST"); return@get
+        }
+
+        val snapshot = SyllabusPaceService.recalcForAssignment(assignmentId, ctx.schoolId)
+        if (snapshot == null) {
+            call.ok(SylPaceWarningDto(level = "ON_TRACK", message = "No pace data yet"),
+                message = "OK")
+            return@get
+        }
+
+        val msg = when (snapshot.level) {
+            "CRITICAL" -> "Syllabus coverage is critically behind expected pace. Please accelerate or adjust."
+            "BEHIND" -> "Syllabus coverage is behind the expected pace. Consider reviewing your teaching speed."
+            "AHEAD" -> "Syllabus coverage is ahead of the expected pace. You may slow down or revise."
+            else -> "Syllabus is on track."
+        }
+        call.ok(
+            SylPaceWarningDto(
+                level = snapshot.level,
+                expectedPct = snapshot.expectedPct,
+                actualPct = snapshot.actualPct,
+                deviationPct = snapshot.deviationPct,
+                message = msg,
+                weeklyPeriods = snapshot.weeklyPeriods,
+                classesElapsed = snapshot.classesElapsed,
+                classesRemaining = snapshot.classesRemaining,
+                estimatedCompletionDate = snapshot.estimatedCompletionDate,
+                topicsPerClass = snapshot.topicsPerClass,
+                holidayDaysCounted = snapshot.holidayDaysCounted,
+                avgCoveragePerClass = snapshot.avgCoveragePerClass,
+            ),
+            message = "OK",
+        )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/v1/teacher/syllabus/daily-log   (create/update daily class log)
+// ─────────────────────────────────────────────────────────────────────────────
+private fun Route.syllabusDailyLogCreate() {
+    post("/daily-log") {
+        val ctx = call.requireTeacherContext() ?: return@post
+        val req = runCatching { call.receive<SylDailyLogRequest>() }.getOrNull()
+        if (req == null) {
+            call.fail("Invalid request body", HttpStatusCode.BadRequest, "BAD_REQUEST"); return@post
+        }
+        val asg = call.requireOwnedAssignment(ctx, req.assignmentId) ?: return@post
+
+        val logDate = runCatching { LocalDate.parse(req.date) }.getOrNull() ?: run {
+            call.fail("date must be YYYY-MM-DD", HttpStatusCode.BadRequest, "BAD_DATE"); return@post
+        }
+        if (logDate.isAfter(todayIst())) {
+            call.fail("date cannot be in the future", HttpStatusCode.BadRequest, "DATE_FUTURE"); return@post
+        }
+        if (req.coveragePct !in 0..100) {
+            call.fail("coverage_pct must be 0-100", HttpStatusCode.BadRequest, "BAD_COVERAGE"); return@post
+        }
+
+        val topicIds = req.topicIds.mapNotNull { runCatching { UUID.fromString(it) }.getOrNull() }
+        if (topicIds.isNotEmpty()) {
+            val scopeClassId = asg.classId
+            val scopeSubjectId = asg.subjectId
+            if (scopeClassId != null && scopeSubjectId != null) {
+                val ownedCount = dbQuery {
+                    CurriculumUnitsTable.selectAll().where {
+                        (CurriculumUnitsTable.id inList topicIds.map { org.jetbrains.exposed.dao.id.EntityID(it, CurriculumUnitsTable) }) and
+                            (CurriculumUnitsTable.classId eq scopeClassId) and
+                            (CurriculumUnitsTable.subjectId eq scopeSubjectId) and
+                            (CurriculumUnitsTable.isActive eq true)
+                    }.count()
+                }.toInt()
+                if (ownedCount != topicIds.size) {
+                    call.fail("One or more topic_ids do not belong to your assignment", HttpStatusCode.Forbidden, "TOPIC_NOT_IN_SCOPE"); return@post
+                }
+            }
+        }
+
+        val topicIdsJson = topicIds.joinToString(prefix = "[", postfix = "]", separator = ",") { "\"$it\"" }
+        val now = Instant.now()
+        val logId = UUID.randomUUID()
+
+        val summaryText = if (req.summaryText.isNotBlank()) {
+            req.summaryText
+        } else {
+            val topicTitles = dbQuery {
+                if (topicIds.isEmpty()) emptyList()
+                else CurriculumUnitsTable.selectAll().where {
+                    CurriculumUnitsTable.id inList topicIds.map { org.jetbrains.exposed.dao.id.EntityID(it, CurriculumUnitsTable) }
+                }.map { it[CurriculumUnitsTable.title] }
+            }
+            SyllabusAiService.generateDailySummary(topicTitles, asg.className, asg.subject, ctx.schoolId) ?: ""
+        }
+
+        dbQuery {
+            val existing = DailyClassLogTable.selectAll().where {
+                (DailyClassLogTable.assignmentId eq asg.assignmentId) and
+                    (DailyClassLogTable.date eq logDate)
+            }.singleOrNull()
+
+            if (existing != null) {
+                DailyClassLogTable.update({
+                    DailyClassLogTable.id eq existing[DailyClassLogTable.id]
+                }) {
+                    it[DailyClassLogTable.topicIds] = topicIdsJson
+                    it[DailyClassLogTable.summaryText] = summaryText
+                    it[DailyClassLogTable.coveragePct] = req.coveragePct
+                    it[DailyClassLogTable.logSource] = "TEACHER"
+                    it[DailyClassLogTable.isAiEstimated] = false
+                    it[DailyClassLogTable.updatedAt] = now
+                }
+            } else {
+                DailyClassLogTable.insert {
+                    it[DailyClassLogTable.id] = logId
+                    it[DailyClassLogTable.schoolId] = ctx.schoolId
+                    it[DailyClassLogTable.assignmentId] = asg.assignmentId
+                    it[DailyClassLogTable.date] = logDate
+                    it[DailyClassLogTable.topicIds] = topicIdsJson
+                    it[DailyClassLogTable.summaryText] = summaryText
+                    it[DailyClassLogTable.coveragePct] = req.coveragePct
+                    it[DailyClassLogTable.logSource] = "TEACHER"
+                    it[DailyClassLogTable.isAiEstimated] = false
+                    it[DailyClassLogTable.createdAt] = now
+                    it[DailyClassLogTable.updatedAt] = now
+                }
+            }
+
+            // Update syllabus_progress for each selected topic
+            val section = asg.section.ifBlank { "A" }
+            for (topicId in topicIds) {
+                val progExisting = SyllabusProgressTable.selectAll().where {
+                    (SyllabusProgressTable.unitId eq topicId) and
+                        (SyllabusProgressTable.section eq section) and
+                        (SyllabusProgressTable.assignmentId eq asg.assignmentId)
+                }.singleOrNull()
+
+                val fullyCovered = req.coveragePct >= 100
+                val coveredOnDate: LocalDate? = if (fullyCovered) logDate else null
+                if (progExisting != null) {
+                    SyllabusProgressTable.update({
+                        SyllabusProgressTable.id eq progExisting[SyllabusProgressTable.id]
+                    }) {
+                        it[coveragePercent] = req.coveragePct
+                        if (fullyCovered) {
+                            it[isCovered] = true
+                            it[SyllabusProgressTable.coveredOn] = coveredOnDate
+                            it[coveredBy] = ctx.userId
+                        }
+                        it[updatedAt] = now
+                    }
+                } else {
+                    SyllabusProgressTable.insert {
+                        it[id] = UUID.randomUUID()
+                        it[SyllabusProgressTable.unitId] = topicId
+                        it[SyllabusProgressTable.section] = section
+                        it[assignmentId] = asg.assignmentId
+                        it[isCovered] = fullyCovered
+                        it[SyllabusProgressTable.coveredOn] = coveredOnDate
+                        it[coveredBy] = if (fullyCovered) ctx.userId else null
+                        it[coveragePercent] = req.coveragePct
+                        it[createdAt] = now
+                        it[updatedAt] = now
+                    }
+                }
+            }
+        }
+
+        // Trigger pace recalculation for this assignment
+        SyllabusPaceService.recalcForAssignment(asg.assignmentId, ctx.schoolId)
+
+        call.ok(
+            SylDailyLogDto(
+                id = logId.toString(),
+                date = logDate.toString(),
+                topicIds = topicIds.map { it.toString() },
+                summaryText = summaryText,
+                coveragePct = req.coveragePct,
+                source = "TEACHER",
+                isAiEstimated = false,
+            ),
+            message = "Daily log saved",
+        )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/v1/teacher/syllabus/daily-log?assignmentId=&from=&to=   (list logs)
+// ─────────────────────────────────────────────────────────────────────────────
+private fun Route.syllabusDailyLogList() {
+    get("/daily-log") {
+        val ctx = call.requireTeacherContext() ?: return@get
+        val assignmentParam = call.request.queryParameters["assignmentId"]
+            ?: call.request.queryParameters["assignment_id"]
+        val asg = call.requireOwnedAssignment(ctx, assignmentParam) ?: return@get
+
+        val fromStr = call.request.queryParameters["from"]
+        val toStr = call.request.queryParameters["to"]
+        val fromDate = fromStr?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+        val toDate = toStr?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+
+        val logs = dbQuery {
+            var pred: org.jetbrains.exposed.sql.Op<Boolean> =
+                (DailyClassLogTable.assignmentId eq asg.assignmentId)
+            if (fromDate != null) pred = pred and (DailyClassLogTable.date greaterEq fromDate)
+            if (toDate != null) pred = pred and (DailyClassLogTable.date lessEq toDate)
+            DailyClassLogTable.selectAll().where { pred }
+                .orderBy(DailyClassLogTable.date, SortOrder.DESC).map { row ->
+                SylDailyLogDto(
+                    id = row[DailyClassLogTable.id].value.toString(),
+                    date = row[DailyClassLogTable.date].toString(),
+                    topicIds = parseTopicIdsJson(row[DailyClassLogTable.topicIds]),
+                    summaryText = row[DailyClassLogTable.summaryText],
+                    coveragePct = row[DailyClassLogTable.coveragePct],
+                    source = row[DailyClassLogTable.logSource],
+                    isAiEstimated = row[DailyClassLogTable.isAiEstimated],
+                )
+            }
+        }
+        call.ok(SylDailyLogListDto(logs = logs), message = "Daily logs loaded")
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/v1/teacher/syllabus/daily-log/should-show?assignmentId=
+//   Returns whether the daily check-in popup should show for this assignment today.
+// ─────────────────────────────────────────────────────────────────────────────
+private fun Route.syllabusDailyLogShouldShow() {
+    get("/daily-log/should-show") {
+        val ctx = call.requireTeacherContext() ?: return@get
+        val assignmentParam = call.request.queryParameters["assignmentId"]
+            ?: call.request.queryParameters["assignment_id"]
+        val asg = call.requireOwnedAssignment(ctx, assignmentParam) ?: return@get
+
+        val today = todayIst()
+        val alreadyLogged = dbQuery {
+            DailyClassLogTable.selectAll().where {
+                (DailyClassLogTable.assignmentId eq asg.assignmentId) and
+                    (DailyClassLogTable.date eq today)
+            }.count()
+        } > 0
+
+        if (alreadyLogged) {
+            call.ok(SylShouldShowPopupDto(shouldShow = false, reason = "already_logged"), message = "OK"); return@get
+        }
+
+        val prefs = dbQuery {
+            SyllabusPopupPrefsTable.selectAll().where {
+                (SyllabusPopupPrefsTable.teacherId eq ctx.userId) and
+                    (SyllabusPopupPrefsTable.assignmentId eq asg.assignmentId)
+            }.singleOrNull()
+        }
+        if (prefs != null) {
+            val mode = prefs[SyllabusPopupPrefsTable.suppressMode]
+            val suppressedUntil = prefs[SyllabusPopupPrefsTable.suppressedUntil]
+            when (mode) {
+                "permanent" -> {
+                    call.ok(SylShouldShowPopupDto(shouldShow = false, reason = "suppressed_permanent"), message = "OK"); return@get
+                }
+                "week" -> {
+                    if (suppressedUntil != null && !today.isAfter(suppressedUntil)) {
+                        call.ok(SylShouldShowPopupDto(shouldShow = false, reason = "suppressed_until_${suppressedUntil}"), message = "OK"); return@get
+                    }
+                }
+            }
+        }
+        call.ok(SylShouldShowPopupDto(shouldShow = true, reason = "ok"), message = "OK")
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/v1/teacher/syllabus/popup-prefs   (set suppression prefs)
+// ─────────────────────────────────────────────────────────────────────────────
+private fun Route.syllabusPopupPrefsSet() {
+    post("/popup-prefs") {
+        val ctx = call.requireTeacherContext() ?: return@post
+        val req = runCatching { call.receive<SylPopupPrefsRequest>() }.getOrNull()
+        if (req == null) {
+            call.fail("Invalid request body", HttpStatusCode.BadRequest, "BAD_REQUEST"); return@post
+        }
+        val asg = call.requireOwnedAssignment(ctx, req.assignmentId) ?: return@post
+
+        val mode = req.suppressMode.lowercase()
+        if (mode !in setOf("off", "week", "permanent")) {
+            call.fail("suppress_mode must be off, week, or permanent", HttpStatusCode.BadRequest, "BAD_MODE"); return@post
+        }
+
+        val suppressedUntil: LocalDate? = when (mode) {
+            "week" -> todayIst().plusDays(7)
+            else -> null
+        }
+        val now = Instant.now()
+
+        dbQuery {
+            val existing = SyllabusPopupPrefsTable.selectAll().where {
+                (SyllabusPopupPrefsTable.teacherId eq ctx.userId) and
+                    (SyllabusPopupPrefsTable.assignmentId eq asg.assignmentId)
+            }.singleOrNull()
+
+            if (existing != null) {
+                SyllabusPopupPrefsTable.update({
+                    SyllabusPopupPrefsTable.id eq existing[SyllabusPopupPrefsTable.id]
+                }) {
+                    it[SyllabusPopupPrefsTable.suppressMode] = mode
+                    it[SyllabusPopupPrefsTable.suppressedUntil] = suppressedUntil
+                    it[updatedAt] = now
+                }
+            } else {
+                SyllabusPopupPrefsTable.insert {
+                    it[id] = UUID.randomUUID()
+                    it[teacherId] = ctx.userId
+                    it[assignmentId] = asg.assignmentId
+                    it[SyllabusPopupPrefsTable.suppressMode] = mode
+                    it[SyllabusPopupPrefsTable.suppressedUntil] = suppressedUntil
+                    it[createdAt] = now
+                    it[updatedAt] = now
+                }
+            }
+        }
+        call.ok(
+            SylPopupPrefsDto(suppressMode = mode, suppressedUntil = suppressedUntil?.toString()),
+            message = "Popup preferences saved",
+        )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/v1/teacher/syllabus/popup-prefs?assignmentId=   (get suppression prefs)
+// ─────────────────────────────────────────────────────────────────────────────
+private fun Route.syllabusPopupPrefsGet() {
+    get("/popup-prefs") {
+        val ctx = call.requireTeacherContext() ?: return@get
+        val assignmentParam = call.request.queryParameters["assignmentId"]
+            ?: call.request.queryParameters["assignment_id"]
+        val asg = call.requireOwnedAssignment(ctx, assignmentParam) ?: return@get
+
+        val prefs = dbQuery {
+            SyllabusPopupPrefsTable.selectAll().where {
+                (SyllabusPopupPrefsTable.teacherId eq ctx.userId) and
+                    (SyllabusPopupPrefsTable.assignmentId eq asg.assignmentId)
+            }.singleOrNull()
+        }
+        call.ok(
+            SylPopupPrefsDto(
+                suppressMode = prefs?.get(SyllabusPopupPrefsTable.suppressMode) ?: "off",
+                suppressedUntil = prefs?.get(SyllabusPopupPrefsTable.suppressedUntil)?.toString(),
+            ),
+            message = "Popup preferences loaded",
+        )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers for the agentic endpoints.
+// ─────────────────────────────────────────────────────────────────────────────
+
+private val imageHttpClient by lazy {
+    HttpClient(CIO).also { com.littlebridge.enrollplus.core.HttpClientRegistry.register(it) }
+}
+private val log = LoggerFactory.getLogger("TeacherSyllabusRouting")
+
+private const val MAX_IMAGE_BYTES = 5 * 1024 * 1024L // 5 MB cap
+
+private val ALLOWED_IMAGE_SCHEMES = setOf("http", "https")
+
+private fun isInternalOrBlockedHost(host: String): Boolean {
+    return try {
+        val addr = java.net.InetAddress.getByName(host)
+        addr.isLoopbackAddress ||
+            addr.isAnyLocalAddress ||
+            addr.isLinkLocalAddress ||
+            addr.isSiteLocalAddress ||
+            addr.isMulticastAddress ||
+            // Cloud metadata endpoints (169.254.169.254 etc.) — isSiteLocal covers 10.x/172.16-31.x/192.168.x
+            // but 169.254.x is link-local (covered by isLinkLocalAddress). Double-check the AWS/GCP metadata IP:
+            host == "169.254.169.254" ||
+            host == "metadata.google.internal"
+    } catch (e: Exception) {
+        true
+    }
+}
+
+private suspend fun fetchImageAsBase64(url: String): String? {
+    return try {
+        val parsed = io.ktor.http.URLBuilder(url).build()
+        if (parsed.protocol.name !in ALLOWED_IMAGE_SCHEMES) {
+            log.warn("fetchImageAsBase64: refusing URL {} — unsupported scheme '{}'", url, parsed.protocol.name)
+            return null
+        }
+        if (isInternalOrBlockedHost(parsed.host)) {
+            log.warn("fetchImageAsBase64: refusing URL {} — host '{}' resolves to internal/blocked address", url, parsed.host)
+            return null
+        }
+        val resp = imageHttpClient.get(url)
+        val contentLength = resp.headers[io.ktor.http.HttpHeaders.ContentLength]?.toLongOrNull()
+        if (contentLength != null && contentLength > MAX_IMAGE_BYTES) {
+            log.warn("fetchImageAsBase64: refusing image {} — Content-Length {} exceeds {} byte cap", url, contentLength, MAX_IMAGE_BYTES)
+            return null
+        }
+        val bytes = resp.readRawBytes()
+        if (bytes.size > MAX_IMAGE_BYTES) {
+            log.warn("fetchImageAsBase64: refusing image {} — actual {} bytes exceeds {} byte cap", url, bytes.size, MAX_IMAGE_BYTES)
+            return null
+        }
+        java.util.Base64.getEncoder().encodeToString(bytes)
+    } catch (e: Exception) {
+        log.warn("fetchImageAsBase64: failed to fetch {}", url, e)
+        null
+    }
+}
+
+private fun guessMimeType(url: String): String {
+    val lower = url.lowercase()
+    return when {
+        lower.endsWith(".png") -> "image/png"
+        lower.endsWith(".webp") -> "image/webp"
+        lower.endsWith(".gif") -> "image/gif"
+        else -> "image/jpeg"
+    }
+}
+
+private fun parseTopicIdsJson(jsonStr: String): List<String> {
+    return try {
+        val arr = kotlinx.serialization.json.Json.parseToJsonElement(jsonStr).jsonArray
+        arr.map { it.jsonPrimitive.content }
+    } catch (e: Exception) {
+        log.warn("parseTopicIdsJson: failed to parse JSON: {}", jsonStr.take(200), e)
+        emptyList()
     }
 }

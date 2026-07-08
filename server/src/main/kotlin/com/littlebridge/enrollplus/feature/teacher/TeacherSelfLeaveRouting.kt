@@ -176,7 +176,7 @@ fun Route.teacherSelfLeaveRouting() {
                         body = "${ctx.fullName} applied for leave (${req.dateFrom} → ${req.dateTo}).",
                         schoolId = ctx.schoolId,
                         actorId = ctx.userId,
-                        deepLink = "school/leave-requests",
+                        deepLink = "/school/leave-requests",
                         refType = "leave_request",
                         refId = newId.toString(),
                     )

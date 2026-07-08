@@ -38,7 +38,7 @@
  */
 package com.littlebridge.enrollplus.feature.media
 
-import com.littlebridge.enrollplus.feature.auth.delivery.OtpEnv
+import com.littlebridge.enrollplus.core.EnvConfig
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpTimeout
@@ -49,9 +49,9 @@ import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import org.slf4j.LoggerFactory
 import java.util.UUID
 
 /** Result of a successful upload: the public URL + the storage object path. */
@@ -63,10 +63,12 @@ data class UploadResult(
 
 object SupabaseStorage {
 
+    private val logger = LoggerFactory.getLogger(SupabaseStorage::class.java)
+
     // -- env (resolved lazily so a missing var doesn't break class-load) --
-    private val baseUrl: String? get() = OtpEnv.get("SUPABASE_URL")?.trimEnd('/')
-    private val serviceKey: String? get() = OtpEnv.get("SUPABASE_SERVICE_KEY")
-    private val bucket: String get() = OtpEnv.get("SUPABASE_BUCKET", "school-media")
+    private val baseUrl: String? get() = EnvConfig.get("SUPABASE_URL")?.trimEnd('/')
+    private val serviceKey: String? get() = EnvConfig.get("SUPABASE_SERVICE_KEY")
+    private val bucket: String get() = EnvConfig.get("SUPABASE_BUCKET", "school-media")
 
     /** True only when the minimum env is present, so callers can 503 cleanly. */
     fun isConfigured(): Boolean = baseUrl != null && serviceKey != null
@@ -80,7 +82,7 @@ object SupabaseStorage {
                 requestTimeoutMillis = 60_000   // a 5 MB gallery image on a slow link
                 socketTimeoutMillis = 60_000
             }
-        }
+        }.also { com.littlebridge.enrollplus.core.HttpClientRegistry.register(it) }
     }
 
     /** Allowed content types → file extension. Anything else is rejected. */
@@ -91,6 +93,9 @@ object SupabaseStorage {
         "image/webp" to "webp",
         "image/gif" to "gif",
         "image/heic" to "heic",
+        "image/svg+xml" to "svg",
+        "image/x-icon" to "ico",
+        "image/vnd.microsoft.icon" to "ico",
     )
     private val VIDEO_TYPES = mapOf(
         "video/mp4" to "mp4",
@@ -149,7 +154,7 @@ object SupabaseStorage {
 
         return try {
             val resp: HttpResponse = client.post(endpoint) {
-                header(HttpHeaders.Authorization, "Bearer $key")
+                header("apikey", key)
                 // x-upsert=false: never silently overwrite (paths are uuid-unique anyway)
                 header("x-upsert", "false")
                 contentType(ContentType.parse(contentType.substringBefore(';').trim()))
@@ -163,13 +168,11 @@ object SupabaseStorage {
                 )
             } else {
                 // Surface the gateway message to server logs (never the key).
-                System.err.println(
-                    "[SupabaseStorage] upload failed ${resp.status.value}: ${resp.bodyAsText().take(300)}"
-                )
+                logger.warn("[SupabaseStorage] upload failed {}: {}", resp.status.value, resp.bodyAsText().take(300))
                 null
             }
         } catch (e: Exception) {
-            System.err.println("[SupabaseStorage] upload exception: ${e.message}")
+            logger.warn("[SupabaseStorage] upload exception: {}", e.message, e)
             null
         }
     }
@@ -184,11 +187,11 @@ object SupabaseStorage {
         val key = serviceKey ?: return true
         return try {
             val resp = client.delete("$root/storage/v1/object/$bucket/$objectPath") {
-                header(HttpHeaders.Authorization, "Bearer $key")
+                header("apikey", key)
             }
             resp.status.isSuccess()
         } catch (e: Exception) {
-            System.err.println("[SupabaseStorage] delete exception: ${e.message}")
+            logger.warn("[SupabaseStorage] delete exception: {}", e.message, e)
             false
         }
     }

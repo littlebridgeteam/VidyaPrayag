@@ -46,7 +46,7 @@
  *   OTP_PEPPER                 : secret pepper added to every hash
  *                                (REQUIRED in production; dev fallback exists)
  *   OTP_EXPIRY_MINUTES         : default 10
- *   OTP_MAX_ATTEMPTS           : default 5
+ *   OTP_MAX_ATTEMPTS           : default 3
  *   OTP_MAX_RESENDS_PER_HOUR   : default 5
  *   OTP_DEV_RETURN_CODE        : "true" in dev to echo the OTP back in the
  *                                API response (NEVER in production)
@@ -60,6 +60,7 @@
  */
 package com.littlebridge.enrollplus.feature.auth
 
+import com.littlebridge.enrollplus.core.RuntimeEnvironment
 import com.littlebridge.enrollplus.db.AuthOtpsTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.OtpDeliveryAttemptsTable
@@ -127,7 +128,7 @@ object OtpService {
         env("OTP_EXPIRY_MINUTES", "10").toLong().coerceIn(1, 60)
     }
     private val maxAttempts: Int by lazy {
-        env("OTP_MAX_ATTEMPTS", "5").toInt().coerceIn(3, 10)
+        env("OTP_MAX_ATTEMPTS", "3").toInt().coerceIn(3, 10)
     }
     private val maxResendsPerHour: Int by lazy {
         env("OTP_MAX_RESENDS_PER_HOUR", "5").toInt().coerceIn(1, 20)
@@ -139,10 +140,10 @@ object OtpService {
      *   1) the default is now "false" (opt-in, not opt-out); and
      *   2) it is hard-gated to non-production — even if OTP_DEV_RETURN_CODE=true
      *      is set on a prod dyno, the echo is suppressed whenever DATABASE_URL is
-     *      configured (the same prod signal JwtConfig.isProduction uses).
+     *      configured (the same prod signal RuntimeEnvironment.isProduction uses).
      */
     private val isProduction: Boolean
-        get() = System.getenv("DATABASE_URL")?.takeIf { it.isNotBlank() } != null
+        get() = RuntimeEnvironment.isProduction
     private val devReturnCode: Boolean by lazy {
         !isProduction && env("OTP_DEV_RETURN_CODE", "false").equals("true", true)
     }
@@ -184,7 +185,6 @@ object OtpService {
         // needing OTP_DEV_RETURN_CODE=true in the API response.
        // if (!isProduction) {
             log.info("[TESTING] Generated OTP for {}: {}", identifier, code)
-            println(">>> [TESTING] OTP for $identifier: $code")
        // }
 
         // RA-38: the resend-limit check and the UPSERT now run inside ONE

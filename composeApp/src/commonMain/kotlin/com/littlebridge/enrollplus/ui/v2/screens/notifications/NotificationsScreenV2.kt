@@ -23,6 +23,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,15 +50,17 @@ import com.littlebridge.enrollplus.feature.parent.presentation.NotificationsView
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
-import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VElevationLevel
-import com.littlebridge.enrollplus.ui.v2.theme.VMotion
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
-import com.littlebridge.enrollplus.ui.v2.theme.vElevation
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.core.tween
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VMotion
+import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -81,6 +85,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun NotificationsScreenV2(
     onBack: () -> Unit,
+    onDeepLink: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: NotificationsViewModel = koinViewModel(),
 ) {
@@ -92,6 +97,8 @@ fun NotificationsScreenV2(
         onBack = onBack,
         onMarkAll = viewModel::markAllRead,
         onMarkRead = viewModel::markRead,
+        onClearAll = viewModel::clearAll,
+        onDeepLink = onDeepLink,
         onRetry = viewModel::load,
         modifier = modifier.statusBarsPadding()
             .imePadding()
@@ -108,12 +115,11 @@ private fun NotificationsContent(
     onBack: () -> Unit,
     onMarkAll: () -> Unit,
     onMarkRead: (String) -> Unit,
+    onClearAll: () -> Unit,
+    onDeepLink: (String) -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    val d = VTheme.dimens
-
     var filterUnread by remember { mutableStateOf(false) }
 
     val items = state.notifications.map {
@@ -124,34 +130,21 @@ private fun NotificationsContent(
             body = it.body,
             time = it.time,
             unread = it.unread,
+            deepLink = it.deepLink,
         )
     }
     val unread = items.count { it.unread }
     val visible = if (filterUnread) items.filter { it.unread } else items
 
-    Column(modifier.fillMaxSize().background(c.background).statusBarsPadding()
+    Column(modifier.fillMaxSize().background(VColors.cream).statusBarsPadding()
         .imePadding()
         .navigationBarsPadding()) {
-        VBackHeader(
-            title = "Notifications",
+        PremiumNotificationHeader(
+            title = appString(StringKeys.NOTIF_TITLE),
             onBack = onBack,
-            // React action: `<Check 14/> Mark all` — a text+icon button in teal-deep / 700.
-            action = {
-                Row(
-                    Modifier
-                        .clip(RoundedCornerShape(999.dp))
-                        .clickable { onMarkAll() },
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Icon(VIcons.Check, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(14.dp))
-                    Text(
-                        "Mark all",
-                        style = VTheme.type.caption.colored(c.tealDeep).copy(fontWeight = FontWeight.Bold),
-                        maxLines = 1,
-                    )
-                }
-            },
+            onMarkAll = onMarkAll,
+            onClearAll = onClearAll,
+            canClear = items.isNotEmpty(),
         )
 
         VPullRefresh(
@@ -166,7 +159,7 @@ private fun NotificationsContent(
         ) {
             // ── Inbox hero ──────────────────────────────────────────────────────────
             // React: `px-5 pt-2 pb-5` = 20 / 8 / 20px wrapper around an 18px-radius gradient card.
-            Box(Modifier.padding(start = 20.dp, end = 20.dp, top = d.sm, bottom = 20.dp)) {
+            Box(Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 20.dp)) {
                 Box(
                     Modifier
                         .fillMaxWidth()
@@ -174,7 +167,7 @@ private fun NotificationsContent(
                         .background(
                             // React: linear-gradient(135deg, --navy 0%, #3b3870 100%)
                             Brush.linearGradient(
-                                colors = listOf(c.navy, Color(0xFF3B3870)),
+                                colors = listOf(VColors.violet, VColors.violetHover),
                                 start = Offset(0f, 0f),
                                 end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
                             ),
@@ -192,7 +185,7 @@ private fun NotificationsContent(
                                 center = Offset(size.width + 40.dp.toPx(), -40.dp.toPx()),
                             )
                         }
-                        .padding(d.lg),
+                        .padding(24.dp),
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         // Blurred white bell chip (React rgba(255,255,255,0.14) + backdrop-blur).
@@ -205,12 +198,13 @@ private fun NotificationsContent(
                         ) {
                             Icon(VIcons.Bell, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
                         }
-                        Spacer(Modifier.width(d.md))
+                        Spacer(Modifier.width(16.dp))
                         Column(Modifier.weight(1f)) {
                             // React: 12sp / 0.05em / uppercase / opacity .7 — NOT the 11sp label token.
                             Text(
-                                "INBOX",
-                                style = VTheme.type.body.colored(Color.White.copy(alpha = 0.7f)).copy(
+                                appString(StringKeys.NOTIF_INBOX),
+                                style = VTypography.body.copy(
+                                    color = Color.White.copy(alpha = 0.7f),
                                     fontSize = 12.sp,
                                     letterSpacing = 0.05.em,
                                 ),
@@ -220,7 +214,8 @@ private fun NotificationsContent(
                             Row(verticalAlignment = Alignment.Bottom) {
                                 Text(
                                     unread.toString(),
-                                    style = VTheme.type.dataLg.colored(Color.White).copy(
+                                    style = VTypography.body.copy(
+                                        color = Color.White,
                                         fontSize = 28.sp,
                                         lineHeight = 30.8.sp,
                                         fontWeight = FontWeight.SemiBold,
@@ -228,8 +223,8 @@ private fun NotificationsContent(
                                 )
                                 Spacer(Modifier.width(6.dp))
                                 Text(
-                                    "unread",
-                                    style = VTheme.type.body.colored(Color.White.copy(alpha = 0.7f)),
+                                    appString(StringKeys.NOTIF_UNREAD_LABEL),
+                                    style = VTypography.body.copy(color = Color.White.copy(alpha = 0.7f)),
                                     modifier = Modifier.padding(bottom = 3.dp),
                                 )
                             }
@@ -242,11 +237,11 @@ private fun NotificationsContent(
             // React: `px-5 mb-3 flex gap-2`. Pills: navy active / cream inactive, 12/700, capitalize.
             Row(
                 Modifier.padding(start = 20.dp, end = 20.dp, bottom = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(d.sm),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                FilterPill(label = "All", active = !filterUnread) { filterUnread = false }
+                FilterPill(label = appString(StringKeys.COMMON_ALL), active = !filterUnread) { filterUnread = false }
                 FilterPill(
-                    label = if (unread > 0) "Unread · $unread" else "Unread",
+                    label = if (unread > 0) "${appString(StringKeys.NOTIF_FILTER_UNREAD)} · $unread" else appString(StringKeys.NOTIF_FILTER_UNREAD),
                     active = filterUnread,
                 ) { filterUnread = true }
             }
@@ -255,15 +250,15 @@ private fun NotificationsContent(
             // React: `px-5 pb-8 space-y-2`.
             Column(
                 Modifier.padding(horizontal = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(d.sm),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 VStateHost(
                     loading = state.isLoading,
                     error = state.error,
                     isEmpty = visible.isEmpty(),
                     emptyIcon = VIcons.Check,
-                    emptyTitle = "You're all caught up",
-                    emptyBody = if (filterUnread) "No unread notifications." else "No notifications yet.",
+                    emptyTitle = appString(StringKeys.NOTIF_ALL_CAUGHT_UP),
+                    emptyBody = if (filterUnread) appString(StringKeys.NOTIF_NO_UNREAD) else appString(StringKeys.NOTIF_NONE_YET),
                     onRetry = onRetry,
                 ) {
                     visible.forEachIndexed { i, n ->
@@ -275,9 +270,19 @@ private fun NotificationsContent(
                         }
                         AnimatedVisibility(
                             visible = shown,
-                            enter = VMotion.fadeUp(delayMs = 0, fromY = 8),
+                            enter = fadeIn(tween(VMotion.durSlow, easing = VMotion.ease)) +
+                                slideInVertically(
+                                    tween(VMotion.durSlow, easing = VMotion.ease),
+                                    initialOffsetY = { 8 },
+                                ),
                         ) {
-                            NotificationRow(n, onClick = { onMarkRead(n.id) })
+                            NotificationRow(
+                                n,
+                                onClick = {
+                                    onMarkRead(n.id)
+                                    n.deepLink?.let { onDeepLink(it) }
+                                },
+                            )
                         }
                     }
                 }
@@ -285,24 +290,24 @@ private fun NotificationsContent(
 
             // ── Preferences footer ──────────────────────────────────────────────────
             // React: `px-5 pb-10` wrapper; pb-8 on the list above → extra gap before footer.
-            Spacer(Modifier.height(d.md))
+            Spacer(Modifier.height(16.dp))
             Box(Modifier.padding(start = 20.dp, end = 20.dp, bottom = 40.dp)) {
                 Row(
                     Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(c.cream)
+                        .background(VColors.cream)
                         .clickable {}
                         .padding(vertical = 12.dp),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(VIcons.Close, contentDescription = null, tint = c.ink2, modifier = Modifier.size(14.dp))
-                    Spacer(Modifier.width(d.sm))
-                    // React: 13 / 600 — slightly larger than the 12/500 caption token.
+                    Icon(VIcons.Close, contentDescription = null, tint = VColors.ink2, modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.width(8.dp))
                     Text(
-                        "Notification preferences",
-                        style = VTheme.type.bodyStrong.colored(c.ink2).copy(fontSize = 13.sp),
+                        appString(StringKeys.NOTIF_PREFERENCES),
+                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
+                        color = VColors.ink2,
                     )
                 }
             }
@@ -312,24 +317,110 @@ private fun NotificationsContent(
 }
 
 @Composable
+private fun PremiumNotificationHeader(
+    title: String,
+    onBack: () -> Unit,
+    onMarkAll: () -> Unit,
+    onClearAll: () -> Unit,
+    canClear: Boolean,
+) {
+    Column(Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(VColors.surfaceCard)
+                        .border(1.dp, VColors.line, CircleShape)
+                        .clickable(onClick = onBack),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = VColors.ink,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+                Text(
+                    title,
+                    style = VTypography.body.copy(fontWeight = FontWeight.Bold),
+                    color = VColors.ink,
+                )
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Row(
+                    Modifier
+                        .clip(RoundedCornerShape(999.dp))
+                        .clickable { onMarkAll() }
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Icon(VIcons.Check, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(14.dp))
+                    Text(
+                        appString(StringKeys.NOTIF_MARK_ALL),
+                        style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
+                        color = VColors.violet,
+                        maxLines = 1,
+                    )
+                }
+                if (canClear) {
+                    Row(
+                        Modifier
+                            .clip(RoundedCornerShape(999.dp))
+                            .clickable { onClearAll() }
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Icon(VIcons.Close, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(14.dp))
+                        Text(
+                            "Clear",
+                            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
+                            color = VColors.ink3,
+                            maxLines = 1,
+                        )
+                    }
+                }
+            }
+        }
+        Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line).padding(horizontal = 24.dp))
+    }
+}
+
+@Composable
 private fun FilterPill(label: String, active: Boolean, onClick: () -> Unit) {
-    val c = VTheme.colors
     val interaction = remember { MutableInteractionSource() }
     Box(
         Modifier
             .clip(RoundedCornerShape(999.dp))
-            .background(if (active) c.navy else c.cream)
+            .background(if (active) VColors.violet else VColors.cream)
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
-            // React: `px-3.5 py-1.5` = 14 / 6.
             .padding(horizontal = 14.dp, vertical = 6.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             label,
-            // React: 12 / 700; active white, inactive ink-2.
-            style = VTheme.type.caption
-                .colored(if (active) Color.White else c.ink2)
-                .copy(fontSize = 12.sp, fontWeight = FontWeight.Bold),
+            style = VTypography.caption.copy(
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (active) Color.White else VColors.ink2,
+            ),
             maxLines = 1,
         )
     }
@@ -337,20 +428,16 @@ private fun FilterPill(label: String, active: Boolean, onClick: () -> Unit) {
 
 @Composable
 private fun NotificationRow(n: VNotification, onClick: () -> Unit) {
-    val c = VTheme.colors
-    val d = VTheme.dimens
     val (tileBg, tileFg) = categoryTile(n.category)
     val interaction = remember { MutableInteractionSource() }
-    // React shadow levels: unread → raised (0 6px 14px -6px navy@12%); read → resting (0 2px 6px navy@4%).
     Box(
         Modifier
             .fillMaxWidth()
-            .vElevation(if (n.unread) VElevationLevel.Raised else VElevationLevel.Card, radius = 14.dp)
             .clip(RoundedCornerShape(14.dp))
-            .background(c.card)
-            .border(1.dp, c.hairline, RoundedCornerShape(14.dp))
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, RoundedCornerShape(14.dp))
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
-            .padding(14.dp), // React `p-3.5`
+            .padding(14.dp),
     ) {
         Row(verticalAlignment = Alignment.Top) {
             Box(
@@ -362,33 +449,32 @@ private fun NotificationRow(n: VNotification, onClick: () -> Unit) {
             ) {
                 Icon(categoryIcon(n.category), contentDescription = null, tint = tileFg, modifier = Modifier.size(16.dp))
             }
-            Spacer(Modifier.width(d.sm + d.xs)) // React gap-3 = 12
+            Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     VBadge(text = n.category, tone = categoryBadgeTone(n.category))
-                    Spacer(Modifier.width(d.sm))
-                    Text(n.time, style = VTheme.type.label.colored(c.ink3).copy(fontSize = 11.sp, letterSpacing = 0.sp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(n.time, style = VTypography.label.copy(fontSize = 11.sp, letterSpacing = 0.sp), color = VColors.ink3)
                 }
-                Spacer(Modifier.height(6.dp)) // React mt-1.5
-                Text(n.title, style = VTheme.type.bodyStrong.colored(c.ink)) // 14 / 600
-                Spacer(Modifier.height(2.dp)) // React mt-0.5
-                Text(n.body, style = VTheme.type.caption.colored(c.ink2)) // 12 / ink-2
+                Spacer(Modifier.height(6.dp))
+                Text(n.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+                Spacer(Modifier.height(2.dp))
+                Text(n.body, style = VTypography.caption, color = VColors.ink2)
             }
             if (n.unread) {
-                // React: 8px teal-deep dot top-right.
                 Box(
                     Modifier
-                        .padding(start = d.sm, top = 0.dp)
+                        .padding(start = 8.dp, top = 0.dp)
                         .size(8.dp)
                         .clip(CircleShape)
-                        .background(c.tealDeep),
+                        .background(VColors.violet),
                 )
             } else {
                 Icon(
                     VIcons.ChevronRight,
                     contentDescription = null,
-                    tint = c.ink3,
-                    modifier = Modifier.padding(start = d.xs, top = 4.dp).size(16.dp),
+                    tint = VColors.ink3,
+                    modifier = Modifier.padding(start = 4.dp, top = 4.dp).size(16.dp),
                 )
             }
         }
@@ -403,6 +489,7 @@ data class VNotification(
     val body: String,
     val time: String,
     val unread: Boolean,
+    val deepLink: String? = null,
 )
 
 // §9 one-off literals (lifted verbatim from Notifications.tsx; not part of the global palette):
@@ -428,13 +515,11 @@ private fun categoryBadgeTone(cat: String): VBadgeTone = when (cat.lowercase()) 
 }
 
 /** Category-tinted icon-tile colors, matching the React `toneFor()` map (§9#4) verbatim. */
-@Composable
 private fun categoryTile(cat: String): Pair<Color, Color> {
-    val c = VTheme.colors
     return when (cat.lowercase()) {
-        "attendance" -> c.warning.copy(alpha = 0.55f) to TileFgAttendance // rgba(255,212,163,0.55) / #7a3f00
-        "fees" -> c.danger.copy(alpha = 0.55f) to TileFgFees              // rgba(255,173,168,0.55) / #7a1c18
-        "academic" -> c.teal.copy(alpha = 0.18f) to c.tealDeep            // rgba(60,185,169,0.18) / --teal-deep
-        else -> c.success.copy(alpha = 0.42f) to TileFgDefault            // rgba(168,230,207,0.42) / #155e3a
+        "attendance" -> VColors.goldSoft.copy(alpha = 0.55f) to TileFgAttendance
+        "fees" -> VColors.coralSoft.copy(alpha = 0.55f) to TileFgFees
+        "academic" -> VColors.violetSoft.copy(alpha = 0.18f) to VColors.violet
+        else -> VColors.mintSoft.copy(alpha = 0.42f) to TileFgDefault
     }
 }

@@ -8,6 +8,16 @@
  * (server rotates the refresh token on every use, see AuthRouting.kt §refresh).
  *
  * Logout revokes the refresh session server-side and clears local state.
+ *
+ * SEC-010 SECURITY NOTE: Tokens are stored in localStorage (not cookies).
+ * This is vulnerable to XSS exfiltration. Moving to httpOnly + Secure +
+ * SameSite=Strict cookies requires server-side cookie support (tracked as
+ * WEB-012, deferred). Until then, mitigate via:
+ *   - CSP headers (WEB-026) to restrict script sources
+ *   - Input sanitization (SEC-018) to prevent stored XSS
+ *   - Short token lifetimes with refresh rotation
+ * If cookies are introduced in the future, they MUST use:
+ *   httpOnly=true; secure=true; sameSite="strict"; maxAge=<short>
  */
 
 import {
@@ -21,6 +31,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import type { AuthTokenResponse } from "./types";
+import { API_BASE_URL } from "../api";
 
 const ADMIN_KEY = "enrollplus.admin.v1";
 
@@ -110,7 +121,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     if (s) {
       try {
         await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "http://localhost:8080"}/api/v1/auth/logout`,
+          `${API_BASE_URL}/api/v1/auth/logout`,
           {
             method: "POST",
             headers: {
@@ -121,8 +132,8 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
             body: JSON.stringify({ refresh_token: s.refreshToken }),
           }
         );
-      } catch {
-        /* ignore */
+      } catch (e) {
+        console.error("Logout: server-side revocation failed", e);
       }
     }
     eraseSession();

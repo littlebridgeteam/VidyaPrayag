@@ -30,9 +30,12 @@ import com.littlebridge.enrollplus.db.MessageStatusTable
 import com.littlebridge.enrollplus.db.MessageThreadsTable
 import com.littlebridge.enrollplus.db.MessagesTable
 import com.littlebridge.enrollplus.feature.notifications.Notify
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerialName
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.greater
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
@@ -282,7 +285,7 @@ private fun insertMessage(
         it[MessagesTable.threadId] = threadId
         it[MessagesTable.conversationId] = conversationId
         it[MessagesTable.senderId] = senderId
-        it[MessagesTable.body] = body
+        it[MessagesTable.body] = com.littlebridge.enrollplus.core.HtmlSanitizer.sanitize(body)
         it[MessagesTable.createdAt] = now
         it[MessagesTable.seq] = seq
         if (clientMsgId != null) it[MessagesTable.clientMsgId] = clientMsgId
@@ -309,8 +312,13 @@ private fun nextSeqForConversation(conversationId: UUID): Int {
             .where { ConversationSeqTable.conversationId eq conversationId }
             .forUpdate()
             .firstOrNull()
-    } catch (_: Throwable) {
-        // forUpdate() not supported on some DBs — fall back to plain select.
+    } catch (_: UnsupportedOperationException) {
+        // forUpdate() not supported on some DBs (e.g. SQLite) — fall back to plain select.
+        ConversationSeqTable.selectAll()
+            .where { ConversationSeqTable.conversationId eq conversationId }
+            .firstOrNull()
+    } catch (_: Exception) {
+        // forUpdate() not supported on this DB driver — fall back to plain select.
         ConversationSeqTable.selectAll()
             .where { ConversationSeqTable.conversationId eq conversationId }
             .firstOrNull()
@@ -322,7 +330,7 @@ private fun nextSeqForConversation(conversationId: UUID): Int {
             it[ConversationSeqTable.nextVal] = newVal
             it[ConversationSeqTable.updatedAt] = Instant.now()
         }
-        return newVal
+        return newVal.toInt()
     }
 
     // First message in this conversation — insert counter at 1.
@@ -555,10 +563,27 @@ internal suspend fun notifyMessageRecipient(
 ) {
     if (recipientId == null || recipientId == actorId) return
     val recipient = dbQuery { resolveMessagingUser(recipientId) }
+    // Resolve the RECIPIENT's thread ID from the shared conversationId.
+    // The sender's threadId is a different row in MessageThreadsTable — the
+    // recipient's thread list shows their own rows, so the deep link must
+    // use the recipient's thread ID for the client to find and open it.
+    val recipientThreadId = dbQuery {
+        val senderRow = MessageThreadsTable.selectAll()
+            .where { MessageThreadsTable.id eq threadId }
+            .singleOrNull() ?: return@dbQuery null
+        val convId = senderRow.conversationKey()
+        MessageThreadsTable.selectAll()
+            .where {
+                (MessageThreadsTable.conversationId eq convId) and
+                    (MessageThreadsTable.ownerUserId eq recipientId)
+            }
+            .firstOrNull()?.get(MessageThreadsTable.id)?.value
+    } ?: threadId // fallback to sender's threadId if lookup fails
+
     val deepLink = when (recipient?.role) {
-        "parent" -> "parent/messages"
-        "teacher" -> "teacher/messages"
-        "admin", "school_admin", "super_admin" -> "school/messages"
+        "parent" -> "/parent/messages/$recipientThreadId"
+        "teacher" -> "/teacher/messages/$recipientThreadId"
+        "admin", "school_admin", "super_admin" -> "/school/messages/$recipientThreadId"
         else -> "messages"
     }
     runCatching {
@@ -571,7 +596,7 @@ internal suspend fun notifyMessageRecipient(
             actorId = actorId,
             deepLink = deepLink,
             refType = "message",
-            refId = threadId.toString(),
+            refId = recipientThreadId.toString(),
         )
     }
 }
@@ -620,12 +645,13 @@ internal fun editMessage(
 
     val convId = row[MessagesTable.conversationId] ?: return null
 
+    val sanitizedBody = com.littlebridge.enrollplus.core.HtmlSanitizer.sanitize(newBody)
     MessagesTable.update({ MessagesTable.id eq messageId }) {
-        it[MessagesTable.body] = newBody
+        it[MessagesTable.body] = sanitizedBody
         it[MessagesTable.editedAt] = now
     }
 
-    return EditMessageResult(messageId, convId, newBody, now)
+    return EditMessageResult(messageId, convId, sanitizedBody, now)
 }
 
 /** Result of [deleteMessage]. */
@@ -698,3 +724,51 @@ internal fun loadMessageStatus(messageId: UUID, userId: UUID): String? {
         }
         .singleOrNull()?.get(MessageStatusTable.status)
 }
+
+/**
+ * Read Receipts: load the peer's (recipient's) status for a message I sent.
+ * Used to show read-receipt ticks on the sender's own messages.
+ * Returns the status string (SENT/DELIVERED/READ) or null if no status row exists.
+ */
+internal fun loadPeerMessageStatus(messageId: UUID, senderUserId: UUID): String? {
+    return MessageStatusTable.selectAll()
+        .where {
+            (MessageStatusTable.messageId eq messageId) and (MessageStatusTable.userId neq senderUserId)
+        }
+        .singleOrNull()?.get(MessageStatusTable.status)
+}
+
+/**
+ * Read Receipts Phase 1 (READ_RECEIPTS_PLAN §6.1.2): bulk-update all SENT/DELIVERED
+ * status rows for a user in a conversation to READ. Called by the /threads/{id}/read
+ * endpoints after the thread-level unreadCount/isRead update.
+ *
+ * @return number of status rows updated
+ */
+internal fun markConversationRead(userId: UUID, conversationId: UUID): Int {
+    val now = Instant.now()
+    return MessageStatusTable.update({
+        (MessageStatusTable.conversationId eq conversationId) and
+            (MessageStatusTable.userId eq userId) and
+            (MessageStatusTable.status inList listOf("SENT", "DELIVERED"))
+    }) {
+        it[status] = "READ"
+        it[readAt] = now
+    }
+}
+
+/**
+ * Read Receipts Phase 2 (READ_RECEIPTS_PLAN §6.2): total unread messages across
+ * all threads owned by a user. Used by the /messages/unread-count endpoints.
+ */
+internal fun getUnreadCount(userId: UUID): Int {
+    return MessageThreadsTable.selectAll()
+        .where {
+            (MessageThreadsTable.ownerUserId eq userId) and
+                (MessageThreadsTable.unreadCount greater 0)
+        }
+        .sumOf { it[MessageThreadsTable.unreadCount] }
+}
+
+@Serializable
+data class UnreadCountDto(@SerialName("unread_count") val unreadCount: Int)

@@ -45,6 +45,9 @@ import type {
   UpdateOtpProviderResponse,
   TriggerPulseResponse,
   DevSendNotificationResponse,
+  TriggerPewsResponse,
+  ServerLogsPageDto,
+  ServerLogStatsDto,
   AlumniDto,
   AlumniListResponse,
   AlumniCampaignDto,
@@ -52,6 +55,58 @@ import type {
   AlumniAnalyticsDto,
   AlumniMentorshipDto,
   AlumniMentorshipRequestDto,
+  PewsCohort,
+  PewsStudentDetail,
+  PewsIntervention,
+  UpdatePewsInterventionRequest,
+  PewsEffectiveness,
+  PewsConfig,
+  PewsRunResult,
+  PewsRunResponse,
+  PewsJobStatus,
+  PewsEffectivenessTrend,
+  PewsRiskLevel,
+  PewsInterventionStatus,
+  PewsDraftMessage,
+  PewsSendParentResult,
+  ReportCardOversightSummary,
+  ReportCardPublishRequest,
+  ReportCardPublishResult,
+  ReportCardEffectivenessReport,
+  ReportCardTermConfig,
+  TutorTeacherScopeResponse,
+  TutorHeatmapResponse,
+  AiRateLimitEntry,
+  AiHealthEntry,
+  AiRecentUsageResponse,
+  SchoolDayConfigDto,
+  SchoolDayConfigListResponse,
+  CreateSchoolDayConfigRequest,
+  UpdateSchoolDayConfigRequest,
+  SchoolClassDto,
+  SchoolClassListResponse,
+  CreateSchoolClassRequest,
+  UpdateSchoolClassRequest,
+  SchoolSubjectDto,
+  SchoolSubjectListResponse,
+  CreateSchoolSubjectRequest,
+  UpdateSchoolSubjectRequest,
+  PeriodDetailDto,
+  CreatePeriodRequest,
+  UpdatePeriodRequest,
+  BulkCreatePeriodsRequest,
+  BulkCreatePeriodsResponse,
+  CopySectionRequest,
+  LanguageDistributionDto,
+  UserLanguagePrefDto,
+  LanguageAdoptionDto,
+  UsersByLanguageDto,
+  ServerStringEntry,
+  ServerStringsResponse,
+  UpsertServerStringRequest,
+  BulkUpsertServerStringRequest,
+  BulkUpsertServerStringResponse,
+  StringOverrideHistoryResponse,
 } from "./types";
 
 interface Opts {
@@ -100,23 +155,29 @@ async function rawRequest<T>(
     Authorization: `Bearer ${token}`,
   };
   if (opts.body !== undefined) headers["Content-Type"] = "application/json";
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    method: opts.method ?? "GET",
-    headers,
-    body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
-    cache: "no-store",
-    signal: opts.signal,
-  });
-  let env: ApiEnvelope<T> | null = null;
-  const text = await res.text();
-  if (text) {
-    try {
-      env = JSON.parse(text) as ApiEnvelope<T>;
-    } catch {
-      env = null;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15_000);
+  try {
+    const res = await fetch(`${API_BASE_URL}${path}`, {
+      method: opts.method ?? "GET",
+      headers,
+      body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+      cache: "no-store",
+      signal: opts.signal ?? controller.signal,
+    });
+    let env: ApiEnvelope<T> | null = null;
+    const text = await res.text();
+    if (text) {
+      try {
+        env = JSON.parse(text) as ApiEnvelope<T>;
+      } catch {
+        env = null;
+      }
     }
+    return { ok: res.ok, status: res.status, env };
+  } finally {
+    clearTimeout(timeoutId);
   }
-  return { ok: res.ok, status: res.status, env };
 }
 
 /** Authed request with transparent single-retry refresh. */
@@ -262,6 +323,26 @@ export const adminApi = {
     authRequest<TriggerPulseResponse>("/api/v1/admin/dev/trigger-pulse", { method: "POST" }),
   devSendNotification: (body: { user_id: string; title: string; body: string; deep_link?: string; category?: string; school_id?: string }) =>
     authRequest<DevSendNotificationResponse>("/api/v1/admin/dev/send-notification", { method: "POST", body }),
+  triggerPews: () =>
+    authRequest<TriggerPewsResponse>("/api/v1/admin/dev/trigger-pews", { method: "POST" }),
+
+  // server logs
+  serverLogs: (params?: { level?: string; category?: string; search?: string; limit?: number; offset?: number }) => {
+    const qs = new URLSearchParams();
+    if (params?.level) qs.set("level", params.level);
+    if (params?.category) qs.set("category", params.category);
+    if (params?.search) qs.set("search", params.search);
+    if (params?.limit) qs.set("limit", String(params.limit));
+    if (params?.offset) qs.set("offset", String(params.offset));
+    const q = qs.toString();
+    return authRequest<ServerLogsPageDto>(`/api/v1/admin/dev/logs${q ? `?${q}` : ""}`);
+  },
+  serverLogStats: () =>
+    authRequest<ServerLogStatsDto>("/api/v1/admin/dev/logs/stats"),
+  serverLogToggleGet: () =>
+    authRequest<{ enabled: boolean }>("/api/v1/admin/dev/logs/logging-toggle"),
+  serverLogToggleSet: (enabled: boolean) =>
+    authRequest<{ enabled: boolean }>(`/api/v1/admin/dev/logs/logging-toggle?enabled=${enabled}`, { method: "POST" }),
 
   // alumni management
   alumniList: (params?: { year?: number; profession?: string; city?: string; q?: string; page?: number; limit?: number }) => {
@@ -322,4 +403,136 @@ export const adminApi = {
     authRequest<AlumniMentorshipRequestDto[]>("/api/v1/school/alumni/mentorship-requests"),
   alumniMentorshipRequestOverride: (requestId: string, action: string) =>
     authRequest<AlumniMentorshipRequestDto>(`/api/v1/school/alumni/mentorship-requests/${requestId}`, { method: "PATCH", body: { action } }),
+
+  // ── PEWS (Predictive Early Warning System) ───────────────────────────────────
+  // The admin is the owner of the whole Sense→Reason→Act→Learn loop. Every route
+  // is school-scoped from the JWT (requireSchoolAdmin) — the client never sends a
+  // school_id. AI narrative fields are nullable and shown only when present.
+  pewsCohort: (minLevel?: PewsRiskLevel) => {
+    const qs = minLevel ? `?min_level=${encodeURIComponent(minLevel)}` : "";
+    return authRequest<PewsCohort>(`/api/v1/school/pews/cohort${qs}`);
+  },
+  pewsStudent: (studentCode: string) =>
+    authRequest<PewsStudentDetail>(`/api/v1/school/pews/student/${encodeURIComponent(studentCode)}`),
+  pewsInterventions: (status?: PewsInterventionStatus) => {
+    const qs = status ? `?status=${encodeURIComponent(status)}` : "";
+    return authRequest<PewsIntervention[]>(`/api/v1/school/pews/interventions${qs}`);
+  },
+  // Server now returns the full updated intervention DTO (richer contract), so
+  // callers can update their list in place; we still re-fetch for simplicity.
+  pewsUpdateIntervention: (id: string, body: UpdatePewsInterventionRequest) =>
+    authRequest<PewsIntervention>(`/api/v1/school/pews/interventions/${id}`, { method: "PATCH", body }),
+  pewsEffectiveness: () =>
+    authRequest<PewsEffectiveness>("/api/v1/school/pews/effectiveness"),
+  pewsConfig: () => authRequest<PewsConfig>("/api/v1/school/pews/config"),
+  pewsUpdateConfig: (body: PewsConfig) =>
+    authRequest<PewsConfig>("/api/v1/school/pews/config", { method: "PUT", body }),
+  pewsRun: () => authRequest<PewsRunResponse>("/api/v1/school/pews/run", { method: "POST" }),
+  pewsJobStatus: (jobId: string) =>
+    authRequest<PewsJobStatus>(`/api/v1/school/pews/run/${encodeURIComponent(jobId)}`),
+  pewsTrend: (days?: number) => {
+    const qs = days ? `?days=${days}` : "";
+    return authRequest<PewsEffectivenessTrend>(`/api/v1/school/pews/trend${qs}`);
+  },
+  pewsDraftMessage: (interventionId: string, lang: string = "en") =>
+    authRequest<PewsDraftMessage>(`/api/v1/school/pews/interventions/${encodeURIComponent(interventionId)}/draft-message?lang=${encodeURIComponent(lang)}`, { method: "POST" }),
+  pewsSendParentMessage: (interventionId: string) =>
+    authRequest<PewsSendParentResult>(`/api/v1/school/pews/interventions/${encodeURIComponent(interventionId)}/send-parent-message`, { method: "POST" }),
+
+  // ── AI Report Card 2.0 ─────────────────────────────────────────────────────
+  // Admin (school-scoped) endpoints for oversight, publishing, and effectiveness.
+  reportCardOversight: (term: string, academicYearId?: string) => {
+    const qs = new URLSearchParams({ term });
+    if (academicYearId) qs.set("academicYearId", academicYearId);
+    return authRequest<ReportCardOversightSummary>(`/api/v1/report-card/oversight?${qs.toString()}`);
+  },
+  reportCardPublish: (body: ReportCardPublishRequest) =>
+    authRequest<ReportCardPublishResult>("/api/v1/report-card/publish", { method: "POST", body }),
+  reportCardEffectiveness: () =>
+    authRequest<ReportCardEffectivenessReport[]>("/api/v1/report-card/learn/effectiveness"),
+  reportCardTermConfig: () =>
+    authRequest<ReportCardTermConfig>("/api/v1/report-card/term-config"),
+
+  // ── AI Tutor 2.0 ───────────────────────────────────────────────────────────
+  // Teacher/admin heatmap scope + heatmap data. The server routes are JWT-scoped
+  // (teacher context), so the admin sees the same data as a teacher for their
+  // assigned classes.
+  tutorTeacherScope: () =>
+    authRequest<TutorTeacherScopeResponse>("/api/v1/tutor/heatmap/scope"),
+  tutorHeatmap: (classId: string, subjectId: string) =>
+    authRequest<TutorHeatmapResponse>(`/api/v1/tutor/heatmap/${encodeURIComponent(classId)}/${encodeURIComponent(subjectId)}`),
+
+  // ── AI Token Monitor (Dev Tools — super admin only) ────────────────────────
+  aiRateLimits: () =>
+    authRequest<AiRateLimitEntry[]>("/api/v1/admin/ai/rate-limits"),
+  aiHealth: () =>
+    authRequest<AiHealthEntry[]>("/api/v1/admin/ai/health"),
+  aiRecentUsage: (limit: number = 50, windowMin: number = 60) =>
+    authRequest<AiRecentUsageResponse>(`/api/v1/admin/ai/recent-usage?limit=${limit}&window=${windowMin}`),
+
+  // ── School Day Configuration (TIMETABLE_CLASS_TEACHER_PLAN.md Phase 0) ──────
+  schoolDayConfigs: () =>
+    authRequest<SchoolDayConfigListResponse>("/api/v1/school/day-config"),
+  schoolDayConfigCreate: (body: CreateSchoolDayConfigRequest) =>
+    authRequest<SchoolDayConfigDto>("/api/v1/school/day-config", { method: "POST", body }),
+  schoolDayConfigUpdate: (id: string, body: UpdateSchoolDayConfigRequest) =>
+    authRequest<SchoolDayConfigDto>(`/api/v1/school/day-config/${id}`, { method: "PUT", body }),
+  schoolDayConfigDeactivate: (id: string) =>
+    authRequest<unknown>(`/api/v1/school/day-config/${id}`, { method: "DELETE" }),
+
+  // ── School Classes & Subjects (SchoolClassesRouting.kt) ─────────────────────
+  schoolClasses: () =>
+    authRequest<SchoolClassListResponse>("/api/v1/school/classes"),
+  createSchoolClass: (body: CreateSchoolClassRequest) =>
+    authRequest<SchoolClassDto>("/api/v1/school/classes", { method: "POST", body }),
+  updateSchoolClass: (id: string, body: UpdateSchoolClassRequest) =>
+    authRequest<SchoolClassDto>(`/api/v1/school/classes/${id}`, { method: "PUT", body }),
+  deleteSchoolClass: (id: string) =>
+    authRequest<unknown>(`/api/v1/school/classes/${id}`, { method: "DELETE" }),
+  schoolSubjects: (classId: string) =>
+    authRequest<SchoolSubjectListResponse>(`/api/v1/school/classes/${classId}/subjects`),
+  createSchoolSubject: (classId: string, body: CreateSchoolSubjectRequest) =>
+    authRequest<SchoolSubjectDto>(`/api/v1/school/classes/${classId}/subjects`, { method: "POST", body }),
+  updateSchoolSubject: (id: string, body: UpdateSchoolSubjectRequest) =>
+    authRequest<SchoolSubjectDto>(`/api/v1/school/subjects/${id}`, { method: "PUT", body }),
+  deleteSchoolSubject: (id: string) =>
+    authRequest<unknown>(`/api/v1/school/subjects/${id}`, { method: "DELETE" }),
+
+  // ── Timetable Periods (SchoolTimetableRouting.kt) ───────────────────────────
+  createPeriod: (body: CreatePeriodRequest) =>
+    authRequest<PeriodDetailDto>("/api/v1/school/timetable/periods", { method: "POST", body }),
+  bulkCreatePeriods: (body: BulkCreatePeriodsRequest) =>
+    authRequest<BulkCreatePeriodsResponse>("/api/v1/school/timetable/periods/bulk", { method: "POST", body }),
+  updatePeriod: (id: string, body: UpdatePeriodRequest) =>
+    authRequest<PeriodDetailDto>(`/api/v1/school/timetable/periods/${id}`, { method: "PUT", body }),
+  deletePeriod: (id: string) =>
+    authRequest<unknown>(`/api/v1/school/timetable/periods/${id}`, { method: "DELETE" }),
+  copySection: (body: CopySectionRequest) =>
+    authRequest<BulkCreatePeriodsResponse>("/api/v1/school/timetable/periods/copy-section", { method: "POST", body }),
+
+  // ── Multi-Language i18n (I18nRouting.kt) ───────────────────────────────────
+  languageDistribution: () =>
+    authRequest<{ distribution: LanguageDistributionDto[] }>("/api/v1/school/language-distribution"),
+  usersLanguagePref: () =>
+    authRequest<{ users: UserLanguagePrefDto[] }>("/api/v1/school/users-language-pref"),
+  languageAdoption: () =>
+    authRequest<LanguageAdoptionDto>("/api/admin/language-adoption"),
+  usersByLanguage: () =>
+    authRequest<UsersByLanguageDto[]>("/api/admin/users-by-language"),
+  serverStrings: () =>
+    authRequest<ServerStringsResponse>("/api/admin/server-strings"),
+  upsertServerString: (key: string, body: UpsertServerStringRequest) =>
+    authRequest<ServerStringEntry>(`/api/admin/server-strings/${encodeURIComponent(key)}`, { method: "PATCH", body }),
+  deleteServerString: (key: string, lang: string) =>
+    authRequest<unknown>(`/api/admin/server-strings/${encodeURIComponent(key)}?lang=${encodeURIComponent(lang)}`, { method: "DELETE" }),
+  bulkUpsertServerStrings: (body: BulkUpsertServerStringRequest) =>
+    authRequest<BulkUpsertServerStringResponse>(`/api/admin/server-strings/bulk`, { method: "PATCH", body }),
+  stringOverrideHistory: (params?: { key?: string; lang?: string; limit?: number }) => {
+    const qs = new URLSearchParams();
+    if (params?.key) qs.set("key", params.key);
+    if (params?.lang) qs.set("lang", params.lang);
+    if (params?.limit) qs.set("limit", String(params.limit));
+    const q = qs.toString();
+    return authRequest<StringOverrideHistoryResponse>(`/api/admin/server-strings/history${q ? `?${q}` : ""}`);
+  },
 };

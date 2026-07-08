@@ -37,9 +37,13 @@ import com.littlebridge.enrollplus.feature.school.AttachmentInput
 import com.littlebridge.enrollplus.feature.school.conversationMessagesFor
 import com.littlebridge.enrollplus.feature.school.deleteMessage
 import com.littlebridge.enrollplus.feature.school.editMessage
+import com.littlebridge.enrollplus.feature.school.getUnreadCount
+import com.littlebridge.enrollplus.feature.school.markConversationRead
+import com.littlebridge.enrollplus.feature.school.UnreadCountDto
 import com.littlebridge.enrollplus.feature.school.handleAttachmentUpload
 import com.littlebridge.enrollplus.feature.school.loadAttachmentsForMessages
 import com.littlebridge.enrollplus.feature.school.loadMessageStatus
+import com.littlebridge.enrollplus.feature.school.loadPeerMessageStatus
 import com.littlebridge.enrollplus.feature.school.notifyMessageRecipient
 import com.littlebridge.enrollplus.feature.school.resolveMessagingUser
 import com.littlebridge.enrollplus.feature.school.sendInConversation
@@ -318,8 +322,8 @@ fun Route.parentMessagesRouting() {
                     ?: run { call.fail("Invalid id"); return@get }
 
                 // Phase 1 (§9.2): pagination via offset/limit query params.
-                val offset = call.parameters["offset"]?.toIntOrNull() ?: 0
-                val limit = call.parameters["limit"]?.toIntOrNull() ?: 50
+                val offset = (call.parameters["offset"]?.toIntOrNull() ?: 0).coerceAtLeast(0)
+                val limit = (call.parameters["limit"]?.toIntOrNull() ?: 50).coerceIn(1, 100)
 
                 val payload = dbQuery {
                     val thread = MessageThreadsTable.selectAll()
@@ -338,8 +342,12 @@ fun Route.parentMessagesRouting() {
                         val sid = row[MessagesTable.senderId]
                         val created = row[MessagesTable.createdAt]
                         val msgId = row[MessagesTable.id].value
-                        val status = if (sid != uid && paged.conversationId != null) {
-                            loadMessageStatus(msgId, uid)
+                        val status = if (paged.conversationId != null) {
+                            if (sid != uid) {
+                                loadMessageStatus(msgId, uid)
+                            } else {
+                                loadPeerMessageStatus(msgId, uid)
+                            }
                         } else null
                         ParentMessageDto(
                             id = msgId.toString(),
@@ -379,6 +387,13 @@ fun Route.parentMessagesRouting() {
                 }
             }
 
+            // -------- UNREAD COUNT --------
+            get("/unread-count") {
+                val uid = call.principalUserUuid() ?: run { call.fail("Unauthorized", HttpStatusCode.Unauthorized); return@get }
+                val count = dbQuery { getUnreadCount(uid) }
+                call.ok(UnreadCountDto(count))
+            }
+
             // -------- MARK READ --------
             post("/threads/{id}/read") {
                 val uid = call.principalUserUuid() ?: run { call.fail("Unauthorized", HttpStatusCode.Unauthorized); return@post }
@@ -392,6 +407,11 @@ fun Route.parentMessagesRouting() {
                         it[isRead] = true
                         it[updatedAt] = Instant.now()
                     }
+                    // Read Receipts Phase 1: also bulk-update per-message status rows to READ
+                    val convId = MessageThreadsTable.selectAll()
+                        .where { (MessageThreadsTable.id eq id) and (MessageThreadsTable.ownerUserId eq uid) }
+                        .singleOrNull()?.get(MessageThreadsTable.conversationId) ?: id
+                    markConversationRead(uid, convId)
                 }
                 if (n == 0) call.fail("Thread not found", HttpStatusCode.NotFound)
                 else call.okMessage("Thread marked as read")
@@ -445,6 +465,10 @@ fun Route.parentMessagesRouting() {
                 val replyTo = req.replyToId?.let { runCatching { UUID.fromString(it) }.getOrNull() }
 
                 // Phase 1: map attachment DTOs to core AttachmentInput.
+                if (req.attachments.size > 10) {
+                    call.fail("Maximum 10 attachments per message", HttpStatusCode.BadRequest, "TOO_MANY_ATTACHMENTS")
+                    return@post
+                }
                 val attachmentInputs = req.attachments.map { att ->
                     AttachmentInput(
                         fileName = att.fileName,

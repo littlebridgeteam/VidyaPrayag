@@ -30,12 +30,13 @@
  *   DATABASE_URL       : full JDBC or postgres:// URL
  *   DATABASE_USER      : Postgres user (optional if encoded in URL)
  *   DATABASE_PASSWORD  : Postgres password (optional if encoded in URL)
- *   DB_POOL_SIZE       : HikariCP pool size (default 5)
+ *   DB_POOL_SIZE       : HikariCP pool size (default 10)
  *   APP_SEED_CMS       : "true" to seed/upsert landing+app_config rows
  *                        (default "true" — these are CMS strings, safe to seed)
  */
 package com.littlebridge.enrollplus.db
 
+import com.littlebridge.enrollplus.core.RuntimeEnvironment
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.github.cdimascio.dotenv.dotenv
@@ -44,10 +45,15 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.Properties
 
 object DatabaseFactory {
+
+    private val logger = LoggerFactory.getLogger(DatabaseFactory::class.java)
+    @Volatile var seedFailure: String? = null
+        private set
 
     /**
      * Config resolution order for a given key (first non-blank wins):
@@ -69,13 +75,13 @@ object DatabaseFactory {
         // runs with CWD = repo root, but be forgiving about where it's launched.
         val candidates = listOf(
             File("local.properties"),
-            File("../local.properties"),
+            File(".." + File.separator + "local.properties"),
             File(System.getProperty("user.dir"), "local.properties")
         )
         candidates.firstOrNull { it.isFile }?.let { f ->
             runCatching { f.inputStream().use(props::load) }
-                .onSuccess { println("DB_INIT: Loaded fallback config from ${f.absolutePath}") }
-                .onFailure { System.err.println("DB_INIT: Could not read ${f.absolutePath}: ${it.message}") }
+                .onSuccess { logger.info("DB_INIT: Loaded fallback config from {}", f.absolutePath) }
+                .onFailure { logger.warn("DB_INIT: Could not read {}: {}", f.absolutePath, it.message) }
         }
         props
     }
@@ -184,6 +190,10 @@ object DatabaseFactory {
         // Academic Calendar platform (VP-CAL — centralized planning & scheduling)
         CalendarEventsTable,
         AcademicYearsTable,
+        // Event Registration System (EVENT_REGISTRATION_PLAN.md §3) — slots + registrations.
+        // event_slots has soft FK to calendar_events; event_registrations has soft FK to event_slots.
+        EventSlotsTable,
+        EventRegistrationsTable,
         // Teacher Portal Rebuild — Doc 11 T-001: typed class membership (enrollments).
         // Applied by docs/db/migration_008_enrollments.sql (must run before deploy;
         // AUTO_CREATE_TABLES is OFF in prod and validateSchema() gates boot on it).
@@ -231,16 +241,133 @@ object DatabaseFactory {
         TransportAssignmentsTable,        // FK to routes + stops + vehicles
         TransportTrackingTable,           // FK to vehicles
         TransportAttendanceTable,
+        // AI Gateway (AI_FEATURES_PLAN.md §4 / AI_INFRASTRUCTURE_SPEC.md §6)
+        // Applied by docs/db/migration_060_ai_gateway.sql (must run before deploy;
+        // AUTO_CREATE_TABLES is OFF in prod and validateSchema() gates boot on it).
+        AiProviderConfigTable,
+        AiPromptTemplatesTable,
+        AiUsageLogTable,
+        AiResponseCacheTable,
+        AiJobsTable,
+        AiProviderHealthTable,
+        // PEWS — Predictive Early Warning System (AI_FEATURES_PLAN.md Part A)
+        // Applied by docs/db/migration_061_pews.sql (must run before deploy).
+        PewsRiskSnapshotsTable,
+        PewsInterventionsTable,
+        PewsConfigTable,
+        PewsNudgeSeenTable,
+        PewsFeatureFlagsTable,
+        FeatureFlagsTable,
+        PewsCaseFilesTable,
+        PewsEffectivenessPriorsTable,
+        // AI Report Card 2.0 (AI_REPORT_CARD_2.0_AGENTIC_REDESIGN.md)
+        // Applied by docs/db/migration_062_report_card.sql (must run before deploy;
+        // AUTO_CREATE_TABLES is OFF in prod and validateSchema() gates boot on it).
+        ReportCardDraftsTable,
+        ReportFocusEffectivenessTable,
+        HolisticAssessmentsTable,
+        CoScholasticRecordsTable,
+        ReportCardTemplatesTable,
+        // AI Tutor 2.0 (AI_TUTOR_2.0_AGENTIC_REDESIGN.md §12)
+        // Applied by docs/db/migration_064_tutor_2.sql + migration_065_tutor_rag.sql
+        // (must run before deploy; AUTO_CREATE_TABLES is OFF in prod).
+        TutorSessionsTable,
+        TutorReviewStateTable,
+        TutorMasteryTable,
+        TutorMisconceptionsTable,
+        TutorKnowledgeChunksTable,
         // School Branding Kit (SCHOOL_BRANDING_KIT_SPEC.md — per-school branding)
         // Applied by docs/db/migration_101_school_branding.sql (must run before
         // deploy; AUTO_CREATE_TABLES is OFF in prod).
         SchoolBrandingTable,
+        // ID Card Generation (ID_CARD_GENERATION_SPEC.md — templates + generated cards)
+        // Applied by docs/db/migration_102_id_card.sql (must run before deploy;
+        // AUTO_CREATE_TABLES is OFF in prod).
+        IdCardTemplatesTable,
+        IdCardsTable,                    // FK to templates
+        // Library Management (LIBRARY_MANAGEMENT_SPEC.md)
+        // Applied by docs/db/migration_104_library.sql (must run before deploy;
+        // AUTO_CREATE_TABLES is OFF in prod). Order matters for FKs: books → copies → issues,
+        // books → reservations, books → wishlist, books → discussions.
+        LibraryBooksTable,
+        LibraryBookCopiesTable,          // FK to books
+        LibraryIssuesTable,              // FK to books + copies
+        LibraryReservationsTable,        // FK to books
+        LibraryCategoriesTable,
+        LibrarySettingsTable,
+        LibraryAuditLogTable,
+        LibraryAnnouncementsTable,
+        LibraryWishlistTable,            // FK to books
+        LibraryReadingGoalsTable,
+        LibraryAcquisitionRequestsTable,
+        LibraryReadingBadgesTable,
+        LibraryBookDiscussionsTable,     // FK to books
+        // Scheduled Messages (MESSAGE_SCHEDULING_PLAN.md §4)
+        // Applied by docs/db/migration-104-scheduled-messages.sql (must run before
+        // deploy; AUTO_CREATE_TABLES is OFF in prod).
+        ScheduledMessagesTable,
+        SchoolDayConfigTable,
+        SchoolDaySlotsTable,
+        // Timetable Change Requests (migration_108_timetable_management.sql)
+        // Teacher-initiated timetable change requests with admin review workflow.
+        TimetableChangeRequestsTable,
+        // Multi-Branch / School Chain Support (MULTI_BRANCH_SPEC.md)
+        // Applied by docs/db/migration_051_multi_branch.sql (must run before
+        // deploy; AUTO_CREATE_TABLES is OFF in prod).
+        SchoolOrganizationsTable,
+        StudentTransfersTable,
+        // Agentic Syllabus Management (migration_110) — AI syllabus lifecycle:
+        // sources, daily log, pace plan, popup prefs, pace alerts.
+        SyllabusSourcesTable,
+        DailyClassLogTable,
+        SyllabusPacePlanTable,
+        SyllabusPopupPrefsTable,
+        SyllabusPaceAlertsTable,
+        // Agentic Quiz System (migration_111) — quiz questions + answers.
+        QuizQuestionsTable,
+        QuizAnswersTable,
+        // Syllabus Quiz System (migration_112) — syllabus-linked quizzes + questions + answers.
+        SyllabusQuizzesTable,
+        SyllabusQuizQuestionsTable,
+        SyllabusQuizAnswersTable,
+        // NCERT syllabus reference (migration_111) — auto-fill data for syllabus.
+        NcertSyllabusReferenceTable,
+        // Multi-Language (migration_071/073) — language pref history + server string overrides
+        LanguagePrefHistoryTable,
+        ServerStringOverridesTable,
+        ServerStringOverrideHistoryTable,
+        // Server Logs (Notification Deep-Linking & Backend Log Viewer Plan §3.1)
+        // Structured server-side log table for the super-admin Log Viewer.
+        ServerLogsTable,
     )
 
     /** True when DATABASE_URL is set → we're talking to Postgres / Supabase. */
+    @Volatile
     var isPostgres: Boolean = false
         private set
 
+    /** The HikariCP data source, exposed for metrics registration (GAP-015). */
+    internal var hikariDataSource: HikariDataSource? = null
+        private set
+
+    /** Prometheus registry set before init() so it can be wired into HikariConfig pre-pool-creation. */
+    @Volatile
+    var meterRegistry: io.micrometer.core.instrument.MeterRegistry? = null
+
+    // ── Read replica support (spec §17 Connection Pool) ─────────────────────
+    // When READ_REPLICA_URL is configured, read-heavy queries (search, analytics,
+    // audit log, export) route to the replica via readQuery { }.
+    @Volatile
+    private var readReplicaDb: Database? = null
+
+    /** The read-replica HikariDataSource, exposed for shutdown cleanup (P3-AUDIT-014). */
+    @Volatile
+    internal var readReplicaDataSource: HikariDataSource? = null
+        private set
+
+    val hasReadReplica: Boolean get() = readReplicaDb != null
+
+    @Synchronized
     fun init() {
         val dotenv = dotenv {
             ignoreIfMalformed = true
@@ -255,10 +382,11 @@ object DatabaseFactory {
                 databaseUrl,
                 user = resolve(dotenv, "DATABASE_USER"),
                 password = resolve(dotenv, "DATABASE_PASSWORD"),
-                poolSize = resolve(dotenv, "DB_POOL_SIZE")?.toIntOrNull() ?: 5
+                poolSize = resolve(dotenv, "DB_POOL_SIZE")?.toIntOrNull() ?: 10,
+                dotenv = dotenv
             )
         } else {
-            System.err.println(
+            logger.warn(
                 "DB_INIT: No DATABASE_URL found in .env, environment, or local.properties — " +
                     "falling back to LOCAL SQLite (data.db). Writes will NOT reach Supabase! " +
                     "Set DATABASE_URL (+ DATABASE_USER / DATABASE_PASSWORD) to use Postgres."
@@ -267,27 +395,68 @@ object DatabaseFactory {
         }
 
         Database.connect(dataSource)
+        hikariDataSource = dataSource
 
         val autoCreateRaw = resolve(dotenv, "AUTO_CREATE_TABLES")
         val autoCreate = autoCreateRaw.equals("true", ignoreCase = true)
 
-        println("DB_INIT: isPostgres=$isPostgres, AUTO_CREATE_TABLES='$autoCreateRaw' -> $autoCreate")
+        logger.info("DB_INIT: isPostgres={}, AUTO_CREATE_TABLES='{}' -> {}", isPostgres, autoCreateRaw, autoCreate)
 
-        // Try to create tables if in SQLite OR if explicitly requested in Postgres
-        if (!isPostgres || autoCreate) {
-            println("DB_INIT: Running SchemaUtils.createMissingTablesAndColumns for ${allTables.size} tables...")
+        // For Postgres with autoCreate: create tables BEFORE Flyway so migrations
+        // can reference them (V2 adds FK constraints, V3 alters columns).
+        // For Postgres without autoCreate: tables must be pre-provisioned.
+        if (isPostgres && autoCreate) {
+            logger.info("DB_INIT: Running SchemaUtils.createMissingTablesAndColumns for {} tables (pre-Flyway)...", allTables.size)
             try {
                 transaction {
                     SchemaUtils.createMissingTablesAndColumns(*allTables)
                 }
-                println("DB_INIT: Schema check/creation completed.")
+                logger.info("DB_INIT: Schema check/creation completed (pre-Flyway).")
             } catch (e: Exception) {
-                System.err.println("DB_INIT_ERROR: Schema creation failed!")
-                e.printStackTrace()
-                // If this fails, we probably can't proceed with seeding either
+                logger.error("DB_INIT_ERROR: Schema creation failed", e)
+                throw IllegalStateException("Schema creation failed. Server cannot start.", e)
             }
-        } else {
-            println("DB_INIT: Skipping auto-creation (AUTO_CREATE_TABLES is not 'true').")
+        }
+
+        if (isPostgres) {
+            try {
+                FlywayMigrationRunner.runMigrations(dataSource as HikariDataSource)
+            } catch (e: Exception) {
+                logger.error("DB_INIT_ERROR: Flyway migration failed", e)
+                throw IllegalStateException("Flyway migration failed. Server cannot start.", e)
+            }
+        }
+
+        // ── Read replica (optional, spec §17) ───────────────────────────────
+        val replicaUrl = resolve(dotenv, "READ_REPLICA_URL")
+        if (replicaUrl != null && isPostgres) {
+            val replicaDs = createPostgresDataSource(
+                replicaUrl,
+                user = resolve(dotenv, "READ_REPLICA_USER") ?: resolve(dotenv, "DATABASE_USER"),
+                password = resolve(dotenv, "READ_REPLICA_PASSWORD") ?: resolve(dotenv, "DATABASE_PASSWORD"),
+                poolSize = resolve(dotenv, "READ_REPLICA_POOL_SIZE")?.toIntOrNull() ?: 5,
+                dotenv = dotenv
+            )
+            readReplicaDb = Database.connect(replicaDs)
+            readReplicaDataSource = replicaDs
+            logger.info("DB_INIT: Read replica configured — read-heavy queries will route to replica.")
+        }
+
+        // For SQLite: always create tables (Flyway not used).
+        // For Postgres: already done above if autoCreate was true.
+        if (!isPostgres) {
+            logger.info("DB_INIT: Running SchemaUtils.createMissingTablesAndColumns for {} tables...", allTables.size)
+            try {
+                transaction {
+                    SchemaUtils.createMissingTablesAndColumns(*allTables)
+                }
+                logger.info("DB_INIT: Schema check/creation completed.")
+            } catch (e: Exception) {
+                logger.error("DB_INIT_ERROR: Schema creation failed", e)
+                logger.warn("DB_INIT: Schema creation failed in dev mode — continuing. Expect runtime errors.")
+            }
+        } else if (!autoCreate) {
+            logger.info("DB_INIT: Skipping auto-creation (AUTO_CREATE_TABLES is not 'true').")
         }
 
         // Boot-time schema completeness validation (audit finding A). In
@@ -302,19 +471,17 @@ object DatabaseFactory {
             .equals("true", ignoreCase = true)
         
         if (seedCms) {
-            println("DB_INIT: Running CMS seed...")
+            logger.info("DB_INIT: Running CMS seed...")
             try {
-                // We wrap the seed in a check to see if the table exists first to avoid crash loops
                 CmsSeed.ensureLandingAndConfig()
-                println("DB_INIT: CMS seed completed successfully.")
+                logger.info("DB_INIT: CMS seed completed successfully.")
             } catch (e: Exception) {
                 val msg = e.message ?: ""
                 if (msg.contains("relation", ignoreCase = true) && msg.contains("does not exist", ignoreCase = true)) {
-                    System.err.println("DB_INIT_WARNING: CMS Seeding skipped because tables are missing.")
-                    System.err.println("DB_INIT_TIP: Set AUTO_CREATE_TABLES=true on Render to create tables automatically.")
+                    logger.warn("DB_INIT_WARNING: CMS Seeding skipped because tables are missing.")
+                    logger.warn("DB_INIT_TIP: Set AUTO_CREATE_TABLES=true on Render to create tables automatically.")
                 } else {
-                    System.err.println("DB_INIT_ERROR: CMS Seeding failed with unexpected error!")
-                    e.printStackTrace()
+                    logger.error("DB_INIT_ERROR: CMS Seeding failed with unexpected error", e)
                     throw e
                 }
             }
@@ -323,30 +490,38 @@ object DatabaseFactory {
         // Operational demo seed (audit finding B): one working credential per
         // profile type + minimal operational data, so a fresh deploy is
         // immediately loginable instead of empty/unlogin-able. Idempotent.
-        val seedDemo = (resolve(dotenv, "APP_SEED_DEMO") ?: "true")
+        val seedDemoRequested = (resolve(dotenv, "APP_SEED_DEMO") ?: "true")
             .equals("true", ignoreCase = true)
 
+        val seedDemo = if (RuntimeEnvironment.isProduction) {
+            if (seedDemoRequested) {
+                logger.warn("DB_INIT_WARNING: APP_SEED_DEMO=true is set in production — ignoring (demo data is not allowed in production).")
+            }
+            false
+        } else {
+            seedDemoRequested
+        }
+
         if (seedDemo) {
-            println("DB_INIT: Running operational demo seed...")
+            logger.info("DB_INIT: Running operational demo seed...")
             try {
                 DemoSeed.ensureDemoData()
-                println("DB_INIT: Demo seed completed successfully.")
+                logger.info("DB_INIT: Demo seed completed successfully.")
             } catch (e: Exception) {
                 val msg = e.message ?: ""
                 if (msg.contains("relation", ignoreCase = true) && msg.contains("does not exist", ignoreCase = true)) {
-                    System.err.println("DB_INIT_WARNING: Demo seeding skipped because tables are missing.")
-                    System.err.println("DB_INIT_TIP: Set AUTO_CREATE_TABLES=true on Render to create tables automatically.")
+                    logger.warn("DB_INIT_WARNING: Demo seeding skipped because tables are missing.")
+                    logger.warn("DB_INIT_TIP: Set AUTO_CREATE_TABLES=true on Render to create tables automatically.")
                 } else {
-                    System.err.println("DB_INIT_ERROR: Demo seeding failed with unexpected error!")
-                    e.printStackTrace()
-                    // Non-fatal: CMS + schema are already in place; don't crash-loop.
+                    logger.error("DB_INIT_ERROR: Demo seeding failed with unexpected error", e)
+                    seedFailure = "Demo seed failed: ${e.message}"
                 }
             }
         }
     }
 
     /**
-     * Audit finding A: verify every one of the 36 registered tables exists.
+     * Audit finding A: verify every registered table exists (allTables has ~100+ entries).
      * In Postgres without auto-create, any missing table means an incomplete
      * provisioning recipe was used (see docs/db/PROVISION.sql for the only
      * complete one) and dependent routes would 500 at runtime — so we refuse
@@ -363,26 +538,24 @@ object DatabaseFactory {
                 .filter { it !in existing }
 
             if (missing.isEmpty()) {
-                println("DB_INIT: Schema validation OK — all ${allTables.size} tables present.")
+                logger.info("DB_INIT: Schema validation OK — all {} tables present.", allTables.size)
                 return
             }
 
-            val msg = "DB_INIT: Schema validation FOUND ${missing.size} MISSING table(s): ${missing.sorted()}"
             if (isPostgres && !autoCreate) {
-                System.err.println(msg)
-                System.err.println("DB_INIT_TIP: Provision with docs/db/PROVISION.sql (the only complete recipe) " +
-                    "or set AUTO_CREATE_TABLES=true.")
+                logger.error("DB_INIT: Schema validation FOUND {} MISSING table(s): {}", missing.size, missing.sorted())
+                logger.error("DB_INIT_TIP: Provision with docs/db/PROVISION.sql (the only complete recipe) or set AUTO_CREATE_TABLES=true.")
                 throw IllegalStateException(
                     "Refusing to boot: Postgres schema is incomplete (missing ${missing.size} tables). " +
                     "See docs/db/PROVISION.sql."
                 )
             } else {
-                System.err.println("$msg (non-fatal: SQLite/dev or auto-create enabled).")
+                logger.warn("DB_INIT: Schema validation FOUND {} MISSING table(s): {} (non-fatal: SQLite/dev or auto-create enabled).", missing.size, missing.sorted())
             }
         } catch (e: IllegalStateException) {
             throw e
         } catch (e: Exception) {
-            System.err.println("DB_INIT_WARNING: Schema validation could not run: ${e.message}")
+            logger.warn("DB_INIT_WARNING: Schema validation could not run: {}", e.message, e)
         }
     }
 
@@ -390,7 +563,8 @@ object DatabaseFactory {
         databaseUrl: String,
         user: String?,
         password: String?,
-        poolSize: Int
+        poolSize: Int,
+        dotenv: io.github.cdimascio.dotenv.Dotenv
     ): HikariDataSource {
         // Defensively strip any surrounding quotes/whitespace that may have slipped
         // through (e.g. a value read straight from a .properties file). Without this
@@ -410,25 +584,27 @@ object DatabaseFactory {
             else -> "jdbc:postgresql://$cleanUrl"
         }
 
-        // Auto-append SSL mode and PgBouncer threshold if missing
+        val sslMode = resolve(dotenv, "PG_SSLMODE") ?: "require"
+        val usePgBouncer = resolve(dotenv, "PG_PGBOUNCER")?.equals("true", ignoreCase = true) == true
+
         val finalJdbcUrl = buildString {
             append(jdbcUrl)
             val separator = if (jdbcUrl.contains("?")) "&" else "?"
             
             if (!jdbcUrl.contains("sslmode=") && isPostgres) {
-                append(separator).append("sslmode=require")
+                append(separator).append("sslmode=").append(sslMode)
             }
             
-            if (!contains("prepareThreshold=")) {
+            if (usePgBouncer && !contains("prepareThreshold=")) {
                 append(if (contains("?")) "&" else "?").append("prepareThreshold=0")
             }
             
-            if (!contains("currentSchema=")) {
+            if (!contains("currentSchema=") && !jdbcUrl.contains("currentSchema=")) {
                 append(if (contains("?")) "&" else "?").append("currentSchema=public")
             }
         }
 
-        println("DB_INIT: Connecting to $finalJdbcUrl")
+        logger.info("DB_INIT: Connecting to {}", finalJdbcUrl)
 
         val config = HikariConfig().apply {
             driverClassName = "org.postgresql.Driver"
@@ -438,13 +614,17 @@ object DatabaseFactory {
             maximumPoolSize = poolSize
             minimumIdle = 1
             isAutoCommit = false
-            transactionIsolation = "TRANSACTION_REPEATABLE_READ"
-            // Sensible defaults for Supabase (pooled, IPv4 PgBouncer port 6543).
+            // Don't set transactionIsolation — Supabase PgBouncer doesn't support
+            // session-level isolation; PostgreSQL defaults to READ_COMMITTED which is fine.
             addDataSourceProperty("ApplicationName", "vidyaprayag-ktor")
             addDataSourceProperty("reWriteBatchedInserts", "true")
             connectionTimeout = 30_000
             validationTimeout = 5_000
             maxLifetime = 30 * 60 * 1000L
+            connectionTestQuery = "SELECT 1"
+            // HikariCP metrics are collected via Micrometer's HikariDataSourceMetrics binder,
+            // not via HikariConfig's Dropwizard-based metricRegistry/healthCheckRegistry setters
+            // (which require com.codahale.metrics on the classpath).
             validate()
         }
         return HikariDataSource(config)
@@ -455,7 +635,7 @@ object DatabaseFactory {
             jdbcUrl = "jdbc:sqlite:data.db"
             maximumPoolSize = 3
             isAutoCommit = false
-            transactionIsolation = "TRANSACTION_SERIALIZABLE"
+            transactionIsolation = "TRANSACTION_READ_COMMITTED"
             validate()
         }
         return HikariDataSource(config)
@@ -463,4 +643,14 @@ object DatabaseFactory {
 
     suspend fun <T> dbQuery(block: suspend () -> T): T =
         newSuspendedTransaction(Dispatchers.IO) { block() }
+
+    /**
+     * Read-replica routing (spec §17): search and analytics queries route to
+     * the read replica if configured (READ_REPLICA_URL). Falls back to the
+     * primary connection when no replica is available.
+     */
+    suspend fun <T> readQuery(block: suspend () -> T): T =
+        newSuspendedTransaction(Dispatchers.IO, db = readReplicaDb) {
+            block()
+        }
 }

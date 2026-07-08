@@ -31,7 +31,8 @@ data class DashboardChildSummary(
     @SerialName("overall_progress") val overallProgress: Double,
     @SerialName("current_level") val currentLevel: Int,
     @SerialName("attendance_status") val attendanceStatus: String,
-    @SerialName("profile_pic") val profilePic: String? = null
+    @SerialName("profile_pic") val profilePic: String? = null,
+    @SerialName("school_name") val schoolName: String? = null
 )
 
 @Serializable
@@ -158,7 +159,10 @@ data class ParentNotificationDto(
     val title: String,
     val body: String,
     val time: String,
-    val unread: Boolean = true
+    val unread: Boolean = true,
+    @SerialName("deep_link") val deepLink: String? = null,
+    @SerialName("ref_type") val refType: String? = null,
+    @SerialName("ref_id") val refId: String? = null,
 )
 
 // --- Link Your Child wizard (report §5.3 — replaces MockV2.childForParent/school) ---

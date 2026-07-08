@@ -58,10 +58,13 @@ import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
+import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
 import java.util.UUID
+
+private val logger = LoggerFactory.getLogger("TeacherLessonPlanRouting")
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Server-side DTOs — mirror shared/.../teacher/domain/model/TeacherModels.kt
@@ -246,7 +249,8 @@ private fun activitiesFromJson(json: String?): List<LpActivityDto> {
                 durationMin = durationMatch?.groupValues?.get(1)?.toIntOrNull() ?: 15,
             )
         }
-    } catch (_: Exception) {
+    } catch (e: Exception) {
+        logger.warn("parseActivitiesJson: failed to parse lesson plan activities JSON", e)
         emptyList()
     }
 }
@@ -542,7 +546,7 @@ private fun Route.lessonPlanComplete() {
         val (row, asg) = call.requireOwnedLessonPlan(ctx, call.parameters["id"]) ?: return@post
         val planId = row[LessonPlansTable.id].value
         val now = Instant.now()
-        val today = LocalDate.now()
+        val today = todayIst()
 
         // If a curriculum unit is linked, upsert SyllabusProgressTable.
         val unitId = row[LessonPlansTable.curriculumUnitId]
@@ -630,7 +634,7 @@ private fun Route.lessonPlanCalendar() {
         val asg = call.requireOwnedAssignment(ctx, assignmentParam) ?: return@get
 
         val monthStr = call.request.queryParameters["month"]
-            ?: LocalDate.now().let { "${it.year}-${it.monthValue.toString().padStart(2, '0')}" }
+            ?: todayIst().let { "${it.year}-${it.monthValue.toString().padStart(2, '0')}" }
 
         val ym = runCatching { YearMonth.parse(monthStr) }.getOrNull() ?: run {
             call.fail("month must be YYYY-MM", HttpStatusCode.BadRequest, "BAD_MONTH"); return@get

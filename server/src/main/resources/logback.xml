@@ -1,17 +1,36 @@
 <configuration>
     <!--
-      Log level is env-driven so production can stay at INFO while devs can opt
-      into verbose output without a rebuild:
-        LOG_LEVEL=DEBUG  (or TRACE) for local debugging.
-      Default is INFO. Shipping TRACE in production floods stdout with Ktor
-      routing-resolution noise (every "Selector didn't match" line) and was part
-      of how request/response bodies leaked into shared logs.
+      Structured JSON logging (GAP-011).
+      In production, logs are emitted as JSON for log aggregation (Datadog,
+      Loki, CloudWatch, etc.). In dev, a human-readable pattern is used.
+
+      Control via LOG_FORMAT env var:
+        LOG_FORMAT=json  → JSON output (production default)
+        LOG_FORMAT=text  → human-readable (dev default)
     -->
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>%d{YYYY-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
-        </encoder>
-    </appender>
+
+    <if condition='property("LOG_FORMAT").equalsIgnoreCase("json") || property("LOG_ENV").equalsIgnoreCase("production")'>
+        <then>
+            <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+                <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                    <includeContext>false</includeContext>
+                    <includeMdc>true</includeMdc>
+                    <customFields>{"app":"vidyaprayag","service":"server"}</customFields>
+                    <fieldNames>
+                        <timestamp>@timestamp</timestamp>
+                        <levelValue>[ignore]</levelValue>
+                    </fieldNames>
+                </encoder>
+            </appender>
+        </then>
+        <else>
+            <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+                <encoder>
+                    <pattern>%d{YYYY-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{requestId:-}] %logger{36} - %msg%n</pattern>
+                </encoder>
+            </appender>
+        </else>
+    </if>
 
     <root level="${LOG_LEVEL:-INFO}">
         <appender-ref ref="STDOUT"/>

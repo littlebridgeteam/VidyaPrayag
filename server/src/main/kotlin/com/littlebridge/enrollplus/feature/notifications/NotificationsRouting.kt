@@ -43,6 +43,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.update
 import java.time.Instant
 import java.util.UUID
@@ -54,7 +55,10 @@ data class NotificationDto(
     val title: String,
     val body: String,
     val time: String,
-    val unread: Boolean = true
+    val unread: Boolean = true,
+    @SerialName("deep_link") val deepLink: String? = null,
+    @SerialName("ref_type") val refType: String? = null,
+    @SerialName("ref_id") val refId: String? = null,
 )
 
 @Serializable
@@ -94,6 +98,9 @@ fun Route.notificationsRouting() {
                                 body = row[NotificationsTable.body],
                                 time = row[NotificationsTable.createdAt].toString(),
                                 unread = !row[NotificationsTable.isRead],
+                                deepLink = row[NotificationsTable.deepLink],
+                                refType = row[NotificationsTable.refType],
+                                refId = row[NotificationsTable.refId],
                             )
                         }
 
@@ -125,6 +132,9 @@ fun Route.notificationsRouting() {
                                         body = row[AnnouncementsTable.description],
                                         time = row[AnnouncementsTable.date],
                                         unread = true,
+                                        deepLink = "/parent/announcements/" + row[AnnouncementsTable.id].value.toString(),
+                                        refType = "announcement",
+                                        refId = row[AnnouncementsTable.id].value.toString(),
                                     )
                                 }
                         }
@@ -151,6 +161,9 @@ fun Route.notificationsRouting() {
                                     },
                                     time = due ?: "",
                                     unread = true,
+                                    deepLink = "/parent/fees/" + row[FeeRecordsTable.id].value.toString(),
+                                    refType = "fee_record",
+                                    refId = row[FeeRecordsTable.id].value.toString(),
                                 )
                             }
                     }
@@ -236,6 +249,56 @@ fun Route.notificationsRouting() {
                     }
                 }
                 call.okMessage("All marked read")
+            }
+
+            // -------- mark by ref (for push tap auto-read) --------
+            post("/mark-by-ref") {
+                val uid = call.principalUserUuid() ?: run {
+                    call.respond(HttpStatusCode.Unauthorized); return@post
+                }
+                val refType = call.request.queryParameters["refType"]
+                val refId = call.request.queryParameters["refId"]
+                if (refType.isNullOrBlank() || refId.isNullOrBlank()) {
+                    call.respond(HttpStatusCode.BadRequest); return@post
+                }
+                val now = Instant.now()
+                dbQuery {
+                    NotificationsTable.update({
+                        (NotificationsTable.userId eq uid) and
+                            (NotificationsTable.refType eq refType) and
+                            (NotificationsTable.refId eq refId)
+                    }) {
+                        it[isRead] = true
+                        it[readAt] = now
+                    }
+                }
+                call.okMessage("Marked read by ref")
+            }
+
+            // -------- clear all read notifications --------
+            delete("/clear-all") {
+                val uid = call.principalUserUuid() ?: run {
+                    call.respond(HttpStatusCode.Unauthorized); return@delete
+                }
+                dbQuery {
+                    NotificationsTable.deleteWhere {
+                        (NotificationsTable.userId eq uid) and (NotificationsTable.isRead eq true)
+                    }
+                }
+                call.okMessage("Cleared read notifications")
+            }
+
+            // -------- clear every notification --------
+            delete("/all") {
+                val uid = call.principalUserUuid() ?: run {
+                    call.respond(HttpStatusCode.Unauthorized); return@delete
+                }
+                dbQuery {
+                    NotificationsTable.deleteWhere {
+                        NotificationsTable.userId eq uid
+                    }
+                }
+                call.okMessage("Cleared all notifications")
             }
 
         }

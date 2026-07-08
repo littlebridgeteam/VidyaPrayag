@@ -4,6 +4,8 @@ import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.feature.parent.data.remote.ParentApi
 import com.littlebridge.enrollplus.feature.parent.domain.model.*
 import com.littlebridge.enrollplus.feature.parent.domain.repository.ParentRepository
+import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizSubmitRequest
+import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizSubmitResponse
 
 class ParentRepositoryImpl(
     private val api: ParentApi
@@ -38,6 +40,18 @@ class ParentRepositoryImpl(
 
     override suspend fun markAllNotificationsRead(token: String): NetworkResult<Unit> {
         return api.markAllNotificationsRead(token)
+    }
+
+    override suspend fun markNotificationByRef(token: String, refType: String, refId: String): NetworkResult<Unit> {
+        return api.markNotificationByRef(token, refType, refId)
+    }
+
+    override suspend fun clearReadNotifications(token: String): NetworkResult<Unit> {
+        return api.clearReadNotifications(token)
+    }
+
+    override suspend fun clearAllNotifications(token: String): NetworkResult<Unit> {
+        return api.clearAllNotifications(token)
     }
 
     override suspend fun getChildAttendance(token: String, childId: String): NetworkResult<ParentAttendanceResponse> {
@@ -80,6 +94,30 @@ class ParentRepositoryImpl(
         return api.getThreadMessages(token, threadId)
     }
 
+    override suspend fun markThreadRead(token: String, threadId: String): NetworkResult<Unit> {
+        return when (val result = api.markThreadRead(token, threadId)) {
+            is NetworkResult.Success -> {
+                val envelope = result.data
+                if (!envelope.success) NetworkResult.Error(envelope.message.ifBlank { "Failed to mark thread as read" })
+                else NetworkResult.Success(Unit)
+            }
+            is NetworkResult.Error -> NetworkResult.Error(result.message, result.code)
+            is NetworkResult.ConnectionError -> NetworkResult.ConnectionError
+        }
+    }
+
+    override suspend fun getUnreadCount(token: String): NetworkResult<Int> {
+        return when (val result = api.getUnreadCount(token)) {
+            is NetworkResult.Success -> {
+                val dto = result.data
+                if (!dto.success) NetworkResult.Error("Failed to fetch unread count")
+                else NetworkResult.Success(dto.data?.unreadCount ?: 0)
+            }
+            is NetworkResult.Error -> NetworkResult.Error(result.message, result.code)
+            is NetworkResult.ConnectionError -> NetworkResult.ConnectionError
+        }
+    }
+
     override suspend fun sendMessage(token: String, request: ParentSendMessageRequest): NetworkResult<ParentSendMessageResponse> {
         return api.sendMessage(token, request)
     }
@@ -94,5 +132,34 @@ class ParentRepositoryImpl(
 
     override suspend fun getPulseHistory(token: String, childId: String, weeks: Int): NetworkResult<PulseHistoryResponse> {
         return api.getPulseHistory(token, childId, weeks)
+    }
+
+    // ── Agentic Syllabus — daily summary, syllabus-v2, quiz ───────────────────
+    override suspend fun getDailySummary(token: String, childId: String, date: String?): NetworkResult<ParentDailySummaryResponse> {
+        return api.getDailySummary(token, childId, date)
+    }
+
+    override suspend fun getSyllabusV2(token: String, childId: String): NetworkResult<ParentSyllabusV2Response> {
+        return api.getSyllabusV2(token, childId)
+    }
+
+    override suspend fun getQuizList(token: String, childId: String): NetworkResult<ParentQuizListResponse> {
+        return api.getQuizList(token, childId)
+    }
+
+    override suspend fun getQuizDetail(token: String, quizId: String): NetworkResult<ParentQuizDetailResponse> {
+        return api.getQuizDetail(token, quizId)
+    }
+
+    override suspend fun submitQuiz(token: String, request: QuizSubmitRequest): NetworkResult<QuizSubmitResponse> {
+        return api.submitQuiz(token, request)
+    }
+
+    override suspend fun getQuizLeaderboard(token: String, childId: String, quizId: String): NetworkResult<QuizLeaderboardResponse> {
+        return api.getQuizLeaderboard(token, childId, quizId)
+    }
+
+    override suspend fun getQuizResult(token: String, childId: String, quizId: String): NetworkResult<QuizSubmitResponse> {
+        return api.getQuizResult(token, childId, quizId)
     }
 }

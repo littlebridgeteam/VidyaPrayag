@@ -7,6 +7,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,13 +15,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,57 +35,97 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.littlebridge.enrollplus.feature.teacher.domain.model.ObligationItemDto
-import com.littlebridge.enrollplus.feature.teacher.presentation.ResolvedDayUi
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.feature.event.domain.model.TeacherPtmEventDto
+import com.littlebridge.enrollplus.feature.event.presentation.TeacherEventRegistrationState
+import com.littlebridge.enrollplus.feature.event.presentation.TeacherEventRegistrationViewModel
+import com.littlebridge.enrollplus.feature.teacher.domain.model.TeacherClassSummaryDto
 import com.littlebridge.enrollplus.feature.teacher.presentation.ResolvedPeriodUi
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherCheckInState
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherCheckInViewModel
+import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherClassesState
+import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherClassesViewModel
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherObligationsState
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherObligationsViewModel
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherTodayState
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherTodayViewModel
-import com.littlebridge.enrollplus.platform.BiometricMethod
-import com.littlebridge.enrollplus.ui.v2.components.VActionCard
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VShapes
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
-import com.littlebridge.enrollplus.util.todayIso
+import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
- * TeacherHomeScreenV2 — the rebuilt-from-scratch Home tab, built on the Parents Portal's design
- * language (lavender canvas, white rounded cards, Canvas rings, the signature swipe-to-expand
- * cards) and the teacher's REAL data spine (Today / CheckIn / Obligations view-models).
+ * TeacherHomeScreenV2 — rebuilt to match the premium parent-portal home structure.
  *
- * It deliberately replaces the cluttered "20-class list": today's classes are CLUBBED into a single
- * swipe-expand attendance card (face 0 = the day's progress ring + clubbed metrics; face 1 = the
- * per-class list). The greeting hero carries the time-sensitive greeting + a one-tap check-in ring.
- * A first-login-of-day check-in popup appears over this screen (closeable). Below, today's schedule
- * and the "what needs me" reminders are each their own card. Every number is server-authoritative.
+ * Sections (top to bottom):
+ *   1. TeacherHomeHeader  — wordmark, greeting, notification bell (parent-portal style).
+ *   2. NowTeachingCard    — the live/current class hero with Mark attendance + Lesson plan CTAs.
+ *   3. Today's schedule   — horizontal scroll of class cards (NOW / NEXT / LATER).
+ *   4. Pending actions    — real obligations from TeacherObligationsViewModel.
+ *   5. Quick actions      — 4-tap grid to Attendance, Marks, Homework, Messages.
+ *   6. My classes         — the teacher's allocated classes from TeacherClassesViewModel.
+ *   7. Upcoming events    — teacher PTM events from TeacherEventRegistrationViewModel.
+ *
+ * Base backdrop is the same warm cream used on the parent home tab ([VColors.cream]).
+ * Cards use [VColors.surfaceCard] with a soft outline; type uses [VTypography] tokens as-is.
  */
 @Composable
 fun TeacherHomeScreenV2(
     onOpenAttendanceForAssignment: (assignmentId: String, scope: String) -> Unit,
+    onOpenLessonPlanForAssignment: (assignmentId: String, scope: String) -> Unit,
     onOpenUpdateTab: () -> Unit,
+    onOpenUpdateTool: (UpdateTool) -> Unit,
     onOpenClasses: () -> Unit,
-    onOpenLessonPlanForAssignment: (assignmentId: String, scope: String) -> Unit = { _, _ -> },
-    onOpenHealthAlerts: () -> Unit = {},
-    onOpenTransportAttendance: () -> Unit = {},
+    onOpenHealthAlerts: () -> Unit,
+    onOpenTransportAttendance: () -> Unit,
+    onOpenPews: () -> Unit,
+    onOpenReportReview: () -> Unit,
+    onOpenHeatmap: () -> Unit,
+    onOpenIdCard: () -> Unit,
+    onOpenScheduledMessages: () -> Unit,
+    onOpenEvents: () -> Unit,
+    onOpenMessages: () -> Unit,
+    onOpenNotifications: () -> Unit = {},
     modifier: Modifier = Modifier,
     todayViewModel: TeacherTodayViewModel = koinViewModel(),
     checkInViewModel: TeacherCheckInViewModel = koinViewModel(),
     obligationsViewModel: TeacherObligationsViewModel = koinViewModel(),
+    classesViewModel: TeacherClassesViewModel = koinViewModel(),
+    eventsViewModel: TeacherEventRegistrationViewModel = koinViewModel(),
 ) {
     val today by todayViewModel.state.collectAsStateV2()
     val checkIn by checkInViewModel.state.collectAsStateV2()
     val obligations by obligationsViewModel.state.collectAsStateV2()
+    val classesState by classesViewModel.state.collectAsStateV2()
+    val eventsState by eventsViewModel.state.collectAsStateV2()
 
-    // First-login-of-day popup gate: show once per day, tracked in saveable state. It pops only when
-    // the status has resolved as "not checked in" and the teacher hasn't dismissed it this session.
+    // Pull classes + events when the home tab appears; refresh every 60s alongside today/obligations.
+    LaunchedEffect(Unit) {
+        obligationsViewModel.load()
+        todayViewModel.load()
+        classesViewModel.load()
+        eventsViewModel.loadPtmEvents()
+        while (true) {
+            delay(60_000L)
+            obligationsViewModel.load()
+            todayViewModel.load()
+            classesViewModel.load()
+            eventsViewModel.loadPtmEvents()
+        }
+    }
+
+    // First-login-of-day check-in popup gate (kept from the previous rebuild).
     var popupDismissedForDate by rememberSaveable { mutableStateOf<String?>(null) }
     val popupVisible = !checkIn.isLoading &&
         !checkIn.statusUnavailable &&
@@ -88,432 +133,592 @@ fun TeacherHomeScreenV2(
         checkIn.date.isNotBlank() &&
         popupDismissedForDate != checkIn.date
 
-    Box(modifier.fillMaxSize().background(VTheme.colors.background)) {
-        val scroll = rememberScrollState()
-        Column(
-            Modifier
-                .fillMaxSize()
-                .verticalScroll(scroll)
-                .padding(horizontal = 16.dp)
-                .padding(top = 14.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            GreetingHeroCard(
-                teacherName = today.teacherName,
-                checkIn = checkIn,
-                obligations = obligations,
-                onCheckIn = { method -> checkInViewModel.checkIn(method) },
-            )
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(VColors.cream)
+            .verticalScroll(rememberScrollState())
+            .statusBarsPadding()
+            .padding(horizontal = 24.dp)
+            .padding(top = 12.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(24.dp),
+    ) {
+        TeacherHomeHeader(
+            teacherName = today.teacherName,
+            onOpenNotifications = onOpenNotifications,
+        )
 
-            AttendanceSummaryCard(
+        NowTeachingCard(
+            today = today,
+            onMarkAttendance = onOpenAttendanceForAssignment,
+            onLessonPlan = onOpenLessonPlanForAssignment,
+        )
+
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            SectionHeader(
+                title = appString(StringKeys.TC_TODAYS_SCHEDULE),
+                actionLabel = appString(StringKeys.TC_ALL_CLASSES),
+                onAction = onOpenClasses,
+            )
+            TodaysScheduleRow(
                 today = today,
-                obligations = obligations,
+                onOpenLessonPlan = onOpenLessonPlanForAssignment,
                 onOpenAttendance = onOpenAttendanceForAssignment,
-                onOpenUpdate = onOpenUpdateTab,
             )
+        }
 
-            ScheduleCard(today = today, onOpenLessonPlan = onOpenLessonPlanForAssignment)
-
-            RemindersCard(
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            SectionHeader(title = appString(StringKeys.TC_PENDING_ACTIONS))
+            PendingActionsList(
                 obligations = obligations,
                 onOpenUpdate = onOpenUpdateTab,
                 onOpenClasses = onOpenClasses,
             )
+        }
 
-            VActionCard(
-                title = "Health Alerts",
-                subtitle = "Allergies & conditions for students in your classes",
-                icon = VIcons.Heart,
-                onClick = onOpenHealthAlerts,
-            )
-
-            VActionCard(
-                title = "Transport Attendance",
-                subtitle = "Mark pickup & drop for students on your bus route",
-                icon = VIcons.MapPin,
-                onClick = onOpenTransportAttendance,
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            SectionHeader(title = appString(StringKeys.TC_QUICK_ACTIONS))
+            QuickActionsGrid(
+                onAttendance = { onOpenUpdateTool(UpdateTool.Attendance) },
+                onMarks = { onOpenUpdateTool(UpdateTool.Marks) },
+                onHomework = { onOpenUpdateTool(UpdateTool.Homework) },
+                onMessages = onOpenMessages,
             )
         }
 
-        // The first-login fingerprint check-in popup rides above everything.
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            SectionHeader(
+                title = appString(StringKeys.TEACHER_CLASSES),
+                actionLabel = appString(StringKeys.HOME_SEE_ALL),
+                onAction = onOpenClasses,
+            )
+            MyClassesList(
+                classes = classesState,
+                onOpenClasses = onOpenClasses,
+            )
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            SectionHeader(
+                title = appString(StringKeys.TC_UPCOMING_EVENTS),
+                actionLabel = appString(StringKeys.HOME_SEE_ALL),
+                onAction = onOpenEvents,
+            )
+            UpcomingEventsList(
+                events = eventsState,
+                onOpenEvents = onOpenEvents,
+            )
+        }
+    }
+
+    if (popupVisible) {
         TeacherCheckInPopup(
             state = checkIn,
             visible = popupVisible,
-            onDismiss = { popupDismissedForDate = checkIn.date.ifBlank { todayIso() } },
+            onDismiss = { popupDismissedForDate = checkIn.date.ifBlank { com.littlebridge.enrollplus.util.todayIso() } },
             onCheckIn = { method -> checkInViewModel.checkIn(method) },
         )
     }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Greeting hero — time-sensitive greeting + a one-tap check-in ring.
+// Header — mirrors the parent portal home header: wordmark, greeting, bell.
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun GreetingHeroCard(
+private fun TeacherHomeHeader(
     teacherName: String,
-    checkIn: TeacherCheckInState,
-    obligations: TeacherObligationsState,
-    onCheckIn: (method: String) -> Unit,
+    onOpenNotifications: () -> Unit,
 ) {
-    val c = VTheme.colors
-    val name = teacherName.trim().substringBefore(" ").ifBlank { "Teacher" }
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-            .background(
-                Brush.linearGradient(
-                    listOf(c.accent.copy(alpha = 0.10f), c.accentSoft.copy(alpha = 0.05f), c.card),
-                ),
-            )
-            .border(1.dp, c.hairline, RoundedCornerShape(24.dp))
-            .padding(18.dp),
+    val name = teacherName.trim().substringBefore(" ").ifBlank { teacherName.ifBlank { appString(StringKeys.TEACHER_TITLE) } }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                TEyebrow(teacherGreeting().uppercase(), dot = c.accent)
-                Spacer(Modifier.height(6.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = "Enroll+",
+                style = VTypography.wordmark.copy(color = VColors.violet),
+            )
+
+            val ix = remember { MutableInteractionSource() }
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(VShapes.full)
+                    .clickable(interactionSource = ix, indication = null) { onOpenNotifications() },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = VIcons.BellStroke,
+                    contentDescription = appString(StringKeys.TC_MESSAGES),
+                    tint = VColors.ink,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        Text(
+            text = "Hi ${name}",
+            style = VTypography.caption.copy(
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = VColors.violet,
+            ),
+        )
+
+        Spacer(Modifier.height(2.dp))
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                text = "here's",
+                style = VTypography.h2.copy(color = VColors.ink),
+            )
+            Text(
+                text = appString(StringKeys.TC_YOUR_DAY),
+                style = VTypography.h2.copy(color = VColors.violet),
+            )
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Now Teaching — violet hero card with live/next class and two CTAs.
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun NowTeachingCard(
+    today: TeacherTodayState,
+    onMarkAttendance: (assignmentId: String, scope: String) -> Unit,
+    onLessonPlan: (assignmentId: String, scope: String) -> Unit,
+) {
+    val day = today.day
+    val current = day?.periods?.getOrNull(day.nowIndex)
+    val next = day?.periods?.getOrNull(day.nextIndex)
+    val period = current ?: next
+
+    val gradient = Brush.linearGradient(
+        colors = listOf(VColors.violet, VColors.violetHover),
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.xl)
+            .background(gradient)
+            .padding(20.dp),
+    ) {
+        Column {
+            // eyebrow + status pill
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
                 Text(
-                    "Hi, $name",
-                    style = VTheme.type.h1.colored(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold, fontSize = 26.sp),
+                    text = appString(StringKeys.TC_NOW_TEACHING).uppercase(),
+                    style = VTypography.label.copy(
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.8.sp,
+                        color = VColors.white.copy(alpha = 0.85f),
+                    ),
+                )
+                StatusPill(
+                    label = if (current != null) appString(StringKeys.TC_NOW) else appString(StringKeys.TC_NEXT),
+                    bg = VColors.white.copy(alpha = 0.20f),
+                    fg = VColors.white,
+                )
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            if (period != null) {
+                Text(
+                    text = "Class ${period.classLabel}",
+                    style = VTypography.h2.copy(color = VColors.white),
                 )
                 Spacer(Modifier.height(4.dp))
-                val line = when {
-                    obligations.isAllCaughtUp -> "You're all caught up — have a great day."
-                    obligations.totalOutstanding > 0 -> "${obligations.totalOutstanding} thing${if (obligations.totalOutstanding == 1) "" else "s"} need your attention."
-                    else -> "Here's your day at a glance."
+                Text(
+                    text = buildString {
+                        append(period.subject)
+                        if (period.room.isNotBlank()) append(" · ${period.room}")
+                    },
+                    style = VTypography.body.copy(color = VColors.white.copy(alpha = 0.85f)),
+                )
+
+                Spacer(Modifier.height(16.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    val scope = if (period.section.isBlank()) {
+                        "${period.className} · ${period.subject}"
+                    } else {
+                        "${period.className}-${period.section} · ${period.subject}"
+                    }
+                    HeroCta(
+                        text = appString(StringKeys.TC_MARK_ATTENDANCE),
+                        icon = VIcons.ListChecks,
+                        tone = VColors.white,
+                        onClick = { period.assignmentId?.let { onMarkAttendance(it, scope) } },
+                        modifier = Modifier.weight(1f),
+                    )
+                    HeroCta(
+                        text = appString(StringKeys.TC_LESSON),
+                        icon = VIcons.ClipboardList,
+                        tone = VColors.white.copy(alpha = 0.85f),
+                        onClick = { period.assignmentId?.let { onLessonPlan(it, scope) } },
+                        modifier = Modifier.weight(1f),
+                    )
                 }
-                Text(line, style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.5.sp))
+            } else {
+                Text(
+                    text = appString(StringKeys.TC_NO_PERIOD_RIGHT_NOW),
+                    style = VTypography.h3.copy(color = VColors.white),
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = appString(StringKeys.TC_NO_CLASSES_SCHEDULED_TODAY),
+                    style = VTypography.body.copy(color = VColors.white.copy(alpha = 0.75f)),
+                )
             }
-            Spacer(Modifier.width(12.dp))
-            CheckInRing(checkIn = checkIn, onCheckIn = onCheckIn)
         }
     }
 }
 
 @Composable
-private fun CheckInRing(checkIn: TeacherCheckInState, onCheckIn: (method: String) -> Unit) {
-    val c = VTheme.colors
-    val checkedIn = checkIn.checkedIn
-    val accent = if (checkedIn) c.successInk else c.warningInk
+private fun HeroCta(
+    text: String,
+    icon: ImageVector,
+    tone: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val ix = remember { MutableInteractionSource() }
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(
-            Modifier
-                .size(78.dp)
-                .clip(androidx.compose.foundation.shape.CircleShape)
-                .clickable(
-                    interactionSource = ix,
-                    indication = null,
-                    enabled = !checkedIn && !checkIn.isCheckingIn,
-                ) { onCheckIn(BiometricMethod.Manual.wire) },
-            contentAlignment = Alignment.Center,
-        ) {
-            TRing(
-                percent = if (checkedIn) 100 else 0,
-                modifier = Modifier.fillMaxSize(),
-                accent = accent,
-                stroke = 6.dp,
-                label = "",
-            )
-            if (checkIn.isCheckingIn) {
-                TeacherSpinner(26.dp)
-            } else {
-                Icon(
-                    if (checkedIn) VIcons.Check else VIcons.ShieldCheck,
-                    contentDescription = "Check in",
-                    tint = accent,
-                    modifier = Modifier.size(30.dp),
-                )
-            }
-        }
-        Spacer(Modifier.height(6.dp))
+    Row(
+        modifier = modifier
+            .clip(VShapes.lg)
+            .background(tone.copy(alpha = 0.14f))
+            .border(1.dp, tone.copy(alpha = 0.25f), VShapes.lg)
+            .clickable(interactionSource = ix, indication = null) { onClick() }
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = tone, modifier = Modifier.size(18.dp))
         Text(
-            if (checkedIn) "Checked in" else "Tap to check in",
-            style = VTheme.type.label.colored(accent).copy(fontSize = 9.5.sp, fontWeight = FontWeight.Bold),
+            text = text,
+            style = VTypography.label.copy(
+                fontSize = 12.sp,
+                color = tone,
+                fontWeight = FontWeight.Bold,
+            ),
         )
     }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Attendance summary swipe card — clubbed metrics (face 0) / per-class list (face 1).
+// Today's schedule — horizontal scroll of class cards.
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun AttendanceSummaryCard(
+private fun TodaysScheduleRow(
     today: TeacherTodayState,
-    obligations: TeacherObligationsState,
+    onOpenLessonPlan: (assignmentId: String, scope: String) -> Unit,
     onOpenAttendance: (assignmentId: String, scope: String) -> Unit,
-    onOpenUpdate: () -> Unit,
 ) {
-    val c = VTheme.colors
-    var face by remember { mutableStateOf(0) }
+    val day = today.day
+    val periods = day?.periods.orEmpty()
 
-    // Classes with a real, teachable period today (skip holiday/cancelled rows for the count).
-    val periods = today.day?.periods.orEmpty().filter { !it.isCancelled }
-    val totalToday = obligations.classesTodayTotal.takeIf { it > 0 } ?: periods.size
-    val unmarked = obligations.unmarkedClasses
-    val done = (totalToday - unmarked).coerceIn(0, totalToday)
-    val percent = if (totalToday == 0) 0 else (done * 100) / totalToday
-
-    SwipeExpandCard(face = face, faceCount = 2, onFaceChange = { face = it }, padding = 18.dp) { f ->
-        Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                TEyebrow("ATTENDANCE TODAY", dot = if (unmarked == 0) c.successInk else c.warningInk)
-                Spacer(Modifier.weight(1f))
-                FaceDots(face, 2)
-            }
-            Spacer(Modifier.height(12.dp))
-
-            when (f) {
-                0 -> {
-                    // Clubbed metrics — the single answer to "how many classes is attendance done".
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        TRing(
-                            percent = percent,
-                            modifier = Modifier.size(86.dp),
-                            accent = if (unmarked == 0) c.successInk else c.accent,
-                            label = "$done/$totalToday",
-                            labelSize = 17.sp,
-                        )
-                        Spacer(Modifier.width(16.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                if (totalToday == 0) "No classes today"
-                                else if (unmarked == 0) "All attendance done"
-                                else "$unmarked class${if (unmarked == 1) "" else "es"} to mark",
-                                style = VTheme.type.h3.colored(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold, fontSize = 16.sp),
-                            )
-                            Spacer(Modifier.height(2.dp))
-                            Text(
-                                "$done of $totalToday classes marked",
-                                style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp),
-                            )
-                            Spacer(Modifier.height(10.dp))
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                TMetricTile(done.toString(), "Done", c.successInk, Modifier.weight(1f))
-                                TMetricTile(unmarked.toString(), "Pending", c.warningInk, Modifier.weight(1f))
-                            }
-                        }
-                    }
-                    Spacer(Modifier.height(10.dp))
-                    TSwipeHint("Swipe to see each class →")
-                }
-                else -> {
-                    // Per-class list — the detail in-place (no navigation), tap a row to mark.
-                    if (periods.isEmpty()) {
-                        Text("No classes scheduled today.", style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.sp))
-                    } else {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            periods.forEach { p ->
-                                AttendanceClassRow(p, onOpenAttendance)
-                            }
-                        }
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    TSwipeHint("← Swipe back to summary")
-                }
-            }
+    if (today.isLoading && day == null) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            repeat(3) { SkeletonScheduleCard() }
         }
+        return
     }
-}
 
-@Composable
-private fun AttendanceClassRow(p: ResolvedPeriodUi, onOpen: (assignmentId: String, scope: String) -> Unit) {
-    val c = VTheme.colors
-    val accent = teacherSubjectColor(c, p.subject.ifBlank { p.className })
-    val asg = p.assignmentId
-    val ix = remember { MutableInteractionSource() }
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(c.cream)
-            .clickable(interactionSource = ix, indication = null, enabled = asg != null) {
-                if (asg != null) onOpen(asg, "${p.classLabel} · ${p.subject}")
-            }
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    if (day == null || periods.isEmpty() || day.isHoliday) {
+        EmptyCard(
+            text = if (day?.isHoliday == true) appString(StringKeys.TC_HOLIDAY) else appString(StringKeys.TC_NO_CLASSES_SCHEDULED_TODAY),
+        )
+        return
+    }
+
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(end = 4.dp),
     ) {
-        TIconDisc(VIcons.ListChecks, tint = accent, bg = accent.copy(alpha = 0.12f), size = 36.dp, glyph = 18.dp)
-        Column(Modifier.weight(1f)) {
-            Text("${p.classLabel} · ${p.subject}", style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 13.5.sp, fontWeight = FontWeight.Bold))
-            Text(
-                "${p.startTime}–${p.endTime}${if (p.room.isNotBlank()) " · ${p.room}" else ""}",
-                style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp),
+        items(periods, key = { it.periodId ?: it.hashCode() }) { p ->
+            val index = periods.indexOf(p)
+            val isNow = day.nowIndex == index
+            val isNext = day.nextIndex == index
+            val label = when {
+                isNow -> appString(StringKeys.TC_NOW)
+                isNext -> appString(StringKeys.TC_NEXT)
+                else -> appString(StringKeys.TC_LATER)
+            }
+            val scope = if (p.section.isBlank()) "${p.className} · ${p.subject}" else "${p.className}-${p.section} · ${p.subject}"
+            ScheduleCard(
+                period = p,
+                label = label,
+                isNow = isNow,
+                onClick = {
+                    p.assignmentId?.let { aid ->
+                        if (p.attendanceMarked) onOpenLessonPlan(aid, scope)
+                        else onOpenAttendance(aid, scope)
+                    }
+                },
             )
         }
-        if (p.attendanceMarked) {
-            TPill("DONE", bg = c.success.copy(alpha = 0.16f), fg = c.successInk)
-        } else {
-            TPill("MARK", bg = c.accent.copy(alpha = 0.12f), fg = c.accentDeep)
-        }
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Schedule card — today's timetable, with a live "now / next" cue.
-// ─────────────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun ScheduleCard(today: TeacherTodayState, onOpenLessonPlan: (assignmentId: String, scope: String) -> Unit = { _, _ -> }) {
-    val c = VTheme.colors
-    val day = today.day
-    TCard(padding = 18.dp) {
-        Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                TEyebrow("TODAY'S SCHEDULE", dot = c.accent)
-                Spacer(Modifier.weight(1f))
-                Text(prettyDate(day?.date), style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp))
-            }
-            Spacer(Modifier.height(12.dp))
-            when {
-                today.isLoading && day == null -> Box(Modifier.fillMaxWidth().height(60.dp), contentAlignment = Alignment.Center) { TeacherSpinner(26.dp) }
-                day == null -> Text("Couldn't load your schedule.", style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.sp))
-                day.isHoliday -> HolidayRow(day)
-                day.periods.isEmpty() -> Text("No periods scheduled today.", style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.sp))
-                else -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    day.periods.forEachIndexed { i, p ->
-                        SchedulePeriodRow(
-                            p,
-                            isNow = i == day.nowIndex,
-                            isNext = i == day.nextIndex,
-                            onOpenLessonPlan = onOpenLessonPlan,
-                        )
-                    }
-                }
-            }
-        }
     }
 }
 
 @Composable
-private fun HolidayRow(day: ResolvedDayUi) {
-    val c = VTheme.colors
-    Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(c.navy.copy(alpha = 0.06f)).padding(14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        TIconDisc(VIcons.Calendar, tint = c.navy, bg = c.navy.copy(alpha = 0.12f), size = 36.dp, glyph = 18.dp)
-        Column {
-            Text("Holiday", style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 14.sp, fontWeight = FontWeight.Bold))
-            val holidayName = day.holidayName
-            if (!holidayName.isNullOrBlank()) Text(holidayName, style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp))
-        }
-    }
-}
-
-@Composable
-private fun SchedulePeriodRow(
-    p: ResolvedPeriodUi,
+private fun ScheduleCard(
+    period: ResolvedPeriodUi,
+    label: String,
     isNow: Boolean,
-    isNext: Boolean,
-    onOpenLessonPlan: (assignmentId: String, scope: String) -> Unit = { _, _ -> },
+    onClick: () -> Unit,
 ) {
-    val c = VTheme.colors
-    val accent = teacherSubjectColor(c, p.subject.ifBlank { p.className })
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(if (isNow) accent.copy(alpha = 0.10f) else c.cream)
-            .then(if (isNow) Modifier.border(1.dp, accent.copy(alpha = 0.4f), RoundedCornerShape(14.dp)) else Modifier)
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    val accent = if (isNow) VColors.violet else VColors.ink3
+    val ix = remember { MutableInteractionSource() }
+    Column(
+        modifier = Modifier
+            .width(160.dp)
+            .clip(VShapes.lg)
+            .background(VColors.surfaceCard)
+            .border(
+                width = if (isNow) 2.dp else 1.dp,
+                color = if (isNow) VColors.violet.copy(alpha = 0.35f) else VColors.line,
+                shape = VShapes.lg,
+            )
+            .clickable(interactionSource = ix, indication = null) { onClick() }
+            .padding(16.dp),
     ) {
-        Column(Modifier.width(54.dp)) {
-            Text(p.startTime, style = VTheme.type.bodyStrong.colored(if (isNow) accent else c.ink).copy(fontSize = 13.sp, fontWeight = FontWeight.Bold))
-            Text(p.endTime, style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.5.sp))
+        StatusPill(
+            label = label,
+            bg = if (isNow) VColors.violetSoft else VColors.lineSoft,
+            fg = if (isNow) VColors.violet else VColors.ink3,
+        )
+        Spacer(Modifier.height(12.dp))
+        Text(
+            text = period.classLabel,
+            style = VTypography.h3.copy(fontSize = 18.sp, color = VColors.ink),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Spacer(Modifier.height(2.dp))
+        Text(
+            text = period.subject,
+            style = VTypography.caption.copy(color = VColors.ink2),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Spacer(Modifier.height(12.dp))
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Icon(VIcons.Clock, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(14.dp))
+            Text(
+                text = "${period.startTime} – ${period.endTime}",
+                style = VTypography.caption.copy(color = VColors.ink3),
+            )
         }
-        Box(Modifier.size(6.dp).clip(androidx.compose.foundation.shape.CircleShape).background(accent))
-        Column(Modifier.weight(1f)) {
+        Spacer(Modifier.height(6.dp))
+        if (period.room.isNotBlank()) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Icon(VIcons.MapPin, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(14.dp))
                 Text(
-                    if (p.isCancelled) "${p.classLabel} · ${p.subject} (cancelled)" else "${p.classLabel} · ${p.subject}",
-                    style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 13.5.sp, fontWeight = FontWeight.Bold),
-                )
-                if (isNow) TPill("NOW", bg = accent.copy(alpha = 0.18f), fg = accent)
-                else if (isNext) TPill("NEXT", bg = c.accent.copy(alpha = 0.10f), fg = c.accentDeep)
-                // Lesson plan chip (LESSON_PLANNING_SPEC §7.3)
-                p.lessonPlanStatus?.let { lps ->
-                    val lpColor = when (lps) {
-                        "completed" -> c.tealDeep
-                        "skipped" -> c.ink3
-                        else -> c.accent
-                    }
-                    val lpIcon = when (lps) {
-                        "completed" -> VIcons.Check
-                        "skipped" -> VIcons.Close
-                        else -> VIcons.ClipboardList
-                    }
-                    val lpIx = remember { MutableInteractionSource() }
-                    val scopeLabel = if (p.section.isBlank()) "${p.className} · ${p.subject}" else "${p.className}-${p.section} · ${p.subject}"
-                    TPill(
-                        label = lps.uppercase(),
-                        bg = lpColor.copy(alpha = 0.12f),
-                        fg = lpColor,
-                        leading = { Icon(lpIcon, contentDescription = null, modifier = Modifier.size(10.dp)) },
-                        modifier = Modifier.clickable(interactionSource = lpIx, indication = null) {
-                            p.assignmentId?.let { aid -> onOpenLessonPlan(aid, scopeLabel) }
-                        },
-                    )
-                }
-            }
-            val sub = p.substituteTeacherName
-            if (p.room.isNotBlank() || sub != null) {
-                Text(
-                    buildString {
-                        if (p.room.isNotBlank()) append(p.room)
-                        if (sub != null) {
-                            if (isNotEmpty()) append(" · ")
-                            append("Sub: $sub")
-                        }
-                    },
-                    style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp),
+                    text = "Room ${period.room}",
+                    style = VTypography.caption.copy(color = VColors.ink3),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
     }
 }
 
+@Composable
+private fun SkeletonScheduleCard() {
+    Column(
+        modifier = Modifier
+            .width(160.dp)
+            .clip(VShapes.lg)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.lg)
+            .padding(16.dp),
+    ) {
+        Box(Modifier.size(48.dp, 22.dp).clip(VShapes.full).background(VColors.lineSoft))
+        Spacer(Modifier.height(12.dp))
+        Box(Modifier.size(90.dp, 20.dp).clip(VShapes.sm).background(VColors.lineSoft))
+        Spacer(Modifier.height(8.dp))
+        Box(Modifier.size(120.dp, 14.dp).clip(VShapes.sm).background(VColors.lineSoft))
+    }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
-// Reminders / "what needs me" card — server obligations, honest when caught up.
+// Pending actions — honest list built from real obligation counts.
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun RemindersCard(
+private fun PendingActionsList(
     obligations: TeacherObligationsState,
     onOpenUpdate: () -> Unit,
     onOpenClasses: () -> Unit,
 ) {
-    val c = VTheme.colors
-    if (obligations.unavailable) return // honest: hide rather than fake "all caught up"
-    TCard(padding = 18.dp) {
-        Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                TEyebrow("WHAT NEEDS YOU", dot = if (obligations.isAllCaughtUp) c.successInk else c.warningInk)
-                Spacer(Modifier.weight(1f))
-                if (obligations.totalOutstanding > 0) {
-                    TPill(obligations.totalOutstanding.toString(), bg = c.warning.copy(alpha = 0.18f), fg = c.warningInk)
-                }
+    if (obligations.unavailable) {
+        EmptyCard(text = appString(StringKeys.COMMON_ERROR_GENERIC))
+        return
+    }
+
+    val items = buildList {
+        if (obligations.unmarkedClasses > 0) {
+            add(PendingItem(
+                label = appString(StringKeys.TC_ATTENDANCE),
+                count = obligations.unmarkedClasses,
+                suffix = appString(StringKeys.TC_CLASSES),
+                icon = VIcons.ListChecks,
+                tint = VColors.gold,
+                onClick = onOpenUpdate,
+            ))
+        }
+        if (obligations.submissionsToReview > 0) {
+            add(PendingItem(
+                label = appString(StringKeys.TEACHER_HOMEWORK),
+                count = obligations.submissionsToReview,
+                suffix = appString(StringKeys.TC_SUBMISSIONS),
+                icon = VIcons.FileText,
+                tint = VColors.sky,
+                onClick = onOpenUpdate,
+            ))
+        }
+        if (obligations.unpublishedResults > 0) {
+            add(PendingItem(
+                label = appString(StringKeys.TC_RESULTS),
+                count = obligations.unpublishedResults,
+                suffix = appString(StringKeys.TC_TO_PUBLISH),
+                icon = VIcons.GraduationCap,
+                tint = VColors.violet,
+                onClick = onOpenUpdate,
+            ))
+        }
+        if (obligations.pendingLeaveDecisions > 0) {
+            add(PendingItem(
+                label = appString(StringKeys.TC_LEAVE_REQUESTS),
+                count = obligations.pendingLeaveDecisions,
+                suffix = appString(StringKeys.TC_PENDING_COUNT),
+                icon = VIcons.Calendar,
+                tint = VColors.coral,
+                onClick = onOpenClasses,
+            ))
+        }
+    }
+
+    if (items.isEmpty()) {
+        EmptyCard(
+            icon = VIcons.Sparkles,
+            text = appString(StringKeys.TC_ALL_CAUGHT_UP),
+            subtext = appString(StringKeys.TC_NOTHING_PENDING),
+        )
+        return
+    }
+
+    SurfaceCard {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            items.forEach { item ->
+                PendingRow(item = item)
             }
-            Spacer(Modifier.height(12.dp))
-            if (obligations.isAllCaughtUp || obligations.items.isEmpty()) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    TIconDisc(VIcons.Sparkles, tint = c.successInk, bg = c.success.copy(alpha = 0.16f), size = 40.dp, glyph = 20.dp)
-                    Column {
-                        Text("All caught up", style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 14.sp, fontWeight = FontWeight.Bold))
-                        Text("Nothing pending right now.", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp))
-                    }
-                }
-            } else {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    obligations.items.take(5).forEach { item ->
-                        ReminderRow(item, onOpenUpdate, onOpenClasses)
+        }
+    }
+}
+
+private data class PendingItem(
+    val label: String,
+    val count: Int,
+    val suffix: String,
+    val icon: ImageVector,
+    val tint: Color,
+    val onClick: () -> Unit,
+)
+
+@Composable
+private fun PendingRow(item: PendingItem) {
+    val ix = remember { MutableInteractionSource() }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.md)
+            .clickable(interactionSource = ix, indication = null) { item.onClick() }
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(item.tint.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(item.icon, contentDescription = null, tint = item.tint, modifier = Modifier.size(20.dp))
+        }
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = item.label,
+                style = VTypography.bodySmall.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    color = VColors.ink,
+                ),
+            )
+            Text(
+                text = "${item.count} ${item.suffix}",
+                style = VTypography.caption.copy(color = VColors.ink3),
+            )
+        }
+        Text(
+            text = item.count.toString(),
+            style = VTypography.h3.copy(fontSize = 20.sp, color = item.tint),
+        )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Quick actions — 2×2 grid with fixed, non-repeated actions.
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun QuickActionsGrid(
+    onAttendance: () -> Unit,
+    onMarks: () -> Unit,
+    onHomework: () -> Unit,
+    onMessages: () -> Unit,
+) {
+    val actions = listOf(
+        QuickAction(appString(StringKeys.TEACHER_ATTENDANCE), VColors.violetSoft, VColors.violet, VIcons.ListChecks, onAttendance),
+        QuickAction(appString(StringKeys.TC_MARKS), VColors.mintSoft, VColors.mint, VIcons.GraduationCap, onMarks),
+        QuickAction(appString(StringKeys.TEACHER_HOMEWORK), VColors.goldSoft, VColors.gold, VIcons.FileText, onHomework),
+        QuickAction(appString(StringKeys.TC_MESSAGES), VColors.coralSoft, VColors.coral, VIcons.Chat, onMessages),
+    )
+
+    SurfaceCard {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            actions.chunked(2).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    row.forEach { action ->
+                        QuickActionTile(
+                            action = action,
+                            modifier = Modifier.weight(1f),
+                        )
                     }
                 }
             }
@@ -521,37 +726,382 @@ private fun RemindersCard(
     }
 }
 
+private data class QuickAction(
+    val label: String,
+    val bg: Color,
+    val iconTint: Color,
+    val icon: ImageVector,
+    val onClick: () -> Unit,
+)
+
 @Composable
-private fun ReminderRow(item: ObligationItemDto, onOpenUpdate: () -> Unit, onOpenClasses: () -> Unit) {
-    val c = VTheme.colors
-    val tint = when (item.type) {
-        "attendance" -> c.warningInk
-        "marks" -> c.accent
-        "homework" -> c.tealDeep
-        "leave" -> c.dangerInk
-        else -> c.ink2
-    }
+private fun QuickActionTile(action: QuickAction, modifier: Modifier = Modifier) {
     val ix = remember { MutableInteractionSource() }
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(c.cream)
-            .clickable(interactionSource = ix, indication = null) {
-                if (item.type == "leave") onOpenClasses() else onOpenUpdate()
-            }
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    Column(
+        modifier = modifier
+            .clip(VShapes.lg)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.lg)
+            .clickable(interactionSource = ix, indication = null) { action.onClick() }
+            .padding(16.dp),
+        horizontalAlignment = Alignment.Start,
     ) {
-        TIconDisc(obligationIcon(item.type), tint = tint, bg = tint.copy(alpha = 0.12f), size = 36.dp, glyph = 18.dp)
-        Column(Modifier.weight(1f)) {
-            Text(item.title, style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 13.5.sp, fontWeight = FontWeight.Bold), maxLines = 1)
-            if (item.subtitle.isNotBlank()) {
-                Text(item.subtitle, style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp), maxLines = 1)
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clip(CircleShape)
+                .background(action.bg),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(action.icon, contentDescription = null, tint = action.iconTint, modifier = Modifier.size(22.dp))
+        }
+        Spacer(Modifier.height(12.dp))
+        Text(
+            text = action.label,
+            style = VTypography.bodySmall.copy(
+                fontWeight = FontWeight.Bold,
+                color = VColors.ink,
+            ),
+        )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// My classes — list of allocated classes with real counts.
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun MyClassesList(
+    classes: TeacherClassesState,
+    onOpenClasses: () -> Unit,
+) {
+    if (classes.isLoading && classes.classes.isEmpty()) {
+        SurfaceCard {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                repeat(3) { SkeletonClassRow() }
             }
         }
-        if (item.count > 0) TPill(item.count.toString(), bg = tint.copy(alpha = 0.14f), fg = tint)
-        Icon(VIcons.ChevronRight, contentDescription = null, tint = c.ink3, modifier = Modifier.size(18.dp))
+        return
     }
+
+    if (classes.classes.isEmpty()) {
+        EmptyCard(text = appString(StringKeys.TC_NO_ALLOCATIONS))
+        return
+    }
+
+    SurfaceCard {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            classes.classes.take(4).forEach { cls ->
+                ClassRow(cls = cls, onClick = onOpenClasses)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ClassRow(cls: TeacherClassSummaryDto, onClick: () -> Unit) {
+    val accent = subjectColor(VColors, cls.subject.ifBlank { cls.className })
+    val ix = remember { MutableInteractionSource() }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.md)
+            .clickable(interactionSource = ix, indication = null) { onClick() }
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clip(CircleShape)
+                .background(accent.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = cls.className.take(1).uppercase(),
+                style = VTypography.h3.copy(fontSize = 18.sp, color = accent),
+            )
+        }
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "Class ${cls.className}-${cls.section}",
+                    style = VTypography.bodySmall.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        color = VColors.ink,
+                    ),
+                )
+                if (cls.isClassTeacher) {
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "CT",
+                        style = VTypography.caption.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = VColors.violet,
+                        ),
+                        modifier = Modifier
+                            .clip(VShapes.full)
+                            .background(VColors.violetSoft)
+                            .padding(horizontal = 8.dp, vertical = 2.dp),
+                    )
+                }
+            }
+            Text(
+                text = "${cls.studentCount} students · ${cls.subject}",
+                style = VTypography.caption.copy(color = VColors.ink2),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        if (!cls.todayAttendanceMarked) {
+            StatusPill(
+                label = appString(StringKeys.TC_PENDING),
+                bg = VColors.gold.copy(alpha = 0.16f),
+                fg = VColors.gold,
+            )
+        } else {
+            Icon(VIcons.Check, contentDescription = null, tint = VColors.success, modifier = Modifier.size(20.dp))
+        }
+    }
+}
+
+@Composable
+private fun SkeletonClassRow() {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Box(Modifier.size(44.dp).clip(CircleShape).background(VColors.lineSoft))
+        Column(Modifier.weight(1f)) {
+            Box(Modifier.size(120.dp, 16.dp).clip(VShapes.sm).background(VColors.lineSoft))
+            Spacer(Modifier.height(6.dp))
+            Box(Modifier.size(160.dp, 12.dp).clip(VShapes.sm).background(VColors.lineSoft))
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Upcoming events — teacher PTM events from the event registration VM.
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun UpcomingEventsList(
+    events: TeacherEventRegistrationState,
+    onOpenEvents: () -> Unit,
+) {
+    if (events.isLoading && events.events.isEmpty()) {
+        SurfaceCard {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                repeat(2) { SkeletonEventRow() }
+            }
+        }
+        return
+    }
+
+    if (events.events.isEmpty()) {
+        EmptyCard(text = appString(StringKeys.CAL_NO_EVENTS))
+        return
+    }
+
+    SurfaceCard {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            events.events.take(4).forEach { event ->
+                EventRow(event = event, onClick = onOpenEvents)
+            }
+        }
+    }
+}
+
+@Composable
+private fun EventRow(event: TeacherPtmEventDto, onClick: () -> Unit) {
+    val ix = remember { MutableInteractionSource() }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.md)
+            .clickable(interactionSource = ix, indication = null) { onClick() }
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Column(
+            modifier = Modifier
+                .size(48.dp)
+                .clip(VShapes.md)
+                .background(VColors.violetSoft),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            val (day, mon) = event.date.prettyDayMon()
+            Text(text = day, style = VTypography.bodySmall.copy(fontWeight = FontWeight.ExtraBold, color = VColors.violet))
+            Text(text = mon, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, color = VColors.violetInk))
+        }
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = event.title,
+                style = VTypography.bodySmall.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    color = VColors.ink,
+                ),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = event.date.prettyDate() ?: "",
+                style = VTypography.caption.copy(color = VColors.ink2),
+            )
+        }
+        Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(18.dp))
+    }
+}
+
+@Composable
+private fun SkeletonEventRow() {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        Box(Modifier.size(48.dp).clip(VShapes.md).background(VColors.lineSoft))
+        Column(Modifier.weight(1f)) {
+            Box(Modifier.size(140.dp, 16.dp).clip(VShapes.sm).background(VColors.lineSoft))
+            Spacer(Modifier.height(6.dp))
+            Box(Modifier.size(100.dp, 12.dp).clip(VShapes.sm).background(VColors.lineSoft))
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared atoms — section header, surface card, status pill, empty card.
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun SectionHeader(
+    title: String,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(
+            text = title,
+            style = VTypography.h3.copy(fontSize = 18.sp, color = VColors.ink),
+        )
+        if (actionLabel != null && onAction != null) {
+            val ix = remember { MutableInteractionSource() }
+            Text(
+                text = actionLabel,
+                style = VTypography.label.copy(color = VColors.violet),
+                modifier = Modifier.clickable(interactionSource = ix, indication = null) { onAction() },
+            )
+        }
+    }
+}
+
+@Composable
+private fun SurfaceCard(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(VShapes.xl)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.xl)
+            .padding(16.dp),
+    ) {
+        content()
+    }
+}
+
+@Composable
+private fun StatusPill(
+    label: String,
+    bg: Color,
+    fg: Color,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = label,
+        style = VTypography.caption.copy(
+            fontWeight = FontWeight.Bold,
+            color = fg,
+        ),
+        modifier = modifier
+            .clip(VShapes.full)
+            .background(bg)
+            .padding(horizontal = 10.dp, vertical = 4.dp),
+    )
+}
+
+@Composable
+private fun EmptyCard(
+    text: String,
+    subtext: String? = null,
+    icon: ImageVector? = null,
+) {
+    SurfaceCard {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+        ) {
+            if (icon != null) {
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(VColors.success.copy(alpha = 0.12f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(icon, contentDescription = null, tint = VColors.success, modifier = Modifier.size(22.dp))
+                }
+            }
+            Text(
+                text = text,
+                style = VTypography.bodySmall.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    color = VColors.ink,
+                ),
+                textAlign = TextAlign.Center,
+            )
+            if (subtext != null) {
+                Text(
+                    text = subtext,
+                    style = VTypography.caption.copy(color = VColors.ink3),
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers — local formatting extensions.
+// ─────────────────────────────────────────────────────────────────────────────
+
+private fun subjectColor(c: VColors, key: String): Color {
+    val palette = listOf(c.violet, c.mint, c.sky, c.coral, c.gold)
+    if (key.isBlank()) return palette.first()
+    val idx = ((key.hashCode() % palette.size) + palette.size) % palette.size
+    return palette[idx]
+}
+
+private fun String?.prettyDate(): String? {
+    if (this.isNullOrBlank()) return null
+    val parts = split("-")
+    if (parts.size != 3) return this
+    val y = parts[0]
+    val m = parts[1].toIntOrNull() ?: return this
+    val d = parts[2].toIntOrNull() ?: return this
+    val mon = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec").getOrNull(m - 1) ?: return this
+    return "$d $mon $y"
+}
+
+private fun String?.prettyDayMon(): Pair<String, String> {
+    if (this.isNullOrBlank()) return "" to ""
+    val parts = split("-")
+    if (parts.size != 3) return "" to ""
+    val m = parts[1].toIntOrNull() ?: return "" to ""
+    val d = parts[2].toIntOrNull() ?: return "" to ""
+    val mon = listOf("JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC").getOrNull(m - 1) ?: return "" to ""
+    return d.toString() to mon
 }

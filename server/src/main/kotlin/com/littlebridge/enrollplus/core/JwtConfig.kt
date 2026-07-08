@@ -24,49 +24,52 @@
  *
  * NOTE FOR DEVOPS (manual step you must do):
  *   Set JWT_SECRET to a strong random 256-bit value in production .env.
- *   The dev fallback ("vidyaprayag-dev-secret-change-me") is INSECURE and is
- *   only there so the server boots on a fresh clone.
+ *   In dev (no DATABASE_URL), an ephemeral random secret is generated
+ *   automatically — tokens will not survive a restart.
  */
 package com.littlebridge.enrollplus.core
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import org.slf4j.LoggerFactory
+import java.security.SecureRandom
+import java.util.Base64
 import java.util.Date
 
 object JwtConfig {
-    private const val DEV_SECRET_FALLBACK = "vidyaprayag-dev-secret-change-me"
+    private val log = LoggerFactory.getLogger("JwtConfig")
 
     private fun env(name: String, default: String): String =
-        System.getenv(name)?.takeIf { it.isNotBlank() } ?: default
+        EnvConfig.get(name) ?: default
 
     private fun rawEnv(name: String): String? =
-        System.getenv(name)?.takeIf { it.isNotBlank() }
+        EnvConfig.get(name)
 
-    /**
-     * Treat the deployment as production whenever a real Postgres database is
-     * configured (Render/Supabase set DATABASE_URL). This mirrors
-     * DatabaseFactory's own prod detection so we have a single, consistent
-     * signal instead of inventing a new env var.
-     */
-    private val isProduction: Boolean
-        get() = rawEnv("DATABASE_URL") != null
-
-    /**
-     * Resolve the signing secret, HARD-FAILING the boot in production if it is
-     * unset or still the public dev default (audit §3.2, finding E). In dev
-     * (SQLite, no DATABASE_URL) we fall back to the well-known dev secret so a
-     * fresh clone still boots.
-     */
     val secret: String by lazy {
         val configured = rawEnv("JWT_SECRET")
-        if (isProduction && (configured == null || configured == DEV_SECRET_FALLBACK)) {
-            throw IllegalStateException(
-                "FATAL: JWT_SECRET must be set to a strong, unique value in production " +
-                "(DATABASE_URL is configured). Refusing to boot with a missing or default " +
-                "signing key — this would allow trivial token forgery."
-            )
+        if (RuntimeEnvironment.isProduction) {
+            if (configured.isNullOrBlank()) {
+                throw IllegalStateException(
+                    "FATAL: JWT_SECRET environment variable is required in production. " +
+                    "Refusing to boot without a signing key — this would allow trivial token forgery."
+                )
+            }
+            if (configured.length < 32) {
+                throw IllegalStateException(
+                    "FATAL: JWT_SECRET must be at least 32 characters in production. " +
+                    "Current length: ${configured.length}. Use: openssl rand -hex 64"
+                )
+            }
+            configured
+        } else {
+            if (configured.isNullOrBlank()) {
+                val ephemeral = Base64.getEncoder().encodeToString(ByteArray(64).also { SecureRandom().nextBytes(it) })
+                log.warn("WARNING: Using ephemeral JWT secret for dev mode. Tokens will not survive restart.")
+                ephemeral
+            } else {
+                configured
+            }
         }
-        configured ?: DEV_SECRET_FALLBACK
     }
 
     val issuer: String   by lazy { env("JWT_ISSUER", "vidyaprayag-api") }
@@ -85,17 +88,51 @@ object JwtConfig {
             .build()
     }
 
-    /** Issue a signed access token. */
-    fun issueToken(userId: String, role: String, name: String): String =
-        JWT.create()
+    // Spec §16 Session timeout: admin/librarian 30 min, student/parent 24 hours.
+    private val ADMIN_ROLES = setOf("school_admin", "school_staff", "admin", "super_admin")
+    private const val ADMIN_EXPIRY_SECS = 30L * 60          // 30 minutes
+    private const val DEFAULT_EXPIRY_SECS = 24L * 60 * 60   // 24 hours
+
+    /** Issue a signed access token with role-based expiry. */
+    fun issueToken(userId: String, role: String, name: String): String {
+        val ttl = if (role in ADMIN_ROLES) ADMIN_EXPIRY_SECS else DEFAULT_EXPIRY_SECS
+        return JWT.create()
             .withIssuer(issuer)
             .withAudience(audience)
             .withSubject(userId)
             .withClaim("role", role)
             .withClaim("name", name)
             .withIssuedAt(Date())
-            .withExpiresAt(Date(System.currentTimeMillis() + expirySecs * 1000))
+            .withExpiresAt(Date(System.currentTimeMillis() + ttl * 1000))
             .sign(algorithm)
+    }
+
+    /**
+     * Multi-Branch (MULTI_BRANCH_SPEC.md §8.3): issue a token with org admin
+     * claims. The organization_id and org_admin_role are read from app_users
+     * at login time and embedded as JWT claims so downstream guards can scope
+     * queries by organization without an extra DB round-trip.
+     */
+    fun issueTokenWithOrg(
+        userId: String,
+        role: String,
+        name: String,
+        organizationId: String?,
+        orgAdminRole: String?
+    ): String {
+        val ttl = if (role in ADMIN_ROLES) ADMIN_EXPIRY_SECS else DEFAULT_EXPIRY_SECS
+        val builder = JWT.create()
+            .withIssuer(issuer)
+            .withAudience(audience)
+            .withSubject(userId)
+            .withClaim("role", role)
+            .withClaim("name", name)
+            .withIssuedAt(Date())
+            .withExpiresAt(Date(System.currentTimeMillis() + ttl * 1000))
+        organizationId?.let { builder.withClaim("organization_id", it) }
+        orgAdminRole?.let { builder.withClaim("org_admin_role", it) }
+        return builder.sign(algorithm)
+    }
 
     /** Issue an opaque refresh token. In production, persist + rotate it. */
     fun issueRefreshToken(userId: String): String =

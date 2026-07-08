@@ -334,13 +334,17 @@ private fun Route.assessmentHistory() {
                     ),
                 )
 
+            val assessmentIds = published.map { it[AssessmentsTable.id].value }
+            val allMarks = if (assessmentIds.isEmpty()) emptyList() else AssessmentMarksTable.selectAll().where {
+                AssessmentMarksTable.assessmentId inList assessmentIds
+            }.toList()
+            val marksByAssessment = allMarks.groupBy { it[AssessmentMarksTable.assessmentId] }
+
             val timeline = published.map { a ->
                 val aId = a[AssessmentsTable.id].value
                 val max = a[AssessmentsTable.maxMarks]
                 val passMark = a[AssessmentsTable.passMarks]
-                val marks = AssessmentMarksTable.selectAll().where {
-                    AssessmentMarksTable.assessmentId eq aId
-                }.toList()
+                val marks = marksByAssessment[aId] ?: emptyList()
                 // Present (non-absent) numeric scores only — AB is excluded from the
                 // average (Doc 07 §5.2 / M3).
                 val scored = marks.filter { !it[AssessmentMarksTable.isAbsent] }
@@ -478,7 +482,7 @@ private fun Route.assessmentListAndCreate() {
             // Initial status (Doc 07 §4): a future-dated scheduled test waits in
             // `scheduled`; a surprise test (or any test for today/past) opens
             // straight into `marks_pending`. Everything else starts `draft`.
-            val today = LocalDate.now()
+            val today = todayIst()
             val initialStatus = when {
                 type == "scheduled" && examDate != null && examDate.isAfter(today) -> GbStatus.SCHEDULED
                 type == "surprise" -> GbStatus.MARKS_PENDING
@@ -787,6 +791,7 @@ private fun Route.assessmentPublishUnpublish() {
         val examName = row[AssessmentsTable.name]
         val subject = row[AssessmentsTable.subject]
         val className = asg?.className ?: row[AssessmentsTable.className]
+        val section = asg?.section ?: "A"
         val parents = NotifyRecipients.parentsOfClass(ctx.schoolId, className)
         if (parents.isNotEmpty()) {
             Notify.toUsers(
@@ -796,10 +801,20 @@ private fun Route.assessmentPublishUnpublish() {
                 body = "Marks for \"$examName\" ($subject) have been published.",
                 schoolId = ctx.schoolId,
                 actorId = ctx.userId,
-                deepLink = "parent/academics/marks",
+                deepLink = "/parent/academics/marks",
                 refType = "assessment",
                 refId = assessmentId.toString(),
             )
+        }
+
+        // AI Report Card: mark existing drafts for this class as stale so
+        // the next generation cycle picks up the new marks. Best-effort.
+        runCatching {
+            val assemblyService = com.littlebridge.enrollplus.feature.reportcard.assemble.ReportAssemblyService()
+            val currentTerm = com.littlebridge.enrollplus.feature.reportcard.core.ReportCardConfig.currentTerm
+            if (currentTerm != null) {
+                assemblyService.markDraftsStaleOnMarksChange(ctx.schoolId, className, section, currentTerm)
+            }
         }
         call.ok(
             GbPublishResultDto(

@@ -32,8 +32,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 
 /**
  * PewsPreview — a **label-free schematic teaser** for the PEWS (Predictive Early Warning System)
@@ -52,32 +52,31 @@ import com.littlebridge.enrollplus.ui.v2.theme.colored
  */
 @Composable
 fun PewsPreview(modifier: Modifier = Modifier) {
-    val c = VTheme.colors
-
+    
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         // ── Risk-band schematic (no counts) ──────────────────────────────────────
         Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(c.cream).padding(12.dp),
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(VColors.cream).padding(12.dp),
         ) {
             Text(
                 "RISK BAND",
-                style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp, letterSpacing = 0.08.em),
+                style = VTypography.label.copy(color = VColors.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp, letterSpacing = 0.08.em),
             )
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                RiskBandTile("Low", c.success, c.successInk, Modifier.weight(1f))
-                RiskBandTile("Watch", c.warning, c.warningInk, Modifier.weight(1f))
-                RiskBandTile("High", c.danger, c.dangerInk, Modifier.weight(1f))
+                RiskBandTile("Low", VColors.success, VColors.success, Modifier.weight(1f))
+                RiskBandTile("Watch", VColors.gold, VColors.gold, Modifier.weight(1f))
+                RiskBandTile("High", VColors.error, VColors.error, Modifier.weight(1f))
             }
         }
 
         // ── Highest-priority placeholder rows (no names, no scores) ──────────────
         Column {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Icon(VIcons.AlertTriangle, contentDescription = null, tint = c.dangerInk, modifier = Modifier.size(13.dp))
+                Icon(VIcons.AlertTriangle, contentDescription = null, tint = VColors.error, modifier = Modifier.size(13.dp))
                 Text(
                     "HIGHEST PRIORITY",
-                    style = VTheme.type.label.colored(c.ink2).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp, letterSpacing = 0.04.em),
+                    style = VTypography.label.copy(color = VColors.ink2).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp, letterSpacing = 0.04.em),
                 )
             }
             Spacer(Modifier.height(8.dp))
@@ -91,21 +90,21 @@ fun PewsPreview(modifier: Modifier = Modifier) {
             Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(10.dp))
-                .background(c.teal.copy(alpha = 0.10f))
-                .dashedBorder(c.tealDeep.copy(alpha = 0.30f), 1.dp, 10.dp)
+                .background(VColors.sky.copy(alpha = 0.10f))
+                .dashedBorder(VColors.sky.copy(alpha = 0.30f), 1.dp, 10.dp)
                 .padding(10.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Icon(VIcons.Sparkles, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(11.dp))
+                Icon(VIcons.Sparkles, contentDescription = null, tint = VColors.sky, modifier = Modifier.size(11.dp))
                 Text(
                     "SUGGESTED INTERVENTION",
-                    style = VTheme.type.label.colored(c.tealDeep).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                    style = VTypography.label.copy(color = VColors.sky).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
                 )
             }
             Spacer(Modifier.height(4.dp))
             Text(
                 "Open the cohort to see this week's at-risk students and recommended actions.",
-                style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp, lineHeight = 18.sp),
+                style = VTypography.caption.copy(color = VColors.ink2).copy(fontSize = 12.sp, lineHeight = 18.sp),
             )
         }
     }
@@ -121,23 +120,22 @@ private fun RiskBandTile(label: String, bg: Color, fg: Color, modifier: Modifier
         // Abstract "value" bar instead of an invented number.
         Box(Modifier.width(22.dp).height(6.dp).clip(RoundedCornerShape(3.dp)).background(fg.copy(alpha = 0.55f)))
         Spacer(Modifier.height(8.dp))
-        Text(label, style = VTheme.type.caption.colored(fg).copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold))
+        Text(label, style = VTypography.caption.copy(color = fg).copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold))
     }
 }
 
 /** A neutral placeholder row — avatar dot + two grey bars — that reads as "preview", never as a real student. */
 @Composable
 private fun PlaceholderRow() {
-    val c = VTheme.colors
-    Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(c.cream).padding(10.dp),
+        Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(VColors.cream).padding(10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Box(Modifier.size(28.dp).clip(CircleShape).background(c.ink.copy(alpha = 0.08f)))
+        Box(Modifier.size(28.dp).clip(CircleShape).background(VColors.ink.copy(alpha = 0.08f)))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Box(Modifier.fillMaxWidth(0.55f).height(8.dp).clip(RoundedCornerShape(4.dp)).background(c.ink.copy(alpha = 0.10f)))
-            Box(Modifier.fillMaxWidth(0.8f).height(7.dp).clip(RoundedCornerShape(4.dp)).background(c.ink.copy(alpha = 0.06f)))
+            Box(Modifier.fillMaxWidth(0.55f).height(8.dp).clip(RoundedCornerShape(4.dp)).background(VColors.ink.copy(alpha = 0.10f)))
+            Box(Modifier.fillMaxWidth(0.8f).height(7.dp).clip(RoundedCornerShape(4.dp)).background(VColors.ink.copy(alpha = 0.06f)))
         }
     }
 }

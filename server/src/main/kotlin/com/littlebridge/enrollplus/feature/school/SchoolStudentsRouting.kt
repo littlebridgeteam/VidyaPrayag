@@ -373,6 +373,12 @@ private fun buildTeacherProfile(schoolId: UUID, teacherId: UUID): TeacherProfile
     }
     var expectedSubmissions = 0
     var actualSubmissions = 0
+    val hwIdList = homeworkIds.map { it.id }
+    val submissionCounts = if (hwIdList.isEmpty()) emptyMap() else
+        HomeworkSubmissionsTable.selectAll().where {
+            HomeworkSubmissionsTable.homeworkId inList hwIdList
+        }.groupBy { it[HomeworkSubmissionsTable.homeworkId] }.mapValues { it.value.size }
+
     homeworkIds.forEach { hw ->
         val expected = classSectionCounts[hw.className to hw.section]
             ?: StudentsTable.selectAll().where {
@@ -382,9 +388,7 @@ private fun buildTeacherProfile(schoolId: UUID, teacherId: UUID): TeacherProfile
                     it[StudentsTable.className], it[StudentsTable.section], hw.className, hw.section
                 )
             }
-        val submitted = HomeworkSubmissionsTable.selectAll()
-            .where { HomeworkSubmissionsTable.homeworkId eq hw.id }
-            .count().toInt()
+        val submitted = submissionCounts[hw.id] ?: 0
         expectedSubmissions += expected
         // Cap submissions at the expected headcount so the ratio can never exceed
         // 100% (e.g. stale submissions from since-removed students).

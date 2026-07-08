@@ -9,6 +9,11 @@
  * All endpoints require the authenticated user's role (read from the DB, not
  * the JWT claim) to be "super_admin". Any other role gets 403.
  *
+ * AUTH-012 NOTE: The per-request DB read in requireSuperAdmin() is intentional.
+ * JWT claims can be stale after a role change or token refresh; reading the DB
+ * on every call ensures the role check is always current. The performance cost
+ * is acceptable for admin-only endpoints with low traffic volume.
+ *
  * Endpoints
  * ---------
  *   GET  /api/v1/admin/dev/otp-providers
@@ -27,9 +32,15 @@
  *   POST /api/v1/admin/dev/send-notification
  *     body: { "user_id": "...", "title": "...", "body": "...", "deep_link"?: "...", "category"?: "..." }
  *     → sends an in-app + push notification to a single user via Notify.toUser.
+ *
+ *   POST /api/v1/admin/dev/trigger-pews
+ *     → immediately runs the PEWS pipeline (Sense → Reason → Act) for all
+ *       active schools and returns the count of schools processed + at-risk
+ *       snapshots found.
  */
 package com.littlebridge.enrollplus.feature.devtools
 
+import com.littlebridge.enrollplus.core.RuntimeEnvironment
 import com.littlebridge.enrollplus.core.fail
 import com.littlebridge.enrollplus.core.ok
 import com.littlebridge.enrollplus.core.principalUserUuid
@@ -41,6 +52,8 @@ import com.littlebridge.enrollplus.feature.auth.delivery.OtpEnv
 import com.littlebridge.enrollplus.feature.notifications.Notify
 import com.littlebridge.enrollplus.feature.pulse.ParentPulseService
 import com.littlebridge.enrollplus.feature.pulse.PulseWeeklyJob
+import com.littlebridge.enrollplus.feature.pews.PewsDailyJob
+import com.littlebridge.enrollplus.feature.pews.PewsSnapshotService
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -102,6 +115,12 @@ data class DevSendNotificationRequest(
 @Serializable
 data class DevSendNotificationResponse(
     val sent: Boolean,
+)
+
+@Serializable
+data class TriggerPewsResponse(
+    val schools_processed: Int,
+    val at_risk_count: Int,
 )
 
 // ── Guard ──────────────────────────────────────────────────────────────────
@@ -168,7 +187,12 @@ fun Route.devToolsRouting() {
         route("/api/v1/admin/dev") {
 
         // ----- OTP providers list + current config -----
+        // SEC-007: OTP provider switching is a development-only tool.
         get("/otp-providers") {
+            if (RuntimeEnvironment.isProduction) {
+                call.fail("DevTools endpoints are disabled in production", HttpStatusCode.Forbidden, "DEV_TOOLS_DISABLED")
+                return@get
+            }
             if (call.requireSuperAdmin() == null) return@get
 
             val providers = OtpDeliveryDispatcher.knownProviders.map {
@@ -194,7 +218,12 @@ fun Route.devToolsRouting() {
         }
 
         // ----- Change OTP provider at runtime -----
+        // SEC-007: OTP provider switching is a development-only tool.
         put("/otp-provider") {
+            if (RuntimeEnvironment.isProduction) {
+                call.fail("DevTools endpoints are disabled in production", HttpStatusCode.Forbidden, "DEV_TOOLS_DISABLED")
+                return@put
+            }
             if (call.requireSuperAdmin() == null) return@put
 
             val body = runCatching { call.receive<UpdateOtpProviderRequest>() }.getOrNull()
@@ -288,6 +317,23 @@ fun Route.devToolsRouting() {
             call.ok(
                 DevSendNotificationResponse(sent = true),
                 message = "Notification sent to user $userId",
+            )
+        }
+
+        // ----- Manually trigger PEWS pipeline for all schools -----
+        post("/trigger-pews") {
+            if (call.requireSuperAdmin() == null) return@post
+
+            val runDate = java.time.LocalDate.now()
+            val schoolIds = PewsSnapshotService().activeSchoolIds()
+            val atRiskCount = PewsDailyJob.runAll(runDate)
+
+            call.ok(
+                TriggerPewsResponse(
+                    schools_processed = schoolIds.size,
+                    at_risk_count = atRiskCount,
+                ),
+                message = "PEWS pipeline triggered — $atRiskCount at-risk snapshots across ${schoolIds.size} schools",
             )
         }
         }

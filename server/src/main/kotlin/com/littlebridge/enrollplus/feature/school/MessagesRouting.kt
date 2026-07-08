@@ -316,8 +316,8 @@ fun Route.messagesRouting() {
                     ?: run { call.fail("Invalid id"); return@get }
 
                 // Phase 1 (§9.2): pagination via offset/limit query params.
-                val offset = call.parameters["offset"]?.toIntOrNull() ?: 0
-                val limit = call.parameters["limit"]?.toIntOrNull() ?: 50
+                val offset = (call.parameters["offset"]?.toIntOrNull() ?: 0).coerceAtLeast(0)
+                val limit = (call.parameters["limit"]?.toIntOrNull() ?: 50).coerceIn(1, 100)
 
                 val payload = dbQuery {
                     // The thread must belong to the caller (owner) AND school.
@@ -342,8 +342,12 @@ fun Route.messagesRouting() {
                         val sid = row[MessagesTable.senderId]
                         val createdInstant = row[MessagesTable.createdAt]
                         val msgId = row[MessagesTable.id].value
-                        val status = if (sid != ctx.userId && paged.conversationId != null) {
-                            loadMessageStatus(msgId, ctx.userId)
+                        val status = if (paged.conversationId != null) {
+                            if (sid != ctx.userId) {
+                                loadMessageStatus(msgId, ctx.userId)
+                            } else {
+                                loadPeerMessageStatus(msgId, ctx.userId)
+                            }
                         } else null
                         MessageDto(
                             id = msgId.toString(),
@@ -384,6 +388,13 @@ fun Route.messagesRouting() {
                 }
             }
 
+            // -------- UNREAD COUNT --------
+            get("/unread-count") {
+                val ctx = call.requireSchoolContext() ?: return@get
+                val count = dbQuery { getUnreadCount(ctx.userId) }
+                call.ok(UnreadCountDto(count))
+            }
+
             // -------- MARK READ --------
             post("/threads/{id}/read") {
                 val ctx = call.requireSchoolContext() ?: return@post
@@ -399,6 +410,11 @@ fun Route.messagesRouting() {
                         it[isRead] = true
                         it[updatedAt] = Instant.now()
                     }
+                    // Read Receipts Phase 1: also bulk-update per-message status rows to READ
+                    val convId = MessageThreadsTable.selectAll()
+                        .where { (MessageThreadsTable.id eq id) and (MessageThreadsTable.ownerUserId eq uid) }
+                        .singleOrNull()?.get(MessageThreadsTable.conversationId) ?: id
+                    markConversationRead(uid, convId)
                 }
                 if (n == 0) call.fail("Thread not found", HttpStatusCode.NotFound)
                 else call.okMessage("Thread marked as read")
@@ -447,6 +463,10 @@ fun Route.messagesRouting() {
                 val actorName = req.senderName ?: dbQuery { resolveMessagingUser(uid)?.fullName } ?: "Admin Desk"
 
                 // Phase 1: map attachment DTOs to core AttachmentInput.
+                if (req.attachments.size > 10) {
+                    call.fail("Maximum 10 attachments per message", HttpStatusCode.BadRequest, "TOO_MANY_ATTACHMENTS")
+                    return@post
+                }
                 val attachmentInputs = req.attachments.map { att ->
                     AttachmentInput(
                         fileName = att.fileName,

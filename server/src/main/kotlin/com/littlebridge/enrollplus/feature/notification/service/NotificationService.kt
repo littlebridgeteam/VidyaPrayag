@@ -48,11 +48,14 @@ import com.littlebridge.enrollplus.feature.notification.dto.SendNotificationRequ
 import com.littlebridge.enrollplus.feature.notification.dto.SendNotificationResponse
 import com.littlebridge.enrollplus.feature.notification.firebase.FirebaseAdminInitializer
 import com.littlebridge.enrollplus.feature.notification.repository.DeviceTokenRepository
+import org.slf4j.LoggerFactory
 import java.util.UUID
 
 class NotificationService(
     private val deviceTokenRepository: DeviceTokenRepository
 ) {
+
+    private val logger = LoggerFactory.getLogger(NotificationService::class.java)
 
     /**
      * Dispatch [request] to every active device token owned by
@@ -132,7 +135,7 @@ class NotificationService(
                     // token as failed but leave them active — a transient
                     // outage should not retire otherwise-valid tokens.
                     failed += chunk.size
-                    println("NOTIFY_DISPATCH: multicast batch failed for ${chunk.size} tokens: ${it.message}")
+                    logger.error("NOTIFY_DISPATCH: multicast batch failed for {} tokens: {}", chunk.size, it.message, it)
                     return@forEach
                 }
 
@@ -190,9 +193,9 @@ class NotificationService(
         val code = fcmException?.errorCode
         if (code?.name in INVALID_TOKEN_ERROR_CODES) {
             runCatching { deviceTokenRepository.deactivateToken(token) }
-                .onFailure { println("NOTIFY_DISPATCH: failed to deactivate token: ${it.message}") }
+                .onFailure { logger.warn("NOTIFY_DISPATCH: failed to deactivate token: {}", it.message, it) }
         } else {
-            println("NOTIFY_DISPATCH: send failed for token …${token.takeLast(6)}: code=$code msg=${fcmException?.message?.take(120)}")
+            logger.warn("NOTIFY_DISPATCH: send failed for token …{}: code={} msg={}", token.takeLast(6), code, fcmException?.message?.take(120))
         }
     }
 

@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -37,12 +38,18 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import org.jetbrains.compose.resources.painterResource
+import vidyaprayag.composeapp.generated.resources.Res
+import vidyaprayag.composeapp.generated.resources.landing_school_1
 import com.littlebridge.enrollplus.feature.schools.presentation.DiscoveredSchool
 import com.littlebridge.enrollplus.feature.schools.presentation.SchoolDiscoveryState
 import com.littlebridge.enrollplus.feature.schools.presentation.SchoolDiscoveryViewModel
-import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
@@ -57,8 +64,14 @@ import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.components.VLabel
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.screens.parent.PortalTopHeaderMinimal
+import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.core.locale.AppStrings
+import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.ui.v2.locale.LocalLocale
 import org.koin.compose.viewmodel.koinViewModel
 
 /** Internal view state for the discovery flow (mirrors React `DiscoveryApp` view union). */
@@ -173,61 +186,90 @@ private fun DiscoveryList(
     // Client-side query filter (substring against name + location). The endpoint already
     // supports `city=` for proper server-side filtering — Phase D will switch this over
     // once the design specifies per-key behaviour.
-    val filtered = remember(state.schools, state.query) {
+    var activeFilter by remember { mutableStateOf("All") }
+    var sortBy by remember { mutableStateOf("name") }
+
+    val filtered = remember(state.schools, state.query, activeFilter, sortBy) {
         val q = state.query.trim()
-        if (q.isBlank()) state.schools
-        else state.schools.filter {
+        var list = if (q.isBlank()) state.schools else state.schools.filter {
             it.name.contains(q, ignoreCase = true) || it.location.contains(q, ignoreCase = true)
         }
+        list = when (activeFilter) {
+            "CBSE" -> list.filter { it.board.equals("CBSE", ignoreCase = true) }
+            "English" -> list.filter { it.medium.equals("English", ignoreCase = true) }
+            "Co-ed" -> list.filter { it.schoolGender.equals("co_ed", ignoreCase = true) }
+            "Top rated" -> list.filter { it.rating >= 4.0 }
+            "Nearby" -> list.filter { it.distanceLabel != null }
+            else -> list
+        }
+        list = when (sortBy) {
+            "rating" -> list.sortedByDescending { it.rating }
+            "distance" -> list.sortedBy { it.distanceLabel ?: "999 km" }
+            else -> list.sortedBy { it.name }
+        }
+        list
     }
 
-    Column(modifier.fillMaxSize().background(c.background)) {
-        // header — when embedded inside the unlinked-parent landing the host already owns the
-        // title + tab switcher, so we drop the duplicate hero title block and the "Exit" pill and
-        // render a clean, transparent search-only header that sits flush under the segmented control.
+    Column(modifier.fillMaxSize().background(VColors.cream)) {
+        // Shared portal header when embedded inside the unlinked-parent carousel flow; standalone
+        // unauth flow keeps the full overlay header.
+        if (embedded) {
+            PortalTopHeaderMinimal(
+                onOpenNotifications = {},
+                unreadNotificationsCount = 0,
+                onBack = onExit,
+                modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 4.dp),
+            )
+        } else {
+            PremiumOverlayHeader(
+                title = appString(StringKeys.DISC_FIND_SCHOOL),
+                onBack = onExit,
+            )
+        }
         Column(
             Modifier
                 .fillMaxWidth()
-                .then(if (embedded) Modifier else Modifier.background(c.card))
                 .padding(horizontal = 20.dp)
-                .padding(top = if (embedded) 8.dp else 20.dp, bottom = 12.dp),
+                .padding(top = if (embedded) 4.dp else 12.dp, bottom = 12.dp),
         ) {
-            if (!embedded) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.SpaceBetween) {
-                    Column {
-                        VLabel("Discover")
-                        Text("Find your child's school", style = VTheme.type.h2.colored(c.ink), modifier = Modifier.padding(top = 4.dp))
-                    }
-                    val exitInteraction = remember { MutableInteractionSource() }
-                    Box(
-                        Modifier
-                            .clip(RoundedCornerShape(999.dp))
-                            .background(c.cream)
-                            .clickable(interactionSource = exitInteraction, indication = null) { onExit() }
-                            .padding(horizontal = 12.dp, vertical = 6.dp),
-                    ) {
-                        // React label is "Exit" (leaves the discovery flow).
-                        Text("Exit", style = VTheme.type.caption.colored(c.ink2).copy(fontWeight = FontWeight.SemiBold))
-                    }
-                }
-                Spacer(Modifier.height(12.dp))
-            }
+            Text(
+                text = appString(StringKeys.DISC_FIND_SCHOOL),
+                style = VTheme.type.h2.colored(c.ink),
+            )
+            Text(
+                text = "Search, filter and compare the best schools for your child.",
+                style = VTheme.type.caption.colored(c.ink2),
+            )
+            Spacer(Modifier.height(12.dp))
             VInput(
                 value = state.query,
                 onValueChange = onQuery,
-                placeholder = "Find schools near you or by name",
+                placeholder = appString(StringKeys.DISC_SEARCH_PH),
                 leadingIcon = VIcons.Search,
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(12.dp))
-            // Tag chips are unfiltered today — they will become real filter pills once the
-            // server-side filter contract for board / fee-range / SRI is finalised (Phase D).
-            // Keeping the visual affordance preserves the React fidelity per LAW 5.
+            // Functional filter pills. Filters applied client-side against real server fields;
+            // server-side filtering can be wired later without changing the UI contract.
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                // Clean, premium text pills (no emoji glyphs — those read cheap). Active chip uses
-                // the Parents Portal lavender accent, consistent with every other filter row.
-                listOf("Within 3 km", "CBSE", "Fee range", "Type", "SRI rating").forEachIndexed { i, f ->
-                    com.littlebridge.enrollplus.ui.v2.components.VTag(text = f, active = i == 0, accentActive = true)
+                listOf("All", "CBSE", "English", "Co-ed", "Top rated", "Nearby").forEach { f ->
+                    com.littlebridge.enrollplus.ui.v2.components.VTag(
+                        text = f,
+                        active = activeFilter == f,
+                        onClick = { activeFilter = f },
+                        accentActive = true,
+                    )
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("Name" to "name", "Rating" to "rating", "Distance" to "distance").forEach { (label, key) ->
+                    com.littlebridge.enrollplus.ui.v2.components.VTag(
+                        text = label,
+                        active = sortBy == key,
+                        onClick = { sortBy = key },
+                        accentActive = true,
+                    )
                 }
             }
         }
@@ -238,11 +280,11 @@ private fun DiscoveryList(
             error = state.errorMessage,
             isEmpty = !state.isLoading && state.errorMessage == null && filtered.isEmpty(),
             modifier = Modifier.weight(1f).fillMaxWidth(),
-            emptyTitle = if (state.query.isBlank()) "No schools yet" else "No matches",
+            emptyTitle = if (state.query.isBlank()) appString(StringKeys.DISC_NO_SCHOOLS) else appString(StringKeys.DISC_NO_MATCHES),
             emptyBody = if (state.query.isBlank()) {
-                "Schools registered on VidyaPrayag will appear here."
+                appString(StringKeys.DISC_SCHOOLS_APPEAR)
             } else {
-                "Try another name or city."
+                appString(StringKeys.DISC_TRY_ANOTHER)
             },
             emptyIcon = VIcons.Search,
             onRetry = onRetry,
@@ -283,11 +325,11 @@ private fun DiscoveryList(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    "${compare.size} school${if (compare.size > 1) "s" else ""} selected",
+                    if (compare.size > 1) appString(StringKeys.DISC_SCHOOLS_SELECTED).replace("{count}", compare.size.toString()) else appString(StringKeys.DISC_SCHOOL_SELECTED).replace("{count}", compare.size.toString()),
                     style = VTheme.type.caption.colored(Color.White),
                     modifier = Modifier.weight(1f),
                 )
-                VButton(text = "Compare now", onClick = onCompare, size = VButtonSize.Sm, tone = VButtonTone.Sky, soft = false)
+                VButton(text = appString(StringKeys.DISC_COMPARE_NOW), onClick = onCompare, size = VButtonSize.Sm, tone = VButtonTone.Sky, soft = false)
             }
         }
     }
@@ -308,17 +350,26 @@ private fun SchoolCard(
                 .height(144.dp)
                 .clip(RoundedCornerShape(12.dp)),
         ) {
-            AsyncImage(
-                model = s.image,
-                contentDescription = s.name,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
-            Box(
-                Modifier.fillMaxSize().background(
-                    Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.35f))),
-                ),
-            )
+            if (s.image != null) {
+                AsyncImage(
+                    model = s.image,
+                    contentDescription = s.name,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+                Box(
+                    Modifier.fillMaxSize().background(
+                        Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.35f))),
+                    ),
+                )
+            } else {
+                Image(
+                    painter = painterResource(Res.drawable.landing_school_1),
+                    contentDescription = s.name,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
             // Distance pill — only shown when the server populated `distance_km`
             // (i.e. when lat/lng were available). LAW 6: don't fabricate "1.8 km" otherwise.
             s.distanceLabel?.let { dist ->
@@ -350,7 +401,7 @@ private fun SchoolCard(
                 }
                 s.medium?.let { med ->
                     Spacer(Modifier.height(6.dp))
-                    Text("$med medium", style = VTheme.type.caption.colored(c.ink2))
+                    Text(appString(StringKeys.DISC_MEDIUM_LABEL).replace("{medium}", med), style = VTheme.type.caption.colored(c.ink2))
                 }
             }
             Column(horizontalAlignment = Alignment.End) {
@@ -366,13 +417,13 @@ private fun SchoolCard(
                     Icon(VIcons.Star, contentDescription = null, tint = SriInk, modifier = Modifier.size(12.dp))
                     Text(formatRating(s.rating), style = VTheme.type.dataSm.colored(SriInk))
                 }
-                Text("SRI score", style = VTheme.type.label.colored(c.ink3), modifier = Modifier.padding(top = 4.dp))
+                Text(appString(StringKeys.DISC_SRI_SCORE), style = VTheme.type.label.colored(c.ink3), modifier = Modifier.padding(top = 4.dp))
             }
         }
         Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             VButton(
-                text = if (inCompare) "In compare" else "Compare",
+                text = if (inCompare) appString(StringKeys.DISC_IN_COMPARE) else appString(StringKeys.DISC_COMPARE),
                 onClick = onToggleCompare,
                 variant = VButtonVariant.Secondary,
                 size = VButtonSize.Sm,
@@ -384,7 +435,7 @@ private fun SchoolCard(
                 } else null,
             )
             VButton(
-                text = "Enquire",
+                text = appString(StringKeys.DISC_ENQUIRE),
                 onClick = onOpen,
                 size = VButtonSize.Sm,
                 tone = VButtonTone.Sky,
@@ -426,18 +477,18 @@ private fun AlreadyLinkedCta(onLink: () -> Unit) {
             }
             Spacer(Modifier.height(12.dp))
             Text(
-                "Already with a partner school?",
+                appString(StringKeys.DISC_ALREADY_LINKED),
                 style = VTheme.type.h3.colored(c.ink),
             )
             Spacer(Modifier.height(6.dp))
             Text(
-                "If your child's school is already on VidyaPrayag, link your child to see attendance, marks and their full journey.",
+                appString(StringKeys.DISC_ALREADY_LINKED_DESC),
                 style = VTheme.type.caption.colored(c.ink2),
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(16.dp))
             VButton(
-                text = "Link your child",
+                text = appString(StringKeys.DISC_LINK_CHILD),
                 onClick = onLink,
                 size = VButtonSize.Md,
                 tone = VButtonTone.Lavender,
@@ -461,19 +512,32 @@ private fun SchoolProfile(
     // React `SchoolProfile` — the "Enquire now" button opens a bottom-sheet enquiry form.
     var enquireOpen by remember { mutableStateOf(false) }
     Box(modifier.fillMaxSize()) {
-    Column(Modifier.fillMaxSize().background(c.background)) {
-        VBackHeader(title = "School profile", onBack = onBack, action = {
-            Icon(VIcons.Share, contentDescription = "Share", tint = c.ink2, modifier = Modifier.size(18.dp))
-        })
+    Column(Modifier.fillMaxSize().background(VColors.cream)) {
+        PremiumOverlayHeader(
+            title = appString(StringKeys.DISC_SCHOOL_PROFILE),
+            onBack = onBack,
+            action = {
+                Icon(VIcons.Share, contentDescription = appString(StringKeys.DISC_SHARE), tint = VColors.ink2, modifier = Modifier.size(18.dp))
+            },
+        )
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
             Box(Modifier.fillMaxWidth().height(224.dp)) {
-                AsyncImage(
-                    model = school.image,
-                    contentDescription = school.name,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-                Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.5f)))))
+                if (school.image != null) {
+                    AsyncImage(
+                        model = school.image,
+                        contentDescription = school.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.5f)))))
+                } else {
+                    Image(
+                        painter = painterResource(Res.drawable.landing_school_1),
+                        contentDescription = school.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
             }
             Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Column {
@@ -510,59 +574,59 @@ private fun SchoolProfile(
                             .clickable(interactionSource = saveIx, indication = null) {},
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(VIcons.Heart, contentDescription = "Save school", tint = c.accentDeep, modifier = Modifier.size(18.dp))
+                        Icon(VIcons.Heart, contentDescription = appString(StringKeys.DISC_SAVE_SCHOOL), tint = c.accentDeep, modifier = Modifier.size(18.dp))
                     }
-                    VButton(text = "Compare", onClick = {}, variant = VButtonVariant.Secondary, size = VButtonSize.Sm, tone = VButtonTone.Navy, full = true, modifier = Modifier.weight(1f))
-                    VButton(text = "Enquire now", onClick = { enquireOpen = true }, size = VButtonSize.Sm, tone = VButtonTone.Sky, soft = false, full = true, modifier = Modifier.weight(1f))
+                    VButton(text = appString(StringKeys.DISC_COMPARE), onClick = {}, variant = VButtonVariant.Secondary, size = VButtonSize.Sm, tone = VButtonTone.Navy, full = true, modifier = Modifier.weight(1f))
+                    VButton(text = appString(StringKeys.DISC_ENQUIRE_NOW), onClick = { enquireOpen = true }, size = VButtonSize.Sm, tone = VButtonTone.Sky, soft = false, full = true, modifier = Modifier.weight(1f))
                 }
 
                 // About / academics / fees / reviews / location need richer endpoints
                 // (school profile API, fees API, reviews API). Until they ship, surface
                 // the real "we don't have this yet" message rather than fabricating data.
-                ProfileSection("About") {
+                ProfileSection(appString(StringKeys.DISC_ABOUT)) {
                     VComingSoon(
-                        title = "School profile",
-                        description = "Rich school descriptions and tags will appear here once schools complete their public profile in the admin portal.",
+                        title = appString(StringKeys.DISC_PROFILE_COMING),
+                        description = appString(StringKeys.DISC_PROFILE_DESC),
                     )
                 }
                 // Academics — board / medium / co-ed are now REAL columns surfaced by the
                 // discover endpoint; fields the backend still lacks stay "Coming Soon" (LAW 6).
-                ProfileSection("Academics") {
+                ProfileSection(appString(StringKeys.DISC_ACADEMICS)) {
                     VCard {
-                        ProfileRow("Board", school.board ?: "—")
-                        ProfileRow("Medium", school.medium?.let { "$it medium" } ?: "—")
-                        ProfileRow("Co-ed", coEdLabel(school.schoolGender))
-                        ProfileRow("Classes offered", "Coming Soon")
-                        ProfileRow("Teacher–student ratio", "Coming Soon")
+                        ProfileRow(appString(StringKeys.DISC_BOARD), school.board ?: "—")
+                        ProfileRow(appString(StringKeys.DISC_MEDIUM), school.medium?.let { appString(StringKeys.DISC_MEDIUM_LABEL).replace("{medium}", it) } ?: "—")
+                        ProfileRow(appString(StringKeys.DISC_CO_ED), coEdLabel(school.schoolGender, LocalLocale.current))
+                        ProfileRow(appString(StringKeys.DISC_CLASSES_OFFERED), appString(StringKeys.DISC_COMING_SOON))
+                        ProfileRow(appString(StringKeys.DISC_TEACHER_RATIO), appString(StringKeys.DISC_COMING_SOON))
                     }
                 }
-                ProfileSection("Fee structure") {
+                ProfileSection(appString(StringKeys.DISC_FEE_STRUCTURE)) {
                     VComingSoon(
-                        title = "Fee structure",
-                        description = "Tuition and one-time fees will appear once the school admin publishes its fee plan.",
+                        title = appString(StringKeys.DISC_FEE_COMING),
+                        description = appString(StringKeys.DISC_FEE_DESC),
                     )
                 }
-                ProfileSection("SRI breakdown") {
+                ProfileSection(appString(StringKeys.DISC_SRI_BREAKDOWN)) {
                     VComingSoon(
-                        title = "School Reputation Index",
-                        description = "Our 11-signal score lets you compare schools on academics, safety, facilities and parent sentiment.",
+                        title = appString(StringKeys.DISC_SRI_TITLE),
+                        description = appString(StringKeys.DISC_SRI_DESC),
                         preview = { SriPreview(score = school.rating.toFloat()) },
                     )
                 }
-                ProfileSection("Parent reviews") {
+                ProfileSection(appString(StringKeys.DISC_PARENT_REVIEWS)) {
                     VComingSoon(
-                        title = "Parent reviews",
-                        description = "Verified-parent reviews launch alongside the family link-child flow.",
+                        title = appString(StringKeys.DISC_REVIEWS_TITLE),
+                        description = appString(StringKeys.DISC_REVIEWS_DESC),
                     )
                 }
-                ProfileSection("Location") {
+                ProfileSection(appString(StringKeys.DISC_LOCATION)) {
                     // Capture into a local — `address` lives in the shared module, so a direct
                     // smart cast across the module boundary is not permitted by the compiler.
                     val address = school.address
                     if (address.isNullOrBlank()) {
                         VComingSoon(
-                            title = "On the map",
-                            description = "Map embedding ships with the upcoming Maps integration. City: ${school.location}.",
+                            title = appString(StringKeys.DISC_ON_MAP),
+                            description = appString(StringKeys.DISC_MAP_DESC).replace("{city}", school.location),
                         )
                     } else {
                         VCard {
@@ -618,33 +682,33 @@ private fun EnquirySheet(onDismiss: () -> Unit) {
                 .padding(horizontal = 20.dp, vertical = 24.dp)
                 .verticalScroll(rememberScrollState()),
         ) {
-            Text("Send enquiry", style = VTheme.type.h3.colored(c.ink))
+            Text(appString(StringKeys.DISC_SEND_ENQUIRY), style = VTheme.type.h3.colored(c.ink))
             Text(
-                "The admissions team will respond within 2 working days.",
+                appString(StringKeys.DISC_ENQUIRY_RESPONSE),
                 style = VTheme.type.caption.colored(c.ink2),
                 modifier = Modifier.padding(top = 2.dp),
             )
             Spacer(Modifier.height(16.dp))
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                VInput(value = name, onValueChange = { name = it }, label = "Your name")
-                VInput(value = childName, onValueChange = { childName = it }, label = "Child's name")
+                VInput(value = name, onValueChange = { name = it }, label = appString(StringKeys.DISC_YOUR_NAME))
+                VInput(value = childName, onValueChange = { childName = it }, label = appString(StringKeys.DISC_CHILD_NAME))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    VInput(value = currentClass, onValueChange = { currentClass = it }, label = "Current class", placeholder = "—", modifier = Modifier.weight(1f))
-                    VInput(value = applyClass, onValueChange = { applyClass = it }, label = "Apply for class", placeholder = "—", modifier = Modifier.weight(1f))
+                    VInput(value = currentClass, onValueChange = { currentClass = it }, label = appString(StringKeys.DISC_CURRENT_CLASS), placeholder = "—", modifier = Modifier.weight(1f))
+                    VInput(value = applyClass, onValueChange = { applyClass = it }, label = appString(StringKeys.DISC_APPLY_CLASS), placeholder = "—", modifier = Modifier.weight(1f))
                 }
-                VInput(value = message, onValueChange = { message = it }, label = "Message (optional)", placeholder = "Any specific question?")
+                VInput(value = message, onValueChange = { message = it }, label = appString(StringKeys.DISC_MESSAGE_OPT), placeholder = appString(StringKeys.DISC_ANY_QUESTION))
             }
             Spacer(Modifier.height(20.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                VButton(text = "Cancel", onClick = onDismiss, variant = VButtonVariant.Ghost, full = true, modifier = Modifier.weight(1f))
+                VButton(text = appString(StringKeys.COMMON_BUTTON_CANCEL), onClick = onDismiss, variant = VButtonVariant.Ghost, full = true, modifier = Modifier.weight(1f))
                 VButton(
-                    text = "Submit enquiry",
+                    text = appString(StringKeys.DISC_SUBMIT_ENQUIRY),
                     onClick = onDismiss,
                     tone = VButtonTone.Sky,
                     soft = false,
                     full = true,
                     stateful = true,
-                    successLabel = "Sent",
+                    successLabel = appString(StringKeys.DISC_SENT),
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -665,21 +729,22 @@ private fun SchoolCompare(
     onBack: () -> Unit,
 ) {
     val c = VTheme.colors
+    val locale = LocalLocale.current
     data class CompareRow(val label: String, val pick: (DiscoveredSchool) -> String)
     val rows = listOf(
-        CompareRow("Board") { it.board ?: "—" },
-        CompareRow("City") { it.location },
-        CompareRow("Medium") { it.medium ?: "—" },
-        CompareRow("Fee range") { "—" },
-        CompareRow("SRI score") { formatRating(it.rating) },
-        CompareRow("Distance") { it.distanceLabel ?: "—" },
-        CompareRow("Board result") { "—" },
-        CompareRow("Co-ed") { coEdLabel(it.schoolGender) },
+        CompareRow(appString(StringKeys.DISC_BOARD)) { it.board ?: "—" },
+        CompareRow(appString(StringKeys.DISC_CITY)) { it.location },
+        CompareRow(appString(StringKeys.DISC_MEDIUM)) { it.medium ?: "—" },
+        CompareRow(appString(StringKeys.DISC_FEE_RANGE)) { "—" },
+        CompareRow(appString(StringKeys.DISC_SRI_SCORE)) { formatRating(it.rating) },
+        CompareRow(appString(StringKeys.DISC_DISTANCE)) { it.distanceLabel ?: "—" },
+        CompareRow(appString(StringKeys.DISC_BOARD_RESULT)) { "—" },
+        CompareRow(appString(StringKeys.DISC_CO_ED)) { coEdLabel(it.schoolGender, locale) },
     )
     val bestSri = items.maxOfOrNull { it.rating } ?: 0.0
 
-    Column(modifier.fillMaxSize().background(c.background)) {
-        VBackHeader(title = "Compare schools", onBack = onBack)
+    Column(modifier.fillMaxSize().background(VColors.cream)) {
+        PremiumOverlayHeader(title = appString(StringKeys.DISC_COMPARE_SCHOOLS), onBack = onBack)
         Column(
             Modifier
                 .weight(1f)
@@ -733,7 +798,7 @@ private fun SchoolCompare(
                         )
                         items.forEach { s ->
                             val v = r.pick(s)
-                            val isBest = r.label == "SRI score" && s.rating == bestSri && bestSri > 0.0
+                            val isBest = r.label == appString(StringKeys.DISC_SRI_SCORE) && s.rating == bestSri && bestSri > 0.0
                             Box(
                                 Modifier
                                     .weight(1f)
@@ -750,20 +815,20 @@ private fun SchoolCompare(
             }
             // Honest footnote — these columns fill in as schools complete their public profile.
             Text(
-                "Fee range and board results populate once schools publish their fee plan.",
+                appString(StringKeys.DISC_FEE_NOTE),
                 style = VTheme.type.caption.colored(c.ink3),
                 modifier = Modifier.padding(top = 8.dp, start = 8.dp, end = 8.dp),
             )
             Spacer(Modifier.height(16.dp))
             VButton(
-                text = "Enquire to all selected",
+                text = appString(StringKeys.DISC_ENQUIRE_ALL),
                 onClick = {},
                 size = VButtonSize.Lg,
                 tone = VButtonTone.Sky,
                 soft = false,
                 full = true,
                 stateful = true,
-                successLabel = "Enquiries sent",
+                successLabel = appString(StringKeys.DISC_ENQUIRIES_SENT),
             )
         }
     }
@@ -795,10 +860,10 @@ private fun ProfileRow(k: String, v: String) {
 }
 
 /** "co_ed" → "Yes", "girls" → "Girls only", "boys" → "Boys only" (React `coed` row). */
-private fun coEdLabel(gender: String?): String = when (gender?.lowercase()) {
-    "co_ed", "coed", "co-ed" -> "Yes"
-    "girls" -> "Girls only"
-    "boys" -> "Boys only"
+private fun coEdLabel(gender: String?, locale: String): String = when (gender?.lowercase()) {
+    "co_ed", "coed", "co-ed" -> AppStrings.get(StringKeys.DISC_CO_ED_YES, locale)
+    "girls" -> AppStrings.get(StringKeys.DISC_GIRLS_ONLY, locale)
+    "boys" -> AppStrings.get(StringKeys.DISC_BOYS_ONLY, locale)
     else -> "—"
 }
 

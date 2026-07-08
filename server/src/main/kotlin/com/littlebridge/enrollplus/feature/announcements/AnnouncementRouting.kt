@@ -45,6 +45,7 @@ import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.TeacherSubjectAssignmentsTable
 import com.littlebridge.enrollplus.db.WhatsappLogsTable
 import com.littlebridge.enrollplus.feature.calendar.syncAnnouncementToCalendar
+import com.littlebridge.enrollplus.feature.school.resolveMessagingUser
 import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
@@ -79,7 +80,8 @@ data class AnnouncementDto(
     @SerialName("event_image") val eventImage: String? = null,
     val date: String,
     @SerialName("audience_type") val audienceType: String = "ALL_SCHOOL",
-    @SerialName("audience_filter") val audienceFilter: JsonElement? = null
+    @SerialName("audience_filter") val audienceFilter: JsonElement? = null,
+    @SerialName("is_calendar_only") val isCalendarOnly: Boolean = false
 )
 
 @Serializable
@@ -102,7 +104,8 @@ data class CreateAnnouncementDto(
     // this flag enabled (the default), the platform also mirrors it into a
     // calendar event tagged source = ANNOUNCEMENT so the admin never has to
     // create the same thing twice. Plain "Update"/"Reminder" types ignore this.
-    @SerialName("add_to_calendar") val addToCalendar: Boolean = true
+    @SerialName("add_to_calendar") val addToCalendar: Boolean = true,
+    @SerialName("is_calendar_only") val isCalendarOnly: Boolean = false
 )
 
 /** Audience scopes a broadcast can target. */
@@ -211,20 +214,25 @@ fun Route.announcementRouting() {
                         it[AnnouncementsTable.schoolId] = schoolId
                         it[AnnouncementsTable.eventId] = eventId
                         it[type] = req.type
-                        it[title] = req.title
-                        it[subTitle] = req.subTitle
-                        it[description] = req.description
+                        it[title] = com.littlebridge.enrollplus.core.HtmlSanitizer.sanitize(req.title)
+                        it[subTitle] = req.subTitle?.let { com.littlebridge.enrollplus.core.HtmlSanitizer.sanitize(it) }
+                        it[description] = com.littlebridge.enrollplus.core.HtmlSanitizer.sanitize(req.description)
                         it[eventImage] = req.eventImage
                         it[date] = req.date
                         it[AnnouncementsTable.audienceType] = audienceType
                         it[audienceFilter] = filterText
                         it[authorRole] = ctx.role
+                        it[AnnouncementsTable.isCalendarOnly] = req.isCalendarOnly
                         it[syncedToWa] = false
                         it[createdBy] = uid
                         it[createdAt] = now
                         it[updatedAt] = now
                     }
                 }
+                // Calendar-only announcements skip parent notification fan-out
+                // entirely — they exist only for the academic calendar. Teachers
+                // still receive school-wide ones so they're aware of the event.
+                if (!req.isCalendarOnly) {
                 // RA-41 + RA-49: an announcement reaches parents + teachers
                 // in-app, not just the WhatsApp sync. The IN-APP fan-out now
                 // honours the audience scope (no blasting the whole school when
@@ -248,17 +256,39 @@ fun Route.announcementRouting() {
                     audienceParents.distinct()
                 }
                 if (recipients.isNotEmpty()) {
-                    Notify.toUsers(
-                        userIds = recipients,
-                        category = "announcement",
-                        title = req.title,
-                        body = req.subTitle ?: req.description.take(140),
-                        schoolId = schoolId,
-                        actorId = uid,
-                        deepLink = "announcements/$eventId",
-                        refType = "announcement",
-                        refId = eventId,
-                    )
+                    // Send role-appropriate deep links: parents get /parent/announcements/<id>,
+                    // teachers get /teacher/announcements?id=<id>.
+                    val parentRecipients = recipients.filter { rid ->
+                        runCatching { dbQuery { resolveMessagingUser(rid)?.role } }.getOrNull()?.lowercase() == "parent"
+                    }
+                    val teacherRecipients = recipients.filter { it !in parentRecipients }
+                    if (parentRecipients.isNotEmpty()) {
+                        Notify.toUsers(
+                            userIds = parentRecipients,
+                            category = "announcement",
+                            title = req.title,
+                            body = req.subTitle ?: req.description.take(140),
+                            schoolId = schoolId,
+                            actorId = uid,
+                            deepLink = "/parent/announcements/$eventId",
+                            refType = "announcement",
+                            refId = eventId,
+                        )
+                    }
+                    if (teacherRecipients.isNotEmpty()) {
+                        Notify.toUsers(
+                            userIds = teacherRecipients,
+                            category = "announcement",
+                            title = req.title,
+                            body = req.subTitle ?: req.description.take(140),
+                            schoolId = schoolId,
+                            actorId = uid,
+                            deepLink = "/teacher/announcements?id=$eventId",
+                            refType = "announcement",
+                            refId = eventId,
+                        )
+                    }
+                }
                 }
                 // VP-CAL: mirror Holiday/PTM/Event announcements into the Academic
                 // Calendar when "Add To Academic Calendar" is enabled. Idempotent
@@ -282,7 +312,8 @@ fun Route.announcementRouting() {
                 call.created(
                     AnnouncementDto(
                         req.type, eventId, req.title, req.subTitle, req.description,
-                        req.eventImage, req.date, audienceType, req.audienceFilter
+                        req.eventImage, req.date, audienceType, req.audienceFilter,
+                        req.isCalendarOnly
                     ),
                     message = "Announcement created"
                 )
@@ -435,7 +466,8 @@ private fun org.jetbrains.exposed.sql.ResultRow.toDto(): AnnouncementDto {
         eventImage = this[AnnouncementsTable.eventImage],
         date = this[AnnouncementsTable.date],
         audienceType = this[AnnouncementsTable.audienceType],
-        audienceFilter = filter
+        audienceFilter = filter,
+        isCalendarOnly = this[AnnouncementsTable.isCalendarOnly]
     )
 }
 

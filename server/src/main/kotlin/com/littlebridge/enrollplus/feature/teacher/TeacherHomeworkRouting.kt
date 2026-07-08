@@ -255,12 +255,12 @@ private suspend fun ApplicationCall.requireOwnedHomework(
 private fun ResultRow.isHomeworkPastDue(): Boolean {
     val dueDate = this[HomeworkTable.dueDate]
     val dueTime = this[HomeworkTable.dueTime]
-    val today = LocalDate.now()
+    val today = todayIst()
     return when {
         dueDate.isBefore(today) -> true
         dueDate.isAfter(today) -> false
         // Same day: past only if a cutoff time exists and has elapsed.
-        else -> dueTime != null && LocalTime.now().isAfter(dueTime)
+        else -> dueTime != null && LocalTime.now(IST_ZONE).isAfter(dueTime)
     }
 }
 
@@ -423,13 +423,17 @@ private fun Route.homeworkListAndAssign() {
         }
 
         val rosterCount = enrollmentsFor(asg).size
+        val hwIds = rows.map { it[HomeworkTable.id].value }
+        val allSubmissions = if (hwIds.isEmpty()) emptyList() else dbQuery {
+            HomeworkSubmissionsTable.selectAll().where {
+                HomeworkSubmissionsTable.homeworkId inList hwIds
+            }.toList()
+        }
+        val submissionsByHw = allSubmissions.groupBy { it[HomeworkSubmissionsTable.homeworkId] }
+
         val items = rows.map { hw ->
             val hwId = hw[HomeworkTable.id].value
-            val counts = dbQuery {
-                HomeworkSubmissionsTable.selectAll().where {
-                    HomeworkSubmissionsTable.homeworkId eq hwId
-                }.toList()
-            }
+            val counts = submissionsByHw[hwId] ?: emptyList()
             var submitted = 0; var late = 0; var graded = 0
             counts.forEach {
                 when (it[HomeworkSubmissionsTable.status]) {
@@ -484,7 +488,7 @@ private fun Route.homeworkListAndAssign() {
             call.fail("due_date is required", HttpStatusCode.BadRequest, "BAD_DATE"); return@post
         }
         // H1: due date in the past is blocked at create.
-        if (dueDate.isBefore(LocalDate.now())) {
+        if (dueDate.isBefore(todayIst())) {
             call.fail("Due date cannot be in the past", HttpStatusCode.BadRequest, "DUE_IN_PAST"); return@post
         }
         val dueTime: LocalTime? = req.dueTime?.takeIf { it.isNotBlank() }?.let {
@@ -540,7 +544,7 @@ private fun Route.homeworkListAndAssign() {
                 body = "${asg.subject}: $title — due $dueDate.",
                 schoolId = ctx.schoolId,
                 actorId = ctx.userId,
-                deepLink = "parent/academics",
+                deepLink = "/parent/academics/homework",
                 refType = "homework",
                 refId = newId.toString(),
             )
@@ -617,7 +621,7 @@ private fun Route.homeworkExtend() {
         } ?: run {
             call.fail("new_due_date is required", HttpStatusCode.BadRequest, "BAD_DATE"); return@post
         }
-        if (newDueDate.isBefore(LocalDate.now())) {
+        if (newDueDate.isBefore(todayIst())) {
             call.fail("Extension date cannot be in the past", HttpStatusCode.BadRequest, "EXT_IN_PAST"); return@post
         }
         val newDueTime: LocalTime? = req.newDueTime?.takeIf { it.isNotBlank() }?.let {

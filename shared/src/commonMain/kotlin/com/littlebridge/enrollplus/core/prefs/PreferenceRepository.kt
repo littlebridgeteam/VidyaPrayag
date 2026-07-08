@@ -55,5 +55,22 @@ interface PreferenceRepository {
     fun getNotificationsDeclined(): Flow<Boolean>
     suspend fun setNotificationsDeclined(declined: Boolean)
 
+    // UIX-032: Font scale for accessibility (1.0 = default, 2.0 = 200%)
+    fun getFontScale(): Flow<Float>
+    suspend fun setFontScale(scale: Float)
+
+    // --- school branding cache (for branded splash/login before auth) ---
+    // The serialized SchoolBranding JSON from the last authenticated session.
+    // Loaded on app start so the splash/login screens can show the school's
+    // brand immediately, without waiting for a network call.
+    fun getCachedBranding(): Flow<String?>
+    suspend fun setCachedBranding(brandingJson: String?)
+
+    // --- multi-language (MULTI_LANGUAGE_SPEC.md) ---
+    // The user's UI language preference, persisted locally for instant
+    // language switch on app launch. Synced to server via PATCH /api/v1/user/language-pref.
+    fun getLanguagePref(): Flow<String>
+    suspend fun setLanguagePref(lang: String)
+
     suspend fun clearSession()
 }

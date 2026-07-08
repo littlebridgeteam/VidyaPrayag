@@ -35,7 +35,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.feature.teacher.domain.model.TeacherSelfLeaveDto
 import com.littlebridge.enrollplus.feature.teacher.presentation.ActionResult
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherProfile
@@ -49,9 +49,11 @@ import com.littlebridge.enrollplus.ui.v2.components.VDatePicker
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.components.VThemePicker
+import com.littlebridge.enrollplus.ui.v2.components.VLanguagePicker
+import com.littlebridge.enrollplus.core.locale.LocaleManager
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -74,7 +76,7 @@ fun TeacherProfileScreenV2(
     profileViewModel: TeacherProfileViewModel = koinViewModel(),
     actionsViewModel: TeacherProfileActionsViewModel = koinViewModel(),
 ) {
-    val c = VTheme.colors
+    val c = VtC
     val profileState by profileViewModel.state.collectAsStateV2()
     val leave by actionsViewModel.leave.collectAsStateV2()
     val applyResult by actionsViewModel.apply.collectAsStateV2()
@@ -82,18 +84,20 @@ fun TeacherProfileScreenV2(
     val themeName by actionsViewModel.themeName.collectAsStateV2()
     val themeMode by actionsViewModel.themeMode.collectAsStateV2()
     val customThemeId by actionsViewModel.customThemeId.collectAsStateV2()
+    val localeManager = koinInject<LocaleManager>()
+    val currentLocale by localeManager.currentLocale.collectAsStateV2()
 
     var showLeaveComposer by remember { mutableStateOf(false) }
     var showPasswordForm by remember { mutableStateOf(false) }
     var confirmLogout by remember { mutableStateOf(false) }
 
     LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
+        modifier = modifier.fillMaxSize().background(c.cream),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 120.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            Text("Profile", style = VTheme.type.h1.colored(c.navyDeep))
+            Text(appString(StringKeys.TC_PROFILE), style = VtT.h2.coloredV(c.navyDeep))
             Spacer(Modifier.height(4.dp))
         }
 
@@ -104,10 +108,10 @@ fun TeacherProfileScreenV2(
                 profileState.profile != null -> IdentityCard(profileState.profile!!)
                 else -> TCard {
                     Column {
-                        Text("Couldn't load profile", style = VTheme.type.bodyStrong.colored(c.navyDeep))
-                        profileState.error?.let { Spacer(Modifier.height(4.dp)); Text(it, style = VTheme.type.caption.colored(c.ink3)) }
+                        Text(appString(StringKeys.TC_COULDNT_LOAD_PROFILE), style = VtT.bodyStrong.coloredV(c.navyDeep))
+                        profileState.error?.let { Spacer(Modifier.height(4.dp)); Text(it, style = VtT.caption.coloredV(c.ink3)) }
                         Spacer(Modifier.height(12.dp))
-                        VButton("Try again", onClick = { profileViewModel.load() }, size = VButtonSize.Sm, tone = VButtonTone.Lavender)
+                        VButton(appString(StringKeys.COMMON_BUTTON_TRY_AGAIN), onClick = { profileViewModel.load() }, size = VButtonSize.Sm, tone = VButtonTone.Lavender)
                     }
                 }
             }
@@ -163,10 +167,24 @@ fun TeacherProfileScreenV2(
             }
         }
 
+        // 4b — Language
+        item {
+            TCard {
+                Column {
+                    Text(appString(StringKeys.TC_LANGUAGE), style = VtT.h3.coloredV(c.navyDeep))
+                    Spacer(Modifier.height(10.dp))
+                    VLanguagePicker(
+                        currentLang = currentLocale,
+                        onSelect = { lang -> localeManager.setLocale(lang) },
+                    )
+                }
+            }
+        }
+
         // 5 — Logout
         item {
             VButton(
-                text = "Log out",
+                text = appString(StringKeys.TC_LOG_OUT),
                 onClick = { confirmLogout = true },
                 variant = VButtonVariant.Destructive,
                 full = true,
@@ -175,8 +193,8 @@ fun TeacherProfileScreenV2(
             Spacer(Modifier.height(8.dp))
             profileState.profile?.let {
                 Text(
-                    "Signed in as ${it.username}",
-                    style = VTheme.type.caption.colored(c.ink3),
+                    appString(StringKeys.TC_SIGNED_IN_AS, "username" to it.username),
+                    style = VtT.caption.coloredV(c.ink3),
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -185,9 +203,9 @@ fun TeacherProfileScreenV2(
 
     if (confirmLogout) {
         TeacherConfirmDialog(
-            title = "Log out?",
-            body = "You'll need to sign in again to access your classes.",
-            confirmLabel = "Log out",
+            title = appString(StringKeys.TC_LOG_OUT_Q),
+            body = appString(StringKeys.TC_LOG_OUT_DESC),
+            confirmLabel = appString(StringKeys.TC_LOG_OUT),
             destructive = true,
             onConfirm = {
                 confirmLogout = false
@@ -204,7 +222,7 @@ fun TeacherProfileScreenV2(
 
 @Composable
 private fun IdentityCard(p: TeacherProfile) {
-    val c = VTheme.colors
+    val c = VtC
     TCard {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -212,16 +230,16 @@ private fun IdentityCard(p: TeacherProfile) {
                     Modifier.size(64.dp).clip(CircleShape).background(c.accentTint),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(p.name.take(1).uppercase(), style = VTheme.type.h2.colored(c.accentDeep))
+                    Text(p.name.take(1).uppercase(), style = VtT.h2.coloredV(c.accentDeep))
                 }
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(p.name, style = VTheme.type.h3.colored(c.navyDeep))
+                    Text(p.name, style = VtT.h3.coloredV(c.navyDeep))
                     Spacer(Modifier.height(2.dp))
-                    Text("@${p.username}", style = VTheme.type.body.colored(c.ink2))
+                    Text("@${p.username}", style = VtT.body.coloredV(c.ink2))
                     if (p.schoolName.isNotBlank()) {
                         Spacer(Modifier.height(2.dp))
-                        Text(p.schoolName, style = VTheme.type.caption.colored(c.ink3))
+                        Text(p.schoolName, style = VtT.caption.coloredV(c.ink3))
                     }
                 }
             }
@@ -234,13 +252,13 @@ private fun IdentityCard(p: TeacherProfile) {
             }
             if (p.subjects.isNotEmpty()) {
                 Spacer(Modifier.height(12.dp))
-                TEyebrow("SUBJECTS")
+                TEyebrow(appString(StringKeys.TC_SUBJECTS))
                 Spacer(Modifier.height(6.dp))
-                ChipFlow(p.subjects) { s -> teacherSubjectColor(c, s) }
+                ChipFlow(p.subjects) { s -> vtSubjectColor(s) }
             }
             if (p.classes.isNotEmpty()) {
                 Spacer(Modifier.height(12.dp))
-                TEyebrow("CLASSES")
+                TEyebrow(appString(StringKeys.TC_CLASSES))
                 Spacer(Modifier.height(6.dp))
                 ChipFlow(p.classes) { c.navy }
             }
@@ -250,10 +268,10 @@ private fun IdentityCard(p: TeacherProfile) {
 
 @Composable
 private fun ContactLine(icon: ImageVector, text: String) {
-    val c = VTheme.colors
+    val c = VtC
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Icon(icon, contentDescription = null, tint = c.ink3, modifier = Modifier.size(14.dp))
-        Text(text, style = VTheme.type.body.colored(c.ink2))
+        Text(text, style = VtT.body.coloredV(c.ink2))
     }
 }
 
@@ -286,7 +304,7 @@ private fun LeaveCard(
     onApplied: () -> Unit,
     onRetry: () -> Unit,
 ) {
-    val c = VTheme.colors
+    val c = VtC
     // Auto-collapse the composer on success.
     LaunchedEffect(applyResult) {
         if (applyResult is ActionResult.Success) onApplied()
@@ -295,14 +313,14 @@ private fun LeaveCard(
         Column {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.weight(1f)) {
-                    Text("My leave", style = VTheme.type.h3.colored(c.navyDeep))
+                    Text(appString(StringKeys.TC_MY_LEAVE), style = VtT.h3.coloredV(c.navyDeep))
                     if (leave.pendingCount > 0) {
                         Spacer(Modifier.height(2.dp))
-                        Text("${leave.pendingCount} pending", style = VTheme.type.caption.colored(c.warningInk))
+                        Text(appString(StringKeys.TC_PENDING_COUNT, "count" to leave.pendingCount.toString()), style = VtT.caption.coloredV(c.warningInk))
                     }
                 }
                 VButton(
-                    text = if (showComposer) "Close" else "Apply",
+                    text = if (showComposer) appString(StringKeys.COMMON_BUTTON_CLOSE) else appString(StringKeys.TC_APPLY),
                     onClick = onToggleComposer,
                     size = VButtonSize.Sm,
                     variant = if (showComposer) VButtonVariant.Ghost else VButtonVariant.Secondary,
@@ -321,10 +339,10 @@ private fun LeaveCard(
             when {
                 leave.isLoading && leave.requests.isEmpty() -> Box(Modifier.fillMaxWidth().height(40.dp), contentAlignment = Alignment.Center) { TeacherSpinner(24.dp) }
                 leave.error != null && leave.requests.isEmpty() -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(leave.error ?: "", style = VTheme.type.caption.colored(c.ink3), modifier = Modifier.weight(1f))
-                    VButton("Retry", onClick = onRetry, size = VButtonSize.Sm, variant = VButtonVariant.Ghost)
+                    Text(leave.error ?: "", style = VtT.caption.coloredV(c.ink3), modifier = Modifier.weight(1f))
+                    VButton(appString(StringKeys.COMMON_BUTTON_RETRY), onClick = onRetry, size = VButtonSize.Sm, variant = VButtonVariant.Ghost)
                 }
-                leave.requests.isEmpty() -> Text("No leave requests yet.", style = VTheme.type.body.colored(c.ink3))
+                leave.requests.isEmpty() -> Text(appString(StringKeys.TC_NO_LEAVE_REQUESTS), style = VtT.body.coloredV(c.ink3))
                 else -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     leave.requests.forEach { LeaveRow(it) }
                 }
@@ -338,28 +356,28 @@ private fun LeaveComposer(
     applyResult: ActionResult,
     onApply: (from: String, to: String, reason: String) -> Unit,
 ) {
-    val c = VTheme.colors
+    val c = VtC
     var from by remember { mutableStateOf("") }
     var to by remember { mutableStateOf("") }
     var reason by remember { mutableStateOf("") }
     val inFlight = applyResult is ActionResult.InFlight
 
     Column(Modifier.padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VDatePicker(value = from, onValueChange = { from = it }, label = "From", enabled = !inFlight)
-        VDatePicker(value = to, onValueChange = { to = it }, label = "To", enabled = !inFlight)
+        VDatePicker(value = from, onValueChange = { from = it }, label = appString(StringKeys.TC_FROM), enabled = !inFlight)
+        VDatePicker(value = to, onValueChange = { to = it }, label = appString(StringKeys.TC_TO), enabled = !inFlight)
         VInput(
             value = reason,
             onValueChange = { reason = it },
-            label = "Reason",
-            placeholder = "Why are you applying?",
+            label = appString(StringKeys.TC_REASON),
+            placeholder = appString(StringKeys.TC_WHY_APPLYING),
             singleLine = false,
             enabled = !inFlight,
         )
         if (applyResult is ActionResult.Failure) {
-            Text(applyResult.message, style = VTheme.type.caption.colored(c.dangerInk))
+            Text(applyResult.message, style = VtT.caption.coloredV(c.dangerInk))
         }
         VButton(
-            text = "Submit request",
+            text = appString(StringKeys.TC_SUBMIT_REQUEST),
             onClick = { onApply(from, to, reason) },
             full = true,
             tone = VButtonTone.Lavender,
@@ -372,7 +390,7 @@ private fun LeaveComposer(
 
 @Composable
 private fun LeaveRow(leave: TeacherSelfLeaveDto) {
-    val c = VTheme.colors
+    val c = VtC
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(c.cream).padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -381,11 +399,11 @@ private fun LeaveRow(leave: TeacherSelfLeaveDto) {
             Text(
                 if (leave.dateFrom == leave.dateTo) prettyDateShort(leave.dateFrom)
                 else "${prettyDateShort(leave.dateFrom)} – ${prettyDateShort(leave.dateTo)}",
-                style = VTheme.type.bodyStrong.colored(c.navyDeep),
+                style = VtT.bodyStrong.coloredV(c.navyDeep),
             )
             if (leave.reason.isNotBlank()) {
                 Spacer(Modifier.height(2.dp))
-                Text(leave.reason, style = VTheme.type.caption.colored(c.ink3))
+                Text(leave.reason, style = VtT.caption.coloredV(c.ink3))
             }
         }
         LeaveStatusPill(leave.status)
@@ -394,7 +412,7 @@ private fun LeaveRow(leave: TeacherSelfLeaveDto) {
 
 @Composable
 private fun LeaveStatusPill(status: String) {
-    val c = VTheme.colors
+    val c = VtC
     val (bg, fg) = when (status.lowercase()) {
         "approved" -> c.success.copy(alpha = 0.16f) to c.successInk
         "rejected" -> c.danger.copy(alpha = 0.12f) to c.dangerInk
@@ -415,7 +433,7 @@ private fun PasswordCard(
     onSubmit: (old: String, new: String, confirm: String) -> Unit,
     onDone: () -> Unit,
 ) {
-    val c = VTheme.colors
+    val c = VtC
     LaunchedEffect(result) {
         if (result is ActionResult.Success) onDone()
     }
@@ -432,8 +450,8 @@ private fun PasswordCard(
                 TIconDisc(VIcons.Lock, c.navy, c.navy.copy(alpha = 0.10f))
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("Password", style = VTheme.type.bodyStrong.colored(c.navyDeep))
-                    Text("Change your sign-in password", style = VTheme.type.caption.colored(c.ink3))
+                    Text(appString(StringKeys.TC_PASSWORD), style = VtT.bodyStrong.coloredV(c.navyDeep))
+                    Text(appString(StringKeys.TC_CHANGE_PASSWORD), style = VtT.caption.coloredV(c.ink3))
                 }
                 Icon(
                     if (expanded) VIcons.ChevronUp else VIcons.ChevronRight,
@@ -452,7 +470,7 @@ private fun PasswordForm(
     result: ActionResult,
     onSubmit: (old: String, new: String, confirm: String) -> Unit,
 ) {
-    val c = VTheme.colors
+    val c = VtC
     var old by remember { mutableStateOf("") }
     var new0 by remember { mutableStateOf("") }
     var confirm by remember { mutableStateOf("") }
@@ -461,35 +479,35 @@ private fun PasswordForm(
 
     Column(Modifier.padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         VInput(
-            value = old, onValueChange = { old = it }, label = "Current password",
+            value = old, onValueChange = { old = it }, label = appString(StringKeys.TC_CURRENT_PASSWORD),
             isPassword = true, passwordVisible = reveal, enabled = !inFlight,
             keyboardType = KeyboardType.Password,
         )
         VInput(
-            value = new0, onValueChange = { new0 = it }, label = "New password",
-            hint = "At least 8 characters",
+            value = new0, onValueChange = { new0 = it }, label = appString(StringKeys.TC_NEW_PASSWORD),
+            hint = appString(StringKeys.TC_AT_LEAST_),
             isPassword = true, passwordVisible = reveal, enabled = !inFlight,
             keyboardType = KeyboardType.Password,
         )
         VInput(
-            value = confirm, onValueChange = { confirm = it }, label = "Confirm new password",
+            value = confirm, onValueChange = { confirm = it }, label = appString(StringKeys.TC_CONFIRM_NEW_PASSWORD),
             isPassword = true, passwordVisible = reveal, enabled = !inFlight,
             keyboardType = KeyboardType.Password,
             trailing = {
                 val ix = remember { MutableInteractionSource() }
                 Icon(
                     VIcons.Eye,
-                    contentDescription = "Toggle visibility",
+                    contentDescription = appString(StringKeys.TC_TOGGLE_VISIBILITY),
                     tint = c.ink3,
                     modifier = Modifier.size(18.dp).clickable(interactionSource = ix, indication = null) { reveal = !reveal },
                 )
             },
         )
         if (result is ActionResult.Failure) {
-            Text(result.message, style = VTheme.type.caption.colored(c.dangerInk))
+            Text(result.message, style = VtT.caption.coloredV(c.dangerInk))
         }
         VButton(
-            text = "Update password",
+            text = appString(StringKeys.TC_UPDATE_PASSWORD),
             onClick = { onSubmit(old, new0, confirm) },
             full = true,
             tone = VButtonTone.Navy,
@@ -508,7 +526,7 @@ private data class ThemeOption(val key: String, val label: String, val caption: 
 
 @Composable
 private fun ThemeCard(current: String, onSelect: (String) -> Unit) {
-    val c = VTheme.colors
+    val c = VtC
     val options = listOf(
         ThemeOption("WARM", "Warm", "Cream & lavender", VIcons.Sparkles),
         ThemeOption("LIGHT", "Light", "Crisp & bright", VIcons.Star),
@@ -516,7 +534,7 @@ private fun ThemeCard(current: String, onSelect: (String) -> Unit) {
     )
     TCard {
         Column {
-            Text("Appearance", style = VTheme.type.h3.colored(c.navyDeep))
+            Text("Appearance", style = VtT.h3.coloredV(c.navyDeep))
             Spacer(Modifier.height(10.dp))
             options.forEachIndexed { i, opt ->
                 if (i > 0) Spacer(Modifier.height(8.dp))
@@ -535,8 +553,8 @@ private fun ThemeCard(current: String, onSelect: (String) -> Unit) {
                     TIconDisc(opt.icon, if (active) c.accentDeep else c.ink2, if (active) c.accent.copy(alpha = 0.15f) else c.card)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(opt.label, style = VTheme.type.bodyStrong.colored(if (active) c.accentDeep else c.navyDeep))
-                        Text(opt.caption, style = VTheme.type.caption.colored(c.ink3))
+                        Text(opt.label, style = VtT.bodyStrong.coloredV(if (active) c.accentDeep else c.navyDeep))
+                        Text(opt.caption, style = VtT.caption.coloredV(c.ink3))
                     }
                     if (active) {
                         Box(Modifier.size(22.dp).clip(CircleShape).background(c.accentDeep), contentAlignment = Alignment.Center) {

@@ -29,14 +29,18 @@ import coil3.disk.DiskCache
 import coil3.memory.MemoryCache
 import coil3.network.ktor3.KtorNetworkFetcherFactory
 import coil3.request.crossfade
+import com.littlebridge.enrollplus.feature.auth.presentation.AuthViewModel
 import com.littlebridge.enrollplus.presentation.MainViewModel
+import com.littlebridge.enrollplus.core.locale.LocaleManager
+import com.littlebridge.enrollplus.ui.navigation.AuthNavGraph
+import com.littlebridge.enrollplus.ui.screens.shared.SplashScreen
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VMotion
+import com.littlebridge.enrollplus.ui.v2.locale.LocalLocale
 import com.littlebridge.enrollplus.ui.v2.navigation.NavGraphV2
-import com.littlebridge.enrollplus.ui.v2.screens.auth.SplashScreenV2
-import com.littlebridge.enrollplus.ui.v2.theme.VColors
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.VThemeRegistry
 import com.littlebridge.enrollplus.util.Config
 import io.ktor.client.*
+import kotlinx.coroutines.delay
 import okio.FileSystem
 import org.koin.compose.KoinContext
 import org.koin.compose.koinInject
@@ -48,14 +52,16 @@ import org.koin.core.annotation.KoinExperimentalAPI
  *
  * The legacy `ui/` (theme/components/auth/screens) and the old 35-destination
  * `navigation/NavGraph.kt` have been removed; navigation is now role-driven through
- * [NavGraphV2], which selects the correct portal (`SchoolPortalV2` / `TeacherPortalV2` /
- * `ParentPortalV2`) and applies the matching theme via [VThemeRegistry].
+ * [NavGraphV2], which selects the correct portal (`SchoolPortalPremium` / `TeacherPortalShell` /
+ * `ParentPortalShell`) and applies the matching theme via [VThemeRegistry].
  *
  * Flow:
  *  - `KoinContext` → [MainViewModel] (auth state).
  *  - Install the Coil image loader (Ktor fetcher + Supabase token-stripping cache mapper).
- *  - While auth is still loading → a minimal lavender splash with a spinner.
- *  - Once loaded → [NavGraphV2] with `role` + `isAuthenticated` + `onLogout`.
+ *  - Splash always plays for a minimum 1600ms brand reveal, regardless of auth state.
+ *  - Once both the splash minimum has elapsed AND auth is loaded → transition.
+ *  - Authenticated → [NavGraphV2] (portals only).
+ *  - Unauthenticated → [AuthNavGraph] (starts at Landing — splash is already handled here).
  */
 @OptIn(KoinExperimentalAPI::class, coil3.annotation.ExperimentalCoilApi::class)
 @Composable
@@ -69,6 +75,10 @@ fun App(
     // NavGraphV2 parses it and routes to the correct portal/screen.
     deepLink: String? = null,
     onDeepLinkConsumed: () -> Unit = {},
+    // Push notification ref info for auto-mark-read (Android only).
+    pushRefType: String? = null,
+    pushRefId: String? = null,
+    onPushRefConsumed: () -> Unit = {},
 ) {
     KoinContext {
         // Signal the platform host after the first composition lands. SideEffect runs
@@ -78,8 +88,17 @@ fun App(
         val viewModel: MainViewModel = koinViewModel()
         val authState by viewModel.authState.collectAsState()
 
+        // Multi-Language: provide the current locale to all composables via LocalLocale.
+        val localeManager = koinInject<LocaleManager>()
+        val currentLocale by localeManager.currentLocale.collectAsState()
+
         val httpClient = koinInject<HttpClient>()
         val platform = koinInject<Platform>()
+
+        // Restore cached school branding so splash/login screens can show the
+        // school's brand immediately (before authentication completes).
+        val brandingThemeManager = koinInject<com.littlebridge.enrollplus.feature.branding.presentation.BrandingThemeManager>()
+        LaunchedEffect(Unit) { brandingThemeManager.loadCached() }
 
         setSingletonImageLoaderFactory { context: PlatformContext ->
             ImageLoader.Builder(context)
@@ -113,8 +132,7 @@ fun App(
                 .build()
         }
 
-        // Resolve the colors for a lavender (Light) splash before the portal theme is known.
-        val splashColors: VColors = VThemeRegistry.resolve("light").colors
+        val authViewModel: AuthViewModel = koinViewModel()
 
         // ── SESSION-BLEED FIX (root cause) ───────────────────────────────────────
         // This app has NO NavHost / NavController: NavGraphV2 is a hand-rolled
@@ -141,19 +159,42 @@ fun App(
         // can bleed across a role switch.
         val isAuthenticated = !authState.token.isNullOrBlank()
 
-        Box(modifier = Modifier.fillMaxSize().background(splashColors.background)) {
-            // PHASE 2 — Splash shows the brand while the session check (JWT + role) runs in
-            // parallel inside MainViewModel.authState. The instant `isLoaded` flips true we
-            // crossfade straight into the role-driven graph: no artificial hold, no blank frame.
+        // Splash minimum duration — the brand reveal always plays in full,
+        // even if the session check resolves instantly. This gives a
+        // consistent premium feel for both logged-in and logged-out users.
+        var splashMinElapsed by remember { mutableStateOf(false) }
+        LaunchedEffect(Unit) {
+            delay(1600)
+            splashMinElapsed = true
+        }
+        val showSplash = !authState.isLoaded || !splashMinElapsed
+
+        // Auto-mark notification as read when a push notification is tapped.
+        // Uses refType+refId to identify the notification on the server.
+        if (pushRefType != null && pushRefId != null && isAuthenticated) {
+            val notificationsVm: com.littlebridge.enrollplus.feature.parent.presentation.NotificationsViewModel = koinViewModel()
+            LaunchedEffect(pushRefType, pushRefId) {
+                notificationsVm.markByRef(pushRefType, pushRefId)
+                onPushRefConsumed()
+            }
+        }
+
+        Box(modifier = Modifier.fillMaxSize().background(VColors.cream)) {
+         // Multi-Language: provide the current locale to all composables below.
+         CompositionLocalProvider(LocalLocale provides currentLocale) {
+            // Splash plays for a minimum 1600ms brand reveal regardless of auth
+            // state. Only transitions when BOTH the min duration has elapsed AND
+            // the session check (JWT + role) has resolved. This ensures a
+            // consistent premium entry for logged-in and logged-out users alike.
             AnimatedContent(
-                targetState = authState.isLoaded,
-                transitionSpec = { fadeIn(tween(280)) togetherWith fadeOut(tween(220)) },
+                targetState = showSplash,
+                transitionSpec = { fadeIn(tween(400, easing = VMotion.ease)) togetherWith fadeOut(tween(400, easing = VMotion.ease)) },
                 label = "splash-to-app",
                 modifier = Modifier.fillMaxSize(),
-            ) { loaded ->
-                if (!loaded) {
-                    SplashScreenV2(modifier = Modifier.fillMaxSize())
-                } else {
+            ) { isSplash ->
+                if (isSplash) {
+                    SplashScreen(onTimeout = { })
+                } else if (isAuthenticated) {
                     // The session key is the live JWT (unique per login) while
                     // authenticated, or a constant sentinel while logged out. When it
                     // changes — logout, or a logout→login role switch — SessionScope
@@ -165,16 +206,17 @@ fun App(
                         NavGraphV2(
                             role = authState.role,
                             isAuthenticated = isAuthenticated,
-                            // logout() revokes server-side + clears the persisted
-                            // session (prefs); that flips the session key, which
-                            // disposes this scope's store so no session-scoped VM
-                            // survives into the next login.
                             onLogout = { viewModel.logout() },
                             deepLink = deepLink,
                             onDeepLinkConsumed = onDeepLinkConsumed,
                             modifier = Modifier.fillMaxSize(),
                         )
                     }
+                } else {
+                    AuthNavGraph(
+                        authViewModel = authViewModel,
+                        onAuthSuccess = { },
+                    )
                 }
             }
 
@@ -197,6 +239,7 @@ fun App(
                         .padding(horizontal = 8.dp, vertical = 2.dp)
                 )
             }
+         } // end CompositionLocalProvider
         }
     }
 }

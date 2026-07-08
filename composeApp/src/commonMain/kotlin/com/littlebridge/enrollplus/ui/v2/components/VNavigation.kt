@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,6 +29,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -44,6 +46,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
+import androidx.compose.foundation.border
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -61,6 +64,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VShapes
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 
 // ─────────────────────────────────────────────────────────────────────────────
 // VTopTabs — horizontally scrollable underline tab bar
@@ -934,10 +940,126 @@ fun VBackHeader(
                 Icon(VIcons.ChevronLeft, contentDescription = "Back", tint = c.ink, modifier = Modifier.size(20.dp))
             }
             Text(title, style = VTheme.type.h3.colored(c.ink))
-            Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+            Box(Modifier.height(40.dp).wrapContentWidth(), contentAlignment = Alignment.Center) {
                 action?.invoke()
             }
         }
         VDivider()
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// VCreamBottomNav — premium floating dock navigation (v2, +10% size)
+//
+// Design DNA:
+//   • VColors.surfaceCard bar (pure white) — floats above cream background
+//   • 1dp VColors.line border, 24dp rounded corners
+//   • Active: icon in a filled violet circle (36dp) + violet label
+//   • Inactive: plain icon in ink3 + ink3 label
+//   • Badge: coral dot on top-right of icon (no text, just a dot)
+//   • Clean tween animations, no springs
+//   • 62dp height — 10% larger, premium
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+fun VCreamBottomNav(
+    items: List<VNavItem>,
+    selected: String,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val haptic = LocalHapticFeedback.current
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(horizontal = 16.dp, vertical = 11.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .height(62.dp)
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(24.dp))
+                .background(VColors.surfaceCard)
+                .border(1.dp, VColors.line, RoundedCornerShape(24.dp))
+                .padding(horizontal = 8.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                items.forEach { item ->
+                    val active = item.id == selected
+                    val iconTint = if (active) VColors.violet else VColors.ink3
+                    val labelColor = if (active) VColors.violet else VColors.ink3
+                    val interaction = remember { MutableInteractionSource() }
+
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(18.dp))
+                            .clickable(interactionSource = interaction, indication = null) {
+                                if (!active) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                }
+                                onSelect(item.id)
+                            },
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Box(contentAlignment = Alignment.TopEnd) {
+                            if (active) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(VColors.violetSoft),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(
+                                        imageVector = item.icon,
+                                        contentDescription = item.label,
+                                        tint = iconTint,
+                                        modifier = Modifier.size(20.dp),
+                                    )
+                                }
+                            } else {
+                                Icon(
+                                    imageVector = item.icon,
+                                    contentDescription = item.label,
+                                    tint = iconTint,
+                                    modifier = Modifier.size(22.dp),
+                                )
+                            }
+                            if (item.badge > 0) {
+                                Box(
+                                    modifier = Modifier
+                                        .offset(x = 7.dp, y = (-2).dp)
+                                        .size(8.dp)
+                                        .clip(CircleShape)
+                                        .background(VColors.coral)
+                                        .border(1.5.dp, VColors.surfaceCard, CircleShape),
+                                )
+                            }
+                        }
+
+                        Spacer(Modifier.height(4.dp))
+
+                        Text(
+                            text = item.label,
+                            style = VTypography.caption.copy(
+                                fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
+                                fontSize = 10.sp,
+                            ),
+                            color = labelColor,
+                        )
+                    }
+                }
+            }
+        }
     }
 }

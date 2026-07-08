@@ -131,7 +131,7 @@ class MessagingPhase1Test {
     fun messagingCore_hasSeqAssignment() {
         val src = source("feature/school/MessagingCore.kt")
         assertTrue(src.contains("nextSeqForConversation"), "nextSeqForConversation must exist")
-        assertTrue(src.contains("MessagesTable.seq.max()"), "seq must use MAX(seq)+1 pattern")
+        assertTrue(src.contains("ConversationSeqTable"), "seq must use ConversationSeqTable counter pattern")
     }
 
     @Test
@@ -346,5 +346,76 @@ class MessagingPhase1Test {
             tablesSrc.contains("VIDYASETU") || tablesSrc.contains("vidya_setu"),
             "Tables.kt must not reference the abandoned VIDYASETU v2.1 schema"
         )
+    }
+
+    // ── Read Receipts: markConversationRead + readAt column ──────────────────
+
+    @Test
+    fun messageStatusTable_hasReadAtColumn() {
+        val src = source("db/Tables.kt")
+        assertTrue(src.contains("val readAt"), "MessageStatusTable must have readAt column")
+        assertTrue(src.contains("\"read_at\""), "readAt must map to read_at column")
+    }
+
+    @Test
+    fun messagingCore_hasMarkConversationRead() {
+        val src = source("feature/school/MessagingCore.kt")
+        assertTrue(src.contains("fun markConversationRead("), "MessagingCore must have markConversationRead function")
+        assertTrue(src.contains("\"READ\""), "markConversationRead must set status to READ")
+        assertTrue(src.contains("\"SENT\", \"DELIVERED\""), "markConversationRead must filter SENT and DELIVERED")
+    }
+
+    @Test
+    fun messagingCore_hasGetUnreadCount() {
+        val src = source("feature/school/MessagingCore.kt")
+        assertTrue(src.contains("fun getUnreadCount("), "MessagingCore must have getUnreadCount function")
+    }
+
+    @Test
+    fun adminRouting_callsMarkConversationRead() {
+        val src = source("feature/school/MessagesRouting.kt")
+        assertTrue(src.contains("markConversationRead("), "Admin MessagesRouting must call markConversationRead")
+        assertTrue(src.contains("\"/unread-count\""), "Admin MessagesRouting must have GET /unread-count endpoint")
+    }
+
+    @Test
+    fun teacherRouting_callsMarkConversationRead() {
+        val src = source("feature/teacher/TeacherMessagesRouting.kt")
+        assertTrue(src.contains("markConversationRead("), "Teacher MessagesRouting must call markConversationRead")
+        assertTrue(src.contains("\"/unread-count\""), "Teacher MessagesRouting must have GET /unread-count endpoint")
+    }
+
+    @Test
+    fun parentRouting_callsMarkConversationRead() {
+        val src = source("feature/user/ParentMessagesRouting.kt")
+        assertTrue(src.contains("markConversationRead("), "Parent MessagesRouting must call markConversationRead")
+        assertTrue(src.contains("\"/unread-count\""), "Parent MessagesRouting must have GET /unread-count endpoint")
+    }
+
+    // ── Read Receipts: loadPeerMessageStatus for sender read receipts ─────────
+
+    @Test
+    fun messagingCore_hasLoadPeerMessageStatus() {
+        val src = source("feature/school/MessagingCore.kt")
+        assertTrue(src.contains("fun loadPeerMessageStatus("), "MessagingCore must have loadPeerMessageStatus function")
+        assertTrue(src.contains("neq"), "loadPeerMessageStatus must query for userId != sender")
+    }
+
+    @Test
+    fun adminRouting_callsLoadPeerMessageStatus() {
+        val src = source("feature/school/MessagesRouting.kt")
+        assertTrue(src.contains("loadPeerMessageStatus("), "Admin MessagesRouting must call loadPeerMessageStatus for sent messages")
+    }
+
+    @Test
+    fun teacherRouting_callsLoadPeerMessageStatus() {
+        val src = source("feature/teacher/TeacherMessagesRouting.kt")
+        assertTrue(src.contains("loadPeerMessageStatus("), "Teacher MessagesRouting must call loadPeerMessageStatus for sent messages")
+    }
+
+    @Test
+    fun parentRouting_callsLoadPeerMessageStatus() {
+        val src = source("feature/user/ParentMessagesRouting.kt")
+        assertTrue(src.contains("loadPeerMessageStatus("), "Parent MessagesRouting must call loadPeerMessageStatus for sent messages")
     }
 }

@@ -37,7 +37,7 @@ import com.littlebridge.enrollplus.core.fail
 import com.littlebridge.enrollplus.core.ok
 import com.littlebridge.enrollplus.core.okMessage
 import com.littlebridge.enrollplus.core.principalUserId
-import com.littlebridge.enrollplus.core.requireSchoolContext
+import com.littlebridge.enrollplus.core.requireSchoolAdmin
 import com.littlebridge.enrollplus.core.resolveSchoolIdForUser
 import io.ktor.http.*
 import io.ktor.server.auth.*
@@ -46,6 +46,12 @@ import io.ktor.server.routing.*
 import java.time.LocalDate
 import java.util.UUID
 
+// Module-level singleton — consistent DI pattern for server-side services.
+// Created once at class load (not per-request), ensuring shared state (caches,
+// rate limiters) is preserved across requests. This matches the pattern used
+// by LibraryRouting.kt and other server route modules.
+private val transportService = TransportService()
+
 fun Route.transportRouting() {
     authenticate("jwt") {
 
@@ -53,28 +59,28 @@ fun Route.transportRouting() {
         route("/api/v1/school/transport/routes") {
 
             get {
-                val ctx = call.requireSchoolContext() ?: return@get
+                val ctx = call.requireSchoolAdmin() ?: return@get
                 val activeOnly = call.request.queryParameters["all"]?.toBooleanStrictOrNull() != true
-                val routes = TransportService().listRoutes(ctx.schoolId, activeOnly)
+                val routes = transportService.listRoutes(ctx.schoolId, activeOnly)
                 call.ok(routes, "Routes (${routes.size})")
             }
 
             post {
-                val ctx = call.requireSchoolContext() ?: return@post
+                val ctx = call.requireSchoolAdmin() ?: return@post
                 val req = runCatching { call.receive<CreateRouteRequest>() }.getOrNull()
                     ?: run { call.fail("Invalid request body"); return@post }
                 if (req.name.isBlank()) {
                     call.fail("Route name is required"); return@post
                 }
-                val route = TransportService().createRoute(ctx.schoolId, req)
+                val route = transportService.createRoute(ctx.schoolId, req)
                 call.ok(route, "Route created", HttpStatusCode.Created)
             }
 
             get("/{routeId}") {
-                val ctx = call.requireSchoolContext() ?: return@get
+                val ctx = call.requireSchoolAdmin() ?: return@get
                 val routeId = call.parameters["routeId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
                     ?: run { call.fail("Invalid route id"); return@get }
-                val route = TransportService().getRoute(ctx.schoolId, routeId)
+                val route = transportService.getRoute(ctx.schoolId, routeId)
                 if (route == null) {
                     call.fail("Route not found", HttpStatusCode.NotFound, "NOT_FOUND")
                 } else {
@@ -83,31 +89,31 @@ fun Route.transportRouting() {
             }
 
             put("/{routeId}") {
-                val ctx = call.requireSchoolContext() ?: return@put
+                val ctx = call.requireSchoolAdmin() ?: return@put
                 val routeId = call.parameters["routeId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
                     ?: run { call.fail("Invalid route id"); return@put }
                 val req = runCatching { call.receive<UpdateRouteRequest>() }.getOrNull()
                     ?: run { call.fail("Invalid request body"); return@put }
-                val updated = TransportService().updateRoute(ctx.schoolId, routeId, req)
+                val updated = transportService.updateRoute(ctx.schoolId, routeId, req)
                 if (updated) call.okMessage("Route updated") else call.fail("Route not found", HttpStatusCode.NotFound)
             }
 
             delete("/{routeId}") {
-                val ctx = call.requireSchoolContext() ?: return@delete
+                val ctx = call.requireSchoolAdmin() ?: return@delete
                 val routeId = call.parameters["routeId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
                     ?: run { call.fail("Invalid route id"); return@delete }
-                val deleted = TransportService().deleteRoute(ctx.schoolId, routeId)
+                val deleted = transportService.deleteRoute(ctx.schoolId, routeId)
                 if (deleted) call.okMessage("Route deleted") else call.fail("Route not found", HttpStatusCode.NotFound)
             }
 
             // Add stop to route
             post("/{routeId}/stops") {
-                val ctx = call.requireSchoolContext() ?: return@post
+                val ctx = call.requireSchoolAdmin() ?: return@post
                 val routeId = call.parameters["routeId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
                     ?: run { call.fail("Invalid route id"); return@post }
                 val req = runCatching { call.receive<CreateStopRequest>() }.getOrNull()
                     ?: run { call.fail("Invalid request body"); return@post }
-                val stop = TransportService().addStop(ctx.schoolId, routeId, req)
+                val stop = transportService.addStop(ctx.schoolId, routeId, req)
                 if (stop == null) {
                     call.fail("Route not found", HttpStatusCode.NotFound, "NOT_FOUND")
                 } else {
@@ -118,10 +124,10 @@ fun Route.transportRouting() {
 
         // ── Admin: Stops (delete) ─────────────────────────────────────────
         delete("/api/v1/school/transport/stops/{stopId}") {
-            val ctx = call.requireSchoolContext() ?: return@delete
+            val ctx = call.requireSchoolAdmin() ?: return@delete
             val stopId = call.parameters["stopId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
                 ?: run { call.fail("Invalid stop id"); return@delete }
-            val deleted = TransportService().deleteStop(ctx.schoolId, stopId)
+            val deleted = transportService.deleteStop(ctx.schoolId, stopId)
             if (deleted) call.okMessage("Stop deleted") else call.fail("Stop not found", HttpStatusCode.NotFound)
         }
 
@@ -129,38 +135,38 @@ fun Route.transportRouting() {
         route("/api/v1/school/transport/vehicles") {
 
             get {
-                val ctx = call.requireSchoolContext() ?: return@get
+                val ctx = call.requireSchoolAdmin() ?: return@get
                 val activeOnly = call.request.queryParameters["all"]?.toBooleanStrictOrNull() != true
-                val vehicles = TransportService().listVehicles(ctx.schoolId, activeOnly)
+                val vehicles = transportService.listVehicles(ctx.schoolId, activeOnly)
                 call.ok(vehicles, "Vehicles (${vehicles.size})")
             }
 
             post {
-                val ctx = call.requireSchoolContext() ?: return@post
+                val ctx = call.requireSchoolAdmin() ?: return@post
                 val req = runCatching { call.receive<CreateVehicleRequest>() }.getOrNull()
                     ?: run { call.fail("Invalid request body"); return@post }
                 if (req.busNumber.isBlank()) {
                     call.fail("Bus number is required"); return@post
                 }
-                val vehicle = TransportService().createVehicle(ctx.schoolId, req)
+                val vehicle = transportService.createVehicle(ctx.schoolId, req)
                 call.ok(vehicle, "Vehicle created", HttpStatusCode.Created)
             }
 
             put("/{vehicleId}") {
-                val ctx = call.requireSchoolContext() ?: return@put
+                val ctx = call.requireSchoolAdmin() ?: return@put
                 val vehicleId = call.parameters["vehicleId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
                     ?: run { call.fail("Invalid vehicle id"); return@put }
                 val req = runCatching { call.receive<UpdateVehicleRequest>() }.getOrNull()
                     ?: run { call.fail("Invalid request body"); return@put }
-                val updated = TransportService().updateVehicle(ctx.schoolId, vehicleId, req)
+                val updated = transportService.updateVehicle(ctx.schoolId, vehicleId, req)
                 if (updated) call.okMessage("Vehicle updated") else call.fail("Vehicle not found", HttpStatusCode.NotFound)
             }
 
             delete("/{vehicleId}") {
-                val ctx = call.requireSchoolContext() ?: return@delete
+                val ctx = call.requireSchoolAdmin() ?: return@delete
                 val vehicleId = call.parameters["vehicleId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
                     ?: run { call.fail("Invalid vehicle id"); return@delete }
-                val deleted = TransportService().deleteVehicle(ctx.schoolId, vehicleId)
+                val deleted = transportService.deleteVehicle(ctx.schoolId, vehicleId)
                 if (deleted) call.okMessage("Vehicle deleted") else call.fail("Vehicle not found", HttpStatusCode.NotFound)
             }
         }
@@ -169,18 +175,18 @@ fun Route.transportRouting() {
         route("/api/v1/school/transport/assignments") {
 
             get {
-                val ctx = call.requireSchoolContext() ?: return@get
+                val ctx = call.requireSchoolAdmin() ?: return@get
                 val routeId = call.request.queryParameters["route_id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
                 val studentId = call.request.queryParameters["student_id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
-                val assignments = TransportService().listAssignments(ctx.schoolId, routeId, studentId)
+                val assignments = transportService.listAssignments(ctx.schoolId, routeId, studentId)
                 call.ok(assignments, "Assignments (${assignments.size})")
             }
 
             post {
-                val ctx = call.requireSchoolContext() ?: return@post
+                val ctx = call.requireSchoolAdmin() ?: return@post
                 val req = runCatching { call.receive<CreateAssignmentRequest>() }.getOrNull()
                     ?: run { call.fail("Invalid request body"); return@post }
-                val assignment = TransportService().createAssignment(ctx.schoolId, req)
+                val assignment = transportService.createAssignment(ctx.schoolId, req)
                 if (assignment == null) {
                     call.fail("Invalid student/route/stop/vehicle id", HttpStatusCode.BadRequest)
                 } else {
@@ -189,32 +195,32 @@ fun Route.transportRouting() {
             }
 
             delete("/{assignmentId}") {
-                val ctx = call.requireSchoolContext() ?: return@delete
+                val ctx = call.requireSchoolAdmin() ?: return@delete
                 val assignmentId = call.parameters["assignmentId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
                     ?: run { call.fail("Invalid assignment id"); return@delete }
-                val deactivated = TransportService().deactivateAssignment(ctx.schoolId, assignmentId)
+                val deactivated = transportService.deactivateAssignment(ctx.schoolId, assignmentId)
                 if (deactivated) call.okMessage("Assignment deactivated") else call.fail("Assignment not found", HttpStatusCode.NotFound)
             }
         }
 
         // ── Admin: Attendance ─────────────────────────────────────────────
         get("/api/v1/school/transport/attendance") {
-            val ctx = call.requireSchoolContext() ?: return@get
+            val ctx = call.requireSchoolAdmin() ?: return@get
             val routeId = call.request.queryParameters["route_id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
                 ?: run { call.fail("route_id query parameter is required"); return@get }
             val dateStr = call.request.queryParameters["date"] ?: LocalDate.now().toString()
             val date = runCatching { LocalDate.parse(dateStr) }.getOrNull()
                 ?: run { call.fail("Invalid date format (use YYYY-MM-DD)"); return@get }
-            val attendance = TransportService().getDailyAttendance(ctx.schoolId, routeId, date)
+            val attendance = transportService.getDailyAttendance(ctx.schoolId, routeId, date)
             call.ok(attendance, "Attendance (${attendance.size})")
         }
 
         // ── Admin: Transport Fee ──────────────────────────────────────────
         post("/api/v1/school/transport/fees") {
-            val ctx = call.requireSchoolContext() ?: return@post
+            val ctx = call.requireSchoolAdmin() ?: return@post
             val req = runCatching { call.receive<CreateTransportFeeRequest>() }.getOrNull()
                 ?: run { call.fail("Invalid request body"); return@post }
-            val created = TransportService().createTransportFee(ctx.schoolId, req)
+            val created = transportService.createTransportFee(ctx.schoolId, req)
             if (created) call.okMessage("Transport fee created") else call.fail("Failed to create transport fee")
         }
 
@@ -227,7 +233,7 @@ fun Route.transportRouting() {
                 }
                 val req = runCatching { call.receive<UpdateLocationRequest>() }.getOrNull()
                     ?: run { call.fail("Invalid request body"); return@post }
-                val tracking = TransportService().updateLocation(req)
+                val tracking = transportService.updateLocation(req)
                 if (tracking == null) {
                     call.fail("Invalid vehicle id", HttpStatusCode.BadRequest)
                 } else {
@@ -249,7 +255,7 @@ fun Route.transportRouting() {
                 val schoolId = resolveSchoolIdForUser(uid) ?: run {
                     call.fail("No school associated with this user", HttpStatusCode.Forbidden); return@post
                 }
-                val attendance = TransportService().markPickup(
+                val attendance = transportService.markPickup(
                     schoolId = schoolId,
                     studentId = studentId,
                     routeId = routeId,
@@ -276,7 +282,7 @@ fun Route.transportRouting() {
                 val schoolId = resolveSchoolIdForUser(uid) ?: run {
                     call.fail("No school associated with this user", HttpStatusCode.Forbidden); return@post
                 }
-                val attendance = TransportService().markDrop(
+                val attendance = transportService.markDrop(
                     schoolId = schoolId,
                     studentId = studentId,
                     routeId = routeId,
@@ -299,7 +305,7 @@ fun Route.transportRouting() {
                 }
                 val childId = call.parameters["childId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
                     ?: run { call.fail("Invalid child id"); return@get }
-                val progress = TransportService().getLiveLocationForChild(uid, childId)
+                val progress = transportService.getLiveLocationForChild(uid, childId)
                 if (progress == null) {
                     call.fail("No transport assignment found for this child", HttpStatusCode.NotFound, "NO_ASSIGNMENT")
                 } else {
@@ -313,7 +319,7 @@ fun Route.transportRouting() {
                 }
                 val childId = call.parameters["childId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
                     ?: run { call.fail("Invalid child id"); return@get }
-                val route = TransportService().getRouteForChild(uid, childId)
+                val route = transportService.getRouteForChild(uid, childId)
                 if (route == null) {
                     call.fail("No transport assignment found for this child", HttpStatusCode.NotFound, "NO_ASSIGNMENT")
                 } else {

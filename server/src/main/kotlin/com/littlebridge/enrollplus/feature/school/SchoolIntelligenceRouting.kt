@@ -147,7 +147,8 @@ data class ActivityItemDto(
     val actor: String,
     val action: String,
     val target: String,
-    @SerialName("iso_time") val isoTime: String
+    @SerialName("iso_time") val isoTime: String,
+    @SerialName("deep_link") val deepLink: String? = null,
 )
 
 @Serializable
@@ -391,7 +392,8 @@ fun Route.schoolIntelligenceRouting() {
                                 actor = actorId?.let { actorNames[it] } ?: "System",
                                 action = row[NotificationsTable.title],
                                 target = row[NotificationsTable.body],
-                                isoTime = row[NotificationsTable.createdAt].toString()
+                                isoTime = row[NotificationsTable.createdAt].toString(),
+                                deepLink = row[NotificationsTable.deepLink],
                             )
                         )
                     }
@@ -407,7 +409,8 @@ fun Route.schoolIntelligenceRouting() {
                                 actor = row[LeaveRequestsTable.requesterName],
                                 action = "filed a leave request",
                                 target = "${row[LeaveRequestsTable.dateFrom]} → ${row[LeaveRequestsTable.dateTo]}",
-                                isoTime = row[LeaveRequestsTable.createdAt].toString()
+                                isoTime = row[LeaveRequestsTable.createdAt].toString(),
+                                deepLink = "/leave/${row[LeaveRequestsTable.id].value}",
                             )
                         )
                     }
@@ -424,7 +427,8 @@ fun Route.schoolIntelligenceRouting() {
                                 actor = byId?.let { actorNames[it] } ?: "School office",
                                 action = "posted an announcement",
                                 target = row[AnnouncementsTable.title],
-                                isoTime = row[AnnouncementsTable.createdAt].toString()
+                                isoTime = row[AnnouncementsTable.createdAt].toString(),
+                                deepLink = "/announcements/${row[AnnouncementsTable.id].value}",
                             )
                         )
                     }

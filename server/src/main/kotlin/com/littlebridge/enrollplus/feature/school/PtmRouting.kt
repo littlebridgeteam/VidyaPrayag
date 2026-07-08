@@ -29,9 +29,13 @@ import com.littlebridge.enrollplus.core.fail
 import com.littlebridge.enrollplus.core.ok
 import com.littlebridge.enrollplus.core.okMessage
 import com.littlebridge.enrollplus.core.requireSchoolContext
+import com.littlebridge.enrollplus.db.CalendarEventsTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.PtmClassProgressTable
 import com.littlebridge.enrollplus.db.PtmEventsTable
+import com.littlebridge.enrollplus.feature.calendar.createCalendarEvent
+import com.littlebridge.enrollplus.feature.calendar.EventStatus
+import com.littlebridge.enrollplus.feature.calendar.EventType
 import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
@@ -46,6 +50,7 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
+import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
@@ -116,6 +121,8 @@ data class UpsertClassProgressDto(
 )
 
 // ---------------- helpers ----------------
+
+private val ptmLogger = LoggerFactory.getLogger("PtmRouting")
 
 /** Confirms [eventId] belongs to [schoolId]. Must run inside dbQuery {}. */
 private fun ptmOwnedBySchool(eventId: UUID, schoolId: UUID): Boolean =
@@ -237,6 +244,32 @@ fun Route.ptmRouting() {
                         it[createdAt] = now
                         it[updatedAt] = now
                     }
+                }
+
+                // Bridge: also create a calendar_event with registration enabled
+                // so the new Event Registration system can manage PTM slots.
+                runCatching {
+                    createCalendarEvent(
+                        schoolId = schoolId,
+                        title = req.title,
+                        description = "Parent-Teacher Meeting",
+                        type = EventType.PTM,
+                        status = EventStatus.PUBLISHED,
+                        source = "MANUAL",
+                        startDate = req.date,
+                        audience = "ALL_SCHOOL",
+                        notifyParents = true,
+                        notifyTeachers = true,
+                        createdBy = uid,
+                    )
+                    // Enable registration on the newly created calendar event
+                    dbQuery {
+                        CalendarEventsTable.update({ CalendarEventsTable.type eq EventType.PTM and (CalendarEventsTable.startDate eq LocalDate.parse(req.date)) and (CalendarEventsTable.schoolId eq schoolId) }) {
+                            it[CalendarEventsTable.registrationEnabled] = true
+                        }
+                    }
+                }.onFailure {
+                    ptmLogger.warn("PTM bridge: failed to create calendar event: {}", it.message, it)
                 }
                 call.created(
                     PtmActiveEventDto(

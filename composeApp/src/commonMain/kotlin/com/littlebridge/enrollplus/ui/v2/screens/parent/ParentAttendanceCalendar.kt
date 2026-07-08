@@ -42,6 +42,8 @@ import com.littlebridge.enrollplus.feature.parent.domain.model.ParentAttendanceD
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VLabel
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import com.littlebridge.enrollplus.util.MONTH_LONG
@@ -75,13 +77,11 @@ internal fun ParentAttendanceCalendar(
     // (it shouldn't — the upsert is per-day), the last one wins.
     val byDate = remember(records) { records.associate { it.date to it.status.lowercase() } }
 
-    // Anchor the calendar on the most recent month that actually has data; otherwise the current
-    // real month. From there, navigation is FREE in both directions (no longer clamped to the set
-    // of data-months) — exactly the "switch the month" interaction the brief asks for.
-    val (startYear, startMonth) = remember(records) {
-        val newest = records.mapNotNull { parseIsoDate(it.date)?.let { (y, m, _) -> y to m } }
-            .maxWithOrNull(compareBy({ it.first }, { it.second }))
-        newest ?: (parseIsoDate(todayIso())?.let { (y, m, _) -> y to m } ?: (2026 to 1))
+    // Anchor the calendar on the CURRENT real month — not the newest data month.
+    // The parent should always see the current month first; they can navigate back
+    // to prior months freely with the pager.
+    val (startYear, startMonth) = remember {
+        parseIsoDate(todayIso())?.let { (y, m, _) -> y to m } ?: (2026 to 1)
     }
 
     // Visible month, expressed as an absolute month-offset relative to the anchor so we can page
@@ -168,13 +168,13 @@ internal fun ParentAttendanceCalendar(
         Spacer(Modifier.height(16.dp))
 
         // ── Legend ──────────────────────────────────────────────────────────
-        VLabel("Legend")
+        VLabel(appString(StringKeys.PACL_LEGEND))
         Spacer(Modifier.height(8.dp))
         // COLOR IS SEMANTIC: present=green, late=amber, absent=red — meaning carried by colour.
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            LegendDot(c.successInk, "Present")
-            LegendDot(c.warningInk, "Late")
-            LegendDot(c.dangerInk, "Absent")
+            LegendDot(c.successInk, appString(StringKeys.PACL_PRESENT))
+            LegendDot(c.warningInk, appString(StringKeys.PACL_LATE))
+            LegendDot(c.dangerInk, appString(StringKeys.PACL_ABSENT))
         }
     }
 }

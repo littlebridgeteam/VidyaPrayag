@@ -69,7 +69,10 @@ data class AuthResponse(
     @SerialName("profile_completed") val profileCompleted: Boolean,
     // RA-54: true when a provisioned teacher must change their generated
     // initial password on first login. Drives the TeacherFirstLogin gate.
-    @SerialName("must_change_password") val mustChangePassword: Boolean = false
+    @SerialName("must_change_password") val mustChangePassword: Boolean = false,
+    // MULTI_LANGUAGE_SPEC.md §9.1: server returns user's language preference
+    // so the client can sync on login without a separate API call.
+    @SerialName("language_pref") val languagePref: String = "en"
 )
 
 @Serializable
