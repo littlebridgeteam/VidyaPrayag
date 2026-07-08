@@ -1652,6 +1652,7 @@ object StringKeys {
     const val TC_LANGUAGE_COLON                        = "tc.language_colon"
     const val TC_LAST_MARKED_BY                        = "tc.last_marked_by"
     const val TC_LEAVES                                = "tc.leaves"
+    const val TC_LEAVE_REQUESTS                        = "tc.leave_requests"
     const val TC_LESSON                                = "tc.lesson"
     const val TC_LESSON_PLANS                          = "tc.lesson_plans"
     const val TC_LESSON_TITLE                          = "tc.lesson_title"
@@ -1696,6 +1697,7 @@ object StringKeys {
     const val TC_NEW_TOPIC                             = "tc.new_topic"
     const val TC_NEXT                                  = "tc.next"
     const val TC_NEXT_CLASS                            = "tc.next_class"
+    const val TC_LATER                                 = "tc.later"
     const val TC_NOTHING_PENDING                       = "tc.nothing_pending"
     const val TC_NOT_ENOUGH_DATA                       = "tc.not_enough_data"
     const val TC_NOT_MARKED                            = "tc.not_marked"
@@ -1703,6 +1705,12 @@ object StringKeys {
     const val TC_NOT_YOUR_STUDENT                      = "tc.not_your_student"
     const val TC_NOT_YOUR_STUDENT_DESC                 = "tc.not_your_student_desc"
     const val TC_NOW                                   = "tc.now"
+    const val TC_NOW_TEACHING                          = "tc.now_teaching"
+    const val TC_QUICK_ACTIONS                         = "tc.quick_actions"
+    const val TC_PENDING_ACTIONS                       = "tc.pending_actions"
+    const val TC_UPCOMING_EVENTS                       = "tc.upcoming_events"
+    const val TC_YOUR_DAY                              = "tc.your_day"
+    const val TC_NO_PERIOD_RIGHT_NOW                   = "tc.no_period_right_now"
     const val TC_NO_ACTIVE_HOMEWORK                    = "tc.no_active_homework"
     const val TC_NO_ACTIVE_HOMEWORK_CLASS              = "tc.no_active_homework_class"
     const val TC_NO_ALLOCATIONS                        = "tc.no_allocations"
@@ -1883,6 +1891,7 @@ object StringKeys {
     const val TC_TITLE                                 = "tc.title"
     const val TC_TITLE_PH                              = "tc.title_ph"
     const val TC_TO                                    = "tc.to"
+    const val TC_TO_PUBLISH                            = "tc.to_publish"
     const val TC_TODAY                                 = "tc.today"
     const val TC_TODAYS_SCHEDULE                       = "tc.todays_schedule"
     const val TC_TOGGLE_VISIBILITY                     = "tc.toggle_visibility"
@@ -4604,6 +4613,7 @@ object AppStrings {
         StringKeys.TC_LANGUAGE_COLON                        to "Language: {lang}",
         StringKeys.TC_LAST_MARKED_BY                        to "Last marked by {name}",
         StringKeys.TC_LEAVES                                to "Leaves",
+        StringKeys.TC_LEAVE_REQUESTS                        to "Leave requests",
         StringKeys.TC_LESSON                                to "Lesson Plan",
         StringKeys.TC_LESSON_PLANS                          to "LESSON PLANS",
         StringKeys.TC_LESSON_TITLE                          to "Lesson title",
@@ -4648,6 +4658,7 @@ object AppStrings {
         StringKeys.TC_NEW_TOPIC                             to "New topic",
         StringKeys.TC_NEXT                                  to "NEXT",
         StringKeys.TC_NEXT_CLASS                            to "NEXT CLASS",
+        StringKeys.TC_LATER                                 to "Later",
         StringKeys.TC_NOTHING_PENDING                       to "Nothing pending right now.",
         StringKeys.TC_NOT_ENOUGH_DATA                       to "Not enough data",
         StringKeys.TC_NOT_MARKED                            to "NOT MARKED",
@@ -4655,6 +4666,12 @@ object AppStrings {
         StringKeys.TC_NOT_YOUR_STUDENT                      to "Not your student",
         StringKeys.TC_NOT_YOUR_STUDENT_DESC                 to "This student is not in your assigned classes.",
         StringKeys.TC_NOW                                   to "NOW",
+        StringKeys.TC_NOW_TEACHING                          to "Now teaching",
+        StringKeys.TC_QUICK_ACTIONS                         to "Quick actions",
+        StringKeys.TC_PENDING_ACTIONS                       to "Pending actions",
+        StringKeys.TC_UPCOMING_EVENTS                         to "Upcoming events",
+        StringKeys.TC_YOUR_DAY                              to "your day",
+        StringKeys.TC_NO_PERIOD_RIGHT_NOW                   to "No class right now",
         StringKeys.TC_NO_ACTIVE_HOMEWORK                    to "No active homework",
         StringKeys.TC_NO_ACTIVE_HOMEWORK_CLASS              to "No active homework for this class",
         StringKeys.TC_NO_ALLOCATIONS                        to "No allocations yet",
@@ -4835,6 +4852,7 @@ object AppStrings {
         StringKeys.TC_TITLE                                 to "Title",
         StringKeys.TC_TITLE_PH                              to "e.g. Chapter 4 exercises",
         StringKeys.TC_TO                                    to "To",
+        StringKeys.TC_TO_PUBLISH                            to "to publish",
         StringKeys.TC_TODAY                                 to "TODAY",
         StringKeys.TC_TODAYS_SCHEDULE                       to "TODAY'S SCHEDULE",
         StringKeys.TC_TOGGLE_VISIBILITY                     to "Toggle visibility",
@@ -7535,6 +7553,7 @@ object AppStrings {
         StringKeys.TC_LANGUAGE_COLON                        to "Language: {lang}",
         StringKeys.TC_LAST_MARKED_BY                        to "Last marked by {name}",
         StringKeys.TC_LEAVES                                to "Leaves",
+        StringKeys.TC_LEAVE_REQUESTS                        to "छुट्टी के अनुरोध",
         StringKeys.TC_LESSON                                to "Lesson Plan",
         StringKeys.TC_LESSON_PLANS                          to "LESSON PLANS",
         StringKeys.TC_LESSON_TITLE                          to "Lesson title",
@@ -7579,6 +7598,7 @@ object AppStrings {
         StringKeys.TC_NEW_TOPIC                             to "New topic",
         StringKeys.TC_NEXT                                  to "अगला",
         StringKeys.TC_NEXT_CLASS                            to "NEXT CLASS",
+        StringKeys.TC_LATER                                 to "बाद में",
         StringKeys.TC_NOTHING_PENDING                       to "Nothing pending right now.",
         StringKeys.TC_NOT_ENOUGH_DATA                       to "Not enough data",
         StringKeys.TC_NOT_MARKED                            to "NOT MARKED",
@@ -7586,6 +7606,12 @@ object AppStrings {
         StringKeys.TC_NOT_YOUR_STUDENT                      to "Not your student",
         StringKeys.TC_NOT_YOUR_STUDENT_DESC                 to "This student is not in your assigned classes.",
         StringKeys.TC_NOW                                   to "अभी",
+        StringKeys.TC_NOW_TEACHING                          to "अभी पढ़ा रहे हैं",
+        StringKeys.TC_QUICK_ACTIONS                         to "त्वरित क्रियाएँ",
+        StringKeys.TC_PENDING_ACTIONS                       to "लंबित कार्य",
+        StringKeys.TC_UPCOMING_EVENTS                         to "आगामी कार्यक्रम",
+        StringKeys.TC_YOUR_DAY                              to "आपका दिन",
+        StringKeys.TC_NO_PERIOD_RIGHT_NOW                   to "अभी कोई कक्षा नहीं",
         StringKeys.TC_NO_ACTIVE_HOMEWORK                    to "No active homework",
         StringKeys.TC_NO_ACTIVE_HOMEWORK_CLASS              to "No active homework for this class",
         StringKeys.TC_NO_ALLOCATIONS                        to "No allocations yet",
@@ -7766,6 +7792,7 @@ object AppStrings {
         StringKeys.TC_TITLE                                 to "शीर्षक",
         StringKeys.TC_TITLE_PH                              to "e.g. Chapter 4 exercises",
         StringKeys.TC_TO                                    to "को",
+        StringKeys.TC_TO_PUBLISH                            to "प्रकाशित करने के लिए",
         StringKeys.TC_TODAY                                 to "आज",
         StringKeys.TC_TODAYS_SCHEDULE                       to "TODAY'S SCHEDULE",
         StringKeys.TC_TOGGLE_VISIBILITY                     to "Toggle visibility",
