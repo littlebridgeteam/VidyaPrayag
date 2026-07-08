@@ -28,10 +28,51 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.TextStyle
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+
+/**
+ * VtC / VtT — the shared legacy-token bridge. Screens mid-migration bind
+ * `val c = VtC` in place of the old `val c = VTheme.colors`, mapping every
+ * legacy lavender token name onto the cream/violet [VColors] system. This lets a
+ * screen retire its [com.littlebridge.enrollplus.ui.v2.theme.VTheme] dependency
+ * without touching any layout/branch logic. Prefer using [VColors]/[VTypography]
+ * directly in brand-new code; this bridge exists purely for in-place migration.
+ */
+object VtC {
+    val background: Color get() = VColors.cream
+    val card: Color get() = VColors.white
+    val cream: Color get() = VColors.surfaceTint      // subtle chip / disc fill
+    val hairline: Color get() = VColors.line
+    val ink: Color get() = VColors.ink
+    val ink2: Color get() = VColors.ink2
+    val ink3: Color get() = VColors.ink3
+    val navyDeep: Color get() = VColors.ink           // primary heading ink
+    val accent: Color get() = VColors.violet
+    val accentDeep: Color get() = VColors.violetInk
+    val teal: Color get() = VColors.mint              // positive / coverage
+    val tealDeep: Color get() = VColors.success
+    val success: Color get() = VColors.success
+    val warning: Color get() = VColors.gold
+    val warningInk: Color get() = VColors.gold
+    val danger: Color get() = VColors.error
+    val dangerInk: Color get() = VColors.error
+}
+
+/** Typography twin for the [VtC] bridge — maps legacy VTheme.type.* names. */
+object VtT {
+    val h3: TextStyle get() = VTypography.h3
+    val body: TextStyle get() = VTypography.body
+    val bodyStrong: TextStyle get() = VTypography.body
+    val caption: TextStyle get() = VTypography.caption
+    val label: TextStyle get() = VTypography.label
+}
+
+/** Local `colored` extension so migrated screens keep `style.colored(c.x)` calls. */
+fun TextStyle.coloredV(color: Color): TextStyle = copy(color = color)
 
 /**
  * TeacherKitV2 — the token-based atom set for the rebuilt Teacher Portal.

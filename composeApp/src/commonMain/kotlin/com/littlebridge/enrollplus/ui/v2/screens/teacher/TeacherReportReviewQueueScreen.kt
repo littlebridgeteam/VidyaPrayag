@@ -39,8 +39,6 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
 
 /**
  * TeacherReportReviewQueueScreen — shows AI-generated report card drafts
@@ -56,7 +54,7 @@ fun TeacherReportReviewQueueScreen(
     viewModel: TeacherReportReviewViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
-    val c = VTheme.colors
+    val c = VtC
 
     LaunchedEffect(className, section, term) {
         viewModel.loadReviewQueue(className, section, term)
@@ -74,8 +72,8 @@ fun TeacherReportReviewQueueScreen(
         ) {
             VButton(text = appString(StringKeys.COMMON_BUTTON_BACK), onClick = onBack, variant = VButtonVariant.Secondary, size = VButtonSize.Sm)
             Column {
-                Text(appString(StringKeys.TC_REPORT_CARD_REVIEW), style = VTheme.type.h3.colored(c.ink))
-                Text("$className $section • $term", style = VTheme.type.caption.colored(c.ink2))
+                Text(appString(StringKeys.TC_REPORT_CARD_REVIEW), style = VtT.h3.coloredV(c.ink))
+                Text("$className $section • $term", style = VtT.caption.coloredV(c.ink2))
             }
         }
 
@@ -97,7 +95,7 @@ fun TeacherReportReviewQueueScreen(
                 VCard(Modifier.fillMaxWidth()) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Icon(VIcons.Check, contentDescription = null, tint = c.success, modifier = Modifier.size(16.dp))
-                        Text(msg, style = VTheme.type.body.colored(c.ink))
+                        Text(msg, style = VtT.body.coloredV(c.ink))
                     }
                 }
             }
@@ -113,7 +111,7 @@ fun TeacherReportReviewQueueScreen(
             state.error != null -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(state.error!!, style = VTheme.type.body.colored(c.danger))
+                        Text(state.error!!, style = VtT.body.coloredV(c.danger))
                         Spacer(Modifier.height(8.dp))
                         VButton(text = appString(StringKeys.COMMON_BUTTON_RETRY), onClick = { viewModel.loadReviewQueue(className, section, term) })
                     }
@@ -121,7 +119,7 @@ fun TeacherReportReviewQueueScreen(
             }
             state.isEmpty -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(appString(StringKeys.TC_NO_DRAFTS_FOUND), style = VTheme.type.body.colored(c.ink2))
+                    Text(appString(StringKeys.TC_NO_DRAFTS_FOUND), style = VtT.body.coloredV(c.ink2))
                 }
             }
             else -> {
@@ -147,13 +145,13 @@ fun TeacherReportReviewQueueScreen(
 
 @Composable
 private fun SummaryChip(label: String, count: Int, color: androidx.compose.ui.graphics.Color) {
-    val c = VTheme.colors
+    val c = VtC
     Column(
         Modifier.clip(RoundedCornerShape(8.dp)).background(color.copy(alpha = 0.1f)).padding(horizontal = 10.dp, vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text("$count", style = VTheme.type.h3.colored(color).copy(fontSize = 16.sp))
-        Text(label, style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp))
+        Text("$count", style = VtT.h3.coloredV(color).copy(fontSize = 16.sp))
+        Text(label, style = VtT.caption.coloredV(c.ink3).copy(fontSize = 10.sp))
     }
 }
 
@@ -166,7 +164,7 @@ private fun DraftReviewCard(
     onRegenerate: () -> Unit,
     onEdit: () -> Unit,
 ) {
-    val c = VTheme.colors
+    val c = VtC
     val statusTone = when (draft.status) {
         "draft" -> VBadgeTone.Neutral
         "flagged_for_review" -> VBadgeTone.Warning
@@ -189,21 +187,21 @@ private fun DraftReviewCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(appString(StringKeys.TC_STUDENT_COLON, "id" to draft.studentId.take(8)), style = VTheme.type.body.colored(c.ink).copy(fontWeight = FontWeight.Medium))
+                Text(appString(StringKeys.TC_STUDENT_COLON, "id" to draft.studentId.take(8)), style = VtT.body.coloredV(c.ink).copy(fontWeight = FontWeight.Medium))
                 VBadge(text = statusLabel, tone = statusTone)
             }
 
             if (draft.groundingFlags != null) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     Icon(VIcons.AlertCircle, contentDescription = null, tint = c.warning, modifier = Modifier.size(12.dp))
-                    Text(appString(StringKeys.TC_GROUNDING_FLAGS_DETECTED), style = VTheme.type.caption.colored(c.warning).copy(fontSize = 11.sp))
+                    Text(appString(StringKeys.TC_GROUNDING_FLAGS_DETECTED), style = VtT.caption.coloredV(c.warning).copy(fontSize = 11.sp))
                 }
             }
 
             val aiDraft = draft.aiDraft
             if (aiDraft != null) {
                 val preview = aiDraft.take(120) + if (aiDraft.length > 120) "…" else ""
-                Text(preview, style = VTheme.type.body.colored(c.ink2).copy(fontSize = 12.sp), maxLines = 3)
+                Text(preview, style = VtT.body.coloredV(c.ink2).copy(fontSize = 12.sp), maxLines = 3)
             }
 
             if (draft.status == "draft" || draft.status == "flagged_for_review") {
