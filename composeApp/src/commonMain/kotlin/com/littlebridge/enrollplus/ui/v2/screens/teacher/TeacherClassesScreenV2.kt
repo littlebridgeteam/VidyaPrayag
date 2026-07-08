@@ -79,6 +79,7 @@ fun TeacherClassesScreenV2(
     viewModel: TeacherClassesViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
+    val c = VTheme.colors
 
     // Student-profile drill-down lives here (over the class detail).
     var openStudentId by remember { mutableStateOf<String?>(null) }
@@ -87,7 +88,7 @@ fun TeacherClassesScreenV2(
         targetState = Triple(state.openAssignmentId, openStudentId, state.classes.size),
         transitionSpec = { (fadeIn() togetherWith fadeOut()) },
         label = "classes-nav",
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize().background(c.cream),
     ) { (assignmentId, studentId, _) ->
         when {
             studentId != null -> TeacherStudentProfilePane(
@@ -137,12 +138,12 @@ private fun ClassListPane(
         }
         else -> LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 120.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
                 Column {
-                    Text(appString(StringKeys.TC_CLASSES), style = VTheme.type.h1.colored(c.navyDeep))
+                    Text(appString(StringKeys.TC_CLASSES), style = VTheme.type.h2.colored(c.navyDeep))
                     Spacer(Modifier.height(2.dp))
                     Text(
                         appString(StringKeys.TC_CLASSES_YOU_TEACH, "count" to state.classes.size.toString(), "plural" to if (state.classes.size == 1) "class" else "classes"),

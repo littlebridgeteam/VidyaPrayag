@@ -66,6 +66,7 @@ fun TeacherTimetableScreenV2(
     viewModel: TeacherTimetableViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
+    val c = VTheme.colors
     val thisWeekLabel = appString(StringKeys.TC_THIS_WEEK)
     var activeTab by remember { mutableStateOf(thisWeekLabel) }
     var selectedDay by remember { mutableStateOf(1) }
@@ -73,7 +74,7 @@ fun TeacherTimetableScreenV2(
     var requestKind by remember { mutableStateOf("NEW_PERIOD") }
     var requestPeriod by remember { mutableStateOf<ResolvedPeriodDto?>(null) }
 
-    Column(modifier.fillMaxSize().statusBarsPadding()) {
+    Column(modifier.fillMaxSize().background(c.cream).statusBarsPadding()) {
         VTopTabs(
             tabs = listOf(appString(StringKeys.TC_THIS_WEEK), appString(StringKeys.TC_CHANGE_REQUESTS)),
             selected = activeTab,
@@ -146,7 +147,7 @@ fun TeacherTimetableScreenV2(
                         Text(it, style = VTheme.type.caption.colored(VTheme.colors.dangerInk))
                     }
 
-                    Spacer(Modifier.height(80.dp))
+                    Spacer(Modifier.height(120.dp))
                 }
             }
 
@@ -166,7 +167,7 @@ fun TeacherTimetableScreenV2(
                             ChangeRequestItemCard(req)
                         }
                     }
-                    Spacer(Modifier.height(80.dp))
+                    Spacer(Modifier.height(120.dp))
                 }
             }
         }

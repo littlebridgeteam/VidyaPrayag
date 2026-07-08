@@ -95,12 +95,12 @@ fun TeacherProfileScreenV2(
     var confirmLogout by remember { mutableStateOf(false) }
 
     LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
+        modifier = modifier.fillMaxSize().background(c.cream),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 120.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            Text(appString(StringKeys.TC_PROFILE), style = VTheme.type.h1.colored(c.navyDeep))
+            Text(appString(StringKeys.TC_PROFILE), style = VTheme.type.h2.colored(c.navyDeep))
             Spacer(Modifier.height(4.dp))
         }
 

@@ -181,16 +181,75 @@ fun PortalTopHeaderMinimal(
     onOpenNotifications: () -> Unit,
     unreadNotificationsCount: Int,
     modifier: Modifier = Modifier,
+    onBack: (() -> Unit)? = null,
 ) {
-    PortalTopHeader(
-        parentName = "",
-        childName = "",
-        children = emptyList(),
-        selectedChild = null,
-        onSelectChild = {},
-        onOpenNotifications = onOpenNotifications,
-        unreadNotificationsCount = unreadNotificationsCount,
-        modifier = modifier,
-        showGreeting = false,
-    )
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(horizontal = 24.dp)
+            .padding(top = 12.dp, bottom = 12.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                onBack?.let { onBackClick ->
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(VShapes.full)
+                            .clickable(onClick = onBackClick),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = VIcons.ArrowLeft,
+                            contentDescription = "Back",
+                            tint = VColors.ink,
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
+                }
+                Text(
+                    text = "Enroll+",
+                    style = VTypography.wordmark.copy(
+                        fontSize = 22.sp,
+                        color = VColors.violet,
+                    ),
+                    fontWeight = FontWeight.ExtraBold,
+                )
+            }
+
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(VShapes.full)
+                    .clickable(onClick = onOpenNotifications),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = VIcons.BellStroke,
+                    contentDescription = "Notifications",
+                    tint = VColors.ink,
+                    modifier = Modifier.size(24.dp),
+                )
+                if (unreadNotificationsCount > 0) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(top = 8.dp, end = 8.dp)
+                            .size(10.dp)
+                            .clip(CircleShape)
+                            .background(VColors.error)
+                            .border(2.dp, VColors.cream, CircleShape),
+                    )
+                }
+            }
+        }
+    }
 }

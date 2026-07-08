@@ -176,12 +176,10 @@ fun ParentPortalV2(
 
     // ── Unlinked-parent gate ────────────────────────────────────────────────────
     // A parent with NO child linked yet shouldn't land in the 5-tab portal where every tab is an
-    // empty state. Once the dashboard has resolved (not loading, no error) and reports zero
-    // children, we hand off to the focused two-tab landing — Link a child / Explore schools.
-    // (While the very first load is still in flight we fall through to the portal's own skeletons,
-    // so the unlinked screen never flashes for an existing parent.)
-    val hasResolved = !dashboard.isLoading && dashboard.error == null
-    if (hasResolved && dashboard.children.isEmpty()) {
+    // empty state. Show the focused unlinked landing while the dashboard is still resolving AND
+    // once it confirms zero children. This prevents the home-tab skeleton from flashing before
+    // the carousel appears for a genuinely unlinked parent.
+    if (dashboard.isLoading || (dashboard.error == null && dashboard.children.isEmpty())) {
         ParentUnlinkedScreenV2(
             // After a successful link request the dashboard reloads — once the school approves and
             // a child appears, this gate falls through to the full portal automatically.

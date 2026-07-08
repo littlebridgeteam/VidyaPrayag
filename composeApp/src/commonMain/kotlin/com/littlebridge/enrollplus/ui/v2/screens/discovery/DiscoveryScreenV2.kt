@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -41,6 +42,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import org.jetbrains.compose.resources.painterResource
+import vidyaprayag.composeapp.generated.resources.Res
+import vidyaprayag.composeapp.generated.resources.landing_school_1
 import com.littlebridge.enrollplus.feature.schools.presentation.DiscoveredSchool
 import com.littlebridge.enrollplus.feature.schools.presentation.SchoolDiscoveryState
 import com.littlebridge.enrollplus.feature.schools.presentation.SchoolDiscoveryViewModel
@@ -213,6 +217,7 @@ private fun DiscoveryList(
             PortalTopHeaderMinimal(
                 onOpenNotifications = {},
                 unreadNotificationsCount = 0,
+                onBack = onExit,
                 modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 4.dp),
             )
         } else {
@@ -358,31 +363,12 @@ private fun SchoolCard(
                     ),
                 )
             } else {
-                Box(
-                    modifier = Modifier.fillMaxSize().background(VColors.creamDeep),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = VIcons.School,
-                        contentDescription = null,
-                        tint = VColors.ink3,
-                        modifier = Modifier.size(48.dp),
-                    )
-                }
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.BottomCenter)
-                        .background(VColors.white.copy(alpha = 0.92f))
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                ) {
-                    Text(
-                        text = "No real photo available yet. School administration will upload soon.",
-                        style = VTypography.caption.copy(fontSize = 11.sp, color = VColors.ink3),
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
+                Image(
+                    painter = painterResource(Res.drawable.landing_school_1),
+                    contentDescription = s.name,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
             }
             // Distance pill — only shown when the server populated `distance_km`
             // (i.e. when lat/lng were available). LAW 6: don't fabricate "1.8 km" otherwise.
@@ -545,31 +531,12 @@ private fun SchoolProfile(
                     )
                     Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.5f)))))
                 } else {
-                    Box(
-                        modifier = Modifier.fillMaxSize().background(VColors.creamDeep),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            imageVector = VIcons.School,
-                            contentDescription = null,
-                            tint = VColors.ink3,
-                            modifier = Modifier.size(64.dp),
-                        )
-                    }
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.BottomCenter)
-                            .background(VColors.white.copy(alpha = 0.92f))
-                            .padding(horizontal = 16.dp, vertical = 10.dp),
-                    ) {
-                        Text(
-                            text = "No real photo available yet. School administration will upload soon.",
-                            style = VTypography.caption.copy(fontSize = 12.sp, color = VColors.ink3),
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    }
+                    Image(
+                        painter = painterResource(Res.drawable.landing_school_1),
+                        contentDescription = school.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
                 }
             }
             Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {

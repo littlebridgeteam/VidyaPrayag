@@ -140,7 +140,7 @@ fun TeacherHomeScreenV2(
             .verticalScroll(rememberScrollState())
             .statusBarsPadding()
             .padding(horizontal = 24.dp)
-            .padding(top = 12.dp, bottom = 120.dp),
+            .padding(top = 12.dp, bottom = 160.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
         TeacherHomeHeader(
