@@ -96,7 +96,7 @@ private fun androidx.compose.ui.text.TextStyle.coloredK(color: Color) = copy(col
 // Pure (non-@Composable) helpers: they only read colors off the passed-in
 // [VColors] and do plain arithmetic, so they can be called from any context —
 // including non-composable lambdas (e.g. the `tint` callback in ChipFlow).
-fun teacherSubjectPalette(c: VColors): List<Color> = listOf(
+fun teacherSubjectPalette(c: VtC): List<Color> = listOf(
     c.accent,          // violet (brand)
     c.teal,            // teal
     Color(0xFF6C8DF5), // sky
@@ -105,7 +105,7 @@ fun teacherSubjectPalette(c: VColors): List<Color> = listOf(
 )
 
 /** Deterministic, stable per-key accent so a given subject keeps its hue everywhere. */
-fun teacherSubjectColor(c: VColors, key: String): Color {
+fun teacherSubjectColor(c: VtC, key: String): Color {
     val palette = teacherSubjectPalette(c)
     if (key.isBlank()) return palette.first()
     val idx = ((key.hashCode() % palette.size) + palette.size) % palette.size

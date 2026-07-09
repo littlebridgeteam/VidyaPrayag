@@ -25,6 +25,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -51,6 +54,7 @@ import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -76,6 +80,11 @@ fun ParentProfileCardScreenV2(
     val profile by profileViewModel.state.collectAsStateV2()
     val academics by academicsViewModel.state.collectAsStateV2()
     val track by trackViewModel.state.collectAsStateV2()
+    var isRefreshing by remember { mutableStateOf(false) }
+
+    LaunchedEffect(state.isLoading) {
+        if (!state.isLoading) isRefreshing = false
+    }
 
     LaunchedEffect(Unit) {
         if (state.children.isEmpty()) viewModel.load()
@@ -87,25 +96,34 @@ fun ParentProfileCardScreenV2(
         }
     }
 
-    ProfileContent(
-        state = state,
-        profile = profile,
-        academics = academics,
-        track = track,
-        parentName = parentName,
-        children = children,
-        selectedChild = selectedChild,
-        onSelectChild = onSelectChild,
-        onRetry = viewModel::load,
-        onRetryProfile = profileViewModel::load,
-        onLogout = onLogout,
-        onLinkChild = onLinkChild,
-        onDiscoverSchools = onDiscoverSchools,
-        onOpenAccountSettings = onOpenAccountSettings,
-        onOpenNotifications = onOpenNotifications,
-        unreadNotificationsCount = unreadNotificationsCount,
-        modifier = modifier,
-    )
+    VPullRefresh(
+        isRefreshing = isRefreshing,
+        onRefresh = {
+            isRefreshing = true
+            viewModel.load()
+            profileViewModel.load()
+        },
+        modifier = modifier.fillMaxSize(),
+    ) {
+        ProfileContent(
+            state = state,
+            profile = profile,
+            academics = academics,
+            track = track,
+            parentName = parentName,
+            children = children,
+            selectedChild = selectedChild,
+            onSelectChild = onSelectChild,
+            onRetry = viewModel::load,
+            onRetryProfile = profileViewModel::load,
+            onLogout = onLogout,
+            onLinkChild = onLinkChild,
+            onDiscoverSchools = onDiscoverSchools,
+            onOpenAccountSettings = onOpenAccountSettings,
+            onOpenNotifications = onOpenNotifications,
+            unreadNotificationsCount = unreadNotificationsCount,
+        )
+    }
 }
 
 @Composable
@@ -143,6 +161,8 @@ private fun ProfileContent(
             onSelectChild = onSelectChild,
             onOpenNotifications = onOpenNotifications,
             unreadNotificationsCount = unreadNotificationsCount,
+            greetingLead = "your",
+            greetingAccent = "profile",
         )
 
         when {

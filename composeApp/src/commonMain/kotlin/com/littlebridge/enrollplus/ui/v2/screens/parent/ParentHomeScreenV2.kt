@@ -89,6 +89,10 @@ fun ParentHomeScreenV2(
     val transport by transportViewModel.state.collectAsStateV2()
     var isRefreshing by remember { mutableStateOf(false) }
 
+    LaunchedEffect(state.isLoading) {
+        if (!state.isLoading) isRefreshing = false
+    }
+
     LaunchedEffect(Unit) {
         if (state.children.isEmpty()) viewModel.load()
     }
@@ -129,7 +133,6 @@ fun ParentHomeScreenV2(
                 academicsViewModel.loadDailySummary()
                 transportViewModel.loadChildRoute(childId)
             }
-            isRefreshing = false
         },
         onSelectChild = viewModel::selectChild,
         onOpenNotifications = onOpenNotifications,
@@ -192,6 +195,8 @@ private fun ParentHomeContent(
                 onSelectChild = onSelectChild,
                 onOpenNotifications = onOpenNotifications,
                 unreadNotificationsCount = unreadNotificationsCount,
+                greetingLead = "here's",
+                greetingAccent = "${state.selectedChild?.name?.ifBlank { null } ?: "Your Child"}'s day",
             )
 
             when {

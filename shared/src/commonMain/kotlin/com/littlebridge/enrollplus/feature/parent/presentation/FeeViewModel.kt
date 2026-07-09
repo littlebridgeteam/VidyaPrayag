@@ -55,6 +55,11 @@ class FeeViewModel(
         }
     }
 
+    /** Pull-to-refresh: re-fetch fees for the currently selected child. */
+    fun reload() {
+        loadFees(selectedChildHolder.selectedChildId.value)
+    }
+
     /** RA-S05: load fees scoped to [childId] (null = all of the parent's records). */
     private fun loadFees(childId: String?) {
         viewModelScope.launch {

@@ -131,7 +131,7 @@ class ParentDashboardViewModel(
     private val preferenceRepository: PreferenceRepository,
     private val selectedChildHolder: SelectedChildHolder,
 ) : ViewModel() {
-    private val _state = MutableStateFlow(ParentDashboardState())
+    private val _state = MutableStateFlow(ParentDashboardState(isLoading = true))
     val state: StateFlow<ParentDashboardState> = _state.asStateFlow()
 
     init {

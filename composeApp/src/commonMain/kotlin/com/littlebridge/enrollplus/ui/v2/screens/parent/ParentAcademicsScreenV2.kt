@@ -92,6 +92,7 @@ import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VMotion
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -119,38 +120,58 @@ fun ParentAcademicsScreenV2(
 ) {
     val state by viewModel.state.collectAsState()
     val academics by academicsViewModel.state.collectAsState()
+    var isRefreshing by remember { mutableStateOf(false) }
 
-    ParentAcademicsContent(
-        state = state,
-        academics = academics,
-        parentName = parentName,
-        children = children,
-        selectedChild = selectedChild,
-        onSelectChild = {
-            onSelectChild(it)
-            academicsViewModel.selectChild(it)
+    LaunchedEffect(academics.attendanceLoading || academics.marksLoading || academics.syllabusLoading) {
+        if (!(academics.attendanceLoading || academics.marksLoading || academics.syllabusLoading)) {
+            isRefreshing = false
+        }
+    }
+
+    VPullRefresh(
+        isRefreshing = isRefreshing,
+        onRefresh = {
+            isRefreshing = true
+            academicsViewModel.loadAttendance()
+            academicsViewModel.loadMarks()
+            academicsViewModel.loadSyllabus()
+            academicsViewModel.loadSyllabusV2()
+            academicsViewModel.loadDailySummary()
+            academicsViewModel.loadQuizzes()
         },
-        onLoadAttendance = { academicsViewModel.loadAttendance() },
-        onLoadMarks = { academicsViewModel.loadMarks() },
-        onLoadSyllabus = { academicsViewModel.loadSyllabus() },
-        onLoadSyllabusV2 = { academicsViewModel.loadSyllabusV2() },
-        onLoadDailySummary = { academicsViewModel.loadDailySummary() },
-        onLoadQuizzes = { academicsViewModel.loadQuizzes() },
-        onOpenQuiz = { academicsViewModel.loadQuizDetail(it) },
-        onViewQuizResult = { academicsViewModel.loadQuizResult(it) },
-        onSubmitQuiz = { id, ans, txt -> academicsViewModel.submitQuiz(id, ans, txt) },
-        onClearQuizResult = { academicsViewModel.clearQuizResult() },
-        onLoadLeaderboard = { academicsViewModel.loadLeaderboard(it) },
-        onOpenLeave = onOpenLeave,
-        onOpenHealth = onOpenHealth,
-        onOpenNotifications = onOpenNotifications,
-        unreadNotificationsCount = unreadNotificationsCount,
-        initialTab = initialTab,
-        onTabConsumed = onTabConsumed,
-        initialReportDraftId = initialReportDraftId,
-        onReportDraftIdConsumed = onReportDraftIdConsumed,
-        modifier = modifier,
-    )
+        modifier = modifier.fillMaxSize(),
+    ) {
+        ParentAcademicsContent(
+            state = state,
+            academics = academics,
+            parentName = parentName,
+            children = children,
+            selectedChild = selectedChild,
+            onSelectChild = {
+                onSelectChild(it)
+                academicsViewModel.selectChild(it)
+            },
+            onLoadAttendance = { academicsViewModel.loadAttendance() },
+            onLoadMarks = { academicsViewModel.loadMarks() },
+            onLoadSyllabus = { academicsViewModel.loadSyllabus() },
+            onLoadSyllabusV2 = { academicsViewModel.loadSyllabusV2() },
+            onLoadDailySummary = { academicsViewModel.loadDailySummary() },
+            onLoadQuizzes = { academicsViewModel.loadQuizzes() },
+            onOpenQuiz = { academicsViewModel.loadQuizDetail(it) },
+            onViewQuizResult = { academicsViewModel.loadQuizResult(it) },
+            onSubmitQuiz = { id, ans, txt -> academicsViewModel.submitQuiz(id, ans, txt) },
+            onClearQuizResult = { academicsViewModel.clearQuizResult() },
+            onLoadLeaderboard = { academicsViewModel.loadLeaderboard(it) },
+            onOpenLeave = onOpenLeave,
+            onOpenHealth = onOpenHealth,
+            onOpenNotifications = onOpenNotifications,
+            unreadNotificationsCount = unreadNotificationsCount,
+            initialTab = initialTab,
+            onTabConsumed = onTabConsumed,
+            initialReportDraftId = initialReportDraftId,
+            onReportDraftIdConsumed = onReportDraftIdConsumed,
+        )
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -235,6 +256,8 @@ private fun ParentAcademicsContent(
             onSelectChild = onSelectChild,
             onOpenNotifications = onOpenNotifications,
             unreadNotificationsCount = unreadNotificationsCount,
+            greetingLead = "${selectedChild?.name?.ifBlank { null } ?: "Your Child"}'s",
+            greetingAccent = "academics",
         )
 
         // ── Tab chips row (white selected pill like screenshot) ──
