@@ -1,5 +1,6 @@
 package com.littlebridge.enrollplus.ui.v2.screens.parent
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -32,9 +33,10 @@ import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
+import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.VCard
-import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
+import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VThemePicker
 import com.littlebridge.enrollplus.ui.v2.components.VLanguagePicker
@@ -128,12 +130,15 @@ private fun ParentProfileContent(
         icon = VIcons.AlertTriangle,
     )
 
-    Column(modifier.fillMaxSize()
-        .statusBarsPadding()
-        .imePadding()
-        .navigationBarsPadding()
+    Column(
+        modifier
+            .fillMaxSize()
+            .background(VColors.cream)
+            .statusBarsPadding()
+            .imePadding()
+            .navigationBarsPadding()
     ) {
-        VBackHeader(title = "Profile", onBack = onBack)
+        PremiumOverlayHeader(title = "Profile", onBack = onBack)
         Column(
             Modifier
                 .fillMaxSize()
@@ -190,11 +195,11 @@ private fun ParentProfileContent(
                             ProfileRow("Change password", "Keep your account secure", null),
                             ProfileRow(
                                 "Help & support",
-                                "Email ${com.littlebridge.enrollplus.ui.v2.screens.auth.SUPPORT_EMAIL}",
+                                "Email support@vidyaprayag.in",
                                 {
                                     runCatching {
                                         uriHandler.openUri(
-                                            "mailto:${com.littlebridge.enrollplus.ui.v2.screens.auth.SUPPORT_EMAIL}" +
+                                            "mailto:support@vidyaprayag.in" +
                                                 "?subject=VidyaSetu%20Support",
                                         )
                                     }

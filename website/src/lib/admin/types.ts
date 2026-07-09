@@ -687,6 +687,12 @@ export interface PewsRunResult {
   at_risk: number;
 }
 
+export interface PewsRunJobResponse {
+  job_id: string;
+}
+
+export type PewsRunResponse = PewsRunResult | PewsRunJobResponse;
+
 export interface PewsJobStatus {
   job_id: string;
   status: string; // queued|processing|completed|failed

@@ -146,7 +146,7 @@ class ClassPerformanceViewModel(
                 percentage = o["percentage"]?.jsonPrimitive?.intOrNull ?: 0,
                 value      = o["value"]?.jsonPrimitive?.floatOrNull ?: 0f
             )
-        } catch (_: Exception) { null }
+        } catch (e: Exception) { AppLogger.e("ClassPerformanceVM", "parseGrade failed: ${e.message}", e); null }
     }
 
     private fun parseSubject(el: JsonElement): SubjectMatrixItem? {
@@ -158,7 +158,7 @@ class ClassPerformanceViewModel(
                 percentage = o["percentage"]?.jsonPrimitive?.intOrNull ?: 0,
                 trend      = o["trend"]?.jsonPrimitive?.contentOrNull ?: "flat"
             )
-        } catch (_: Exception) { null }
+        } catch (e: Exception) { AppLogger.e("ClassPerformanceVM", "parseSubject failed: ${e.message}", e); null }
     }
 
     private fun parseProgress(el: JsonElement): ProgressMonitoringItem? {
@@ -174,6 +174,6 @@ class ClassPerformanceViewModel(
                 attendance = o["attendance"]?.jsonPrimitive?.contentOrNull ?: "",
                 status     = o["status"]?.jsonPrimitive?.contentOrNull ?: ""
             )
-        } catch (_: Exception) { null }
+        } catch (e: Exception) { AppLogger.e("ClassPerformanceVM", "parseProgress failed: ${e.message}", e); null }
     }
 }

@@ -66,8 +66,9 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.selectAll
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicLong
 
-// Module-level singleton — no DI container (see NotificationRouting pattern)
+// Module-level singleton — consistent DI pattern for server-side services
 private val libraryService = LibraryService()
 
 // ── Rate Limiter ──────────────────────────────────────────────────────────────
@@ -79,10 +80,14 @@ private data class RateBucket(
 )
 
 private val rateBuckets = ConcurrentHashMap<String, RateBucket>()
+private val rateBucketCleanup = AtomicLong(0)
+private const val RATE_CLEANUP_INTERVAL_MS = 300_000L
+private const val MAX_RATE_BUCKETS = 10_000
 
 private fun checkRateLimit(key: String, maxRequests: Int, windowMs: Long): Boolean {
-    val bucket = rateBuckets.computeIfAbsent(key) { RateBucket() }
     val now = System.currentTimeMillis()
+    maybeCleanupRateBuckets(now)
+    val bucket = rateBuckets.computeIfAbsent(key) { RateBucket() }
     val windowStart = now - windowMs
     synchronized(bucket) {
         bucket.timestamps.removeAll { it < windowStart }
@@ -99,6 +104,25 @@ private fun ApplicationCall.applyRateLimit(scope: String, maxRequests: Int, wind
 
 private const val WINDOW_MINUTE = 60_000L
 private const val WINDOW_HOUR = 3_600_000L
+
+private fun maybeCleanupRateBuckets(now: Long) {
+    val last = rateBucketCleanup.get()
+    if (now - last < RATE_CLEANUP_INTERVAL_MS) return
+    if (!rateBucketCleanup.compareAndSet(last, now)) return
+    val windowStart = now - WINDOW_HOUR
+    rateBuckets.entries.removeIf { (_, bucket) ->
+        synchronized(bucket) {
+            bucket.timestamps.removeAll { it < windowStart }
+            bucket.timestamps.isEmpty()
+        }
+    }
+    if (rateBuckets.size > MAX_RATE_BUCKETS) {
+        rateBuckets.entries
+            .sortedBy { entry -> entry.value.timestamps.minOfOrNull { it } ?: Long.MAX_VALUE }
+            .take(rateBuckets.size - MAX_RATE_BUCKETS)
+            .forEach { rateBuckets.remove(it.key) }
+    }
+}
 
 // ── Own-data check: verify parent-child relationship ──────────────────────────
 // Spec §16 Data Isolation: "Parent queries filtered by child_id (verified parent-child
@@ -164,7 +188,7 @@ fun Route.libraryRouting() {
                 val sortBy = call.request.queryParameters["sortBy"] ?: "newest"
                 val availability = call.request.queryParameters["availability"] ?: "all"
                 val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
-                val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 20
+                val limit = (call.request.queryParameters["limit"]?.toIntOrNull() ?: 20).coerceIn(1, 100)
                 try {
                     val result = libraryService.searchBooks(ctx.schoolId, query, category, language, tags, sortBy, availability, page, limit)
                     call.respond(LibraryPaginatedResponse(data = result.books, total = result.total, page = result.page, limit = result.limit))
@@ -182,7 +206,7 @@ fun Route.libraryRouting() {
                 val sortBy = call.request.queryParameters["sortBy"] ?: "newest"
                 val availability = call.request.queryParameters["availability"] ?: "all"
                 val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
-                val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 20
+                val limit = (call.request.queryParameters["limit"]?.toIntOrNull() ?: 20).coerceIn(1, 100)
                 try {
                     val result = libraryService.searchBooks(ctx.schoolId, query, category, language, tags, sortBy, availability, page, limit)
                     call.respond(LibraryPaginatedResponse(data = result.books, total = result.total, page = result.page, limit = result.limit))
@@ -270,7 +294,7 @@ fun Route.libraryRouting() {
                 val ctx = call.requireSchoolAdmin() ?: return@get
                 val status = call.request.queryParameters["status"]
                 val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
-                val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 20
+                val limit = (call.request.queryParameters["limit"]?.toIntOrNull() ?: 20).coerceIn(1, 100)
                 try {
                     val (issues, total) = libraryService.listIssues(ctx.schoolId, status, page, limit)
                     call.respond(LibraryPaginatedResponse(data = issues, total = total, page = page, limit = limit))
@@ -458,7 +482,7 @@ fun Route.libraryRouting() {
             // ── Trending ──────────────────────────────────────────────────
             get("/trending") {
                 val ctx = call.requireSchoolAdmin() ?: return@get
-                val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 10
+                val limit = (call.request.queryParameters["limit"]?.toIntOrNull() ?: 10).coerceIn(1, 100)
                 try {
                     val result = libraryService.listTrending(ctx.schoolId, limit)
                     call.ok(result)
@@ -707,7 +731,7 @@ fun Route.libraryRouting() {
                 val ctx = call.requireSchoolAdmin() ?: return@get
                 if (!call.applyRateLimit("audit-log", 10, WINDOW_MINUTE)) { call.fail("Too many audit-log requests", HttpStatusCode.TooManyRequests, "RATE_LIMITED"); return@get }
                 val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
-                val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 50
+                val limit = (call.request.queryParameters["limit"]?.toIntOrNull() ?: 50).coerceIn(1, 100)
                 try {
                     val logs = libraryService.listAuditLog(ctx.schoolId, page, limit)
                     call.ok(logs)
@@ -808,7 +832,7 @@ fun Route.libraryRouting() {
             get("/fines/outstanding") {
                 val ctx = call.requireSchoolAdmin() ?: return@get
                 val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
-                val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 20
+                val limit = (call.request.queryParameters["limit"]?.toIntOrNull() ?: 20).coerceIn(1, 100)
                 try {
                     val (fines, total) = libraryService.listOutstandingFines(ctx.schoolId, page, limit)
                     call.ok(mapOf("items" to fines, "total" to total, "page" to page, "limit" to limit))
@@ -868,7 +892,7 @@ fun Route.libraryRouting() {
             // ── Leaderboard ────────────────────────────────────────────────
             get("/leaderboard") {
                 val ctx = call.requireSchoolAdmin() ?: return@get
-                val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 50
+                val limit = (call.request.queryParameters["limit"]?.toIntOrNull() ?: 50).coerceIn(1, 100)
                 try {
                     val leaderboard = libraryService.getLeaderboard(ctx.schoolId, limit)
                     call.ok(leaderboard)
@@ -1000,7 +1024,7 @@ fun Route.libraryRouting() {
                 val tags = call.request.queryParameters["tags"]?.split(",")?.filter { it.isNotBlank() }
                 val sortBy = call.request.queryParameters["sortBy"] ?: "newest"
                 val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
-                val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 20
+                val limit = (call.request.queryParameters["limit"]?.toIntOrNull() ?: 20).coerceIn(1, 100)
                 try {
                     val result = libraryService.searchBooks(schoolId, query, category, language, tags, sortBy, "all", page, limit)
                     call.respond(LibraryPaginatedResponse(data = result.books, total = result.total, page = result.page, limit = result.limit))
@@ -1119,7 +1143,7 @@ fun Route.libraryRouting() {
             get("/trending") {
                 val uid = call.principalUserUuid() ?: run { call.fail("Unauthorized", HttpStatusCode.Unauthorized, "UNAUTHORIZED"); return@get }
                 val schoolId = resolveParentSchoolId(uid) ?: run { call.fail("No school", HttpStatusCode.NotFound, "NO_SCHOOL"); return@get }
-                val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 10
+                val limit = (call.request.queryParameters["limit"]?.toIntOrNull() ?: 10).coerceIn(1, 100)
                 try {
                     val trending = libraryService.listTrending(schoolId, limit)
                     call.ok(trending)
@@ -1188,7 +1212,7 @@ fun Route.libraryRouting() {
                 val tags = call.request.queryParameters["tags"]?.split(",")?.filter { it.isNotBlank() }
                 val sortBy = call.request.queryParameters["sortBy"] ?: "newest"
                 val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
-                val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 20
+                val limit = (call.request.queryParameters["limit"]?.toIntOrNull() ?: 20).coerceIn(1, 100)
                 try {
                     val result = libraryService.searchBooks(schoolId, query, category, language, tags, sortBy, "all", page, limit)
                     call.respond(LibraryPaginatedResponse(data = result.books, total = result.total, page = result.page, limit = result.limit))
@@ -1464,7 +1488,7 @@ fun Route.libraryRouting() {
             get("/recommendations") {
                 val uid = call.principalUserUuid() ?: run { call.fail("Unauthorized", HttpStatusCode.Unauthorized, "UNAUTHORIZED"); return@get }
                 val schoolId = resolveParentSchoolId(uid) ?: run { call.fail("No school", HttpStatusCode.NotFound, "NO_SCHOOL"); return@get }
-                val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 10
+                val limit = (call.request.queryParameters["limit"]?.toIntOrNull() ?: 10).coerceIn(1, 100)
                 try {
                     val recommendations = libraryService.listRecommendations(schoolId, uid, limit)
                     call.ok(recommendations)
@@ -1477,7 +1501,7 @@ fun Route.libraryRouting() {
             get("/trending") {
                 val uid = call.principalUserUuid() ?: run { call.fail("Unauthorized", HttpStatusCode.Unauthorized, "UNAUTHORIZED"); return@get }
                 val schoolId = resolveParentSchoolId(uid) ?: run { call.fail("No school", HttpStatusCode.NotFound, "NO_SCHOOL"); return@get }
-                val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 10
+                val limit = (call.request.queryParameters["limit"]?.toIntOrNull() ?: 10).coerceIn(1, 100)
                 try {
                     val trending = libraryService.listTrending(schoolId, limit)
                     call.ok(trending)
@@ -1490,7 +1514,7 @@ fun Route.libraryRouting() {
             get("/leaderboard") {
                 val uid = call.principalUserUuid() ?: run { call.fail("Unauthorized", HttpStatusCode.Unauthorized, "UNAUTHORIZED"); return@get }
                 val schoolId = resolveParentSchoolId(uid) ?: run { call.fail("No school", HttpStatusCode.NotFound, "NO_SCHOOL"); return@get }
-                val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 50
+                val limit = (call.request.queryParameters["limit"]?.toIntOrNull() ?: 50).coerceIn(1, 100)
                 try {
                     val leaderboard = libraryService.getLeaderboard(schoolId, limit)
                     call.ok(leaderboard)

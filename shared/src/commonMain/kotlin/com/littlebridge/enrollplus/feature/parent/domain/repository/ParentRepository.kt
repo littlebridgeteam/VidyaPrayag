@@ -1,22 +1,24 @@
 package com.littlebridge.enrollplus.feature.parent.domain.repository
 
 import com.littlebridge.enrollplus.core.network.NetworkResult
+import com.littlebridge.enrollplus.core.notification.NotificationFeedRepository
 import com.littlebridge.enrollplus.feature.parent.domain.model.*
 import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizSubmitRequest
 import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizSubmitResponse
 
-interface ParentRepository {
+interface ParentRepository : NotificationFeedRepository {
     suspend fun getDashboard(token: String): NetworkResult<ParentDashboardResponse>
     suspend fun getTrackProgress(token: String): NetworkResult<TrackProgressResponse>
     suspend fun getFees(token: String, childId: String? = null): NetworkResult<FeeResponse>
     suspend fun getScholarships(token: String): NetworkResult<ScholarshipsResponse>
     suspend fun getAnnouncements(token: String): NetworkResult<ParentAnnouncementsResponse>
-    suspend fun getNotifications(token: String): NetworkResult<ParentNotificationsResponse>
+    override suspend fun getNotifications(token: String): NetworkResult<ParentNotificationsResponse>
     /** RA-46: persist read state on the server. */
-    suspend fun markNotificationRead(token: String, id: String): NetworkResult<Unit>
-    suspend fun markAllNotificationsRead(token: String): NetworkResult<Unit>
-    suspend fun markNotificationByRef(token: String, refType: String, refId: String): NetworkResult<Unit>
-    suspend fun clearReadNotifications(token: String): NetworkResult<Unit>
+    override suspend fun markNotificationRead(token: String, id: String): NetworkResult<Unit>
+    override suspend fun markAllNotificationsRead(token: String): NetworkResult<Unit>
+    override suspend fun markNotificationByRef(token: String, refType: String, refId: String): NetworkResult<Unit>
+    override suspend fun clearReadNotifications(token: String): NetworkResult<Unit>
+    override suspend fun clearAllNotifications(token: String): NetworkResult<Unit>
     // RA-43/RA-56: child-scoped academic reads.
     suspend fun getChildAttendance(token: String, childId: String): NetworkResult<ParentAttendanceResponse>
     suspend fun getChildMarks(token: String, childId: String): NetworkResult<ParentMarksResponse>

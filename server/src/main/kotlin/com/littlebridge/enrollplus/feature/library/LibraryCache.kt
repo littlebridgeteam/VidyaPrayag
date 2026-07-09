@@ -32,8 +32,11 @@ object LibraryCache {
 
     private val store = ConcurrentHashMap<String, CacheEntry>()
     private val locks = ConcurrentHashMap<String, Mutex>()
+    private val lockTimestamps = ConcurrentHashMap<String, Long>()
     private val hitCount = AtomicLong(0)
     private val missCount = AtomicLong(0)
+    private const val LOCK_MAX_AGE_MS = 300_000L
+    private const val MAX_LOCKS = 10_000
 
     // LRU tracking — approximate by cleaning expired entries when store exceeds budget
     private const val MAX_ENTRIES = 5_000
@@ -51,6 +54,7 @@ object LibraryCache {
 
     fun put(key: String, value: Any?, ttlMinutes: Int) {
         if (store.size > MAX_ENTRIES) evictExpired()
+        if (locks.size > MAX_LOCKS) evictStaleLocks()
         store[key] = CacheEntry(
             value = value,
             expiresAt = System.currentTimeMillis() + ttlMinutes * 60_000,
@@ -63,12 +67,19 @@ object LibraryCache {
      * simultaneously, only one executes the loader; others wait for the result.
      * Spec §17: "Cache stampede prevention: single-flight pattern"
      */
+    private val cleanupCounter = AtomicLong(0)
+    private const val CLEANUP_INTERVAL = 500
+
     suspend fun <T> getOrPut(key: String, ttlMinutes: Int, loader: suspend () -> T): T {
+        if (cleanupCounter.incrementAndGet() % CLEANUP_INTERVAL == 0L) {
+            evictStaleLocks()
+        }
         @Suppress("UNCHECKED_CAST")
         val cached = get(key) as? T
         if (cached != null) return cached
 
         val mutex = locks.computeIfAbsent(key) { Mutex() }
+        lockTimestamps[key] = System.currentTimeMillis()
         return mutex.withLock {
             // Double-check after acquiring lock
             @Suppress("UNCHECKED_CAST")
@@ -80,6 +91,7 @@ object LibraryCache {
             value
         }.also {
             locks.remove(key)
+            lockTimestamps.remove(key)
         }
     }
 
@@ -126,6 +138,13 @@ object LibraryCache {
                 .take(store.size - MAX_ENTRIES)
                 .forEach { store.remove(it.key) }
         }
+    }
+
+    private fun evictStaleLocks() {
+        val now = System.currentTimeMillis()
+        val cutoff = now - LOCK_MAX_AGE_MS
+        lockTimestamps.entries.removeIf { it.value < cutoff }
+        locks.keys.retainAll(lockTimestamps.keys)
     }
 }
 

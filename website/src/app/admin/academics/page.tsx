@@ -13,7 +13,7 @@ import type {
   BulkPeriodItem,
   CopySectionRequest,
 } from "@/lib/admin/types";
-import { Card, EmptyState, FadeIn, Badge } from "@/components/admin/Primitives";
+import { Card, EmptyState, FadeIn, Badge, Skeleton } from "@/components/admin/Primitives";
 import { DataTable, type Column } from "@/components/admin/DataTable";
 import { Toolbar, Modal, AdminButton } from "@/components/admin/Toolbar";
 import { IconPlus, IconTrash, IconBook, IconCalendar } from "@/components/admin/icons";
@@ -655,7 +655,7 @@ function TimetableTab() {
         </div>
 
         {isLoading && !ttData ? (
-          <div className="h-40 animate-pulse rounded-2xl bg-navy/5" />
+          <Skeleton className="h-40" />
         ) : filteredWeekdays.length === 0 ? (
           <div className="p-10">
             <EmptyState

@@ -39,11 +39,13 @@ import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
 
 private enum class AlumniTab {
@@ -180,7 +182,7 @@ private fun AlumniDirectoryTab(
 
         state.infoMessage?.let {
             VCard(modifier = Modifier.fillMaxWidth()) {
-                Text(it, style = VTheme.type.body, color = VTheme.colors.accent)
+                Text(it, style = VTypography.body, color = VColors.violet)
             }
             Spacer(Modifier.height(8.dp))
         }
@@ -193,13 +195,14 @@ private fun AlumniDirectoryTab(
         emptyTitle = appString(StringKeys.ALM_NO_ALUMNI),
         emptyBody = appString(StringKeys.ALM_NO_ALUMNI_BODY),
         onRetry = onRetry,
+        skeleton = { SkeletonList(rows = 5, withAvatar = true) },
     ) {
         Column(
             Modifier.fillMaxWidth().padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            state.alumni.forEach { alumni ->
-                AlumniRowCard(alumni = alumni, onClick = { onOpenAlumni(alumni.id) })
+            state.alumni.forEachIndexed { index, alumni ->
+                AlumniRowCard(alumni = alumni, onClick = { onOpenAlumni(alumni.id) }, modifier = Modifier.staggeredItemEntrance(index, state.alumni.isNotEmpty()))
             }
         }
     }
@@ -247,7 +250,7 @@ private fun AddAlumniDialog(
     Dialog(onDismissRequest = onDismiss) {
         VCard {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(appString(StringKeys.ALM_ADD_ALUMNI), style = VTheme.type.h3, color = VTheme.colors.ink)
+                Text(appString(StringKeys.ALM_ADD_ALUMNI), style = VTypography.h3, color = VColors.ink)
 
                 VInput(
                     value = name,
@@ -351,11 +354,11 @@ private fun BulkImportDialog(
     Dialog(onDismissRequest = onDismiss) {
         VCard {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(appString(StringKeys.ALM_BULK_IMPORT_TITLE), style = VTheme.type.h3, color = VTheme.colors.ink)
+                Text(appString(StringKeys.ALM_BULK_IMPORT_TITLE), style = VTypography.h3, color = VColors.ink)
                 Text(
                     appString(StringKeys.ALM_BULK_IMPORT_INSTR),
-                    style = VTheme.type.caption,
-                    color = VTheme.colors.ink3,
+                    style = VTypography.caption,
+                    color = VColors.ink3,
                 )
 
                 OutlinedTextField(
@@ -363,11 +366,11 @@ private fun BulkImportDialog(
                     onValueChange = { csvText = it },
                     modifier = Modifier.fillMaxWidth().height(160.dp),
                     placeholder = { Text(appString(StringKeys.ALM_CSV_PH)) },
-                    textStyle = VTheme.type.body,
+                    textStyle = VTypography.body,
                 )
 
                 if (rows.isNotEmpty()) {
-                    Text(appString(StringKeys.ALM_ROWS_READY, "count" to rows.size), style = VTheme.type.caption, color = VTheme.colors.accent)
+                    Text(appString(StringKeys.ALM_ROWS_READY, "count" to rows.size), style = VTypography.caption, color = VColors.violet)
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -430,18 +433,19 @@ private fun AlumniPendingTab(
         emptyTitle = appString(StringKeys.ALM_NO_PENDING),
         emptyBody = appString(StringKeys.ALM_NO_PENDING_BODY),
         onRetry = onRetry,
+        skeleton = { SkeletonList(rows = 4, withAvatar = true) },
     ) {
         Column(
             Modifier.fillMaxWidth().padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            state.pendingVerifications.forEach { alumni ->
-                VCard(modifier = Modifier.fillMaxWidth()) {
+            state.pendingVerifications.forEachIndexed { index, alumni ->
+                VCard(modifier = Modifier.fillMaxWidth().staggeredItemEntrance(index, state.pendingVerifications.isNotEmpty())) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(alumni.name, style = VTheme.type.body, fontWeight = FontWeight.SemiBold, color = VTheme.colors.ink)
-                        Text(appString(StringKeys.ALM_BATCH, "year" to alumni.graduationYear), style = VTheme.type.caption, color = VTheme.colors.ink3)
-                        alumni.email?.let { Text(it, style = VTheme.type.caption, color = VTheme.colors.ink3) }
-                        alumni.phone?.let { Text(it, style = VTheme.type.caption, color = VTheme.colors.ink3) }
+                        Text(alumni.name, style = VTypography.body, fontWeight = FontWeight.SemiBold, color = VColors.ink)
+                        Text(appString(StringKeys.ALM_BATCH, "year" to alumni.graduationYear), style = VTypography.caption, color = VColors.ink3)
+                        alumni.email?.let { Text(it, style = VTypography.caption, color = VColors.ink3) }
+                        alumni.phone?.let { Text(it, style = VTypography.caption, color = VColors.ink3) }
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
                             VChipButton(text = appString(StringKeys.ALM_APPROVE), onClick = { onApprove(alumni.id) })
                             VChipButton(text = appString(StringKeys.ALM_DECLINE), onClick = { onDecline(alumni.id) }, isDestructive = true)
@@ -466,30 +470,31 @@ private fun AlumniCampaignsTab(
         emptyTitle = appString(StringKeys.ALM_NO_CAMPAIGNS),
         emptyBody = appString(StringKeys.ALM_NO_CAMPAIGNS_BODY),
         onRetry = onRetry,
+        skeleton = { SkeletonList(rows = 4) },
     ) {
         Column(
             Modifier.fillMaxWidth().padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            state.campaigns.forEach { campaign ->
+            state.campaigns.forEachIndexed { index, campaign ->
                 VCard(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().staggeredItemEntrance(index, state.campaigns.isNotEmpty()),
                     onClick = { onOpenCampaign(campaign.id) },
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(campaign.title, style = VTheme.type.body, fontWeight = FontWeight.SemiBold, color = VTheme.colors.ink)
+                        Text(campaign.title, style = VTypography.body, fontWeight = FontWeight.SemiBold, color = VColors.ink)
                         campaign.description?.let {
-                            Text(it, style = VTheme.type.caption, color = VTheme.colors.ink3, maxLines = 2)
+                            Text(it, style = VTypography.caption, color = VColors.ink3, maxLines = 2)
                         }
                         val progress = if (campaign.targetAmount > 0) {
                             (campaign.amountRaised / campaign.targetAmount * 100).toInt()
                         } else 0
                         Text(
                             appString(StringKeys.ALM_CAMPAIGN_PROGRESS, "raised" to campaign.amountRaised.toInt(), "target" to campaign.targetAmount.toInt(), "pct" to progress, "donors" to campaign.donorCount),
-                            style = VTheme.type.caption,
-                            color = VTheme.colors.ink3,
+                            style = VTypography.caption,
+                            color = VColors.ink3,
                         )
-                        Text(appString(StringKeys.ALM_STATUS, "status" to campaign.status), style = VTheme.type.caption, color = VTheme.colors.ink3)
+                        Text(appString(StringKeys.ALM_STATUS, "status" to campaign.status), style = VTypography.caption, color = VColors.ink3)
                     }
                 }
             }
@@ -509,20 +514,21 @@ private fun AlumniDonationsTab(
         emptyTitle = appString(StringKeys.ALM_NO_DONATIONS),
         emptyBody = appString(StringKeys.ALM_NO_DONATIONS_BODY),
         onRetry = onRetry,
+        skeleton = { SkeletonList(rows = 5) },
     ) {
         Column(
             Modifier.fillMaxWidth().padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            state.donations.forEach { donation ->
-                VCard(modifier = Modifier.fillMaxWidth()) {
+            state.donations.forEachIndexed { index, donation ->
+                VCard(modifier = Modifier.fillMaxWidth().staggeredItemEntrance(index, state.donations.isNotEmpty())) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(donation.alumniName, style = VTheme.type.body, fontWeight = FontWeight.SemiBold, color = VTheme.colors.ink)
-                        Text("₹${donation.amount.toInt()}", style = VTheme.type.body, color = VTheme.colors.ink)
-                        donation.campaignTitle?.let { Text(appString(StringKeys.ALM_CAMPAIGN_LABEL, "title" to it), style = VTheme.type.caption, color = VTheme.colors.ink3) }
-                        Text(appString(StringKeys.ALM_DATE, "date" to donation.donationDate), style = VTheme.type.caption, color = VTheme.colors.ink3)
+                        Text(donation.alumniName, style = VTypography.body, fontWeight = FontWeight.SemiBold, color = VColors.ink)
+                        Text("₹${donation.amount.toInt()}", style = VTypography.body, color = VColors.ink)
+                        donation.campaignTitle?.let { Text(appString(StringKeys.ALM_CAMPAIGN_LABEL, "title" to it), style = VTypography.caption, color = VColors.ink3) }
+                        Text(appString(StringKeys.ALM_DATE, "date" to donation.donationDate), style = VTypography.caption, color = VColors.ink3)
                         if (donation.is80gEligible) {
-                            Text(appString(StringKeys.ALM_80G_ELIGIBLE, "receipt" to (donation.receiptNumber ?: appString(StringKeys.ALM_RECEIPT_PENDING))), style = VTheme.type.caption, color = VTheme.colors.ink3)
+                            Text(appString(StringKeys.ALM_80G_ELIGIBLE, "receipt" to (donation.receiptNumber ?: appString(StringKeys.ALM_RECEIPT_PENDING))), style = VTypography.caption, color = VColors.ink3)
                         }
                     }
                 }
@@ -543,6 +549,7 @@ private fun AlumniAnalyticsTab(
         isEmpty = analytics == null,
         emptyTitle = appString(StringKeys.ALM_NO_ANALYTICS),
         onRetry = onRetry,
+        skeleton = { SkeletonList(rows = 6) },
     ) {
         val a = analytics!!
         Column(
@@ -587,8 +594,7 @@ private fun AlumniMentorshipTab(
     state: AlumniScreenState,
     onRetry: () -> Unit,
 ) {
-    val c = VTheme.colors
-    Column(
+        Column(
         Modifier.fillMaxWidth().padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
@@ -601,19 +607,20 @@ private fun AlumniMentorshipTab(
             emptyTitle = appString(StringKeys.ALM_NO_MENTORSHIPS),
             emptyBody = appString(StringKeys.ALM_NO_MENTORSHIPS_BODY),
             onRetry = onRetry,
+            skeleton = { SkeletonList(rows = 3) },
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                state.mentorships.forEach { m ->
-                    VCard(modifier = Modifier.fillMaxWidth()) {
+                state.mentorships.forEachIndexed { index, m ->
+                    VCard(modifier = Modifier.fillMaxWidth().staggeredItemEntrance(index, state.mentorships.isNotEmpty())) {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(m.alumniName, style = VTheme.type.body, fontWeight = FontWeight.SemiBold, color = c.ink)
-                            Text(appString(StringKeys.ALM_MENTORING, "name" to m.studentName), style = VTheme.type.caption, color = c.ink3)
-                            Text(appString(StringKeys.ALM_STATUS, "status" to m.status), style = VTheme.type.caption, color = c.ink3)
-                            Text(appString(StringKeys.ALM_STARTED, "date" to m.startDate), style = VTheme.type.caption, color = c.ink3)
+                            Text(m.alumniName, style = VTypography.body, fontWeight = FontWeight.SemiBold, color = VColors.ink)
+                            Text(appString(StringKeys.ALM_MENTORING, "name" to m.studentName), style = VTypography.caption, color = VColors.ink3)
+                            Text(appString(StringKeys.ALM_STATUS, "status" to m.status), style = VTypography.caption, color = VColors.ink3)
+                            Text(appString(StringKeys.ALM_STARTED, "date" to m.startDate), style = VTypography.caption, color = VColors.ink3)
                             if (m.sessionCount > 0) {
-                                Text(appString(StringKeys.ALM_SESSIONS, "count" to m.sessionCount), style = VTheme.type.caption, color = c.ink3)
+                                Text(appString(StringKeys.ALM_SESSIONS, "count" to m.sessionCount), style = VTypography.caption, color = VColors.ink3)
                             }
-                            m.notes?.let { Text(appString(StringKeys.ALM_NOTES, "notes" to it), style = VTheme.type.caption, color = c.ink3) }
+                            m.notes?.let { Text(appString(StringKeys.ALM_NOTES, "notes" to it), style = VTypography.caption, color = VColors.ink3) }
                         }
                     }
                 }
@@ -629,17 +636,18 @@ private fun AlumniMentorshipTab(
             emptyTitle = appString(StringKeys.ALM_NO_MENTOR_REQUESTS),
             emptyBody = appString(StringKeys.ALM_NO_MENTOR_REQUESTS_BODY),
             onRetry = onRetry,
+            skeleton = { SkeletonList(rows = 3) },
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                state.mentorshipRequests.forEach { r ->
-                    VCard(modifier = Modifier.fillMaxWidth()) {
+                state.mentorshipRequests.forEachIndexed { index, r ->
+                    VCard(modifier = Modifier.fillMaxWidth().staggeredItemEntrance(index, state.mentorshipRequests.isNotEmpty())) {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(r.alumniName, style = VTheme.type.body, fontWeight = FontWeight.SemiBold, color = c.ink)
-                            Text(appString(StringKeys.ALM_FROM, "name" to r.studentName), style = VTheme.type.caption, color = c.ink3)
-                            Text(appString(StringKeys.ALM_REQUESTED_BY, "name" to r.requestedByName), style = VTheme.type.caption, color = c.ink3)
-                            r.expertiseArea?.let { Text(appString(StringKeys.ALM_EXPERTISE, "area" to it), style = VTheme.type.caption, color = c.ink3) }
-                            r.message?.let { Text(appString(StringKeys.ALM_MESSAGE, "msg" to it), style = VTheme.type.caption, color = c.ink3) }
-                            Text(appString(StringKeys.ALM_STATUS, "status" to r.status), style = VTheme.type.caption, color = c.ink3)
+                            Text(r.alumniName, style = VTypography.body, fontWeight = FontWeight.SemiBold, color = VColors.ink)
+                            Text(appString(StringKeys.ALM_FROM, "name" to r.studentName), style = VTypography.caption, color = VColors.ink3)
+                            Text(appString(StringKeys.ALM_REQUESTED_BY, "name" to r.requestedByName), style = VTypography.caption, color = VColors.ink3)
+                            r.expertiseArea?.let { Text(appString(StringKeys.ALM_EXPERTISE, "area" to it), style = VTypography.caption, color = VColors.ink3) }
+                            r.message?.let { Text(appString(StringKeys.ALM_MESSAGE, "msg" to it), style = VTypography.caption, color = VColors.ink3) }
+                            Text(appString(StringKeys.ALM_STATUS, "status" to r.status), style = VTypography.caption, color = VColors.ink3)
                         }
                     }
                 }
@@ -649,25 +657,25 @@ private fun AlumniMentorshipTab(
 }
 
 @Composable
-private fun AlumniRowCard(alumni: Alumni, onClick: () -> Unit) {
+private fun AlumniRowCard(alumni: Alumni, onClick: () -> Unit, modifier: Modifier = Modifier) {
     VCard(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         onClick = onClick,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(alumni.name, style = VTheme.type.body, fontWeight = FontWeight.SemiBold, color = VTheme.colors.ink)
+                Text(alumni.name, style = VTypography.body, fontWeight = FontWeight.SemiBold, color = VColors.ink)
                 if (alumni.isFeatured) {
-                    Text("★", style = VTheme.type.caption, color = VTheme.colors.accent)
+                    Text("★", style = VTypography.caption, color = VColors.violet)
                 }
             }
-            Text(appString(StringKeys.ALM_BATCH, "year" to alumni.graduationYear), style = VTheme.type.caption, color = VTheme.colors.ink3)
+            Text(appString(StringKeys.ALM_BATCH, "year" to alumni.graduationYear), style = VTypography.caption, color = VColors.ink3)
             alumni.currentProfession?.let {
-                Text("$it${alumni.company?.let { c -> " @ $c" }}", style = VTheme.type.caption, color = VTheme.colors.ink3)
+                Text("$it${alumni.company?.let { c -> " @ $c" }}", style = VTypography.caption, color = VColors.ink3)
             }
-            alumni.city?.let { Text(it, style = VTheme.type.caption, color = VTheme.colors.ink3) }
+            alumni.city?.let { Text(it, style = VTypography.caption, color = VColors.ink3) }
             if (alumni.isMentor) {
-                Text(alumni.mentorExpertise?.let { e -> appString(StringKeys.ALM_MENTOR_EXPERTISE, "area" to e) } ?: appString(StringKeys.ALM_MENTOR), style = VTheme.type.caption, color = VTheme.colors.accent)
+                Text(alumni.mentorExpertise?.let { e -> appString(StringKeys.ALM_MENTOR_EXPERTISE, "area" to e) } ?: appString(StringKeys.ALM_MENTOR), style = VTypography.caption, color = VColors.violet)
             }
         }
     }
@@ -680,24 +688,23 @@ private fun AnalyticsStatCard(label: String, value: String) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Text(label, style = VTheme.type.body, color = VTheme.colors.ink3)
-            Text(value, style = VTheme.type.body, fontWeight = FontWeight.SemiBold, color = VTheme.colors.ink)
+            Text(label, style = VTypography.body, color = VColors.ink3)
+            Text(value, style = VTypography.body, fontWeight = FontWeight.SemiBold, color = VColors.ink)
         }
     }
 }
 
 @Composable
 private fun VChipButton(text: String, onClick: () -> Unit, isDestructive: Boolean = false) {
-    val c = VTheme.colors
-    VCard(
+        VCard(
         onClick = onClick,
         padding = 8.dp,
     ) {
         Text(
             text,
-            style = VTheme.type.caption,
+            style = VTypography.caption,
             fontWeight = FontWeight.Medium,
-            color = if (isDestructive) c.danger else c.accent,
+            color = if (isDestructive) VColors.error else VColors.violet,
         )
     }
 }

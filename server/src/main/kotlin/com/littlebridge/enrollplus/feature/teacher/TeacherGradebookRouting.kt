@@ -334,13 +334,17 @@ private fun Route.assessmentHistory() {
                     ),
                 )
 
+            val assessmentIds = published.map { it[AssessmentsTable.id].value }
+            val allMarks = if (assessmentIds.isEmpty()) emptyList() else AssessmentMarksTable.selectAll().where {
+                AssessmentMarksTable.assessmentId inList assessmentIds
+            }.toList()
+            val marksByAssessment = allMarks.groupBy { it[AssessmentMarksTable.assessmentId] }
+
             val timeline = published.map { a ->
                 val aId = a[AssessmentsTable.id].value
                 val max = a[AssessmentsTable.maxMarks]
                 val passMark = a[AssessmentsTable.passMarks]
-                val marks = AssessmentMarksTable.selectAll().where {
-                    AssessmentMarksTable.assessmentId eq aId
-                }.toList()
+                val marks = marksByAssessment[aId] ?: emptyList()
                 // Present (non-absent) numeric scores only — AB is excluded from the
                 // average (Doc 07 §5.2 / M3).
                 val scored = marks.filter { !it[AssessmentMarksTable.isAbsent] }

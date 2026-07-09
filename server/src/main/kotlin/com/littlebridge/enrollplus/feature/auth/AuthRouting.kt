@@ -372,6 +372,8 @@ fun Route.authRouting() {
                     return@post
                 }
             } else {
+                // Check for a pre-verified OTP first (clients that call
+                // /verify-otp separately before /signup).
                 val verified = dbQuery {
                     AuthOtpsTable.selectAll()
                         .where {
@@ -391,11 +393,40 @@ fun Route.authRouting() {
                             }.singleOrNull()
                     }
                     if (verifiedAny == null) {
-                        call.fail(
-                            "Phone signup requires a verified OTP. Call /send-otp then /verify-otp first.",
-                            HttpStatusCode.BadRequest, "OTP_REQUIRED"
-                        )
-                        return@post
+                        // No pre-verified OTP — if the client sent the OTP code
+                        // in the signup body, verify it inline so the client
+                        // doesn't need a separate /verify-otp call.
+                        if (!req.otp.isNullOrBlank()) {
+                            val result = OtpService.verify(id, req.otp, "signup")
+                            val finalResult = if (result is OtpVerifyResult.NotFound) {
+                                OtpService.verify(id, req.otp, "login")
+                            } else result
+                            when (finalResult) {
+                                OtpVerifyResult.Ok -> { /* proceed to account creation */ }
+                                OtpVerifyResult.NotFound -> {
+                                    call.fail("No active OTP. Call /send-otp first.", HttpStatusCode.NotFound, "OTP_NOT_FOUND")
+                                    return@post
+                                }
+                                OtpVerifyResult.Expired -> {
+                                    call.fail("OTP expired. Please request a new one.", HttpStatusCode.Gone, "OTP_EXPIRED")
+                                    return@post
+                                }
+                                OtpVerifyResult.Locked -> {
+                                    call.fail("OTP locked. Request a new one.", HttpStatusCode.Locked, "OTP_LOCKED")
+                                    return@post
+                                }
+                                is OtpVerifyResult.Invalid -> {
+                                    call.fail("Invalid OTP. Attempts left: ${finalResult.attemptsLeft}", HttpStatusCode.Unauthorized, "OTP_INVALID")
+                                    return@post
+                                }
+                            }
+                        } else {
+                            call.fail(
+                                "Phone signup requires a verified OTP. Call /send-otp then /verify-otp first.",
+                                HttpStatusCode.BadRequest, "OTP_REQUIRED"
+                            )
+                            return@post
+                        }
                     }
                 }
             }
@@ -483,6 +514,12 @@ fun Route.authRouting() {
             }
             if (req.password.isBlank() || req.password.length < 8) {
                 call.fail("Password must be at least 8 characters", HttpStatusCode.BadRequest, "PASSWORD_TOO_SHORT")
+                return@post
+            }
+            if (!req.password.any { it.isUpperCase() } ||
+                !req.password.any { it.isLowerCase() } ||
+                !req.password.any { it.isDigit() }) {
+                call.fail("Password must contain at least one uppercase letter, one lowercase letter, and one digit", HttpStatusCode.BadRequest, "PASSWORD_TOO_WEAK")
                 return@post
             }
 
@@ -598,10 +635,7 @@ fun Route.authRouting() {
                     LoginThrottle.recordFailure(clientIp, id)
                     call.fail("Invalid email or password", HttpStatusCode.Unauthorized, "INVALID_CREDENTIALS")
                 } else {
-                    // Phone path can't proceed without a user + OTP; keep the
-                    // OTP-flow wording (an unknown phone reveals nothing extra
-                    // because /send-otp must succeed first anyway).
-                    call.fail("No active OTP. Call /send-otp first.", HttpStatusCode.NotFound, "OTP_NOT_FOUND")
+                    call.fail("No account found with this phone number. Please sign up first.", HttpStatusCode.NotFound, "USER_NOT_FOUND")
                 }
                 return@post
             }
@@ -789,6 +823,12 @@ fun Route.authRouting() {
                     call.fail("New password must be at least 8 characters", HttpStatusCode.BadRequest, "PASSWORD_TOO_SHORT")
                     return@post
                 }
+                if (!req.newPassword.any { it.isUpperCase() } ||
+                    !req.newPassword.any { it.isLowerCase() } ||
+                    !req.newPassword.any { it.isDigit() }) {
+                    call.fail("Password must contain at least one uppercase letter, one lowercase letter, and one digit", HttpStatusCode.BadRequest, "PASSWORD_TOO_WEAK")
+                    return@post
+                }
 
                 val user = dbQuery {
                     AppUsersTable.selectAll().where { AppUsersTable.id eq uid }.singleOrNull()
@@ -817,10 +857,12 @@ fun Route.authRouting() {
                         it[passwordHash] = newHash
                         it[profileCompleted] = true
                         it[mustChangePassword] = false
+                        it[AppUsersTable.passwordChangedAt] = now
                         it[updatedAt] = now
                     }
-                    // Revoke all sessions; the current client keeps its access
-                    // token until expiry but must re-login for a refresh.
+                    // Revoke all sessions. All existing access tokens (including
+                    // the current client's) are rejected on next request because
+                    // SecurityModule checks issuedAt < passwordChangedAt.
                     UserSessionsTable.update({ UserSessionsTable.userId eq uid }) {
                         it[revokedAt] = now
                     }

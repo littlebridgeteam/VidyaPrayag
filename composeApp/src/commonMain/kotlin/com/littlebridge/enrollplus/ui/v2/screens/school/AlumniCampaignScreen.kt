@@ -25,11 +25,16 @@ import com.littlebridge.enrollplus.feature.alumni.domain.model.AlumniDonationCam
 import com.littlebridge.enrollplus.feature.alumni.domain.repository.AlumniRepository
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VCard
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -50,7 +55,8 @@ fun AlumniCampaignScreen(
     val notSignedInError = appString(StringKeys.COMMON_ERROR_UNAUTHORIZED)
     val campaignNotFoundError = appString(StringKeys.SCH_CAMPAIGN_NOT_FOUND)
 
-    LaunchedEffect(campaignId) {
+    val reload: () -> Unit = {
+        isLoading = true; error = null
         scope.launch {
             val token = prefs.getUserToken().first()
             if (token.isNullOrBlank()) { error = notSignedInError; isLoading = false; return@launch }
@@ -64,22 +70,25 @@ fun AlumniCampaignScreen(
             }
         }
     }
+    LaunchedEffect(campaignId) { reload() }
 
     Column(
         modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(bottom = 24.dp),
+            .fillMaxSize(),
     ) {
         VBackHeader(title = appString(StringKeys.SCH_CAMPAIGN_DETAIL), onBack = onBack)
-
+        VPullRefresh(isRefreshing = isLoading && campaign != null, onRefresh = reload) {
+            Column(
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
+            ) {
         val c = campaign
         VStateHost(
             loading = isLoading,
             error = error,
             isEmpty = c == null,
             emptyTitle = appString(StringKeys.SCH_CAMPAIGN_NOT_FOUND),
-            onRetry = { isLoading = true; error = null },
+            onRetry = reload,
+            skeleton = { SkeletonDashboard() },
         ) {
             val data = c!!
             Column(
@@ -88,14 +97,14 @@ fun AlumniCampaignScreen(
             ) {
                 VCard(modifier = Modifier.fillMaxWidth()) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(data.title, style = VTheme.type.h2, color = VTheme.colors.ink)
+                        Text(data.title, style = VTypography.h2, color = VColors.ink)
                         data.description?.let {
-                            Text(it, style = VTheme.type.body, color = VTheme.colors.ink3)
+                            Text(it, style = VTypography.body, color = VColors.ink3)
                         }
-                        data.cause?.let { Text(appString(StringKeys.SCH_CAUSE_COLON, "cause" to it), style = VTheme.type.caption, color = VTheme.colors.ink3) }
-                        Text(appString(StringKeys.SCH_STATUS_COLON, "status" to data.status), style = VTheme.type.caption, color = VTheme.colors.ink3)
-                        Text(appString(StringKeys.SCH_PERIOD_COLON, "start" to data.startDate, "end" to (data.endDate ?: "")), style = VTheme.type.caption, color = VTheme.colors.ink3)
-                        data.targetBatchYear?.let { Text(appString(StringKeys.SCH_TARGET_BATCH_COLON, "batch" to it), style = VTheme.type.caption, color = VTheme.colors.ink3) }
+                        data.cause?.let { Text(appString(StringKeys.SCH_CAUSE_COLON, "cause" to it), style = VTypography.caption, color = VColors.ink3) }
+                        Text(appString(StringKeys.SCH_STATUS_COLON, "status" to data.status), style = VTypography.caption, color = VColors.ink3)
+                        Text(appString(StringKeys.SCH_PERIOD_COLON, "start" to data.startDate, "end" to (data.endDate ?: "")), style = VTypography.caption, color = VColors.ink3)
+                        data.targetBatchYear?.let { Text(appString(StringKeys.SCH_TARGET_BATCH_COLON, "batch" to it), style = VTypography.caption, color = VColors.ink3) }
                     }
                 }
 
@@ -107,11 +116,11 @@ fun AlumniCampaignScreen(
                         } else 0
                         Text(
                             "₹${data.amountRaised.toInt()} / ₹${data.targetAmount.toInt()} ($progress%)",
-                            style = VTheme.type.body,
+                            style = VTypography.body,
                             fontWeight = FontWeight.SemiBold,
-                            color = VTheme.colors.ink,
+                            color = VColors.ink,
                         )
-                        Text(appString(StringKeys.SCH_N_DONORS, "count" to data.donorCount.toString()), style = VTheme.type.caption, color = VTheme.colors.ink3)
+                        Text(appString(StringKeys.SCH_N_DONORS, "count" to data.donorCount.toString()), style = VTypography.caption, color = VColors.ink3)
                     }
                 }
 
@@ -122,16 +131,17 @@ fun AlumniCampaignScreen(
                     error = null,
                     isEmpty = d.isNullOrEmpty(),
                     emptyTitle = appString(StringKeys.SCH_NO_DONATIONS_CAMPAIGN),
+                    skeleton = { SkeletonList(rows = 3, withAvatar = false) },
                 ) {
-                    d!!.forEach { donation ->
-                        VCard(modifier = Modifier.fillMaxWidth()) {
+                    d!!.forEachIndexed { i, donation ->
+                        VCard(modifier = Modifier.fillMaxWidth().staggeredItemEntrance(i, d.isNotEmpty())) {
                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text(donation.alumniName, style = VTheme.type.body, fontWeight = FontWeight.SemiBold, color = VTheme.colors.ink)
-                                Text("₹${donation.amount.toInt()}", style = VTheme.type.body, color = VTheme.colors.ink)
-                                Text(appString(StringKeys.SCH_DATE_COLON, "date" to donation.donationDate), style = VTheme.type.caption, color = VTheme.colors.ink3)
-                                donation.paymentMode?.let { Text(appString(StringKeys.SCH_MODE_COLON, "mode" to it), style = VTheme.type.caption, color = VTheme.colors.ink3) }
+                                Text(donation.alumniName, style = VTypography.body, fontWeight = FontWeight.SemiBold, color = VColors.ink)
+                                Text("₹${donation.amount.toInt()}", style = VTypography.body, color = VColors.ink)
+                                Text(appString(StringKeys.SCH_DATE_COLON, "date" to donation.donationDate), style = VTypography.caption, color = VColors.ink3)
+                                donation.paymentMode?.let { Text(appString(StringKeys.SCH_MODE_COLON, "mode" to it), style = VTypography.caption, color = VColors.ink3) }
                                 if (donation.is80gEligible) {
-                                    Text(appString(StringKeys.SCH_80G_RECEIPT, "receipt" to (donation.receiptNumber ?: appString(StringKeys.SCH_PENDING))), style = VTheme.type.caption, color = VTheme.colors.accent)
+                                    Text(appString(StringKeys.SCH_80G_RECEIPT, "receipt" to (donation.receiptNumber ?: appString(StringKeys.SCH_PENDING))), style = VTypography.caption, color = VColors.violet)
                                 }
                             }
                         }
@@ -139,5 +149,7 @@ fun AlumniCampaignScreen(
                 }
             }
         }
+    }
+    }
     }
 }

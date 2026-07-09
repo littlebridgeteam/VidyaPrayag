@@ -23,6 +23,8 @@ import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
+private val lenientJson = Json { ignoreUnknownKeys = true }
+
 /**
  * Ktor [Auth] / `bearer` configuration — automatic token refresh on 401 with a
  * clean logout on refresh failure.
@@ -85,7 +87,7 @@ internal fun HttpClientConfig<*>.installTokenAuth(
                 val bodyText = runCatching { resp.bodyAsText() }.getOrNull()
                 val data = bodyText?.let {
                     runCatching {
-                        Json { ignoreUnknownKeys = true }
+                        lenientJson
                             .parseToJsonElement(it)
                             .jsonObject["data"]?.jsonObject
                     }.getOrNull()

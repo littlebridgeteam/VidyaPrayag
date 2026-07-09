@@ -138,6 +138,7 @@ function AttendanceSection({
 }) {
   const [state, setState] = useState<"loading" | "ok" | "error">("loading");
   const [data, setData] = useState<AttendanceDailyResponse | null>(null);
+  const [errorDetail, setErrorDetail] = useState<string | null>(null);
 
   // Enrolment fallback for FUTURE slots (no attendance to read yet).
   const { data: roster } = useStudents(undefined, period.class_name);
@@ -151,7 +152,11 @@ function AttendanceSection({
         setData(d);
         setState("ok");
       })
-      .catch(() => setState("error"));
+      .catch((e) => {
+        console.error("CalendarSlotPanel: attendance load failed:", e);
+        setErrorDetail(e instanceof Error ? e.message : String(e));
+        setState("error");
+      });
   }, [period.class_name, dateIso]);
 
   useEffect(() => {
@@ -191,6 +196,9 @@ function AttendanceSection({
       {state === "error" && (
         <div className="rounded-xl bg-danger/[0.06] px-3.5 py-3">
           <p className="text-[13px] text-ink-2">Couldn&apos;t load attendance for this class.</p>
+          {errorDetail && (
+            <p className="mt-1 text-[11px] text-ink-3">{errorDetail}</p>
+          )}
           <button
             type="button"
             onClick={load}

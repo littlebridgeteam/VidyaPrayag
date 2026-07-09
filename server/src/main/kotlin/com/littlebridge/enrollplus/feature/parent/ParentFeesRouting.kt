@@ -31,6 +31,7 @@ import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.FeeRecordsTable
 import io.ktor.http.*
 import io.ktor.server.auth.*
+import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -39,6 +40,8 @@ import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.update
+import java.time.Instant
 import java.util.UUID
 
 /**
@@ -83,6 +86,12 @@ private fun money(amount: Double, currency: String): String {
     }
     return "$symbol${"%,d".format(amount.toLong())}"
 }
+
+@Serializable
+data class PayFeeRequest(
+    val feeId: String,
+    val paymentMethod: String? = null,
+)
 
 fun Route.parentFeesRouting() {
     authenticate("jwt") {
@@ -170,6 +179,44 @@ fun Route.parentFeesRouting() {
                 }
 
                 call.ok(response, message = "Fee status fetched successfully")
+            }
+
+            post("/fees/pay") {
+                val uid = call.principalUserId()?.let { runCatching { UUID.fromString(it) }.getOrNull() } ?: run {
+                    call.fail("Invalid token", HttpStatusCode.Unauthorized); return@post
+                }
+
+                val req = runCatching { call.receive<PayFeeRequest>() }.getOrNull() ?: run {
+                    call.fail("Invalid request body", HttpStatusCode.BadRequest, "INVALID_REQUEST"); return@post
+                }
+
+                val feeId = runCatching { UUID.fromString(req.feeId) }.getOrNull() ?: run {
+                    call.fail("Invalid fee ID", HttpStatusCode.BadRequest, "INVALID_FEE_ID"); return@post
+                }
+
+                val now = Instant.now()
+                val updated = dbQuery {
+                    val ownership = FeeRecordsTable.selectAll()
+                        .where { (FeeRecordsTable.id eq feeId) and (FeeRecordsTable.parentId eq uid) }
+                        .singleOrNull() ?: return@dbQuery false
+
+                    if (ownership[FeeRecordsTable.status] == "PAID") return@dbQuery true
+
+                    FeeRecordsTable.update({ FeeRecordsTable.id eq feeId }) {
+                        it[FeeRecordsTable.status] = "PAID"
+                        it[FeeRecordsTable.updatedAt] = now
+                    }
+                    true
+                }
+
+                if (updated == false) {
+                    call.fail("Fee record not found or not owned by this parent", HttpStatusCode.NotFound, "FEE_NOT_FOUND"); return@post
+                }
+
+                call.ok(
+                    mapOf("feeId" to req.feeId, "status" to "PAID", "paidAt" to now.toString()),
+                    message = "Payment recorded successfully",
+                )
             }
         }
     }

@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -27,15 +29,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,76 +47,50 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import com.littlebridge.enrollplus.ui.v2.components.VAvatar
 import com.littlebridge.enrollplus.core.locale.StringKeys
-import com.littlebridge.enrollplus.ui.v2.components.VBadge
-import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
-import com.littlebridge.enrollplus.ui.v2.components.VButton
-import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
-import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
-import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
-import com.littlebridge.enrollplus.ui.v2.components.VCard
-import com.littlebridge.enrollplus.ui.v2.components.VDivider
-import com.littlebridge.enrollplus.ui.v2.components.VIcons
-import com.littlebridge.enrollplus.ui.v2.components.VDatePicker
-import com.littlebridge.enrollplus.ui.v2.components.VInput
-import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
-import com.littlebridge.enrollplus.ui.v2.components.VTag
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.VThemeRegistry
-import com.littlebridge.enrollplus.ui.v2.theme.colored
-import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.feature.admin.presentation.AcademicInfoOBViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.BrandingInfoOBViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.InstitutionalBasicOBViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.LaunchInfoOBViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.OnboardingTeacherInput
 import com.littlebridge.enrollplus.feature.admin.presentation.TeacherProvisioningOBViewModel
+import com.littlebridge.enrollplus.ui.components.FilterChip
+import com.littlebridge.enrollplus.ui.components.VBackHeader
+import com.littlebridge.enrollplus.ui.components.VButton
+import com.littlebridge.enrollplus.ui.components.VButtonVariant
+import com.littlebridge.enrollplus.ui.v2.components.VInput
+import com.littlebridge.enrollplus.ui.components.VProgressBar
+import com.littlebridge.enrollplus.ui.components.VProgressBarSegments
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VShapes
+import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
 
-/**
- * SchoolOnboardingScreenV2 — pixel-faithful Compose copy of `Auth.tsx → SchoolOnboarding`.
- *
- * The full dark (Night) 6-step setup wizard the Figma prototype renders, end-to-end interactive
- * from local state exactly like the React mock:
- *   1. **School identity**  — legal/short name, affiliation, board & type tags, principal.
- *   2. **Academic year**    — year tags, start/end dates, working days, period count.
- *   3. **Classes & sections** — per-class section chips + add-class controls.
- *   4. **Subjects**         — subject cards with per-class chips + "Apply to all".
- *   5. **Teachers**         — live coverage tracker + per-teacher subject×class matrix.
- *   6. **Students**         — CSV import card + validated preview.
- * A final "You're all set" completion screen with the stat bar and quick-start tiles closes it,
- * then [onComplete] opens the dashboard.
- */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SchoolOnboardingScreenV2(
     onComplete: () -> Unit,
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {},
-    // Server step (BASIC|BRANDING|ACADEMIC|REVIEW) the wizard should resume on
-    // for a returning/partially-onboarded admin. Mapped to the local 6-step
-    // wizard index below. Defaults to BASIC (fresh start at step 1).
     resumeStep: String = "BASIC",
     basicVm: InstitutionalBasicOBViewModel = koinViewModel(),
     brandingVm: BrandingInfoOBViewModel = koinViewModel(),
@@ -121,245 +98,194 @@ fun SchoolOnboardingScreenV2(
     launchVm: LaunchInfoOBViewModel = koinViewModel(),
     teacherProvisionVm: TeacherProvisioningOBViewModel = koinViewModel(),
 ) {
-    VTheme(themeDef = VThemeRegistry.resolve("warm")) {
-        val c = VTheme.colors
-        val d = VTheme.dimens
-        val titles = listOf(
-            appString(StringKeys.OB_T_IDENTITY),
-            appString(StringKeys.OB_T_ACADEMIC),
-            appString(StringKeys.OB_T_CLASSES),
-            appString(StringKeys.OB_T_SUBJECTS),
-            appString(StringKeys.OB_T_TEACHERS),
-            appString(StringKeys.OB_T_STUDENTS),
+    val titles = listOf(
+        appString(StringKeys.OB_T_IDENTITY),
+        appString(StringKeys.OB_T_ACADEMIC),
+        appString(StringKeys.OB_T_CLASSES),
+        appString(StringKeys.OB_T_SUBJECTS),
+        appString(StringKeys.OB_T_TEACHERS),
+        appString(StringKeys.OB_T_STUDENTS),
+    )
+
+    val initialStep = remember(resumeStep) {
+        when (resumeStep.uppercase()) {
+            "BRANDING" -> 2
+            "ACADEMIC" -> 3
+            "REVIEW" -> 6
+            else -> 1
+        }
+    }
+    var step by remember { mutableIntStateOf(initialStep) }
+
+    var legalName by remember { mutableStateOf("") }
+    var shortName by remember { mutableStateOf("") }
+    var affiliation by remember { mutableStateOf("") }
+    var board by remember { mutableStateOf("CBSE") }
+    var schoolType by remember { mutableStateOf("Private Unaided") }
+    var principalName by remember { mutableStateOf("") }
+    var principalMobile by remember { mutableStateOf("") }
+
+    val classesBuilt = remember {
+        mutableStateListOf(
+            OBClass("Class 9", mutableStateListOf("A", "B")),
+            OBClass("Class 10", mutableStateListOf("A", "B")),
         )
+    }
+    val classCodes: List<String> = classesBuilt.flatMap { cl -> cl.sections.map { "${cl.name.removePrefix("Class ")}-$it" } }
 
-        // Map the server's onboarding step to this wizard's 1-based step index.
-        // BASIC→1, BRANDING→2 (academic-year UI), ACADEMIC→3 (classes), REVIEW→6.
-        val initialStep = remember(resumeStep) {
-            when (resumeStep.uppercase()) {
-                "BRANDING" -> 2
-                "ACADEMIC" -> 3
-                "REVIEW" -> 6
-                else -> 1
+    val subjects = remember {
+        mutableStateListOf(
+            OBSubject("s1", "Mathematics", "MAT001", "Core", mutableStateListOf()),
+            OBSubject("s2", "Science", "SCI001", "Core", mutableStateListOf()),
+            OBSubject("s3", "English", "ENG001", "Core", mutableStateListOf()),
+            OBSubject("s4", "Hindi", "HIN001", "Language", mutableStateListOf()),
+            OBSubject("s5", "Social Studies", "SOC001", "Core", mutableStateListOf()),
+            OBSubject("s6", "Computer Apps", "COMP01", "Core", mutableStateListOf()),
+        )
+    }
+
+    val teachers = remember { mutableStateListOf<OBTeacher>() }
+    var newTeacherName by remember { mutableStateOf("") }
+    var newTeacherEmail by remember { mutableStateOf("") }
+
+    val basicSubmitting by basicVm.isSubmitting.collectAsState()
+    val basicError by basicVm.errorMessage.collectAsState()
+    val brandingSubmitting by brandingVm.isSubmitting.collectAsState()
+    val brandingError by brandingVm.errorMessage.collectAsState()
+    val academicSubmitting by academicVm.isSubmitting.collectAsState()
+    val academicError by academicVm.errorMessage.collectAsState()
+    val launchSubmitting by launchVm.isSubmitting.collectAsState()
+    val launchError by launchVm.errorMessage.collectAsState()
+
+    val isSubmitting = basicSubmitting || brandingSubmitting || academicSubmitting || launchSubmitting
+
+    val currentError: String? = when (step) {
+        1 -> basicError
+        2 -> brandingError
+        3, 4, 5 -> academicError
+        else -> launchError
+    }
+
+    val canContinue: Boolean = when (step) {
+        1 -> legalName.isNotBlank()
+        3 -> classesBuilt.isNotEmpty()
+        4 -> subjects.isNotEmpty()
+        5 -> teachers.isNotEmpty()
+        else -> true
+    }
+
+    fun continueClicked() {
+        when (step) {
+            1 -> {
+                if (legalName.isBlank()) return
+                basicVm.updateSchoolName(legalName)
+                basicVm.updateBoard(board)
+                basicVm.updateContact(principalMobile.replace(Regex("[^0-9]"), "").take(10))
+                basicVm.submit(onSuccess = { step++ })
             }
-        }
-        var step by remember { mutableIntStateOf(initialStep) }
-
-        // ── Step 1 — Identity inputs lifted to parent so we can submit BASIC ────
-        var legalName by remember { mutableStateOf("") }
-        var shortName by remember { mutableStateOf("") }
-        var affiliation by remember { mutableStateOf("") }
-        var board by remember { mutableStateOf("CBSE") }
-        var schoolType by remember { mutableStateOf("Private Unaided") }
-        var principalName by remember { mutableStateOf("") }
-        var principalMobile by remember { mutableStateOf("") }
-
-        // ── Classes built ──────────────────────────────────────────────────────────
-        val classesBuilt = remember {
-            mutableStateListOf(
-                OBClass("Class 9", mutableStateListOf("A", "B")),
-                OBClass("Class 10", mutableStateListOf("A", "B")),
-            )
-        }
-        val classCodes: List<String> = classesBuilt.flatMap { cl -> cl.sections.map { "${cl.name.removePrefix("Class ")}-$it" } }
-
-        // ── Subjects ───────────────────────────────────────────────────────────────
-        val subjects = remember {
-            mutableStateListOf(
-                OBSubject("s1", "Mathematics", "MAT001", "Core", mutableStateListOf()),
-                OBSubject("s2", "Science", "SCI001", "Core", mutableStateListOf()),
-                OBSubject("s3", "English", "ENG001", "Core", mutableStateListOf()),
-                OBSubject("s4", "Hindi", "HIN001", "Language", mutableStateListOf()),
-                OBSubject("s5", "Social Studies", "SOC001", "Core", mutableStateListOf()),
-                OBSubject("s6", "Computer Apps", "COMP01", "Core", mutableStateListOf()),
-            )
-        }
-
-        // ── Teachers ───────────────────────────────────────────────────────────────
-        // Start EMPTY — no fabricated staff. Admins add their teachers here (or skip
-        // and provision them later from the dashboard). The matrix shows a zero-state
-        // until a teacher is added, so we never persist invented teacher identities.
-        val teachers = remember { mutableStateListOf<OBTeacher>() }
-        var newTeacherName by remember { mutableStateOf("") }
-        var newTeacherEmail by remember { mutableStateOf("") }
-
-        // ── Backend state (per-step submit flags + errors) ─────────────────────────
-        val basicSubmitting by basicVm.isSubmitting.collectAsStateV2()
-        val basicError by basicVm.errorMessage.collectAsStateV2()
-        val brandingSubmitting by brandingVm.isSubmitting.collectAsStateV2()
-        val brandingError by brandingVm.errorMessage.collectAsStateV2()
-        val academicSubmitting by academicVm.isSubmitting.collectAsStateV2()
-        val academicError by academicVm.errorMessage.collectAsStateV2()
-        val launchSubmitting by launchVm.isSubmitting.collectAsStateV2()
-        val launchError by launchVm.errorMessage.collectAsStateV2()
-
-        // Which step's network call (if any) is currently running. Drives the
-        // Continue button's spinner + disables Back while a submit is in-flight.
-        val isSubmitting = basicSubmitting || brandingSubmitting || academicSubmitting || launchSubmitting
-
-        // Surface the first non-null backend error, if any. Step screens display
-        // it inline below their content.
-        val currentError: String? = when (step) {
-            1 -> basicError
-            2 -> brandingError
-            3, 4, 5 -> academicError
-            else -> launchError
-        }
-
-        // Truthful Continue handler — submit the correct OB step to the backend
-        // and only advance the wizard once the server accepts it.
-        fun continueClicked() {
-            when (step) {
-                1 -> {
-                    // Push the lifted identity inputs into the BASIC VM and submit.
-                    // NOTE: Step 1 collects no email — we do NOT synthesise a fake
-                    // one (that would overwrite the real contact email captured at
-                    // registration). Only the values the admin actually typed go up.
-                    basicVm.updateSchoolName(legalName)
-                    basicVm.updateBoard(board)
-                    basicVm.updateContact(principalMobile.replace(Regex("[^0-9]"), "").take(10))
-                    basicVm.submit(onSuccess = { step++ })
-                }
-                2 -> {
-                    // Academic-year step has no logo/brand color UI — submit BRANDING
-                    // with the VM's defaults so the server advances its state machine.
-                    brandingVm.submit(onSuccess = { step++ })
-                }
-                3, 4 -> {
-                    // Classes & Subjects are still being edited — purely local advance.
-                    // ACADEMIC payload is built and submitted on step 5 → 6 transition.
-                    step++
-                }
-                5 -> {
-                    // Teachers step done. TWO real persistence actions happen here:
-                    //
-                    // 1) Provision a REAL `role=teacher` account for every teacher the
-                    //    admin entered with an email (POST /school/teachers). This is
-                    //    what makes the teacher able to LOG IN — the assignment matrix
-                    //    alone never created an account. Best-effort + non-blocking:
-                    //    a duplicate/failure for one teacher won't stop onboarding.
-                    //
-                    // 2) Persist the REAL class/section/subject structure (+ teacher
-                    //    name on each assigned subject) via the ACADEMIC step.
-                    val builtClasses: List<Pair<String, List<String>>> =
-                        classesBuilt.map { it.name to it.sections.toList() }
-                    val builtSubjects: List<Pair<String, String>> =
-                        subjects.map { it.name to it.code }
-                    // "subjectName|classCode" -> teacher name, from the assignment matrix.
-                    val teacherMap: Map<String, String> = buildMap {
-                        teachers.forEach { t ->
-                            t.assignments.forEach { (subjName, classCode) ->
-                                put("$subjName|$classCode", t.name)
-                            }
+            2 -> {
+                brandingVm.submit(onSuccess = { step++ })
+            }
+            3 -> {
+                if (classesBuilt.isEmpty()) return
+                step++
+            }
+            4 -> {
+                if (subjects.isEmpty()) return
+                step++
+            }
+            5 -> {
+                if (teachers.isEmpty()) return
+                val builtClasses: List<Pair<String, List<String>>> =
+                    classesBuilt.map { it.name to it.sections.toList() }
+                val builtSubjects: List<Pair<String, String>> =
+                    subjects.map { it.name to it.code }
+                val teacherMap: Map<String, String> = buildMap {
+                    teachers.forEach { t ->
+                        t.assignments.forEach { (subjName, classCode) ->
+                            put("$subjName|$classCode", t.name)
                         }
                     }
-                    // Real teacher accounts to create (only those given an email/phone).
-                    val toProvision = teachers
-                        .filter { it.identifier.isNotBlank() }
-                        .map { OnboardingTeacherInput(name = it.name, identifier = it.identifier) }
-
-                    teacherProvisionVm.provisionAll(toProvision) {
-                        // Whether or not staff were provisioned, persist the academic
-                        // structure and advance only when the server accepts it.
-                        academicVm.applyBuiltStructure(builtClasses, builtSubjects, teacherMap)
-                        academicVm.submit(onSuccess = { step++ })
-                    }
                 }
-                6 -> {
-                    // Final REVIEW submit with is_final_submission=true.
-                    launchVm.submit(onSuccess = { step++ })
+                val toProvision = teachers
+                    .filter { it.identifier.isNotBlank() }
+                    .map { OnboardingTeacherInput(name = it.name, identifier = it.identifier) }
+
+                teacherProvisionVm.provisionAll(toProvision) {
+                    academicVm.applyBuiltStructure(builtClasses, builtSubjects, teacherMap)
+                    academicVm.submit(onSuccess = { step++ })
                 }
             }
+            6 -> {
+                launchVm.submit(onSuccess = { step++ })
+            }
         }
+    }
 
-        // ── Completion screen ────────────────────────────────────────────────────
-        if (step > 6) {
-            // Real school name from the server's REVIEW step (no hardcoding). Fall
-            // back to the name the admin typed in Step 1 if the server hasn't echoed
-            // it yet, then to a neutral label — never a sample school.
-            val launchState by launchVm.state.collectAsStateV2()
-            val provisionState by teacherProvisionVm.state.collectAsStateV2()
-            val resolvedName = launchState.schoolName
-                .takeIf { it.isNotBlank() && it != "—" }
-                ?: legalName.takeIf { it.isNotBlank() }
-                ?: appString(StringKeys.OB_CM_YOUR_SCHOOL)
-            CompletionScreen(
-                schoolName = resolvedName,
-                provisionedTeachers = provisionState.results,
-                onComplete = onComplete,
+    if (step > 6) {
+        val launchState by launchVm.state.collectAsState()
+        val provisionState by teacherProvisionVm.state.collectAsState()
+        val resolvedName = launchState.schoolName
+            .takeIf { it.isNotBlank() && it != "—" }
+            ?: legalName.takeIf { it.isNotBlank() }
+            ?: appString(StringKeys.OB_CM_YOUR_SCHOOL)
+        CompletionScreen(
+            schoolName = resolvedName,
+            provisionedTeachers = provisionState.results,
+            onComplete = onComplete,
+        )
+        return
+    }
+
+    Column(
+        modifier
+            .fillMaxSize()
+            .background(VColors.cream)
+            .statusBarsPadding()
+            .imePadding(),
+    ) {
+        VBackHeader(onBack = {
+            if (step > 1 && !isSubmitting) step-- else onBack()
+        })
+
+        Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp)) {
+            Text(appString(StringKeys.OB_ONBOARDING), style = VTypography.caption, color = VColors.ink3)
+            Spacer(Modifier.height(8.dp))
+            VProgressBarSegments(total = 6, current = step)
+            Spacer(Modifier.height(16.dp))
+            Text(titles[step - 1], style = VTypography.h2, color = VColors.ink)
+            Text(
+                appString(StringKeys.OB_STEP_OF, "step" to step, "total" to 6),
+                style = VTypography.caption,
+                color = VColors.ink3,
             )
-            return@VTheme
         }
 
-        // §11 cross-platform — wrap the screen in safe-area padding before any
-        // content. statusBars first (top hero), imePadding lifts the form when
-        // the keyboard opens. The footer Row applies navigationBarsPadding
-        // separately so the CTA never sits under the gesture bar even when
-        // the AnimatedContent body is empty.
-        Column(
-            modifier
-                .fillMaxSize()
-                .background(c.background)
-                .statusBarsPadding()
-                .imePadding(),
-        ) {
-            // ── Header + step indicator ─────────────────────────────────────────────
-            Column(Modifier.fillMaxWidth().padding(horizontal = d.lg, vertical = d.md)) {
-                Spacer(Modifier.height(d.sm))
-                Text(appString(StringKeys.OB_ONBOARDING), style = VTheme.type.labelStrong.colored(c.ink3))
-                Spacer(Modifier.height(d.sm))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(d.xs)) {
-                    repeat(6) { i ->
-                        // Smooth fill — each completed bar cross-fades into teal vs the inactive grey.
-                        val active = i < step
-                        val targetColor by androidx.compose.animation.animateColorAsState(
-                            targetValue = if (active) c.teal else c.ink.copy(alpha = 0.08f),
-                            animationSpec = tween(durationMillis = 250),
-                            label = "stepBar$i",
-                        )
-                        Box(
-                            Modifier
-                                .weight(1f)
-                                .height(4.dp)
-                                .clip(CircleShape)
-                                .background(targetColor),
-                        )
-                    }
-                }
-                Spacer(Modifier.height(d.md))
-                Text(titles[step - 1], style = VTheme.type.h2.colored(c.ink))
-                Text(appString(StringKeys.OB_STEP_OF, "step" to step, "total" to 6), style = VTheme.type.caption.colored(c.ink3))
-            }
-
-            // §13.2 — wrap the per-step body in an AnimatedContent so each step
-            // slides in from the side of the press direction (Continue→right→left;
-            // Back→left→right). Fades cross to keep the transition gentle. The
-            // outer Column owns weight(1f) + scroll so step swaps don't jump.
-            AnimatedContent(
-                targetState = step,
-                transitionSpec = {
-                    val forward = targetState > initialState
-                    val dur = 280
-                    val enter = slideInHorizontally(
-                        animationSpec = tween(dur),
-                        initialOffsetX = { if (forward) it / 4 else -it / 4 },
-                    ) + fadeIn(tween(dur))
-                    val exit = slideOutHorizontally(
-                        animationSpec = tween(dur),
-                        targetOffsetX = { if (forward) -it / 4 else it / 4 },
-                    ) + fadeOut(tween(dur))
-                    enter togetherWith exit
-                },
-                label = "onboardingStep",
-                modifier = Modifier.weight(1f).fillMaxWidth(),
-            ) { current ->
-                Column(
-                    Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = d.lg),
-                    verticalArrangement = Arrangement.spacedBy(d.md),
-                ) {
+        AnimatedContent(
+            targetState = step,
+            transitionSpec = {
+                val forward = targetState > initialState
+                val dur = 280
+                val enter = slideInHorizontally(
+                    animationSpec = tween(dur),
+                    initialOffsetX = { if (forward) it / 4 else -it / 4 },
+                ) + fadeIn(tween(dur))
+                val exit = slideOutHorizontally(
+                    animationSpec = tween(dur),
+                    targetOffsetX = { if (forward) -it / 4 else it / 4 },
+                ) + fadeOut(tween(dur))
+                enter togetherWith exit
+            },
+            label = "onboardingStep",
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+        ) { current ->
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
                     when (current) {
                         1 -> IdentityStep(
                             legalName = legalName, onLegalNameChange = { legalName = it },
@@ -387,9 +313,9 @@ fun SchoolOnboardingScreenV2(
                                         OBTeacher(
                                             id = "t${teachers.size + 1}",
                                             name = nm,
-                                            identifier = em,        // email → real login account on submit
+                                            identifier = em,
                                             mobile = "",
-                                            username = em,          // show the email as the meta line
+                                            username = em,
                                             assignments = mutableStateListOf(),
                                         )
                                     )
@@ -400,59 +326,76 @@ fun SchoolOnboardingScreenV2(
                         )
                         else -> StudentsStep()
                     }
-                    // Inline backend error for the current step (LAW 3 — Error leg).
                     val errMsg = currentError
                     if (!errMsg.isNullOrBlank()) {
-                        Spacer(Modifier.height(d.xs))
-                        Text(
-                            errMsg,
-                            style = VTheme.type.caption.colored(c.dangerInk),
-                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(errMsg, style = VTypography.caption, color = VColors.error)
                     }
-                    Spacer(Modifier.height(d.sm))
+                    Spacer(Modifier.height(8.dp))
                 }
-            }
+        }
 
-            // ── Footer nav (top hairline border, like React borderTop --border-dark-1) ──
-            VDivider()
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    // §11.3 — keep the bottom CTAs above the gesture bar on Android +
-                    // home indicator on iOS.
-                    .navigationBarsPadding()
-                    .padding(horizontal = d.lg, vertical = d.md),
-                horizontalArrangement = Arrangement.spacedBy(d.sm),
-            ) {
-                if (step > 1) {
-                    VButton(
-                        text = appString(StringKeys.OB_BACK),
-                        onClick = { if (!isSubmitting) step-- },
-                        variant = VButtonVariant.Ghost,
-                        tone = VButtonTone.Navy,
-                        enabled = !isSubmitting,
-                    )
-                }
+        Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.lineSoft))
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 24.dp, vertical = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            if (step > 1) {
                 VButton(
-                    text = if (step < 6) appString(StringKeys.OB_CONTINUE) else appString(StringKeys.OB_FINISH),
-                    onClick = { continueClicked() },
-                    full = true,
-                    size = VButtonSize.Lg,
-                    tone = if (step == 6) VButtonTone.Teal else VButtonTone.Navy,
-                    loading = isSubmitting,
+                    text = appString(StringKeys.OB_BACK),
+                    onClick = { if (!isSubmitting) step-- },
+                    variant = VButtonVariant.Outline,
                     enabled = !isSubmitting,
-                    successLabel = appString(StringKeys.OB_SETTING_UP),
-                    trailing = { Icon(VIcons.ArrowRight, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                    modifier = Modifier.weight(0.4f),
                 )
             }
+            VButton(
+                text = if (step < 6) appString(StringKeys.OB_CONTINUE) else appString(StringKeys.OB_FINISH),
+                onClick = { continueClicked() },
+                loading = isSubmitting,
+                enabled = !isSubmitting && canContinue,
+                icon = Icons.AutoMirrored.Filled.ArrowForward,
+                modifier = Modifier.weight(1f),
+            )
         }
     }
 }
 
-// ═══ Step 1 — School identity ═══════════════════════════════════════════════════
-// State is HOISTED to the parent so that the Continue handler can read the
-// final values and push them into [InstitutionalBasicOBViewModel] before
-// submitting BASIC to the backend.
+@Composable
+private fun CreamCard(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(VColors.surfaceCard, VShapes.lg)
+            .border(1.dp, VColors.line, VShapes.lg)
+            .padding(16.dp),
+    ) { content() }
+}
+
+@Composable
+private fun MiniBadge(text: String, color: Color, bg: Color) {
+    Text(
+        text = text,
+        style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
+        color = color,
+        modifier = Modifier.background(bg, VShapes.full).padding(horizontal = 8.dp, vertical = 3.dp),
+    )
+}
+
+@Composable
+private fun SimpleAvatar(name: String, size: androidx.compose.ui.unit.Dp) {
+    val initials = name.split(" ").take(2).mapNotNull { it.firstOrNull()?.uppercase() }.joinToString("")
+    Box(
+        modifier = Modifier.size(size).background(VColors.violetSoft, CircleShape),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(initials, style = VTypography.label, color = VColors.violet)
+    }
+}
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun IdentityStep(
@@ -464,34 +407,28 @@ private fun IdentityStep(
     principal: String, onPrincipalChange: (String) -> Unit,
     principalMobile: String, onPrincipalMobileChange: (String) -> Unit,
 ) {
-    val c = VTheme.colors
-    val d = VTheme.dimens
-
     VInput(legalName, onLegalNameChange, label = appString(StringKeys.OB_ID_LEGAL_NAME), placeholder = appString(StringKeys.OB_ID_LEGAL_PH), modifier = Modifier.fillMaxWidth())
     VInput(shortName, onShortNameChange, label = appString(StringKeys.OB_ID_SHORT_NAME), placeholder = appString(StringKeys.OB_ID_SHORT_PH), modifier = Modifier.fillMaxWidth())
     VInput(affiliation, onAffiliationChange, label = appString(StringKeys.OB_ID_AFFIL), placeholder = appString(StringKeys.OB_ID_AFFIL_PH), modifier = Modifier.fillMaxWidth())
 
-    Text(appString(StringKeys.OB_ID_BOARD), style = VTheme.type.labelStrong.colored(c.ink3))
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(d.sm), verticalArrangement = Arrangement.spacedBy(d.sm)) {
+    Text(appString(StringKeys.OB_ID_BOARD), style = VTypography.label, color = VColors.ink3)
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         listOf("CBSE", "ICSE", "UP State", "Other").forEach { b ->
-            VTag(text = b, active = board == b, onClick = { onBoardChange(b) })
+            FilterChip(label = b, selected = board == b, onClick = { onBoardChange(b) })
         }
     }
-    Text(appString(StringKeys.OB_ID_SCHOOL_TYPE), style = VTheme.type.labelStrong.colored(c.ink3))
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(d.sm), verticalArrangement = Arrangement.spacedBy(d.sm)) {
+    Text(appString(StringKeys.OB_ID_SCHOOL_TYPE), style = VTypography.label, color = VColors.ink3)
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         listOf("Government", "Private Aided", "Private Unaided", "Central").forEach { t ->
-            VTag(text = t, active = schoolType == t, onClick = { onSchoolTypeChange(t) })
+            FilterChip(label = t, selected = schoolType == t, onClick = { onSchoolTypeChange(t) })
         }
     }
     VInput(principal, onPrincipalChange, label = appString(StringKeys.OB_ID_PRINCIPAL), placeholder = appString(StringKeys.OB_ID_PRINCIPAL_PH), modifier = Modifier.fillMaxWidth())
-    VInput(principalMobile, onPrincipalMobileChange, label = appString(StringKeys.OB_ID_PRINCIPAL_MOB), placeholder = appString(StringKeys.OB_ID_PRINCIPAL_MOB_PH), modifier = Modifier.fillMaxWidth())
+    VInput(principalMobile, onPrincipalMobileChange, label = appString(StringKeys.OB_ID_PRINCIPAL_MOB), placeholder = appString(StringKeys.OB_ID_PRINCIPAL_MOB_PH), keyboardType = KeyboardType.Phone, modifier = Modifier.fillMaxWidth())
 }
 
-// ═══ Step 2 — Academic year ═════════════════════════════════════════════════════
 @Composable
 private fun AcademicYearStep() {
-    val c = VTheme.colors
-    val d = VTheme.dimens
     var year by remember { mutableStateOf("2025-26") }
     var workingDays by remember { mutableStateOf("Mon–Sat") }
     var starts by remember { mutableStateOf("") }
@@ -500,63 +437,56 @@ private fun AcademicYearStep() {
     var endTime by remember { mutableStateOf("") }
     var periods by remember { mutableStateOf("") }
 
-    Text(appString(StringKeys.OB_AY_CURRENT), style = VTheme.type.labelStrong.colored(c.ink3))
-    Row(horizontalArrangement = Arrangement.spacedBy(d.sm)) {
-        listOf("2025-26", "2026-27").forEach { y -> VTag(text = y, active = year == y, onClick = { year = y }) }
+    Text(appString(StringKeys.OB_AY_CURRENT), style = VTypography.label, color = VColors.ink3)
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        listOf("2025-26", "2026-27").forEach { y -> FilterChip(label = y, selected = year == y, onClick = { year = y }) }
     }
-    Row(horizontalArrangement = Arrangement.spacedBy(d.sm)) {
-        VDatePicker(starts, { starts = it }, label = appString(StringKeys.OB_AY_STARTS), placeholder = appString(StringKeys.OB_AY_STARTS), modifier = Modifier.weight(1f))
-        VDatePicker(ends, { ends = it }, label = appString(StringKeys.OB_AY_ENDS), placeholder = appString(StringKeys.OB_AY_ENDS), modifier = Modifier.weight(1f))
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        VInput(starts, { starts = it }, label = appString(StringKeys.OB_AY_STARTS), placeholder = appString(StringKeys.OB_AY_STARTS), modifier = Modifier.weight(1f))
+        VInput(ends, { ends = it }, label = appString(StringKeys.OB_AY_ENDS), placeholder = appString(StringKeys.OB_AY_ENDS), modifier = Modifier.weight(1f))
     }
-    Text(appString(StringKeys.OB_AY_WORKING_DAYS), style = VTheme.type.labelStrong.colored(c.ink3))
-    Row(horizontalArrangement = Arrangement.spacedBy(d.sm)) {
-        VTag(text = "Mon–Fri", active = workingDays == "Mon–Fri", onClick = { workingDays = "Mon–Fri" })
-        VTag(text = "Mon–Sat", active = workingDays == "Mon–Sat", onClick = { workingDays = "Mon–Sat" })
+    Text(appString(StringKeys.OB_AY_WORKING_DAYS), style = VTypography.label, color = VColors.ink3)
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FilterChip(label = "Mon–Fri", selected = workingDays == "Mon–Fri", onClick = { workingDays = "Mon–Fri" })
+        FilterChip(label = "Mon–Sat", selected = workingDays == "Mon–Sat", onClick = { workingDays = "Mon–Sat" })
     }
-    Row(horizontalArrangement = Arrangement.spacedBy(d.sm)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         VInput(startTime, { startTime = it }, label = appString(StringKeys.OB_AY_START_TIME), placeholder = "08:00 AM", modifier = Modifier.weight(1f))
         VInput(endTime, { endTime = it }, label = appString(StringKeys.OB_AY_END_TIME), placeholder = "02:00 PM", modifier = Modifier.weight(1f))
     }
-    VInput(periods, { periods = it }, label = appString(StringKeys.OB_AY_PERIODS), placeholder = appString(StringKeys.OB_AY_PERIODS_PH), modifier = Modifier.fillMaxWidth())
+    VInput(periods, { periods = it }, label = appString(StringKeys.OB_AY_PERIODS), placeholder = appString(StringKeys.OB_AY_PERIODS_PH), keyboardType = KeyboardType.Number, modifier = Modifier.fillMaxWidth())
 }
 
-// ═══ Step 3 — Classes & sections ════════════════════════════════════════════════
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ClassesStep(classesBuilt: MutableList<OBClass>) {
-    val c = VTheme.colors
-    val d = VTheme.dimens
     var newClassName by remember { mutableStateOf("") }
 
-    VCard(modifier = Modifier.fillMaxWidth()) {
-        Text(appString(StringKeys.OB_CL_TIP), style = VTheme.type.labelStrong.colored(c.ink3))
-        Text(
-            appString(StringKeys.OB_CL_TIP_BODY),
-            style = VTheme.type.caption.colored(c.ink2),
-            modifier = Modifier.padding(top = 4.dp),
-        )
+    CreamCard {
+        Text(appString(StringKeys.OB_CL_TIP), style = VTypography.label, color = VColors.ink3)
+        Text(appString(StringKeys.OB_CL_TIP_BODY), style = VTypography.caption, color = VColors.ink2, modifier = Modifier.padding(top = 4.dp))
     }
     classesBuilt.forEachIndexed { idx, cl ->
-        VCard(modifier = Modifier.fillMaxWidth()) {
+        CreamCard {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(cl.name, style = VTheme.type.bodyStrong.colored(c.ink), modifier = Modifier.weight(1f))
-                Text(appString(StringKeys.OB_CL_SECTIONS, "count" to cl.sections.size), style = VTheme.type.dataSm.colored(c.ink3))
+                Text(cl.name, style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.weight(1f))
+                Text(appString(StringKeys.OB_CL_SECTIONS, "count" to cl.sections.size), style = VTypography.caption, color = VColors.ink3)
             }
-            Spacer(Modifier.height(d.sm))
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(d.xs), verticalArrangement = Arrangement.spacedBy(d.xs)) {
+            Spacer(Modifier.height(8.dp))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 listOf("A", "B", "C", "D", "E", "F").forEach { s ->
                     val on = cl.sections.contains(s)
-                    VTag(text = s, active = on, onClick = {
+                    FilterChip(label = s, selected = on, onClick = {
                         if (on) cl.sections.remove(s) else { cl.sections.add(s); cl.sections.sort() }
                     })
                 }
             }
         }
     }
-    VCard(modifier = Modifier.fillMaxWidth()) {
-        Text(appString(StringKeys.OB_CL_ADD_MANUAL), style = VTheme.type.labelStrong.colored(c.ink3))
-        Spacer(Modifier.height(d.sm))
-        Row(horizontalArrangement = Arrangement.spacedBy(d.sm), verticalAlignment = Alignment.CenterVertically) {
+    CreamCard {
+        Text(appString(StringKeys.OB_CL_ADD_MANUAL), style = VTypography.label, color = VColors.ink3)
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
             VInput(newClassName, { newClassName = it }, placeholder = appString(StringKeys.OB_CL_ADD_PH), modifier = Modifier.weight(1f))
             VButton(
                 text = appString(StringKeys.OB_CL_ADD_BTN),
@@ -566,64 +496,62 @@ private fun ClassesStep(classesBuilt: MutableList<OBClass>) {
                         newClassName = ""
                     }
                 },
-                tone = VButtonTone.Teal,
-                size = VButtonSize.Sm,
                 enabled = newClassName.isNotBlank(),
+                modifier = Modifier.weight(0.4f),
             )
         }
-        Spacer(Modifier.height(d.sm))
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(d.xs), verticalArrangement = Arrangement.spacedBy(d.xs)) {
+        Spacer(Modifier.height(8.dp))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             listOf("Class 11", "Class 12", "Nursery", "LKG", "UKG").forEach { q ->
-                VTag(text = "+ $q", onClick = { classesBuilt.add(OBClass(q, mutableStateListOf("A"))) })
+                FilterChip(label = "+ $q", selected = false, onClick = { classesBuilt.add(OBClass(q, mutableStateListOf("A"))) })
             }
         }
     }
 }
 
-// ═══ Step 4 — Subjects ══════════════════════════════════════════════════════════
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SubjectsStep(subjects: MutableList<OBSubject>, classCodes: List<String>) {
-    val c = VTheme.colors
-    val d = VTheme.dimens
-
-    VCard(modifier = Modifier.fillMaxWidth()) {
+    CreamCard {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f)) {
-                Text(appString(StringKeys.OB_SJ_OFFERED), style = VTheme.type.labelStrong.colored(c.ink3))
-                Text(appString(StringKeys.OB_SJ_TAP_HINT), style = VTheme.type.caption.colored(c.ink3), modifier = Modifier.padding(top = 2.dp))
+                Text(appString(StringKeys.OB_SJ_OFFERED), style = VTypography.label, color = VColors.ink3)
+                Text(appString(StringKeys.OB_SJ_TAP_HINT), style = VTypography.caption, color = VColors.ink3, modifier = Modifier.padding(top = 2.dp))
             }
             Text(
                 appString(StringKeys.OB_SJ_APPLY_ALL),
-                style = VTheme.type.caption.colored(c.tealDeep),
-                modifier = Modifier.padding(start = d.sm),
+                style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
+                color = VColors.violet,
+                modifier = Modifier.padding(start = 8.dp).clickable {
+                    subjects.forEach { s -> s.classes.clear(); s.classes.addAll(classCodes) }
+                },
             )
         }
     }
     subjects.forEach { s ->
-        VCard(modifier = Modifier.fillMaxWidth()) {
+        CreamCard {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text(s.name, style = VTheme.type.bodyStrong.colored(c.ink))
-                    Text("${s.code} · ${s.type}", style = VTheme.type.dataSm.colored(c.ink3))
+                    Text(s.name, style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                    Text("${s.code} · ${s.type}", style = VTypography.caption, color = VColors.ink3)
                 }
-                VBadge(
+                MiniBadge(
                     text = if (s.classes.isEmpty()) appString(StringKeys.OB_SJ_NO_CLASSES) else "${s.classes.size} / ${classCodes.size}",
-                    tone = if (s.classes.isEmpty()) VBadgeTone.Warning else VBadgeTone.Success,
+                    color = if (s.classes.isEmpty()) VColors.gold else VColors.success,
+                    bg = if (s.classes.isEmpty()) VColors.goldSoft else VColors.successSoft,
                 )
             }
-            Spacer(Modifier.height(d.sm))
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(d.xs), verticalArrangement = Arrangement.spacedBy(d.xs)) {
+            Spacer(Modifier.height(8.dp))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 classCodes.forEach { cc ->
                     val on = s.classes.contains(cc)
-                    VTag(text = cc, active = on, onClick = { if (on) s.classes.remove(cc) else s.classes.add(cc) })
+                    FilterChip(label = cc, selected = on, onClick = { if (on) s.classes.remove(cc) else s.classes.add(cc) })
                 }
             }
         }
     }
 }
 
-// ═══ Step 5 — Teachers (coverage + matrix) ══════════════════════════════════════
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TeachersStep(
@@ -636,59 +564,30 @@ private fun TeachersStep(
     onNewTeacherEmailChange: (String) -> Unit,
     onAddTeacher: () -> Unit,
 ) {
-    val c = VTheme.colors
-    val d = VTheme.dimens
-
-    // ── Add teacher (real input only — nothing pre-filled) ──────────────────
-    // Adding a teacher WITH a work email creates a real login account on the
-    // next step: the teacher gets a generated initial password and signs in via
-    // School Administration → email + password (forced to reset on first login).
-    // Name-only entries are still usable for subject assignment but create no
-    // login — those teachers can be provisioned later from the dashboard.
-    VCard(modifier = Modifier.fillMaxWidth()) {
-        Text(appString(StringKeys.OB_TC_ADD), style = VTheme.type.labelStrong.colored(c.ink3))
-        Text(
-            appString(StringKeys.OB_TC_ADD_DESC),
-            style = VTheme.type.caption.colored(c.ink3),
-            modifier = Modifier.padding(top = 2.dp),
-        )
-        Spacer(Modifier.height(d.sm))
-        VInput(
-            newTeacherName,
-            onNewTeacherNameChange,
-            label = appString(StringKeys.OB_TC_FULL_NAME),
-            placeholder = appString(StringKeys.OB_TC_FULL_NAME_PH),
-            leadingIcon = VIcons.User,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(Modifier.height(d.sm))
-        Row(horizontalArrangement = Arrangement.spacedBy(d.sm), verticalAlignment = Alignment.Bottom) {
-            VInput(
-                newTeacherEmail,
-                onNewTeacherEmailChange,
-                label = appString(StringKeys.OB_TC_WORK_EMAIL),
-                placeholder = appString(StringKeys.OB_TC_WORK_EMAIL_PH),
-                leadingIcon = VIcons.Mail,
-                keyboardType = KeyboardType.Email,
-                modifier = Modifier.weight(1f),
-            )
+    CreamCard {
+        Text(appString(StringKeys.OB_TC_ADD), style = VTypography.label, color = VColors.ink3)
+        Text(appString(StringKeys.OB_TC_ADD_DESC), style = VTypography.caption, color = VColors.ink3, modifier = Modifier.padding(top = 2.dp))
+        Spacer(Modifier.height(8.dp))
+        VInput(newTeacherName, onNewTeacherNameChange, label = appString(StringKeys.OB_TC_FULL_NAME), placeholder = appString(StringKeys.OB_TC_FULL_NAME_PH), modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
+            VInput(newTeacherEmail, onNewTeacherEmailChange, label = appString(StringKeys.OB_TC_WORK_EMAIL), placeholder = appString(StringKeys.OB_TC_WORK_EMAIL_PH), keyboardType = KeyboardType.Email, modifier = Modifier.weight(1f))
             VButton(
                 text = appString(StringKeys.OB_CL_ADD_BTN),
                 onClick = onAddTeacher,
-                tone = VButtonTone.Teal,
-                size = VButtonSize.Lg,
                 enabled = newTeacherName.isNotBlank(),
+                modifier = Modifier.weight(0.4f),
             )
         }
     }
 
     if (teachers.isEmpty()) {
-        VCard(modifier = Modifier.fillMaxWidth()) {
-            Column(Modifier.fillMaxWidth().padding(vertical = d.md), horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(VIcons.User, contentDescription = null, tint = c.ink3, modifier = Modifier.size(28.dp))
-                Spacer(Modifier.height(d.xs))
-                Text(appString(StringKeys.OB_TC_NONE_YET), style = VTheme.type.bodyStrong.colored(c.ink))
-                Text(appString(StringKeys.OB_TC_NONE_DESC), style = VTheme.type.caption.colored(c.ink3), textAlign = TextAlign.Center)
+        CreamCard {
+            Column(Modifier.fillMaxWidth().padding(vertical = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(Icons.Filled.Person, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(28.dp))
+                Spacer(Modifier.height(4.dp))
+                Text(appString(StringKeys.OB_TC_NONE_YET), style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                Text(appString(StringKeys.OB_TC_NONE_DESC), style = VTypography.caption, color = VColors.ink3, textAlign = TextAlign.Center)
             }
         }
         return
@@ -699,73 +598,70 @@ private fun TeachersStep(
     val coveredCount = allSlots.count { slot -> assignedSlots.any { it.first == slot.first && it.second == slot.second } }
     val coverage = if (allSlots.isNotEmpty()) (coveredCount * 100 / allSlots.size) else 0
 
-    // Coverage tracker
-    VCard(modifier = Modifier.fillMaxWidth()) {
+    CreamCard {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f)) {
-                Text(appString(StringKeys.OB_TC_COVERAGE), style = VTheme.type.labelStrong.colored(c.ink3))
-                Text(appString(StringKeys.OB_TC_COVERAGE_OF, "covered" to coveredCount, "total" to allSlots.size), style = VTheme.type.caption.colored(c.ink3), modifier = Modifier.padding(top = 2.dp))
+                Text(appString(StringKeys.OB_TC_COVERAGE), style = VTypography.label, color = VColors.ink3)
+                Text(appString(StringKeys.OB_TC_COVERAGE_OF, "covered" to coveredCount, "total" to allSlots.size), style = VTypography.caption, color = VColors.ink3, modifier = Modifier.padding(top = 2.dp))
             }
             Text(
                 "$coverage%",
-                style = VTheme.type.dataLg.colored(if (coverage == 100) c.successInk else if (coverage > 50) c.tealDeep else c.warningInk),
+                style = VTypography.h3.copy(fontWeight = FontWeight.ExtraBold),
+                color = if (coverage == 100) VColors.success else if (coverage > 50) VColors.violet else VColors.gold,
             )
         }
-        Spacer(Modifier.height(d.sm))
-        VProgressBar(value = coverage.toFloat(), modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(8.dp))
+        VProgressBar(progress = coverage.toFloat() / 100f, modifier = Modifier.fillMaxWidth())
         if (coverage < 100 && allSlots.isNotEmpty()) {
-            Spacer(Modifier.height(d.xs))
-            Text(appString(StringKeys.OB_TC_UNASSIGNED, "count" to (allSlots.size - coveredCount)), style = VTheme.type.caption.colored(c.warningInk))
+            Spacer(Modifier.height(4.dp))
+            Text(appString(StringKeys.OB_TC_UNASSIGNED, "count" to (allSlots.size - coveredCount)), style = VTypography.caption, color = VColors.gold)
         }
     }
 
     teachers.forEach { t ->
-        VCard(modifier = Modifier.fillMaxWidth()) {
+        CreamCard {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                VAvatar(name = t.name, size = 40.dp)
-                Spacer(Modifier.width(d.md))
+                SimpleAvatar(name = t.name, size = 40.dp)
+                Spacer(Modifier.width(16.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(t.name, style = VTheme.type.bodyStrong.colored(c.ink))
+                    Text(t.name, style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                     val meta = listOf(t.username, t.mobile).filter { it.isNotBlank() }.joinToString(" · ")
                     if (meta.isNotBlank()) {
-                        Text(meta, style = VTheme.type.dataSm.colored(c.ink3))
+                        Text(meta, style = VTypography.caption, color = VColors.ink3)
                     }
                 }
-                VBadge(text = appString(StringKeys.OB_TC_SLOTS, "count" to t.assignments.size), tone = if (t.assignments.isNotEmpty()) VBadgeTone.Arctic else VBadgeTone.Neutral)
+                MiniBadge(text = appString(StringKeys.OB_TC_SLOTS, "count" to t.assignments.size), color = VColors.violet, bg = VColors.violetSoft)
             }
-            Spacer(Modifier.height(d.sm))
-            // ── Assignment matrix — bordered header grid (110px + repeat(N,1fr)) ──
+            Spacer(Modifier.height(8.dp))
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
-                    .border(1.dp, c.shadowTint.copy(alpha = 0.08f), RoundedCornerShape(10.dp)),
+                    .clip(VShapes.sm)
+                    .border(1.dp, VColors.lineSoft, VShapes.sm),
             ) {
-                // header row — cream bg, uppercase labels
-                Row(Modifier.fillMaxWidth().background(c.cream), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.fillMaxWidth().background(VColors.creamDeep), verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         "SUBJECT",
-                        style = VTheme.type.labelStrong.colored(c.ink3).copy(fontSize = 10.sp, letterSpacing = 0.05.em),
+                        style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 0.05.em),
+                        color = VColors.ink3,
                         modifier = Modifier.width(110.dp).padding(horizontal = 10.dp, vertical = 8.dp),
                     )
                     classCodes.forEach { cc ->
                         Text(
                             cc,
-                            style = VTheme.type.dataSm.colored(c.ink3).copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                            style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                            color = VColors.ink3,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.weight(1f).padding(horizontal = 4.dp, vertical = 8.dp),
                         )
                     }
                 }
-                // subject rows
                 subjects.filter { it.classes.isNotEmpty() }.forEachIndexed { rowI, s ->
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .then(if (rowI > 0) Modifier.border(0.dp, Color.Transparent) else Modifier),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(s.name, style = VTheme.type.caption.colored(c.ink).copy(fontWeight = FontWeight.SemiBold), modifier = Modifier.width(110.dp).padding(horizontal = 10.dp, vertical = 8.dp))
+                    if (rowI > 0) {
+                        Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.lineSoft))
+                    }
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text(s.name, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink, modifier = Modifier.width(110.dp).padding(horizontal = 10.dp, vertical = 8.dp))
                         classCodes.forEach { cc ->
                             val inSubject = s.classes.contains(cc)
                             val mine = t.assignments.any { it.first == s.name && it.second == cc }
@@ -785,25 +681,22 @@ private fun TeachersStep(
                             }
                         }
                     }
-                    if (rowI < subjects.count { it.classes.isNotEmpty() } - 1) {
-                        VDivider(color = c.shadowTint.copy(alpha = 0.05f))
-                    }
                 }
             }
-            // assignment chip summary row (font-mono, teal pill SUBJ·class)
             if (t.assignments.isNotEmpty()) {
-                Spacer(Modifier.height(d.sm))
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(d.xs), verticalArrangement = Arrangement.spacedBy(d.xs)) {
+                Spacer(Modifier.height(8.dp))
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     t.assignments.forEach { a ->
                         Box(
                             Modifier
                                 .clip(CircleShape)
-                                .background(c.teal.copy(alpha = 0.15f))
+                                .background(VColors.violet.copy(alpha = 0.12f))
                                 .padding(horizontal = 8.dp, vertical = 2.dp),
                         ) {
                             Text(
                                 "${a.first.take(4)}·${a.second}",
-                                style = VTheme.type.dataSm.colored(c.tealDeep).copy(fontWeight = FontWeight.SemiBold, fontSize = 11.sp),
+                                style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 11.sp),
+                                color = VColors.violet,
                             )
                         }
                     }
@@ -815,112 +708,83 @@ private fun TeachersStep(
     VButton(
         text = appString(StringKeys.OB_TC_IMPORT_CSV),
         onClick = {},
-        full = true,
-        tone = VButtonTone.Sand,
-        leading = { Icon(VIcons.Upload, contentDescription = null, modifier = Modifier.size(14.dp)) },
+        variant = VButtonVariant.Secondary,
+        icon = Icons.Filled.CloudUpload,
     )
 }
 
 @Composable
 private fun MatrixCell(label: String, inSubject: Boolean, mine: Boolean, takenByOther: Boolean, enabled: Boolean, onClick: () -> Unit) {
-    val c = VTheme.colors
     val available = inSubject && !mine && !takenByOther
     val bg = when {
         !inSubject -> Color.Transparent
-        mine -> c.tealDeep
-        takenByOther -> c.cream
-        else -> c.teal.copy(alpha = 0.10f)
+        mine -> VColors.violet
+        takenByOther -> VColors.creamDeep
+        else -> VColors.violet.copy(alpha = 0.08f)
     }
     val fg = when {
         mine -> Color.White
-        takenByOther -> c.ink3
-        else -> c.tealDeep
+        takenByOther -> VColors.ink3
+        else -> VColors.violet
     }
     var cell = Modifier
         .padding(4.dp)
         .height(32.dp)
         .fillMaxWidth()
-        .clip(RoundedCornerShape(6.dp))
+        .clip(VShapes.sm)
         .background(bg)
     if (available) {
-        // 1px dashed available border rgba(0,106,96,0.35)
-        cell = cell.dashedBorder(c.tealDeep.copy(alpha = 0.35f), strokeWidth = 1.dp, cornerRadius = 6.dp)
+        cell = cell.dashedBorder(VColors.violet.copy(alpha = 0.35f), strokeWidth = 1.dp, cornerRadius = 6.dp)
     }
-    if (enabled) cell = cell.clickableNoRipple(onClick)
+    if (enabled) cell = cell.clickable(onClick = onClick)
     Box(
         cell.then(if (!inSubject) Modifier.alpha(0.25f) else Modifier),
         contentAlignment = Alignment.Center,
     ) {
         if (label.isNotEmpty()) {
-            Text(label, style = VTheme.type.caption.colored(fg).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp))
+            Text(label, style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp), color = fg)
         }
     }
 }
 
-// ═══ Step 6 — Students ══════════════════════════════════════════════════════════
 @Composable
 private fun StudentsStep() {
-    val c = VTheme.colors
-    val d = VTheme.dimens
-
-    VCard(modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.fillMaxWidth().padding(vertical = d.lg), horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(VIcons.Upload, contentDescription = null, tint = c.ink3, modifier = Modifier.size(32.dp))
-            Spacer(Modifier.height(d.sm))
-            Text(appString(StringKeys.OB_ST_DROP_CSV), style = VTheme.type.bodyStrong.colored(c.ink))
-            Text(appString(StringKeys.OB_ST_OR_BROWSE), style = VTheme.type.caption.colored(c.ink3))
-            Spacer(Modifier.height(d.md))
-            VButton(text = appString(StringKeys.OB_ST_DOWNLOAD), onClick = {}, variant = VButtonVariant.Secondary, size = VButtonSize.Sm)
+    CreamCard {
+        Column(Modifier.fillMaxWidth().padding(vertical = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(Icons.Filled.CloudUpload, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(32.dp))
+            Spacer(Modifier.height(8.dp))
+            Text(appString(StringKeys.OB_ST_DROP_CSV), style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+            Text(appString(StringKeys.OB_ST_OR_BROWSE), style = VTypography.caption, color = VColors.ink3)
+            Spacer(Modifier.height(16.dp))
+            VButton(text = appString(StringKeys.OB_ST_DOWNLOAD), onClick = {}, variant = VButtonVariant.Secondary)
         }
     }
-    VCard(modifier = Modifier.fillMaxWidth()) {
+    CreamCard {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(appString(StringKeys.OB_ST_NONE_YET), style = VTheme.type.bodyStrong.colored(c.ink), modifier = Modifier.weight(1f))
-            VBadge(text = appString(StringKeys.OB_ST_OPTIONAL), tone = VBadgeTone.Neutral)
+            Text(appString(StringKeys.OB_ST_NONE_YET), style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.weight(1f))
+            MiniBadge(text = appString(StringKeys.OB_ST_OPTIONAL), color = VColors.ink3, bg = VColors.surfaceTint)
         }
-        Spacer(Modifier.height(d.sm))
-        Text(
-            appString(StringKeys.OB_ST_OPTIONAL_DESC),
-            style = VTheme.type.caption.colored(c.ink3),
-        )
+        Spacer(Modifier.height(8.dp))
+        Text(appString(StringKeys.OB_ST_OPTIONAL_DESC), style = VTypography.caption, color = VColors.ink3)
     }
 }
 
-// ═══ Completion screen ══════════════════════════════════════════════════════════
 @Composable
 private fun CompletionScreen(
     schoolName: String,
     provisionedTeachers: List<com.littlebridge.enrollplus.feature.admin.presentation.ProvisionedTeacher> = emptyList(),
     onComplete: () -> Unit,
 ) {
-    val c = VTheme.colors
-    val d = VTheme.dimens
-
     Column(
         Modifier
             .fillMaxSize()
-            .background(c.background)
+            .background(VColors.cream)
             .verticalScroll(rememberScrollState()),
     ) {
-        // Teal hero — vertical gradient #3cb9a9 → #2a8f80 + radial white glow
         Box(
             Modifier
                 .fillMaxWidth()
-                .background(
-                    Brush.verticalGradient(listOf(c.teal, Color(0xFF2A8F80))),
-                )
-                .drawBehind {
-                    // radial glow circle at 50% 30%, white@30%, fade to transparent ~55%
-                    drawCircle(
-                        brush = Brush.radialGradient(
-                            colors = listOf(Color.White.copy(alpha = 0.30f), Color.Transparent),
-                            center = androidx.compose.ui.geometry.Offset(size.width * 0.5f, size.height * 0.30f),
-                            radius = size.maxDimension * 0.55f,
-                        ),
-                        radius = size.maxDimension * 0.55f,
-                        center = androidx.compose.ui.geometry.Offset(size.width * 0.5f, size.height * 0.30f),
-                    )
-                },
+                .background(VColors.violet),
         ) {
             Column(
                 Modifier
@@ -932,81 +796,80 @@ private fun CompletionScreen(
                 Box(
                     Modifier
                         .size(96.dp)
-                        .clip(RoundedCornerShape(26.dp))
+                        .clip(VShapes.xl)
                         .background(Color.White.copy(alpha = 0.18f))
-                        .border(1.dp, Color.White.copy(alpha = 0.30f), RoundedCornerShape(26.dp)),
+                        .border(1.dp, Color.White.copy(alpha = 0.30f), VShapes.xl),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(VIcons.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(44.dp))
+                    Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(44.dp))
                 }
                 Spacer(Modifier.height(28.dp))
                 Text(
                     appString(StringKeys.OB_CM_ALL_SET),
-                    style = VTheme.type.h1.colored(Color.White).copy(fontSize = 30.sp, letterSpacing = (-0.02).em),
+                    style = VTypography.h1.copy(fontSize = 30.sp, letterSpacing = (-0.02).em),
+                    color = Color.White,
                     textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(6.dp))
-                Text(appString(StringKeys.OB_CM_IS_LIVE, "school" to schoolName), style = VTheme.type.body.colored(Color.White.copy(alpha = 0.88f)), textAlign = TextAlign.Center)
+                Text(
+                    appString(StringKeys.OB_CM_IS_LIVE, "school" to schoolName),
+                    style = VTypography.body,
+                    color = Color.White.copy(alpha = 0.88f),
+                    textAlign = TextAlign.Center,
+                )
             }
         }
 
-        // Body
-        Column(Modifier.fillMaxWidth().padding(d.lg), verticalArrangement = Arrangement.spacedBy(d.md)) {
+        Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             OnboardingCompletedCard()
             val created = provisionedTeachers.filter { it.created && !it.initialPassword.isNullOrBlank() }
             if (created.isNotEmpty()) {
-                Text(appString(StringKeys.OB_CM_TEACHER_LOGINS), style = VTheme.type.labelStrong.colored(c.ink3))
-                VCard(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        appString(StringKeys.OB_CM_SHARE_OTP),
-                        style = VTheme.type.caption.colored(c.ink3),
-                    )
+                Text(appString(StringKeys.OB_CM_TEACHER_LOGINS), style = VTypography.label, color = VColors.ink3)
+                CreamCard {
+                    Text(appString(StringKeys.OB_CM_SHARE_OTP), style = VTypography.caption, color = VColors.ink3)
                     created.forEach { t ->
-                        Spacer(Modifier.height(d.sm))
-                        VDivider()
-                        Spacer(Modifier.height(d.sm))
-                        Text(t.name, style = VTheme.type.bodyStrong.colored(c.ink))
-                        Text(t.identifier, style = VTheme.type.dataSm.colored(c.ink3))
+                        Spacer(Modifier.height(8.dp))
+                        Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.lineSoft))
+                        Spacer(Modifier.height(8.dp))
+                        Text(t.name, style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                        Text(t.identifier, style = VTypography.caption, color = VColors.ink3)
                         Spacer(Modifier.height(2.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(appString(StringKeys.OB_CM_PASSWORD), style = VTheme.type.caption.colored(c.ink3))
+                            Text(appString(StringKeys.OB_CM_PASSWORD), style = VTypography.caption, color = VColors.ink3)
                             Text(
                                 t.initialPassword.orEmpty(),
-                                style = VTheme.type.dataSm.colored(c.tealDeep).copy(fontWeight = FontWeight.Bold),
+                                style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
+                                color = VColors.violet,
                             )
                         }
                     }
                 }
             }
-            // Surface any teacher accounts that could NOT be created (e.g. the
-            // email already exists) so the admin isn't misled into thinking they
-            // were provisioned. Honest, not silent.
             val failed = provisionedTeachers.filter { !it.created }
             if (failed.isNotEmpty()) {
-                VCard(modifier = Modifier.fillMaxWidth()) {
-                    Text(appString(StringKeys.OB_CM_COULDNT_CREATE), style = VTheme.type.bodyStrong.colored(c.warningInk))
+                CreamCard {
+                    Text(appString(StringKeys.OB_CM_COULDNT_CREATE), style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = VColors.gold)
                     failed.forEach { t ->
                         Text(
                             appString(StringKeys.OB_CM_ADD_LATER, "name" to t.name, "id" to t.identifier, "msg" to (t.message ?: "failed")),
-                            style = VTheme.type.caption.colored(c.ink3),
+                            style = VTypography.caption,
+                            color = VColors.ink3,
                             modifier = Modifier.padding(top = 2.dp),
                         )
                     }
                 }
             }
 
-            Spacer(Modifier.height(d.xs))
+            Spacer(Modifier.height(4.dp))
             VButton(
                 text = appString(StringKeys.OB_CM_OPEN_DASH),
                 onClick = onComplete,
-                full = true,
-                size = VButtonSize.Lg,
-                tone = VButtonTone.Teal,
-                trailing = { Icon(VIcons.ArrowRight, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                icon = Icons.AutoMirrored.Filled.ArrowForward,
             )
             Text(
                 appString(StringKeys.OB_CM_EDIT_LATER),
-                style = VTheme.type.caption.colored(c.ink3),
+                style = VTypography.caption,
+                color = VColors.ink3,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,
             )
@@ -1014,7 +877,6 @@ private fun CompletionScreen(
     }
 }
 
-// ── Local wizard models (mirror Auth.tsx OB* types) ─────────────────────────────
 private class OBClass(val name: String, val sections: androidx.compose.runtime.snapshots.SnapshotStateList<String>)
 private class OBSubject(
     val id: String,
@@ -1026,20 +888,12 @@ private class OBSubject(
 private class OBTeacher(
     val id: String,
     val name: String,
-    // Email/phone the teacher will sign in with. When set (email), the wizard
-    // provisions a REAL `role=teacher` account on submit so the teacher can log
-    // in. Blank = name-only (cosmetic assignment matrix; no login created).
     val identifier: String,
     val mobile: String,
     val username: String,
     val assignments: androidx.compose.runtime.snapshots.SnapshotStateList<Pair<String, String>>,
 )
 
-/** Tiny clickable helper. */
-private fun Modifier.clickableNoRipple(onClick: () -> Unit): Modifier =
-    this.clickable(onClick = onClick)
-
-/** 1px dashed rounded border (the React `border: 1px dashed` available-cell style). */
 private fun Modifier.dashedBorder(color: Color, strokeWidth: androidx.compose.ui.unit.Dp, cornerRadius: androidx.compose.ui.unit.Dp): Modifier =
     this.drawBehind {
         val sw = strokeWidth.toPx()
@@ -1054,89 +908,73 @@ private fun Modifier.dashedBorder(color: Color, strokeWidth: androidx.compose.ui
         )
     }
 
-@Preview
 @Composable
 fun OnboardingCompletedCard(
     modifier: Modifier = Modifier,
     onContinue: () -> Unit = {},
 ) {
-    val c = VTheme.colors
-
     var animateSuccess by remember { mutableStateOf(false) }
 
     val scale by animateFloatAsState(
         targetValue = if (animateSuccess) 1f else 0.5f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
+            stiffness = Spring.StiffnessMedium,
         ),
-        label = "success-scale"
+        label = "success-scale",
     )
 
     val alpha by animateFloatAsState(
         targetValue = if (animateSuccess) 1f else 0f,
         animationSpec = tween(500),
-        label = "success-alpha"
+        label = "success-alpha",
     )
 
     LaunchedEffect(Unit) {
         animateSuccess = true
     }
 
-
-    VCard(
-        modifier = modifier
-            .fillMaxWidth()
-    ) {
-
+    CreamCard(modifier = modifier) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(22.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-
-
-            // Animated success badge
             Box(
                 modifier = Modifier
                     .size(72.dp)
                     .graphicsLayer {
-                        var scaleX = scale
+                        scaleX = scale
                         scaleY = scale
                         this.alpha = alpha
                     }
                     .clip(CircleShape)
-                    .background(Color(0xFFDCF2EF)),
-                contentAlignment = Alignment.Center
+                    .background(VColors.successSoft),
+                contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    imageVector = VIcons.Check,
+                    Icons.Filled.Check,
                     contentDescription = null,
-                    tint = Color(0xFF006A60),
-                    modifier = Modifier.size(36.dp)
+                    tint = VColors.success,
+                    modifier = Modifier.size(36.dp),
                 )
             }
 
-
             Spacer(Modifier.height(16.dp))
-
 
             Text(
                 text = appString(StringKeys.OB_CM_READY),
-                style = VTheme.type.h3
-                    .colored(c.ink)
-                    .copy(
-                        fontWeight = FontWeight.Bold
-                    ),
-                textAlign = TextAlign.Center
+                style = VTypography.h3,
+                color = VColors.ink,
+                textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(8.dp))
             Text(
                 text = appString(StringKeys.OB_CM_PROFILE_DONE),
-                style = VTheme.type.body
-                    .colored(c.ink3),
-                textAlign = TextAlign.Center
+                style = VTypography.body,
+                color = VColors.ink3,
+                textAlign = TextAlign.Center,
             )
         }
     }

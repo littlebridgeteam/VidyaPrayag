@@ -36,14 +36,15 @@ object NcertReferenceService {
         val chapters: List<NcertChapter>,
     )
 
-    suspend fun getSyllabus(classLevel: String, subjectName: String): NcertSyllabus? {
+    suspend fun getSyllabus(classLevel: String, subjectName: String, medium: String = "English"): NcertSyllabus? {
         ensureSeeded()
         val nc = normalizeClassLevel(classLevel)
         val ns = normalizeSubjectName(subjectName)
         val row = dbQuery {
             NcertSyllabusReferenceTable.selectAll().where {
                 (NcertSyllabusReferenceTable.classLevel eq nc) and
-                    (NcertSyllabusReferenceTable.subjectName eq ns)
+                    (NcertSyllabusReferenceTable.subjectName eq ns) and
+                    (NcertSyllabusReferenceTable.medium eq medium)
             }.singleOrNull()
         } ?: return null
         val chapters = try {
@@ -52,23 +53,24 @@ object NcertReferenceService {
         return NcertSyllabus(nc, ns, chapters)
     }
 
-    suspend fun hasReference(classLevel: String, subjectName: String): Boolean {
+    suspend fun hasReference(classLevel: String, subjectName: String, medium: String = "English"): Boolean {
         ensureSeeded()
         val nc = normalizeClassLevel(classLevel)
         val ns = normalizeSubjectName(subjectName)
         return dbQuery {
             NcertSyllabusReferenceTable.selectAll().where {
                 (NcertSyllabusReferenceTable.classLevel eq nc) and
-                    (NcertSyllabusReferenceTable.subjectName eq ns)
+                    (NcertSyllabusReferenceTable.subjectName eq ns) and
+                    (NcertSyllabusReferenceTable.medium eq medium)
             }.count()
         } > 0
     }
 
-    suspend fun listAvailable(): List<Pair<String, String>> {
+    suspend fun listAvailable(): List<Triple<String, String, String>> {
         ensureSeeded()
         return dbQuery {
             NcertSyllabusReferenceTable.selectAll()
-                .map { it[NcertSyllabusReferenceTable.classLevel] to it[NcertSyllabusReferenceTable.subjectName] }
+                .map { Triple(it[NcertSyllabusReferenceTable.classLevel], it[NcertSyllabusReferenceTable.subjectName], it[NcertSyllabusReferenceTable.medium]) }
         }
     }
 
@@ -99,9 +101,9 @@ object NcertReferenceService {
             // Table already has rows — check for and insert any missing entries
             val existing = dbQuery {
                 NcertSyllabusReferenceTable.selectAll()
-                    .map { it[NcertSyllabusReferenceTable.classLevel] to it[NcertSyllabusReferenceTable.subjectName] }
+                    .map { Triple(it[NcertSyllabusReferenceTable.classLevel], it[NcertSyllabusReferenceTable.subjectName], it[NcertSyllabusReferenceTable.medium]) }
             }.toSet()
-            val missing = allData.filter { (it.classLevel to it.subjectName) !in existing }
+            val missing = allData.filter { Triple(it.classLevel, it.subjectName, "English") !in existing }
             if (missing.isNotEmpty()) {
                 log.info("Adding {} missing NCERT reference entries...", missing.size)
                 val now = Instant.now()

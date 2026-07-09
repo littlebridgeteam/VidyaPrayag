@@ -11,14 +11,21 @@
  *   a fresh 16-byte cryptographically-random salt and a high iteration count,
  *   defeating rainbow-table and GPU bulk-cracking attacks.
  *
- * Stored format (single column `app_users.password_hash`):
- *   pbkdf2$<iterations>$<base64-salt>$<base64-derived-key>
+ * Stored format (single column `app_users.password_hash`), PHC-compatible:
+ *   pbkdf2_sha256$<iterations>$<base64-salt>$<base64-derived-key>
+ *
+ * This follows the PHC (Password Hashing Competition) format used by Django,
+ * Passlib, and other interoperable implementations. The algorithm identifier
+ * includes the hash function (`sha256`) for full interoperability.
  *
  * Backward compatibility:
- *   `verify()` still recognises the legacy `sha256Hex("pwd:$p")` hashes that
- *   exist in already-provisioned databases, so old logins keep working. New
- *   signups and password writes use PBKDF2. Callers that want to transparently
- *   upgrade a legacy hash on successful login can check `needsRehash()`.
+ *   `verify()` recognises three formats:
+ *   1. Current PHC format: `pbkdf2_sha256$...`
+ *   2. Previous format: `pbkdf2$...` (auto-migrated on successful login)
+ *   3. Legacy unsalted: `sha256Hex("pwd:$p")` (auto-migrated via needsRehash)
+ *
+ *   Callers that want to transparently upgrade a legacy hash on successful
+ *   login can check `needsRehash()`.
  */
 package com.littlebridge.enrollplus.feature.auth
 
@@ -34,7 +41,8 @@ object PasswordHasher {
     private const val ITERATIONS = 120_000
     private const val SALT_BYTES = 16
     private const val KEY_BITS = 256
-    private const val PREFIX = "pbkdf2"
+    private const val PREFIX = "pbkdf2_sha256"
+    private const val LEGACY_PREFIX = "pbkdf2"
 
     private val secureRandom = SecureRandom()
 
@@ -46,6 +54,13 @@ object PasswordHasher {
         return "$PREFIX\$$ITERATIONS\$${b64.encodeToString(salt)}\$${b64.encodeToString(dk)}"
     }
 
+    private fun hashLegacy(password: String): String {
+        val salt = ByteArray(SALT_BYTES).also { secureRandom.nextBytes(it) }
+        val dk = pbkdf2(password, salt, ITERATIONS, KEY_BITS)
+        val b64 = Base64.getEncoder()
+        return "$LEGACY_PREFIX\$$ITERATIONS\$${b64.encodeToString(salt)}\$${b64.encodeToString(dk)}"
+    }
+
     /**
      * Constant-time verify. Accepts both the new PBKDF2 format and the legacy
      * unsalted `sha256Hex("pwd:$p")` format so existing accounts keep working.
@@ -53,6 +68,8 @@ object PasswordHasher {
     fun verify(password: String, stored: String?): Boolean {
         if (stored.isNullOrBlank()) return false
         return if (stored.startsWith("$PREFIX\$")) {
+            verifyPbkdf2(password, stored)
+        } else if (stored.startsWith("$LEGACY_PREFIX\$")) {
             verifyPbkdf2(password, stored)
         } else {
             // Legacy: unsalted SHA-256 with static prefix.

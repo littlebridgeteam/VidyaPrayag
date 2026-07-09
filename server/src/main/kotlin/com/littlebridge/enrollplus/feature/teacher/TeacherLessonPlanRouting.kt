@@ -58,10 +58,13 @@ import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
+import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
 import java.util.UUID
+
+private val logger = LoggerFactory.getLogger("TeacherLessonPlanRouting")
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Server-side DTOs — mirror shared/.../teacher/domain/model/TeacherModels.kt
@@ -246,7 +249,8 @@ private fun activitiesFromJson(json: String?): List<LpActivityDto> {
                 durationMin = durationMatch?.groupValues?.get(1)?.toIntOrNull() ?: 15,
             )
         }
-    } catch (_: Exception) {
+    } catch (e: Exception) {
+        logger.warn("parseActivitiesJson: failed to parse lesson plan activities JSON", e)
         emptyList()
     }
 }

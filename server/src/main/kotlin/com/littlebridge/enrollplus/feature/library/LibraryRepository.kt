@@ -279,21 +279,21 @@ class LibraryRepository {
         }) {
             updates.forEach { (k, v) ->
                 when (k) {
-                    "title" -> it[LibraryBooksTable.title] = v as String
-                    "author" -> it[LibraryBooksTable.author] = v as String?
-                    "publisher" -> it[LibraryBooksTable.publisher] = v as String?
-                    "category" -> it[LibraryBooksTable.category] = v as String?
+                    "title" -> it[LibraryBooksTable.title] = v as? String ?: ""
+                    "author" -> it[LibraryBooksTable.author] = v as? String
+                    "publisher" -> it[LibraryBooksTable.publisher] = v as? String
+                    "category" -> it[LibraryBooksTable.category] = v as? String
                     "tags" -> it[LibraryBooksTable.tags] = (v as? List<String>)?.let { t -> json.encodeToString(t) }
-                    "shelfLocation" -> it[LibraryBooksTable.shelfLocation] = v as String?
-                    "coverUrl" -> it[LibraryBooksTable.coverUrl] = v as String?
+                    "shelfLocation" -> it[LibraryBooksTable.shelfLocation] = v as? String
+                    "coverUrl" -> it[LibraryBooksTable.coverUrl] = v as? String
                     "replacementCost" -> it[LibraryBooksTable.replacementCost] = v as? Double
-                    "seriesName" -> it[LibraryBooksTable.seriesName] = v as String?
+                    "seriesName" -> it[LibraryBooksTable.seriesName] = v as? String
                     "seriesNumber" -> it[LibraryBooksTable.seriesNumber] = v as? Int
-                    "language" -> it[LibraryBooksTable.language] = v as String
-                    "synopsis" -> it[LibraryBooksTable.synopsis] = v as String?
+                    "language" -> it[LibraryBooksTable.language] = v as? String ?: "en"
+                    "synopsis" -> it[LibraryBooksTable.synopsis] = v as? String
                     "pageCount" -> it[LibraryBooksTable.pageCount] = v as? Int
-                    "totalCopies" -> it[LibraryBooksTable.totalCopies] = v as Int
-                    "isArchived" -> it[LibraryBooksTable.isArchived] = v as Boolean
+                    "totalCopies" -> it[LibraryBooksTable.totalCopies] = v as? Int ?: 1
+                    "isArchived" -> it[LibraryBooksTable.isArchived] = v as? Boolean ?: false
                 }
             }
             it[updatedAt] = now
@@ -758,16 +758,16 @@ class LibraryRepository {
         updates.forEach { (k, v) ->
             if (v != null) {
                 when (k) {
-                    "defaultLoanDays" -> it[LibrarySettingsTable.defaultLoanDays] = v as Int
-                    "finePerDay" -> it[LibrarySettingsTable.finePerDay] = v as Double
-                    "maxBooksPerStudent" -> it[LibrarySettingsTable.maxBooksPerStudent] = v as Int
-                    "maxRenewals" -> it[LibrarySettingsTable.maxRenewals] = v as Int
-                    "reservationTimeoutDays" -> it[LibrarySettingsTable.reservationTimeoutDays] = v as Int
-                    "dueReminderDays" -> it[LibrarySettingsTable.dueReminderDays] = v as Int
-                    "fineCapEnabled" -> it[LibrarySettingsTable.fineCapEnabled] = v as Boolean
-                    "quickIssueEnabled" -> it[LibrarySettingsTable.quickIssueEnabled] = v as Boolean
-                    "bulkReturnEnabled" -> it[LibrarySettingsTable.bulkReturnEnabled] = v as Boolean
-                    "leaderboardEnabled" -> it[LibrarySettingsTable.leaderboardEnabled] = v as Boolean
+                    "defaultLoanDays" -> (v as? Int)?.let { it2 -> it[LibrarySettingsTable.defaultLoanDays] = it2 }
+                    "finePerDay" -> (v as? Double)?.let { it2 -> it[LibrarySettingsTable.finePerDay] = it2 }
+                    "maxBooksPerStudent" -> (v as? Int)?.let { it2 -> it[LibrarySettingsTable.maxBooksPerStudent] = it2 }
+                    "maxRenewals" -> (v as? Int)?.let { it2 -> it[LibrarySettingsTable.maxRenewals] = it2 }
+                    "reservationTimeoutDays" -> (v as? Int)?.let { it2 -> it[LibrarySettingsTable.reservationTimeoutDays] = it2 }
+                    "dueReminderDays" -> (v as? Int)?.let { it2 -> it[LibrarySettingsTable.dueReminderDays] = it2 }
+                    "fineCapEnabled" -> (v as? Boolean)?.let { it2 -> it[LibrarySettingsTable.fineCapEnabled] = it2 }
+                    "quickIssueEnabled" -> (v as? Boolean)?.let { it2 -> it[LibrarySettingsTable.quickIssueEnabled] = it2 }
+                    "bulkReturnEnabled" -> (v as? Boolean)?.let { it2 -> it[LibrarySettingsTable.bulkReturnEnabled] = it2 }
+                    "leaderboardEnabled" -> (v as? Boolean)?.let { it2 -> it[LibrarySettingsTable.leaderboardEnabled] = it2 }
                 }
             }
         }
@@ -926,8 +926,8 @@ class LibraryRepository {
         LibraryAnnouncementsTable.update({
             (LibraryAnnouncementsTable.id eq announcementId) and (LibraryAnnouncementsTable.schoolId eq schoolId)
         }) {
-            if (title != null) it[LibraryAnnouncementsTable.title] = title
-            if (message != null) it[LibraryAnnouncementsTable.message] = message
+            if (title != null) it[LibraryAnnouncementsTable.title] = com.littlebridge.enrollplus.core.HtmlSanitizer.sanitize(title)
+            if (message != null) it[LibraryAnnouncementsTable.message] = com.littlebridge.enrollplus.core.HtmlSanitizer.sanitize(message)
             if (audience != null) it[LibraryAnnouncementsTable.audience] = audience
             if (expiresAt != null) it[LibraryAnnouncementsTable.expiresAt] = expiresAt
             if (isActive != null) it[LibraryAnnouncementsTable.isActive] = isActive

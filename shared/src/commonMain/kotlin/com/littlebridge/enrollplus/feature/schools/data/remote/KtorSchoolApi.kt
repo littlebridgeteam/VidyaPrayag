@@ -95,12 +95,11 @@ class KtorSchoolApi(
     }
 
     /**
-     * Token-less overload kept only because the existing [com.littlebridge.enrollplus.feature
-     * .schools.domain.repository.SchoolRepository.refreshSchools] contract has no token. The
-     * server route is authenticated so this can only return an empty list. Removing the stub
-     * data here is intentional — see BACKEND_GAPS.md §3 and LAW 6.
+     * Token-less overload — throws [IllegalStateException] because the server route
+     * is authenticated. Callers must use [fetchSchools] with a token.
      */
-    suspend fun fetchSchools(): List<School> = emptyList()
+    suspend fun fetchSchools(): List<School> =
+        throw IllegalStateException("fetchSchools() requires a token — use fetchSchools(token)")
 }
 
 /** Maps a wire DTO to the cached [School] domain model. */

@@ -51,7 +51,8 @@ data class ChildSummary(
     @SerialName("overall_progress") val overallProgress: Double,
     @SerialName("current_level") val currentLevel: Int,
     @SerialName("attendance_status") val attendanceStatus: String,
-    @SerialName("profile_pic") val profilePic: String? = null
+    @SerialName("profile_pic") val profilePic: String? = null,
+    @SerialName("school_name") val schoolName: String? = null
 )
 
 @Serializable
@@ -194,7 +195,13 @@ fun Route.parentDashboardRouting() {
                                 overallProgress = childRow[ChildrenTable.overallProgress],
                                 currentLevel = childRow[ChildrenTable.currentLevel],
                                 attendanceStatus = liveStatus ?: childRow[ChildrenTable.attendanceStatus],
-                                profilePic = childRow[ChildrenTable.profilePic]
+                                profilePic = childRow[ChildrenTable.profilePic],
+                                schoolName = childSchoolId?.let { sid ->
+                                    SchoolsTable.selectAll()
+                                        .where { SchoolsTable.id eq sid }
+                                        .singleOrNull()
+                                        ?.get(SchoolsTable.name)
+                                }
                             )
                         }
                     // First child mirrored into child_summary for backward compatibility.

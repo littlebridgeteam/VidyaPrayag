@@ -1,8 +1,8 @@
 package com.littlebridge.enrollplus.ui.v2.screens.teacher
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -17,6 +17,7 @@ import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.feature.parent.presentation.NotificationsViewModel
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherObligationsViewModel
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherProfileViewModel
+import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VNavItem
 import com.littlebridge.enrollplus.ui.v2.components.VScreenScaffold
@@ -54,10 +55,10 @@ private enum class TeacherOverlay { None, Notifications, HealthAlerts, Transport
  * The signature `TeacherPortalV2(onLogout, modifier)` is PRESERVED — it is the only
  * external reference (NavGraphV2 line 309).
  *
- * Live theme: the Profile → Appearance switch writes the global theme pref; this
- * shell reads `getThemeName()` and wraps content in a nested [VTheme] so the tone
- * (Warm / Light / Night) flips immediately without a relaunch. Default is Warm —
- * the teacher portal's canonical lavender look.
+ * Theme: the portal now renders on the shared cream/violet token system
+ * (com.littlebridge.enrollplus.ui.tokens — VColors / VTypography / VShapes) via
+ * the VtC / VtT bridge, so every tab and overlay inherits the same warm cream
+ * canvas and deep-violet accent. No legacy VTheme wrapper is used.
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -259,39 +260,29 @@ fun TeacherPortalV2(
         VNavItem("profile", "Profile", VIcons.User),
     )
 
-    // Canonical header identity (hidden on HOME — HOME renders its own greeting hero).
+    // Shared identity — every tab's TeacherPremiumHeader greets with this name.
     val teacherName = profile.profile?.name.orEmpty()
-    val schoolName = profile.profile?.schoolName.orEmpty()
-    val photoUrl = profile.profile?.photoUrl
-    val subline = when (tab) {
-        "update" -> "Mark & publish"
-        "classes" -> "Your classes & students"
-        "timetable" -> "Your weekly timetable"
-        "profile" -> schoolName.ifBlank { "Your account" }
-        else -> schoolName
-    }
 
     VScreenScaffold(
         modifier = modifier,
-        topBar = {
-            // HOME owns its own greeting hero, so the slim canonical header only
-            // mounts on the other three tabs (no double chrome).
-            if (tab != "home") {
-                TeacherHeader(
-                    teacherName = teacherName.ifBlank { "Teacher" },
-                    subline = subline,
-                    photoUrl = photoUrl,
-                    unreadCount = notifications.unreadCount,
-                    onOpenProfile = { tab = "profile" },
-                    onOpenNotifications = { overlay = TeacherOverlay.Notifications },
-                )
-            }
-        },
+        // Every tab now renders the SAME shared TeacherPremiumHeader inside its own
+        // scrolling content (Home · Update · Classes · Timetable · Profile), so the
+        // portal shares one premium chrome and there is no separate top bar chrome.
+        topBar = null,
         bottomBar = {
             TeacherDock(items = items, selected = tab, onSelect = { tab = it })
         },
-    ) { padding ->
-        Box(Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding())) {
+    ) { _ ->
+        // Paint the warm cream page canvas across the WHOLE tab area so the
+        // lavender scaffold background never shows as a purple band behind the
+        // floating dock. Each tab already reserves [TeacherDockClearance] at the
+        // bottom of its own scroll content, so we intentionally do NOT re-apply
+        // the scaffold's bottom inset here (that produced a double gap).
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(VColors.cream),
+        ) {
             when (tab) {
                 "home" -> TeacherHomeScreenV2(
                     onOpenAttendanceForAssignment = { assignmentId, scope ->
@@ -316,6 +307,13 @@ fun TeacherPortalV2(
                         updateScopeNonce++
                         tab = "update"
                     },
+                    onOpenUpdateTool = { tool ->
+                        updateAssignmentId = null
+                        updateScopeLabel = ""
+                        updateInitialTool = tool
+                        updateScopeNonce++
+                        tab = "update"
+                    },
                     onOpenClasses = { tab = "classes" },
                     onOpenHealthAlerts = { overlay = TeacherOverlay.HealthAlerts },
                     onOpenTransportAttendance = { overlay = TeacherOverlay.TransportAttendance },
@@ -326,6 +324,8 @@ fun TeacherPortalV2(
                     onOpenScheduledMessages = { overlay = TeacherOverlay.ScheduledMessages },
                     onOpenEvents = { overlay = TeacherOverlay.EventRegistration },
                     onOpenMessages = { overlay = TeacherOverlay.Messages },
+                    onOpenNotifications = { overlay = TeacherOverlay.Notifications },
+                    unreadCount = notifications.unreadCount,
                 )
 
                 "update" -> key(updateScopeNonce) {
@@ -333,14 +333,30 @@ fun TeacherPortalV2(
                         initialAssignmentId = updateAssignmentId,
                         initialScopeLabel = updateScopeLabel,
                         initialTool = updateInitialTool,
+                        teacherName = teacherName,
+                        unreadCount = notifications.unreadCount,
+                        onOpenNotifications = { overlay = TeacherOverlay.Notifications },
                     )
                 }
 
-                "classes" -> TeacherClassesScreenV2()
+                "classes" -> TeacherClassesScreenV2(
+                    teacherName = teacherName,
+                    unreadCount = notifications.unreadCount,
+                    onOpenNotifications = { overlay = TeacherOverlay.Notifications },
+                )
 
-                "timetable" -> TeacherTimetableScreenV2()
+                "timetable" -> TeacherTimetableScreenV2(
+                    teacherName = teacherName,
+                    unreadCount = notifications.unreadCount,
+                    onOpenNotifications = { overlay = TeacherOverlay.Notifications },
+                )
 
-                "profile" -> TeacherProfileScreenV2(onLogout = onLogout)
+                "profile" -> TeacherProfileScreenV2(
+                    onLogout = onLogout,
+                    teacherName = teacherName,
+                    unreadCount = notifications.unreadCount,
+                    onOpenNotifications = { overlay = TeacherOverlay.Notifications },
+                )
             }
         }
     }

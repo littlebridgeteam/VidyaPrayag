@@ -37,12 +37,15 @@ import com.littlebridge.enrollplus.ui.v2.components.VDatePicker
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.components.VLabel
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -59,14 +62,13 @@ fun AcademicYearManagementScreenV2(
     viewModel: AcademicYearViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
-    val c = VTheme.colors
-
+    
     var showCreate by remember { mutableStateOf(false) }
     var name by remember { mutableStateOf("") }
     var start by remember { mutableStateOf("") }
     var end by remember { mutableStateOf("") }
 
-    Column(modifier.fillMaxSize().background(c.background).statusBarsPadding().imePadding().navigationBarsPadding()) {
+    Column(modifier.fillMaxSize().background(VColors.surface).statusBarsPadding().imePadding().navigationBarsPadding()) {
         VBackHeader(
             title = appString(StringKeys.SCH_ACADEMIC_YEAR),
             onBack = onBack,
@@ -80,16 +82,18 @@ fun AcademicYearManagementScreenV2(
             },
         )
 
-        VStateHost(
-            loading = state.isLoading,
-            error = state.errorMessage,
-            isEmpty = state.isEmpty && !showCreate,
-            modifier = Modifier.weight(1f).fillMaxWidth(),
-            emptyTitle = appString(StringKeys.SCH_NO_ACADEMIC_YEARS),
-            emptyBody = appString(StringKeys.SCH_NO_ACADEMIC_YEARS_DESC),
-            emptyIcon = VIcons.Calendar,
-            onRetry = { viewModel.load() },
-        ) {
+        VPullRefresh(isRefreshing = state.isLoading && !state.isEmpty, onRefresh = { viewModel.load() }) {
+            VStateHost(
+                loading = state.isLoading,
+                error = state.errorMessage,
+                isEmpty = state.isEmpty && !showCreate,
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                emptyTitle = appString(StringKeys.SCH_NO_ACADEMIC_YEARS),
+                emptyBody = appString(StringKeys.SCH_NO_ACADEMIC_YEARS_DESC),
+                emptyIcon = VIcons.Calendar,
+                onRetry = { viewModel.load() },
+                skeleton = { SkeletonList(rows = 4, withAvatar = false) },
+            ) {
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp, vertical = 16.dp),
@@ -140,16 +144,18 @@ fun AcademicYearManagementScreenV2(
                 val historical = state.historicalYears
                 if (historical.isNotEmpty()) {
                     VLabel(appString(StringKeys.SCH_HISTORICAL_DRAFTS))
-                    historical.forEach { y ->
+                    historical.forEachIndexed { i, y ->
                         YearCard(
                             y,
                             isActive = false,
                             onActivate = { viewModel.activate(y.id) },
                             onArchive = { viewModel.archive(y.id) },
+                            modifier = Modifier.staggeredItemEntrance(i, historical.isNotEmpty()),
                         )
                     }
                 }
             }
+        }
         }
     }
 }
@@ -160,13 +166,13 @@ private fun YearCard(
     isActive: Boolean,
     onActivate: () -> Unit,
     onArchive: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    VCard {
+        VCard(modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text(year.name, style = VTheme.type.h3.colored(c.ink))
-                Text("${year.startDate} → ${year.endDate}", style = VTheme.type.caption.colored(c.ink2))
+                Text(year.name, style = VTypography.h3.copy(color = VColors.ink))
+                Text("${year.startDate} → ${year.endDate}", style = VTypography.caption.copy(color = VColors.ink2))
             }
             VBadge(
                 text = year.status,
@@ -180,8 +186,8 @@ private fun YearCard(
         if (year.academicDays != null || year.holidayDays != null) {
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                year.academicDays?.let { Text(appString(StringKeys.SCH_SCHOOL_DAYS, "count" to it.toString()), style = VTheme.type.caption.colored(c.ink3)) }
-                year.holidayDays?.let { Text(appString(StringKeys.SCH_HOLIDAYS, "count" to it.toString()), style = VTheme.type.caption.colored(c.ink3)) }
+                year.academicDays?.let { Text(appString(StringKeys.SCH_SCHOOL_DAYS, "count" to it.toString()), style = VTypography.caption.copy(color = VColors.ink3)) }
+                year.holidayDays?.let { Text(appString(StringKeys.SCH_HOLIDAYS, "count" to it.toString()), style = VTypography.caption.copy(color = VColors.ink3)) }
             }
         }
         Spacer(Modifier.height(12.dp))

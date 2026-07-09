@@ -19,6 +19,7 @@
 package com.littlebridge.enrollplus.feature.ai
 
 import com.littlebridge.enrollplus.core.EnvConfig
+import com.littlebridge.enrollplus.core.RuntimeEnvironment
 import org.slf4j.LoggerFactory
 import java.security.MessageDigest
 import java.security.SecureRandom
@@ -41,11 +42,23 @@ class EncryptionService(
     val isConfigured: Boolean get() = secretKey != null
 
     init {
-        if (secretKey == null) {
-            log.warn(
-                "AI_ENCRYPTION_KEY not set — provider keys will be stored in DEV " +
-                    "passthrough mode (NOT encrypted). Set AI_ENCRYPTION_KEY in production."
-            )
+        if (RuntimeEnvironment.isProduction) {
+            if (secretKey == null) {
+                throw IllegalStateException(
+                    "FATAL: AI_ENCRYPTION_KEY must be set in production. " +
+                    "Refusing to boot — provider API keys would be stored in plaintext."
+                )
+            }
+            log.info("AI encryption service initialized with AES-256-GCM (production mode).")
+        } else {
+            if (secretKey == null) {
+                log.warn(
+                    "WARNING: AI encryption is using plaintext storage in dev mode. " +
+                    "This MUST NOT be used in production."
+                )
+            } else {
+                log.info("AI encryption service initialized with AES-256-GCM (dev mode with key).")
+            }
         }
     }
 

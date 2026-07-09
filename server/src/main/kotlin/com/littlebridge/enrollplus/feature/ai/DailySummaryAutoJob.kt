@@ -33,6 +33,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
+import java.util.concurrent.atomic.AtomicReference
 
 object DailySummaryAutoJob {
     private const val TAG = "DailySummaryAutoJob"
@@ -41,8 +42,7 @@ object DailySummaryAutoJob {
     private const val TARGET_HOUR_UTC = 14 // 7:30 PM IST ≈ 14:00 UTC
     private const val CHECK_INTERVAL_MS = 60 * 60 * 1000L // 1 hour
 
-    @Volatile
-    private var lastRunDate: LocalDate? = null
+    private val lastRunDate = AtomicReference<LocalDate?>(null)
 
     fun start(scope: CoroutineScope) {
         scope.launch {
@@ -59,8 +59,8 @@ object DailySummaryAutoJob {
         val now = ZonedDateTime.now(ZoneOffset.UTC)
         val today = now.toLocalDate()
         if (now.hour != TARGET_HOUR_UTC) return
-        if (lastRunDate == today) return
-        lastRunDate = today
+        if (lastRunDate.get() == today) return
+        if (!lastRunDate.compareAndSet(null, today)) return
         runForDate(today)
     }
 

@@ -91,6 +91,13 @@ class ParentApi(
         }
     }
 
+    /** Clear every notification for this user. */
+    suspend fun clearAllNotifications(token: String): NetworkResult<Unit> {
+        return safeApiCall {
+            client.delete(getUrl("api/v1/notifications/all"))
+        }
+    }
+
     // ── RA-43 / RA-56: child-scoped academic reads ───────────────────────────
     // childId is a server-issued UUID (no encoding hazard); the school+child
     // ownership check lives server-side in requireOwnedChild().

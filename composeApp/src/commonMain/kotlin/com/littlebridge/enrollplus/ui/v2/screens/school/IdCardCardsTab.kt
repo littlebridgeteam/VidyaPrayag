@@ -52,11 +52,13 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VEmptyState
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.components.VTag
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.util.AppConfig
 
 @Composable
@@ -64,8 +66,7 @@ internal fun CardsTab(
     state: IdCardState,
     viewModel: IdCardViewModel,
 ) {
-    val c = VTheme.colors
-    var searchQuery by remember { mutableStateOf("") }
+        var searchQuery by remember { mutableStateOf("") }
     var filterType by remember { mutableStateOf<String?>(null) }
     var cardToDelete by remember { mutableStateOf<IdCardDto?>(null) }
     val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
@@ -104,7 +105,7 @@ internal fun CardsTab(
 
         Text(
             text = appString(StringKeys.SCH_CARDS_COUNT, "filtered" to filteredCards.size.toString(), "total" to state.cards.size.toString()),
-            style = VTheme.type.caption.colored(c.ink3),
+            style = VTypography.caption.copy(color = VColors.ink3),
             modifier = Modifier.padding(horizontal = 16.dp),
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -125,9 +126,9 @@ internal fun CardsTab(
                 modifier = Modifier.padding(top = 48.dp),
             )
         } else {
-            filteredCards.chunked(2).forEach { rowCards ->
+            filteredCards.chunked(2).forEachIndexed { i, rowCards ->
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    modifier = Modifier.fillMaxWidth().staggeredItemEntrance(i, filteredCards.chunked(2).isNotEmpty()).padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     rowCards.forEach { card ->
@@ -173,8 +174,7 @@ private fun CardGridItem(
     onVerify: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    val status = remember(card.validTill) { cardStatus(card.validTill) }
+        val status = remember(card.validTill) { cardStatus(card.validTill) }
 
     VCard(
         modifier = modifier.padding(vertical = 4.dp),
@@ -185,7 +185,7 @@ private fun CardGridItem(
                     .fillMaxWidth()
                     .aspectRatio(54f / 86f)
                     .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
-                    .background(c.cream),
+                    .background(VColors.cream),
                 contentAlignment = Alignment.Center,
             ) {
                 card.digitalCardUrl?.let { url ->
@@ -208,12 +208,12 @@ private fun CardGridItem(
                                 .fillMaxWidth()
                                 .height(20.dp)
                                 .clip(RoundedCornerShape(4.dp))
-                                .background(c.accent),
+                                .background(VColors.violet),
                             contentAlignment = Alignment.CenterStart,
                         ) {
                             Text(
                                 text = appString(StringKeys.SCH_ID_CARD),
-                                style = VTheme.type.caption.colored(Color.White).copy(fontSize = 7.sp),
+                                style = VTypography.caption.copy(color = Color.White).copy(fontSize = 7.sp),
                                 modifier = Modifier.padding(horizontal = 4.dp),
                             )
                         }
@@ -231,10 +231,10 @@ private fun CardGridItem(
                                     Modifier
                                         .size(32.dp)
                                         .clip(RoundedCornerShape(4.dp))
-                                        .background(c.accent.copy(alpha = 0.15f)),
+                                        .background(VColors.violet.copy(alpha = 0.15f)),
                                     contentAlignment = Alignment.Center,
                                 ) {
-                                    Icon(Icons.Filled.Person, contentDescription = null, tint = c.accent, modifier = Modifier.size(20.dp))
+                                    Icon(Icons.Filled.Person, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(20.dp))
                                 }
                                 // Real QR code from server endpoint
                                 AsyncImage(
@@ -253,16 +253,16 @@ private fun CardGridItem(
                             ) {
                                 Text(
                                     text = card.personName,
-                                    style = VTheme.type.caption.colored(c.ink).copy(fontWeight = FontWeight.Bold),
+                                    style = VTypography.caption.copy(color = VColors.ink).copy(fontWeight = FontWeight.Bold),
                                     maxLines = 2,
                                 )
                                 Text(
                                     text = card.personType.replaceFirstChar { it.uppercase() },
-                                    style = VTheme.type.caption.colored(c.accent).copy(fontSize = 8.sp),
+                                    style = VTypography.caption.copy(color = VColors.violet).copy(fontSize = 8.sp),
                                 )
                                 Text(
                                     text = "#${card.personId.takeLast(8)}",
-                                    style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 7.sp),
+                                    style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 7.sp),
                                     maxLines = 1,
                                 )
                             }
@@ -274,7 +274,7 @@ private fun CardGridItem(
                                 .fillMaxWidth()
                                 .height(12.dp)
                                 .clip(RoundedCornerShape(4.dp))
-                                .background(c.accent),
+                                .background(VColors.violet),
                         )
                     }
                 }
@@ -316,12 +316,12 @@ private fun CardGridItem(
             Column(modifier = Modifier.padding(8.dp)) {
                 Text(
                     text = card.personName,
-                    style = VTheme.type.bodyStrong.colored(c.ink),
+                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink),
                     maxLines = 1,
                 )
                 Text(
                     text = card.personType.replaceFirstChar { it.uppercase() },
-                    style = VTheme.type.caption.colored(c.ink2),
+                    style = VTypography.caption.copy(color = VColors.ink2),
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(

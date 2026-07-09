@@ -28,7 +28,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -64,11 +64,13 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -122,8 +124,7 @@ private fun PewsCohortContent(
     onPollJob: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    // The screen is only "empty" (full-screen empty state) when there is NOTHING
+        // The screen is only "empty" (full-screen empty state) when there is NOTHING
     // to manage at all — no cohort AND no config loaded. When the cohort has no
     // at-risk students but config/effectiveness exist, we must still render the
     // list so the admin can reach the Config card (incl. the "Share with parents"
@@ -139,6 +140,7 @@ private fun PewsCohortContent(
         emptyBody = appString(StringKeys.SCH_NO_STUDENTS_ATTENTION_DESC),
         onRetry = onRetry,
         modifier = modifier,
+        skeleton = { SkeletonList(rows = 6, withAvatar = true) },
     ) {
         val cohort = state.cohort
         val students = cohort?.students.orEmpty()
@@ -170,8 +172,8 @@ private fun PewsCohortContent(
                 // Inline "all on track" note so config/effectiveness stay reachable.
                 item { AllOnTrackNote() }
             } else {
-                items(students, key = { it.studentCode }) { s ->
-                    PewsStudentRow(s, onClick = { onOpenStudent(s.studentCode) })
+                itemsIndexed(students, key = { _, it -> it.studentCode }) { index, s ->
+                    PewsStudentRow(s, onClick = { onOpenStudent(s.studentCode) }, modifier = Modifier.staggeredItemEntrance(index, students.isNotEmpty()))
                 }
             }
             // ── Effectiveness rollup (LEARN loop) — admin parity with the web portal
@@ -198,33 +200,32 @@ private fun PewsCohortContent(
 /** Effectiveness — what the intervention loop is achieving (the LEARN stage). */
 @Composable
 private fun EffectivenessCard(eff: PewsEffectivenessDto) {
-    val c = VTheme.colors
-    val resolved = eff.done + eff.dismissed
+        val resolved = eff.done + eff.dismissed
     val outcomeTotal = eff.improved + eff.unchanged + eff.worsened
     val improvedPct = if (outcomeTotal > 0) (eff.improved * 100) / outcomeTotal else 0
     VCard {
         Text(
             appString(StringKeys.SCH_EFFECTIVENESS_HEADER),
-            style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+            style = VTypography.label.copy(color = VColors.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
         )
         Spacer(Modifier.height(4.dp))
         Text(
             appString(StringKeys.SCH_EFFECTIVENESS_LOOP_DESC),
-            style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp),
+            style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 12.sp),
         )
         Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            EffStat(appString(StringKeys.SCH_OPEN), "${eff.open}", c.ink, Modifier.weight(1f))
-            EffStat(appString(StringKeys.SCH_RESOLVED), "$resolved", c.ink, Modifier.weight(1f))
-            EffStat(appString(StringKeys.SCH_IMPROVED), if (outcomeTotal > 0) "$improvedPct%" else "—", c.successInk, Modifier.weight(1f))
+            EffStat(appString(StringKeys.SCH_OPEN), "${eff.open}", VColors.ink, Modifier.weight(1f))
+            EffStat(appString(StringKeys.SCH_RESOLVED), "$resolved", VColors.ink, Modifier.weight(1f))
+            EffStat(appString(StringKeys.SCH_IMPROVED), if (outcomeTotal > 0) "$improvedPct%" else "—", VColors.success, Modifier.weight(1f))
         }
         if (outcomeTotal > 0) {
             Spacer(Modifier.height(12.dp))
-            OutcomeBar(appString(StringKeys.SCH_IMPROVED), eff.improved, eff.total, c.success)
+            OutcomeBar(appString(StringKeys.SCH_IMPROVED), eff.improved, eff.total, VColors.success)
             Spacer(Modifier.height(6.dp))
-            OutcomeBar(appString(StringKeys.SCH_NO_CHANGE), eff.unchanged, eff.total, c.ink3.copy(alpha = 0.5f))
+            OutcomeBar(appString(StringKeys.SCH_NO_CHANGE), eff.unchanged, eff.total, VColors.ink3.copy(alpha = 0.5f))
             Spacer(Modifier.height(6.dp))
-            OutcomeBar(appString(StringKeys.SCH_WORSENED), eff.worsened, eff.total, c.danger)
+            OutcomeBar(appString(StringKeys.SCH_WORSENED), eff.worsened, eff.total, VColors.error)
         }
     }
 }
@@ -236,14 +237,13 @@ private fun EffStat(
     fg: androidx.compose.ui.graphics.Color,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    Column(
-        modifier.clip(RoundedCornerShape(10.dp)).background(c.cream).padding(vertical = 12.dp),
+        Column(
+        modifier.clip(RoundedCornerShape(10.dp)).background(VColors.cream).padding(vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(value, style = VTheme.type.dataLg.colored(fg).copy(fontWeight = FontWeight.Bold, fontSize = 18.sp))
+        Text(value, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = fg).copy(fontWeight = FontWeight.Bold, fontSize = 18.sp))
         Spacer(Modifier.height(2.dp))
-        Text(label, style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp))
+        Text(label, style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 11.sp))
     }
 }
 
@@ -254,16 +254,15 @@ private fun OutcomeBar(
     total: Int,
     fill: androidx.compose.ui.graphics.Color,
 ) {
-    val c = VTheme.colors
-    val frac = if (total > 0) value.toFloat() / total.toFloat() else 0f
+        val frac = if (total > 0) value.toFloat() / total.toFloat() else 0f
     Column(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(label, style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp))
-            Text("$value", style = VTheme.type.caption.colored(c.ink).copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold))
+            Text(label, style = VTypography.caption.copy(color = VColors.ink2).copy(fontSize = 12.sp))
+            Text("$value", style = VTypography.caption.copy(color = VColors.ink).copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold))
         }
         Spacer(Modifier.height(4.dp))
         Box(
-            Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(999.dp)).background(c.cream),
+            Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(999.dp)).background(VColors.cream),
         ) {
             Box(
                 Modifier.fillMaxWidth(frac).height(8.dp).clip(RoundedCornerShape(999.dp)).background(fill),
@@ -279,8 +278,7 @@ private fun ConfigCard(
     isSaving: Boolean,
     onSave: (PewsConfigDto) -> Unit,
 ) {
-    val c = VTheme.colors
-    var draft by remember(config) { mutableStateOf(config) }
+        var draft by remember(config) { mutableStateOf(config) }
     val dirty = draft != config
 
     VCard {
@@ -292,12 +290,12 @@ private fun ConfigCard(
             Column(Modifier.weight(1f)) {
                 Text(
                     appString(StringKeys.SCH_CONFIGURATION),
-                    style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                    style = VTypography.label.copy(color = VColors.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
                     appString(StringKeys.SCH_CONFIGURATION_DESC),
-                    style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp),
+                    style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 12.sp),
                 )
             }
             if (dirty) {
@@ -334,7 +332,7 @@ private fun ConfigCard(
         Spacer(Modifier.height(10.dp))
         Text(
             appString(StringKeys.SCH_RUN_FREQUENCY),
-            style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
+            style = VTypography.body.copy(color = VColors.ink).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
         )
         Spacer(Modifier.height(6.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -351,8 +349,7 @@ private fun ConfigToggle(
     checked: Boolean,
     onChange: (Boolean) -> Unit,
 ) {
-    val c = VTheme.colors
-    Row(
+        Row(
         Modifier.fillMaxWidth().padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -360,22 +357,22 @@ private fun ConfigToggle(
         Column(Modifier.weight(1f)) {
             Text(
                 label,
-                style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
+                style = VTypography.body.copy(color = VColors.ink).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
             )
             Spacer(Modifier.height(2.dp))
             Text(
                 hint,
-                style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp, lineHeight = 15.sp),
+                style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 11.sp, lineHeight = 15.sp),
             )
         }
         Switch(
             checked = checked,
             onCheckedChange = onChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = c.card,
-                checkedTrackColor = c.accent,
-                uncheckedThumbColor = c.card,
-                uncheckedTrackColor = c.ink3.copy(alpha = 0.3f),
+                checkedThumbColor = VColors.surfaceCard,
+                checkedTrackColor = VColors.violet,
+                uncheckedThumbColor = VColors.surfaceCard,
+                uncheckedTrackColor = VColors.ink3.copy(alpha = 0.3f),
             ),
         )
     }
@@ -389,19 +386,18 @@ private fun FreqChip(
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    val isSel = selected == value
+        val isSel = selected == value
     Box(
         modifier
             .clip(RoundedCornerShape(999.dp))
-            .background(if (isSel) c.ink else c.cream)
+            .background(if (isSel) VColors.ink else VColors.cream)
             .clickable { onSelect(value) }
             .padding(vertical = 10.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             label,
-            style = VTheme.type.label.colored(if (isSel) c.card else c.ink2)
+            style = VTypography.label.copy(color = if (isSel) VColors.surfaceCard else VColors.ink2)
                 .copy(fontWeight = FontWeight.SemiBold, fontSize = 12.sp),
         )
     }
@@ -410,23 +406,22 @@ private fun FreqChip(
 /** Real band counts — High / Watch (medium) / Watch (early). */
 @Composable
 private fun RiskBandSummary(cohort: PewsCohortDto) {
-    val c = VTheme.colors
-    VCard {
+        VCard {
         Text(
             appString(StringKeys.SCH_RISK_BAND),
-            style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+            style = VTypography.label.copy(color = VColors.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
         )
         Spacer(Modifier.height(10.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            BandCount(appString(StringKeys.SCH_HIGH), cohort.high, c.danger, c.dangerInk, Modifier.weight(1f))
-            BandCount(appString(StringKeys.SCH_MEDIUM), cohort.medium, c.warning, c.warningInk, Modifier.weight(1f))
-            BandCount(appString(StringKeys.SCH_WATCH), cohort.watch, c.success, c.successInk, Modifier.weight(1f))
+            BandCount(appString(StringKeys.SCH_HIGH), cohort.high, VColors.error, VColors.error, Modifier.weight(1f))
+            BandCount(appString(StringKeys.SCH_MEDIUM), cohort.medium, VColors.gold, VColors.gold, Modifier.weight(1f))
+            BandCount(appString(StringKeys.SCH_WATCH), cohort.watch, VColors.success, VColors.success, Modifier.weight(1f))
         }
         cohort.runDate?.let {
             Spacer(Modifier.height(10.dp))
             Text(
                 appString(StringKeys.SCH_AS_OF, "date" to it),
-                style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp),
+                style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 11.sp),
             )
         }
     }
@@ -444,16 +439,15 @@ private fun BandCount(
         modifier.clip(RoundedCornerShape(10.dp)).background(bg).padding(vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text("$count", style = VTheme.type.dataLg.colored(fg).copy(fontWeight = FontWeight.Bold))
+        Text("$count", style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = fg).copy(fontWeight = FontWeight.Bold))
         Spacer(Modifier.height(2.dp))
-        Text(label, style = VTheme.type.caption.colored(fg).copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold))
+        Text(label, style = VTypography.caption.copy(color = fg).copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold))
     }
 }
 
 @Composable
 private fun BandFilterRow(selected: String, onSelect: (String) -> Unit) {
-    val c = VTheme.colors
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         FilterChip(appString(StringKeys.SCH_ALL), "watch", selected, onSelect, Modifier.weight(1f))
         FilterChip(appString(StringKeys.SCH_MEDIUM_PLUS), "medium", selected, onSelect, Modifier.weight(1f))
         FilterChip(appString(StringKeys.SCH_HIGH_ONLY), "high", selected, onSelect, Modifier.weight(1f))
@@ -468,19 +462,18 @@ private fun FilterChip(
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    val isSel = selected == value
+        val isSel = selected == value
     Box(
         modifier
             .clip(RoundedCornerShape(999.dp))
-            .background(if (isSel) c.ink else c.cream)
+            .background(if (isSel) VColors.ink else VColors.cream)
             .clickable { onSelect(value) }
             .padding(vertical = 10.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             label,
-            style = VTheme.type.label.colored(if (isSel) c.card else c.ink2)
+            style = VTypography.label.copy(color = if (isSel) VColors.surfaceCard else VColors.ink2)
                 .copy(fontWeight = FontWeight.SemiBold, fontSize = 12.sp),
         )
     }
@@ -488,17 +481,16 @@ private fun FilterChip(
 
 @Composable
 private fun AiDisabledNote() {
-    val c = VTheme.colors
-    Row(
+        Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
-            .background(c.cream).padding(12.dp),
+            .background(VColors.cream).padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Icon(VIcons.AlertCircle, contentDescription = null, tint = c.ink3, modifier = Modifier.size(16.dp))
+        Icon(VIcons.AlertCircle, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(16.dp))
         Text(
             appString(StringKeys.SCH_AI_DISABLED_NOTE),
-            style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp, lineHeight = 17.sp),
+            style = VTypography.caption.copy(color = VColors.ink2).copy(fontSize = 12.sp, lineHeight = 17.sp),
         )
     }
 }
@@ -511,17 +503,16 @@ private fun AiDisabledNote() {
  */
 @Composable
 private fun AllOnTrackNote() {
-    val c = VTheme.colors
-    Row(
+        Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
-            .background(c.cream).padding(14.dp),
+            .background(VColors.cream).padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Icon(VIcons.ShieldCheck, contentDescription = null, tint = c.accent, modifier = Modifier.size(18.dp))
+        Icon(VIcons.ShieldCheck, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
         Text(
             appString(StringKeys.SCH_ALL_ON_TRACK_NOTE),
-            style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp, lineHeight = 17.sp),
+            style = VTypography.caption.copy(color = VColors.ink2).copy(fontSize = 12.sp, lineHeight = 17.sp),
         )
     }
 }
@@ -529,13 +520,12 @@ private fun AllOnTrackNote() {
 /** Async job status indicator — shows queued/processing/completed/failed with auto-poll. */
 @Composable
 private fun JobStatusCard(status: String, jobId: String?, onPoll: (String) -> Unit) {
-    val c = VTheme.colors
-    val (label, tone) = when (status) {
-        "queued" -> appString(StringKeys.SCH_QUEUED) to c.ink3
-        "processing" -> appString(StringKeys.SCH_RUNNING) to c.warning
-        "completed" -> appString(StringKeys.SCH_COMPLETE) to c.success
-        "failed" -> appString(StringKeys.SCH_FAILED) to c.danger
-        else -> status to c.ink3
+        val (label, tone) = when (status) {
+        "queued" -> appString(StringKeys.SCH_QUEUED) to VColors.ink3
+        "processing" -> appString(StringKeys.SCH_RUNNING) to VColors.gold
+        "completed" -> appString(StringKeys.SCH_COMPLETE) to VColors.success
+        "failed" -> appString(StringKeys.SCH_FAILED) to VColors.error
+        else -> status to VColors.ink3
     }
     VCard {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -544,7 +534,7 @@ private fun JobStatusCard(status: String, jobId: String?, onPoll: (String) -> Un
             )
             Text(
                 label,
-                style = VTheme.type.body.colored(c.ink).copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
+                style = VTypography.body.copy(color = VColors.ink).copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
                 modifier = Modifier.weight(1f),
             )
             if (jobId != null && (status == "queued" || status == "processing")) {
@@ -562,17 +552,16 @@ private fun JobStatusCard(status: String, jobId: String?, onPoll: (String) -> Un
 /** Cohort risk distribution over time — a simple sparkline-style trend. */
 @Composable
 private fun TrendCard(points: List<PewsTrendPointDto>) {
-    val c = VTheme.colors
-    val maxTotal = points.maxOfOrNull { it.total } ?: 0
+        val maxTotal = points.maxOfOrNull { it.total } ?: 0
     VCard {
         Text(
             appString(StringKeys.SCH_RISK_TREND),
-            style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+            style = VTypography.label.copy(color = VColors.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
         )
         Spacer(Modifier.height(4.dp))
         Text(
             appString(StringKeys.SCH_RISK_TREND_DESC),
-            style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp),
+            style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 12.sp),
         )
         Spacer(Modifier.height(12.dp))
         // Stacked bar chart — one bar per run date
@@ -584,67 +573,65 @@ private fun TrendCard(points: List<PewsTrendPointDto>) {
             ) {
                 Text(
                     p.runDate.takeLast(5),
-                    style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp),
+                    style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 10.sp),
                     modifier = Modifier.weight(0.3f),
                 )
                 Box(
-                    Modifier.weight(0.7f).height(16.dp).clip(RoundedCornerShape(4.dp)).background(c.cream),
+                    Modifier.weight(0.7f).height(16.dp).clip(RoundedCornerShape(4.dp)).background(VColors.cream),
                 ) {
                     Row(Modifier.fillMaxSize()) {
                         val highFrac = if (maxTotal > 0) p.high.toFloat() / maxTotal else 0f
                         val medFrac = if (maxTotal > 0) p.medium.toFloat() / maxTotal else 0f
                         val watchFrac = if (maxTotal > 0) p.watch.toFloat() / maxTotal else 0f
-                        Box(Modifier.fillMaxWidth(highFrac).fillMaxSize().background(c.danger))
-                        Box(Modifier.fillMaxWidth(medFrac).fillMaxSize().background(c.warning))
-                        Box(Modifier.fillMaxWidth(watchFrac).fillMaxSize().background(c.success))
+                        Box(Modifier.fillMaxWidth(highFrac).fillMaxSize().background(VColors.error))
+                        Box(Modifier.fillMaxWidth(medFrac).fillMaxSize().background(VColors.gold))
+                        Box(Modifier.fillMaxWidth(watchFrac).fillMaxSize().background(VColors.success))
                     }
                 }
             }
         }
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            TrendLegend(appString(StringKeys.SCH_HIGH), c.danger)
-            TrendLegend(appString(StringKeys.SCH_MEDIUM), c.warning)
-            TrendLegend(appString(StringKeys.SCH_WATCH), c.success)
+            TrendLegend(appString(StringKeys.SCH_HIGH), VColors.error)
+            TrendLegend(appString(StringKeys.SCH_MEDIUM), VColors.gold)
+            TrendLegend(appString(StringKeys.SCH_WATCH), VColors.success)
         }
     }
 }
 
 @Composable
 private fun TrendLegend(label: String, color: androidx.compose.ui.graphics.Color) {
-    val c = VTheme.colors
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         Box(Modifier.size(8.dp).clip(RoundedCornerShape(2.dp)).background(color))
-        Text(label, style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp))
+        Text(label, style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 10.sp))
     }
 }
 
 @Composable
-private fun PewsStudentRow(s: PewsStudentDto, onClick: () -> Unit) {
-    val c = VTheme.colors
-    val (tone, levelLabel) = when (s.riskLevel) {
+private fun PewsStudentRow(s: PewsStudentDto, onClick: () -> Unit, modifier: Modifier = Modifier) {
+        val (tone, levelLabel) = when (s.riskLevel) {
         "high" -> VBadgeTone.Danger to appString(StringKeys.SCH_HIGH)
         "medium" -> VBadgeTone.Warning to appString(StringKeys.SCH_MEDIUM)
         else -> VBadgeTone.Success to appString(StringKeys.SCH_WATCH)
     }
-    VCard(onClick = onClick) {
+    VCard(modifier = modifier, onClick = onClick) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             // initial avatar
             Box(
-                Modifier.size(40.dp).clip(CircleShape).background(c.cream),
+                Modifier.size(40.dp).clip(CircleShape).background(VColors.cream),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     s.name.firstOrNull()?.uppercase() ?: "?",
-                    style = VTheme.type.bodyStrong.colored(c.ink2),
+                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2),
                 )
             }
             Column(Modifier.weight(1f)) {
-                Text(s.name, style = VTheme.type.bodyStrong.colored(c.ink), maxLines = 1)
+                Text(s.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink), maxLines = 1)
                 Spacer(Modifier.height(2.dp))
                 Text(
                     appString(StringKeys.SCH_CLASS_SECTION_DASH, "className" to s.className, "section" to if (s.section.isNotBlank()) "-${s.section}" else ""),
-                    style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp),
+                    style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 12.sp),
                 )
             }
             VBadge(text = levelLabel, tone = tone)
@@ -663,10 +650,10 @@ private fun PewsStudentRow(s: PewsStudentDto, onClick: () -> Unit) {
         if (!aiLine.isNullOrBlank()) {
             Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Icon(VIcons.Sparkles, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(13.dp))
+                Icon(VIcons.Sparkles, contentDescription = null, tint = VColors.sky, modifier = Modifier.size(13.dp))
                 Text(
                     aiLine,
-                    style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp, lineHeight = 17.sp),
+                    style = VTypography.caption.copy(color = VColors.ink2).copy(fontSize = 12.sp, lineHeight = 17.sp),
                     maxLines = 2,
                 )
             }
@@ -676,10 +663,9 @@ private fun PewsStudentRow(s: PewsStudentDto, onClick: () -> Unit) {
 
 @Composable
 private fun SignalChip(label: String) {
-    val c = VTheme.colors
-    Box(
-        Modifier.clip(RoundedCornerShape(8.dp)).background(c.cream).padding(horizontal = 8.dp, vertical = 4.dp),
+        Box(
+        Modifier.clip(RoundedCornerShape(8.dp)).background(VColors.cream).padding(horizontal = 8.dp, vertical = 4.dp),
     ) {
-        Text(label, style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 11.sp))
+        Text(label, style = VTypography.caption.copy(color = VColors.ink2).copy(fontSize = 11.sp))
     }
 }

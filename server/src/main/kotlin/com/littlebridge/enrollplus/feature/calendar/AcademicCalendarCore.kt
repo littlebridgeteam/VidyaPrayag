@@ -269,8 +269,8 @@ suspend fun createCalendarEvent(
         it[CalendarEventsTable.schoolId] = schoolId
         it[eventCode] = code
         it[CalendarEventsTable.academicYearId] = resolvedYear
-        it[CalendarEventsTable.title] = title
-        it[CalendarEventsTable.description] = description
+        it[CalendarEventsTable.title] = com.littlebridge.enrollplus.core.HtmlSanitizer.sanitize(title)
+        it[CalendarEventsTable.description] = com.littlebridge.enrollplus.core.HtmlSanitizer.sanitize(description)
         it[CalendarEventsTable.type] = type
         it[CalendarEventsTable.status] = status
         it[CalendarEventsTable.eventSource] = source

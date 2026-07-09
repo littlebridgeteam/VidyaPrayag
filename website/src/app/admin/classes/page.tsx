@@ -1,22 +1,24 @@
 "use client";
+import { errorMessage } from "@/lib/errorUtils";
+
 
 import { useState, useEffect, useCallback } from "react";
 import { adminApi } from "@/lib/admin/client";
+import type { SchoolClassDto } from "@/lib/admin/types";
 import { Card, CardHeader, EmptyState, FadeIn, Skeleton } from "@/components/admin/Primitives";
 import { IconClasses } from "@/components/admin/icons";
 
 export default function ClassesPage() {
-  const [data, setData] = useState<Record<string, unknown>[]>([]);
+  const [data, setData] = useState<SchoolClassDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
       const res = await adminApi.schoolClasses();
-      const raw = res as unknown as Record<string, unknown>;
-      setData(Array.isArray(raw) ? raw : (raw.classes as Record<string, unknown>[]) ?? []);
+      setData(res.classes ?? []);
     } catch (e) {
-      setError(`Failed to load classes: ${(e as Error).message}`);
+      setError(`Failed to load classes: ${errorMessage(e)}`);
     } finally {
       setLoading(false);
     }
@@ -56,13 +58,12 @@ export default function ClassesPage() {
                 </thead>
                 <tbody className="divide-y divide-navy/[0.03]">
                   {classes.map((c, i) => {
-                    const row = c as Record<string, unknown>;
                     return (
-                      <tr key={(row.id as string) ?? i} className="hover:bg-navy/[0.02] transition-colors">
-                        <td className="px-5 py-3 font-semibold text-navy-deep">{String(row.name ?? row.className ?? "—")}</td>
-                        <td className="px-5 py-3 text-ink-2">{Array.isArray(row.sections) ? row.sections.join(", ") : String(row.section ?? "—")}</td>
-                        <td className="px-5 py-3 text-ink-3">{String(row.subject_count ?? "—")}</td>
-                        <td className="px-5 py-3 text-ink-3">{String(row.student_count ?? "—")}</td>
+                      <tr key={c.id ?? i} className="hover:bg-navy/[0.02] transition-colors">
+                        <td className="px-5 py-3 font-semibold text-navy-deep">{c.name ?? "—"}</td>
+                        <td className="px-5 py-3 text-ink-2">{Array.isArray(c.sections) ? c.sections.join(", ") : "—"}</td>
+                        <td className="px-5 py-3 text-ink-3">{c.subject_count ?? "—"}</td>
+                        <td className="px-5 py-3 text-ink-3">—</td>
                       </tr>
                     );
                   })}

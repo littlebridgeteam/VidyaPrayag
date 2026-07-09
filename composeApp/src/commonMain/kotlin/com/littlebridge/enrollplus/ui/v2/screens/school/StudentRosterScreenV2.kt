@@ -48,13 +48,16 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
+import androidx.compose.ui.text.font.FontWeight
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -92,13 +95,15 @@ fun StudentRosterScreenV2(
                 )
             },
         )
-        StudentRosterContent(
-            state = state,
-            onRetry = viewModel::load,
-            onOpenStudent = onOpenStudent,
-            onRemoveClick = { pendingRemoval = it },
-            modifier = Modifier.fillMaxSize(),
-        )
+        VPullRefresh(isRefreshing = state.isLoading && state.students.isNotEmpty(), onRefresh = { viewModel.load() }) {
+            StudentRosterContent(
+                state = state,
+                onRetry = viewModel::load,
+                onOpenStudent = onOpenStudent,
+                onRemoveClick = { pendingRemoval = it },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 
     // Auto-close the add dialog once a student is successfully added.
@@ -158,12 +163,13 @@ private fun StudentRosterContent(
             onRetry = onRetry,
             skeleton = { com.littlebridge.enrollplus.ui.v2.screens.SkeletonList(rows = 8) },
         ) {
-            state.students.forEach { s ->
+            state.students.forEachIndexed { i, s ->
                 StudentCard(
                     student = s,
                     removing = state.removingIds.contains(s.id),
                     onOpen = { onOpenStudent(s.id) },
                     onRemove = { onRemoveClick(s) },
+                    modifier = Modifier.staggeredItemEntrance(i, state.students.isNotEmpty()),
                 )
             }
         }
@@ -182,19 +188,19 @@ private fun StudentCard(
     removing: Boolean,
     onOpen: () -> Unit,
     onRemove: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    var menuOpen by remember { mutableStateOf(false) }
+        var menuOpen by remember { mutableStateOf(false) }
     val lowAttendance = student.attendancePercent in 0.1f..74.9f
 
-    VCard(modifier = Modifier.fillMaxWidth(), padding = 16.dp, onClick = onOpen) {
+    VCard(modifier = modifier.fillMaxWidth(), padding = 16.dp, onClick = onOpen) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             VAvatar(name = student.fullName, src = student.profilePhotoUrl, size = 48.dp)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(student.fullName, style = VTheme.type.bodyStrong.colored(c.ink), maxLines = 1)
+                Text(student.fullName, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink), maxLines = 1)
                 Text(
                     "${student.className} · Sec ${student.section} · Roll ${student.rollNumber}",
-                    style = VTheme.type.caption.colored(c.ink2),
+                    style = VTypography.caption.copy(color = VColors.ink2),
                     maxLines = 1,
                 )
             }
@@ -202,11 +208,11 @@ private fun StudentCard(
             Box {
                 Box(
                     Modifier.size(34.dp).clip(RoundedCornerShape(10.dp))
-                        .background(c.ink.copy(alpha = 0.06f))
+                        .background(VColors.ink.copy(alpha = 0.06f))
                         .clickable(enabled = !removing) { menuOpen = true },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(VIcons.More, contentDescription = "Actions", tint = c.ink2, modifier = Modifier.size(18.dp))
+                    Icon(VIcons.More, contentDescription = "Actions", tint = VColors.ink2, modifier = Modifier.size(18.dp))
                 }
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                     DropdownMenuItem(
@@ -225,7 +231,7 @@ private fun StudentCard(
                         leadingIcon = { Icon(VIcons.Phone, contentDescription = null, modifier = Modifier.size(18.dp)) },
                     )
                     DropdownMenuItem(
-                        text = { Text(appString(StringKeys.SCH_REMOVE), style = VTheme.type.body.colored(c.dangerInk)) },
+                        text = { Text(appString(StringKeys.SCH_REMOVE), style = VTypography.body.copy(color = VColors.error)) },
                         onClick = { menuOpen = false; onRemove() },
                         leadingIcon = { Icon(VIcons.Close, contentDescription = null, modifier = Modifier.size(18.dp)) },
                     )
@@ -275,15 +281,14 @@ private fun StudentCard(
 
 @Composable
 private fun MetricChip(icon: ImageVector, value: String, label: String, modifier: Modifier = Modifier) {
-    val c = VTheme.colors
-    Column(
-        modifier = modifier.clip(RoundedCornerShape(12.dp)).background(c.cream).padding(vertical = 10.dp, horizontal = 8.dp),
+        Column(
+        modifier = modifier.clip(RoundedCornerShape(12.dp)).background(VColors.cream).padding(vertical = 10.dp, horizontal = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(3.dp),
     ) {
-        Icon(icon, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(16.dp))
-        Text(value, style = VTheme.type.bodyStrong.colored(c.ink))
-        Text(label, style = VTheme.type.label.colored(c.ink3), maxLines = 1)
+        Icon(icon, contentDescription = null, tint = VColors.sky, modifier = Modifier.size(16.dp))
+        Text(value, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+        Text(label, style = VTypography.label.copy(color = VColors.ink3), maxLines = 1)
     }
 }
 
@@ -295,8 +300,7 @@ private fun AddStudentDialog(
     onDismiss: () -> Unit,
     onSubmit: (name: String, className: String, section: String, rollNumber: String, parentPhone: String) -> Unit,
 ) {
-    val c = VTheme.colors
-    var name by remember { mutableStateOf("") }
+        var name by remember { mutableStateOf("") }
     var className by remember { mutableStateOf("") }
     var section by remember { mutableStateOf("") }
     var roll by remember { mutableStateOf("") }
@@ -312,7 +316,7 @@ private fun AddStudentDialog(
     Dialog(onDismissRequest = onDismiss) {
         VCard(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(appString(StringKeys.SCH_ADD_STUDENT), style = VTheme.type.h3.colored(c.ink))
+                Text(appString(StringKeys.SCH_ADD_STUDENT), style = VTypography.h3.copy(color = VColors.ink))
                 VInput(name, { name = it }, label = appString(StringKeys.SCH_FULL_NAME), placeholder = appString(StringKeys.SCH_FULL_NAME_PH), leadingIcon = VIcons.User)
                 VInput(className, { className = it }, label = appString(StringKeys.SCH_CLASS), placeholder = appString(StringKeys.SCH_CLASS_PH))
                 VInput(section, { section = it }, label = appString(StringKeys.SCH_SECTION), placeholder = "A")
@@ -327,10 +331,10 @@ private fun AddStudentDialog(
                     keyboardType = KeyboardType.Phone,
                 )
                 if (parentPhone.isNotBlank() && !phoneOk) {
-                    Text(appString(StringKeys.SCH_PHONE_MIN_DIGITS), style = VTheme.type.label.colored(c.dangerInk))
+                    Text(appString(StringKeys.SCH_PHONE_MIN_DIGITS), style = VTypography.label.copy(color = VColors.error))
                 }
                 if (error != null) {
-                    Text(error, style = VTheme.type.body.colored(c.dangerInk))
+                    Text(error, style = VTypography.body.copy(color = VColors.error))
                 }
                 Spacer(Modifier.height(2.dp))
                 VButton(

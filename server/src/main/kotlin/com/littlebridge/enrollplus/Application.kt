@@ -51,8 +51,13 @@
  */
 package com.littlebridge.enrollplus
 
+import com.littlebridge.enrollplus.core.REQUEST_ID_HEADER
+import com.littlebridge.enrollplus.core.RequestIdPlugin
 import com.littlebridge.enrollplus.core.configureErrorHandling
 import com.littlebridge.enrollplus.core.configureJwt
+import com.littlebridge.enrollplus.core.CsrfProtection
+import com.littlebridge.enrollplus.core.HttpClientRegistry
+import com.littlebridge.enrollplus.core.requestIdSafe
 import com.littlebridge.enrollplus.db.DatabaseFactory
 import com.littlebridge.enrollplus.feature.admissions.admissionRouting
 import com.littlebridge.enrollplus.feature.announcements.announcementRouting
@@ -149,6 +154,12 @@ import com.littlebridge.enrollplus.feature.user.parentMessagesRouting
 import com.littlebridge.enrollplus.feature.user.userDetailsRouting
 import com.littlebridge.enrollplus.feature.user.userProfileRouting
 import com.littlebridge.enrollplus.core.ApiError
+import com.littlebridge.enrollplus.core.applyApiVersionHeaders
+import com.littlebridge.enrollplus.core.EnvConfig
+import com.littlebridge.enrollplus.core.RuntimeEnvironment
+import com.littlebridge.enrollplus.core.openApiRouting
+import com.littlebridge.enrollplus.core.FeatureFlagService
+import com.littlebridge.enrollplus.core.featureFlagRouting
 import com.littlebridge.enrollplus.feature.logging.ServerLogWriter
 import kotlinx.coroutines.runBlocking
 import io.ktor.http.*
@@ -165,6 +176,9 @@ import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.server.metrics.micrometer.MicrometerMetrics
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
+import io.micrometer.prometheusmetrics.PrometheusConfig
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.util.Properties
@@ -177,6 +191,8 @@ import java.util.Properties
  */
 private const val MAX_JSON_BODY_BYTES = 1L * 1024 * 1024 // 1 MB
 
+private val appLog = org.slf4j.LoggerFactory.getLogger("Application")
+
 private fun loadRootLocalProperties(): Properties {
     val file = File("local.properties")
 
@@ -188,6 +204,10 @@ private fun loadRootLocalProperties(): Properties {
 }
 
 fun main() {
+    // Create Prometheus registry BEFORE DatabaseFactory.init() so it can be wired into
+    // HikariConfig before the pool is sealed (HikariCP config is immutable once started).
+    val prometheusRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
+    DatabaseFactory.meterRegistry = prometheusRegistry
     DatabaseFactory.init()
     val props = loadRootLocalProperties()
 
@@ -210,13 +230,14 @@ fun main() {
     // traffic, and a missing key simply leaves that provider unconfigured.
     kotlinx.coroutines.runBlocking {
         runCatching { KeyVault.bootstrapFromEnv() }
-            .onFailure { org.slf4j.LoggerFactory.getLogger("Application")
-                .warn("KeyVault bootstrap failed (AI will degrade gracefully): {}", it.message) }
+            .onFailure {
+                if (it is IllegalStateException) throw it
+                appLog.warn("KeyVault bootstrap failed (AI will degrade gracefully): {}", it.message)
+            }
 
         // Multi-Language: load ServerStrings DB overrides into in-memory cache.
         runCatching { com.littlebridge.enrollplus.feature.i18n.ServerStringOverrideRepository.loadAllIntoCache() }
-            .onFailure { org.slf4j.LoggerFactory.getLogger("Application")
-                .warn("ServerString overrides load failed (using compiled defaults): {}", it.message) }
+            .onFailure { appLog.warn("ServerString overrides load failed (using compiled defaults): {}", it.message) }
     }
 
     // Start the PEWS daily job (Sense → Reason → Act pipeline; hourly tick).
@@ -233,6 +254,10 @@ fun main() {
     // PEWS 2.0 — load kill-switch flags from DB and start hot-reload polling.
     kotlinx.coroutines.runBlocking { runCatching { KillSwitchConfig.reload() } }
     KillSwitchConfig.startPolling(kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default))
+
+    // GAP-019 — general-purpose feature flags (hot-reloadable).
+    kotlinx.coroutines.runBlocking { runCatching { FeatureFlagService.reload() } }
+    FeatureFlagService.startPolling(kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default))
 
     // Start the Transport job scheduler (GPS staleness check + daily attendance finalization).
     com.littlebridge.enrollplus.feature.transport.TransportJobScheduler.start(
@@ -253,16 +278,34 @@ fun main() {
     // Register event-driven cache invalidation for library (spec §17).
     com.littlebridge.enrollplus.feature.library.LibraryCacheInit.register()
 
-    embeddedServer(
+    // GAP-017: Graceful shutdown — on JVM SIGTERM/SIGINT, stop accepting new
+    // requests, close all registered HttpClients, and close the HikariCP pool
+    // so in-flight connections are returned cleanly instead of leaked.
+    val server = embeddedServer(
         Netty,
         port = port,
         host = host,
         module = Application::module
-    ).start(wait = true)
+    )
+
+    Runtime.getRuntime().addShutdownHook(Thread {
+        appLog.info("Shutdown hook triggered — gracefully stopping server...")
+        runBlocking {
+            runCatching { server.stop(gracePeriodMillis = 5_000, timeoutMillis = 10_000) }
+        }
+        runCatching { HttpClientRegistry.closeAll() }
+        runCatching { DatabaseFactory.readReplicaDataSource?.close() }
+        runCatching { DatabaseFactory.hikariDataSource?.close() }
+        appLog.info("Shutdown complete")
+    })
+
+    server.start(wait = true)
 }
 
 fun Application.module() {
     install(IgnoreTrailingSlash)
+
+    install(RequestIdPlugin)
 
     // Load persisted logging toggle state from app_config so it survives restarts.
     runBlocking { ServerLogWriter.initFromConfig() }
@@ -294,6 +337,7 @@ fun Application.module() {
         val method = call.request.httpMethod.value
         val uri = call.request.uri
         val actorId = call.principal<io.ktor.server.auth.jwt.JWTPrincipal>()?.payload?.subject
+        val rid = call.requestIdSafe()
 
         proceed()
 
@@ -318,35 +362,34 @@ fun Application.module() {
                     "uri" to uri,
                     "status" to status,
                     "duration_ms" to durationMs,
+                    "request_id" to rid,
                 ),
             )
         }
     }
 
     install(CORS) {
-        // RA-37: open CORS (anyHost) is fine in dev but in production lets any
-        // origin script authenticated cross-origin calls with a captured bearer
-        // token. In prod (DATABASE_URL present) we lock to an explicit allow-list
-        // from CORS_ALLOWED_ORIGINS (comma-separated host[:port], optionally with
-        // scheme). Only dev/local falls back to anyHost().
-        val isProduction = System.getenv("DATABASE_URL")?.isNotBlank() == true
-        val configuredOrigins = System.getenv("CORS_ALLOWED_ORIGINS")
+        val isProduction = RuntimeEnvironment.isProduction
+        val configuredOrigins = EnvConfig.get("CORS_ALLOWED_ORIGINS")
             ?.split(",")
             ?.map { it.trim() }
             ?.filter { it.isNotBlank() }
             .orEmpty()
-        if (isProduction && configuredOrigins.isNotEmpty()) {
-            configuredOrigins.forEach { origin ->
-                // Accept "https://app.example.com", "app.example.com" or with a port.
-                val withoutScheme = origin.substringAfter("://", origin)
-                val scheme = if (origin.contains("://")) origin.substringBefore("://") else null
-                val host = withoutScheme.substringBefore(":")
-                val schemes = scheme?.let { listOf(it) } ?: listOf("https", "http")
-                allowHost(host, schemes = schemes)
+        if (isProduction) {
+            if (configuredOrigins.isNotEmpty()) {
+                configuredOrigins.forEach { origin ->
+                    val withoutScheme = origin.substringAfter("://", origin)
+                    val scheme = if (origin.contains("://")) origin.substringBefore("://") else null
+                    val host = withoutScheme.substringBefore(":")
+                    val schemes = scheme?.let { listOf(it) } ?: listOf("https", "http")
+                    allowHost(host, schemes = schemes)
+                }
+                appLog.info("CORS: Allowed origins: {}", configuredOrigins)
+            } else {
+                appLog.warn("CORS: No allowed origins configured. All cross-origin requests will be rejected.")
             }
         } else {
-            // Dev/local (no DATABASE_URL) or prod without an explicit allow-list:
-            // keep the permissive default so local web + device testing still work.
+            appLog.warn("WARNING: CORS is configured to allow any host in dev mode. This MUST NOT be used in production.")
             anyHost()
         }
         allowHeader(HttpHeaders.ContentType)
@@ -355,6 +398,7 @@ fun Application.module() {
         allowHeader("Platform")
         allowHeader("Device-Id")
         allowHeader("Accept-Language")
+        allowHeader(REQUEST_ID_HEADER)
         allowMethod(HttpMethod.Get)
         allowMethod(HttpMethod.Post)
         allowMethod(HttpMethod.Put)
@@ -374,6 +418,11 @@ fun Application.module() {
                 !uri.startsWith("/api/v1/notifications")
         }
     }
+
+    // SEC-020: CSRF protection — validate Origin header on state-changing
+    // requests in production. JWT bearer tokens are inherently CSRF-resistant
+    // (browsers don't auto-attach them cross-origin), but this adds defense-in-depth.
+    CsrfProtection.run { installCsrfProtection() }
 
     install(AutoHeadResponse)
 
@@ -399,6 +448,27 @@ fun Application.module() {
 
     install(StatusPages) { configureErrorHandling() }
 
+    intercept(ApplicationCallPipeline.Plugins) {
+        call.applyApiVersionHeaders()
+    }
+
+    // GAP-010: Observability — Micrometer metrics with Prometheus registry.
+    // Exposes /metrics for Prometheus scraping and /api/v1/health for liveness.
+    // Registry was created in main() and wired into HikariConfig before pool creation.
+    val prometheusRegistry = DatabaseFactory.meterRegistry
+        ?: PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
+    install(MicrometerMetrics) {
+        registry = prometheusRegistry
+    }
+
+    // GAP-015: HikariCP pool metrics — registries were set on HikariConfig before pool
+    // creation in DatabaseFactory.createPostgresDataSource, so no post-start assignment here.
+    if (DatabaseFactory.hikariDataSource != null) {
+        appLog.info("HikariCP metrics and health checks registered with Prometheus (pre-pool)")
+    } else {
+        appLog.warn("HikariCP metrics NOT registered — hikariDataSource is null (DatabaseFactory.init may have failed)")
+    }
+
     routing {
         // Global CORS preflight handler — must be before any authenticate{} block
         // so OPTIONS requests don't get 403'd by the JWT auth plugin.
@@ -411,10 +481,16 @@ fun Application.module() {
             call.respondText("Ktor: ${Greeting().greet()} — VidyaPrayag API v1 is live")
         }
 
+        // Prometheus metrics endpoint — scrape target for Prometheus/Grafana
+        get("/metrics") {
+            call.respondText((prometheusRegistry as PrometheusMeterRegistry).scrape(), ContentType.Text.Plain)
+        }
+
         // Public
         landingRouting()
         appStatusRouting()
         versionRouting()             // /api/v1/config/version — backend-target visibility
+        openApiRouting()             // /api/v1/docs + /api/v1/openapi.yaml — Swagger UI
         authRouting()
         supportRouting()
 
@@ -462,6 +538,7 @@ fun Application.module() {
 
         // AI gateway + PEWS (AI_FEATURES_PLAN.md feature #1)
         aiRouting()                  // /api/v1/school/ai/usage (school-admin) + /api/v1/admin/ai/{providers,health,rotate} (platform-admin)
+        featureFlagRouting()         // /api/v1/admin/flags — GAP-019 general-purpose feature flag management
         pewsRouting()                // /api/v1/{school,teacher,parent}/pews/… — v1 PEWS endpoints (still in use)
         registerPewsModules()        // PEWS 2.0: register all modules with ModuleRegistry
         pewsModuleRouting()          // PEWS 2.0: mount module routes (act, learn, insights, …)
@@ -505,7 +582,7 @@ fun Application.module() {
 
         // Cross-user notification spine (audit part-2 RA-41/42/46/50) — role-aware
         // inbox replacing the parent-only synth; persisted read state; bell summary.
-        notificationsRouting()       // /api/v1/notifications[/summary,/{id}/read,/read-all]
+        notificationsRouting()       // /api/v1/notifications[/summary,/{id}/read,/read-all,/clear-all,/all]
         notificationPreferencesRouting() // /api/v1/notifications/preferences
 
         // Notification FOUNDATION (push infra — distinct from the inbox spine):

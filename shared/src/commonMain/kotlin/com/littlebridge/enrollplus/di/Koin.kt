@@ -305,6 +305,9 @@ val commonModule = module {
     single<com.littlebridge.enrollplus.feature.parent.domain.repository.ParentRepository> {
         com.littlebridge.enrollplus.feature.parent.data.repository.ParentRepositoryImpl(get())
     }
+    single<com.littlebridge.enrollplus.core.notification.NotificationFeedRepository> {
+        get<com.littlebridge.enrollplus.feature.parent.domain.repository.ParentRepository>()
+    }
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.OnboardingRepository> {
         com.littlebridge.enrollplus.feature.admin.data.repository.OnboardingRepositoryImpl(get())
     }
@@ -555,7 +558,7 @@ val viewModelModule = module {
     factory { FeeViewModel(get(), get(), get()) }
     factory { ScholarshipsViewModel(get(), get()) }
     factory { ParentAnnouncementViewModel(get(), get()) }
-    factory { NotificationsViewModel(get(), get()) }
+    factory { NotificationsViewModel(get<com.littlebridge.enrollplus.core.notification.NotificationFeedRepository>(), get()) }
     factory { LinkChildViewModel(get(), get()) }
     factory { ParentHomeViewModel(get(), get(), get()) }
     factory { ParentProfileViewModel(get(), get()) }
@@ -588,6 +591,10 @@ val viewModelModule = module {
     factory { MessagesViewModel(get(), get(), get()) }
     factory { SchedulePTMViewModel(get(), get()) }
     factory { AcademicCalendarViewModel(get(), get()) }
+    // CYC-006: Named qualifiers for all portal calendar VMs.
+    // School and teacher share the default (school endpoint). Parent uses a separate endpoint.
+    factory(qualifier = org.koin.core.qualifier.named("schoolCalendar")) { AcademicCalendarViewModel(get(), get(), "api/v1/school/calendar") }
+    factory(qualifier = org.koin.core.qualifier.named("teacherCalendar")) { AcademicCalendarViewModel(get(), get(), "api/v1/school/calendar") }
     // Parent-specific calendar VM uses the parent endpoint (school endpoint returns 403)
     factory(qualifier = org.koin.core.qualifier.named("parentCalendar")) { AcademicCalendarViewModel(get(), get(), "api/v1/parent/calendar") }
     // VP-CAL: premium Academic Calendar platform + unified create-event + Academic Year mgmt

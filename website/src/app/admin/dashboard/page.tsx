@@ -2,6 +2,7 @@
 
 import { Suspense } from "react";
 import { DashboardWorkspace } from "@/components/admin/DashboardWorkspace";
+import { Skeleton } from "@/components/admin/Primitives";
 
 /**
  * Command Center — the school-admin home, a multi-tab WORKSPACE (not a single
@@ -11,7 +12,7 @@ import { DashboardWorkspace } from "@/components/admin/DashboardWorkspace";
  */
 export default function DashboardPage() {
   return (
-    <Suspense fallback={<div className="h-40" />}>
+    <Suspense fallback={<Skeleton className="h-96" />}>
       <DashboardWorkspace />
     </Suspense>
   );

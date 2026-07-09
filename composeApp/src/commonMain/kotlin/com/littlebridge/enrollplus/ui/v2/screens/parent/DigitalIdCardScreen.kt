@@ -1,5 +1,6 @@
 package com.littlebridge.enrollplus.ui.v2.screens.parent
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,21 +26,20 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.littlebridge.enrollplus.feature.idcard.domain.model.IdCardDto
 import com.littlebridge.enrollplus.feature.idcard.presentation.IdCardViewModel
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.QrCodeImage
-import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VButton
-import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
+import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -62,23 +62,23 @@ fun DigitalIdCardScreen(
         }
     }
 
-    VTheme {
-        Column(
-            modifier = modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            VBackHeader(title = appString(StringKeys.DID_DIGITAL_ID_CARD), onBack = onBack)
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(VColors.cream)
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        PremiumOverlayHeader(title = appString(StringKeys.DID_DIGITAL_ID_CARD), onBack = onBack)
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            state.error?.let { err ->
-                VCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-                    Text(text = err, color = VTheme.colors.dangerInk, style = VTheme.type.body)
-                }
-                Spacer(modifier = Modifier.height(16.dp))
+        state.error?.let { err ->
+            VCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                Text(text = err, color = VColors.error, style = VTypography.body)
             }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
 
             val card = state.currentCard
             if (card != null) {
@@ -110,7 +110,7 @@ fun DigitalIdCardScreen(
 
                 Text(
                     text = appString(StringKeys.DID_SCAN_QR_BACK),
-                    style = VTheme.type.caption,
+                    style = VTypography.caption,
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
 
@@ -118,29 +118,28 @@ fun DigitalIdCardScreen(
 
                 Text(
                     text = appString(StringKeys.DID_VALID_TILL, "date" to (card.validTill ?: "N/A")),
-                    style = VTheme.type.bodyStrong,
+                    style = VTypography.bodyStrong,
                 )
             } else if (state.isLoading) {
                 Text(
                     text = appString(StringKeys.DID_LOADING),
-                    style = VTheme.type.body,
+                    style = VTypography.body,
                 )
             } else if (state.error == null) {
                 Text(
                     text = appString(StringKeys.DID_NO_ID_CARD),
-                    style = VTheme.type.body,
+                    style = VTypography.body,
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
-        }
+        Spacer(modifier = Modifier.height(32.dp))
     }
 }
 
 @Composable
 private fun DigitalCard(card: IdCardDto, showFront: Boolean) {
-    val primaryColor = VTheme.colors.accent
+    val primaryColor = VColors.violet
 
     Box(
         modifier = Modifier
@@ -163,18 +162,18 @@ private fun DigitalCard(card: IdCardDto, showFront: Boolean) {
             if (showFront) {
                 Text(
                     text = card.personName,
-                    style = VTheme.type.h3,
+                    style = VTypography.h3,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = card.personType.replaceFirstChar { it.uppercase() },
-                    style = VTheme.type.body,
+                    style = VTypography.body,
                     color = primaryColor,
                 )
             } else {
                 Text(
                     text = appString(StringKeys.DID_QR_CODE),
-                    style = VTheme.type.bodyStrong,
+                    style = VTypography.bodyStrong,
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 QrCodeImage(
@@ -184,12 +183,12 @@ private fun DigitalCard(card: IdCardDto, showFront: Boolean) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
                     text = appString(StringKeys.DID_SCAN_VERIFY),
-                    style = VTheme.type.caption,
+                    style = VTypography.caption,
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = appString(StringKeys.DID_VALID_TILL, "date" to (card.validTill ?: "N/A")),
-                    style = VTheme.type.caption,
+                    style = VTypography.caption,
                 )
             }
         }

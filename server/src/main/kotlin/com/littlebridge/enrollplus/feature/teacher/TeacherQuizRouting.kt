@@ -296,13 +296,17 @@ fun Route.teacherQuizRouting() {
                     }.orderBy(SyllabusQuizzesTable.createdAt, SortOrder.DESC).toList()
                 }
 
+                val quizIds = quizzes.map { it[SyllabusQuizzesTable.id].value }
+                val allQuestions = if (quizIds.isEmpty()) emptyList() else dbQuery {
+                    SyllabusQuizQuestionsTable.selectAll().where {
+                        SyllabusQuizQuestionsTable.quizId inList quizIds
+                    }.orderBy(SyllabusQuizQuestionsTable.position, SortOrder.ASC).toList()
+                }
+                val questionsByQuiz = allQuestions.groupBy { it[SyllabusQuizQuestionsTable.quizId] }
+
                 val quizList = quizzes.map { qRow ->
                     val qId = qRow[SyllabusQuizzesTable.id].value
-                    val questions = dbQuery {
-                        SyllabusQuizQuestionsTable.selectAll().where {
-                            SyllabusQuizQuestionsTable.quizId eq qId
-                        }.orderBy(SyllabusQuizQuestionsTable.position, SortOrder.ASC).toList()
-                    }
+                    val questions = questionsByQuiz[qId] ?: emptyList()
                     QuizSer(
                         id = qId.toString(),
                         assignmentId = asg.assignmentId.toString(),

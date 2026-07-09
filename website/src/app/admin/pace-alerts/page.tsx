@@ -1,4 +1,6 @@
 "use client";
+import { errorMessage } from "@/lib/errorUtils";
+
 
 import { useState, useEffect, useCallback } from "react";
 import { authRequest } from "@/lib/admin/client";
@@ -27,11 +29,10 @@ export default function PaceAlertsPage() {
 
   const load = useCallback(async () => {
     try {
-      const res = await authRequest<{ alerts: PaceAlertDto[] } | PaceAlertDto[]>("/api/v1/school/syllabus-pace/alerts");
-      const raw = res as Record<string, unknown>;
-      setAlerts((Array.isArray(raw) ? raw : (raw.alerts as PaceAlertDto[])) ?? []);
+      const res = await authRequest<{ alerts: PaceAlertDto[] }>("/api/v1/school/syllabus-pace/alerts");
+      setAlerts(res.alerts ?? []);
     } catch (e) {
-      setError(`Failed to load pace alerts: ${(e as Error).message}`);
+      setError(`Failed to load pace alerts: ${errorMessage(e)}`);
     } finally {
       setLoading(false);
     }
@@ -45,7 +46,7 @@ export default function PaceAlertsPage() {
       await authRequest(`/api/v1/school/syllabus-pace/alerts/${id}/resolve`, { method: "POST" });
       setAlerts(prev => prev.filter(a => a.id !== id));
     } catch (e) {
-      setError(`Failed to resolve alert: ${(e as Error).message}`);
+      setError(`Failed to resolve alert: ${errorMessage(e)}`);
     } finally {
       setResolvingId(null);
     }

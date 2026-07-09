@@ -1,5 +1,3 @@
-@file:OptIn(androidx.annotation.OptIn::class)
-
 package com.littlebridge.enrollplus.platform
 
 import android.content.Context

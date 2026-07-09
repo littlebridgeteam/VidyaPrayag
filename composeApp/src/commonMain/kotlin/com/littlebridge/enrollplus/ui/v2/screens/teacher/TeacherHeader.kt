@@ -25,12 +25,15 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VShapes
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VAvatar
 import com.littlebridge.enrollplus.ui.v2.components.VDivider
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VStatusDot
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 
 /**
  * TeacherHeader — THE single canonical header for the whole rebuilt Teacher Portal, rendered
@@ -54,7 +57,7 @@ fun TeacherHeader(
     modifier: Modifier = Modifier,
     onOpenNotifications: (() -> Unit)? = null,
 ) {
-    val c = VTheme.colors
+    val c = VtC
     Column(
         modifier
             .fillMaxWidth()
@@ -82,12 +85,12 @@ fun TeacherHeader(
                 Column {
                     Text(
                         subline,
-                        style = VTheme.type.label.colored(c.ink3)
+                        style = VtT.label.coloredV(c.ink3)
                             .copy(fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.4.sp),
                     )
                     Text(
                         teacherName.ifBlank { "Teacher" },
-                        style = VTheme.type.bodyStrong.colored(c.ink)
+                        style = VtT.bodyStrong.coloredV(c.ink)
                             .copy(fontSize = 15.sp, fontWeight = FontWeight.ExtraBold),
                     )
                 }
@@ -122,6 +125,104 @@ fun TeacherHeader(
     }
 }
 
+/**
+ * TeacherPremiumHeader — THE single premium header rendered identically on every
+ * teacher tab (Home · Update · Classes · Timetable · Profile), so the whole portal
+ * shares one chrome. Directly on the cream/violet token system (§4-§7):
+ *
+ *   • "Enroll+" wordmark in violet (top-left).
+ *   • A notification bell (top-right) with a live unread dot.
+ *   • "Hi {name}" eyebrow in violet.
+ *   • A big two-tone greeting line — a neutral lead word + a violet accent word —
+ *     that each tab customises to its own context (e.g. "here's your day" on Home,
+ *     "let's update" on Update, "your week" on Timetable).
+ *
+ * It sits inside the scrolling content of each tab (NOT the scaffold topBar) so the
+ * greeting scrolls away like the parent portal — identical everywhere.
+ */
+@Composable
+fun TeacherPremiumHeader(
+    teacherName: String,
+    lead: String,
+    accent: String,
+    unreadCount: Int,
+    onOpenNotifications: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val name = teacherName.trim().substringBefore(" ")
+        .ifBlank { teacherName.ifBlank { appString(StringKeys.TEACHER_TITLE) } }
+
+    // Greeting line is 10% larger than the base h2 (24sp → 26.4sp) for a bolder,
+    // more premium masthead while staying comfortable. The "Hi {name}" eyebrow is
+    // bumped proportionately (14sp → ~15.4sp).
+    val greetingSize = 26.4.sp
+    val eyebrowSize = 15.4.sp
+
+    Column(modifier.fillMaxWidth()) {
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = "Enroll+",
+                style = VTypography.wordmark.copy(color = VColors.violet, fontSize = 17.sp),
+            )
+
+            val ix = remember { MutableInteractionSource() }
+            Box(
+                Modifier
+                    .size(42.dp)
+                    .clip(VShapes.full)
+                    .background(VColors.surfaceCard)
+                    .clickable(interactionSource = ix, indication = null) { onOpenNotifications() },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = VIcons.BellStroke,
+                    contentDescription = appString(StringKeys.TC_MESSAGES),
+                    tint = VColors.ink,
+                    modifier = Modifier.size(24.dp),
+                )
+                if (unreadCount > 0) {
+                    VStatusDot(
+                        color = VColors.coral,
+                        size = 8.dp,
+                        modifier = Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 8.dp),
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        Text(
+            text = "Hi $name",
+            style = VTypography.caption.copy(
+                fontSize = eyebrowSize,
+                fontWeight = FontWeight.SemiBold,
+                color = VColors.violet,
+            ),
+        )
+
+        Spacer(Modifier.height(3.dp))
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(7.dp),
+        ) {
+            Text(
+                text = lead,
+                style = VTypography.h2.copy(color = VColors.ink, fontSize = greetingSize),
+            )
+            Text(
+                text = accent,
+                style = VTypography.h2.copy(color = VColors.violet, fontSize = greetingSize),
+            )
+        }
+    }
+}
+
 /** A simpler header for in-portal sub-screens (overlays): a back chevron + title. */
 @Composable
 fun TeacherSubHeader(
@@ -131,7 +232,7 @@ fun TeacherSubHeader(
     subtitle: String? = null,
     trailing: (@Composable () -> Unit)? = null,
 ) {
-    val c = VTheme.colors
+    val c = VtC
     Column(
         modifier
             .fillMaxWidth()
@@ -149,11 +250,11 @@ fun TeacherSubHeader(
             Column(Modifier.weight(1f)) {
                 Text(
                     title,
-                    style = VTheme.type.h3.colored(c.ink).copy(fontWeight = FontWeight.ExtraBold),
+                    style = VtT.h3.coloredV(c.ink).copy(fontWeight = FontWeight.ExtraBold),
                     maxLines = 1,
                 )
                 if (!subtitle.isNullOrBlank()) {
-                    Text(subtitle, style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp), maxLines = 1)
+                    Text(subtitle, style = VtT.caption.coloredV(c.ink3).copy(fontSize = 11.sp), maxLines = 1)
                 }
             }
             trailing?.invoke()
@@ -166,7 +267,7 @@ fun TeacherSubHeader(
 /** A circular header action button — cream surface, navy glyph, no ripple. */
 @Composable
 private fun HeaderIconButton(icon: ImageVector, label: String, onClick: () -> Unit) {
-    val c = VTheme.colors
+    val c = VtC
     val ix = remember { MutableInteractionSource() }
     Box(
         Modifier

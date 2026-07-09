@@ -27,11 +27,14 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.batchInsert
 import org.jetbrains.exposed.sql.count
 import org.jetbrains.exposed.sql.selectAll
+import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 object Notify {
+
+    private val logger = LoggerFactory.getLogger(Notify::class.java)
 
     private val deviceTokenRepository = DeviceTokenRepository()
     private val pushService = NotificationService(deviceTokenRepository)
@@ -63,14 +66,14 @@ object Notify {
         // --- Preferences filtering: drop recipients who disabled this category ---
         val filteredRecipients = filterByPreferences(recipients, category)
         if (filteredRecipients.isEmpty()) {
-            println("NOTIFY: all ${recipients.size} recipients opted out of category=$category")
+            logger.debug("NOTIFY: all {} recipients opted out of category={}", recipients.size, category)
             return
         }
 
         // --- Rate limiting (§6.13) ---
         val rateLimitedRecipients = filterByRateLimit(filteredRecipients, category, now)
         if (rateLimitedRecipients.isEmpty()) {
-            println("NOTIFY: all ${filteredRecipients.size} recipients rate-limited for category=$category")
+            logger.debug("NOTIFY: all {} recipients rate-limited for category={}", filteredRecipients.size, category)
             return
         }
 
@@ -110,7 +113,7 @@ object Notify {
                 }
             ))
         }.onFailure { e ->
-            println("NOTIFY: push bridge failed for ${finalRecipients.size} recipients: ${e.message}")
+            logger.warn("NOTIFY: push bridge failed for {} recipients: {}", finalRecipients.size, e.message, e)
         }
     }
 

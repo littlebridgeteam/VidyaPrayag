@@ -27,6 +27,14 @@ data class AlumniScreenState(
     val page: Int = 1,
     val error: String? = null,
     val infoMessage: String? = null,
+    val selectedAlumni: Alumni? = null,
+    val selectedAlumniDonations: List<AlumniDonation> = emptyList(),
+    val isDetailLoading: Boolean = false,
+    val areDonationsLoading: Boolean = false,
+    val selectedCampaign: AlumniDonationCampaign? = null,
+    val campaignDonations: List<AlumniDonation> = emptyList(),
+    val isCampaignLoading: Boolean = false,
+    val isGraduating: Boolean = false,
 )
 
 class AlumniViewModel(
@@ -195,5 +203,50 @@ class AlumniViewModel(
 
     fun clearMessages() {
         _state.update { it.copy(error = null, infoMessage = null) }
+    }
+
+    fun loadAlumniDetail(alumniId: String) {
+        _state.update { it.copy(isDetailLoading = true, error = null, selectedAlumni = null) }
+        viewModelScope.launch {
+            when (val result = repository.getAlumni(token(), alumniId)) {
+                is NetworkResult.Success -> _state.update { it.copy(isDetailLoading = false, selectedAlumni = result.data.data) }
+                is NetworkResult.Error -> _state.update { it.copy(isDetailLoading = false, error = result.message) }
+                is NetworkResult.ConnectionError -> _state.update { it.copy(isDetailLoading = false, error = "Connection error") }
+            }
+        }
+    }
+
+    fun loadAlumniDonations(alumniId: String) {
+        _state.update { it.copy(areDonationsLoading = true) }
+        viewModelScope.launch {
+            when (val result = repository.getAlumniDonations(token(), alumniId)) {
+                is NetworkResult.Success -> _state.update { it.copy(areDonationsLoading = false, selectedAlumniDonations = result.data.data ?: emptyList()) }
+                is NetworkResult.Error -> _state.update { it.copy(areDonationsLoading = false) }
+                is NetworkResult.ConnectionError -> _state.update { it.copy(areDonationsLoading = false) }
+            }
+        }
+    }
+
+    fun loadCampaignDetail(campaignId: String) {
+        _state.update { it.copy(isCampaignLoading = true, error = null, selectedCampaign = null) }
+        viewModelScope.launch {
+            val campaignResult = repository.getCampaign(token(), campaignId)
+            val donationsResult = repository.listDonations(token(), campaignId)
+            val campaign = (campaignResult as? NetworkResult.Success)?.data?.data
+            val donations = (donationsResult as? NetworkResult.Success)?.data?.data ?: emptyList()
+            val errorMsg = if (campaign == null) (campaignResult as? NetworkResult.Error)?.message ?: "Campaign not found" else null
+            _state.update { it.copy(isCampaignLoading = false, selectedCampaign = campaign, campaignDonations = donations, error = errorMsg) }
+        }
+    }
+
+    fun graduateStudents(studentIds: List<String>, year: Int) {
+        _state.update { it.copy(isGraduating = true, error = null, infoMessage = null) }
+        viewModelScope.launch {
+            when (val result = repository.graduateStudents(token(), GraduateStudentsRequest(studentIds, year))) {
+                is NetworkResult.Success -> _state.update { it.copy(isGraduating = false, infoMessage = "Graduated ${studentIds.size} student(s) to batch $year") }
+                is NetworkResult.Error -> _state.update { it.copy(isGraduating = false, error = result.message) }
+                is NetworkResult.ConnectionError -> _state.update { it.copy(isGraduating = false, error = "Connection error") }
+            }
+        }
     }
 }

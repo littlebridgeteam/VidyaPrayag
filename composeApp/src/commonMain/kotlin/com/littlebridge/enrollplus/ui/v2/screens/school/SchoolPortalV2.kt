@@ -18,6 +18,7 @@ import com.littlebridge.enrollplus.feature.alumni.domain.model.GraduateStudentsR
 import com.littlebridge.enrollplus.feature.alumni.domain.repository.AlumniRepository
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.ui.v2.components.VBottomNav
+import com.littlebridge.enrollplus.ui.v2.components.VCreamBottomNav
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VNavItem
 import com.littlebridge.enrollplus.ui.v2.components.VScreenScaffold
@@ -567,17 +568,17 @@ fun SchoolPortalV2(
         }
 
         val items = listOf(
-            VNavItem("home", "Home", VIcons.Home),
-            VNavItem("people", "People", VIcons.Users),
-            VNavItem("records", "Records", VIcons.Bookmark),
-            VNavItem("comms", "Comms", VIcons.Megaphone, badge = commsBadge),
-            VNavItem("settings", "Settings", VIcons.Settings),
+            VNavItem("home", "Home", VIcons.HomeStroke),
+            VNavItem("people", "People", VIcons.UsersGroup),
+            VNavItem("records", "Records", VIcons.ClipboardList),
+            VNavItem("comms", "Comms", VIcons.MegaphoneStroke, badge = commsBadge),
+            VNavItem("settings", "Settings", VIcons.SettingsStroke),
         )
 
         VScreenScaffold(
             modifier = modifier,
             bottomBar = {
-                VBottomNav(items = items, selected = tab, onSelect = { tab = it })
+                VCreamBottomNav(items = items, selected = tab, onSelect = { tab = it })
             },
         ) { padding ->
             Box(Modifier.fillMaxSize()) {

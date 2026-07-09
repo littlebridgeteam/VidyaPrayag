@@ -30,12 +30,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentPulseViewModel
-import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VEmptyState
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
@@ -58,11 +60,11 @@ fun ParentPulseScreen(
     Box(
         modifier
             .fillMaxSize()
-            .background(c.background)
+            .background(VColors.cream)
             .drawBehind {
                 drawRect(
                     brush = Brush.radialGradient(
-                        colors = listOf(c.accent.copy(alpha = 0.04f), Color.Transparent),
+                        colors = listOf(VColors.violet.copy(alpha = 0.04f), Color.Transparent),
                         center = Offset(size.width * 0.12f, size.height * 0.02f),
                         radius = size.width * 0.9f,
                     ),
@@ -76,7 +78,7 @@ fun ParentPulseScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             // ── Header with back button + history toggle ───────────────────
-            VBackHeader(
+            PremiumOverlayHeader(
                 title = appString(StringKeys.PPS_PARENT_PULSE),
                 onBack = onBack,
                 action = {
@@ -91,12 +93,12 @@ fun ParentPulseScreen(
                             Icon(
                                 if (state.showHistory) VIcons.Close else VIcons.History,
                                 contentDescription = null,
-                                tint = c.accent,
+                                tint = VColors.violet,
                                 modifier = Modifier.size(16.dp),
                             )
                             Text(
                                 if (state.showHistory) appString(StringKeys.PPS_CLOSE) else appString(StringKeys.PPS_HISTORY),
-                                style = VTheme.type.label.colored(c.accent).copy(fontSize = 12.sp, fontWeight = FontWeight.Medium),
+                                style = VTypography.caption.copy(fontSize = 12.sp, fontWeight = FontWeight.Medium, color = VColors.violet),
                                 modifier = Modifier.padding(4.dp),
                             )
                         }

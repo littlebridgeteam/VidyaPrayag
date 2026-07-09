@@ -56,9 +56,10 @@ import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import org.koin.core.qualifier.named
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.screens.parent.ParentHomeScreenV2
 
 /** Full-screen overlays a portal can push above its tab content (back returns to the tabs). */
-private enum class ParentOverlay { None, Notifications, Calendar, Scholarships, Profile, Leave, Messages, LinkChild, Discovery, Health, Pulse, Transport, TutorChat, TutorProgress, DigitalIdCard, Library, EventRegistration }
+private enum class ParentOverlay { None, Notifications, Calendar, Scholarships, Profile, Leave, Messages, LinkChild, Discovery, Health, Pulse, Transport, TutorChat, TutorProgress, DigitalIdCard, Library, EventRegistration, FeePayment, FeeHistory }
 
 /**
  * ParentPortalV2 — the 5-tab parent shell, a faithful copy of `Parent.tsx → ParentApp`.
@@ -175,12 +176,10 @@ fun ParentPortalV2(
 
     // ── Unlinked-parent gate ────────────────────────────────────────────────────
     // A parent with NO child linked yet shouldn't land in the 5-tab portal where every tab is an
-    // empty state. Once the dashboard has resolved (not loading, no error) and reports zero
-    // children, we hand off to the focused two-tab landing — Link a child / Explore schools.
-    // (While the very first load is still in flight we fall through to the portal's own skeletons,
-    // so the unlinked screen never flashes for an existing parent.)
-    val hasResolved = !dashboard.isLoading && dashboard.error == null
-    if (hasResolved && dashboard.children.isEmpty()) {
+    // empty state. Show the focused unlinked landing while the dashboard is still resolving AND
+    // once it confirms zero children. This prevents the home-tab skeleton from flashing before
+    // the carousel appears for a genuinely unlinked parent.
+    if (dashboard.isLoading || (dashboard.error == null && dashboard.children.isEmpty())) {
         ParentUnlinkedScreenV2(
             // After a successful link request the dashboard reloads — once the school approves and
             // a child appears, this gate falls through to the full portal automatically.
@@ -328,75 +327,54 @@ fun ParentPortalV2(
             )
             return
         }
+        ParentOverlay.FeePayment -> {
+            ParentFeePaymentScreenV2(
+                onBack = { overlay = ParentOverlay.None },
+                modifier = modifier,
+                onPay = { /* TODO: invoke real payment gateway via FeeViewModel */ },
+            )
+            return
+        }
+        ParentOverlay.FeeHistory -> {
+            ParentFeeHistoryScreenV2(
+                onBack = { overlay = ParentOverlay.None },
+                modifier = modifier,
+            )
+            return
+        }
         ParentOverlay.None -> Unit
     }
 
     val items = listOf(
-        VNavItem("home", appString(StringKeys.PPRT_HOME), VIcons.Home),
-        VNavItem("academics", appString(StringKeys.PPRT_ACADEMICS), VIcons.School),
-        VNavItem("fees", appString(StringKeys.PPRT_FEES), VIcons.Wallet),
-        // Phase 3 (commit 9): "Activity" → "Conversations". The tab now leads with real two-way
-        // messaging (Chat icon), with announcements one segment away — see ParentConversationsScreenV2.
-        // The dock badge rides the real unread notifications count so the parent always sees pending
-        // conversation activity at a glance.
-        VNavItem("conversations", appString(StringKeys.PPRT_CONVERSATIONS), VIcons.Chat, badge = notifications.unreadCount),
-        // Phase 4 (commit 10): the flagship house-colored collectible player card lives on its own
-        // tab — see ParentProfileCardScreenV2.
-        VNavItem("profile", appString(StringKeys.PPRT_PROFILE), VIcons.User),
+        VNavItem("home", "Home", VIcons.HomePremium),
+        VNavItem("academics", "Academics", VIcons.Academic),
+        VNavItem("fees", "Fees", VIcons.WalletPremium),
+        VNavItem("conversations", "Chat", VIcons.ChatPremium, badge = notifications.unreadCount),
+        VNavItem("profile", "Profile", VIcons.UserPremium),
     )
+
+    // The Parents Portal's signature premium FLOATING DOCK (ParentDock) — a detached glass
+    // bar with a liquid violet active-lozenge. The shared VBottomNav stays in place for the
+    // Admin/Teacher portals; this bespoke dock is exclusive to the parent experience.
+    //
+    // HIDDEN when the Conversations tab has an open thread or compose-new active —
+    // the conversation/compose surface needs the full screen height for its compose bar
+    // (WhatsApp pattern: no bottom nav inside a chat).
+    val hideDock = tab == "conversations" &&
+        (messageState.openThreadId != null || messageState.composeOpen)
 
     VScreenScaffold(
         modifier = modifier,
-        topBar = {
-            // ONE CANONICAL HEADER (design law): the exact same identity header renders on EVERY
-            // parent tab — Home included. The child switcher lives here and nowhere else; the
-            // identity chip is a dropdown that switches the active child for the whole portal
-            // (the pick flows through the shared SelectedChildHolder to every tab's ViewModel).
-            val child = dashboard.selectedChild
-            // Prefer the dashboard's authoritative level; fall back to the holistic level.
-            val level = child?.currentLevel?.takeIf { it > 0 } ?: progress.currentLevel
-            val rawProgress = child?.overallProgress
-                ?.let { if (it <= 1.0) it * 100.0 else it }
-                ?.toInt()
-                ?: (progress.overallProgress * 100).toInt()
-            val subline = when {
-                level > 0 && rawProgress > 0 -> appString(StringKeys.PPRT_LEVEL_JOURNEY, "level" to level, "percent" to rawProgress)
-                level > 0 -> appString(StringKeys.PPRT_LEVEL, "level" to level)
-                progress.journeyDescription.isNotBlank() -> progress.journeyDescription
-                else -> appString(StringKeys.PPRT_YOUR_CHILD)
-            }
-            ParentHeader(
-                childName = child?.name?.takeIf { it.isNotBlank() } ?: appString(StringKeys.PPRT_YOUR_CHILD),
-                childSubline = subline,
-                childPhoto = child?.profilePic,
-                children = dashboard.children,
-                selectedChildId = dashboard.selectedChildId,
-                onSelectChild = dashboardViewModel::selectChild,
-                // RA-S06: real account name (RA-S03 pref) + real unread count.
-                accountName = progress.accountName,
-                unreadCount = notifications.unreadCount,
-                onOpenNotifications = { overlay = ParentOverlay.Notifications },
-                onOpenMessages = { overlay = ParentOverlay.Messages },
-                onExit = { overlay = ParentOverlay.Profile },
-            )
-        },
-        bottomBar = {
-            // The Parents Portal's signature premium FLOATING DOCK (ParentDock) — a detached glass
-            // bar with a liquid violet active-lozenge. The shared VBottomNav stays in place for the
-            // Admin/Teacher portals; this bespoke dock is exclusive to the parent experience.
-            //
-            // HIDDEN when the Conversations tab has an open thread or compose-new active —
-            // the conversation/compose surface needs the full screen height for its compose bar
-            // (WhatsApp pattern: no bottom nav inside a chat).
-            val hideDock = tab == "conversations" &&
-                (messageState.openThreadId != null || messageState.composeOpen)
-            if (!hideDock) {
+        bottomBar = if (!hideDock) {
+            {
                 ParentDock(
                     items = items,
                     selected = tab,
                     onSelect = { tab = it },
                 )
             }
+        } else {
+            null
         },
     ) { padding ->
         Box(Modifier.fillMaxSize()) {
@@ -410,23 +388,44 @@ fun ParentPortalV2(
                     onOpenPulse = { overlay = ParentOverlay.Pulse },
                     onOpenTransport = { overlay = ParentOverlay.Transport },
                     onOpenTutor = { overlay = ParentOverlay.TutorChat },
-                    onOpenTutorProgress = { overlay = ParentOverlay.TutorProgress },
                     onOpenScholarships = { overlay = ParentOverlay.Scholarships },
                     onOpenIdCard = { overlay = ParentOverlay.DigitalIdCard },
                     onOpenLibrary = { overlay = ParentOverlay.Library },
                     onOpenEvents = { overlay = ParentOverlay.EventRegistration },
+                    unreadNotificationsCount = notifications.unreadCount,
                 )
                 "academics" -> ParentAcademicsScreenV2(
+                    parentName = progress.accountName,
+                    children = dashboard.children,
+                    selectedChild = dashboard.selectedChild,
+                    onSelectChild = { dashboardViewModel.selectChild(it) },
                     onOpenLeave = { overlay = ParentOverlay.Leave },
                     onOpenHealth = { overlay = ParentOverlay.Health },
+                    onOpenNotifications = { overlay = ParentOverlay.Notifications },
                     initialTab = deepLinkAcademicsTab,
                     onTabConsumed = { deepLinkAcademicsTab = null },
                     initialReportDraftId = deepLinkReportDraftId,
                     onReportDraftIdConsumed = { deepLinkReportDraftId = null },
+                    unreadNotificationsCount = notifications.unreadCount,
                 )
-                "fees" -> ParentFeesScreenV2()
+                "fees" -> ParentFeesScreenV2(
+                    parentName = progress.accountName,
+                    children = dashboard.children,
+                    selectedChild = dashboard.selectedChild,
+                    onSelectChild = { dashboardViewModel.selectChild(it) },
+                    onOpenNotifications = { overlay = ParentOverlay.Notifications },
+                    unreadNotificationsCount = notifications.unreadCount,
+                    onPayNow = { overlay = ParentOverlay.FeePayment },
+                    onFeeHistory = { overlay = ParentOverlay.FeeHistory },
+                )
                 // Phase 3 (commit 9): the Conversations hub — messaging-first, announcements second.
                 "conversations" -> ParentConversationsScreenV2(
+                    parentName = progress.accountName,
+                    children = dashboard.children,
+                    selectedChild = dashboard.selectedChild,
+                    onSelectChild = { dashboardViewModel.selectChild(it) },
+                    onOpenNotifications = { overlay = ParentOverlay.Notifications },
+                    unreadNotificationsCount = notifications.unreadCount,
                     messageViewModel = messageViewModel,
                     initialSegment = deepLinkSegment,
                     onSegmentConsumed = { deepLinkSegment = null },
@@ -434,186 +433,17 @@ fun ParentPortalV2(
                 // Phase 4 (commits 10–11): the flagship collectible player card, with a
                 // swipe-down account-options reveal (logout / link child / discover schools).
                 "profile" -> ParentProfileCardScreenV2(
+                    parentName = progress.accountName,
+                    children = dashboard.children,
+                    selectedChild = dashboard.selectedChild,
+                    onSelectChild = { dashboardViewModel.selectChild(it) },
                     onLogout = onLogout,
                     onLinkChild = { overlay = ParentOverlay.LinkChild },
                     onDiscoverSchools = { overlay = ParentOverlay.Discovery },
+                    onOpenAccountSettings = { overlay = ParentOverlay.Profile },
                 )
             }
         }
     }
 }
 
-/**
- * ParentHeader — THE single canonical header for the whole Parents Portal. Renders identically on
- * every tab (Home included). It carries:
- *   • a tappable identity chip (child avatar + name + level/journey) that opens a **dropdown child
- *     switcher** — the ONLY place in the portal a parent switches child. The pick flows through the
- *     shared SelectedChildHolder, so every tab re-scopes to the new child reactively.
- *   • an icon cluster on the right: Conversations, Notifications (with a real unread dot) and the
- *     account avatar (opens the Profile/account screen).
- *
- * Surface: a clean white bar on the lavender canvas with a hairline divider — lavender is the brand
- * accent (chip tint, active dot), not a wall-to-wall fill.
- */
-@Composable
-private fun ParentHeader(
-    childName: String,
-    childSubline: String,
-    childPhoto: String?,
-    children: List<com.littlebridge.enrollplus.feature.parent.domain.model.DashboardChildSummary>,
-    selectedChildId: String?,
-    onSelectChild: (String) -> Unit,
-    accountName: String,
-    unreadCount: Int,
-    onOpenNotifications: () -> Unit,
-    onOpenMessages: () -> Unit,
-    onExit: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val c = VTheme.colors
-    var switcherOpen by remember { mutableStateOf(false) }
-    val canSwitch = children.size > 1
-
-    Column(
-        modifier
-            .fillMaxWidth()
-            .background(c.card)
-            .statusBarsPadding()
-            .padding(horizontal = 20.dp)
-            .padding(top = 16.dp, bottom = 10.dp),
-    ) {
-        Row(
-            Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            // ── Identity chip → dropdown child switcher ──────────────────────────
-            Box {
-                val chipInteraction = remember { MutableInteractionSource() }
-                Row(
-                    Modifier
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(c.cream)
-                        .clickable(
-                            interactionSource = chipInteraction,
-                            indication = null,
-                            enabled = canSwitch,
-                        ) { switcherOpen = true }
-                        .padding(start = 6.dp, end = if (canSwitch) 10.dp else 12.dp, top = 6.dp, bottom = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    VAvatar(name = childName.ifBlank { "?" }, src = childPhoto, size = 34.dp)
-                    Column {
-                        Text(
-                            childName.ifBlank { appString(StringKeys.PPRT_YOUR_CHILD) },
-                            style = VTheme.type.bodyStrong.colored(c.ink)
-                                .copy(fontSize = 13.5.sp, fontWeight = FontWeight.ExtraBold),
-                        )
-                        Text(
-                            childSubline,
-                            style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 10.5.sp),
-                        )
-                    }
-                    if (canSwitch) {
-                        Icon(
-                            VIcons.ChevronDown,
-                            contentDescription = appString(StringKeys.PPRT_SWITCH_CHILD),
-                            tint = c.ink3,
-                            modifier = Modifier.size(16.dp),
-                        )
-                    }
-                }
-
-                // The dropdown anchors under the chip. Real children only — no fabricated entries.
-                androidx.compose.material3.DropdownMenu(
-                    expanded = switcherOpen,
-                    onDismissRequest = { switcherOpen = false },
-                    containerColor = c.card,
-                ) {
-                    children.forEach { ch ->
-                        val selected = ch.id == selectedChildId
-                        androidx.compose.material3.DropdownMenuItem(
-                            text = {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                ) {
-                                    VAvatar(name = ch.name.ifBlank { "?" }, src = ch.profilePic, size = 30.dp)
-                                    Column(Modifier.weight(1f)) {
-                                        Text(
-                                            ch.name.ifBlank { "—" },
-                                            style = VTheme.type.bodyStrong.colored(c.ink)
-                                                .copy(fontSize = 13.sp, fontWeight = FontWeight.Bold),
-                                        )
-                                        if (ch.currentLevel > 0) {
-                                            Text(
-                                                appString(StringKeys.PPRT_LEVEL, "level" to ch.currentLevel),
-                                                style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp),
-                                            )
-                                        }
-                                    }
-                                    if (selected) {
-                                        Icon(
-                                            VIcons.Check,
-                                            contentDescription = "Selected",
-                                            tint = c.accent,
-                                            modifier = Modifier.size(18.dp),
-                                        )
-                                    }
-                                }
-                            },
-                            onClick = {
-                                onSelectChild(ch.id)
-                                switcherOpen = false
-                            },
-                        )
-                    }
-                }
-            }
-
-            // ── Icon cluster: conversations · notifications · account ────────────
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                HeaderIconButton(VIcons.Chat, "Messages", onOpenMessages)
-                Box {
-                    HeaderIconButton(VIcons.Bell, "Notifications", onOpenNotifications)
-                    // Real unread dot only — never a permanent cry-wolf indicator.
-                    if (unreadCount > 0) {
-                        VStatusDot(color = c.dangerInk, size = 7.dp, modifier = Modifier.align(Alignment.TopEnd).padding(7.dp))
-                    }
-                }
-                val exitInteraction = remember { MutableInteractionSource() }
-                Box(
-                    Modifier
-                        .clip(CircleShape)
-                        .clickable(interactionSource = exitInteraction, indication = null) { onExit() },
-                ) {
-                    VAvatar(name = accountName.ifBlank { "Parent" }, size = 36.dp, ring = true)
-                }
-            }
-        }
-        Spacer(Modifier.height(10.dp))
-        VDivider()
-    }
-}
-
-/** A circular header action button — cream surface, navy glyph, no ripple. */
-@Composable
-private fun HeaderIconButton(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    label: String,
-    onClick: () -> Unit,
-) {
-    val c = VTheme.colors
-    val ix = remember { MutableInteractionSource() }
-    Box(
-        Modifier
-            .size(36.dp)
-            .clip(CircleShape)
-            .background(c.cream)
-            .clickable(interactionSource = ix, indication = null) { onClick() },
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(icon, contentDescription = label, tint = c.ink, modifier = Modifier.size(16.dp))
-    }
-}

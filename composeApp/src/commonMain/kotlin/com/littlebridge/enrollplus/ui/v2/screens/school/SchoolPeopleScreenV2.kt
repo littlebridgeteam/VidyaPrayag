@@ -1,7 +1,11 @@
 package com.littlebridge.enrollplus.ui.v2.screens.school
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +20,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.size
@@ -32,10 +37,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -62,18 +72,22 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
-import com.littlebridge.enrollplus.ui.v2.components.VLabel
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.components.VStatusDot
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.core.locale.AppStrings
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VMotion
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
+import com.littlebridge.enrollplus.ui.tokens.VShapes
+import com.littlebridge.enrollplus.ui.tokens.VTypography
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.math.roundToInt
 
@@ -189,13 +203,23 @@ private fun SchoolPeopleContent(
     onGraduateStudents: (List<String>, Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-
     var subTab by remember { mutableStateOf(PeopleSubTab.Teachers) }
     var showAddTeacher by remember { mutableStateOf(false) }
     var showAddStaff by remember { mutableStateOf(false) }
     var showAddStudent by remember { mutableStateOf(false) }
     var showImportStudents by remember { mutableStateOf(false) }
+
+    // Stagger entrance
+    val headerAlpha = remember { Animatable(0f) }
+    val headerOffset = remember { Animatable(20f) }
+    LaunchedEffect(Unit) {
+        headerAlpha.snapTo(0f); headerOffset.snapTo(20f)
+        launch {
+            delay(100)
+            headerAlpha.animateTo(1f, tween(VMotion.durSlower, easing = VMotion.ease))
+            headerOffset.animateTo(0f, tween(VMotion.durSlower, easing = VMotion.ease))
+        }
+    }
 
     // Auto-close the student dialogs once the VM confirms success.
     LaunchedEffect(studentsState.infoMessage) {
@@ -207,6 +231,17 @@ private fun SchoolPeopleContent(
         }
     }
 
+    VPullRefresh(
+        isRefreshing = teachersState.isLoading || studentsState.isLoading || staffState.isLoading || analyticsState.isLoading,
+        onRefresh = {
+            when (subTab) {
+                PeopleSubTab.Teachers -> onTeachersRetry()
+                PeopleSubTab.Students -> { onStudentsRetry(); onAnalyticsRetry() }
+                PeopleSubTab.Staff -> onStaffRetry()
+                PeopleSubTab.Alumni -> {}
+            }
+        },
+    ) {
     Column(
         modifier
             .fillMaxSize()
@@ -214,10 +249,36 @@ private fun SchoolPeopleContent(
             .statusBarsPadding()
             .imePadding()
             .navigationBarsPadding()
-            .padding(top = 24.dp, bottom = 140.dp),
+            .padding(top = 16.dp, bottom = 140.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text(appString(StringKeys.PPL_TITLE), style = VTheme.type.h1.colored(c.ink), modifier = Modifier.padding(horizontal = 20.dp))
+        // Premium header
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 24.dp)
+                .graphicsLayer(translationY = headerOffset.value)
+                .alpha(headerAlpha.value),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(7.dp),
+            ) {
+                Box(Modifier.size(5.dp).clip(CircleShape).background(VColors.violet))
+                Text(appString(StringKeys.PPL_TITLE), style = VTypography.accentLabel, color = VColors.violet)
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = buildAnnotatedString {
+                    withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold, color = VColors.ink)) {
+                        append("People")
+                    }
+                    withStyle(SpanStyle(fontWeight = FontWeight.Normal, color = VColors.ink2)) {
+                        append(" Directory")
+                    }
+                },
+                style = VTypography.h2,
+            )
+        }
 
         VActionCard(
             modifier = Modifier.padding(horizontal = 16.dp),
@@ -236,7 +297,7 @@ private fun SchoolPeopleContent(
         )
 
         Column(
-            Modifier.padding(horizontal = 20.dp),
+            Modifier.padding(horizontal = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             when (subTab) {
@@ -247,8 +308,6 @@ private fun SchoolPeopleContent(
                     onOpenTeacher = onOpenTeacher,
                     onLoadMore = onLoadMoreTeachers,
                     onDeactivate = onDeactivateTeacher,
-                    // RA-TAM — "Assign classes" now opens the reusable Teacher
-                    // Assignment Management module (one of its 3 entry points).
                     onAssignClass = onAssignClasses,
                 )
                 PeopleSubTab.Students -> StudentsSubTab(
@@ -273,12 +332,13 @@ private fun SchoolPeopleContent(
                         modifier = Modifier.fillMaxWidth(),
                         title = appString(StringKeys.PPL_ALUMNI_MGMT_TITLE),
                         subtitle = appString(StringKeys.PPL_ALUMNI_MGMT_SUB),
-                        icon = VIcons.Users,
+                        icon = VIcons.UsersGroup,
                         onClick = onOpenAlumni,
                     )
                 }
             }
         }
+    }
     }
 
     // ── Add-teacher dialog (RA-22) ─────────────────────────────────────────
@@ -337,7 +397,6 @@ private fun TeachersSubTab(
     onDeactivate: (String) -> Unit,
     onAssignClass: (String) -> Unit,
 ) {
-    val c = VTheme.colors
     var query by remember { mutableStateOf("") }
 
     Row(
@@ -345,7 +404,7 @@ private fun TeachersSubTab(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(appString(StringKeys.PPL_TAB_TEACHERS), style = VTheme.type.h3.colored(c.ink))
+        Text(appString(StringKeys.PPL_TAB_TEACHERS), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
         VButton(
             text = appString(StringKeys.PPL_ADD_TEACHER),
             onClick = onAddClick,
@@ -389,15 +448,14 @@ private fun TeachersSubTab(
         val ready = filtered.isNotEmpty() && !state.isLoading
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             filtered.forEachIndexed { index, t ->
-                Box(modifier = Modifier.staggeredItemEntrance(index = index, trigger = ready)) {
-                    TeacherCard(
+                TeacherCard(
                         teacher = t,
                         isMutating = state.isMutating,
                         onViewProfile = { onOpenTeacher(t.id) },
                         onDeactivate = { onDeactivate(t.id) },
                         onAssignClass = { onAssignClass(t.id) },
+                        modifier = Modifier.staggeredItemEntrance(index, ready),
                     )
-                }
             }
 
             // Pagination: only meaningful when NOT filtering locally (a local
@@ -432,15 +490,13 @@ private fun TeacherCard(
     onViewProfile: () -> Unit,
     onDeactivate: () -> Unit,
     onAssignClass: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
     val isActive = teacher.profile.status.equals("ACTIVE", ignoreCase = true)
     var menuOpen by remember { mutableStateOf(false) }
-    // The overflow menu only has content when the backend grants at least one
-    // overflow action; otherwise we hide the ⋮ entirely.
     val hasOverflow = teacher.actions.canAssignClass || teacher.actions.canDeactivate
 
-    VCard(modifier = Modifier.fillMaxWidth()) {
+    VCard(modifier = modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
 
             // ── Header: avatar · name · role · status ──────────────────────
@@ -457,10 +513,11 @@ private fun TeacherCard(
                 Column(Modifier.weight(1f)) {
                     Text(
                         teacher.profile.name.ifBlank { appString(StringKeys.PPL_UNNAMED_TEACHER) },
-                        style = VTheme.type.bodyStrong.colored(c.ink),
+                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        color = VColors.ink,
                     )
                     if (teacher.profile.role.isNotBlank()) {
-                        Text(teacher.profile.role, style = VTheme.type.caption.colored(c.ink2))
+                        Text(teacher.profile.role, style = VTypography.caption, color = VColors.ink3)
                     }
                 }
                 VBadge(
@@ -512,19 +569,21 @@ private fun TeacherCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Icon(VIcons.TrendingUp, contentDescription = null, tint = c.ink3, modifier = Modifier.size(14.dp))
+                    Icon(VIcons.TrendingUp, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(14.dp))
                     Text(
                         teacher.activity.attendancePercentage
                             ?.let { appString(StringKeys.PPL_ATTENDANCE_PCT, "pct" to it) }
                             ?: appString(StringKeys.PPL_ATTENDANCE_NONE),
-                        style = VTheme.type.caption.colored(c.ink2),
+                        style = VTypography.caption,
+                        color = VColors.ink2,
                     )
                 }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Icon(VIcons.Clock, contentDescription = null, tint = c.ink3, modifier = Modifier.size(14.dp))
+                    Icon(VIcons.Clock, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(14.dp))
                     Text(
                         lastActiveLabel(teacher.activity.lastActiveAt),
-                        style = VTheme.type.caption.colored(c.ink2),
+                        style = VTypography.caption,
+                        color = VColors.ink2,
                     )
                 }
             }
@@ -554,16 +613,12 @@ private fun TeacherCard(
                             modifier = Modifier
                                 .size(36.dp)
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(c.cream)
+                                .background(VColors.cream)
                                 .clickable(enabled = !isMutating) { menuOpen = true },
                             contentAlignment = Alignment.Center,
                         ) {
-                            Icon(VIcons.More, contentDescription = appString(StringKeys.PPL_MORE_ACTIONS), tint = c.ink2, modifier = Modifier.size(18.dp))
+                            Icon(VIcons.More, contentDescription = appString(StringKeys.PPL_MORE_ACTIONS), tint = VColors.ink2, modifier = Modifier.size(18.dp))
                         }
-                        // Overflow items are strictly backend-driven by the
-                        // `actions` flags — nothing here is hardcoded. Both map to
-                        // existing flows (assign-class lives in the profile;
-                        // deactivate reuses the soft-delete endpoint).
                         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                             if (teacher.actions.canAssignClass) {
                                 DropdownMenuItem(
@@ -574,9 +629,9 @@ private fun TeacherCard(
                             }
                             if (teacher.actions.canDeactivate) {
                                 DropdownMenuItem(
-                                    text = { Text(appString(StringKeys.PPL_DEACTIVATE), style = VTheme.type.body.colored(c.dangerInk)) },
+                                    text = { Text(appString(StringKeys.PPL_DEACTIVATE), style = VTypography.bodySmall, color = VColors.coral) },
                                     onClick = { menuOpen = false; onDeactivate() },
-                                    leadingIcon = { Icon(VIcons.Close, contentDescription = null, tint = c.dangerInk, modifier = Modifier.size(16.dp)) },
+                                    leadingIcon = { Icon(VIcons.Close, contentDescription = null, tint = VColors.coral, modifier = Modifier.size(16.dp)) },
                                 )
                             }
                         }
@@ -590,8 +645,7 @@ private fun TeacherCard(
 /** Thin hairline divider used between a teacher card's sections. */
 @Composable
 private fun CardDivider() {
-    val c = VTheme.colors
-    Box(Modifier.fillMaxWidth().height(1.dp).background(c.ink.copy(alpha = 0.06f)))
+    Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
 }
 
 /**
@@ -605,23 +659,20 @@ private fun LabeledChipsRow(
     values: List<String>,
     emptyText: String,
 ) {
-    val c = VTheme.colors
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(label, style = VTheme.type.label.colored(c.ink3))
+        Text(label, style = VTypography.caption, color = VColors.ink3)
         if (values.isEmpty()) {
-            Text(emptyText, style = VTheme.type.caption.colored(c.ink3))
+            Text(emptyText, style = VTypography.caption, color = VColors.ink3)
         } else {
-            // Bullet-joined to mirror the "Grade 6 • Grade 7" mock and avoid a
-            // new FlowRow dependency (keeps to existing layout primitives).
             Text(
                 values.joinToString("  •  "),
-                style = VTheme.type.body.colored(c.ink),
+                style = VTypography.bodySmall,
+                color = VColors.ink,
             )
         }
     }
 }
 
-/** A single workload stat tile (big number + caption + icon). */
 @Composable
 private fun WorkloadStat(
     label: String,
@@ -629,19 +680,18 @@ private fun WorkloadStat(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
     Column(
         modifier
             .clip(RoundedCornerShape(12.dp))
-            .background(c.ink.copy(alpha = 0.05f))
+            .background(VColors.cream)
             .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Icon(icon, contentDescription = null, tint = c.ink3, modifier = Modifier.size(14.dp))
-            Text(label, style = VTheme.type.label.colored(c.ink3))
+            Icon(icon, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(14.dp))
+            Text(label, style = VTypography.caption, color = VColors.ink3)
         }
-        Text(value, style = VTheme.type.dataLg.colored(c.ink).copy(fontSize = 20.sp, fontWeight = FontWeight.SemiBold))
+        Text(value, style = VTypography.h3.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
     }
 }
 
@@ -672,12 +722,11 @@ private fun StudentsSubTab(
     analyticsState: StudentAnalyticsState,
     onAnalyticsRetry: () -> Unit,
 ) {
-    val c = VTheme.colors
     var query by remember { mutableStateOf("") }
     var showGraduate by remember { mutableStateOf(false) }
 
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(appString(StringKeys.PPL_TAB_STUDENTS), style = VTheme.type.h3.colored(c.ink))
+        Text(appString(StringKeys.PPL_TAB_STUDENTS), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
         FlowRow(
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -741,21 +790,20 @@ private fun StudentsSubTab(
         val ready = filtered.isNotEmpty() && !state.isLoading
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             filtered.forEachIndexed { index, s ->
-                Box(modifier = Modifier.staggeredItemEntrance(index = index, trigger = ready)) {
-                    PersonRow(
+                PersonRow(
                         name = s.fullName,
                         subtitle = "${s.className} · Sec ${s.section} · Roll ${s.rollNumber}",
                         src = s.profilePhotoUrl,
                         onClick = { onOpenStudent(s.id) },
+                        modifier = Modifier.staggeredItemEntrance(index, ready),
                     )
-                }
             }
         }
     }
 
     // ── Cohort analytics (kept under Students) ──────────────────────────────
     Spacer(Modifier.height(8.dp))
-    Text(appString(StringKeys.PPL_COHORT_ANALYTICS), style = VTheme.type.h3.colored(c.ink))
+    Text(appString(StringKeys.PPL_COHORT_ANALYTICS), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
     VStateHost(
         loading = analyticsState.isLoading,
         error = analyticsState.errorMessage,
@@ -772,17 +820,17 @@ private fun StudentsSubTab(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             VCard {
-                VLabel(appString(StringKeys.PPL_RISK_DISTRIBUTION))
+                Text(appString(StringKeys.PPL_RISK_DISTRIBUTION), style = VTypography.caption, color = VColors.ink3)
                 Spacer(Modifier.height(12.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    RiskTile(appString(StringKeys.PPL_CRITICAL), analyticsState.criticalRiskCount, c.dangerInk, Modifier.weight(1f))
-                    RiskTile(appString(StringKeys.PPL_MEDIUM), analyticsState.mediumRiskCount, c.warningInk, Modifier.weight(1f))
-                    RiskTile(appString(StringKeys.PPL_LOW), analyticsState.lowRiskCount, c.successInk, Modifier.weight(1f))
+                    RiskTile(appString(StringKeys.PPL_CRITICAL), analyticsState.criticalRiskCount, VColors.coral, Modifier.weight(1f))
+                    RiskTile(appString(StringKeys.PPL_MEDIUM), analyticsState.mediumRiskCount, VColors.gold, Modifier.weight(1f))
+                    RiskTile(appString(StringKeys.PPL_LOW), analyticsState.lowRiskCount, VColors.success, Modifier.weight(1f))
                 }
             }
             if (analyticsState.atRiskStudents.isNotEmpty()) {
                 Column {
-                    Text(appString(StringKeys.PPL_AT_RISK_STUDENTS), style = VTheme.type.h3.colored(c.ink), modifier = Modifier.padding(bottom = 8.dp))
+                    Text(appString(StringKeys.PPL_AT_RISK_STUDENTS), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.padding(bottom = 8.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         analyticsState.atRiskStudents.forEach { RiskStudentRow(it) }
                     }
@@ -790,14 +838,14 @@ private fun StudentsSubTab(
             }
             if (analyticsState.subjectEngagements.isNotEmpty()) {
                 VCard {
-                    Text(appString(StringKeys.PPL_SUBJECT_ENGAGEMENT), style = VTheme.type.h3.colored(c.ink))
+                    Text(appString(StringKeys.PPL_SUBJECT_ENGAGEMENT), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                     Spacer(Modifier.height(12.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         analyticsState.subjectEngagements.forEach { e ->
                             Column {
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text(e.name, style = VTheme.type.body.colored(c.ink))
-                                    Text("${e.percentage.roundToInt()}%", style = VTheme.type.dataSm.colored(c.ink2))
+                                    Text(e.name, style = VTypography.bodySmall, color = VColors.ink)
+                                    Text("${e.percentage.roundToInt()}%", style = VTypography.caption, color = VColors.ink2)
                                 }
                                 Spacer(Modifier.height(4.dp))
                                 VProgressBar(
@@ -806,7 +854,7 @@ private fun StudentsSubTab(
                                 )
                                 val status = e.status
                                 if (!status.isNullOrBlank()) {
-                                    Text(status, style = VTheme.type.label.colored(c.ink3))
+                                    Text(status, style = VTypography.caption, color = VColors.ink3)
                                 }
                             }
                         }
@@ -815,15 +863,15 @@ private fun StudentsSubTab(
             }
             if (analyticsState.cohortComparison.isNotEmpty()) {
                 VCard {
-                    Text(appString(StringKeys.PPL_COHORT_COMPARISON), style = VTheme.type.h3.colored(c.ink))
+                    Text(appString(StringKeys.PPL_COHORT_COMPARISON), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                     Spacer(Modifier.height(12.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         analyticsState.cohortComparison.forEachIndexed { i, v ->
                             val label = analyticsState.cohortLabels.getOrNull(i) ?: appString(StringKeys.PPL_GRADE_N, "n" to (i + 1))
                             Column {
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text(label, style = VTheme.type.body.colored(c.ink))
-                                    Text("${v.roundToInt()}%", style = VTheme.type.dataSm.colored(c.ink2))
+                                    Text(label, style = VTypography.bodySmall, color = VColors.ink)
+                                    Text("${v.roundToInt()}%", style = VTypography.caption, color = VColors.ink2)
                                 }
                                 Spacer(Modifier.height(4.dp))
                                 VProgressBar(value = v, tone = VBadgeTone.Arctic)
@@ -841,11 +889,12 @@ private fun StudentsSubTab(
         val currentYear = 2026
         Dialog(onDismissRequest = { showGraduate = false }) {
             VCard {
-                Text(appString(StringKeys.PPL_MARK_ALUMNI), style = VTheme.type.h3.colored(c.ink))
+                Text(appString(StringKeys.PPL_MARK_ALUMNI), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                 Spacer(Modifier.height(8.dp))
                 Text(
                     appString(StringKeys.PPL_MARK_ALUMNI_BODY, "count" to filtered.size),
-                    style = VTheme.type.body.colored(c.ink2),
+                    style = VTypography.caption,
+                    color = VColors.ink2,
                 )
                 Spacer(Modifier.height(16.dp))
                 VInput(
@@ -892,14 +941,12 @@ private fun StaffSubTab(
     onAddClick: () -> Unit,
     onOpenStaff: (String) -> Unit,
 ) {
-    val c = VTheme.colors
-
     Row(
         Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(appString(StringKeys.PPL_TAB_STAFF), style = VTheme.type.h3.colored(c.ink))
+        Text(appString(StringKeys.PPL_TAB_STAFF), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
         VButton(
             text = appString(StringKeys.PPL_ADD_STAFF),
             onClick = onAddClick,
@@ -933,14 +980,13 @@ private fun StaffSubTab(
         val ready = state.staff.isNotEmpty() && !state.isLoading
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             state.staff.forEachIndexed { index, s ->
-                Box(modifier = Modifier.staggeredItemEntrance(index = index, trigger = ready)) {
-                    PersonRow(
+                PersonRow(
                         name = s.fullName,
                         subtitle = listOfNotNull(s.role, s.department?.takeIf { it.isNotBlank() }).joinToString(" · "),
                         src = s.photoUrl,
                         onClick = { onOpenStaff(s.id) },
+                        modifier = Modifier.staggeredItemEntrance(index, ready),
                     )
-                }
             }
         }
     }
@@ -958,21 +1004,21 @@ private fun PersonRow(
     subtitle: String,
     src: String? = null,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    VCard(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)) {
+    VCard(modifier = modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             VAvatar(name = name, src = src, size = 42.dp)
             Column(Modifier.weight(1f)) {
-                Text(name, style = VTheme.type.bodyStrong.colored(c.ink))
+                Text(name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                 if (subtitle.isNotBlank()) {
-                    Text(subtitle, style = VTheme.type.caption.colored(c.ink2))
+                    Text(subtitle, style = VTypography.caption, color = VColors.ink3)
                 }
             }
-            Icon(VIcons.ArrowRight, contentDescription = null, tint = c.ink3, modifier = Modifier.size(18.dp))
+            Icon(VIcons.ArrowRight, contentDescription = null, tint = VColors.ink3.copy(alpha = 0.4f), modifier = Modifier.size(18.dp))
         }
     }
 }
@@ -989,7 +1035,6 @@ private fun AddTeacherDialog(
     onDismiss: () -> Unit,
     onSubmit: (name: String, identifier: String, initialPassword: String?) -> Unit,
 ) {
-    val c = VTheme.colors
     var name by remember { mutableStateOf("") }
     var identifier by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -1006,7 +1051,7 @@ private fun AddTeacherDialog(
                 Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text(appString(StringKeys.PPL_ADD_TEACHER), style = VTheme.type.h3.colored(c.ink))
+                Text(appString(StringKeys.PPL_ADD_TEACHER), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                 VInput(
                     value = name,
                     onValueChange = { name = it },
@@ -1034,7 +1079,8 @@ private fun AddTeacherDialog(
                 } else {
                     Text(
                         appString(StringKeys.PPL_OTP_HINT),
-                        style = VTheme.type.caption.colored(c.ink2),
+                        style = VTypography.caption,
+                        color = VColors.ink2,
                     )
                 }
                 Spacer(Modifier.height(4.dp))
@@ -1070,7 +1116,6 @@ private fun AddStaffDialog(
     onDismiss: () -> Unit,
     onSubmit: (name: String, role: String, department: String, phone: String, email: String) -> Unit,
 ) {
-    val c = VTheme.colors
     var name by remember { mutableStateOf("") }
     var role by remember { mutableStateOf("") }
     var department by remember { mutableStateOf("") }
@@ -1085,7 +1130,7 @@ private fun AddStaffDialog(
                 Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text(appString(StringKeys.PPL_ADD_STAFF_MEMBER), style = VTheme.type.h3.colored(c.ink))
+                Text(appString(StringKeys.PPL_ADD_STAFF_MEMBER), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                 VInput(
                     value = name,
                     onValueChange = { name = it },
@@ -1154,7 +1199,6 @@ private fun AddStudentPeopleDialog(
     onDismiss: () -> Unit,
     onSubmit: (name: String, className: String, section: String, rollNumber: String, parentPhone: String) -> Unit,
 ) {
-    val c = VTheme.colors
     var name by remember { mutableStateOf("") }
     var className by remember { mutableStateOf("") }
     var section by remember { mutableStateOf("") }
@@ -1170,7 +1214,7 @@ private fun AddStudentPeopleDialog(
     Dialog(onDismissRequest = onDismiss) {
         VCard(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(appString(StringKeys.PPL_ADD_STUDENT), style = VTheme.type.h3.colored(c.ink))
+                Text(appString(StringKeys.PPL_ADD_STUDENT), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                 VInput(name, { name = it }, label = appString(StringKeys.PPL_FULL_NAME), placeholder = appString(StringKeys.PPL_NAME_PH_STUDENT), leadingIcon = VIcons.User)
                 VInput(className, { className = it }, label = appString(StringKeys.PPL_CLASS), placeholder = appString(StringKeys.PPL_CLASS_PH))
                 VInput(section, { section = it }, label = appString(StringKeys.PPL_SECTION), placeholder = appString(StringKeys.PPL_SECTION_PH))
@@ -1183,7 +1227,7 @@ private fun AddStudentPeopleDialog(
                     keyboardType = KeyboardType.Phone,
                 )
                 if (error != null) {
-                    Text(error, style = VTheme.type.body.colored(c.dangerInk))
+                    Text(error, style = VTypography.caption, color = VColors.coral)
                 }
                 Spacer(Modifier.height(2.dp))
                 VButton(
@@ -1220,7 +1264,6 @@ private fun ImportStudentsDialog(
     onDismiss: () -> Unit,
     onSubmit: (csv: String) -> Unit,
 ) {
-    val c = VTheme.colors
     var csv by remember {
         mutableStateOf("full_name,class_name,section,roll_number\n")
     }
@@ -1229,10 +1272,11 @@ private fun ImportStudentsDialog(
     Dialog(onDismissRequest = onDismiss) {
         VCard(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(appString(StringKeys.PPL_IMPORT_STUDENTS_CSV), style = VTheme.type.h3.colored(c.ink))
+                Text(appString(StringKeys.PPL_IMPORT_STUDENTS_CSV), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                 Text(
                     appString(StringKeys.PPL_IMPORT_INSTRUCTIONS),
-                    style = VTheme.type.caption.colored(c.ink2),
+                    style = VTypography.caption,
+                    color = VColors.ink2,
                 )
                 VInput(
                     value = csv,
@@ -1243,7 +1287,7 @@ private fun ImportStudentsDialog(
                     modifier = Modifier.fillMaxWidth().height(180.dp),
                 )
                 if (error != null) {
-                    Text(error, style = VTheme.type.body.colored(c.dangerInk))
+                    Text(error, style = VTypography.caption, color = VColors.coral)
                 }
                 Spacer(Modifier.height(2.dp))
                 VButton(
@@ -1270,23 +1314,21 @@ private fun ImportStudentsDialog(
 
 @Composable
 private fun RiskTile(label: String, count: Int, tone: Color, modifier: Modifier = Modifier) {
-    val c = VTheme.colors
     Column(
-        modifier.clip(RoundedCornerShape(12.dp)).background(c.ink.copy(alpha = 0.06f)).padding(12.dp),
+        modifier.clip(RoundedCornerShape(12.dp)).background(VColors.cream).padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(count.toString(), style = VTheme.type.dataLg.colored(tone).copy(fontSize = 22.sp, fontWeight = FontWeight.SemiBold))
-        Text(label, style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp))
+        Text(count.toString(), style = VTypography.h3.copy(fontWeight = FontWeight.SemiBold), color = tone)
+        Text(label, style = VTypography.caption.copy(fontSize = 11.sp), color = VColors.ink3)
     }
 }
 
 @Composable
 private fun RiskStudentRow(s: RiskStudent) {
-    val c = VTheme.colors
     val tone = when (s.riskLevel.lowercase()) {
-        "critical" -> c.danger
-        "medium" -> c.warning
-        else -> c.success
+        "critical" -> VColors.coral
+        "medium" -> VColors.gold
+        else -> VColors.success
     }
     val badgeTone = when (s.riskLevel.lowercase()) {
         "critical" -> VBadgeTone.Danger
@@ -1299,15 +1341,15 @@ private fun RiskStudentRow(s: RiskStudent) {
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     VStatusDot(color = tone)
-                    Text(s.name, style = VTheme.type.bodyStrong.colored(c.ink))
+                    Text(s.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                 }
                 if (s.masteryTrend.isNotBlank()) {
-                    Text(appString(StringKeys.PPL_MASTERY, "trend" to s.masteryTrend), style = VTheme.type.caption.colored(c.ink2))
+                    Text(appString(StringKeys.PPL_MASTERY, "trend" to s.masteryTrend), style = VTypography.caption, color = VColors.ink2)
                 }
             }
             Column(horizontalAlignment = Alignment.End) {
                 VBadge(text = s.riskLevel, tone = badgeTone)
-                Text(appString(StringKeys.PPL_RISK_PCT, "risk" to s.retentionRisk), style = VTheme.type.label.colored(c.ink3).copy(fontSize = 10.sp))
+                Text(appString(StringKeys.PPL_RISK_PCT, "risk" to s.retentionRisk), style = VTypography.caption.copy(fontSize = 10.sp), color = VColors.ink3)
             }
         }
     }

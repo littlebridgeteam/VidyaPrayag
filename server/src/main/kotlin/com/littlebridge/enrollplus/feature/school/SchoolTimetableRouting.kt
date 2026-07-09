@@ -687,6 +687,17 @@ fun Route.schoolTimetableRouting() {
                     return@dbQuery BulkCreatePeriodsResponse(created = created, errors = errors)
                 }
 
+                val srcTeacherIds = sourcePeriods.map { it[TeacherPeriodsTable.teacherId] }.distinct()
+                val srcSlots = sourcePeriods.map { Triple(it[TeacherPeriodsTable.teacherId], it[TeacherPeriodsTable.weekday], it[TeacherPeriodsTable.startTime]) }
+                val existingConflicts = if (srcTeacherIds.isEmpty()) emptyList() else
+                    TeacherPeriodsTable.selectAll().where {
+                        (TeacherPeriodsTable.schoolId eq ctx.schoolId) and
+                            (TeacherPeriodsTable.teacherId inList srcTeacherIds) and
+                            (TeacherPeriodsTable.className eq req.className) and
+                            (TeacherPeriodsTable.section eq req.toSection) and
+                            (TeacherPeriodsTable.isActive eq true)
+                    }.map { Triple(it[TeacherPeriodsTable.teacherId], it[TeacherPeriodsTable.weekday], it[TeacherPeriodsTable.startTime]) }.toSet()
+
                 sourcePeriods.forEach { src ->
                     val srcTeacherId = src[TeacherPeriodsTable.teacherId]
                     val srcWeekday = src[TeacherPeriodsTable.weekday]
@@ -695,17 +706,7 @@ fun Route.schoolTimetableRouting() {
                     val srcSubject = src[TeacherPeriodsTable.subject]
                     val srcRoom = src[TeacherPeriodsTable.room]
 
-                    // Check if target already has a period at this slot (same teacher, weekday, start time)
-                    val dupConflict = TeacherPeriodsTable.selectAll().where {
-                        (TeacherPeriodsTable.schoolId eq ctx.schoolId) and
-                            (TeacherPeriodsTable.teacherId eq srcTeacherId) and
-                            (TeacherPeriodsTable.weekday eq srcWeekday) and
-                            (TeacherPeriodsTable.startTime eq srcStart) and
-                            (TeacherPeriodsTable.className eq req.className) and
-                            (TeacherPeriodsTable.section eq req.toSection) and
-                            (TeacherPeriodsTable.isActive eq true)
-                    }.firstOrNull()
-                    if (dupConflict != null) {
+                    if (Triple(srcTeacherId, srcWeekday, srcStart) in existingConflicts) {
                         errors.add("Skipped: ${srcSubject} on day $srcWeekday at ${srcStart.format(TT_HHMM)} already exists in section ${req.toSection}")
                         return@forEach
                     }

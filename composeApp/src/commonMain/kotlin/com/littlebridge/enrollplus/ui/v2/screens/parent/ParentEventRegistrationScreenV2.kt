@@ -8,6 +8,7 @@
  */
 package com.littlebridge.enrollplus.ui.v2.screens.parent
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -36,7 +37,7 @@ import com.littlebridge.enrollplus.feature.event.domain.model.EventSlotDto
 import com.littlebridge.enrollplus.feature.event.domain.model.ParentEventDto
 import com.littlebridge.enrollplus.feature.event.domain.model.RegistrationDto
 import com.littlebridge.enrollplus.feature.event.presentation.ParentEventRegistrationViewModel
-import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
+import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
@@ -47,6 +48,7 @@ import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
@@ -65,9 +67,10 @@ fun ParentEventRegistrationScreenV2(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .background(VColors.cream)
             .statusBarsPadding(),
     ) {
-        VBackHeader(
+        PremiumOverlayHeader(
             title = if (selectedEventId != null) "Event Detail" else "Events",
             onBack = {
                 if (selectedEventId != null) {

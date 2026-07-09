@@ -285,7 +285,7 @@ private fun insertMessage(
         it[MessagesTable.threadId] = threadId
         it[MessagesTable.conversationId] = conversationId
         it[MessagesTable.senderId] = senderId
-        it[MessagesTable.body] = body
+        it[MessagesTable.body] = com.littlebridge.enrollplus.core.HtmlSanitizer.sanitize(body)
         it[MessagesTable.createdAt] = now
         it[MessagesTable.seq] = seq
         if (clientMsgId != null) it[MessagesTable.clientMsgId] = clientMsgId
@@ -312,8 +312,13 @@ private fun nextSeqForConversation(conversationId: UUID): Int {
             .where { ConversationSeqTable.conversationId eq conversationId }
             .forUpdate()
             .firstOrNull()
-    } catch (_: Throwable) {
-        // forUpdate() not supported on some DBs — fall back to plain select.
+    } catch (_: UnsupportedOperationException) {
+        // forUpdate() not supported on some DBs (e.g. SQLite) — fall back to plain select.
+        ConversationSeqTable.selectAll()
+            .where { ConversationSeqTable.conversationId eq conversationId }
+            .firstOrNull()
+    } catch (_: Exception) {
+        // forUpdate() not supported on this DB driver — fall back to plain select.
         ConversationSeqTable.selectAll()
             .where { ConversationSeqTable.conversationId eq conversationId }
             .firstOrNull()
@@ -325,7 +330,7 @@ private fun nextSeqForConversation(conversationId: UUID): Int {
             it[ConversationSeqTable.nextVal] = newVal
             it[ConversationSeqTable.updatedAt] = Instant.now()
         }
-        return newVal
+        return newVal.toInt()
     }
 
     // First message in this conversation — insert counter at 1.
@@ -640,12 +645,13 @@ internal fun editMessage(
 
     val convId = row[MessagesTable.conversationId] ?: return null
 
+    val sanitizedBody = com.littlebridge.enrollplus.core.HtmlSanitizer.sanitize(newBody)
     MessagesTable.update({ MessagesTable.id eq messageId }) {
-        it[MessagesTable.body] = newBody
+        it[MessagesTable.body] = sanitizedBody
         it[MessagesTable.editedAt] = now
     }
 
-    return EditMessageResult(messageId, convId, newBody, now)
+    return EditMessageResult(messageId, convId, sanitizedBody, now)
 }
 
 /** Result of [deleteMessage]. */

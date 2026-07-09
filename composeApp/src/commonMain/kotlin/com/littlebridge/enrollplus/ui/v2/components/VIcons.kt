@@ -53,7 +53,7 @@ object VIcons {
     val User get() = Icons.Filled.Person                     // User
     val Users get() = Icons.Filled.Person                    // Users (fallback to Person)
     val Search get() = Icons.Filled.Search                   // Search
-    val Bell get() = Icons.Filled.Notifications              // Bell
+    val Bell get() = Icons.Filled.Notifications              // Bell (Material fallback)
     val Calendar get() = Icons.Filled.CalendarMonth          // Calendar
     val Megaphone get() = Icons.Filled.Campaign              // Megaphone
     val School get() = Icons.Filled.School                   // (school plate)
@@ -82,6 +82,26 @@ object VIcons {
     val IdCard get() = Icons.Filled.Person                   // ID Card (fallback to Person)
 
     // ── Hand-authored Material-style vectors (no safe core equivalent) ──────────
+
+    /** Bell (lucide) — stroke-based, crisper than Material filled Notifications. */
+    val BellStroke: ImageVector by lazy {
+        materialStroke("v_bell_stroke") {
+            // Bell dome — arc from (6,8) to (18,8) approximated by two curves
+            moveTo(6f, 8f)
+            curveTo(6f, 4.69f, 8.69f, 2f, 12f, 2f)
+            curveTo(15.31f, 2f, 18f, 4.69f, 18f, 8f)
+            // Right side flaring out to (22,17)
+            curveTo(18f, 15f, 21f, 17f, 22f, 17f)
+            // Bottom rim
+            lineTo(2f, 17f)
+            // Left side back up to (6,8)
+            curveTo(3f, 17f, 6f, 15f, 6f, 8f)
+            // Clapper
+            moveTo(10.3f, 21f)
+            curveTo(10.72f, 21.8f, 11.55f, 22f, 12f, 22f)
+            curveTo(12.45f, 22f, 13.28f, 21.8f, 13.7f, 21f)
+        }
+    }
 
     /** Indeterminate loading spinner (¾ ring) used by [VButton]'s loading phase. */
     val Spinner: ImageVector by lazy {
@@ -419,10 +439,166 @@ object VIcons {
         }
     }
 
+    /** Users (lucide) — three persons group. */
+    val UsersGroup: ImageVector by lazy {
+        materialStroke("v_users_group") {
+            moveTo(17f, 21f)
+            curveTo(17f, 19.67f, 16.33f, 18.67f, 15f, 18f)
+            curveTo(13.67f, 17.33f, 12.33f, 17f, 11f, 17f)
+            curveTo(9.67f, 17f, 8.33f, 17.33f, 7f, 18f)
+            curveTo(5.67f, 18.67f, 5f, 19.67f, 5f, 21f)
+            moveTo(11f, 11f)
+            curveTo(9.34f, 11f, 8f, 9.66f, 8f, 8f)
+            curveTo(8f, 6.34f, 9.34f, 5f, 11f, 5f)
+            curveTo(12.66f, 5f, 14f, 6.34f, 14f, 8f)
+            curveTo(14f, 9.66f, 12.66f, 11f, 11f, 11f)
+            close()
+            moveTo(17f, 11f)
+            curveTo(17f, 9.34f, 16f, 8f, 14.5f, 8f)
+            moveTo(21f, 21f)
+            curveTo(21f, 19.67f, 20.5f, 18.67f, 19.5f, 18f)
+            moveTo(14.5f, 5f)
+            curveTo(15f, 4.84f, 15.5f, 4.5f, 16f, 4f)
+            curveTo(16.5f, 3.5f, 16.75f, 2.75f, 16.75f, 2f)
+        }
+    }
+
+    /** LayoutDashboard (lucide) — 4-quadrant grid. */
+    val LayoutDashboard: ImageVector by lazy {
+        materialStroke("v_layout_dashboard") {
+            moveTo(3f, 3f); lineTo(11f, 3f); lineTo(11f, 11f); lineTo(3f, 11f); close()
+            moveTo(13f, 3f); lineTo(21f, 3f); lineTo(21f, 8f); lineTo(13f, 8f); close()
+            moveTo(13f, 10f); lineTo(21f, 10f); lineTo(21f, 21f); lineTo(13f, 21f); close()
+            moveTo(3f, 13f); lineTo(11f, 13f); lineTo(11f, 21f); lineTo(3f, 21f); close()
+        }
+    }
+
     /** Minus (lucide) — horizontal line. */
     val Minus: ImageVector by lazy {
         materialStroke("v_minus") {
             moveTo(5f, 12f); lineTo(19f, 12f)
+        }
+    }
+
+    /** Home (lucide) — stroke-based house with door. */
+    val HomeStroke: ImageVector by lazy {
+        materialStroke("v_home_stroke") {
+            moveTo(3f, 10f); lineTo(12f, 3f); lineTo(21f, 10f)
+            moveTo(5f, 9f); lineTo(5f, 20f); lineTo(19f, 20f); lineTo(19f, 9f)
+            moveTo(9f, 20f); lineTo(9f, 14f); lineTo(15f, 14f); lineTo(15f, 20f)
+        }
+    }
+
+    /** Megaphone (lucide) — stroke-based loudspeaker. */
+    val MegaphoneStroke: ImageVector by lazy {
+        materialStroke("v_megaphone_stroke") {
+            moveTo(3f, 11f); lineTo(21f, 4f); lineTo(21f, 20f); lineTo(3f, 13f); close()
+            moveTo(11.6f, 16.8f); curveTo(11.2f, 18f, 10f, 19f, 8.5f, 19f)
+            curveTo(7f, 19f, 6f, 18f, 6f, 16.5f); curveTo(6f, 15f, 7f, 14f, 8.5f, 14f)
+        }
+    }
+
+    /** Settings (lucide) — stroke-based gear with center circle. */
+    val SettingsStroke: ImageVector by lazy {
+        materialStroke("v_settings_stroke") {
+            // Gear teeth — 8 spokes
+            moveTo(12f, 2.5f); lineTo(12f, 5.5f)
+            moveTo(12f, 18.5f); lineTo(12f, 21.5f)
+            moveTo(2.5f, 12f); lineTo(5.5f, 12f)
+            moveTo(18.5f, 12f); lineTo(21.5f, 12f)
+            moveTo(5.3f, 5.3f); lineTo(7.4f, 7.4f)
+            moveTo(16.6f, 16.6f); lineTo(18.7f, 18.7f)
+            moveTo(5.3f, 18.7f); lineTo(7.4f, 16.6f)
+            moveTo(16.6f, 7.4f); lineTo(18.7f, 5.3f)
+            // Inner circle
+            moveTo(12f, 8f); curveTo(9.79f, 8f, 8f, 9.79f, 8f, 12f)
+            curveTo(8f, 14.21f, 9.79f, 16f, 12f, 16f)
+            curveTo(14.21f, 16f, 16f, 14.21f, 16f, 12f)
+            curveTo(16f, 9.79f, 14.21f, 8f, 12f, 8f)
+            close()
+        }
+    }
+
+    /** UserPlus (lucide) — person + plus sign. */
+    val UserPlus: ImageVector by lazy {
+        materialStroke("v_user_plus") {
+            // body + head
+            moveTo(16f, 21f); curveTo(16f, 18f, 14f, 16f, 12f, 16f); curveTo(10f, 16f, 8f, 18f, 8f, 21f)
+            moveTo(12f, 11f); curveTo(9.5f, 11f, 7.5f, 9f, 7.5f, 6.5f); curveTo(7.5f, 4f, 9.5f, 2f, 12f, 2f); curveTo(14.5f, 2f, 16.5f, 4f, 16.5f, 6.5f); curveTo(16.5f, 9f, 14.5f, 11f, 12f, 11f)
+            // plus sign
+            moveTo(19f, 8f); lineTo(19f, 14f)
+            moveTo(16f, 11f); lineTo(22f, 11f)
+        }
+    }
+
+    /** Globe (lucide) — sphere with meridians and equator. */
+    val Globe: ImageVector by lazy {
+        materialStroke("v_globe") {
+            moveTo(12f, 2f); curveTo(6.48f, 2f, 2f, 6.48f, 2f, 12f); curveTo(2f, 17.52f, 6.48f, 22f, 12f, 22f); curveTo(17.52f, 22f, 22f, 17.52f, 22f, 12f); curveTo(22f, 6.48f, 17.52f, 2f, 12f, 2f); close()
+            moveTo(2f, 12f); lineTo(22f, 12f)
+            moveTo(12f, 2f); curveTo(15f, 5.5f, 15f, 18.5f, 12f, 22f)
+            moveTo(12f, 2f); curveTo(9f, 5.5f, 9f, 18.5f, 12f, 22f)
+        }
+    }
+
+    /** Palette (lucide) — artist palette with paint wells. */
+    val Palette: ImageVector by lazy {
+        materialStroke("v_palette") {
+            // palette body
+            moveTo(12f, 2f); curveTo(6.48f, 2f, 2f, 6.48f, 2f, 12f); curveTo(2f, 17.52f, 6.48f, 22f, 12f, 22f); curveTo(13.5f, 22f, 14.5f, 20.5f, 14f, 19f); curveTo(13.5f, 17.5f, 15f, 16f, 16.5f, 16f); curveTo(19.5f, 16f, 22f, 13.5f, 22f, 10f); curveTo(22f, 5f, 17.5f, 2f, 12f, 2f); close()
+            // wells
+            moveTo(7f, 12f); arcTo(1f, 1f, 0f, false, true, 9f, 12f); arcTo(1f, 1f, 0f, false, true, 7f, 12f); close()
+            moveTo(11f, 7f); arcTo(1f, 1f, 0f, false, true, 13f, 7f); arcTo(1f, 1f, 0f, false, true, 11f, 7f); close()
+            moveTo(15f, 12f); arcTo(1f, 1f, 0f, false, true, 17f, 12f); arcTo(1f, 1f, 0f, false, true, 15f, 12f); close()
+        }
+    }
+
+    /** LogOut (lucide) — arrow exiting a box. */
+    val LogOut: ImageVector by lazy {
+        materialStroke("v_log_out") {
+            moveTo(9f, 21f); lineTo(5f, 21f); curveTo(3.9f, 21f, 3f, 20.1f, 3f, 19f); lineTo(3f, 5f); curveTo(3f, 3.9f, 3.9f, 3f, 5f, 3f); lineTo(9f, 3f)
+            moveTo(16f, 17f); lineTo(21f, 12f); lineTo(16f, 7f)
+            moveTo(21f, 12f); lineTo(9f, 12f)
+        }
+    }
+
+    /** Home (lucide) — premium stroke house. */
+    val HomePremium: ImageVector by lazy {
+        materialStroke("v_home_premium") {
+            moveTo(3f, 9f); lineTo(12f, 2f); lineTo(21f, 9f)
+            moveTo(5f, 10f); lineTo(5f, 19f); curveTo(5f, 20.1f, 5.9f, 21f, 7f, 21f); lineTo(17f, 21f); curveTo(18.1f, 21f, 19f, 20.1f, 19f, 19f); lineTo(19f, 10f)
+            moveTo(9f, 21f); lineTo(9f, 13f); lineTo(15f, 13f); lineTo(15f, 21f)
+        }
+    }
+
+    /** Academic (lucide GraduationCap) — premium stroke graduation cap. */
+    val Academic: ImageVector by lazy {
+        materialStroke("v_academic") {
+            moveTo(22f, 10f); lineTo(12f, 3f); lineTo(2f, 10f); lineTo(12f, 17f); lineTo(22f, 10f)
+            moveTo(2f, 10f); lineTo(2f, 16f)
+            moveTo(6f, 12.5f); lineTo(6f, 16f); lineTo(12f, 19f); lineTo(18f, 16f); lineTo(18f, 12.5f)
+        }
+    }
+
+    /** WalletPremium (lucide Wallet) — premium stroke wallet. */
+    val WalletPremium: ImageVector by lazy {
+        materialStroke("v_wallet_premium") {
+            moveTo(19f, 7f); lineTo(19f, 4f); curveTo(19f, 2.9f, 18.1f, 2f, 17f, 2f); lineTo(5f, 2f); curveTo(3.9f, 2f, 3f, 2.9f, 3f, 4f); lineTo(3f, 18f); curveTo(3f, 19.1f, 3.9f, 20f, 5f, 20f); lineTo(20f, 20f); curveTo(21.1f, 20f, 22f, 19.1f, 22f, 18f); lineTo(22f, 10f); lineTo(17f, 10f); curveTo(15.9f, 10f, 15f, 10.9f, 15f, 12f); curveTo(15f, 13.1f, 15.9f, 14f, 17f, 14f); lineTo(22f, 14f)
+        }
+    }
+
+    /** ChatPremium (lucide MessageSquare) — premium stroke chat bubble. */
+    val ChatPremium: ImageVector by lazy {
+        materialStroke("v_chat_premium") {
+            moveTo(21f, 15f); curveTo(21f, 16.1f, 20.1f, 17f, 19f, 17f); lineTo(7f, 17f); lineTo(3f, 21f); lineTo(3f, 5f); curveTo(3f, 3.9f, 3.9f, 3f, 5f, 3f); lineTo(19f, 3f); curveTo(20.1f, 3f, 21f, 3.9f, 21f, 5f); lineTo(21f, 15f); close()
+        }
+    }
+
+    /** UserPremium (lucide User) — premium stroke person. */
+    val UserPremium: ImageVector by lazy {
+        materialStroke("v_user_premium") {
+            moveTo(20f, 21f); curveTo(20f, 17.13f, 16.42f, 14f, 12f, 14f); curveTo(7.58f, 14f, 4f, 17.13f, 4f, 21f)
+            moveTo(12f, 11f); curveTo(14.21f, 11f, 16f, 9.21f, 16f, 7f); curveTo(16f, 4.79f, 14.21f, 3f, 12f, 3f); curveTo(9.79f, 3f, 8f, 4.79f, 8f, 7f); curveTo(8f, 9.21f, 9.79f, 11f, 12f, 11f); close()
         }
     }
 }

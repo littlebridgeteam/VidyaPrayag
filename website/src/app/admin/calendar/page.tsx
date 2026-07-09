@@ -1,4 +1,6 @@
 "use client";
+import { errorMessage } from "@/lib/errorUtils";
+
 
 import { useState, useEffect, useCallback } from "react";
 import { authRequest } from "@/lib/admin/client";
@@ -23,7 +25,7 @@ export default function CalendarPage() {
       const res = await authRequest<{ calendar_events: CalendarEventDto[]; summary: { working_days: number; public_holidays: number; school_holidays: number } }>("/api/v1/school/calendar?view_type=month");
       setEvents(res.calendar_events ?? []);
     } catch (e) {
-      setError(`Failed to load calendar: ${(e as Error).message}`);
+      setError(`Failed to load calendar: ${errorMessage(e)}`);
     } finally {
       setLoading(false);
     }
