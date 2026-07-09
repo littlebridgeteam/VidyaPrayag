@@ -14,9 +14,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,10 +32,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.feature.teacher.domain.model.TeacherClassSummaryDto
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherClassesViewModel
@@ -44,23 +51,42 @@ import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.viewmodel.koinViewModel
 
 /** The five scoped tools the Update tab fronts. */
-enum class UpdateTool(val labelKey: String, val icon: ImageVector) {
-    Attendance(StringKeys.TEACHER_ATTENDANCE, VIcons.ListChecks),
-    Marks(StringKeys.TC_MARKS, VIcons.GraduationCap),
-    Syllabus(StringKeys.TEACHER_SYLLABUS, VIcons.BookOpen),
-    Homework(StringKeys.TEACHER_HOMEWORK, VIcons.FileText),
-    LessonPlan(StringKeys.TC_LESSON, VIcons.ClipboardList),
+enum class UpdateTool(
+    val labelKey: String,
+    val icon: ImageVector,
+    val accent: Color,
+    val soft: Color,
+) {
+    Attendance(StringKeys.TEACHER_ATTENDANCE, VIcons.ListChecks, VColors.violet, VColors.violetSoft),
+    Marks(StringKeys.TC_MARKS, VIcons.GraduationCap, VColors.mint, VColors.mintSoft),
+    Homework(StringKeys.TEACHER_HOMEWORK, VIcons.FileText, VColors.gold, VColors.goldSoft),
+    Syllabus(StringKeys.TEACHER_SYLLABUS, VIcons.BookOpen, VColors.sky, VColors.skySoft),
+    LessonPlan(StringKeys.TC_LESSON, VIcons.ClipboardList, VColors.coral, VColors.coralSoft),
 }
 
 /**
- * TeacherUpdateScreenV2 — the UPDATE tab. A tool grid chooses the active write plane
- * (Attendance · Marks · Syllabus · Homework · Lesson Plan); each tool first asks the teacher
- * to pick one of their allocations (the scope gate → assignmentId), then hands off to the
- * tool's scoped sub-screen. A back affordance returns to the scope gate so the teacher can
- * switch class without leaving the tab.
+ * TeacherUpdateScreenV2 — the UPDATE tab, rebuilt from scratch on the premium
+ * cream/violet token system.
  *
- * [initialAssignmentId]/[initialScopeLabel]/[initialTool] let a Home deep-link jump straight
- * into a pre-scoped tool.
+ * TWO layout modes:
+ *
+ *  A) SCOPE-GATE mode (no class chosen yet) — the WHOLE screen scrolls as one
+ *     [LazyColumn], exactly like the Classes tab: header → tool rail → tool intro
+ *     → "which class" heading → the scope rows. There is no nested scroll here, so
+ *     the entire page glides under one finger.
+ *
+ *  B) SCOPED-TOOL mode (a class is chosen) — the header + sticky scope bar stay as
+ *     fixed chrome and the active tool sub-screen fills the remaining BOUNDED height
+ *     via weight(1f). Each sub-screen (Attendance/Marks/…) owns its own LazyColumn.
+ *
+ * CRASH-SAFETY: a child LazyColumn is NEVER nested inside a Column(verticalScroll)
+ * or another parent-owned scroll — that hands the inner list an infinite max-height
+ * and crashes at measure time. In mode A the single LazyColumn owns the scroll and
+ * the rows are emitted flat via [scopeSelectorItems] (no nested list). In mode B the
+ * sub-screen lives in a weight(1f) box (bounded height), so its own LazyColumn is safe.
+ *
+ * [initialAssignmentId]/[initialScopeLabel]/[initialTool] let a Home CTA jump
+ * straight into a pre-scoped tool. Signature is otherwise PRESERVED.
  */
 @Composable
 fun TeacherUpdateScreenV2(
@@ -68,6 +94,9 @@ fun TeacherUpdateScreenV2(
     initialAssignmentId: String? = null,
     initialScopeLabel: String = "",
     initialTool: UpdateTool = UpdateTool.Attendance,
+    teacherName: String = "",
+    unreadCount: Int = 0,
+    onOpenNotifications: () -> Unit = {},
     classesViewModel: TeacherClassesViewModel = koinViewModel(),
 ) {
     val classesState by classesViewModel.state.collectAsStateV2()
@@ -76,64 +105,119 @@ fun TeacherUpdateScreenV2(
     var pickedAssignment by rememberSaveable { mutableStateOf(initialAssignmentId) }
     var pickedLabel by rememberSaveable { mutableStateOf(initialScopeLabel) }
 
-    // IMPORTANT: this screen must NOT wrap its body in a verticalScroll. The scope
-    // gate ([TeacherScopeSelector]) and every scoped tool sub-screen (Attendance,
-    // Marks, Syllabus, Homework, Lesson Plan) each host their own vertically
-    // scrollable LazyColumn. Nesting them inside a Column(verticalScroll) hands the
-    // inner LazyColumn an infinite max-height constraint and crashes at measure time
-    // (IllegalStateException: "Vertically scrollable component was measured with an
-    // infinity maximum height constraints"). Instead the header + tool grid stay
-    // fixed at the top, and the body fills the remaining bounded height with weight(1f).
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(VColors.cream)
-            .padding(top = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        UpdateHeader()
-        ToolGrid(
-            selected = tool,
-            onSelect = {
-                tool = it
-                pickedAssignment = null
-                pickedLabel = ""
-            },
-        )
+    val asg = pickedAssignment
 
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .padding(horizontal = 16.dp),
+    if (asg == null) {
+        // ── MODE A: scope gate — the WHOLE screen is a single scroll (like Classes).
+        LazyColumn(
+            modifier = modifier
+                .fillMaxSize()
+                .background(VColors.cream)
+                .statusBarsPadding(),
+            contentPadding = PaddingValues(top = 12.dp, bottom = TeacherDockClearance),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            val asg = pickedAssignment
-            if (asg == null) {
-                ScopeGate(tool = tool, classes = classesState.classes) { cls ->
+            // 1 — shared premium header.
+            item {
+                TeacherPremiumHeader(
+                    teacherName = teacherName,
+                    lead = appString(StringKeys.TC_LETS),
+                    accent = appString(StringKeys.TC_UPDATE_ACCENT),
+                    unreadCount = unreadCount,
+                    onOpenNotifications = onOpenNotifications,
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                )
+            }
+
+            // 2 — tool rail (horizontal scroll is fine inside a vertical LazyColumn).
+            item {
+                ToolRail(
+                    selected = tool,
+                    onSelect = {
+                        tool = it
+                        pickedAssignment = null
+                        pickedLabel = ""
+                    },
+                )
+            }
+
+            // 3 — tool intro hero.
+            item {
+                Box(Modifier.padding(horizontal = 16.dp)) { ToolIntroCard(tool) }
+            }
+
+            // 4 — "which class" heading.
+            item {
+                Box(Modifier.padding(horizontal = 16.dp)) {
+                    ScopeSelectorHeading(
+                        title = appString(StringKeys.TC_WHICH_CLASS),
+                        caption = appString(
+                            StringKeys.TC_PICK_CLASS_FOR,
+                            "tool" to appString(tool.labelKey).lowercase(),
+                        ),
+                    )
+                }
+            }
+
+            // 5 — the scope rows, emitted flat into THIS list (no nested scroll).
+            scopeSelectorItems(
+                classes = classesState.classes,
+                onPick = { cls ->
                     pickedAssignment = cls.assignmentId
                     pickedLabel = scopeLabelFor(cls)
-                }
-            } else {
-                Column(
-                    Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    ScopeBar(label = pickedLabel, onChange = { pickedAssignment = null; pickedLabel = "" })
-                    // The scoped tool screen owns the remaining bounded height and its
-                    // own LazyColumn/scroll — hence weight(1f) here, never verticalScroll.
-                    Box(Modifier.fillMaxWidth().weight(1f)) {
-                        AnimatedContent(
-                            targetState = tool,
-                            transitionSpec = { fadeIn() togetherWith fadeOut() },
-                            label = "updateTool",
-                        ) { active ->
-                            when (active) {
-                                UpdateTool.Attendance -> TeacherAttendanceScreenV2(asg, pickedLabel)
-                                UpdateTool.Marks -> TeacherMarksScreenV2(asg, pickedLabel)
-                                UpdateTool.Syllabus -> TeacherSyllabusScreenV2(asg, pickedLabel)
-                                UpdateTool.Homework -> TeacherHomeworkScreenV2(asg, pickedLabel)
-                                UpdateTool.LessonPlan -> TeacherLessonPlanScreenV2(asg, pickedLabel)
-                            }
+                },
+                horizontalPadding = 16.dp,
+            )
+        }
+    } else {
+        // ── MODE B: scoped tool — fixed header + scope bar, bounded sub-screen.
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .background(VColors.cream)
+                .statusBarsPadding()
+                .padding(top = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            TeacherPremiumHeader(
+                teacherName = teacherName,
+                lead = appString(StringKeys.TC_LETS),
+                accent = appString(StringKeys.TC_UPDATE_ACCENT),
+                unreadCount = unreadCount,
+                onOpenNotifications = onOpenNotifications,
+                modifier = Modifier.padding(horizontal = 20.dp),
+            )
+
+            ToolRail(
+                selected = tool,
+                onSelect = {
+                    tool = it
+                    pickedAssignment = null
+                    pickedLabel = ""
+                },
+            )
+
+            Column(
+                Modifier.fillMaxWidth().weight(1f).padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                ScopeBar(
+                    tool = tool,
+                    label = pickedLabel,
+                    onChange = { pickedAssignment = null; pickedLabel = "" },
+                )
+                Box(Modifier.fillMaxWidth().weight(1f)) {
+                    AnimatedContent(
+                        targetState = tool,
+                        transitionSpec = { fadeIn() togetherWith fadeOut() },
+                        label = "updateTool",
+                    ) { active ->
+                        when (active) {
+                            UpdateTool.Attendance -> TeacherAttendanceScreenV2(asg, pickedLabel)
+                            UpdateTool.Marks -> TeacherMarksScreenV2(asg, pickedLabel)
+                            UpdateTool.Syllabus -> TeacherSyllabusScreenV2(asg, pickedLabel)
+                            UpdateTool.Homework -> TeacherHomeworkScreenV2(asg, pickedLabel)
+                            UpdateTool.LessonPlan -> TeacherLessonPlanScreenV2(asg, pickedLabel)
                         }
                     }
                 }
@@ -142,148 +226,166 @@ fun TeacherUpdateScreenV2(
     }
 }
 
-@Composable
-private fun UpdateHeader() {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Text(
-            text = "Update",
-            style = VTypography.h2,
-            color = VColors.ink,
-        )
-        Text(
-            text = "Mark & publish",
-            style = VTypography.bodySmall,
-            color = VColors.ink2,
-        )
-    }
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// Tool rail — horizontal pill selector. Active = violet gradient; rest = white.
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun ToolGrid(
+private fun ToolRail(
     selected: UpdateTool,
     onSelect: (UpdateTool) -> Unit,
 ) {
-    Column(
+    Row(
         Modifier
             .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
             .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            UpdateTool.entries.take(3).forEach { t ->
-                ToolChip(
-                    tool = t,
-                    active = t == selected,
-                    modifier = Modifier.weight(1f),
-                    onClick = { onSelect(t) },
-                )
-            }
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)) {
-            UpdateTool.entries.drop(3).forEach { t ->
-                ToolChip(
-                    tool = t,
-                    active = t == selected,
-                    modifier = Modifier.weight(1f),
-                    onClick = { onSelect(t) },
-                )
-            }
+        UpdateTool.entries.forEach { t ->
+            ToolPill(tool = t, active = t == selected, onClick = { onSelect(t) })
         }
     }
 }
 
 @Composable
-private fun ToolChip(
+private fun ToolPill(
     tool: UpdateTool,
     active: Boolean,
-    modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
     val ix = remember { MutableInteractionSource() }
-    Column(
-        modifier = modifier
-            .clip(VShapes.lg)
-            .background(if (active) VColors.violetSoft else VColors.surfaceCard)
-            .border(
-                1.dp,
-                if (active) VColors.violet.copy(alpha = 0.5f) else VColors.outlineSoft,
-                VShapes.lg,
+    val base = Modifier
+        .clip(VShapes.full)
+        .clickable(interactionSource = ix, indication = null) { onClick() }
+    if (active) {
+        Row(
+            base
+                .background(Brush.horizontalGradient(listOf(VColors.violet, VColors.violetHover)))
+                .padding(horizontal = 16.dp, vertical = 11.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(tool.icon, contentDescription = null, tint = VColors.white, modifier = Modifier.size(17.dp))
+            Text(
+                appString(tool.labelKey),
+                style = VTypography.label.copy(color = VColors.white, fontWeight = FontWeight.Bold),
+                maxLines = 1,
             )
-            .clickable(interactionSource = ix, indication = null) { onClick() }
-            .padding(vertical = 14.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        }
+    } else {
+        Row(
+            base
+                .background(VColors.surfaceCard)
+                .border(1.dp, VColors.line, VShapes.full)
+                .padding(horizontal = 16.dp, vertical = 11.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(tool.icon, contentDescription = null, tint = tool.accent, modifier = Modifier.size(17.dp))
+            Text(
+                appString(tool.labelKey),
+                style = VTypography.label.copy(color = VColors.ink2, fontWeight = FontWeight.SemiBold),
+                maxLines = 1,
+            )
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Scope gate pieces — a premium "pick a class" intro + the shared scope rows.
+// (The rows themselves are emitted by scopeSelectorItems into the tab's LazyColumn.)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** A soft accent hero explaining the active write plane. */
+@Composable
+private fun ToolIntroCard(tool: UpdateTool) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(VShapes.xl)
+            .background(tool.soft)
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Icon(
-            imageVector = tool.icon,
-            contentDescription = appString(tool.labelKey),
-            tint = if (active) VColors.violet else VColors.ink2,
-            modifier = Modifier.size(22.dp),
-        )
-        Text(
-            text = appString(tool.labelKey),
-            style = VTypography.label,
-            color = if (active) VColors.violet else VColors.ink2,
-            textAlign = TextAlign.Center,
-            maxLines = 1,
-        )
+        Box(
+            Modifier.size(48.dp).clip(VShapes.lg).background(tool.accent.copy(alpha = 0.18f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(tool.icon, contentDescription = null, tint = tool.accent, modifier = Modifier.size(24.dp))
+        }
+        Column(Modifier.weight(1f)) {
+            Text(
+                appString(tool.labelKey),
+                style = VTypography.h3.copy(fontSize = 18.sp, color = VColors.ink),
+            )
+            Text(
+                toolBlurb(tool),
+                style = VTypography.caption.copy(color = VColors.ink2),
+            )
+        }
     }
 }
 
 @Composable
-private fun ScopeGate(
-    tool: UpdateTool,
-    classes: List<TeacherClassSummaryDto>,
-    onPick: (TeacherClassSummaryDto) -> Unit,
-) {
-    TeacherScopeSelector(
-        classes = classes,
-        onPick = onPick,
-        title = appString(StringKeys.TC_WHICH_CLASS),
-        caption = appString(StringKeys.TC_PICK_CLASS_FOR, "tool" to appString(tool.labelKey).lowercase()),
-    )
+private fun toolBlurb(tool: UpdateTool): String = when (tool) {
+    UpdateTool.Attendance -> appString(StringKeys.TC_UPDATE_BLURB_ATTENDANCE)
+    UpdateTool.Marks -> appString(StringKeys.TC_UPDATE_BLURB_MARKS)
+    UpdateTool.Homework -> appString(StringKeys.TC_UPDATE_BLURB_HOMEWORK)
+    UpdateTool.Syllabus -> appString(StringKeys.TC_UPDATE_BLURB_SYLLABUS)
+    UpdateTool.LessonPlan -> appString(StringKeys.TC_UPDATE_BLURB_LESSON)
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Scope bar — sticky context strip once a class is chosen.
+// ─────────────────────────────────────────────────────────────────────────────
+
 @Composable
-private fun ScopeBar(label: String, onChange: () -> Unit) {
+private fun ScopeBar(tool: UpdateTool, label: String, onChange: () -> Unit) {
     val ix = remember { MutableInteractionSource() }
     Row(
         Modifier
             .fillMaxWidth()
             .clip(VShapes.xl)
             .background(VColors.surfaceCard)
-            .border(1.dp, VColors.outlineSoft, VShapes.xl)
+            .border(1.dp, VColors.line, VShapes.xl)
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Icon(VIcons.School, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
-        Text(
-            text = label,
-            style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
-            color = VColors.ink,
-            modifier = Modifier.weight(1f),
-            maxLines = 1,
-        )
+        Box(
+            Modifier.size(38.dp).clip(VShapes.md).background(tool.soft),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(tool.icon, contentDescription = null, tint = tool.accent, modifier = Modifier.size(19.dp))
+        }
+        Column(Modifier.weight(1f)) {
+            Text(
+                appString(tool.labelKey),
+                style = VTypography.caption.copy(fontWeight = FontWeight.Bold, color = tool.accent),
+                maxLines = 1,
+            )
+            Text(
+                label,
+                style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold, color = VColors.ink),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
         Row(
             Modifier
                 .clip(VShapes.full)
                 .background(VColors.violetSoft)
                 .clickable(interactionSource = ix, indication = null) { onChange() }
-                .padding(horizontal = 10.dp, vertical = 6.dp),
+                .padding(horizontal = 12.dp, vertical = 7.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Icon(VIcons.ArrowLeft, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(14.dp))
             Text(
-                text = appString(StringKeys.TC_CHANGE),
-                style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
-                color = VColors.violet,
+                appString(StringKeys.TC_CHANGE),
+                style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, color = VColors.violet),
             )
         }
     }

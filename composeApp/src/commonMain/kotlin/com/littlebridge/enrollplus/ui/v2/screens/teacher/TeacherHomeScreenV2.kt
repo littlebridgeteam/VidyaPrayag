@@ -69,7 +69,7 @@ import org.koin.compose.viewmodel.koinViewModel
  * TeacherHomeScreenV2 — rebuilt to match the premium parent-portal home structure.
  *
  * Sections (top to bottom):
- *   1. TeacherHomeHeader  — wordmark, greeting, notification bell (parent-portal style).
+ *   1. TeacherPremiumHeader — shared wordmark, greeting, notification bell (used by every tab).
  *   2. NowTeachingCard    — the live/current class hero with Mark attendance + Lesson plan CTAs.
  *   3. Today's schedule   — horizontal scroll of class cards (NOW / NEXT / LATER).
  *   4. Pending actions    — real obligations from TeacherObligationsViewModel.
@@ -97,6 +97,7 @@ fun TeacherHomeScreenV2(
     onOpenEvents: () -> Unit,
     onOpenMessages: () -> Unit,
     onOpenNotifications: () -> Unit = {},
+    unreadCount: Int = 0,
     modifier: Modifier = Modifier,
     todayViewModel: TeacherTodayViewModel = koinViewModel(),
     checkInViewModel: TeacherCheckInViewModel = koinViewModel(),
@@ -140,11 +141,14 @@ fun TeacherHomeScreenV2(
             .verticalScroll(rememberScrollState())
             .statusBarsPadding()
             .padding(horizontal = 24.dp)
-            .padding(top = 12.dp, bottom = 24.dp),
+            .padding(top = 12.dp, bottom = TeacherDockClearance),
         verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
-        TeacherHomeHeader(
+        TeacherPremiumHeader(
             teacherName = today.teacherName,
+            lead = "here's",
+            accent = appString(StringKeys.TC_YOUR_DAY),
+            unreadCount = unreadCount,
             onOpenNotifications = onOpenNotifications,
         )
 
@@ -218,76 +222,6 @@ fun TeacherHomeScreenV2(
             onDismiss = { popupDismissedForDate = checkIn.date.ifBlank { com.littlebridge.enrollplus.util.todayIso() } },
             onCheckIn = { method -> checkInViewModel.checkIn(method) },
         )
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Header — mirrors the parent portal home header: wordmark, greeting, bell.
-// ─────────────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun TeacherHomeHeader(
-    teacherName: String,
-    onOpenNotifications: () -> Unit,
-) {
-    val name = teacherName.trim().substringBefore(" ").ifBlank { teacherName.ifBlank { appString(StringKeys.TEACHER_TITLE) } }
-
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text(
-                text = "Enroll+",
-                style = VTypography.wordmark.copy(color = VColors.violet),
-            )
-
-            val ix = remember { MutableInteractionSource() }
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(VShapes.full)
-                    .clickable(interactionSource = ix, indication = null) { onOpenNotifications() },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = VIcons.BellStroke,
-                    contentDescription = appString(StringKeys.TC_MESSAGES),
-                    tint = VColors.ink,
-                    modifier = Modifier.size(24.dp),
-                )
-            }
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        Text(
-            text = "Hi ${name}",
-            style = VTypography.caption.copy(
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                color = VColors.violet,
-            ),
-        )
-
-        Spacer(Modifier.height(2.dp))
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Text(
-                text = "here's",
-                style = VTypography.h2.copy(color = VColors.ink),
-            )
-            Text(
-                text = appString(StringKeys.TC_YOUR_DAY),
-                style = VTypography.h2.copy(color = VColors.violet),
-            )
-        }
     }
 }
 

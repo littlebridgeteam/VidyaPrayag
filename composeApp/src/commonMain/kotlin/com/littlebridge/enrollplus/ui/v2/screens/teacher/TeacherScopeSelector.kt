@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -60,11 +61,7 @@ fun TeacherScopeSelector(
     }
 
     Column(modifier.fillMaxWidth()) {
-        VtEyebrow(appString(StringKeys.SCH_SELECT_SCOPE), dot = c.accent)
-        Spacer(Modifier.height(6.dp))
-        Text(title, style = VtT.h2.coloredV(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold))
-        Spacer(Modifier.height(2.dp))
-        Text(caption, style = VtT.body.coloredV(c.ink2).copy(fontSize = 13.sp))
+        ScopeSelectorHeading(title, caption)
         Spacer(Modifier.height(14.dp))
 
         if (classes.size > 6) {
@@ -76,6 +73,38 @@ fun TeacherScopeSelector(
             items(filtered, key = { it.assignmentId }) { cls ->
                 ScopeRow(cls, onPick)
             }
+        }
+    }
+}
+
+/** The eyebrow + title + caption block shared by the standalone selector and the
+ *  LazyListScope variant below. */
+@Composable
+fun ScopeSelectorHeading(title: String, caption: String) {
+    val c = VtC
+    Column {
+        VtEyebrow(appString(StringKeys.SCH_SELECT_SCOPE), dot = c.accent)
+        Spacer(Modifier.height(6.dp))
+        Text(title, style = VtT.h2.coloredV(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold))
+        Spacer(Modifier.height(2.dp))
+        Text(caption, style = VtT.body.coloredV(c.ink2).copy(fontSize = 13.sp))
+    }
+}
+
+/**
+ * scopeSelectorItems — emits the scope rows straight into a host [LazyColumn] so the
+ * WHOLE screen (header, tool rail, intro, class list) scrolls as one, instead of the
+ * selector owning a nested scroll. Row content and behaviour are identical to
+ * [TeacherScopeSelector]; the host owns the scroll and provides the surrounding chrome.
+ */
+fun LazyListScope.scopeSelectorItems(
+    classes: List<TeacherClassSummaryDto>,
+    onPick: (TeacherClassSummaryDto) -> Unit,
+    horizontalPadding: androidx.compose.ui.unit.Dp = 0.dp,
+) {
+    items(classes, key = { it.assignmentId }) { cls ->
+        Box(Modifier.padding(horizontal = horizontalPadding)) {
+            ScopeRow(cls, onPick)
         }
     }
 }
