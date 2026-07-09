@@ -288,6 +288,19 @@ fun Route.notificationsRouting() {
                 call.okMessage("Cleared read notifications")
             }
 
+            // -------- clear every notification --------
+            delete("/all") {
+                val uid = call.principalUserUuid() ?: run {
+                    call.respond(HttpStatusCode.Unauthorized); return@delete
+                }
+                dbQuery {
+                    NotificationsTable.deleteWhere {
+                        NotificationsTable.userId eq uid
+                    }
+                }
+                call.okMessage("Cleared all notifications")
+            }
+
         }
     }
 }

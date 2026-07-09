@@ -1,0 +1,538 @@
+package com.littlebridge.enrollplus.ui.v2.screens.school
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.feature.admin.domain.model.AcademicCalendarEventDto
+import com.littlebridge.enrollplus.feature.admin.domain.model.CalEventType
+import com.littlebridge.enrollplus.feature.admin.domain.model.CalendarKpiDto
+import com.littlebridge.enrollplus.feature.admin.presentation.AcademicCalendarPlatformViewModel
+import com.littlebridge.enrollplus.feature.admin.presentation.CalendarViewMode
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
+import com.littlebridge.enrollplus.ui.v2.components.VBadge
+import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
+import com.littlebridge.enrollplus.ui.v2.components.VButton
+import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
+import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
+import com.littlebridge.enrollplus.ui.v2.components.VCard
+import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.components.VLabel
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
+import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
+import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.util.todayIso
+import org.koin.compose.viewmodel.koinViewModel
+
+/**
+ * AcademicCalendarPlatformScreenV2 — the premium Academic Calendar platform
+ * (VP-CAL). Nine sections, top to bottom:
+ *   1. Hero Overview (academic year / days / holidays / next event)
+ *   2. Upcoming Highlights carousel
+ *   3. View Switcher (Month / Agenda / Timeline)
+ *   4. Interactive Calendar (indicators / counts / colors / tap)
+ *   5. Upcoming Events Timeline
+ *   6. Draft Events
+ *   7. Published Events
+ *   8. Academic Milestones
+ *   9. Calendar Analytics (KPI carousel)
+ *
+ * Built entirely from the V* design system (no raw Material surfaces). Pull-to-
+ * refresh, empty + loading states, and a "Create Event" CTA into the 7-step
+ * wizard are all wired here.
+ */
+@Composable
+fun AcademicCalendarPlatformScreenV2(
+    onBack: () -> Unit,
+    onCreateEvent: () -> Unit,
+    onOpenEvent: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: AcademicCalendarPlatformViewModel = koinViewModel(),
+) {
+    val state by viewModel.state.collectAsStateV2()
+
+    LaunchedEffect(Unit) { viewModel.refresh() }
+
+    Column(modifier.fillMaxSize().background(VColors.surface).statusBarsPadding().navigationBarsPadding()) {
+        VBackHeader(
+            title = appString(StringKeys.ACALP_TITLE),
+            onBack = onBack,
+            action = {
+                VButton(
+                    text = appString(StringKeys.ACALP_CREATE),
+                    onClick = onCreateEvent,
+                    size = VButtonSize.Sm,
+                    tone = VButtonTone.Teal,
+                    leading = { Icon(VIcons.Plus, null, tint = Color.White, modifier = Modifier.size(14.dp)) },
+                )
+            },
+        )
+
+        VStateHost(
+            loading = state.isLoading,
+            error = state.errorMessage,
+            isEmpty = state.isEmpty,
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            emptyTitle = appString(StringKeys.ACALP_EMPTY_TITLE),
+            emptyBody = appString(StringKeys.ACALP_EMPTY_BODY),
+            emptyIcon = VIcons.Calendar,
+            onRetry = { viewModel.load() },
+            skeleton = { SkeletonList(rows = 5) },
+        ) {
+            VPullRefresh(isRefreshing = state.isRefreshing, onRefresh = { viewModel.refresh() }) {
+                Column(
+                    Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                ) {
+                    val dash = state.dashboard
+
+                    // ── 1. Hero Overview ─────────────────────────────────────
+                    HeroOverview(dash?.hero?.academicYear, dash?.hero?.academicDays ?: 0,
+                        dash?.hero?.holidayDays ?: 0, dash?.hero?.totalEvents ?: 0, dash?.hero?.nextEvent)
+
+                    // ── 2. Upcoming Highlights carousel ──────────────────────
+                    val highlights = dash?.upcomingHighlights.orEmpty()
+                    if (highlights.isNotEmpty()) {
+                        VLabel(appString(StringKeys.ACALP_HIGHLIGHTS))
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            items(highlights.size) { i ->
+                                HighlightCard(highlights[i], onClick = { onOpenEvent(highlights[i].id) })
+                            }
+                        }
+                    }
+
+                    // ── 3. View Switcher ─────────────────────────────────────
+                    VLabel(appString(StringKeys.ACALP_VIEW))
+                    ViewSwitcher(state.viewMode, onSelect = viewModel::setViewMode)
+
+                    // ── 4 / 5 — content for the selected view ────────────────
+                    when (state.viewMode) {
+                        CalendarViewMode.MONTH -> InteractiveCalendar(state.events, onOpenEvent)
+                        CalendarViewMode.AGENDA -> AgendaList(state.events, onOpenEvent)
+                        CalendarViewMode.TIMELINE -> TimelineList(dash?.upcomingTimeline.orEmpty(), onOpenEvent)
+                    }
+
+                    // ── 5. Upcoming Events Timeline (always shown) ───────────
+                    val timeline = dash?.upcomingTimeline.orEmpty()
+                    if (timeline.isNotEmpty()) {
+                        VLabel(appString(StringKeys.ACALP_UPCOMING))
+                        timeline.take(6).forEach { EventRow(it, onClick = { onOpenEvent(it.id) }) }
+                    }
+
+                    // ── 6. Draft Events ──────────────────────────────────────
+                    val drafts = dash?.draftEvents.orEmpty()
+                    if (drafts.isNotEmpty()) {
+                        VLabel(appString(StringKeys.ACALP_DRAFT_EVENTS))
+                        drafts.take(6).forEach {
+                            EventRow(it, onClick = { onOpenEvent(it.id) }, trailingBadge = "DRAFT")
+                        }
+                    }
+
+                    // ── 7. Published Events ──────────────────────────────────
+                    val published = dash?.publishedEvents.orEmpty()
+                    if (published.isNotEmpty()) {
+                        VLabel(appString(StringKeys.ACALP_PUBLISHED_EVENTS))
+                        published.take(6).forEach {
+                            EventRow(it, onClick = { onOpenEvent(it.id) }, trailingBadge = "LIVE")
+                        }
+                    }
+
+                    // ── 8. Academic Milestones ───────────────────────────────
+                    val milestones = dash?.milestones.orEmpty()
+                    if (milestones.isNotEmpty()) {
+                        VLabel(appString(StringKeys.ACALP_MILESTONES))
+                        milestones.take(6).forEach { MilestoneRow(it, onClick = { onOpenEvent(it.id) }) }
+                    }
+
+                    // ── 9. Calendar Analytics (KPI carousel) ─────────────────
+                    val analytics = dash?.analytics.orEmpty()
+                    if (analytics.isNotEmpty()) {
+                        VLabel(appString(StringKeys.ACALP_ANALYTICS))
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            items(analytics.size) { i -> KpiCard(analytics[i]) }
+                        }
+                    }
+
+                    Spacer(Modifier.height(24.dp))
+                }
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section 1 — Hero
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun HeroOverview(
+    academicYear: String?,
+    academicDays: Int,
+    holidayDays: Int,
+    totalEvents: Int,
+    nextEvent: AcademicCalendarEventDto?,
+) {
+    VCard(background = VColors.violet, border = false) {
+        Text(
+            academicYear?.let { appString(StringKeys.ACALP_ACADEMIC_YEAR).replace("{year}", it) } ?: appString(StringKeys.ACALP_ACADEMIC_CAL),
+            style = VTypography.h3, color = Color.White,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(appString(StringKeys.ACALP_CENTRALIZED), style = VTypography.caption, color = Color.White.copy(alpha = 0.7f))
+        Spacer(Modifier.height(16.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            HeroStat(appString(StringKeys.ACALP_EVENTS), totalEvents.toString(), Modifier.weight(1f))
+            HeroStat(appString(StringKeys.ACALP_SCHOOL_DAYS), academicDays.toString(), Modifier.weight(1f))
+            HeroStat(appString(StringKeys.ACALP_HOLIDAYS), holidayDays.toString(), Modifier.weight(1f))
+        }
+        if (nextEvent != null) {
+            Spacer(Modifier.height(14.dp))
+            Box(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+                    .background(Color.White.copy(alpha = 0.08f)).padding(12.dp),
+            ) {
+                Column {
+                    Text(appString(StringKeys.ACALP_NEXT_EVENT), style = VTypography.label, color = VColors.violetSoft)
+                    Spacer(Modifier.height(2.dp))
+                    Text(nextEvent.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = Color.White)
+                    Text(
+                        formatRange(nextEvent.startDate, nextEvent.endDate),
+                        style = VTypography.caption, color = Color.White.copy(alpha = 0.7f),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HeroStat(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(value, style = VTypography.body.copy(color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.SemiBold))
+        Text(label, style = VTypography.label, color = Color.White.copy(alpha = 0.65f))
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section 2 — Highlight carousel card
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun HighlightCard(e: AcademicCalendarEventDto, onClick: () -> Unit) {
+    VCard(modifier = Modifier.width(220.dp), onClick = onClick) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            TypeDot(e.type)
+            Text(CalEventType.label(e.type), style = VTypography.label, color = VColors.ink3)
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(e.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink, maxLines = 2)
+        Spacer(Modifier.height(4.dp))
+        Text(formatRange(e.startDate, e.endDate), style = VTypography.caption, color = VColors.ink2)
+        if (e.hasConflicts) {
+            Spacer(Modifier.height(6.dp))
+            VBadge(appString(StringKeys.ACALP_CONFLICT), tone = VBadgeTone.Warning)
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section 3 — View Switcher
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun ViewSwitcher(mode: CalendarViewMode, onSelect: (CalendarViewMode) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(VColors.cream).padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        CalendarViewMode.entries.forEach { m ->
+            val selected = m == mode
+            Box(
+                Modifier.weight(1f).clip(RoundedCornerShape(9.dp))
+                    .background(if (selected) VColors.surfaceCard else Color.Transparent)
+                    .clickable { onSelect(m) }
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    m.name.lowercase().replaceFirstChar { it.uppercase() },
+                    style = VTypography.caption.copy(
+                        color = if (selected) VColors.violet else VColors.ink3,
+                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                    ),
+                )
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section 4 — Interactive month calendar
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun InteractiveCalendar(events: List<AcademicCalendarEventDto>, onOpenEvent: (String) -> Unit) {
+    // Start from current month, not stuck on June.
+    val today = remember { parseIso3(todayIso()) ?: Triple(2026, 7, 1) }
+    var navYear by remember { mutableStateOf(today.first) }
+    var navMonth by remember { mutableStateOf(today.second) }
+
+    fun prevMonth() {
+        if (navMonth == 1) { navMonth = 12; navYear-- } else navMonth--
+    }
+    fun nextMonth() {
+        if (navMonth == 12) { navMonth = 1; navYear++ } else navMonth++
+    }
+
+    val days = daysIn(navYear, navMonth)
+
+    val eventsByDay = remember(events, navYear, navMonth) {
+        events.filter {
+            val p = parseIso3(it.startDate)
+            p != null && p.first == navYear && p.second == navMonth
+        }.groupBy { parseIso3(it.startDate)!!.third }
+    }
+
+    VCard {
+        Row(
+            Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "${MONTHS[navMonth - 1]} $navYear",
+                style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+                color = VColors.ink,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Box(
+                    Modifier.clip(RoundedCornerShape(8.dp)).clickable { prevMonth() }
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                ) {
+                    Text("‹", style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.violet)
+                }
+                Box(
+                    Modifier.clip(RoundedCornerShape(8.dp)).clickable { nextMonth() }
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                ) {
+                    Text("›", style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.violet)
+                }
+            }
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            listOf("S", "M", "T", "W", "T", "F", "S").forEach {
+                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    Text(it, style = VTypography.label, color = VColors.ink3)
+                }
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        (1..days).toList().chunked(7).forEach { week ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                week.forEach { day ->
+                    val dayEvents = eventsByDay[day].orEmpty()
+                    val primary = dayEvents.firstOrNull()
+                    Box(
+                        Modifier.weight(1f).aspectRatio(1f).clip(RoundedCornerShape(10.dp))
+                            .background(if (primary != null) typeColor(primary.type).copy(alpha = 0.16f) else Color.Transparent)
+                            .clickable(enabled = primary != null) { primary?.let { onOpenEvent(it.id) } },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(day.toString(), style = VTypography.caption, color = VColors.ink)
+                            if (dayEvents.isNotEmpty()) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                                    dayEvents.take(3).forEach {
+                                        Box(Modifier.size(4.dp).clip(CircleShape).background(typeColor(it.type)))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                repeat(7 - week.size) { Box(Modifier.weight(1f)) {} }
+            }
+            Spacer(Modifier.height(4.dp))
+        }
+    }
+}
+
+@Composable
+private fun AgendaList(events: List<AcademicCalendarEventDto>, onOpenEvent: (String) -> Unit) {
+    if (events.isEmpty()) {
+        Text(appString(StringKeys.ACALP_NO_EVENTS), style = VTypography.caption, color = VColors.ink2)
+        return
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        events.sortedBy { it.startDate }.forEach { EventRow(it, onClick = { onOpenEvent(it.id) }) }
+    }
+}
+
+@Composable
+private fun TimelineList(events: List<AcademicCalendarEventDto>, onOpenEvent: (String) -> Unit) {
+    if (events.isEmpty()) {
+        Text(appString(StringKeys.ACALP_NOTHING_UPCOMING), style = VTypography.caption, color = VColors.ink2)
+        return
+    }
+    Column {
+        events.forEach { e ->
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(Modifier.size(10.dp).clip(CircleShape).background(typeColor(e.type)))
+                    Box(Modifier.width(2.dp).height(40.dp).background(VColors.line))
+                }
+                Column(Modifier.padding(bottom = 8.dp).clickable { onOpenEvent(e.id) }) {
+                    Text(e.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+                    Text(formatRange(e.startDate, e.endDate), style = VTypography.caption, color = VColors.ink2)
+                }
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared rows
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun EventRow(
+    e: AcademicCalendarEventDto,
+    onClick: () -> Unit,
+    trailingBadge: String? = null,
+) {
+    VCard(onClick = onClick) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Box(Modifier.size(8.dp).clip(CircleShape).background(typeColor(e.type)))
+            Column(Modifier.weight(1f)) {
+                Text(e.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink, maxLines = 1)
+                Text(
+                    "${CalEventType.label(e.type)} • ${formatRange(e.startDate, e.endDate)}",
+                    style = VTypography.caption, color = VColors.ink2,
+                )
+                if (e.hasConflicts) {
+                    Spacer(Modifier.height(4.dp))
+                    VBadge(appString(StringKeys.ACALP_CONFLICT), tone = VBadgeTone.Warning)
+                }
+            }
+            if (trailingBadge != null) {
+                VBadge(trailingBadge, tone = if (trailingBadge == "LIVE") VBadgeTone.Success else VBadgeTone.Neutral)
+            }
+            Icon(VIcons.ChevronRight, null, tint = VColors.ink3, modifier = Modifier.size(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun MilestoneRow(e: AcademicCalendarEventDto, onClick: () -> Unit) {
+    VCard(onClick = onClick) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Icon(VIcons.Star, null, tint = VColors.gold, modifier = Modifier.size(18.dp))
+            Column(Modifier.weight(1f)) {
+                Text(e.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+                Text(formatRange(e.startDate, e.endDate), style = VTypography.caption, color = VColors.ink2)
+            }
+        }
+    }
+}
+
+@Composable
+private fun KpiCard(kpi: CalendarKpiDto) {
+    VCard(modifier = Modifier.width(140.dp)) {
+        Text(kpi.value.toString(), style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp), color = VColors.ink)
+        Text(kpi.label, style = VTypography.label, color = VColors.ink3)
+    }
+}
+
+@Composable
+private fun TypeDot(type: String) {
+    Box(Modifier.size(8.dp).clip(CircleShape).background(typeColor(type)))
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+private fun typeColor(type: String): Color {
+    return when (type.uppercase()) {
+        CalEventType.EXAM -> VColors.coral
+        CalEventType.HOLIDAY -> VColors.mint
+        CalEventType.PTM -> VColors.sky
+        CalEventType.SCHOOL_EVENT -> VColors.violet
+        CalEventType.ACTIVITY -> VColors.gold
+        CalEventType.ADMINISTRATIVE -> VColors.ink3
+        CalEventType.MILESTONE -> VColors.violet
+        else -> VColors.ink3
+    }
+}
+
+private val MONTHS = listOf(
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+)
+
+private fun parseIso3(iso: String): Triple<Int, Int, Int>? {
+    if (iso.length < 10) return null
+    val y = iso.substring(0, 4).toIntOrNull() ?: return null
+    val m = iso.substring(5, 7).toIntOrNull() ?: return null
+    val d = iso.substring(8, 10).toIntOrNull() ?: return null
+    if (m !in 1..12 || d !in 1..31) return null
+    return Triple(y, m, d)
+}
+
+private fun daysIn(year: Int, month: Int): Int = when (month) {
+    1, 3, 5, 7, 8, 10, 12 -> 31
+    4, 6, 9, 11 -> 30
+    2 -> if ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0) 29 else 28
+    else -> 30
+}
+
+private fun formatRange(start: String, end: String): String {
+    if (start == end || end.isBlank()) return formatShort(start)
+    return "${formatShort(start)} – ${formatShort(end)}"
+}
+
+private fun formatShort(iso: String): String {
+    val p = parseIso3(iso) ?: return iso
+    val m = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+    return "${m[p.second - 1]} ${p.third}, ${p.first}"
+}

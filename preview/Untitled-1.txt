@@ -1,0 +1,67 @@
+# Airtable Onboarding UI: Real Screenshots | SaaSUI
+
+[Blog](https://www.saasui.design/blog)
+[About](https://www.saasui.design/about)
+[Submit UI Request](https://www.saasui.design/submit)
+[Home](https://www.saasui.design/)
+[UI Patterns](https://www.saasui.design/categories)
+[Onboarding](https://www.saasui.design/pattern/onboarding)
+
+# Airtable Onboarding
+Productivity
+This is the onboarding design from Airtable, a productivity application. Airtable flexible and powerful cloud collaboration platform that helps you organize everything and achieve anything with ease. Onboarding flow designs from top SaaS apps. Welcome screens, setup wizards, and first-run experiences. We have 5 onboarding screenshots from Airtable showing different states and variations of this pattern.
+[View all Airtable screenshots](https://www.saasui.design/application/airtable)
+[Visit Airtable](https://www.airtable.com/)
+[Browse all onboarding patterns →](https://www.saasui.design/pattern/onboarding)
+
+# Airtable Onboarding
+Productivity
+This is the onboarding design from Airtable, a productivity application. Airtable flexible and powerful cloud collaboration platform that helps you organize everything and achieve anything with ease. Onboarding flow designs from top SaaS apps. Welcome screens, setup wizards, and first-run experiences. We have 5 onboarding screenshots from Airtable showing different states and variations of this pattern.
+[View all Airtable screenshots](https://www.saasui.design/application/airtable)
+[Visit Airtable](https://www.airtable.com/)
+More Onboarding Patterns
+[Browse all onboarding patterns →](https://www.saasui.design/pattern/onboarding)
+A curated collection of SaaS UI design patterns and interactions for product teams.
+[hello@rakeshmondal.in](mailto:hello@rakeshmondal.in)
+
+## Navigate
+[Browse](https://www.saasui.design/)
+[Blog](https://www.saasui.design/blog)
+[About](https://www.saasui.design/about)
+[SaaS Glossary](https://www.saasui.design/glossary)
+[Submit UI Request](https://www.saasui.design/submit)
+[Sponsor](https://www.saasui.design/sponsor)
+
+## Projects
+[Skolasti](https://www.skolasti.com/)
+[UX of AI](https://uxofai.design)
+[MotionGuide](https://motionguide.ai)
+
+## Stay Updated
+or [sponsor our newsletter →](https://www.saasui.design/sponsor)
+
+## UI Patterns
+[Login](https://www.saasui.design/pattern/login)
+[Signup](https://www.saasui.design/pattern/signup)
+[Dashboard](https://www.saasui.design/pattern/dashboard)
+[Settings](https://www.saasui.design/pattern/settings)
+[Onboarding](https://www.saasui.design/pattern/onboarding)
+[Pricing](https://www.saasui.design/pattern/pricing)
+[Navigation](https://www.saasui.design/pattern/navigation)
+[Empty State](https://www.saasui.design/pattern/empty-state)
+[Modal](https://www.saasui.design/pattern/modal)
+[Form](https://www.saasui.design/pattern/form)
+[Table](https://www.saasui.design/pattern/table)
+[Profile](https://www.saasui.design/pattern/profile)
+[Search](https://www.saasui.design/pattern/search)
+[Notification](https://www.saasui.design/pattern/notification)
+[Editor](https://www.saasui.design/pattern/editor)
+[Landing](https://www.saasui.design/pattern/landing)
+[Analytics](https://www.saasui.design/pattern/analytics)
+[Chat](https://www.saasui.design/pattern/chat)
+[Email](https://www.saasui.design/pattern/email)
+[Calendar](https://www.saasui.design/pattern/calendar)
+[Billing](https://www.saasui.design/pattern/billing)
+[Integration](https://www.saasui.design/pattern/integration)
+© 2026 SaaSUI. Curated by [Rakesh Mondal](https://rakeshmondal.in)
+All product and company names are trademarks™ or registered® trademarks. Logos, screenshots, and icons remain the property of their respective owners.

@@ -24,13 +24,14 @@ import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.feature.tutor.domain.model.ProgressCardDto
 import com.littlebridge.enrollplus.feature.tutor.domain.model.TopicProgressDto
 import com.littlebridge.enrollplus.feature.tutor.presentation.ParentProgressViewModel
-import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
+import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VEmptyState
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.VErrorState
 import com.littlebridge.enrollplus.ui.v2.screens.VLoadingState
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import com.littlebridge.enrollplus.core.locale.StringKeys
@@ -63,13 +64,13 @@ fun ParentProgressScreen(
     Box(
         modifier
             .fillMaxSize()
-            .background(c.background)
+            .background(VColors.cream)
     ) {
         Column(
             Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
-            VBackHeader(title = appString(StringKeys.TUT_PROGRESS_TITLE), onBack = onBack)
+            PremiumOverlayHeader(title = appString(StringKeys.TUT_PROGRESS_TITLE), onBack = onBack)
 
             when {
                 state.isLoading -> VLoadingState()

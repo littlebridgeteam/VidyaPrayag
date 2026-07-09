@@ -31,7 +31,8 @@ data class DashboardChildSummary(
     @SerialName("overall_progress") val overallProgress: Double,
     @SerialName("current_level") val currentLevel: Int,
     @SerialName("attendance_status") val attendanceStatus: String,
-    @SerialName("profile_pic") val profilePic: String? = null
+    @SerialName("profile_pic") val profilePic: String? = null,
+    @SerialName("school_name") val schoolName: String? = null
 )
 
 @Serializable

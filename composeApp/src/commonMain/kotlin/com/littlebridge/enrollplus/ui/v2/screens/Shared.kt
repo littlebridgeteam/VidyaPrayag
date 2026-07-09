@@ -29,8 +29,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VEmptyState
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import kotlinx.coroutines.flow.StateFlow
@@ -52,12 +52,11 @@ fun <T> StateFlow<T>.collectAsStateV2(): State<T> = collectAsState()
  */
 @Composable
 fun VLoadingState(modifier: Modifier = Modifier) {
-    val c = VTheme.colors
     Box(
         modifier.fillMaxSize().padding(vertical = 64.dp),
         contentAlignment = Alignment.Center,
     ) {
-        CircularProgressIndicator(color = c.teal, modifier = Modifier.size(36.dp))
+        CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(36.dp))
     }
 }
 
@@ -70,7 +69,6 @@ fun VErrorState(
     onRetry: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
     VEmptyState(
         modifier = modifier,
         icon = VIcons.AlertTriangle,
@@ -164,13 +162,12 @@ fun VSectionHeader(
     modifier: Modifier = Modifier,
     action: (@Composable () -> Unit)? = null,
 ) {
-    val c = VTheme.colors
     Row(
         modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(title, style = VTheme.type.label.colored(c.ink3))
+        Text(title, style = VTypography.label.copy(color = VColors.ink3))
         action?.invoke()
     }
 }
@@ -184,16 +181,15 @@ fun VPortalHeader(
     photoUrl: String? = null,
     trailing: (@Composable () -> Unit)? = null,
 ) {
-    val c = VTheme.colors
     Row(
-        modifier.fillMaxWidth().padding(vertical = VTheme.dimens.sm),
+        modifier.fillMaxWidth().padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(VTheme.dimens.md),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         VAvatar(name = name.ifBlank { "?" }, src = photoUrl, ring = true)
         Column(Modifier.weight(1f)) {
-            Text(subtitle, style = VTheme.type.caption.colored(c.ink3), textAlign = TextAlign.Start)
-            Text(name.ifBlank { "—" }, style = VTheme.type.h3.colored(c.ink))
+            Text(subtitle, style = VTypography.caption.copy(color = VColors.ink3), textAlign = TextAlign.Start)
+            Text(name.ifBlank { "—" }, style = VTypography.h3.copy(color = VColors.ink))
         }
         trailing?.invoke()
     }

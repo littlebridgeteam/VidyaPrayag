@@ -50,6 +50,10 @@ class ParentRepositoryImpl(
         return api.clearReadNotifications(token)
     }
 
+    override suspend fun clearAllNotifications(token: String): NetworkResult<Unit> {
+        return api.clearAllNotifications(token)
+    }
+
     override suspend fun getChildAttendance(token: String, childId: String): NetworkResult<ParentAttendanceResponse> {
         return api.getChildAttendance(token, childId)
     }

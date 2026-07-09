@@ -581,7 +581,7 @@ fun Application.module() {
 
         // Cross-user notification spine (audit part-2 RA-41/42/46/50) — role-aware
         // inbox replacing the parent-only synth; persisted read state; bell summary.
-        notificationsRouting()       // /api/v1/notifications[/summary,/{id}/read,/read-all]
+        notificationsRouting()       // /api/v1/notifications[/summary,/{id}/read,/read-all,/clear-all,/all]
         notificationPreferencesRouting() // /api/v1/notifications/preferences
 
         // Notification FOUNDATION (push infra — distinct from the inbox spine):

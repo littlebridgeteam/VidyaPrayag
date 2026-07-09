@@ -34,14 +34,16 @@ import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.admin.domain.model.CalendarEventDto
 import com.littlebridge.enrollplus.feature.admin.presentation.AcademicCalendarState
 import com.littlebridge.enrollplus.feature.admin.presentation.AcademicCalendarViewModel
-import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
+import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VLabel
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.VtC
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.VtT
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.coloredV
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
@@ -91,9 +93,9 @@ private fun AcademicCalendarContent(
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    Column(modifier.fillMaxSize().background(c.background)) {
-        VBackHeader(title = appString(StringKeys.CAL_ACADEMIC_TITLE), onBack = onBack)
+    val c = VtC
+    Column(modifier.fillMaxSize().background(VColors.cream)) {
+        PremiumOverlayHeader(title = appString(StringKeys.CAL_ACADEMIC_TITLE), onBack = onBack)
 
         VStateHost(
             loading = state.isLoading,
@@ -125,7 +127,7 @@ private fun AcademicCalendarContent(
                     MonthPill(appString(StringKeys.CAL_PREV), onClick = onPrev)
                     Text(
                         state.currentMonth.ifBlank { "—" },
-                        style = VTheme.type.bodyStrong.colored(c.ink),
+                        style = VtT.bodyStrong.coloredV(c.ink),
                     )
                     MonthPill(appString(StringKeys.CAL_NEXT_BTN), onClick = onNext)
                 }
@@ -143,7 +145,7 @@ private fun AcademicCalendarContent(
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         listOf("S", "M", "T", "W", "T", "F", "S").forEach { d ->
                             Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                                Text(d, style = VTheme.type.label.colored(c.ink3))
+                                Text(d, style = VtT.label.coloredV(c.ink3))
                             }
                         }
                     }
@@ -166,7 +168,7 @@ private fun AcademicCalendarContent(
                                             .background(tone),
                                         contentAlignment = Alignment.Center,
                                     ) {
-                                        Text(day.toString(), style = VTheme.type.caption.colored(c.ink))
+                                        Text(day.toString(), style = VtT.caption.coloredV(c.ink))
                                     }
                                 }
                                 repeat(7 - week.size) { Box(Modifier.weight(1f)) {} }
@@ -198,7 +200,7 @@ private fun AcademicCalendarContent(
                 if (state.calendarEvents.isEmpty()) {
                     Text(
                         appString(StringKeys.CAL_NO_EVENTS),
-                        style = VTheme.type.caption.colored(c.ink2),
+                        style = VtT.caption.coloredV(c.ink2),
                     )
                 } else {
                     state.calendarEvents.forEach { e ->
@@ -212,7 +214,7 @@ private fun AcademicCalendarContent(
 
 @Composable
 private fun EventRow(e: CalendarEventDto) {
-    val c = VTheme.colors
+    val c = VtC
     val day = dayOfIsoDate(e.date)
     val monthShort = monthShortOfIsoDate(e.date)
     VCard {
@@ -220,15 +222,15 @@ private fun EventRow(e: CalendarEventDto) {
             Column(Modifier.size(width = 48.dp, height = 44.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     (day?.toString() ?: "—"),
-                    style = VTheme.type.dataLg.colored(c.ink).copy(fontSize = 20.sp),
+                    style = VtT.dataLg.coloredV(c.ink).copy(fontSize = 20.sp),
                 )
-                Text((monthShort ?: ""), style = VTheme.type.label.colored(c.ink3))
+                Text((monthShort ?: ""), style = VtT.label.coloredV(c.ink3))
             }
             Column(Modifier.weight(1f)) {
-                Text(e.eventTitle, style = VTheme.type.bodyStrong.colored(c.ink))
+                Text(e.eventTitle, style = VtT.bodyStrong.coloredV(c.ink))
                 Text(
                     e.eventDescription.ifBlank { e.day.ifBlank { e.date } },
-                    style = VTheme.type.label.colored(c.ink3),
+                    style = VtT.label.coloredV(c.ink3),
                 )
             }
             Icon(VIcons.ChevronRight, contentDescription = null, tint = c.ink3, modifier = Modifier.size(16.dp))
@@ -238,16 +240,16 @@ private fun EventRow(e: CalendarEventDto) {
 
 @Composable
 private fun StatPill(label: String, value: String, modifier: Modifier = Modifier) {
-    val c = VTheme.colors
+    val c = VtC
     VCard(modifier = modifier) {
-        Text(value, style = VTheme.type.h3.colored(c.ink))
-        Text(label, style = VTheme.type.label.colored(c.ink3))
+        Text(value, style = VtT.h3.coloredV(c.ink))
+        Text(label, style = VtT.label.coloredV(c.ink3))
     }
 }
 
 @Composable
 private fun MonthPill(label: String, onClick: () -> Unit) {
-    val c = VTheme.colors
+    val c = VtC
     Box(
         Modifier
             .clip(RoundedCornerShape(999.dp))
@@ -255,7 +257,7 @@ private fun MonthPill(label: String, onClick: () -> Unit) {
             .clickable { onClick() }
             .padding(horizontal = 12.dp, vertical = 6.dp),
     ) {
-        Text(label, style = VTheme.type.caption.colored(c.ink2))
+        Text(label, style = VtT.caption.coloredV(c.ink2))
     }
 }
 

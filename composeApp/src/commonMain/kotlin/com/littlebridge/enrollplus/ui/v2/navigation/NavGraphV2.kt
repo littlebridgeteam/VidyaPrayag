@@ -6,12 +6,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -19,28 +13,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import com.littlebridge.enrollplus.ui.v2.components.VBackHandler
-import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.feature.admin.presentation.OnboardingGate
 import com.littlebridge.enrollplus.feature.admin.presentation.OnboardingGateViewModel
 import com.littlebridge.enrollplus.feature.auth.domain.repository.AuthRepository
+import com.littlebridge.enrollplus.ui.v2.screens.auth.ParentLinkChildScreenV2
+import com.littlebridge.enrollplus.ui.v2.screens.auth.SchoolOnboardingScreenV2
+import com.littlebridge.enrollplus.ui.v2.screens.auth.TeacherFirstLoginScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.screens.premium.auth.AdminAuthScreen
-import com.littlebridge.enrollplus.ui.v2.screens.premium.auth.CommonLandingScreen
-import com.littlebridge.enrollplus.ui.v2.screens.premium.auth.LanguageSelectionScreen
-import com.littlebridge.enrollplus.ui.v2.screens.premium.auth.LegalInfoScreen
-import com.littlebridge.enrollplus.ui.v2.screens.premium.auth.ParentAuthScreen
-import com.littlebridge.enrollplus.ui.v2.screens.premium.auth.ParentLinkChildScreen
-import com.littlebridge.enrollplus.ui.v2.screens.premium.auth.SchoolOnboardingScreen
-import com.littlebridge.enrollplus.ui.v2.screens.premium.auth.TeacherFirstLoginScreen
-import com.littlebridge.enrollplus.ui.v2.screens.premium.parent.ParentDiscoveryScreen
-import com.littlebridge.enrollplus.ui.v2.screens.premium.parent.ParentPortalShell
-import com.littlebridge.enrollplus.ui.v2.screens.premium.school.SchoolPortalPremium
-import com.littlebridge.enrollplus.ui.v2.screens.premium.teacher.TeacherPortalShell
+import com.littlebridge.enrollplus.ui.v2.screens.parent.ParentPortalV2
+import com.littlebridge.enrollplus.ui.v2.screens.school.SchoolPortalV2
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherPortalV2
 import com.littlebridge.enrollplus.feature.branding.presentation.BrandingThemeManager
 import com.littlebridge.enrollplus.ui.v2.theme.BrandingColorMapper
 import com.littlebridge.enrollplus.ui.v2.theme.VMotion
@@ -48,7 +32,6 @@ import com.littlebridge.enrollplus.ui.v2.theme.VStatusBarAdapter
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.VThemeDef
 import com.littlebridge.enrollplus.ui.v2.theme.VThemeRegistry
-import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 /**
@@ -60,8 +43,10 @@ import org.koin.compose.koinInject
  * its predecessor so back-press can never return to splash, landing, or an auth screen (LAW 4).
  *
  *   Splash (in App.kt)
- *     ├─ valid session → [AuthedFlow] → role gate → correct portal
- *     └─ no session    → [UnauthFlow] → CommonLanding → Parent/Admin auth
+ *     └─ valid session → [AuthedFlow] → role gate → correct portal
+ *
+ * Unauthenticated flow (splash → landing → login/signup) is handled by the
+ * backup-402 AuthNavGraph in App.kt. NavGraphV2 is only called when authenticated.
  *
  * Role is the persisted JWT role; [EntryRole] normalizes it (handles ADMIN / SCHOOL_ADMIN / TEACHER
  * / PARENT) so no decision site hardcodes a raw string.
@@ -94,11 +79,9 @@ fun NavGraphV2(
     }
 
     // Fetch school branding when authenticated; clear on logout
-    // PRF-004: Guard against auth state flutter — only load if branding is empty.
     LaunchedEffect(isAuthenticated) {
-        if (isAuthenticated) {
-            if (schoolBranding == null) brandingThemeManager.loadBranding()
-        } else brandingThemeManager.clear()
+        if (isAuthenticated) brandingThemeManager.loadBranding()
+        else brandingThemeManager.clear()
     }
 
     // Parse the deep link once when it arrives — but only if we know the user's role.
@@ -116,24 +99,7 @@ fun NavGraphV2(
     LaunchedEffect(rawDeepLink, entryRole) {
         val link = rawDeepLink
         if (link != null && entryRole != EntryRole.Unknown) {
-            pendingNavigation = try {
-                val target = parseDeepLink(link, entryRole)
-                val targetRole = target.role
-                val roleMatches = when {
-                    entryRole == targetRole -> true
-                    entryRole == EntryRole.SuperAdmin && targetRole == EntryRole.SchoolAdmin -> true
-                    else -> false
-                }
-                if (!roleMatches) {
-                    com.littlebridge.enrollplus.util.AppLogger.e("NavGraphV2", "Deep link role mismatch: user=$entryRole target=$targetRole for path '$link' — ignoring")
-                    null
-                } else {
-                    target
-                }
-            } catch (e: Exception) {
-                com.littlebridge.enrollplus.util.AppLogger.e("NavGraphV2", "Failed to parse deep link '$link': ${e.message}", e)
-                null
-            }
+            pendingNavigation = parseDeepLink(link, entryRole)
             rawDeepLink = null
         }
     }
@@ -149,17 +115,13 @@ fun NavGraphV2(
             // active theme — light icons on dark themes, dark icons on light.
             VStatusBarAdapter(def.colors.isNight)
 
-            if (isAuthenticated) {
-                AuthedFlow(
-                    role = entryRole,
-                    onLogout = onLogout,
-                    deepLinkTarget = pendingNavigation,
-                    onDeepLinkNavigated = { pendingNavigation = null },
-                    modifier = modifier,
-                )
-            } else {
-                UnauthFlow(modifier = modifier)
-            }
+            AuthedFlow(
+                role = entryRole,
+                onLogout = onLogout,
+                deepLinkTarget = pendingNavigation,
+                onDeepLinkNavigated = { pendingNavigation = null },
+                modifier = modifier,
+            )
         }
     }
 }
@@ -215,7 +177,7 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
     // Strip query string before segment splitting — deep links from
     // notifications carry className/section/term params (e.g.
     // "/teacher/report-review?className=8&section=A&term=Term 1").
-    val pathOnly = path.substringBefore("?").removeSuffix("/")
+    val pathOnly = path.substringBefore("?")
     val queryStr = path.substringAfter("?", "")
     val normalized = pathOnly.trim().removePrefix("/")
     val segments = normalized.split("/").filter { it.isNotBlank() }
@@ -227,10 +189,9 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
             val thirdSeg = segments.getOrNull(2)
             // Messages deep link with thread ID: /parent/messages/<threadId>
             if (secondSeg == "messages" && thirdSeg != null) {
-                if (!isValidUuid(thirdSeg)) return DeepLinkTarget.Generic(currentRole, path)
                 return DeepLinkTarget.Messages(EntryRole.Parent, threadId = thirdSeg)
             }
-            // Valid bottom-nav tabs in ParentPortalShell.
+            // Valid bottom-nav tabs in ParentPortalV2.
             val validTabs = setOf("home", "academics", "fees", "conversations", "profile")
             if (secondSeg in validTabs) {
                 // Second segment is a tab name; third segment (if any) is an overlay.
@@ -258,12 +219,9 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
                     "syllabus" -> "syllabus"
                     else -> null
                 }
-                val reportDraftId = if (thirdSeg == "report-card") segments.getOrNull(3) else null
-                val feeId = if (secondSeg == "fees" && thirdSeg != null && thirdSeg != "fees") thirdSeg else null
-                val params = when {
-                    reportDraftId != null -> mapOf("draftId" to reportDraftId)
-                    feeId != null -> mapOf("feeId" to feeId)
-                    else -> emptyMap()
+                val params = parseQueryParams(queryStr).toMutableMap()
+                if (thirdSeg == "report-card") {
+                    segments.getOrNull(3)?.let { params["draftId"] = it }
                 }
                 DeepLinkTarget.ParentTab(EntryRole.Parent, secondSeg, overlay, params)
             } else {
@@ -288,17 +246,18 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
                     "link-child" -> "profile" to "link-child"
                     else -> "home" to null
                 }
-                val reportDraftId = segments.getOrNull(2)
-                DeepLinkTarget.ParentTab(EntryRole.Parent, mappedTab, mappedOverlay, if (secondSeg == "report-card" && reportDraftId != null) mapOf("draftId" to reportDraftId) else emptyMap())
+                val params = parseQueryParams(queryStr).toMutableMap()
+                if (secondSeg == "report-card") {
+                    segments.getOrNull(2)?.let { params["draftId"] = it }
+                }
+                DeepLinkTarget.ParentTab(EntryRole.Parent, mappedTab, mappedOverlay, params)
             }
         }
         "teacher" -> {
             val screen = segments.getOrNull(1) ?: "home"
             // Messages deep link with thread ID: /teacher/messages/<threadId>
             if (screen == "messages" && segments.size > 2) {
-                val tid = segments.getOrNull(2)
-                if (tid != null && !isValidUuid(tid)) return DeepLinkTarget.Generic(currentRole, path)
-                DeepLinkTarget.Messages(EntryRole.Teacher, threadId = tid)
+                DeepLinkTarget.Messages(EntryRole.Teacher, threadId = segments.getOrNull(2))
             } else {
                 // Parse query params for report-review deep links (className, section, term)
                 val params = parseQueryParams(queryStr)
@@ -309,9 +268,7 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
             val screen = segments.getOrNull(1) ?: "home"
             // Messages deep link with thread ID: /school/messages/<threadId>
             if (screen == "messages" && segments.size > 2) {
-                val tid = segments.getOrNull(2)
-                if (tid != null && !isValidUuid(tid)) return DeepLinkTarget.Generic(currentRole, path)
-                DeepLinkTarget.Messages(EntryRole.SchoolAdmin, threadId = tid)
+                DeepLinkTarget.Messages(EntryRole.SchoolAdmin, threadId = segments.getOrNull(2))
             } else {
                 var params = parseQueryParams(queryStr)
                 // Capture extra path segments as params for specific screens.
@@ -348,7 +305,6 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
         }
         "messages" -> {
             val threadId = segments.getOrNull(1)
-            if (threadId != null && !isValidUuid(threadId)) return DeepLinkTarget.Generic(currentRole, path)
             when (currentRole) {
                 EntryRole.Parent -> DeepLinkTarget.Messages(EntryRole.Parent, threadId)
                 EntryRole.Teacher -> DeepLinkTarget.Messages(EntryRole.Teacher, threadId)
@@ -359,7 +315,7 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
         "fees" -> {
             val feeId = segments.getOrNull(1)
             when (currentRole) {
-                EntryRole.Parent -> DeepLinkTarget.ParentTab(EntryRole.Parent, "fees", null, if (feeId != null) mapOf("feeId" to feeId) else emptyMap())
+                EntryRole.Parent -> DeepLinkTarget.ParentTab(EntryRole.Parent, "fees", feeId)
                 EntryRole.SchoolAdmin, EntryRole.SuperAdmin ->
                     DeepLinkTarget.SchoolScreen(currentRole, "fees", if (feeId != null) mapOf("id" to feeId) else emptyMap())
                 else -> DeepLinkTarget.Generic(currentRole, path)
@@ -376,7 +332,7 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
         }
         "scholarships" -> {
             when (currentRole) {
-                EntryRole.Parent -> DeepLinkTarget.ParentTab(EntryRole.Parent, "home", "scholarships")
+                EntryRole.Parent -> DeepLinkTarget.ParentTab(EntryRole.Parent, "scholarships")
                 EntryRole.SchoolAdmin, EntryRole.SuperAdmin ->
                     DeepLinkTarget.SchoolScreen(currentRole, "scholarships")
                 else -> DeepLinkTarget.Generic(currentRole, path)
@@ -386,7 +342,7 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
             when (currentRole) {
                 EntryRole.SchoolAdmin, EntryRole.SuperAdmin ->
                     DeepLinkTarget.SchoolScreen(currentRole, "link-requests")
-                EntryRole.Parent -> DeepLinkTarget.ParentTab(EntryRole.Parent, "profile", "link-child")
+                EntryRole.Parent -> DeepLinkTarget.ParentTab(EntryRole.Parent, "link-child")
                 else -> DeepLinkTarget.Generic(currentRole, path)
             }
         }
@@ -474,37 +430,10 @@ private fun parseQueryParams(queryStr: String): Map<String, String> {
         val idx = pair.indexOf("=")
         if (idx > 0) {
             val key = pair.substring(0, idx)
-            val rawValue = urlDecode(pair.substring(idx + 1))
-            val sanitizedValue = rawValue.filter { it.isLetterOrDigit() || it.isWhitespace() || it in ".,-_/" }.take(200)
-            key to sanitizedValue
+            val value = pair.substring(idx + 1).replace("+", " ")
+            key to value
         } else null
     }.toMap()
-}
-
-/** Validates that a string is a well-formed UUID (hyphenated or non-hyphenated). DFL-011. */
-private fun isValidUuid(s: String): Boolean {
-    val uuidRegex = Regex("^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$")
-    return uuidRegex.matches(s)
-}
-
-/** Percent-decodes a URL-encoded string (%XX → byte, + → space). */
-private fun urlDecode(s: String): String {
-    val sb = StringBuilder(s.length)
-    var i = 0
-    while (i < s.length) {
-        val c = s[i]
-        when {
-            c == '+' -> { sb.append(' '); i++ }
-            c == '%' && i + 2 < s.length -> {
-                val hex = s.substring(i + 1, i + 3)
-                val code = hex.toIntOrNull(16)
-                if (code != null) { sb.append(code.toChar()); i += 3 }
-                else { sb.append(c); i++ }
-            }
-            else -> { sb.append(c); i++ }
-        }
-    }
-    return sb.toString()
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -525,104 +454,6 @@ enum class EntryRole {
             "TEACHER" -> Teacher
             "ALUMNI" -> Alumni
             else -> Unknown
-        }
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Unauthenticated funnel:  CommonLanding → Parent/Admin auth (+ discovery/link/onboard branches)
-// ─────────────────────────────────────────────────────────────────────────────
-
-private enum class UnauthRoute { LanguageSelection, Landing, ParentAuth, AdminAuth, Discovery, ParentLinkChild, SchoolOnboarding, Legal }
-
-@OptIn(ExperimentalComposeUiApi::class)
-@Composable
-private fun UnauthFlow(modifier: Modifier = Modifier) {
-    val preferenceRepository = koinInject<PreferenceRepository>()
-    val hasLanguagePref by preferenceRepository.getLanguagePref()
-        .collectAsState(initial = "")
-
-    var route by remember { mutableStateOf(UnauthRoute.Landing) }
-    // Which legal/info document the Legal route opens on (Privacy / Terms / Help Desk).
-    var legalDoc by remember { mutableStateOf("Privacy") }
-
-    // First-launch gate: if no language preference is set, show the language
-    // selection screen before the landing page.
-    LaunchedEffect(hasLanguagePref) {
-        if (hasLanguagePref.isBlank() && route == UnauthRoute.Landing) {
-            route = UnauthRoute.LanguageSelection
-        } else if (hasLanguagePref.isNotBlank() && route == UnauthRoute.LanguageSelection) {
-            route = UnauthRoute.Landing
-        }
-    }
-
-    // System back: collapse the funnel toward the landing screen (never exit from a leaf).
-    VBackHandler(enabled = route != UnauthRoute.Landing) {
-        route = when (route) {
-            UnauthRoute.ParentAuth -> UnauthRoute.Landing
-            UnauthRoute.AdminAuth -> UnauthRoute.Landing
-            UnauthRoute.Discovery -> UnauthRoute.ParentAuth
-            UnauthRoute.ParentLinkChild -> UnauthRoute.Discovery
-            UnauthRoute.SchoolOnboarding -> UnauthRoute.AdminAuth
-            // Legal/Support is a leaf reachable from the landing footer — back returns there.
-            UnauthRoute.Legal -> UnauthRoute.Landing
-            UnauthRoute.LanguageSelection -> UnauthRoute.Landing
-            UnauthRoute.Landing -> UnauthRoute.Landing
-        }
-    }
-
-    AnimatedContent(
-        targetState = route,
-        // Funnel screens advance "deeper" → subtle forward horizontal momentum + fade.
-        transitionSpec = { VMotion.forwardSlide() },
-        label = "unauth-flow",
-        modifier = modifier,
-    ) { current ->
-        when (current) {
-            UnauthRoute.LanguageSelection -> LanguageSelectionScreen(
-                onLanguageSelected = { route = UnauthRoute.Landing },
-                modifier = modifier,
-            )
-            // The single landing surface for BOTH roles (PHASE 7). Its two role-entry cards are the
-            // only auth CTAs: "I'm a Parent" → [onParent] → OTP funnel; "School / Administration" →
-            // [onAdmin] → credential funnel (teachers sign in via the Admin path). A tap on any
-            // Featured-Institution card or Portal-access row also funnels into the matching auth
-            // screen (a school tap leads families into the parent OTP sign-in). Content (hero copy,
-            // featured schools, offerings, portals) is CMS-driven inside the screen itself via
-            // LandingViewModel + MainViewModel — both fetch in `init`, so no extra wiring is needed
-            // here; this site only supplies the navigation callbacks.
-            UnauthRoute.Landing -> CommonLandingScreen(
-                onParent = { route = UnauthRoute.ParentAuth },
-                onAdmin = { route = UnauthRoute.AdminAuth },
-                onLegal = { doc ->
-                    legalDoc = doc
-                    route = UnauthRoute.Legal
-                },
-            )
-            UnauthRoute.ParentAuth -> ParentAuthScreen(
-                onAuthSuccess = {},
-                onBack = { route = UnauthRoute.Landing },
-            )
-            UnauthRoute.AdminAuth -> AdminAuthScreen(
-                onAuthSuccess = {},
-                onBack = { route = UnauthRoute.Landing },
-            )
-            UnauthRoute.Discovery -> ParentDiscoveryScreen(
-                onExit = { route = UnauthRoute.ParentAuth },
-                onOpenSchool = { _ -> route = UnauthRoute.ParentLinkChild },
-            )
-            UnauthRoute.ParentLinkChild -> ParentLinkChildScreen(
-                onDone = { route = UnauthRoute.ParentAuth },
-                onBack = { route = UnauthRoute.Discovery },
-            )
-            UnauthRoute.SchoolOnboarding -> SchoolOnboardingScreen(
-                onComplete = { route = UnauthRoute.AdminAuth },
-                onBack = { route = UnauthRoute.AdminAuth },
-            )
-            UnauthRoute.Legal -> LegalInfoScreen(
-                onBack = { route = UnauthRoute.Landing },
-                initial = legalDoc,
-            )
         }
     }
 }
@@ -732,23 +563,20 @@ private fun AuthedFlow(
         when (current) {
             // Brief resolving frame — themed background only, no spinner flash for the common
             // (already-completed) case which resolves on the first composition.
-            AuthedRoute.Resolving -> Box(
-                modifier = modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-            }
+            AuthedRoute.Resolving -> androidx.compose.foundation.layout.Box(
+                Modifier.then(modifier),
+            ) {}
 
-            AuthedRoute.ParentLinkChild -> ParentLinkChildScreen(
+            AuthedRoute.ParentLinkChild -> ParentLinkChildScreenV2(
                 onDone = { route = AuthedRoute.Portal },
                 onBack = { route = AuthedRoute.Portal },
             )
-            AuthedRoute.SchoolOnboarding -> SchoolOnboardingScreen(
+            AuthedRoute.SchoolOnboarding -> SchoolOnboardingScreenV2(
                 resumeStep = onboardingResumeStep,
                 onComplete = { route = AuthedRoute.Portal },
                 onBack = { route = AuthedRoute.Portal },
             )
-            AuthedRoute.TeacherFirstLogin -> TeacherFirstLoginScreen(
+            AuthedRoute.TeacherFirstLogin -> TeacherFirstLoginScreenV2(
                 onDone = { route = AuthedRoute.Portal },
             )
             AuthedRoute.Portal -> RolePortal(
@@ -775,73 +603,32 @@ private fun RolePortal(
         // super_admin currently shares the school-admin operator surface (no
         // dedicated super-admin portal exists yet) — but it is no longer
         // silently dropped into the parent UI (audit §3.5).
-        EntryRole.SchoolAdmin, EntryRole.SuperAdmin -> SchoolPortalPremium(
-            onLogout = onLogout,
-            modifier = modifier,
-            deepLinkTarget = deepLinkTarget,
-            isDark = isSystemInDarkTheme(),
-        )
-        EntryRole.Teacher -> TeacherPortalShell(
+        EntryRole.SchoolAdmin, EntryRole.SuperAdmin -> SchoolPortalV2(
             onLogout = onLogout,
             modifier = modifier,
             deepLinkTarget = deepLinkTarget,
         )
-        EntryRole.Parent -> ParentPortalShell(
+        EntryRole.Teacher -> TeacherPortalV2(
+            onLogout = onLogout,
+            modifier = modifier,
+            deepLinkTarget = deepLinkTarget,
+        )
+        EntryRole.Parent -> ParentPortalV2(
             onLogout = onLogout,
             modifier = modifier,
             deepLinkTarget = deepLinkTarget,
         )
         // Authenticated but role unknown → safest default is the parent surface.
         // Alumni also use the parent portal surface until Phase 2 self-service UI ships.
-        EntryRole.Unknown -> {
-            com.littlebridge.enrollplus.util.AppLogger.e("NavGraphV2", "Unknown role detected — forcing logout")
-            LaunchedEffect(Unit) { onLogout() }
-            Box(
-                modifier = modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                    androidx.compose.material3.Text(
-                        "Unrecognised account role. Please log in again.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
-            }
-        }
-        EntryRole.Alumni -> {
-            LaunchedEffect(Unit) { onLogout() }
-            Box(
-                modifier = modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                    androidx.compose.material3.Text(
-                        "Alumni portal is not yet available. Please log in again.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
-            }
-        }
+        EntryRole.Alumni, EntryRole.Unknown -> ParentPortalV2(
+            onLogout = onLogout,
+            modifier = modifier,
+            deepLinkTarget = deepLinkTarget,
+        )
     }
 
-    // Consume the deep link once the portal is composed. The yield ensures
-    // the portal's own LaunchedEffect(deepLinkTarget, localDeepLink) runs
-    // first — clearing pendingNavigation immediately could null out
-    // deepLinkTarget before the portal processes it (CON-003 race fix).
+    // Consume the deep link once the portal is composed.
     LaunchedEffect(deepLinkTarget) {
-        if (deepLinkTarget != null) {
-            kotlinx.coroutines.yield()
-            onDeepLinkNavigated()
-        }
+        if (deepLinkTarget != null) onDeepLinkNavigated()
     }
 }

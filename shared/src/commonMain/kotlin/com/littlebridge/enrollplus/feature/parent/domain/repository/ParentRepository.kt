@@ -18,6 +18,7 @@ interface ParentRepository : NotificationFeedRepository {
     override suspend fun markAllNotificationsRead(token: String): NetworkResult<Unit>
     override suspend fun markNotificationByRef(token: String, refType: String, refId: String): NetworkResult<Unit>
     override suspend fun clearReadNotifications(token: String): NetworkResult<Unit>
+    override suspend fun clearAllNotifications(token: String): NetworkResult<Unit>
     // RA-43/RA-56: child-scoped academic reads.
     suspend fun getChildAttendance(token: String, childId: String): NetworkResult<ParentAttendanceResponse>
     suspend fun getChildMarks(token: String, childId: String): NetworkResult<ParentMarksResponse>

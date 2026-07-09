@@ -372,6 +372,8 @@ fun Route.authRouting() {
                     return@post
                 }
             } else {
+                // Check for a pre-verified OTP first (clients that call
+                // /verify-otp separately before /signup).
                 val verified = dbQuery {
                     AuthOtpsTable.selectAll()
                         .where {
@@ -391,11 +393,40 @@ fun Route.authRouting() {
                             }.singleOrNull()
                     }
                     if (verifiedAny == null) {
-                        call.fail(
-                            "Phone signup requires a verified OTP. Call /send-otp then /verify-otp first.",
-                            HttpStatusCode.BadRequest, "OTP_REQUIRED"
-                        )
-                        return@post
+                        // No pre-verified OTP — if the client sent the OTP code
+                        // in the signup body, verify it inline so the client
+                        // doesn't need a separate /verify-otp call.
+                        if (!req.otp.isNullOrBlank()) {
+                            val result = OtpService.verify(id, req.otp, "signup")
+                            val finalResult = if (result is OtpVerifyResult.NotFound) {
+                                OtpService.verify(id, req.otp, "login")
+                            } else result
+                            when (finalResult) {
+                                OtpVerifyResult.Ok -> { /* proceed to account creation */ }
+                                OtpVerifyResult.NotFound -> {
+                                    call.fail("No active OTP. Call /send-otp first.", HttpStatusCode.NotFound, "OTP_NOT_FOUND")
+                                    return@post
+                                }
+                                OtpVerifyResult.Expired -> {
+                                    call.fail("OTP expired. Please request a new one.", HttpStatusCode.Gone, "OTP_EXPIRED")
+                                    return@post
+                                }
+                                OtpVerifyResult.Locked -> {
+                                    call.fail("OTP locked. Request a new one.", HttpStatusCode.Locked, "OTP_LOCKED")
+                                    return@post
+                                }
+                                is OtpVerifyResult.Invalid -> {
+                                    call.fail("Invalid OTP. Attempts left: ${finalResult.attemptsLeft}", HttpStatusCode.Unauthorized, "OTP_INVALID")
+                                    return@post
+                                }
+                            }
+                        } else {
+                            call.fail(
+                                "Phone signup requires a verified OTP. Call /send-otp then /verify-otp first.",
+                                HttpStatusCode.BadRequest, "OTP_REQUIRED"
+                            )
+                            return@post
+                        }
                     }
                 }
             }
@@ -604,10 +635,7 @@ fun Route.authRouting() {
                     LoginThrottle.recordFailure(clientIp, id)
                     call.fail("Invalid email or password", HttpStatusCode.Unauthorized, "INVALID_CREDENTIALS")
                 } else {
-                    // Phone path can't proceed without a user + OTP; keep the
-                    // OTP-flow wording (an unknown phone reveals nothing extra
-                    // because /send-otp must succeed first anyway).
-                    call.fail("No active OTP. Call /send-otp first.", HttpStatusCode.NotFound, "OTP_NOT_FOUND")
+                    call.fail("No account found with this phone number. Please sign up first.", HttpStatusCode.NotFound, "USER_NOT_FOUND")
                 }
                 return@post
             }

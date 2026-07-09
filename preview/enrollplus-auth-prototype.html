@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enroll+ — Premium Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   DESIGN TOKENS
+   Warm cream base (Airtable warmth, Notion cleanliness)
+   No grey. No dark. Warm, alive, premium.
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  /* ── Warm Cream Base ── */
+  --cream:           #FBF8F4;
+  --cream-deep:      #F5F0E8;
+  --white:           #FFFFFF;
+
+  /* ── Warm Surfaces ── */
+  --surface:         #FBF8F4;
+  --surface-card:    #FFFFFF;
+  --surface-elevated:#FFFFFF;
+  --surface-tint:    #F8F4EF;
+  --surface-warm:    #FFF6EE;
+
+  /* ── On-surface ── */
+  --ink:             #1A1614;
+  --ink-2:           #5C544E;
+  --ink-3:           #8A8078;
+  --line:            #E8E0D6;
+  --line-soft:       #F0EAE0;
+
+  /* ── Primary — Deep violet ── */
+  --violet:          #5B41D5;
+  --violet-hover:    #4A30C4;
+  --violet-soft:     #EEE8FB;
+  --violet-ink:      #16006E;
+
+  /* ── Accent Colors (Airtable warmth) ── */
+  --coral:           #F82B60;
+  --coral-soft:      #FFE4EC;
+  --gold:            #FCB400;
+  --gold-soft:       #FFF4D1;
+  --sky:             #18BFFF;
+  --sky-soft:        #E0F6FF;
+  --mint:            #2DCE89;
+  --mint-soft:       #DCF5E8;
+
+  /* ── States ── */
+  --success:         #2D7A4A;
+  --success-soft:    #D4EDDB;
+  --error:           #BA1A1A;
+  --error-soft:      #FFDAD6;
+
+  /* ── Radii ── */
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 18px;
+  --r-xl: 24px;
+  --r-2xl: 32px;
+  --r-full: 9999px;
+
+  /* ── Spacing ── */
+  --s-xs: 4px;  --s-sm: 8px;  --s-md: 16px;
+  --s-lg: 24px; --s-xl: 32px; --s-2xl: 48px;
+
+  /* ── Type ── */
+  --font: 'Plus Jakarta Sans', -apple-system, system-ui, sans-serif;
+  --fw-r: 400; --fw-m: 500; --fw-s: 600; --fw-b: 700; --fw-eb: 800;
+
+  /* ── Motion ── */
+  --dur: 250ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:var(--font);
+  background:#0A0910;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;-webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  -webkit-tap-highlight-color:transparent;
+}
+
+/* ═══ SHELL ═══ */
+.shell{display:flex;height:100vh;width:100vw}
+
+.sidebar{
+  width:260px;background:#131218;padding:var(--s-lg) var(--s-md);
+  overflow-y:auto;flex-shrink:0;border-right:1px solid #1E1D26;
+}
+.sidebar .brand{display:flex;align-items:center;gap:10px;margin-bottom:var(--s-xl);padding:0 var(--s-sm)}
+.sidebar .brand svg{width:32px;height:32px;flex-shrink:0}
+.sidebar .brand-name{font-size:15px;font-weight:var(--fw-eb);color:#fff;letter-spacing:-0.4px}
+.sidebar .brand-name .plus{color:#6C5CE0}
+.sidebar .nav-group{
+  font-size:10px;color:#5A5764;text-transform:uppercase;
+  letter-spacing:1.4px;margin:var(--s-lg) var(--s-sm) var(--s-xs);font-weight:var(--fw-b);
+}
+.sidebar .nav-item{
+  display:flex;align-items:center;gap:10px;
+  background:transparent;border:none;color:#8A8794;
+  padding:11px var(--s-sm);border-radius:var(--r-sm);
+  font-size:13px;font-family:var(--font);font-weight:var(--fw-m);
+  text-align:left;cursor:pointer;width:100%;
+  transition:all 150ms var(--ease);
+}
+.sidebar .nav-item:hover{background:#1C1B24;color:#C0BDC8}
+.sidebar .nav-item.active{background:var(--violet);color:#fff}
+.sidebar .nav-dot{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:0.4;flex-shrink:0}
+.sidebar .nav-item.active .nav-dot{opacity:1}
+
+/* ═══ PHONE ═══ */
+.phone-wrap{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at center,#131218 0%,#0A0910 100%);
+  overflow:hidden;
+}
+.phone{
+  width:390px;height:844px;background:#000;border-radius:50px;padding:8px;
+  box-shadow:0 0 0 1.5px rgba(255,255,255,0.04),0 0 0 6px rgba(0,0,0,0.3),0 40px 100px rgba(0,0,0,0.6),0 15px 40px rgba(0,0,0,0.3);
+  flex-shrink:0;position:relative;
+}
+.screen-area{
+  width:100%;height:100%;border-radius:42px;overflow:hidden;position:relative;
+  background:var(--surface);
+}
+.island{
+  position:absolute;top:10px;left:50%;transform:translateX(-50%);
+  width:124px;height:34px;background:#000;border-radius:20px;z-index:100;
+}
+.home-bar{
+  position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
+  width:134px;height:5px;border-radius:3px;z-index:100;
+}
+
+.statusbar{
+  height:48px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 var(--s-lg);font-size:14px;font-weight:var(--fw-s);
+  color:var(--ink);flex-shrink:0;position:relative;z-index:10;
+  font-variant-numeric:tabular-nums;
+}
+.statusbar .icons{display:flex;align-items:center;gap:5px;font-size:12px}
+
+.screen{display:none;height:100%;flex-direction:column;overflow:hidden}
+.screen.active{display:flex;animation:enter 300ms var(--ease)}
+@keyframes enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden}
+.scroll::-webkit-scrollbar{display:none}
+
+/* ═══════════════════════════════════════════════════════════════
+   SPLASH — Logo + name. Clean, confident.
+   ═══════════════════════════════════════════════════════════════ */
+.splash{
+  background:var(--cream);
+  align-items:center;justify-content:center;position:relative;
+}
+.splash-name{
+  font-size:42px;font-weight:var(--fw-eb);color:var(--ink);
+  letter-spacing:-1.8px;
+  animation:splash-in 600ms var(--ease) both;
+}
+.splash-name .plus{color:var(--violet)}
+@keyframes splash-in{
+  from{opacity:0;transform:scale(0.96);filter:blur(4px)}
+  to{opacity:1;transform:scale(1);filter:blur(0)}
+}
+.splash-accent{
+  width:0;height:2px;background:var(--violet);border-radius:2px;
+  margin-top:14px;
+  animation:accent-draw 800ms var(--ease) 400ms forwards;
+}
+@keyframes accent-draw{
+  from{width:0;opacity:0}
+  to{width:48px;opacity:1}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LANDING — Premium swipeable carousel. Bold, typographic, warm cream.
+   Two slides: Parent / Staff. Big type, bottom-anchored, minimal.
+   Editorial typography, grain texture, subtle swipe hint.
+   ═══════════════════════════════════════════════════════════════ */
+.landing{
+  background:var(--cream);
+  color:var(--ink);
+  position:relative;
+}
+.landing::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.08 0 0 0 0 0.06 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity:0.5;z-index:0;
+}
+.landing-body{display:flex;flex-direction:column;height:100%;position:relative;z-index:1}
+
+/* Carousel */
+.carousel{
+  flex:1;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;
+  scroll-behavior:smooth;position:relative;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.carousel::-webkit-scrollbar{display:none}
+.carousel-slide{
+  flex:0 0 100%;scroll-snap-align:start;
+  display:flex;flex-direction:column;height:100%;
+  padding:var(--s-lg) var(--s-2xl) 0;
+  position:relative;
+}
+
+/* Top bar — wordmark + slide counter */
+.slide-top-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:var(--s-sm) 0 var(--s-lg);
+}
+.slide-wordmark{
+  font-size:16px;font-weight:var(--fw-eb);color:var(--ink);
+  letter-spacing:-0.4px;
+}
+.slide-wordmark .plus{color:var(--violet)}
+.slide-counter{
+  font-size:13px;font-weight:var(--fw-m);color:var(--ink-3);
+  font-variant-numeric:tabular-nums;letter-spacing:0.5px;
+}
+.slide-counter .current{color:var(--ink);font-weight:var(--fw-b)}
+
+/* Main content area — bottom anchored */
+.slide-main{
+  flex:1;display:flex;flex-direction:column;justify-content:flex-end;
+  padding-bottom:var(--s-2xl);
+}
+
+/* Accent label — small dot + text */
+.slide-accent-label{
+  font-size:13px;font-weight:var(--fw-b);letter-spacing:0.3px;
+  margin-bottom:var(--s-md);
+  display:flex;align-items:center;gap:7px;
+}
+.slide-accent-label::before{
+  content:'';width:5px;height:5px;border-radius:50%;
+}
+.slide-accent-label--parent{color:var(--coral)}
+.slide-accent-label--parent::before{background:var(--coral)}
+.slide-accent-label--staff{color:var(--violet)}
+.slide-accent-label--staff::before{background:var(--violet)}
+
+/* Big headline — editorial mixed-weight */
+.slide-headline{
+  font-size:44px;font-weight:var(--fw-eb);color:var(--ink);
+  letter-spacing:-1.8px;line-height:1.0;max-width:320px;
+}
+.slide-headline .light{
+  font-weight:var(--fw-r);color:var(--ink-2);
+}
+
+/* Subtitle */
+.slide-sub{
+  font-size:15px;color:var(--ink-2);
+  margin-top:var(--s-md);font-weight:var(--fw-m);line-height:1.55;max-width:300px;
+}
+
+/* Swipe hint — subtle, fades after first scroll */
+.swipe-hint{
+  position:absolute;bottom:var(--s-2xl);left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:6px;
+  font-size:12px;font-weight:var(--fw-m);color:var(--ink-3);
+  letter-spacing:0.3px;
+  animation:swipe-pulse 2s var(--ease) infinite;
+  transition:opacity 600ms var(--ease);
+  pointer-events:none;z-index:2;
+}
+.swipe-hint.hidden{opacity:0}
+.swipe-hint svg{width:14px;height:14px;stroke:var(--ink-3);stroke-width:2;fill:none}
+@keyframes swipe-pulse{
+  0%,100%{opacity:0.5;transform:translateX(-50%) translateX(0)}
+  50%{opacity:1;transform:translateX(-50%) translateX(4px)}
+}
+
+/* Bottom controls */
+.landing-controls{
+  padding:0 var(--s-2xl) var(--s-2xl);display:flex;flex-direction:column;gap:var(--s-lg);
+}
+
+/* Progress segments */
+.carousel-progress{display:flex;gap:6px}
+.carousel-progress-bar{
+  flex:1;height:2px;border-radius:1px;background:var(--line);
+  overflow:hidden;cursor:pointer;transition:background 400ms var(--ease);
+}
+.carousel-progress-bar.active{background:var(--violet)}
+
+.landing-cta-row{display:flex;flex-direction:column;gap:var(--s-sm)}
+.landing-cta-row .terms{
+  text-align:center;font-size:12px;color:var(--ink-3);
+  font-weight:var(--fw-m);margin-top:2px;line-height:1.5;
+}
+.landing-cta-row .terms a{color:var(--violet);text-decoration:none}
+
+/* Slide content stagger animation */
+.carousel-slide .slide-accent-label,
+.carousel-slide .slide-headline,
+.carousel-slide .slide-sub{
+  animation:slide-fade-up 700ms var(--ease) both;
+}
+.carousel-slide .slide-headline{animation-delay:120ms}
+.carousel-slide .slide-sub{animation-delay:240ms}
+@keyframes slide-fade-up{
+  from{opacity:0;transform:translateY(24px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* Premium CTA — subtle shadow for tactile feel */
+.landing .btn-primary{
+  box-shadow:0 2px 12px -2px rgba(91,65,213,0.25);
+}
+.landing .btn-primary:hover{
+  box-shadow:0 4px 16px -2px rgba(91,65,213,0.35);
+}
+
+/* Role dropdown — for login/signup screens */
+.role-dropdown{
+  position:relative;
+}
+.role-dropdown-trigger{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px var(--s-md);border:1.5px solid var(--line);
+  border-radius:var(--r-md);background:var(--surface-card);
+  cursor:pointer;width:100%;font-family:var(--font);
+  transition:border-color 150ms var(--ease);
+}
+.role-dropdown-trigger:hover{border-color:var(--ink-3)}
+.role-dropdown-trigger.open{border-color:var(--violet)}
+.role-dropdown-label{font-size:15px;font-weight:var(--fw-s);color:var(--ink)}
+.role-dropdown-placeholder{font-size:15px;font-weight:var(--fw-r);color:var(--ink-3)}
+.role-dropdown-chevron{
+  width:20px;height:20px;transition:transform 200ms var(--ease);
+  display:flex;align-items:center;justify-content:center;color:var(--ink-3);
+}
+.role-dropdown-trigger.open .role-dropdown-chevron{transform:rotate(180deg)}
+.role-dropdown-menu{
+  display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;
+  background:var(--surface-card);border:1px solid var(--line);
+  border-radius:var(--r-md);overflow:hidden;z-index:20;
+  box-shadow:0 8px 24px -6px rgba(0,0,0,0.12);
+}
+.role-dropdown-menu.open{display:block}
+.role-dropdown-item{
+  display:flex;align-items:center;gap:var(--s-md);padding:14px var(--s-md);
+  cursor:pointer;border:none;background:transparent;width:100%;text-align:left;
+  font-family:var(--font);transition:background 150ms;
+}
+.role-dropdown-item:hover{background:var(--surface-tint)}
+.role-dropdown-item-icon{
+  width:36px;height:36px;border-radius:var(--r-sm);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.role-dropdown-item-icon svg{width:18px;height:18px}
+.role-dropdown-item-icon--parent{background:var(--coral-soft)}
+.role-dropdown-item-icon--parent svg{stroke:var(--coral)}
+.role-dropdown-item-icon--admin{background:var(--violet-soft)}
+.role-dropdown-item-icon--admin svg{stroke:var(--violet)}
+.role-dropdown-item-text{flex:1}
+.role-dropdown-item-title{font-size:15px;font-weight:var(--fw-s);color:var(--ink)}
+.role-dropdown-item-sub{font-size:12px;color:var(--ink-3);margin-top:1px}
+.role-dropdown-item.selected{background:var(--violet-soft)}
+.role-dropdown-check{
+  width:20px;height:20px;color:var(--violet);flex-shrink:0;
+  display:none;
+}
+.role-dropdown-item.selected .role-dropdown-check{display:block}
+
+/* ═══════════════════════════════════════════════════════════════
+   AUTH — Notion-style: SSO first, then form. Clean, minimal.
+   ═══════════════════════════════════════════════════════════════ */
+.auth-body{
+  padding:var(--s-lg) var(--s-xl) var(--s-2xl);
+  display:flex;flex-direction:column;gap:var(--s-lg);flex:1;
+}
+.auth-head{text-align:center;padding-top:var(--s-md)}
+.auth-h{
+  font-size:24px;font-weight:var(--fw-eb);color:var(--ink);
+  letter-spacing:-0.5px;line-height:1.2;
+}
+.auth-p{
+  font-size:14px;color:var(--ink-2);
+  margin-top:6px;line-height:1.5;font-weight:var(--fw-m);
+}
+
+/* SSO Buttons — premium split row */
+.sso-row{display:flex;gap:var(--s-sm)}
+.sso-btn{
+  display:flex;align-items:center;justify-content:center;gap:var(--s-sm);
+  padding:13px var(--s-md);border-radius:var(--r-md);
+  font-size:14px;font-weight:var(--fw-s);font-family:var(--font);
+  border:1.5px solid var(--line);cursor:pointer;flex:1;min-height:48px;
+  background:var(--surface-card);color:var(--ink);
+  transition:all 200ms var(--ease);
+}
+.sso-btn:hover{background:var(--surface-tint);border-color:var(--ink-3);transform:translateY(-1px)}
+.sso-btn:active{transform:scale(0.97)}
+.sso-btn svg{width:20px;height:20px;flex-shrink:0}
+
+/* Divider */
+.divider{
+  display:flex;align-items:center;gap:var(--s-md);
+  color:var(--ink-3);font-size:12px;font-weight:var(--fw-m);
+  padding:var(--s-xs) 0;
+}
+.divider::before,.divider::after{
+  content:'';flex:1;height:1px;background:var(--line-soft);
+}
+
+/* Form */
+.form{display:flex;flex-direction:column;gap:var(--s-md)}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{
+  font-size:13px;font-weight:var(--fw-s);color:var(--ink-2);
+  padding-left:2px;letter-spacing:0.1px;
+}
+.input{
+  background:var(--surface-card);border:1.5px solid var(--line);
+  border-radius:var(--r-md);padding:14px var(--s-md);
+  font-size:15px;font-family:var(--font);color:var(--ink);
+  outline:none;width:100%;transition:all 200ms var(--ease);
+}
+.input:focus{border-color:var(--violet);box-shadow:0 0 0 3px var(--violet-soft)}
+.input::placeholder{color:var(--ink-3);font-weight:var(--fw-r)}
+.input-group{
+  display:flex;align-items:center;background:var(--surface-card);
+  border:1.5px solid var(--line);border-radius:var(--r-md);
+  overflow:hidden;transition:border-color 150ms var(--ease);
+}
+.input-group:focus-within{border-color:var(--violet);box-shadow:0 0 0 3px var(--violet-soft)}
+.input-group .pre{
+  padding:14px var(--s-md);font-size:15px;font-weight:var(--fw-b);
+  color:var(--ink);background:var(--surface-tint);
+  border-right:1.5px solid var(--line);flex-shrink:0;
+}
+.input-group input{
+  border:none;outline:none;flex:1;padding:14px var(--s-md);
+  font-size:15px;font-family:var(--font);color:var(--ink);background:transparent;
+}
+.select{
+  background:var(--surface-card);border:1.5px solid var(--line);
+  border-radius:var(--r-md);padding:14px var(--s-md);
+  font-size:15px;font-family:var(--font);color:var(--ink);
+  outline:none;cursor:pointer;width:100%;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238A8078' d='M6 8L2 4h8z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 16px center;
+  transition:border-color 150ms var(--ease);
+}
+.select:focus{border-color:var(--violet);box-shadow:0 0 0 3px var(--violet-soft)}
+
+/* Button */
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:var(--s-sm);
+  padding:15px var(--s-lg);border-radius:var(--r-md);
+  font-size:15px;font-weight:var(--fw-s);font-family:var(--font);
+  border:none;cursor:pointer;width:100%;min-height:52px;
+  transition:all 200ms var(--ease);letter-spacing:-0.1px;position:relative;
+}
+.btn-primary{background:var(--violet);color:#fff;box-shadow:0 4px 14px -2px rgba(91,65,213,0.35)}
+.btn-primary:hover{background:var(--violet-hover);box-shadow:0 6px 20px -2px rgba(91,65,213,0.45)}
+.btn-primary:active{transform:scale(0.98);box-shadow:0 2px 8px -2px rgba(91,65,213,0.3)}
+.btn-secondary{background:var(--surface-card);color:var(--ink);border:1.5px solid var(--line);box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+.btn-secondary:hover{background:var(--surface-tint);border-color:var(--ink-3)}
+.btn-secondary:active{transform:scale(0.98)}
+.btn-ghost{background:transparent;color:var(--violet)}
+.btn-ghost:hover{background:var(--violet-soft)}
+.btn:disabled{opacity:0.35;cursor:not-allowed;transform:none}
+
+/* Button with arrow */
+.btn-arrow{width:18px;height:18px;flex-shrink:0;transition:transform 200ms var(--ease)}
+.btn:hover .btn-arrow{transform:translateX(3px)}
+
+/* Auth footer — proper outlined button */
+.auth-footer{
+  display:flex;flex-direction:column;gap:var(--s-sm);
+  padding-top:var(--s-sm);
+}
+.auth-footer-text{text-align:center;font-size:13px;color:var(--ink-3);font-weight:var(--fw-m)}
+.btn-outline{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:12px var(--s-lg);border-radius:var(--r-md);
+  font-size:14px;font-weight:var(--fw-s);font-family:var(--font);
+  border:1.5px solid var(--line);cursor:pointer;width:100%;min-height:46px;
+  background:transparent;color:var(--ink-2);
+  transition:all 200ms var(--ease);
+}
+.btn-outline:hover{background:var(--surface-card);border-color:var(--ink-3);color:var(--ink)}
+.btn-outline:active{transform:scale(0.98)}
+
+/* Link */
+.link{
+  background:none;border:none;color:var(--violet);
+  font-size:14px;font-weight:var(--fw-b);font-family:var(--font);
+  cursor:pointer;padding:4px;transition:opacity 150ms;
+}
+.link:hover{opacity:0.7}
+
+/* Auth footer — old styles replaced */
+.auth-footer{
+  display:flex;flex-direction:column;gap:var(--s-sm);
+  padding-top:var(--s-sm);
+}
+.auth-footer-text{text-align:center;font-size:13px;color:var(--ink-3);font-weight:var(--fw-m)}
+
+/* Back header */
+.back-header{
+  display:flex;align-items:center;padding:var(--s-xs) var(--s-md);
+  min-height:48px;gap:var(--s-sm);flex-shrink:0;
+}
+.back-btn{
+  width:40px;height:40px;border-radius:var(--r-full);
+  border:none;background:transparent;color:var(--ink);
+  font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all 200ms var(--ease);flex-shrink:0;
+}
+.back-btn:hover{background:var(--surface-tint);transform:scale(1.05)}
+.back-btn:active{transform:scale(0.92)}
+
+/* Tabs */
+.tabs{display:flex;gap:var(--s-lg);border-bottom:1px solid var(--line)}
+.tab{
+  background:transparent;border:none;padding:10px 2px;
+  font-size:15px;font-weight:var(--fw-m);font-family:var(--font);
+  color:var(--ink-2);cursor:pointer;position:relative;
+  transition:color 150ms;
+}
+.tab.active{color:var(--violet);font-weight:var(--fw-b)}
+.tab.active::after{
+  content:'';position:absolute;bottom:-1px;left:0;right:0;
+  height:2.5px;background:var(--violet);border-radius:2px;
+}
+
+/* OTP */
+.otp-row{display:flex;gap:10px;justify-content:center}
+.otp-box{
+  width:48px;height:56px;border:1.5px solid var(--line);
+  border-radius:var(--r-md);text-align:center;font-size:22px;
+  font-weight:var(--fw-b);font-family:var(--font);color:var(--ink);
+  background:var(--surface-card);outline:none;
+  transition:border-color 150ms var(--ease);
+}
+.otp-box:focus{border-color:var(--violet);background:var(--violet-soft);box-shadow:0 0 0 3px var(--violet-soft)}
+.otp-box.filled{border-color:var(--violet);background:var(--violet-soft);color:var(--violet-ink)}
+
+.tab-content{display:none;flex-direction:column;gap:var(--s-md)}
+.tab-content.active{display:flex}
+.forgot-row{display:flex;justify-content:flex-end}
+
+.step{display:none;flex-direction:column;gap:var(--s-md)}
+.step.active{display:flex}
+
+.otp-section{display:none;flex-direction:column;gap:var(--s-lg);align-items:center}
+.otp-section.active{display:flex}
+.phone-section{display:flex;flex-direction:column;gap:var(--s-lg)}
+.phone-section.hidden{display:none}
+.otp-info{text-align:center;font-size:14px;color:var(--ink-2);line-height:1.6}
+.otp-info strong{color:var(--ink);font-weight:var(--fw-b)}
+.resend-row{display:flex;align-items:center;justify-content:center;gap:var(--s-sm)}
+.resend-timer{font-size:13px;color:var(--ink-3)}
+
+.info-card{
+  background:var(--surface-warm);border-radius:var(--r-md);
+  padding:var(--s-md);font-size:13px;color:var(--ink-2);line-height:1.7;
+}
+.info-card strong{color:var(--ink);font-weight:var(--fw-b)}
+
+.success{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:var(--s-md);padding:var(--s-2xl) var(--s-lg);text-align:center;
+}
+.success-icon{
+  width:72px;height:72px;border-radius:50%;
+  background:var(--success-soft);display:flex;align-items:center;
+  justify-content:center;
+  animation:pop 400ms var(--ease) both;
+}
+@keyframes pop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+.success-icon svg{width:36px;height:36px}
+.success-title{font-size:22px;font-weight:var(--fw-eb);color:var(--ink);letter-spacing:-0.5px}
+.success-msg{font-size:15px;color:var(--ink-2);line-height:1.6;font-weight:var(--fw-m)}
+
+.auth-footer{
+  display:flex;justify-content:center;align-items:center;gap:4px;
+  padding-top:var(--s-sm);
+}
+.auth-footer-text{font-size:14px;color:var(--ink-2)}
+
+/* Progress bar */
+.progress-bar{height:3px;background:var(--line);border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;background:var(--violet);border-radius:2px;transition:width 400ms var(--ease)}
+</style>
+</head>
+<body>
+
+<!-- SVG Symbols -->
+<svg style="display:none">
+  <defs>
+    <symbol id="mark" viewBox="0 0 64 64">
+      <defs>
+        <linearGradient id="ep-g" x1="16" y1="36" x2="48" y2="36" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="#544AB8"/><stop offset="0.5" stop-color="#6C5CE0"/><stop offset="1" stop-color="#544AB8"/>
+        </linearGradient>
+      </defs>
+      <rect x="2" y="2" width="60" height="60" rx="18" fill="#E6E6FA"/>
+      <rect x="2.5" y="2.5" width="59" height="59" rx="17.5" stroke="#26234D" stroke-opacity="0.06"/>
+      <path d="M16 36 Q32 16 48 36" stroke="url(#ep-g)" stroke-width="3.4" stroke-linecap="round"/>
+      <path d="M14 44 H50" stroke="#26234D" stroke-width="4" stroke-linecap="round"/>
+      <path d="M22 36 V44" stroke="#26234D" stroke-opacity="0.78" stroke-width="1.8" stroke-linecap="round"/>
+      <path d="M32 26 V44" stroke="#26234D" stroke-opacity="0.78" stroke-width="1.8" stroke-linecap="round"/>
+      <path d="M42 36 V44" stroke="#26234D" stroke-opacity="0.78" stroke-width="1.8" stroke-linecap="round"/>
+      <circle cx="16" cy="36" r="2.9" fill="#26234D"/>
+      <circle cx="48" cy="36" r="2.9" fill="#26234D"/>
+      <circle cx="32" cy="26" r="3" fill="#6C5CE0"/>
+    </symbol>
+    <symbol id="icon-parent" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="9" cy="7" r="3"/>
+      <circle cx="17" cy="7" r="3"/>
+      <path d="M3 21v-1a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v1"/>
+      <path d="M15 21v-1a4 4 0 0 1 4-4h2a4 4 0 0 1 4 4v1"/>
+    </symbol>
+    <symbol id="icon-school" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 21h18"/>
+      <path d="M5 21V7l8-4v18"/>
+      <path d="M19 21V11l-6-4"/>
+      <path d="M9 9v.01"/><path d="M9 12v.01"/><path d="M9 15v.01"/><path d="M9 18v.01"/>
+    </symbol>
+    <symbol id="icon-check" viewBox="0 0 24 24" fill="none" stroke="#2D7A4A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 13l4 4L19 7"/>
+    </symbol>
+    <symbol id="icon-google" viewBox="0 0 24 24">
+      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+    </symbol>
+    <symbol id="icon-apple" viewBox="0 0 24 24" fill="#000">
+      <path d="M17.05 12.04c-.03-2.6 2.13-3.85 2.22-3.91-1.21-1.77-3.09-2.01-3.76-2.04-1.6-.16-3.12.94-3.93.94-.81 0-2.06-.92-3.39-.89-1.74.03-3.35 1.01-4.25 2.58-1.81 3.14-.46 7.8 1.31 10.36.86 1.25 1.89 2.66 3.23 2.61 1.29-.05 1.78-.83 3.34-.83 1.56 0 2 .83 3.37.81 1.39-.03 2.27-1.29 3.12-2.55.98-1.45 1.38-2.86 1.4-2.93-.03-.01-2.69-1.03-2.71-4.09zM14.66 4.62c.71-.86 1.19-2.06 1.06-3.25-1.02.04-2.26.68-2.99 1.54-.66.76-1.23 1.98-1.08 3.15 1.14.09 2.3-.58 3.01-1.44z"/>
+    </symbol>
+    <symbol id="icon-check-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 13l4 4L19 7"/>
+    </symbol>
+    <symbol id="icon-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 9l6 6 6-6"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <img src="enrollplus-logo-dp.png" alt="Enroll+" style="width:32px;height:32px;flex-shrink:0;border-radius:8px">
+      <div class="brand-name">Enroll<span class="plus">+</span></div>
+    </div>
+    <nav>
+      <div class="nav-group">Onboarding</div>
+      <button class="nav-item active" data-nav="screen:Splash"><span class="nav-dot"></span>Splash</button>
+      <button class="nav-item" data-nav="screen:Landing"><span class="nav-dot"></span>Landing</button>
+      <div class="nav-group">Parent</div>
+      <button class="nav-item" data-nav="screen:ParentLogin"><span class="nav-dot"></span>Parent Sign In</button>
+      <button class="nav-item" data-nav="screen:ParentSignup"><span class="nav-dot"></span>Parent Sign Up</button>
+      <div class="nav-group">School Staff</div>
+      <button class="nav-item" data-nav="screen:AdminLogin"><span class="nav-dot"></span>Staff Sign In</button>
+      <button class="nav-item" data-nav="screen:AdminSignup"><span class="nav-dot"></span>School Registration</button>
+    </nav>
+  </aside>
+
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="screen-area">
+        <div class="island"></div>
+
+        <!-- ═══ SPLASH ═══ -->
+        <section class="screen splash active" data-screen="Splash">
+          <div class="splash-name">Enroll<span class="plus">+</span></div>
+          <div class="splash-accent"></div>
+          <div class="home-bar" style="background:var(--ink);opacity:0.15"></div>
+        </section>
+
+        <!-- ═══ LANDING ═══ -->
+        <section class="screen landing" data-screen="Landing">
+          <div class="statusbar"><span>9:41</span><span class="icons">●●● 100%</span></div>
+          <div class="landing-body">
+            <div class="carousel" id="landing-carousel">
+              <!-- Slide 1: Parent -->
+              <div class="carousel-slide" data-slide="0" data-target="screen:ParentLogin">
+                <div class="slide-top-bar">
+                  <div class="slide-wordmark">Enroll<span class="plus">+</span></div>
+                  <div class="slide-counter"><span class="current">01</span> / 02</div>
+                </div>
+                <div class="slide-main">
+                  <div class="slide-accent-label slide-accent-label--parent">For Parents</div>
+                  <div class="slide-headline">Every step of your child's journey, <span class="light">in your pocket.</span></div>
+                  <div class="slide-sub">Attendance, fees, progress reports and direct messages — all in one place.</div>
+                </div>
+              </div>
+              <!-- Slide 2: School Staff -->
+              <div class="carousel-slide" data-slide="1" data-target="screen:AdminLogin">
+                <div class="slide-top-bar">
+                  <div class="slide-wordmark">Enroll<span class="plus">+</span></div>
+                  <div class="slide-counter"><span class="current">02</span> / 02</div>
+                </div>
+                <div class="slide-main">
+                  <div class="slide-accent-label slide-accent-label--staff">For Schools</div>
+                  <div class="slide-headline">Run your entire school <span class="light">from one screen.</span></div>
+                  <div class="slide-sub">Students, staff, attendance, fees and communication — a single commanding dashboard.</div>
+                </div>
+              </div>
+            </div>
+            <div class="swipe-hint" id="swipe-hint">Swipe <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+            <div class="landing-controls">
+              <div class="carousel-progress">
+                <div class="carousel-progress-bar active" data-progress="0"></div>
+                <div class="carousel-progress-bar" data-progress="1"></div>
+              </div>
+              <div class="landing-cta-row">
+                <button class="btn btn-primary" id="landing-cta" data-nav="screen:ParentLogin">Continue as Parent <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+                <div class="terms">By continuing you agree to our <a>Terms</a> & <a>Privacy Policy</a></div>
+              </div>
+            </div>
+          </div>
+          <div class="home-bar" style="background:var(--ink);opacity:0.15"></div>
+        </section>
+
+        <!-- ═══ PARENT LOGIN ═══ -->
+        <section class="screen" data-screen="ParentLogin">
+          <div class="statusbar"><span>9:41</span><span class="icons">●●● 100%</span></div>
+          <div class="back-header">
+            <button class="back-btn" data-nav="screen:Landing">‹</button>
+          </div>
+          <div class="scroll">
+            <div class="auth-body">
+              <div class="auth-head" style="text-align:left">
+                <div class="auth-h">Parent Sign In</div>
+                <div class="auth-p">Enter your phone number to receive a verification code</div>
+              </div>
+
+              <!-- SSO -->
+              <div class="sso-row">
+                <button class="sso-btn"><svg><use href="#icon-google"/></svg>Google</button>
+                <button class="sso-btn"><svg><use href="#icon-apple"/></svg>Apple</button>
+              </div>
+
+              <div class="divider">or use your phone number</div>
+
+              <div class="phone-section" id="parent-phone-section">
+                <div class="form">
+                  <div class="field">
+                    <label>Phone Number</label>
+                    <div class="input-group">
+                      <span class="pre">+91</span>
+                      <input type="tel" placeholder="98765 43210" maxlength="10" id="parent-phone-input">
+                    </div>
+                  </div>
+                </div>
+                <button class="btn btn-primary" data-nav="parent-otp">Send OTP <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+              </div>
+
+              <div class="otp-section" id="parent-otp-section">
+                <div class="otp-info">Enter the 6-digit code sent to<br><strong>+91 98765 43210</strong></div>
+                <div class="otp-row">
+                  <input class="otp-box" type="text" maxlength="1">
+                  <input class="otp-box" type="text" maxlength="1">
+                  <input class="otp-box" type="text" maxlength="1">
+                  <input class="otp-box" type="text" maxlength="1">
+                  <input class="otp-box" type="text" maxlength="1">
+                  <input class="otp-box" type="text" maxlength="1">
+                </div>
+                <div class="resend-row">
+                  <span class="resend-timer" id="parent-resend-timer">Resend in 0:30</span>
+                  <button class="link" id="parent-resend-btn" style="display:none">Resend OTP</button>
+                </div>
+                <button class="btn btn-primary" data-nav="screen:Splash">Verify & Continue <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+              </div>
+
+              <div class="auth-footer">
+                <div class="auth-footer-text">New to Enroll+?</div>
+                <button class="btn-outline" data-nav="screen:ParentSignup">Create parent account</button>
+              </div>
+            </div>
+          </div>
+          <div class="home-bar" style="background:var(--ink);opacity:0.15"></div>
+        </section>
+
+        <!-- ═══ PARENT SIGNUP ═══ -->
+        <section class="screen" data-screen="ParentSignup">
+          <div class="statusbar"><span>9:41</span><span class="icons">●●● 100%</span></div>
+          <div class="back-header">
+            <button class="back-btn" data-nav="screen:ParentLogin">‹</button>
+          </div>
+          <div class="scroll">
+            <div class="auth-body">
+              <div class="auth-head" style="text-align:left">
+                <div class="auth-h">Parent Sign Up</div>
+                <div class="auth-p">Create your account to get started</div>
+              </div>
+
+              <!-- SSO -->
+              <div class="sso-row">
+                <button class="sso-btn"><svg><use href="#icon-google"/></svg>Google</button>
+                <button class="sso-btn"><svg><use href="#icon-apple"/></svg>Apple</button>
+              </div>
+
+              <div class="divider">or use your phone number</div>
+
+              <div class="progress-bar"><div class="progress-fill" id="parent-progress" style="width:50%"></div></div>
+
+              <div class="step active" id="parent-signup-step-1">
+                <div class="form">
+                  <div class="field"><label>Full Name</label><input class="input" type="text" placeholder="Priya Sharma"></div>
+                  <div class="field"><label>Phone Number</label>
+                    <div class="input-group"><span class="pre">+91</span><input type="tel" placeholder="98765 43210" maxlength="10"></div>
+                  </div>
+                </div>
+                <button class="btn btn-primary" data-nav="parent-signup-step-2">Continue <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+              </div>
+
+              <div class="step" id="parent-signup-step-2">
+                <div class="otp-info">Verify your phone number<br>Enter the 6-digit code sent to<br><strong>+91 98765 43210</strong></div>
+                <div class="otp-row">
+                  <input class="otp-box" type="text" maxlength="1">
+                  <input class="otp-box" type="text" maxlength="1">
+                  <input class="otp-box" type="text" maxlength="1">
+                  <input class="otp-box" type="text" maxlength="1">
+                  <input class="otp-box" type="text" maxlength="1">
+                  <input class="otp-box" type="text" maxlength="1">
+                </div>
+                <div class="resend-row"><span class="resend-timer">Resend in 0:30</span><button class="link" style="display:none">Resend OTP</button></div>
+                <button class="btn btn-primary" data-nav="parent-signup-success">Verify & Create <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+              </div>
+
+              <div class="step" id="parent-signup-success">
+                <div class="success">
+                  <div class="success-icon"><svg><use href="#icon-check"/></svg></div>
+                  <div class="success-title">Account Created</div>
+                  <div class="success-msg">Your account is ready. You can link your child's school after signing in.</div>
+                  <button class="btn btn-primary" data-nav="screen:Splash" style="margin-top:var(--s-md)">Continue <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+                </div>
+              </div>
+
+              <div class="auth-footer">
+                <div class="auth-footer-text">Already have an account?</div>
+                <button class="btn-outline" data-nav="screen:ParentLogin">Sign in</button>
+              </div>
+            </div>
+          </div>
+          <div class="home-bar" style="background:var(--ink);opacity:0.15"></div>
+        </section>
+
+        <!-- ═══ ADMIN LOGIN ═══ -->
+        <section class="screen" data-screen="AdminLogin">
+          <div class="statusbar"><span>9:41</span><span class="icons">●●● 100%</span></div>
+          <div class="back-header">
+            <button class="back-btn" data-nav="screen:Landing">‹</button>
+          </div>
+          <div class="scroll">
+            <div class="auth-body">
+              <div class="auth-head" style="text-align:left">
+                <div class="auth-h">Staff Sign In</div>
+                <div class="auth-p">Access your school management console</div>
+              </div>
+
+              <!-- SSO -->
+              <div class="sso-row">
+                <button class="sso-btn"><svg><use href="#icon-google"/></svg>Google</button>
+                <button class="sso-btn"><svg><use href="#icon-apple"/></svg>Apple</button>
+              </div>
+
+              <div class="divider">or sign in with credentials</div>
+
+              <div class="form">
+                <div class="field"><label>Email Address</label><input class="input" type="email" placeholder="principal@school.edu.in"></div>
+                <div class="field"><label>Password</label><input class="input" type="password" placeholder="Enter your password"></div>
+              </div>
+              <div class="forgot-row"><button class="link">Forgot password?</button></div>
+              <button class="btn btn-primary" data-nav="screen:Splash">Sign In <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+
+              <div class="auth-footer">
+                <div class="auth-footer-text">Don't have an account?</div>
+                <button class="btn-outline" data-nav="screen:AdminSignup">Register your school</button>
+              </div>
+            </div>
+          </div>
+          <div class="home-bar" style="background:var(--ink);opacity:0.15"></div>
+        </section>
+
+        <!-- ═══ ADMIN SIGNUP ═══ -->
+        <section class="screen" data-screen="AdminSignup">
+          <div class="statusbar"><span>9:41</span><span class="icons">●●● 100%</span></div>
+          <div class="back-header">
+            <button class="back-btn" data-nav="screen:AdminLogin">‹</button>
+          </div>
+          <div class="scroll">
+            <div class="auth-body">
+              <div class="auth-head" style="text-align:left">
+                <div class="auth-h">Register Your School</div>
+                <div class="auth-p">Set up your management portal in minutes</div>
+              </div>
+
+              <div class="progress-bar"><div class="progress-fill" id="admin-progress" style="width:33%"></div></div>
+
+              <div class="step active" id="admin-signup-step-1">
+                <div class="form">
+                  <div class="field"><label>School Name</label><input class="input" type="text" placeholder="Delhi Public School"></div>
+                  <div class="field"><label>Board / Affiliation</label>
+                    <select class="select"><option value="">Select board...</option><option>CBSE</option><option>ICSE</option><option>State Board</option><option>IB</option><option>Cambridge (IGCSE)</option></select>
+                  </div>
+                  <div class="field"><label>City</label><input class="input" type="text" placeholder="New Delhi"></div>
+                  <div class="field"><label>School Type</label>
+                    <select class="select"><option value="">Select type...</option><option>Pre-Primary (Nursery – KG)</option><option>Primary (Class 1 – 5)</option><option>Secondary (Class 6 – 10)</option><option>Senior Secondary (Class 11 – 12)</option><option>Full School (Nursery – 12)</option></select>
+                  </div>
+                </div>
+                <button class="btn btn-primary" data-nav="admin-signup-step-2">Continue <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+              </div>
+
+              <div class="step" id="admin-signup-step-2">
+                <div class="form">
+                  <div class="field"><label>Your Full Name</label><input class="input" type="text" placeholder="Dr. Rajesh Sharma"></div>
+                  <div class="field"><label>Your Role</label>
+                    <select class="select"><option value="">Select role...</option><option>Principal</option><option>Vice Principal</option><option>Administrator</option><option>Office Staff</option></select>
+                  </div>
+                  <div class="field"><label>Email Address</label><input class="input" type="email" placeholder="principal@dps.edu.in"></div>
+                  <div class="field"><label>Phone Number</label>
+                    <div class="input-group"><span class="pre">+91</span><input type="tel" placeholder="98765 43210" maxlength="10"></div>
+                  </div>
+                </div>
+                <button class="btn btn-primary" data-nav="admin-signup-step-3">Continue <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+              </div>
+
+              <div class="step" id="admin-signup-step-3">
+                <div class="form">
+                  <div class="field"><label>Create Password</label><input class="input" type="password" placeholder="Min. 8 characters"></div>
+                  <div class="field"><label>Confirm Password</label><input class="input" type="password" placeholder="Re-enter password"></div>
+                  <div class="info-card">
+                    <strong>Password requirements</strong><br>
+                    • At least 8 characters<br>
+                    • One uppercase letter (A–Z)<br>
+                    • One number (0–9)<br>
+                    • One special character (!@#$%)
+                  </div>
+                </div>
+                <button class="btn btn-primary" data-nav="admin-signup-success">Create Account <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+              </div>
+
+              <div class="step" id="admin-signup-success">
+                <div class="success">
+                  <div class="success-icon"><svg><use href="#icon-check"/></svg></div>
+                  <div class="success-title">School Registered</div>
+                  <div class="success-msg">Welcome to Enroll+ — your school management<br>portal is ready to set up.</div>
+                  <button class="btn btn-primary" data-nav="screen:Splash" style="margin-top:var(--s-md)">Start Onboarding <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+                </div>
+              </div>
+
+              <div class="auth-footer">
+                <div class="auth-footer-text">Already have an account?</div>
+                <button class="btn-outline" data-nav="screen:AdminLogin">Sign in</button>
+              </div>
+            </div>
+          </div>
+          <div class="home-bar" style="background:var(--ink);opacity:0.15"></div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const screens=document.querySelectorAll('.screen');
+const navItems=document.querySelectorAll('.sidebar .nav-item');
+let current='Splash';
+
+function show(name){
+  screens.forEach(s=>s.classList.remove('active'));
+  const t=document.querySelector(`[data-screen="${name}"]`);
+  if(t){t.classList.add('active');current=name;
+    navItems.forEach(n=>n.classList.remove('active'));
+    const ni=document.querySelector(`.nav-item[data-nav="screen:${name}"]`);
+    if(ni)ni.classList.add('active');
+    const sc=t.querySelector('.scroll');if(sc)sc.scrollTop=0;
+  }
+}
+
+document.querySelectorAll('[data-nav]').forEach(el=>{
+  el.addEventListener('click',e=>{
+    e.stopPropagation();
+    const nav=el.getAttribute('data-nav');
+    if(nav.startsWith('screen:')){show(nav.split(':')[1]);return}
+    if(nav==='parent-otp'){
+      document.getElementById('parent-phone-section').classList.add('hidden');
+      document.getElementById('parent-otp-section').classList.add('active');
+      timer('parent-resend-timer','parent-resend-btn');
+    }else if(nav==='admin-otp'){
+      document.getElementById('admin-otp-section').classList.add('active');
+    }else if(nav==='parent-signup-step-2'){
+      step('parent',1,2);document.getElementById('parent-progress').style.width='100%';
+    }else if(nav==='parent-signup-success'){
+      document.getElementById('parent-signup-step-2').classList.remove('active');
+      document.getElementById('parent-signup-success').classList.add('active');
+    }else if(nav==='admin-signup-step-2'){
+      step('admin',1,2);document.getElementById('admin-progress').style.width='66%';
+    }else if(nav==='admin-signup-step-3'){
+      step('admin',2,3);document.getElementById('admin-progress').style.width='100%';
+    }else if(nav==='admin-signup-success'){
+      document.getElementById('admin-signup-step-3').classList.remove('active');
+      document.getElementById('admin-signup-success').classList.add('active');
+    }
+  });
+});
+
+function step(p,f,t){
+  document.getElementById(`${p}-signup-step-${f}`).classList.remove('active');
+  document.getElementById(`${p}-signup-step-${t}`).classList.add('active');
+}
+
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    const t=tab.getAttribute('data-tab');
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+    document.getElementById(`admin-tab-${t}`).classList.add('active');
+  });
+});
+
+document.querySelectorAll('.otp-box').forEach((box,i,boxes)=>{
+  box.addEventListener('input',()=>{
+    if(box.value.length===1){box.classList.add('filled');if(i<boxes.length-1)boxes[i+1].focus()}
+    else box.classList.remove('filled');
+  });
+  box.addEventListener('keydown',e=>{if(e.key==='Backspace'&&!box.value&&i>0)boxes[i-1].focus()});
+});
+
+function timer(tid,bid){
+  let s=30;const t=document.getElementById(tid),b=document.getElementById(bid);
+  if(!t)return;t.style.display='';if(b)b.style.display='none';
+  const iv=setInterval(()=>{
+    s--;
+    if(s<=0){clearInterval(iv);t.textContent="Didn't receive it?";if(b)b.style.display=''}
+    else t.textContent=`Resend in 0:${s.toString().padStart(2,'0')}`;
+  },1000);
+}
+
+// Carousel
+const carousel=document.getElementById('landing-carousel');
+const ctaBtn=document.getElementById('landing-cta');
+const progressBars=document.querySelectorAll('.carousel-progress-bar');
+const slides=document.querySelectorAll('.carousel-slide');
+let currentSlide=0;
+
+function updateCarousel(idx){
+  currentSlide=idx;
+  progressBars.forEach((b,i)=>b.classList.toggle('active',i===idx));
+  const slide=slides[idx];
+  const target=slide.getAttribute('data-target');
+  const label=idx===0?'Continue as Parent':'Continue as School Staff';
+  ctaBtn.setAttribute('data-nav',target);
+  ctaBtn.innerHTML=label+' <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
+
+  // Re-trigger slide animations
+  slide.querySelectorAll('.slide-accent-label,.slide-headline,.slide-sub').forEach(el=>{
+    el.style.animation='none';
+    void el.offsetWidth;
+    el.style.animation='';
+  });
+}
+
+carousel.addEventListener('scroll',()=>{
+  const idx=Math.round(carousel.scrollLeft/carousel.offsetWidth);
+  if(idx!==currentSlide)updateCarousel(idx);
+  // Hide swipe hint on first scroll
+  const hint=document.getElementById('swipe-hint');
+  if(hint&&!hint.classList.contains('hidden'))hint.classList.add('hidden');
+});
+
+progressBars.forEach(bar=>{
+  bar.addEventListener('click',()=>{
+    const idx=parseInt(bar.getAttribute('data-progress'));
+    carousel.scrollTo({left:idx*carousel.offsetWidth,behavior:'smooth'});
+    updateCarousel(idx);
+  });
+});
+
+setTimeout(()=>{if(current==='Splash')show('Landing')},2000);
+document.querySelector('.splash').addEventListener('click',()=>{if(current==='Splash')show('Landing')});
+</script>
+</body>
+</html>

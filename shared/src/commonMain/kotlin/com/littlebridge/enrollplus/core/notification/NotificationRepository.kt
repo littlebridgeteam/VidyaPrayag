@@ -9,4 +9,5 @@ interface NotificationFeedRepository {
     suspend fun markAllNotificationsRead(token: String): NetworkResult<Unit>
     suspend fun markNotificationByRef(token: String, refType: String, refId: String): NetworkResult<Unit>
     suspend fun clearReadNotifications(token: String): NetworkResult<Unit>
+    suspend fun clearAllNotifications(token: String): NetworkResult<Unit>
 }
