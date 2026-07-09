@@ -43,6 +43,8 @@ data class TeacherObligationsState(
     // Honest "we couldn't read it": the strip hides rather than pretending
     // everything is done (Doc 04 §5.5 — never fabricate "all caught up").
     val unavailable: Boolean = false,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 ) {
     /** True only when the load succeeded AND there is genuinely nothing outstanding. */
     val isAllCaughtUp: Boolean
@@ -90,6 +92,8 @@ class TeacherObligationsViewModel(
                             pendingLeaveDecisions = d.pendingLeaveDecisions,
                             items = d.items,
                             unavailable = false,
+                            isStale = result.isStale,
+                            isOffline = result.isOffline,
                         )
                     }
                 }

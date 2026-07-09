@@ -53,7 +53,9 @@ data class TeacherPerformanceState(
     val accountabilityMatrix: List<FacultyAccountability> = emptyList(),
     val deptEfficiencies: List<DeptEfficiency> = emptyList(),
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class TeacherPerformanceViewModel(
@@ -75,7 +77,7 @@ class TeacherPerformanceViewModel(
             }
             when (val result = analyticsRepository.getTeacherPerformance(token)) {
                 is NetworkResult.Success -> {
-                    _state.value = parseTeacher(result.data.data).copy(isLoading = false)
+                    _state.value = parseTeacher(result.data.data).copy(isLoading = false, isStale = result.isStale, isOffline = result.isOffline)
                 }
                 is NetworkResult.Error -> {
                     AppLogger.e("TeacherPerformanceVM", "getTeacherPerformance error: ${result.message}")

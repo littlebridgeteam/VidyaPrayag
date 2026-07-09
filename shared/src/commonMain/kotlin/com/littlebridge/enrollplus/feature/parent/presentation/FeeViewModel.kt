@@ -30,7 +30,9 @@ data class FeeState(
     val overdueCount: Int = 0,
     val announcements: List<FeeAnnouncement> = emptyList(),
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class FeeViewModel(
@@ -74,7 +76,9 @@ class FeeViewModel(
                             overdueCount = data.overdueCount,
                             announcements = data.announcements.map { a ->
                                 FeeAnnouncement(a.id, a.title, a.time, a.description, a.openRate, a.engagement, a.type)
-                            }
+                            },
+                            isStale = result.isStale,
+                            isOffline = result.isOffline,
                         )
                     }
                 }

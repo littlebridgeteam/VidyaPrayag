@@ -42,6 +42,8 @@ data class LinkRequestsState(
     val error: String? = null,
     // ids currently being approved/rejected (per-row spinner / disable).
     val actingIds: Set<String> = emptySet(),
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class LinkRequestsViewModel(
@@ -80,6 +82,8 @@ class LinkRequestsViewModel(
                         requests = list,
                         // Keep the needs-review badge in sync when we're on that tab.
                         needsReviewCount = if (tab == LinkRequestTab.NEEDS_REVIEW) list.size else _state.value.needsReviewCount,
+                        isStale = result.isStale,
+                        isOffline = result.isOffline,
                     )
                     // If we're on the pending tab, opportunistically refresh the
                     // needs-review count so the badge is accurate without a switch.

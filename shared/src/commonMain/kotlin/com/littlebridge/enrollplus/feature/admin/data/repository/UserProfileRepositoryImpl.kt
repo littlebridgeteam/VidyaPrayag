@@ -1,5 +1,7 @@
 package com.littlebridge.enrollplus.feature.admin.data.repository
 
+import com.littlebridge.enrollplus.core.cache.CacheManager
+import com.littlebridge.enrollplus.core.cache.cacheFirstNetworkResult
 import com.littlebridge.enrollplus.core.model.ApiResponse
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.feature.admin.data.remote.UserProfileApi
@@ -12,9 +14,12 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.VisibilityRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.VisibilityResponse
 import com.littlebridge.enrollplus.feature.admin.domain.repository.UserProfileRepository
 
-class UserProfileRepositoryImpl(private val api: UserProfileApi) : UserProfileRepository {
+class UserProfileRepositoryImpl(
+    private val api: UserProfileApi,
+    private val cache: CacheManager,
+) : UserProfileRepository {
     override suspend fun getProfile(token: String): NetworkResult<ApiResponse<UserProfileResponse>> =
-        api.getProfile(token)
+        cacheFirstNetworkResult(cache, "admin_user_profile", ApiResponse.serializer(UserProfileResponse.serializer())) { api.getProfile(token) }
 
     override suspend fun updatePhilosophy(token: String, body: PhilosophyDetailsDto): NetworkResult<ApiResponse<Unit>> =
         api.updatePhilosophy(token, body)

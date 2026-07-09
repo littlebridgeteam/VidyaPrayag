@@ -50,7 +50,9 @@ data class AnalyticsDashboardState(
     val insights: List<InsightItem> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val parseWarning: String? = null
+    val parseWarning: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 // ---------------------------------------------------------------------------
@@ -94,7 +96,9 @@ class AnalyticsDashboardViewModel(
                         cards            = parsedCards,
                         insights         = parsedInsights,
                         isLoading        = false,
-                        parseWarning     = warning
+                        parseWarning     = warning,
+                        isStale          = result.isStale,
+                        isOffline        = result.isOffline,
                     )
                 }
                 is NetworkResult.Error -> {

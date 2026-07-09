@@ -26,6 +26,8 @@ data class TeacherTimetableState(
     val isSaving: Boolean = false,
     val errorMessage: String? = null,
     val infoMessage: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class TeacherTimetableViewModel(
@@ -54,7 +56,7 @@ class TeacherTimetableViewModel(
                 is NetworkResult.Success -> {
                     val w = result.data.data
                     _state.update {
-                        it.copy(isLoading = false, week = w.days, weekStart = w.weekStart)
+                        it.copy(isLoading = false, week = w.days, weekStart = w.weekStart, isStale = result.isStale, isOffline = result.isOffline)
                     }
                 }
                 is NetworkResult.Error -> {

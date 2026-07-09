@@ -102,6 +102,13 @@ val commonModule = module {
     // RA-S01: session-manager wraps the singleton HttpClient so logout can evict
     // the Ktor Auth plugin's in-memory bearer-token cache (clearToken()).
     single { com.littlebridge.enrollplus.core.network.SessionManager(get()) }
+    // Offline-mode: generic JSON cache manager backed by Room (or NoopCacheStorage on web)
+    single {
+        com.littlebridge.enrollplus.core.cache.CacheManager(
+            storage = get(),
+            json = Json { ignoreUnknownKeys = true; isLenient = true },
+        )
+    }
     single { KtorSchoolApi(get(), AppConfig.schoolBaseUrl) }
     single { 
         com.littlebridge.enrollplus.feature.content.data.remote.ContentApi(
@@ -300,86 +307,86 @@ val commonModule = module {
     single<com.littlebridge.enrollplus.feature.auth.domain.repository.AuthRepository> {
         // RA-S05: 4th arg = SelectedChildHolder (cleared on logout).
         // 5th arg = LocaleManager (syncs languagePref from login response).
-        com.littlebridge.enrollplus.feature.auth.data.repository.AuthRepositoryImpl(get(), get(), get(), get(), get())
+        com.littlebridge.enrollplus.feature.auth.data.repository.AuthRepositoryImpl(get(), get(), get(), get(), get(), get())
     }
     single<com.littlebridge.enrollplus.feature.parent.domain.repository.ParentRepository> {
-        com.littlebridge.enrollplus.feature.parent.data.repository.ParentRepositoryImpl(get())
+        com.littlebridge.enrollplus.feature.parent.data.repository.ParentRepositoryImpl(get(), get())
     }
     single<com.littlebridge.enrollplus.core.notification.NotificationFeedRepository> {
         get<com.littlebridge.enrollplus.feature.parent.domain.repository.ParentRepository>()
     }
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.OnboardingRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.OnboardingRepositoryImpl(get())
+        com.littlebridge.enrollplus.feature.admin.data.repository.OnboardingRepositoryImpl(get(), get())
     }
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.AdmissionRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.AdmissionRepositoryImpl(get())
+        com.littlebridge.enrollplus.feature.admin.data.repository.AdmissionRepositoryImpl(get(), get())
     }
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.MessagesRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.MessagesRepositoryImpl(get())
+        com.littlebridge.enrollplus.feature.admin.data.repository.MessagesRepositoryImpl(get(), get())
     }
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.AnnouncementsRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.AnnouncementsRepositoryImpl(get())
+        com.littlebridge.enrollplus.feature.admin.data.repository.AnnouncementsRepositoryImpl(get(), get())
     }
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.TeachersRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.TeachersRepositoryImpl(get())
+        com.littlebridge.enrollplus.feature.admin.data.repository.TeachersRepositoryImpl(get(), get())
     }
     // RA-47
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.SchoolProfileRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.SchoolProfileRepositoryImpl(get())
+        com.littlebridge.enrollplus.feature.admin.data.repository.SchoolProfileRepositoryImpl(get(), get())
     }
     // RA-45
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.StudentsRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.StudentsRepositoryImpl(get())
+        com.littlebridge.enrollplus.feature.admin.data.repository.StudentsRepositoryImpl(get(), get())
     }
     // RA-TAM: Teacher Assignment Management repository
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.TeacherAssignmentRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.TeacherAssignmentRepositoryImpl(get())
+        com.littlebridge.enrollplus.feature.admin.data.repository.TeacherAssignmentRepositoryImpl(get(), get())
     }
     // RA-S17
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.StaffRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.StaffRepositoryImpl(get())
+        com.littlebridge.enrollplus.feature.admin.data.repository.StaffRepositoryImpl(get(), get())
     }
     // RA-52
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.RecordsRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.RecordsRepositoryImpl(get())
+        com.littlebridge.enrollplus.feature.admin.data.repository.RecordsRepositoryImpl(get(), get())
     }
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.PtmRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.PtmRepositoryImpl(get())
+        com.littlebridge.enrollplus.feature.admin.data.repository.PtmRepositoryImpl(get(), get())
     }
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.CalendarRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.CalendarRepositoryImpl(get())
+        com.littlebridge.enrollplus.feature.admin.data.repository.CalendarRepositoryImpl(get(), get())
     }
     // VP-CAL: Academic Calendar platform + Academic Year management repositories
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.AcademicCalendarPlatformRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.AcademicCalendarPlatformRepositoryImpl(get())
+        com.littlebridge.enrollplus.feature.admin.data.repository.AcademicCalendarPlatformRepositoryImpl(get(), get())
     }
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.AcademicYearRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.AcademicYearRepositoryImpl(get())
+        com.littlebridge.enrollplus.feature.admin.data.repository.AcademicYearRepositoryImpl(get(), get())
     }
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.AttendanceRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.AttendanceRepositoryImpl(get())
+        com.littlebridge.enrollplus.feature.admin.data.repository.AttendanceRepositoryImpl(get(), get())
     }
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.LeaveRequestsRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.LeaveRequestsRepositoryImpl(get())
+        com.littlebridge.enrollplus.feature.admin.data.repository.LeaveRequestsRepositoryImpl(get(), get())
     }
     // RA-48: school-admin link-request queue repository.
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.LinkRequestsRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.LinkRequestsRepositoryImpl(get())
+        com.littlebridge.enrollplus.feature.admin.data.repository.LinkRequestsRepositoryImpl(get(), get())
     }
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.AnalyticsRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.AnalyticsRepositoryImpl(get())
+        com.littlebridge.enrollplus.feature.admin.data.repository.AnalyticsRepositoryImpl(get(), get())
     }
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.AdminDashboardRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.AdminDashboardRepositoryImpl(get())
+        com.littlebridge.enrollplus.feature.admin.data.repository.AdminDashboardRepositoryImpl(get(), get())
     }
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.ResultsRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.ResultsRepositoryImpl(get())
+        com.littlebridge.enrollplus.feature.admin.data.repository.ResultsRepositoryImpl(get(), get())
     }
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.UserProfileRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.UserProfileRepositoryImpl(get())
+        com.littlebridge.enrollplus.feature.admin.data.repository.UserProfileRepositoryImpl(get(), get())
     }
     single<com.littlebridge.enrollplus.feature.teacher.domain.repository.TeacherRepository> {
-        com.littlebridge.enrollplus.feature.teacher.data.repository.TeacherRepositoryImpl(get())
+        com.littlebridge.enrollplus.feature.teacher.data.repository.TeacherRepositoryImpl(get(), get())
     }
     // Notification FOUNDATION repository — delegates to NotificationApi.
     single<com.littlebridge.enrollplus.feature.notification.domain.repository.NotificationRepository> {
@@ -493,7 +500,7 @@ val commonModule = module {
         )
     }
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.SchoolDayConfigRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.SchoolDayConfigRepositoryImpl(get())
+        com.littlebridge.enrollplus.feature.admin.data.repository.SchoolDayConfigRepositoryImpl(get(), get())
     }
 
     // Timetable AI Import (OCR + text parsing)
@@ -512,7 +519,7 @@ val commonModule = module {
         )
     }
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.SchoolClassesRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.SchoolClassesRepositoryImpl(get())
+        com.littlebridge.enrollplus.feature.admin.data.repository.SchoolClassesRepositoryImpl(get(), get())
     }
 
     // UseCases

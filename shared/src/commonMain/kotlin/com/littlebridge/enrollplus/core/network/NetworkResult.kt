@@ -13,7 +13,11 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 sealed class NetworkResult<out T> {
-    data class Success<out T>(val data: T) : NetworkResult<T>()
+    data class Success<out T>(
+        val data: T,
+        val isStale: Boolean = false,
+        val isOffline: Boolean = false,
+    ) : NetworkResult<T>()
     data class Error(val message: String, val code: Int? = null) : NetworkResult<Nothing>()
     data object ConnectionError : NetworkResult<Nothing>()
 }

@@ -130,6 +130,8 @@ data class TeacherSyllabusState(
     val isApproving: Boolean = false,
     val approveError: String? = null,
     val hasDraftUnits: Boolean = false,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 ) {
     /** 0..1; 0 when nothing to cover yet (honest, never NaN). */
     val progress: Float get() = if (totalCount == 0) 0f else coveredCount.toFloat() / totalCount
@@ -175,6 +177,8 @@ class TeacherSyllabusViewModel(
                             coveredCount = d.coveredCount,
                             totalCount = d.totalCount,
                             hasDraftUnits = uiUnits.any { it.approvalStatus == "DRAFT" },
+                            isStale = result.isStale,
+                            isOffline = result.isOffline,
                         )
                     }
                 }

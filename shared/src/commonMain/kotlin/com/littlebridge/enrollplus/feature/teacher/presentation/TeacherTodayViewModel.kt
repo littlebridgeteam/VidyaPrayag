@@ -41,6 +41,8 @@ data class TeacherTodayState(
     // Resolved week (Mon–Sat) for Face C; loaded lazily alongside the day.
     val week: List<ResolvedDayUi> = emptyList(),
     val weekStart: String = "",
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 ) {
     /** True only when there is genuinely no schedule to show and it isn't a holiday. */
     val isUnseeded: Boolean
@@ -136,7 +138,7 @@ class TeacherTodayViewModel(
                 is NetworkResult.Success -> {
                     val ui = dayResult.data.data.toUi()
                     loadedDate = ui.date
-                    _state.update { it.copy(isLoading = false, error = null, day = ui) }
+                    _state.update { it.copy(isLoading = false, error = null, day = ui, isStale = dayResult.isStale, isOffline = dayResult.isOffline) }
                 }
                 is NetworkResult.Error -> {
                     _state.update { it.copy(isLoading = false, error = dayResult.message) }
@@ -152,7 +154,7 @@ class TeacherTodayViewModel(
                 is NetworkResult.Success -> {
                     val w = weekResult.data.data
                     _state.update {
-                        it.copy(week = w.days.map { d -> d.toUi() }, weekStart = w.weekStart)
+                        it.copy(week = w.days.map { d -> d.toUi() }, weekStart = w.weekStart, isStale = weekResult.isStale)
                     }
                 }
                 // A week failure is non-fatal — Face C simply shows its empty state.

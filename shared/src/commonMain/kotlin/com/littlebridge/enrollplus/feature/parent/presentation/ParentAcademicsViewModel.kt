@@ -36,42 +36,51 @@ data class ParentAcademicsState(
     val selectedChildId: String? = null,
     val childrenLoading: Boolean = false,
     val childrenError: String? = null,
+    val childrenStale: Boolean = false,
 
     val attendance: ParentAttendanceData? = null,
     val attendanceLoading: Boolean = false,
     val attendanceError: String? = null,
+    val attendanceStale: Boolean = false,
 
     val marks: ParentMarksData? = null,
     val marksLoading: Boolean = false,
     val marksError: String? = null,
+    val marksStale: Boolean = false,
 
     val syllabus: ParentSyllabusData? = null,
     val syllabusLoading: Boolean = false,
     val syllabusError: String? = null,
+    val syllabusStale: Boolean = false,
 
     // ── Agentic: syllabus V2 (typed curriculum_units with AI estimation) ──
     val syllabusV2: ParentSyllabusV2Data? = null,
     val syllabusV2Loading: Boolean = false,
     val syllabusV2Error: String? = null,
+    val syllabusV2Stale: Boolean = false,
 
     // ── Agentic: daily summary ──
     val dailySummary: ParentDailySummaryData? = null,
     val dailySummaryLoading: Boolean = false,
     val dailySummaryError: String? = null,
+    val dailySummaryStale: Boolean = false,
 
     // ── Agentic: quizzes ──
     val quizzes: List<ParentQuizDto> = emptyList(),
     val quizzesLoading: Boolean = false,
     val quizzesError: String? = null,
+    val quizzesStale: Boolean = false,
     val quizDetail: ParentQuizDetailData? = null,
     val quizDetailLoading: Boolean = false,
     val quizDetailError: String? = null,
+    val quizDetailStale: Boolean = false,
     val quizResult: QuizSubmitResponse? = null,
     val isSubmittingQuiz: Boolean = false,
     val quizSubmitError: String? = null,
     val leaderboard: QuizLeaderboardData? = null,
     val leaderboardLoading: Boolean = false,
     val leaderboardError: String? = null,
+    val leaderboardStale: Boolean = false,
 ) {
     val selectedChild: DashboardChildSummary?
         get() = children.firstOrNull { it.id == selectedChildId } ?: children.firstOrNull()
@@ -135,6 +144,7 @@ class ParentAcademicsViewModel(
                             childrenLoading = false,
                             children = children,
                             selectedChildId = keep ?: children.firstOrNull()?.id,
+                            childrenStale = result.isStale,
                         )
                     }
                     // RA-S05: seed the shared holder so other tabs converge.
@@ -171,7 +181,7 @@ class ParentAcademicsViewModel(
                 _state.update { it.copy(attendanceLoading = false, attendanceError = "Not authenticated") }; return@launch
             }
             when (val r = repository.getChildAttendance(token, resolvedChildId)) {
-                is NetworkResult.Success -> _state.update { it.copy(attendanceLoading = false, attendance = r.data.data) }
+                is NetworkResult.Success -> _state.update { it.copy(attendanceLoading = false, attendance = r.data.data, attendanceStale = r.isStale) }
                 is NetworkResult.Error -> _state.update { it.copy(attendanceLoading = false, attendanceError = r.message) }
                 is NetworkResult.ConnectionError -> _state.update { it.copy(attendanceLoading = false, attendanceError = "Connection error") }
             }
@@ -186,7 +196,7 @@ class ParentAcademicsViewModel(
                 _state.update { it.copy(marksLoading = false, marksError = "Not authenticated") }; return@launch
             }
             when (val r = repository.getChildMarks(token, resolvedChildId)) {
-                is NetworkResult.Success -> _state.update { it.copy(marksLoading = false, marks = r.data.data) }
+                is NetworkResult.Success -> _state.update { it.copy(marksLoading = false, marks = r.data.data, marksStale = r.isStale) }
                 is NetworkResult.Error -> _state.update { it.copy(marksLoading = false, marksError = r.message) }
                 is NetworkResult.ConnectionError -> _state.update { it.copy(marksLoading = false, marksError = "Connection error") }
             }
@@ -201,7 +211,7 @@ class ParentAcademicsViewModel(
                 _state.update { it.copy(syllabusLoading = false, syllabusError = "Not authenticated") }; return@launch
             }
             when (val r = repository.getChildSyllabus(token, resolvedChildId)) {
-                is NetworkResult.Success -> _state.update { it.copy(syllabusLoading = false, syllabus = r.data.data) }
+                is NetworkResult.Success -> _state.update { it.copy(syllabusLoading = false, syllabus = r.data.data, syllabusStale = r.isStale) }
                 is NetworkResult.Error -> _state.update { it.copy(syllabusLoading = false, syllabusError = r.message) }
                 is NetworkResult.ConnectionError -> _state.update { it.copy(syllabusLoading = false, syllabusError = "Connection error") }
             }
@@ -216,7 +226,7 @@ class ParentAcademicsViewModel(
                 _state.update { it.copy(syllabusV2Loading = false, syllabusV2Error = "Not authenticated") }; return@launch
             }
             when (val r = repository.getSyllabusV2(token, resolvedChildId)) {
-                is NetworkResult.Success -> _state.update { it.copy(syllabusV2Loading = false, syllabusV2 = r.data.data) }
+                is NetworkResult.Success -> _state.update { it.copy(syllabusV2Loading = false, syllabusV2 = r.data.data, syllabusV2Stale = r.isStale) }
                 is NetworkResult.Error -> _state.update { it.copy(syllabusV2Loading = false, syllabusV2Error = r.message) }
                 is NetworkResult.ConnectionError -> _state.update { it.copy(syllabusV2Loading = false, syllabusV2Error = "Connection error") }
             }
@@ -235,7 +245,7 @@ class ParentAcademicsViewModel(
                 _state.update { it.copy(dailySummaryLoading = false, dailySummaryError = "Not authenticated") }; return@launch
             }
             when (val r = repository.getDailySummary(token, resolvedChildId, date)) {
-                is NetworkResult.Success -> _state.update { it.copy(dailySummaryLoading = false, dailySummary = r.data.data) }
+                is NetworkResult.Success -> _state.update { it.copy(dailySummaryLoading = false, dailySummary = r.data.data, dailySummaryStale = r.isStale) }
                 is NetworkResult.Error -> _state.update { it.copy(dailySummaryLoading = false, dailySummaryError = r.message) }
                 is NetworkResult.ConnectionError -> _state.update { it.copy(dailySummaryLoading = false, dailySummaryError = "Connection error") }
             }
@@ -252,7 +262,7 @@ class ParentAcademicsViewModel(
                 _state.update { it.copy(quizzesLoading = false, quizzesError = "Not authenticated") }; return@launch
             }
             when (val r = repository.getQuizList(token, resolvedChildId)) {
-                is NetworkResult.Success -> _state.update { it.copy(quizzesLoading = false, quizzes = r.data.data.quizzes) }
+                is NetworkResult.Success -> _state.update { it.copy(quizzesLoading = false, quizzes = r.data.data.quizzes, quizzesStale = r.isStale) }
                 is NetworkResult.Error -> _state.update { it.copy(quizzesLoading = false, quizzesError = r.message) }
                 is NetworkResult.ConnectionError -> _state.update { it.copy(quizzesLoading = false, quizzesError = "Connection error") }
             }
@@ -266,7 +276,7 @@ class ParentAcademicsViewModel(
                 _state.update { it.copy(quizDetailLoading = false, quizDetailError = "Not authenticated") }; return@launch
             }
             when (val r = repository.getQuizDetail(token, quizId)) {
-                is NetworkResult.Success -> _state.update { it.copy(quizDetailLoading = false, quizDetail = r.data.data) }
+                is NetworkResult.Success -> _state.update { it.copy(quizDetailLoading = false, quizDetail = r.data.data, quizDetailStale = r.isStale) }
                 is NetworkResult.Error -> _state.update { it.copy(quizDetailLoading = false, quizDetailError = r.message) }
                 is NetworkResult.ConnectionError -> _state.update { it.copy(quizDetailLoading = false, quizDetailError = "Connection error") }
             }
@@ -305,7 +315,7 @@ class ParentAcademicsViewModel(
                 _state.update { it.copy(leaderboardLoading = false, leaderboardError = "Not authenticated") }; return@launch
             }
             when (val r = repository.getQuizLeaderboard(token, resolvedChildId, quizId)) {
-                is NetworkResult.Success -> _state.update { it.copy(leaderboardLoading = false, leaderboard = r.data.data) }
+                is NetworkResult.Success -> _state.update { it.copy(leaderboardLoading = false, leaderboard = r.data.data, leaderboardStale = r.isStale) }
                 is NetworkResult.Error -> _state.update { it.copy(leaderboardLoading = false, leaderboardError = r.message) }
                 is NetworkResult.ConnectionError -> _state.update { it.copy(leaderboardLoading = false, leaderboardError = "Connection error") }
             }

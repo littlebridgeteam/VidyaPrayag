@@ -1,5 +1,8 @@
 package com.littlebridge.enrollplus.feature.admin.data.repository
 
+import com.littlebridge.enrollplus.core.cache.CacheManager
+import com.littlebridge.enrollplus.core.cache.cacheFirstNetworkResult
+import com.littlebridge.enrollplus.core.model.ApiResponse
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.feature.admin.data.remote.OnboardingApi
 import com.littlebridge.enrollplus.feature.admin.domain.model.ClassDetailsResponse
@@ -18,26 +21,26 @@ import com.littlebridge.enrollplus.feature.admin.domain.repository.OnboardingRep
  * server returned `success=false` (or the data field was missing).
  */
 class OnboardingRepositoryImpl(
-    private val api: OnboardingApi
+    private val api: OnboardingApi,
+    private val cache: CacheManager,
 ) : OnboardingRepository {
 
     override suspend fun getStep(
         token: String,
         obStepType: String
     ): NetworkResult<OnboardingStepResponse> {
-        return when (val result = api.getStep(token, obStepType)) {
+        val r = cacheFirstNetworkResult(cache, "admin_ob_step_$obStepType", ApiResponse.serializer(OnboardingStepResponse.serializer())) { api.getStep(token, obStepType) }
+        return when (r) {
             is NetworkResult.Success -> {
-                val envelope = result.data
+                val envelope = r.data
                 val data = envelope.data
                 when {
-                    !envelope.success -> NetworkResult.Error(
-                        envelope.message.ifBlank { "Failed to fetch onboarding step" }
-                    )
+                    !envelope.success -> NetworkResult.Error(envelope.message.ifBlank { "Failed to fetch onboarding step" })
                     data == null -> NetworkResult.Error("No data in response")
-                    else -> NetworkResult.Success(data)
+                    else -> NetworkResult.Success(data, isStale = r.isStale, isOffline = r.isOffline)
                 }
             }
-            is NetworkResult.Error -> NetworkResult.Error(result.message, result.code)
+            is NetworkResult.Error -> NetworkResult.Error(r.message, r.code)
             is NetworkResult.ConnectionError -> NetworkResult.ConnectionError
         }
     }
@@ -67,19 +70,18 @@ class OnboardingRepositoryImpl(
         token: String,
         classId: String
     ): NetworkResult<ClassDetailsResponse> {
-        return when (val result = api.getClassDetails(token, classId)) {
+        val r = cacheFirstNetworkResult(cache, "admin_ob_class_details_$classId", ApiResponse.serializer(ClassDetailsResponse.serializer())) { api.getClassDetails(token, classId) }
+        return when (r) {
             is NetworkResult.Success -> {
-                val envelope = result.data
+                val envelope = r.data
                 val data = envelope.data
                 when {
-                    !envelope.success -> NetworkResult.Error(
-                        envelope.message.ifBlank { "Failed to fetch class details" }
-                    )
+                    !envelope.success -> NetworkResult.Error(envelope.message.ifBlank { "Failed to fetch class details" })
                     data == null -> NetworkResult.Error("No data in response")
-                    else -> NetworkResult.Success(data)
+                    else -> NetworkResult.Success(data, isStale = r.isStale, isOffline = r.isOffline)
                 }
             }
-            is NetworkResult.Error -> NetworkResult.Error(result.message, result.code)
+            is NetworkResult.Error -> NetworkResult.Error(r.message, r.code)
             is NetworkResult.ConnectionError -> NetworkResult.ConnectionError
         }
     }
@@ -87,19 +89,18 @@ class OnboardingRepositoryImpl(
     override suspend fun getStatus(
         token: String
     ): NetworkResult<OnboardingStatusResponse> {
-        return when (val result = api.getStatus(token)) {
+        val r = cacheFirstNetworkResult(cache, "admin_ob_status", ApiResponse.serializer(OnboardingStatusResponse.serializer())) { api.getStatus(token) }
+        return when (r) {
             is NetworkResult.Success -> {
-                val envelope = result.data
+                val envelope = r.data
                 val data = envelope.data
                 when {
-                    !envelope.success -> NetworkResult.Error(
-                        envelope.message.ifBlank { "Failed to fetch onboarding status" }
-                    )
+                    !envelope.success -> NetworkResult.Error(envelope.message.ifBlank { "Failed to fetch onboarding status" })
                     data == null -> NetworkResult.Error("No data in response")
-                    else -> NetworkResult.Success(data)
+                    else -> NetworkResult.Success(data, isStale = r.isStale, isOffline = r.isOffline)
                 }
             }
-            is NetworkResult.Error -> NetworkResult.Error(result.message, result.code)
+            is NetworkResult.Error -> NetworkResult.Error(r.message, r.code)
             is NetworkResult.ConnectionError -> NetworkResult.ConnectionError
         }
     }

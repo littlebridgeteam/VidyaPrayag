@@ -29,6 +29,8 @@ data class NotificationsState(
     val unreadCount: Int = 0,
     val isLoading: Boolean = false,
     val error: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class NotificationsViewModel(
@@ -70,6 +72,8 @@ class NotificationsViewModel(
                                 )
                             },
                             unreadCount = data.unreadCount,
+                            isStale = result.isStale,
+                            isOffline = result.isOffline,
                         )
                     }
                 }

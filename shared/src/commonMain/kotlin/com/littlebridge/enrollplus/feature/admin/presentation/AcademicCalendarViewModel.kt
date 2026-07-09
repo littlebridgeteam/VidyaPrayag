@@ -34,7 +34,9 @@ data class AcademicCalendarState(
     val syllabusTargets: List<SyllabusTarget> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val infoMessage: String? = null
+    val infoMessage: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class AcademicCalendarViewModel(
@@ -79,7 +81,9 @@ class AcademicCalendarViewModel(
                         conflicts = 0,   // server doesn't return conflicts count yet
                         currentDate = resolvedAnchor,
                         currentMonth = formatMonthLabel(resolvedAnchor),
-                        isLoading = false
+                        isLoading = false,
+                        isStale = result.isStale,
+                        isOffline = result.isOffline,
                     )
                 }
                 is NetworkResult.Error -> {

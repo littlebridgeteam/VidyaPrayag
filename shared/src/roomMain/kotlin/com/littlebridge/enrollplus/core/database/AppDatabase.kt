@@ -32,8 +32,9 @@ import com.littlebridge.enrollplus.feature.announcements.data.local.Announcement
         OutboxOperationEntity::class,
         AnnouncementEntity::class,
         TeacherDayCacheEntity::class,
+        CacheEntity::class,
     ],
-    version = 3,
+    version = 4,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun schoolDao(): SchoolDao
@@ -45,6 +46,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun outboxOperationDao(): OutboxOperationDao
     abstract fun announcementDao(): AnnouncementDao
     abstract fun teacherDayCacheDao(): TeacherDayCacheDao
+    abstract fun cacheDao(): CacheDao
 
     companion object
 }

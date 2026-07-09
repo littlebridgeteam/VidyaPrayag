@@ -47,6 +47,8 @@ data class ClassesSubjectsState(
     val isSaving: Boolean = false,
     val errorMessage: String? = null,
     val infoMessage: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class ClassesSubjectsViewModel(
@@ -71,7 +73,7 @@ class ClassesSubjectsViewModel(
             if (token.isNullOrBlank()) return@launch
             when (val r = teachersRepository.getTeachers(token, page = 1, pageSize = 100)) {
                 is NetworkResult.Success -> {
-                    _state.value = _state.value.copy(teachers = r.data.data?.teachers ?: emptyList())
+                    _state.value = _state.value.copy(teachers = r.data.data?.teachers ?: emptyList(), isStale = r.isStale, isOffline = r.isOffline)
                 }
                 is NetworkResult.Error -> {
                     AppLogger.e("ClassesVM", "teachers error: ${r.message}")
@@ -122,7 +124,7 @@ class ClassesSubjectsViewModel(
             when (val result = repository.listClasses(token)) {
                 is NetworkResult.Success -> {
                     val classes = result.data.data?.classes ?: emptyList()
-                    _state.value = _state.value.copy(classes = classes, isLoading = false)
+                    _state.value = _state.value.copy(classes = classes, isLoading = false, isStale = result.isStale, isOffline = result.isOffline)
                 }
                 is NetworkResult.Error -> {
                     AppLogger.e("ClassesVM", "list error: ${result.message}")
@@ -226,6 +228,8 @@ class ClassesSubjectsViewModel(
                     _state.value = _state.value.copy(
                         subjectsByClass = _state.value.subjectsByClass + (classId to subjects),
                         selectedClassId = classId,
+                        isStale = result.isStale,
+                        isOffline = result.isOffline,
                     )
                 }
                 is NetworkResult.Error -> {
@@ -332,7 +336,7 @@ class ClassesSubjectsViewModel(
             }
             when (val result = repository.getTimetable(token, classFilter)) {
                 is NetworkResult.Success -> {
-                    _state.value = _state.value.copy(timetable = result.data.data, isLoading = false)
+                    _state.value = _state.value.copy(timetable = result.data.data, isLoading = false, isStale = result.isStale, isOffline = result.isOffline)
                 }
                 is NetworkResult.Error -> {
                     AppLogger.e("ClassesVM", "timetable error: ${result.message}")
@@ -459,7 +463,7 @@ class ClassesSubjectsViewModel(
             if (token.isNullOrBlank()) return@launch
             when (val r = repository.listExceptions(token, date)) {
                 is NetworkResult.Success -> {
-                    _state.value = _state.value.copy(exceptions = r.data.data?.exceptions ?: emptyList())
+                    _state.value = _state.value.copy(exceptions = r.data.data?.exceptions ?: emptyList(), isStale = r.isStale, isOffline = r.isOffline)
                 }
                 is NetworkResult.Error -> {
                     _state.value = _state.value.copy(errorMessage = r.message)
@@ -526,7 +530,7 @@ class ClassesSubjectsViewModel(
             if (token.isNullOrBlank()) return@launch
             when (val r = repository.listChangeRequests(token, status)) {
                 is NetworkResult.Success -> {
-                    _state.value = _state.value.copy(changeRequests = r.data.data?.requests ?: emptyList())
+                    _state.value = _state.value.copy(changeRequests = r.data.data?.requests ?: emptyList(), isStale = r.isStale, isOffline = r.isOffline)
                 }
                 is NetworkResult.Error -> {
                     _state.value = _state.value.copy(errorMessage = r.message)

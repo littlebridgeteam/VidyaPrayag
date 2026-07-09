@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enroll+ — Product Launch</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--cream:#FBF8F4;--cream-deep:#F5F0E8;--white:#FFF;--surface-tint:#F8F4EF;--ink:#1A1614;--ink-2:#5C544E;--ink-3:#8A8078;--line:#E8E0D6;--line-soft:#F0EAE0;--violet:#5B41D5;--violet-hover:#4A30C4;--violet-soft:#EEE8FB;--coral:#F82B60;--coral-soft:#FFE4EC;--gold:#FCB400;--gold-soft:#FFF4D1;--sky:#18BFFF;--sky-soft:#E0F6FF;--mint:#2DCE89;--mint-soft:#DCF5E8;--success:#2D7A4A;--success-soft:#D4EDDB;--r-sm:10px;--r-md:14px;--r-lg:18px;--r-xl:24px;--r-full:9999px;--shadow-1:0 1px 2px rgba(26,22,20,.04),0 1px 3px rgba(26,22,20,.06);--shadow-2:0 2px 8px -2px rgba(26,22,20,.08),0 1px 3px rgba(26,22,20,.04);--shadow-card:0 0 0 1px rgba(232,224,214,.6),0 1px 2px rgba(26,22,20,.04),0 1px 3px rgba(26,22,20,.06);--shadow-primary:0 4px 14px -2px rgba(91,65,213,.22);--ease:cubic-bezier(.16,1,.3,1)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:#000;-webkit-font-smoothing:antialiased}
+#stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+.scene{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;opacity:0;pointer-events:none;transition:opacity 1s var(--ease)}
+.scene.active{opacity:1;pointer-events:auto}.scene.exit{opacity:0}
+#progress-track{position:fixed;bottom:0;left:0;right:0;height:3px;background:rgba(26,22,20,.06);z-index:100}
+#progress-bar{height:100%;width:0;background:linear-gradient(90deg,#5B41D5,#7C6FF0,#5B41D5);transition:width .1s linear}
+#indicators{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:100}
+.indicator{width:6px;height:6px;border-radius:50%;background:rgba(26,22,20,.15);transition:all .4s ease}
+.indicator.active{background:var(--violet);width:20px;border-radius:3px}
+#replay{position:fixed;top:20px;right:20px;z-index:100;width:40px;height:40px;border-radius:50%;border:1px solid rgba(26,22,20,.1);background:rgba(255,255,255,.8);backdrop-filter:blur(10px);color:var(--ink-2);cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .6s;font-size:16px}
+#replay.visible{opacity:1}#replay:hover{background:var(--violet-soft);color:var(--violet)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeDown{from{opacity:0;transform:translateY(-30px)}to{opacity:1;transform:translateY(0)}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+@keyframes blurIn{from{opacity:0;filter:blur(15px);transform:scale(1.05)}to{opacity:1;filter:blur(0);transform:scale(1)}}
+@keyframes slideLeft{from{opacity:0;transform:translateX(-60px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideRight{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:translateX(0)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes glow{0%,100%{filter:drop-shadow(0 0 15px rgba(91,65,213,.2))}50%{filter:drop-shadow(0 0 35px rgba(91,65,213,.4))}}
+@keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+@keyframes drawBridge{from{stroke-dashoffset:200}to{stroke-dashoffset:0}}
+@keyframes pulseDot{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes floatCard{0%,100%{transform:translateY(0) rotate(var(--rot,0deg))}50%{transform:translateY(-15px) rotate(var(--rot,0deg))}}
+.anim-fade-up{animation:fadeUp .9s var(--ease) forwards;opacity:0}
+.anim-fade-down{animation:fadeDown .9s var(--ease) forwards;opacity:0}
+.anim-scale-in{animation:scaleIn 1.1s var(--ease) forwards;opacity:0}
+.anim-blur-in{animation:blurIn 1.3s var(--ease) forwards;opacity:0}
+.anim-slide-left{animation:slideLeft .9s var(--ease) forwards;opacity:0}
+.anim-slide-right{animation:slideRight .9s var(--ease) forwards;opacity:0}
+.anim-glow{animation:glow 3s ease-in-out infinite}
+.anim-float{animation:float 4s ease-in-out infinite}
+.anim-draw{stroke-dasharray:200;animation:drawBridge 2s var(--ease) forwards}
+.anim-pulse{animation:pulseDot 1.8s infinite}
+.anim-float-card{animation:floatCard 5s ease-in-out infinite}
+.s1{animation-delay:.1s}.s2{animation-delay:.25s}.s3{animation-delay:.4s}.s4{animation-delay:.55s}.s5{animation-delay:.7s}.s6{animation-delay:.85s}.s7{animation-delay:1s}.s8{animation-delay:1.15s}
+.gradient-text{background:linear-gradient(135deg,#5B41D5,#7C6FF0,#5B41D5);background-size:200% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 3s linear infinite}
+.glow-orb{position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none}
+
+/* Chaos cards */
+.chaos-card{position:absolute;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:10px;backdrop-filter:blur(10px);white-space:nowrap}
+.chaos-card .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.chaos-card .text{font-size:13px;font-weight:600;color:rgba(255,255,255,.7)}
+.chaos-card .time{font-size:11px;color:rgba(255,255,255,.3)}
+.chaos-1{top:15%;left:8%;--rot:-4deg}.chaos-2{top:22%;right:10%;--rot:3deg}.chaos-3{top:45%;left:5%;--rot:2deg}.chaos-4{top:55%;right:8%;--rot:-3deg}.chaos-5{top:72%;left:12%;--rot:1deg}.chaos-6{top:78%;right:15%;--rot:-2deg}.chaos-7{top:35%;left:40%;--rot:-1deg}
+
+/* Feature pills */
+.feature-pill{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:9999px;background:var(--white);box-shadow:var(--shadow-1);font-size:13px;font-weight:600;color:var(--ink)}
+.feature-pill .dot{width:8px;height:8px;border-radius:50%}
+
+/* Phone */
+.phone{width:280px;height:600px;background:#000;border-radius:40px;padding:6px;box-shadow:0 0 0 1.5px rgba(255,255,255,.06),0 0 0 4px rgba(0,0,0,.3),0 25px 60px rgba(0,0,0,.2),0 8px 25px rgba(0,0,0,.12);flex-shrink:0;position:relative}
+.phone-screen{width:100%;height:100%;background:var(--cream);border-radius:34px;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.phone-island{position:absolute;top:6px;left:50%;transform:translateX(-50%);width:80px;height:22px;background:#000;border-radius:16px;z-index:100}
+.phone-statusbar{display:flex;justify-content:space-between;align-items:center;padding:8px 20px 2px;font-size:11px;font-weight:600;flex-shrink:0;z-index:10;color:var(--ink)}
+.phone-statusbar .icons{font-size:10px}
+.phone-scroll{flex:1;overflow:hidden;padding-bottom:50px}
+.phone-dock{position:absolute;bottom:0;left:0;right:0;display:flex;align-items:center;justify-content:space-around;padding:6px 4px 12px;background:var(--white);box-shadow:0 -1px 0 var(--line-soft)}
+.phone-dock .tab{display:flex;flex-direction:column;align-items:center;gap:2px}
+.phone-dock .tab-icon{width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--ink-3)}
+.phone-dock .tab-icon svg{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none}
+.phone-dock .tab-label{font-size:8px;font-weight:600;color:var(--ink-3)}
+.phone-dock .tab.active .tab-icon{background:var(--violet-soft);color:var(--violet)}
+.phone-dock .tab.active .tab-label{color:var(--violet);font-weight:700}
+
+/* Parent screen elements */
+.p-greeting{padding:4px 18px 6px}.p-greeting-hi{font-size:10px;font-weight:500;color:var(--ink-3)}.p-greeting-name{font-size:18px;font-weight:800;color:var(--ink);letter-spacing:-.4px}
+.p-hero{margin:0 14px 10px;padding:14px;background:var(--white);border-radius:16px;box-shadow:var(--shadow-1);position:relative;overflow:hidden;display:flex;align-items:center;gap:10px}
+.p-hero::before{content:'';position:absolute;top:-25px;right:-12px;width:80px;height:80px;border-radius:50%;background:var(--violet-soft);opacity:.4}
+.p-hero-avatar{width:40px;height:40px;border-radius:50%;background:var(--violet-soft);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--violet);flex-shrink:0;position:relative;z-index:1;outline:2px solid var(--white);box-shadow:0 0 0 2px var(--violet-soft)}
+.p-hero-info{flex:1;min-width:0;position:relative;z-index:1}
+.p-hero-name{font-size:13px;font-weight:800;color:var(--ink);letter-spacing:-.2px}
+.p-hero-class{font-size:10px;font-weight:500;color:var(--ink-3);margin-top:1px}
+.p-hero-tags{display:flex;gap:4px;margin-top:5px}
+.p-hero-tag{font-size:8px;font-weight:700;padding:2px 6px;border-radius:9999px}
+.p-hero-tag--house{background:var(--coral-soft);color:var(--coral)}
+.p-hero-tag--roll{background:var(--surface-tint);color:var(--ink-2)}
+
+.p-day{margin:0 14px 10px;background:var(--white);border-radius:12px;box-shadow:var(--shadow-1);padding:10px 12px;position:relative}
+.p-day::before{content:'';position:absolute;left:17px;top:10px;bottom:10px;width:2px;background:var(--line-soft);border-radius:1px;z-index:0}
+.p-period{display:flex;align-items:center;gap:8px;padding:5px 0;position:relative;z-index:1}
+.p-period-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;border:2px solid var(--line);background:var(--white);position:relative;z-index:2}
+.p-period-dot--now{background:var(--violet);border-color:var(--violet);box-shadow:0 0 0 3px var(--violet-soft);animation:pulseDot 2s infinite}
+.p-period-dot--done{background:var(--mint);border-color:var(--mint)}
+.p-period-time{font-size:9px;font-weight:600;color:var(--ink-3);min-width:32px;flex-shrink:0;font-variant-numeric:tabular-nums}
+.p-period-info{flex:1;min-width:0}
+.p-period-subject{font-size:11px;font-weight:700;color:var(--ink)}
+.p-period-teacher{font-size:9px;font-weight:500;color:var(--ink-3)}
+.p-period-status{font-size:8px;font-weight:700;padding:2px 6px;border-radius:9999px;flex-shrink:0}
+.p-period-status--now{background:var(--violet-soft);color:var(--violet)}
+.p-period-status--done{background:var(--mint-soft);color:var(--success)}
+.p-period-status--upcoming{background:var(--surface-tint);color:var(--ink-3)}
+
+.p-insights{display:flex;gap:7px;margin:0 14px 10px}
+.p-insight{flex:1;padding:10px;background:var(--white);border-radius:12px;box-shadow:var(--shadow-1);position:relative;overflow:hidden}
+.p-insight::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;border-radius:0 0 12px 12px}
+.p-insight--att::after{background:var(--mint);opacity:.6}
+.p-insight--fees::after{background:var(--coral);opacity:.6}
+.p-insight-icon{width:22px;height:22px;border-radius:7px;display:flex;align-items:center;justify-content:center;margin-bottom:6px}
+.p-insight-icon svg{width:12px;height:12px;stroke-width:2;fill:none}
+.p-insight-icon--att{background:var(--mint-soft)}.p-insight-icon--att svg{stroke:var(--success)}
+.p-insight-icon--fees{background:var(--coral-soft)}.p-insight-icon--fees svg{stroke:var(--coral)}
+.p-insight-num{font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.2px;line-height:1}
+.p-insight-label{font-size:8px;font-weight:600;color:var(--ink-3);margin-top:3px;text-transform:uppercase;letter-spacing:.3px}
+
+.p-tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin:0 14px 10px}
+.p-tile{padding:9px;background:var(--white);border-radius:12px;box-shadow:var(--shadow-1);display:flex;flex-direction:column;gap:6px}
+.p-tile-icon{width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center}
+.p-tile-icon svg{width:12px;height:12px;stroke-width:2;fill:none}
+.p-tile-icon--book{background:var(--violet-soft)}.p-tile-icon--book svg{stroke:var(--violet)}
+.p-tile-icon--bus{background:var(--mint-soft)}.p-tile-icon--bus svg{stroke:var(--success)}
+.p-tile-icon--heart{background:var(--coral-soft)}.p-tile-icon--heart svg{stroke:var(--coral)}
+.p-tile-icon--id{background:var(--surface-tint)}.p-tile-icon--id svg{stroke:var(--ink-2)}
+.p-tile-label{font-size:10px;font-weight:700;color:var(--ink)}
+.p-tile-sub{font-size:8px;font-weight:500;color:var(--ink-3)}
+
+/* Teacher screen elements */
+.t-header{display:flex;align-items:center;justify-content:space-between;padding:4px 18px 6px}
+.t-logo{font-size:15px;font-weight:800;color:var(--violet);letter-spacing:-.4px}
+.t-greeting{padding:0 18px 10px}
+.t-greeting-hi{font-size:11px;font-weight:500;color:var(--violet)}
+.t-greeting-text{font-size:19px;font-weight:800;color:var(--ink);letter-spacing:-.5px;line-height:1.2;margin-top:0}
+.t-greeting-text .accent{color:var(--violet)}
+.t-hero{margin:0 14px 10px;background:linear-gradient(135deg,var(--violet),var(--violet-hover));border-radius:20px;box-shadow:var(--shadow-primary);overflow:hidden;color:#fff}
+.t-hero-top{display:flex;align-items:center;justify-content:space-between;padding:10px 12px 4px}
+.t-hero-label{font-size:9px;font-weight:700;color:rgba(255,255,255,.75);letter-spacing:.06em;text-transform:uppercase}
+.t-hero-status{display:flex;align-items:center;gap:4px;padding:3px 7px;border-radius:9999px;background:rgba(255,255,255,.14);font-size:9px;font-weight:700;color:#fff}
+.t-hero-status::before{content:'';width:4px;height:4px;border-radius:50%;background:#fff;animation:pulseDot 1.8s infinite}
+.t-hero-body{padding:0 12px 10px}
+.t-hero-class{font-size:19px;font-weight:800;color:#fff;letter-spacing:-.4px;line-height:1.1}
+.t-hero-subject{font-size:12px;font-weight:500;color:rgba(255,255,255,.85);margin-top:3px}
+.t-hero-meta{display:flex;gap:12px;padding:10px 12px;border-top:1px solid rgba(255,255,255,.12)}
+.t-hero-meta-item{display:flex;align-items:center;gap:4px;font-size:10px;font-weight:500;color:rgba(255,255,255,.85)}
+.t-hero-meta-item svg{width:11px;height:11px;stroke:rgba(255,255,255,.7);stroke-width:2;fill:none}
+.t-hero-actions{display:flex;gap:5px;padding:0 12px 10px}
+.t-hero-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:8px;border-radius:9999px;border:none;font-family:'Inter',sans-serif;font-size:11px;font-weight:600}
+.t-hero-btn-primary{background:#fff;color:var(--violet)}
+.t-hero-btn-ghost{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2)}
+.t-hero-btn svg{width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none}
+
+.t-section{display:flex;align-items:center;justify-content:space-between;padding:6px 18px 4px}
+.t-section-title{font-size:12px;font-weight:700;color:var(--ink)}
+
+.t-timeline{display:flex;gap:6px;overflow:hidden;padding:0 14px 10px}
+.t-period-card{flex-shrink:0;width:105px;padding:10px;border-radius:14px;background:var(--white);box-shadow:var(--shadow-card)}
+.t-period-card.current{box-shadow:0 0 0 1.5px var(--violet),var(--shadow-2)}
+.t-period-time{font-size:9px;font-weight:500;color:var(--ink-3)}
+.t-period-class{font-size:13px;font-weight:800;color:var(--ink);margin-top:2px;letter-spacing:-.2px}
+.t-period-subject{font-size:10px;font-weight:500;color:var(--ink-2);margin-top:1px}
+.t-period-badge{display:inline-block;margin-top:5px;padding:2px 6px;border-radius:9999px;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.2px}
+.t-period-badge.current{background:var(--violet);color:#fff}
+.t-period-badge.done{background:var(--mint-soft);color:var(--success)}
+.t-period-badge.next{background:var(--surface-tint);color:var(--ink-2)}
+
+.t-obligations{margin:0 14px 10px;padding:10px 12px;background:var(--white);border-radius:16px;box-shadow:var(--shadow-card)}
+.t-obligations-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.t-obligations-title{font-size:13px;font-weight:700;color:var(--ink)}
+.t-obligations-num{font-size:18px;font-weight:800;color:var(--coral);letter-spacing:-.4px}
+.t-obligations-label{font-size:10px;font-weight:500;color:var(--ink-3)}
+.t-obligation-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-top:1px solid var(--line-soft)}
+.t-obligation-row:first-of-type{border-top:none}
+.t-obligation-left{display:flex;align-items:center;gap:7px}
+.t-obligation-dot{width:6px;height:6px;border-radius:50%}
+.t-obligation-label{font-size:12px;font-weight:500;color:var(--ink)}
+.t-obligation-count{font-size:11px;font-weight:700;color:var(--ink-2)}
+
+.bridge-logo{width:72px;height:72px}.bridge-logo svg{width:100%;height:100%}
+.stat-num{font-size:64px;font-weight:900;letter-spacing:-2.5px;background:linear-gradient(135deg,var(--violet),#7C6FF0);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.stat-label{font-size:14px;font-weight:500;color:var(--ink-3);margin-top:2px}
+</style>
+</head>
+<body>
+<div id="stage">
+
+<!-- SCENE 0: Chaos -->
+<div class="scene" id="scene0">
+  <div class="glow-orb" style="width:500px;height:500px;background:rgba(248,43,96,.04);top:-100px;left:-100px"></div>
+  <div class="chaos-card chaos-1 anim-float-card" style="--rot:-4deg"><div class="dot" style="background:#F82B60"></div><div class="text">Fee pending — ₹12,500</div><div class="time">2m</div></div>
+  <div class="chaos-card chaos-2 anim-float-card" style="--rot:3deg;animation-delay:.5s"><div class="dot" style="background:#FCB400"></div><div class="text">Leave request — Aarav</div><div class="time">5m</div></div>
+  <div class="chaos-card chaos-3 anim-float-card" style="--rot:2deg;animation-delay:1s"><div class="dot" style="background:#18BFFF"></div><div class="text">PTM rescheduled to 4 PM</div><div class="time">12m</div></div>
+  <div class="chaos-card chaos-4 anim-float-card" style="--rot:-3deg;animation-delay:1.5s"><div class="dot" style="background:#5B41D5"></div><div class="text">Homework not submitted</div><div class="time">18m</div></div>
+  <div class="chaos-card chaos-5 anim-float-card" style="--rot:1deg;animation-delay:2s"><div class="dot" style="background:#2DCE89"></div><div class="text">Bus delayed by 10 min</div><div class="time">25m</div></div>
+  <div class="chaos-card chaos-6 anim-float-card" style="--rot:-2deg;animation-delay:2.5s"><div class="dot" style="background:#F82B60"></div><div class="text">Attendance below 75%</div><div class="time">1h</div></div>
+  <div class="chaos-card chaos-7 anim-float-card" style="--rot:-1deg;animation-delay:3s"><div class="dot" style="background:#FCB400"></div><div class="text">Exam datesheet released</div><div class="time">3h</div></div>
+  <div style="position:relative;z-index:10;text-align:center">
+    <div class="anim-fade-up s3" style="font-size:15px;color:rgba(255,255,255,.3);font-weight:500;letter-spacing:3px;text-transform:uppercase;margin-bottom:14px">Running a school is</div>
+    <div class="anim-fade-up s4" style="font-size:60px;font-weight:900;color:#fff;letter-spacing:-2px"><span style="color:#F82B60">chaos</span></div>
+    <div class="anim-fade-up s6" style="font-size:15px;color:rgba(255,255,255,.25);margin-top:18px;max-width:400px;line-height:1.5">WhatsApp groups. Paper registers. Missed messages.<br>Fees lost in spreadsheets. Parents left in the dark.</div>
+  </div>
+</div>
+
+<!-- SCENE 1: The Question -->
+<div class="scene" id="scene1">
+  <div style="text-align:center">
+    <div class="anim-blur-in" style="font-size:48px;font-weight:800;color:rgba(255,255,255,.9);letter-spacing:-1.5px;line-height:1.15;max-width:650px">What if <span class="gradient-text">one platform</span><br>could connect them all?</div>
+    <div class="anim-fade-up s4" style="font-size:17px;color:rgba(255,255,255,.3);margin-top:22px">The office. The teachers. Every parent.</div>
+  </div>
+</div>
+
+<!-- SCENE 2: Cream Reveal -->
+<div class="scene" id="scene2">
+  <div class="glow-orb" style="width:600px;height:600px;background:rgba(91,65,213,.06);top:-200px;right:-200px"></div>
+  <div class="glow-orb" style="width:400px;height:400px;background:rgba(248,43,96,.04);bottom:-100px;left:-100px"></div>
+  <div class="anim-scale-in" style="margin-bottom:28px"><div class="bridge-logo anim-glow"><svg viewBox="0 0 64 64" fill="none"><defs><linearGradient id="s2" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#544AB8"/><stop offset=".5" stop-color="#5B41D5"/><stop offset="1" stop-color="#544AB8"/></linearGradient></defs><path class="anim-draw" d="M16 36 Q32 16 48 36" stroke="url(#s2)" stroke-width="3.4" stroke-linecap="round" fill="none"/><path d="M14 44 H50" stroke="#1A1614" stroke-width="4" stroke-linecap="round"/><path d="M22 36 V44" stroke="#1A1614" stroke-opacity=".78" stroke-width="1.8" stroke-linecap="round"/><path d="M32 26 V44" stroke="#1A1614" stroke-opacity=".78" stroke-width="1.8" stroke-linecap="round"/><path d="M42 36 V44" stroke="#1A1614" stroke-opacity=".78" stroke-width="1.8" stroke-linecap="round"/><circle cx="16" cy="36" r="2.9" fill="#1A1614"/><circle cx="48" cy="36" r="2.9" fill="#1A1614"/><circle cx="32" cy="26" r="3" fill="#5B41D5"/></svg></div></div>
+  <div class="anim-fade-up s3" style="font-size:52px;font-weight:900;color:var(--ink);letter-spacing:-2px;line-height:1.05;text-align:center">The OS for<br><span class="gradient-text">your campus.</span></div>
+  <div class="anim-fade-up s5" style="font-size:17px;font-weight:400;color:var(--ink-2);margin-top:18px;text-align:center;max-width:480px;line-height:1.5">One platform connecting your office, your teachers, and every parent.</div>
+  <div class="anim-fade-up s7" style="margin-top:32px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><div class="feature-pill"><div class="dot" style="background:var(--violet)"></div>Admin</div><div class="feature-pill"><div class="dot" style="background:var(--coral)"></div>Teacher</div><div class="feature-pill"><div class="dot" style="background:var(--mint)"></div>Parent</div></div>
+</div>
+
+<!-- SCENE 3: Parent Portal -->
+<div class="scene" id="scene3">
+  <div class="glow-orb" style="width:500px;height:500px;background:rgba(91,65,213,.05);top:-150px;right:-100px"></div>
+  <div style="display:flex;align-items:center;gap:50px">
+    <div style="text-align:right;max-width:340px">
+      <div class="anim-fade-down" style="font-size:12px;font-weight:700;color:var(--violet);letter-spacing:2px;text-transform:uppercase">For Parents</div>
+      <div class="anim-fade-up s2" style="font-size:42px;font-weight:800;color:var(--ink);letter-spacing:-1.3px;line-height:1.1;margin-top:6px">Every update.<br>One tap away.</div>
+      <div class="anim-fade-up s4" style="font-size:16px;font-weight:400;color:var(--ink-2);margin-top:12px;line-height:1.5">Attendance, marks, fees, bus tracking, homework — everything about your child in one calm feed.</div>
+      <div class="anim-fade-up s6" style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:16px"><div class="feature-pill"><div class="dot" style="background:var(--mint)"></div>Live attendance</div><div class="feature-pill"><div class="dot" style="background:var(--coral)"></div>Fee payments</div></div>
+    </div>
+    <div class="phone anim-slide-right s2">
+      <div class="phone-screen"><div class="phone-island"></div><div class="phone-statusbar"><span>9:42</span><span class="icons">5G ▮</span></div>
+        <div class="phone-scroll">
+          <div class="p-greeting"><div class="p-greeting-hi">Good morning</div><div class="p-greeting-name">Aarav's day</div></div>
+          <div class="p-hero"><div class="p-hero-avatar">A</div><div class="p-hero-info"><div class="p-hero-name">Aarav Sharma</div><div class="p-hero-class">Class 7-B · Roll 14</div><div class="p-hero-tags"><span class="p-hero-tag p-hero-tag--house">Red House</span><span class="p-hero-tag p-hero-tag--roll">Roll 14</span></div></div></div>
+          <div class="p-day">
+            <div class="p-period"><div class="p-period-dot p-period-dot--done"></div><div class="p-period-time">08:30</div><div class="p-period-info"><div class="p-period-subject">English</div><div class="p-period-teacher">Ms. Kavita</div></div><span class="p-period-status p-period-status--done">Done</span></div>
+            <div class="p-period"><div class="p-period-dot p-period-dot--now"></div><div class="p-period-time">09:30</div><div class="p-period-info"><div class="p-period-subject">Mathematics</div><div class="p-period-teacher">Mr. Rajesh</div></div><span class="p-period-status p-period-status--now">Now</span></div>
+            <div class="p-period"><div class="p-period-dot" style="border-color:var(--ink-3)"></div><div class="p-period-time">10:30</div><div class="p-period-info"><div class="p-period-subject">Science</div><div class="p-period-teacher">Ms. Priya</div></div><span class="p-period-status p-period-status--upcoming">Next</span></div>
+          </div>
+          <div class="p-insights">
+            <div class="p-insight p-insight--att"><div class="p-insight-icon p-insight-icon--att"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><div class="p-insight-num">94%</div><div class="p-insight-label">Attendance</div></div>
+            <div class="p-insight p-insight--fees"><div class="p-insight-icon p-insight-icon--fees"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="p-insight-num">₹12.5k</div><div class="p-insight-label">Fees Due</div></div>
+          </div>
+          <div class="p-tiles">
+            <div class="p-tile"><div class="p-tile-icon p-tile-icon--book"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div><div class="p-tile-label">Homework</div><div class="p-tile-sub">3 pending</div></div>
+            <div class="p-tile"><div class="p-tile-icon p-tile-icon--bus"><svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div><div class="p-tile-label">Bus Track</div><div class="p-tile-sub">On the way</div></div>
+            <div class="p-tile"><div class="p-tile-icon p-tile-icon--heart"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div><div class="p-tile-label">Health</div><div class="p-tile-sub">Pulse: Good</div></div>
+            <div class="p-tile"><div class="p-tile-icon p-tile-icon--id"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M15 8h3M15 12h3M7 16h10"/></svg></div><div class="p-tile-label">Digital ID</div><div class="p-tile-sub">View card</div></div>
+          </div>
+        </div>
+        <div class="phone-dock">
+          <div class="tab active"><div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div><div class="tab-label">Home</div></div>
+          <div class="tab"><div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div><div class="tab-label">Academics</div></div>
+          <div class="tab"><div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="tab-label">Chats</div></div>
+          <div class="tab"><div class="tab-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg></div><div class="tab-label">Profile</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 4: Teacher Portal -->
+<div class="scene" id="scene4">
+  <div class="glow-orb" style="width:500px;height:500px;background:rgba(91,65,213,.05);top:-150px;left:-100px"></div>
+  <div style="display:flex;align-items:center;gap:50px">
+    <div class="phone anim-slide-left s2">
+      <div class="phone-screen"><div class="phone-island"></div><div class="phone-statusbar"><span>12:50</span><span class="icons">5G ▮</span></div>
+        <div class="phone-scroll">
+          <div class="t-header"><div class="t-logo">Enroll<span>+</span></div></div>
+          <div class="t-greeting"><div class="t-greeting-hi">Hi Mrs. Sharma</div><div class="t-greeting-text">here's <span class="accent">your teaching</span> day</div></div>
+          <div class="t-hero">
+            <div class="t-hero-top"><div class="t-hero-label">Now teaching</div><div class="t-hero-status">In progress</div></div>
+            <div class="t-hero-body"><div class="t-hero-class">Class 7-B</div><div class="t-hero-subject">Mathematics · Quadratic Equations</div></div>
+            <div class="t-hero-meta"><div class="t-hero-meta-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>09:30–10:15</div><div class="t-hero-meta-item"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>32 students</div></div>
+            <div class="t-hero-actions"><button class="t-hero-btn t-hero-btn-primary"><svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>Attendance</button><button class="t-hero-btn t-hero-btn-ghost"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Lesson</button></div>
+          </div>
+          <div class="t-section"><div class="t-section-title">Today's schedule</div></div>
+          <div class="t-timeline">
+            <div class="t-period-card current"><div class="t-period-time">09:30</div><div class="t-period-class">7-B</div><div class="t-period-subject">Maths</div><span class="t-period-badge current">Now</span></div>
+            <div class="t-period-card"><div class="t-period-time">10:30</div><div class="t-period-class">8-A</div><div class="t-period-subject">Maths</div><span class="t-period-badge next">Next</span></div>
+            <div class="t-period-card" style="opacity:.55"><div class="t-period-time">08:30</div><div class="t-period-class">9-A</div><div class="t-period-subject">Maths</div><span class="t-period-badge done">Done</span></div>
+          </div>
+          <div class="t-obligations">
+            <div class="t-obligations-top"><div class="t-obligations-title">Pending actions</div><div><span class="t-obligations-num">4</span> <span class="t-obligations-label">need attention</span></div></div>
+            <div class="t-obligation-row"><div class="t-obligation-left"><div class="t-obligation-dot" style="background:var(--coral)"></div><div class="t-obligation-label">Mark attendance</div></div><div class="t-obligation-count">2 classes</div></div>
+            <div class="t-obligation-row"><div class="t-obligation-left"><div class="t-obligation-dot" style="background:var(--gold)"></div><div class="t-obligation-label">Review homework</div></div><div class="t-obligation-count">14 submissions</div></div>
+            <div class="t-obligation-row"><div class="t-obligation-left"><div class="t-obligation-dot" style="background:var(--sky)"></div><div class="t-obligation-label">Syllabus behind</div></div><div class="t-obligation-count">8-A</div></div>
+          </div>
+        </div>
+        <div class="phone-dock">
+          <div class="tab active"><div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div><div class="tab-label">Home</div></div>
+          <div class="tab"><div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg></div><div class="tab-label">Update</div></div>
+          <div class="tab"><div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div class="tab-label">Classes</div></div>
+          <div class="tab"><div class="tab-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg></div><div class="tab-label">Profile</div></div>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:left;max-width:340px">
+      <div class="anim-fade-down" style="font-size:12px;font-weight:700;color:var(--violet);letter-spacing:2px;text-transform:uppercase">For Teachers</div>
+      <div class="anim-fade-up s2" style="font-size:42px;font-weight:800;color:var(--ink);letter-spacing:-1.3px;line-height:1.1;margin-top:6px">Teach faster.<br>Manage less.</div>
+      <div class="anim-fade-up s4" style="font-size:16px;font-weight:400;color:var(--ink-2);margin-top:12px;line-height:1.5">Attendance in one tap. Marks, homework, lesson plans — all from one screen. No more switching apps.</div>
+      <div class="anim-fade-up s6" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px"><div class="feature-pill"><div class="dot" style="background:var(--violet)"></div>Quick attendance</div><div class="feature-pill"><div class="dot" style="background:var(--gold)"></div>Homework review</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 5: Stats -->
+<div class="scene" id="scene5">
+  <div class="glow-orb" style="width:500px;height:500px;background:rgba(91,65,213,.05);top:-150px;right:-100px"></div>
+  <div class="anim-fade-down" style="font-size:14px;font-weight:700;color:var(--violet);letter-spacing:2px;text-transform:uppercase;margin-bottom:30px">One ecosystem. Built for everyone.</div>
+  <div style="display:flex;gap:60px;align-items:center">
+    <div class="anim-fade-up s1" style="text-align:center"><div class="stat-num">18+</div><div class="stat-label">Features</div></div>
+    <div class="anim-fade-up s3" style="text-align:center"><div class="stat-num">3</div><div class="stat-label">Portals</div></div>
+    <div class="anim-fade-up s5" style="text-align:center"><div class="stat-num">5</div><div class="stat-label">Platforms</div></div>
+  </div>
+  <div class="anim-fade-up s7" style="margin-top:35px;font-size:15px;color:var(--ink-3);text-align:center;max-width:450px;line-height:1.5">Android, iOS, Web, Desktop, and Server —<br>one codebase, zero compromises.</div>
+</div>
+
+<!-- SCENE 6: Final Brand -->
+<div class="scene" id="scene6">
+  <div class="glow-orb" style="width:600px;height:600px;background:rgba(91,65,213,.06);top:-200px;right:-200px"></div>
+  <div class="glow-orb" style="width:400px;height:400px;background:rgba(248,43,96,.04);bottom:-100px;left:-100px"></div>
+  <div class="anim-scale-in" style="margin-bottom:24px"><div class="bridge-logo anim-glow anim-float"><svg viewBox="0 0 64 64" fill="none"><defs><linearGradient id="s6" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#544AB8"/><stop offset=".5" stop-color="#5B41D5"/><stop offset="1" stop-color="#544AB8"/></linearGradient></defs><path d="M16 36 Q32 16 48 36" stroke="url(#s6)" stroke-width="3.4" stroke-linecap="round" fill="none"/><path d="M14 44 H50" stroke="#1A1614" stroke-width="4" stroke-linecap="round"/><path d="M22 36 V44" stroke="#1A1614" stroke-opacity=".78" stroke-width="1.8" stroke-linecap="round"/><path d="M32 26 V44" stroke="#1A1614" stroke-opacity=".78" stroke-width="1.8" stroke-linecap="round"/><path d="M42 36 V44" stroke="#1A1614" stroke-opacity=".78" stroke-width="1.8" stroke-linecap="round"/><circle cx="16" cy="36" r="2.9" fill="#1A1614"/><circle cx="48" cy="36" r="2.9" fill="#1A1614"/><circle cx="32" cy="26" r="3" fill="#5B41D5"/></svg></div></div>
+  <div class="anim-blur-in" style="font-size:56px;font-weight:900;color:var(--ink);letter-spacing:-2px">Enroll<span style="color:var(--violet)">+</span></div>
+  <div class="anim-fade-up s2" style="font-size:24px;font-weight:300;color:var(--ink-2);margin-top:10px">The OS for your campus.</div>
+  <div class="anim-fade-up s4" style="font-size:13px;color:var(--ink-3);letter-spacing:2px;text-transform:uppercase;margin-top:30px">Available now</div>
+</div>
+
+</div>
+
+<div id="progress-track"><div id="progress-bar"></div></div>
+<div id="indicators"><div class="indicator active"></div><div class="indicator"></div><div class="indicator"></div><div class="indicator"></div><div class="indicator"></div><div class="indicator"></div><div class="indicator"></div></div>
+<button id="replay" onclick="replay()">&#x21bb;</button>
+
+<script>
+const scenes=[
+  {id:'scene0',duration:4500},
+  {id:'scene1',duration:4000},
+  {id:'scene2',duration:5000},
+  {id:'scene3',duration:5500},
+  {id:'scene4',duration:5500},
+  {id:'scene5',duration:4000},
+  {id:'scene6',duration:5000}
+];
+let currentScene=0,startTime=0,rafId=null,isPlaying=false,paused=false,pauseTime=0;
+const totalTime=scenes.reduce((s,x)=>s+x.duration,0);
+const indicators=document.querySelectorAll('.indicator');
+const progressBar=document.getElementById('progress-bar');
+const replayBtn=document.getElementById('replay');
+
+function showScene(i){
+  scenes.forEach((s,j)=>{
+    const el=document.getElementById(s.id);
+    if(j===i){el.classList.remove('exit');el.classList.add('active');
+      el.querySelectorAll('[class*="anim-"]').forEach(c=>{const cls=c.className;c.className='';void c.offsetWidth;c.className=cls;});
+    }else if(j<i){el.classList.remove('active');el.classList.add('exit');}
+    else{el.classList.remove('active','exit');}
+  });
+  indicators.forEach((ind,j)=>ind.classList.toggle('active',j===i));
+}
+
+function loop(ts){
+  if(!startTime)startTime=ts;
+  const elapsed=ts-startTime;
+  progressBar.style.width=Math.min(elapsed/totalTime,1)*100+'%';
+  let acc=0,idx=0;
+  for(let i=0;i<scenes.length;i++){acc+=scenes[i].duration;if(elapsed<acc){idx=i;break;}idx=i;}
+  if(idx!==currentScene){currentScene=idx;showScene(currentScene);}
+  if(elapsed<totalTime){rafId=requestAnimationFrame(loop);}
+  else{isPlaying=false;replayBtn.classList.add('visible');}
+}
+
+function start(){cancelAnimationFrame(rafId);startTime=0;currentScene=0;isPlaying=true;paused=false;replayBtn.classList.remove('visible');showScene(0);rafId=requestAnimationFrame(loop);}
+function replay(){start();}
+
+window.addEventListener('load',()=>setTimeout(start,300));
+document.addEventListener('click',e=>{if(!isPlaying&&e.target.id!=='replay')start();});
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'){e.preventDefault();
+    if(!paused){paused=true;pauseTime=performance.now();cancelAnimationFrame(rafId);}
+    else{paused=false;startTime+=performance.now()-pauseTime;rafId=requestAnimationFrame(loop);}
+  }else if(e.code==='KeyR')start();
+});
+</script>
+</body>
+</html>

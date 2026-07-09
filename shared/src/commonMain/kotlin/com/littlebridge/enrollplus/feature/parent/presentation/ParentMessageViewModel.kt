@@ -33,6 +33,8 @@ data class ParentMessageState(
     val threads: List<ParentMessageThreadDto> = emptyList(),
     val loading: Boolean = false,
     val error: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 
     // open conversation
     val openThreadId: String? = null,
@@ -40,6 +42,7 @@ data class ParentMessageState(
     val messages: List<ParentMessageDto> = emptyList(),
     val conversationLoading: Boolean = false,
     val conversationError: String? = null,
+    val conversationStale: Boolean = false,
 
     // compose (reply)
     val sending: Boolean = false,
@@ -87,7 +90,7 @@ class ParentMessageViewModel(
             }
             when (val r = repository.getMessageThreads(token)) {
                 is NetworkResult.Success ->
-                    _state.update { it.copy(loading = false, threads = r.data.data.threads) }
+                    _state.update { it.copy(loading = false, threads = r.data.data.threads, isStale = r.isStale, isOffline = r.isOffline) }
                 is NetworkResult.Error ->
                     _state.update { it.copy(loading = false, error = r.message) }
                 is NetworkResult.ConnectionError ->
@@ -121,6 +124,7 @@ class ParentMessageViewModel(
                             conversationLoading = false,
                             messages = data?.messages ?: emptyList(),
                             openThreadName = data?.senderName ?: fallbackName,
+                            conversationStale = r.isStale,
                         )
                     }
                     // opening clears the unread badge server-side; refresh the list.

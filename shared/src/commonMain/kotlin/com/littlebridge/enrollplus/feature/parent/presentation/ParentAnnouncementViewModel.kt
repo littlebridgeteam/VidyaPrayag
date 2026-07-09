@@ -25,7 +25,9 @@ data class ParentAnnouncementState(
     val announcements: List<ParentAnnouncement> = emptyList(),
     val isWhatsAppSyncEnabled: Boolean = false,
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class ParentAnnouncementViewModel(
@@ -53,7 +55,9 @@ class ParentAnnouncementViewModel(
                                     announcements = data.announcements.map { a ->
                                         ParentAnnouncement(a.id, a.title, a.description, a.date, a.category, a.isFeatured, a.imageUrl)
                                     },
-                                    isWhatsAppSyncEnabled = data.isWhatsAppSyncEnabled
+                                    isWhatsAppSyncEnabled = data.isWhatsAppSyncEnabled,
+                                    isStale = result.isStale,
+                                    isOffline = result.isOffline,
                                 )
                             }
                         }

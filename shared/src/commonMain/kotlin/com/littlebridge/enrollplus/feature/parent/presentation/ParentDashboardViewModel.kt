@@ -86,16 +86,20 @@ data class ParentDashboardState(
     val alerts: List<DashboardAlertDto> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 
     // attendance
     val attendance: ParentAttendanceData? = null,
     val today: TodayAttendance = TodayAttendance(AttendanceDayState.NoData),
     val attendanceLoading: Boolean = false,
+    val attendanceStale: Boolean = false,
 
     // timetable (today + full week)
     val timetable: ParentTimetableData? = null,
     val todayPeriods: List<LivePeriod> = emptyList(),
     val timetableLoading: Boolean = false,
+    val timetableStale: Boolean = false,
 
     // covered today (syllabus)
     val syllabus: ParentSyllabusData? = null,
@@ -103,6 +107,7 @@ data class ParentDashboardState(
     /** True once the school day is over → the "covered today" card shows its summary state. */
     val schoolDayEnded: Boolean = false,
     val syllabusLoading: Boolean = false,
+    val syllabusStale: Boolean = false,
 
     // marks (academics card)
     val latestMark: ParentMarkDto? = null,
@@ -110,10 +115,12 @@ data class ParentDashboardState(
     /** Recent scored marks for the same subject as [latestMark], oldest→newest, for the sparkline. */
     val markTrend: List<Double> = emptyList(),
     val marksLoading: Boolean = false,
+    val marksStale: Boolean = false,
 
     // fees (fees card)
     val fees: FeeData? = null,
     val feesLoading: Boolean = false,
+    val feesStale: Boolean = false,
 ) {
     val selectedChild: DashboardChildSummary?
         get() = children.firstOrNull { it.id == selectedChildId } ?: children.firstOrNull()
@@ -166,6 +173,8 @@ class ParentDashboardViewModel(
                             alerts = data.alerts,
                             children = children,
                             selectedChildId = resolved,
+                            isStale = result.isStale,
+                            isOffline = result.isOffline,
                         )
                     }
                     resolved?.let { loadChildData(it) }
@@ -228,7 +237,7 @@ class ParentDashboardViewModel(
             _state.update { it.copy(feesLoading = true) }
             val token = token() ?: run { _state.update { it.copy(feesLoading = false) }; return@launch }
             when (val r = repository.getFees(token, childId)) {
-                is NetworkResult.Success -> _state.update { it.copy(feesLoading = false, fees = r.data.data) }
+                is NetworkResult.Success -> _state.update { it.copy(feesLoading = false, fees = r.data.data, feesStale = r.isStale) }
                 else -> _state.update { it.copy(feesLoading = false) }
             }
         }
@@ -245,6 +254,7 @@ class ParentDashboardViewModel(
                         attendanceLoading = false,
                         attendance = data,
                         today = resolveToday(data),
+                        attendanceStale = r.isStale,
                     )
                 }
                 else -> _state.update { it.copy(attendanceLoading = false) }
@@ -270,6 +280,7 @@ class ParentDashboardViewModel(
                         timetable = data,
                         todayPeriods = if (isNonSchoolDay) emptyList() else computeTodayPeriods(data),
                         schoolDayEnded = if (isNonSchoolDay) true else computeSchoolDayEnded(data),
+                        timetableStale = r.isStale,
                     )
                 }
                 else -> _state.update { it.copy(timetableLoading = false) }
@@ -288,6 +299,7 @@ class ParentDashboardViewModel(
                         syllabusLoading = false,
                         syllabus = data,
                         coveredToday = computeCoveredToday(data),
+                        syllabusStale = r.isStale,
                     )
                 }
                 else -> _state.update { it.copy(syllabusLoading = false) }
@@ -317,7 +329,7 @@ class ParentDashboardViewModel(
                             .take(8)
                             .reversed()
                     } else emptyList()
-                    it.copy(marksLoading = false, latestMark = latest, previousMarkForSubject = prev, markTrend = trend)
+                    it.copy(marksLoading = false, latestMark = latest, previousMarkForSubject = prev, markTrend = trend, marksStale = r.isStale)
                 }
                 else -> _state.update { it.copy(marksLoading = false) }
             }

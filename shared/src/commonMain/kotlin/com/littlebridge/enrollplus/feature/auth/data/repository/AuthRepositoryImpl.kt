@@ -1,5 +1,6 @@
 package com.littlebridge.enrollplus.feature.auth.data.repository
 
+import com.littlebridge.enrollplus.core.cache.CacheManager
 import com.littlebridge.enrollplus.core.locale.LocaleManager
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.core.network.SessionManager
@@ -21,6 +22,8 @@ class AuthRepositoryImpl(
     // MULTI_LANGUAGE_SPEC.md §9.1: sync server-returned languagePref to LocaleManager
     // on login/refresh so the client picks up the user's language without a separate API call.
     private val localeManager: LocaleManager,
+    // Offline-mode: evict all cached data on logout so a different user doesn't see previous user's data.
+    private val cacheManager: CacheManager,
 ) : AuthRepository {
     // RA-29: there is NO in-memory session cache. `prefs` is the single source
     // of truth — the same store the Ktor `Auth` plugin's `refreshTokens` writes
@@ -196,6 +199,9 @@ class AuthRepositoryImpl(
         sessionManager.clearAuthCache()
         // RA-S05: drop the shared selected-child (a Koin single survives logout).
         selectedChildHolder.clear()
+        // Offline-mode: evict all cached data so a re-login as a different user
+        // never sees the previous user's cached screens.
+        cacheManager.evictAll()
     }
 
     override suspend fun getUserDetails(token: String): NetworkResult<UserDetailsResponse> {

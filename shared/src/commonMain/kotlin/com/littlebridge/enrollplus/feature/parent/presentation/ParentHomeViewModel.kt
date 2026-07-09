@@ -28,6 +28,8 @@ data class ParentHomeState(
     val curationLogic: String = "",
     val isLoading: Boolean = false,
     val error: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 ) {
     /** The child currently selected (falls back to the first child). */
     val childSummary: DashboardChildSummary?
@@ -100,6 +102,8 @@ class ParentHomeViewModel(
                             alerts = data.alerts,
                             featuredSchools = data.featuredSchools,
                             curationLogic = data.curationLogic,
+                            isStale = result.isStale,
+                            isOffline = result.isOffline,
                         )
                     }
                 }

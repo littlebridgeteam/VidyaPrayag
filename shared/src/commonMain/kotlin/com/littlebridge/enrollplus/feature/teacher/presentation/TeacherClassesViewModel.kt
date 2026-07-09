@@ -37,6 +37,8 @@ data class TeacherClassesState(
     val classes: List<TeacherClassSummaryDto> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
     // filter: null = all, true = class-teacher only, false = subject-only
     val classTeacherFilter: Boolean? = null,
     val search: String = "",
@@ -86,7 +88,7 @@ class TeacherClassesViewModel(
             when (val result = repository.listClassesV2(token)) {
                 is NetworkResult.Success ->
                     _state.update {
-                        it.copy(isLoading = false, classes = result.data.data?.classes ?: emptyList())
+                        it.copy(isLoading = false, classes = result.data.data?.classes ?: emptyList(), isStale = result.isStale, isOffline = result.isOffline)
                     }
                 is NetworkResult.Error -> _state.update { it.copy(isLoading = false, error = result.message) }
                 is NetworkResult.ConnectionError -> _state.update { it.copy(isLoading = false, error = "Connection error") }

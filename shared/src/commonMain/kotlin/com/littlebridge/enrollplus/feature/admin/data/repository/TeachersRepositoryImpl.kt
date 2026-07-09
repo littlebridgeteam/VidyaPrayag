@@ -1,5 +1,7 @@
 package com.littlebridge.enrollplus.feature.admin.data.repository
 
+import com.littlebridge.enrollplus.core.cache.CacheManager
+import com.littlebridge.enrollplus.core.cache.cacheFirstNetworkResult
 import com.littlebridge.enrollplus.core.model.ApiResponse
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.feature.admin.data.remote.TeachersApi
@@ -10,7 +12,8 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.TeacherCredentialD
 import com.littlebridge.enrollplus.feature.admin.domain.repository.TeachersRepository
 
 class TeachersRepositoryImpl(
-    private val api: TeachersApi
+    private val api: TeachersApi,
+    private val cache: CacheManager,
 ) : TeachersRepository {
 
     override suspend fun getTeachers(
@@ -18,7 +21,7 @@ class TeachersRepositoryImpl(
         page: Int,
         pageSize: Int
     ): NetworkResult<ApiResponse<TeacherCardListResponse>> =
-        api.getTeachers(token, page, pageSize)
+        cacheFirstNetworkResult(cache, "admin_teachers_${page}_$pageSize", ApiResponse.serializer(TeacherCardListResponse.serializer())) { api.getTeachers(token, page, pageSize) }
 
     override suspend fun createTeacher(token: String, request: CreateTeacherRequest): NetworkResult<ApiResponse<TeacherAccountDto>> =
         api.createTeacher(token, request)

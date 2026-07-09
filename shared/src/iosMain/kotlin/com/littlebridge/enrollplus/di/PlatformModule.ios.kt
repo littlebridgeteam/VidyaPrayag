@@ -5,6 +5,8 @@ import com.littlebridge.enrollplus.core.database.DatabaseFactory
 import com.littlebridge.enrollplus.core.prefs.PreferenceManager
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.core.prefs.createDataStore
+import com.littlebridge.enrollplus.core.cache.CacheStorage
+import com.littlebridge.enrollplus.core.cache.RoomCacheStorage
 import com.littlebridge.enrollplus.feature.schools.data.local.RoomSchoolLocalDataSource
 import com.littlebridge.enrollplus.feature.schools.data.local.SchoolLocalDataSource
 import com.littlebridge.enrollplus.feature.library.data.local.LibraryLocalDataSource
@@ -31,6 +33,8 @@ actual fun platformModule(): Module = module {
     single { get<AppDatabase>().outboxOperationDao() }
     single { get<AppDatabase>().announcementDao() }
     single { get<AppDatabase>().teacherDayCacheDao() }
+    single { get<AppDatabase>().cacheDao() }
+    single<CacheStorage> { RoomCacheStorage(get()) }
     single<LibraryLocalDataSource> { RoomLibraryLocalDataSource(get(), get(), get()) }
 
     single {

@@ -29,7 +29,9 @@ data class StudentProfileUiState(
     // RA-S17: delete-from-profile (replaces the direct roster Remove button)
     val isRemoving: Boolean = false,
     val removed: Boolean = false,
-    val removeError: String? = null
+    val removeError: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class StudentProfileViewModel(
@@ -53,7 +55,7 @@ class StudentProfileViewModel(
             }
             when (val r = repository.getStudentProfile(token, studentId)) {
                 is NetworkResult.Success -> {
-                    _state.value = _state.value.copy(isLoading = false, error = null, profile = r.data.data)
+                    _state.value = _state.value.copy(isLoading = false, error = null, profile = r.data.data, isStale = r.isStale, isOffline = r.isOffline)
                 }
                 is NetworkResult.Error -> {
                     AppLogger.e("StudentProfileVM", "getStudentProfile error: ${r.message}")

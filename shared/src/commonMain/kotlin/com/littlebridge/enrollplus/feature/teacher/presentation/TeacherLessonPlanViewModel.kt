@@ -87,6 +87,8 @@ data class TeacherLessonPlanState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val statusFilter: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
     // ── editor ──
     val editor: LessonPlanEditorState = LessonPlanEditorState(),
     val syllabusUnits: List<SyllabusNodeDto> = emptyList(),
@@ -131,7 +133,7 @@ class TeacherLessonPlanViewModel(
             when (result) {
                 is NetworkResult.Success -> {
                     val items = result.data.data.map { it.toSummary() }
-                    _state.update { it.copy(items = items, isLoading = false) }
+                    _state.update { it.copy(items = items, isLoading = false, isStale = result.isStale, isOffline = result.isOffline) }
                 }
                 is NetworkResult.Error -> _state.update { it.copy(isLoading = false, error = result.message ?: "Failed to load") }
                 is NetworkResult.ConnectionError -> {}

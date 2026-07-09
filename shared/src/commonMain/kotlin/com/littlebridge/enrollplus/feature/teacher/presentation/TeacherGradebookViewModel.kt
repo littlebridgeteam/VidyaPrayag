@@ -100,6 +100,8 @@ data class TeacherGradebookState(
     // Both null → no comparison shown; the screen invites the teacher to pick two.
     val compareLeftId: String? = null,
     val compareRightId: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 ) {
     val enteredCount: Int get() = students.count { it.marks != null || it.isAbsent }
     val rosterCount: Int get() = students.size
@@ -168,7 +170,7 @@ class TeacherGradebookViewModel(
             }
             when (val r = repository.listAssessments(t, asg)) {
                 is NetworkResult.Success ->
-                    _state.update { it.copy(isListLoading = false, assessments = r.data.data.assessments) }
+                    _state.update { it.copy(isListLoading = false, assessments = r.data.data.assessments, isStale = r.isStale, isOffline = r.isOffline) }
                 is NetworkResult.Error ->
                     _state.update { it.copy(isListLoading = false, listError = r.message) }
                 is NetworkResult.ConnectionError ->
@@ -287,6 +289,8 @@ class TeacherGradebookViewModel(
                                     remark = e.remark,
                                 )
                             },
+                            isStale = r.isStale,
+                            isOffline = r.isOffline,
                         )
                     }
                 }
@@ -504,6 +508,8 @@ class TeacherGradebookViewModel(
                             history = d,
                             compareLeftId = recent.getOrNull(0)?.assessmentId,
                             compareRightId = recent.getOrNull(1)?.assessmentId,
+                            isStale = r.isStale,
+                            isOffline = r.isOffline,
                         )
                     }
                 }

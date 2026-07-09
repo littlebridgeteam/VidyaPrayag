@@ -34,7 +34,9 @@ data class AcademicInfoState(
     val availableClasses: List<String> = DEFAULT_CLASSES,
     val subjects: List<Subject> = DEFAULT_SUBJECTS,
     val syncActive: Boolean = true,
-    val curriculumPrecision: Int = 92
+    val curriculumPrecision: Int = 92,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 ) {
     companion object {
         val DEFAULT_CLASSES = listOf(
@@ -125,6 +127,7 @@ class AcademicInfoOBViewModel(
                         // Best-effort: try to load subject details for the first class.
                         loadClassDetailsInternal(token, _state.value.selectedClass)
                     }
+                    _state.value = _state.value.copy(isStale = result.isStale, isOffline = result.isOffline)
                     AppLogger.d("OnboardingAcademic", "Loaded ${classes.size} classes from backend")
                 }
                 is NetworkResult.Error -> {
@@ -171,7 +174,7 @@ class AcademicInfoOBViewModel(
                     )
                 }
                 if (subjects.isNotEmpty()) {
-                    _state.value = _state.value.copy(subjects = subjects)
+                    _state.value = _state.value.copy(subjects = subjects, isStale = res.isStale, isOffline = res.isOffline)
                 }
                 AppLogger.d("OnboardingAcademic", "Loaded ${subjects.size} subjects for $className")
             }

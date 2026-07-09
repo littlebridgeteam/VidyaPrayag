@@ -47,7 +47,9 @@ data class SchoolProfileState(
     val state: String = "",
     val pincode: String = "",
     val logoUrl: String = "",
-    val brandColor: String = "#2563EB"
+    val brandColor: String = "#2563EB",
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class SchoolProfileViewModel(
@@ -93,7 +95,9 @@ class SchoolProfileViewModel(
                         state = d.state,
                         pincode = d.pincode.orEmpty(),
                         logoUrl = d.logoUrl.orEmpty(),
-                        brandColor = d.brandColor
+                        brandColor = d.brandColor,
+                        isStale = r.isStale,
+                        isOffline = r.isOffline,
                     )
                 }
                 is NetworkResult.Error -> {
