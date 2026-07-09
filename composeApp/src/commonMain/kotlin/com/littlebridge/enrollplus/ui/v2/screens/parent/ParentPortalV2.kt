@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -52,6 +53,8 @@ import com.littlebridge.enrollplus.ui.v2.screens.auth.ParentLinkChildScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.discovery.AcademicCalendarScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.discovery.DiscoveryScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.notifications.NotificationsScreenV2
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import org.koin.core.qualifier.named
 import com.littlebridge.enrollplus.ui.v2.theme.colored
@@ -175,17 +178,52 @@ fun ParentPortalV2(
     val messageState by messageViewModel.state.collectAsStateV2()
 
     // ── Unlinked-parent gate ────────────────────────────────────────────────────
-    // A parent with NO child linked yet shouldn't land in the 5-tab portal where every tab is an
-    // empty state. Show the focused unlinked landing while the dashboard is still resolving AND
-    // once it confirms zero children. This prevents the home-tab skeleton from flashing before
-    // the carousel appears for a genuinely unlinked parent.
-    if (dashboard.isLoading || (dashboard.error == null && dashboard.children.isEmpty())) {
+    // Show the unlinked screen ONLY when the dashboard has fully resolved (not loading,
+    // no error) and confirmed zero children. This prevents:
+    //   - Flashing the unlinked screen on every reload for linked parents
+    //   - Showing the unlinked screen when offline with cached data
+    if (!dashboard.isLoading && dashboard.error == null && dashboard.children.isEmpty()) {
         ParentUnlinkedScreenV2(
             // After a successful link request the dashboard reloads — once the school approves and
             // a child appears, this gate falls through to the full portal automatically.
             onLinked = { dashboardViewModel.load() },
             modifier = modifier,
         )
+        return
+    }
+
+    // First load with no cached children — show a loading indicator, not the unlinked screen.
+    if (dashboard.isLoading && dashboard.children.isEmpty()) {
+        Box(
+            modifier = modifier.fillMaxSize().background(VColors.surface),
+            contentAlignment = Alignment.Center,
+        ) {
+            CircularProgressIndicator(color = VColors.primary)
+        }
+        return
+    }
+
+    // Offline/error with no cached children — show error with retry, not the unlinked screen.
+    if (dashboard.error != null && dashboard.children.isEmpty()) {
+        val errorMsg = dashboard.error ?: return
+        Column(
+            modifier = modifier.fillMaxSize().background(VColors.surface).statusBarsPadding(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = errorMsg,
+                color = VColors.error,
+                style = VTypography.body,
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Retry",
+                color = VColors.primary,
+                style = VTypography.label,
+                modifier = Modifier.clickable { dashboardViewModel.load() },
+            )
+        }
         return
     }
 

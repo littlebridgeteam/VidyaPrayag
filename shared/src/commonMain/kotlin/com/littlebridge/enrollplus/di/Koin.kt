@@ -72,9 +72,9 @@ val commonModule = module {
             }
 
             install(HttpTimeout) {
-                requestTimeoutMillis = 60000
-                connectTimeoutMillis = 60000
-                socketTimeoutMillis = 60000
+                requestTimeoutMillis = 15_000
+                connectTimeoutMillis = 15_000
+                socketTimeoutMillis = 15_000
             }
 
             // Auth: attach the stored access token to every request and, on a
