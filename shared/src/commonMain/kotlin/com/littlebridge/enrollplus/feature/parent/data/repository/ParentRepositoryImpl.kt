@@ -135,7 +135,12 @@ class ParentRepositoryImpl(
         cacheFirstNetworkResult(cache, "parent_quiz_detail_$quizId", ParentQuizDetailResponse.serializer()) { api.getQuizDetail(token, quizId) }
 
     override suspend fun submitQuiz(token: String, request: QuizSubmitRequest): NetworkResult<QuizSubmitResponse> {
-        return api.submitQuiz(token, request)
+        val result = api.submitQuiz(token, request)
+        if (result is NetworkResult.Success) {
+            // Invalidate quiz list cache so the submitted quiz shows "SUBMITTED" status on next load
+            request.childId?.let { cache.delete("parent_quiz_list_$it") }
+        }
+        return result
     }
 
     override suspend fun getQuizLeaderboard(token: String, childId: String, quizId: String): NetworkResult<QuizLeaderboardResponse> =

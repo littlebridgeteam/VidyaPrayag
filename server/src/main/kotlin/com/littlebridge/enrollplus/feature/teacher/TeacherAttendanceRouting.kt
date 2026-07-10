@@ -53,6 +53,7 @@ import com.littlebridge.enrollplus.db.LeaveRequestsTable
 import com.littlebridge.enrollplus.db.StudentsTable
 import com.littlebridge.enrollplus.feature.calendar.EventStatus
 import com.littlebridge.enrollplus.feature.calendar.EventType
+import com.littlebridge.enrollplus.feature.gamification.XpHooks
 import com.littlebridge.enrollplus.feature.notifications.Notify
 import com.littlebridge.enrollplus.feature.notifications.NotifyRecipients
 import io.ktor.http.HttpStatusCode
@@ -420,6 +421,7 @@ fun Route.teacherAttendanceRouting() {
                 // RA-41 alert behaviour the deleted handler had). Keyed by
                 // student_code, since NotifyRecipients.parentsOfStudent expects it.
                 val flaggedCodes = mutableListOf<Pair<String, String>>() // (studentCode, status)
+                val presentStudentIds = mutableListOf<UUID>() // for XP hook
                 val saved = dbQuery {
                     var count = 0
                     for (m in req.marks) {
@@ -429,6 +431,8 @@ fun Route.teacherAttendanceRouting() {
                         val enrolled = rosterById[sid] ?: continue // not in this class → ignore
                         if (status == "absent" || status == "late") {
                             flaggedCodes += enrolled.studentCode to status
+                        } else if (status == "present") {
+                            presentStudentIds += sid
                         }
                         // Upsert on (school, date, type, student, assignment).
                         val existing = AttendanceRecordsTable.selectAll().where {
@@ -471,6 +475,11 @@ fun Route.teacherAttendanceRouting() {
                         count++
                     }
                     count
+                }
+
+                // Gamification XP hook — award XP for present students
+                for (sid in presentStudentIds) {
+                    XpHooks.onAttendancePresent(sid, ctx.schoolId)
                 }
 
                 // RA-41 (preserved from the deleted legacy handler): alert each

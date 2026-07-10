@@ -49,6 +49,7 @@ import com.littlebridge.enrollplus.core.requireTeacherContext
 import com.littlebridge.enrollplus.db.AssessmentMarksTable
 import com.littlebridge.enrollplus.db.AssessmentsTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
+import com.littlebridge.enrollplus.feature.gamification.XpHooks
 import com.littlebridge.enrollplus.feature.notifications.Notify
 import com.littlebridge.enrollplus.feature.notifications.NotifyRecipients
 import io.ktor.http.HttpStatusCode
@@ -668,6 +669,7 @@ private fun Route.assessmentMarksLoadAndSave() {
             val roster = asg?.let { enrollmentsFor(it) } ?: emptyList()
             val rosterById = roster.associateBy { it.studentId }
             val now = Instant.now()
+            val awardedMarks = mutableListOf<Pair<UUID, Double?>>() // for XP hook
 
             val saved = dbQuery {
                 var count = 0
@@ -681,6 +683,7 @@ private fun Route.assessmentMarksLoadAndSave() {
                     val code = enrolled?.studentCode ?: row[AssessmentsTable.className] // fallback noop
                     val name = enrolled?.fullName ?: ""
                     val clamped = if (e.isAbsent) null else e.marks?.toDouble()?.coerceIn(0.0, maxMarks)
+                    awardedMarks += sid to clamped
 
                     val existing = AssessmentMarksTable.selectAll().where {
                         (AssessmentMarksTable.assessmentId eq assessmentId) and
@@ -734,6 +737,11 @@ private fun Route.assessmentMarksLoadAndSave() {
                     }
                 }
                 count
+            }
+
+            // Gamification XP hook — award XP for assessment marks
+            for ((sid, marks) in awardedMarks) {
+                XpHooks.onAssessmentMarked(sid, ctx.schoolId, marks, maxMarks)
             }
 
             val rosterCount = if (roster.isNotEmpty()) roster.size else dbQuery {

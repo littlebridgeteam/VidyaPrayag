@@ -25,11 +25,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.update
+import org.jetbrains.exposed.sql.*
 import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.time.LocalDate
@@ -263,7 +259,7 @@ object GamificationService {
 
     suspend fun getLevelDefinitions(): List<LevelDefinitionDto> = dbQuery {
         GameLevelDefinitionsTable.selectAll()
-            .where { GameLevelDefinitionsTable.schoolId.isNull() and GameLevelDefinitionsTable.isActive }
+            .where { GameLevelDefinitionsTable.schoolId.isNull() and (GameLevelDefinitionsTable.isActive eq true) }
             .orderBy(GameLevelDefinitionsTable.level)
             .map {
                 LevelDefinitionDto(
@@ -295,7 +291,7 @@ object GamificationService {
         val boosts = GameXpBoostsTable.selectAll()
             .where {
                 (GameXpBoostsTable.schoolId eq schoolId) and
-                (GameXpBoostsTable.isActive) and
+                (GameXpBoostsTable.isActive eq true) and
                 (GameXpBoostsTable.startsAt lessEq now) and
                 (GameXpBoostsTable.endsAt greater now)
             }

@@ -70,6 +70,7 @@ import com.littlebridge.enrollplus.feature.calendar.academicCalendarRouting
 import com.littlebridge.enrollplus.feature.calendar.academicYearRouting
 import com.littlebridge.enrollplus.feature.auth.otpAdminRouting
 import com.littlebridge.enrollplus.feature.config.appStatusRouting
+import com.littlebridge.enrollplus.feature.gamification.gamificationRouting
 import com.littlebridge.enrollplus.feature.config.versionRouting
 import com.littlebridge.enrollplus.feature.devtools.devToolsRouting
 import com.littlebridge.enrollplus.feature.logging.serverLogRouting
@@ -685,5 +686,11 @@ fun Application.module() {
         //   /api/v1/school/{language-distribution, users-language-pref}  — school admin
         //   /api/admin/{language-adoption, users-by-language, server-strings[…]}  — super admin
         i18nRouting()
+
+        // Gamification System (GAMIFICATION_SYSTEM_SPEC.md)
+        //   /api/v1/parent/gamification/{childId}/{stats,badges,levels}  — parent
+        //   /api/v1/teacher/gamification/{encourage,badge/award,badges,student/{id}/stats}  — teacher
+        //   /api/v1/admin/gamification/{flags,badges,levels}  — admin kill switch + config
+        gamificationRouting()
     }
 }

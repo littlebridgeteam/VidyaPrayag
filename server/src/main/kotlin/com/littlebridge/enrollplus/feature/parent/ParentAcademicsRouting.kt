@@ -43,6 +43,7 @@ import com.littlebridge.enrollplus.db.SyllabusQuizAnswersTable
 import com.littlebridge.enrollplus.db.TeacherPeriodsTable
 import com.littlebridge.enrollplus.db.TeacherSubjectAssignmentsTable
 import com.littlebridge.enrollplus.feature.ai.SyllabusAiService
+import com.littlebridge.enrollplus.feature.gamification.XpHooks
 import com.littlebridge.enrollplus.feature.teacher.MatchPairSer
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -285,6 +286,7 @@ data class QuizAnswerDto(
 data class QuizSubmitRequest(
     @SerialName("quiz_id") val quizId: String,
     val answers: List<QuizAnswerDto> = emptyList(),
+    @SerialName("child_id") val childId: String? = null,
 )
 
 @Serializable
@@ -1161,6 +1163,12 @@ fun Route.parentAcademicsRouting() {
                 val totalMarks = questions.size
                 val percentage = if (totalMarks > 0) (correctCount * 100) / totalMarks else 0
 
+                // Gamification XP hook — quiz completed
+                val childId = call.parameters["id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                if (childId != null && child.schoolId != null) {
+                    XpHooks.onQuizCompleted(childId, child.schoolId, correctCount, totalMarks)
+                }
+
                 call.ok(
                     QuizResultDto(
                         id = UUID.randomUUID().toString(),
@@ -1436,13 +1444,22 @@ fun Route.parentAcademicsRouting() {
                 var correctCount = 0
                 val questionResults = mutableListOf<QuizQuestionResultDto>()
 
-                // Resolve student ID from parent's token
+                // Resolve student ID from parent's token + child_id in request body
                 val uid = call.principalUserId()?.let { runCatching { UUID.fromString(it) }.getOrNull() }
-                val childRow = uid?.let { u ->
+                val childIdUuid = req.childId?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                val childRow = if (uid != null && childIdUuid != null) {
                     dbQuery {
-                        ChildrenTable.selectAll().where { ChildrenTable.parentId eq u }.firstOrNull()
+                        ChildrenTable.selectAll().where {
+                            (ChildrenTable.id eq childIdUuid) and
+                                (ChildrenTable.parentId eq uid) and
+                                (ChildrenTable.isActive eq true)
+                        }.singleOrNull()
                     }
-                }
+                } else if (uid != null) {
+                    dbQuery {
+                        ChildrenTable.selectAll().where { ChildrenTable.parentId eq uid }.firstOrNull()
+                    }
+                } else null
                 val studentId = childRow?.get(ChildrenTable.studentCode) ?: "unknown"
 
                 // One attempt per student
@@ -1517,6 +1534,13 @@ fun Route.parentAcademicsRouting() {
 
                 val totalMarks = questions.size
                 val percentage = if (totalMarks > 0) (correctCount * 100) / totalMarks else 0
+
+                // Gamification XP hook — quiz completed
+                val childIdForXp = childRow?.get(ChildrenTable.id)?.value
+                val schoolIdForXp = childRow?.get(ChildrenTable.schoolId)
+                if (childIdForXp != null && schoolIdForXp != null) {
+                    XpHooks.onQuizCompleted(childIdForXp, schoolIdForXp, correctCount, totalMarks)
+                }
 
                 call.ok(
                     QuizResultDto(

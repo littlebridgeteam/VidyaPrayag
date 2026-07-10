@@ -289,6 +289,7 @@ class ParentAcademicsViewModel(
             val token = token() ?: run {
                 _state.update { it.copy(isSubmittingQuiz = false, quizSubmitError = "Not authenticated") }; return@launch
             }
+            val childId = currentChildId()
             val request = QuizSubmitRequest(
                 quizId = quizId,
                 answers = answers.map { (qid, idx) ->
@@ -298,9 +299,14 @@ class ParentAcademicsViewModel(
                         answerText = textAnswers[qid],
                     )
                 },
+                childId = childId,
             )
             when (val r = repository.submitQuiz(token, request)) {
-                is NetworkResult.Success -> _state.update { it.copy(isSubmittingQuiz = false, quizResult = r.data) }
+                is NetworkResult.Success -> {
+                    _state.update { it.copy(isSubmittingQuiz = false, quizResult = r.data) }
+                    // Refresh quiz list so the submitted quiz shows "SUBMITTED" status
+                    loadQuizzes(childId)
+                }
                 is NetworkResult.Error -> _state.update { it.copy(isSubmittingQuiz = false, quizSubmitError = r.message) }
                 is NetworkResult.ConnectionError -> _state.update { it.copy(isSubmittingQuiz = false, quizSubmitError = "Connection error") }
             }

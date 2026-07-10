@@ -1053,6 +1053,14 @@ private fun QuizzesTab(
         QuizResultCard(academics, onBackToList, onLoadLeaderboard)
         return
     }
+    if (academics.quizDetailLoading) {
+        LoadingState()
+        return
+    }
+    academics.quizDetailError?.let {
+        ErrorState(message = it, onRetry = onBackToList)
+        return
+    }
 
     if (academics.quizzesLoading) {
         LoadingState()

@@ -974,6 +974,7 @@ data class QuizListData(
 data class QuizSubmitRequest(
     @SerialName("quiz_id") val quizId: String,
     val answers: List<QuizAnswerDto> = emptyList(),
+    @SerialName("child_id") val childId: String? = null,
 )
 
 @Serializable
