@@ -445,6 +445,17 @@ val commonModule = module {
         com.littlebridge.enrollplus.feature.scholarship.data.repository.ScholarshipRepositoryImpl(get())
     }
 
+    // Gamification (GAMIFICATION_SYSTEM_SPEC.md)
+    single {
+        com.littlebridge.enrollplus.feature.gamification.data.remote.GamificationApi(
+            client = get(),
+            baseUrl = AppConfig.schoolBaseUrl
+        )
+    }
+    single<com.littlebridge.enrollplus.feature.gamification.domain.repository.GamificationRepository> {
+        com.littlebridge.enrollplus.feature.gamification.data.repository.GamificationRepositoryImpl(get())
+    }
+
     // School Branding Kit (SCHOOL_BRANDING_KIT_SPEC.md)
     single {
         com.littlebridge.enrollplus.feature.branding.data.remote.BrandingApi(

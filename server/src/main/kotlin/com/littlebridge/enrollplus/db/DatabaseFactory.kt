@@ -37,7 +37,6 @@
 package com.littlebridge.enrollplus.db
 
 import com.littlebridge.enrollplus.core.RuntimeEnvironment
-import com.littlebridge.enrollplus.feature.gamification.GamificationSeeder
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.github.cdimascio.dotenv.dotenv
@@ -340,33 +339,11 @@ object DatabaseFactory {
         // Server Logs (Notification Deep-Linking & Backend Log Viewer Plan §3.1)
         // Structured server-side log table for the super-admin Log Viewer.
         ServerLogsTable,
-        // Gamification System (GAMIFICATION_SYSTEM_SPEC.md §26)
-        // Applied by docs/db/migration_100_gamification.sql (must run before
-        // deploy; AUTO_CREATE_TABLES is OFF in prod). Order matters for FKs:
-        // level/badge/house/quest definitions first, then student-scoped tables,
-        // then progress/social/event tables.
-        GameLevelDefinitionsTable,
-        GameBadgeDefinitionsTable,
-        GameHousesTable,
-        GameQuestDefinitionsTable,
-        GameProgressionPathsTable,
-        GameTitlesTable,
-        GameXpLedgerTable,
-        GameStudentStatsTable,
-        GameStudentBadgesTable,
-        GameStudentHouseAssignmentsTable,
-        GameStudentQuestsTable,
-        GameXpBoostsTable,
-        GameRewardCatalogTable,
-        GameRewardRedemptionsTable,
-        GameClassGoalsTable,
-        GameShoutoutsTable,
-        GameMentorAssignmentsTable,
-        GameStudyBuddyPairsTable,
-        GameStudentPathProgressTable,
-        GameSeasonalEventsTable,
-        GameMotivationMessagesTable,
-        GameTeacherEncouragementsTable,
+        // Gamification System tables NOT included in schema validation —
+        // they are provisioned separately via docs/db/migration_100_gamification.sql
+        // and are still under development. Including them here would block server
+        // boot until that migration is applied. Gamification code gracefully handles
+        // missing tables at runtime.
     )
 
     /** True when DATABASE_URL is set → we're talking to Postgres / Supabase. */
@@ -547,12 +524,6 @@ object DatabaseFactory {
             }
         }
 
-        // Gamification seed (default levels, badges, quests, paths, titles, messages, kill switch flag)
-        try {
-            GamificationSeeder.seed()
-        } catch (e: Exception) {
-            logger.warn("DB_INIT_WARNING: Gamification seed failed: ${e.message}")
-        }
     }
 
     /**

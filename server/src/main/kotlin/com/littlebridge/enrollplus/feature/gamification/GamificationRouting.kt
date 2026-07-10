@@ -35,6 +35,9 @@ import com.littlebridge.enrollplus.core.requireSchoolContext
 import com.littlebridge.enrollplus.core.requireSchoolOrTeacherContext
 import com.littlebridge.enrollplus.db.ChildrenTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
+import com.littlebridge.enrollplus.db.GameClassGoalsTable
+import com.littlebridge.enrollplus.db.GameShoutoutsTable
+import com.littlebridge.enrollplus.db.GameStudentStatsTable
 import org.jetbrains.exposed.sql.*
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -61,6 +64,30 @@ data class AwardBadgeRequest(
 @Serializable
 data class SetGamificationFlagRequest(
     val isGamificationEnabled: Boolean
+)
+
+@Serializable
+data class ShoutoutRequest(
+    val receiverId: String,
+    val message: String,
+    val templateId: Int = 0,
+    val isPublic: Boolean = true
+)
+
+@Serializable
+data class ClassGoalRequest(
+    val className: String,
+    val section: String? = null,
+    val goalType: String,
+    val target: Int,
+    val reward: String,
+    val deadline: String? = null
+)
+
+@Serializable
+data class AssignQuestRequest(
+    val studentId: String,
+    val questId: String
 )
 
 fun Route.gamificationRouting() {
@@ -174,6 +201,117 @@ fun Route.gamificationRouting() {
                 val stats = GamificationService.getStudentStats(studentId)
                 if (stats != null) call.ok(stats, "Student stats")
                 else call.ok(StudentStatsDto(studentId.toString(), 0, 0, 1, "Beginner", 0), "Student stats (new)")
+            }
+
+            // ── Teacher Tools: Class leaderboard ──────────────────────────
+            get("/class/leaderboard") {
+                val ctx = call.requireSchoolOrTeacherContext() ?: return@get
+                val limit = call.request.queryParameters["limit"]?.toIntOrNull()?.coerceIn(1, 100) ?: 50
+                val leaderboard = LeaderboardService.getSchoolLeaderboard(ctx.schoolId, limit)
+                call.ok(leaderboard, "Class leaderboard (${leaderboard.size})")
+            }
+
+            // ── Teacher Tools: Student badges ─────────────────────────────
+            get("/student/{id}/badges") {
+                val ctx = call.requireSchoolOrTeacherContext() ?: return@get
+                val studentId = call.parameters["id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                    ?: run { call.fail("Invalid student id"); return@get }
+
+                val badges = BadgeCriteriaEvaluator.getStudentBadges(studentId)
+                call.ok(badges, "Student badges (${badges.size})")
+            }
+
+            // ── Teacher Tools: Send shoutout ──────────────────────────────
+            post("/shoutout") {
+                val ctx = call.requireSchoolOrTeacherContext() ?: return@post
+                val req = runCatching { call.receive<ShoutoutRequest>() }.getOrNull()
+                    ?: run { call.fail("Invalid request body"); return@post }
+
+                val receiverId = runCatching { UUID.fromString(req.receiverId) }.getOrNull()
+                    ?: run { call.fail("Invalid receiver id"); return@post }
+
+                dbQuery {
+                    GameShoutoutsTable.insert {
+                        it[GameShoutoutsTable.senderId] = ctx.userId
+                        it[GameShoutoutsTable.receiverId] = receiverId
+                        it[GameShoutoutsTable.schoolId] = ctx.schoolId
+                        it[GameShoutoutsTable.templateId] = req.templateId
+                        it[GameShoutoutsTable.message] = req.message
+                        it[GameShoutoutsTable.isPublic] = req.isPublic
+                        it[GameShoutoutsTable.createdAt] = java.time.Instant.now()
+                    }
+                }
+                call.okMessage("Shoutout sent!")
+            }
+
+            // ── Teacher Tools: Class goals ────────────────────────────────
+            get("/class-goals") {
+                val ctx = call.requireSchoolOrTeacherContext() ?: return@get
+                val goals = dbQuery {
+                    GameClassGoalsTable.selectAll()
+                        .where { GameClassGoalsTable.schoolId eq ctx.schoolId }
+                        .orderBy(GameClassGoalsTable.createdAt, SortOrder.DESC)
+                        .map {
+                            mapOf(
+                                "id" to it[GameClassGoalsTable.id].value.toString(),
+                                "className" to (it[GameClassGoalsTable.className] ?: ""),
+                                "section" to (it[GameClassGoalsTable.section] ?: ""),
+                                "goalType" to it[GameClassGoalsTable.goalType],
+                                "target" to it[GameClassGoalsTable.target],
+                                "currentProgress" to it[GameClassGoalsTable.currentProgress],
+                                "reward" to it[GameClassGoalsTable.reward],
+                                "completed" to it[GameClassGoalsTable.completed],
+                                "deadline" to (it[GameClassGoalsTable.deadline]?.toString() ?: "")
+                            )
+                        }
+                }
+                call.ok(goals, "Class goals (${goals.size})")
+            }
+
+            post("/class-goals") {
+                val ctx = call.requireSchoolOrTeacherContext() ?: return@post
+                val req = runCatching { call.receive<ClassGoalRequest>() }.getOrNull()
+                    ?: run { call.fail("Invalid request body"); return@post }
+
+                val deadline = req.deadline?.let { runCatching { java.time.LocalDate.parse(it) }.getOrNull() }
+                dbQuery {
+                    GameClassGoalsTable.insert {
+                        it[GameClassGoalsTable.schoolId] = ctx.schoolId
+                        it[GameClassGoalsTable.className] = req.className
+                        it[GameClassGoalsTable.section] = req.section
+                        it[GameClassGoalsTable.goalType] = req.goalType
+                        it[GameClassGoalsTable.target] = req.target
+                        it[GameClassGoalsTable.currentProgress] = 0
+                        it[GameClassGoalsTable.reward] = req.reward
+                        it[GameClassGoalsTable.completed] = false
+                        it[GameClassGoalsTable.deadline] = deadline
+                        it[GameClassGoalsTable.createdBy] = ctx.userId
+                        it[GameClassGoalsTable.createdAt] = java.time.Instant.now()
+                    }
+                }
+                call.okMessage("Class goal created")
+            }
+
+            // ── Teacher Tools: Assign quest to student ────────────────────
+            post("/quest/assign") {
+                val ctx = call.requireSchoolOrTeacherContext() ?: return@post
+                val req = runCatching { call.receive<AssignQuestRequest>() }.getOrNull()
+                    ?: run { call.fail("Invalid request body"); return@post }
+
+                val studentId = runCatching { UUID.fromString(req.studentId) }.getOrNull()
+                    ?: run { call.fail("Invalid student id"); return@post }
+                val questId = runCatching { UUID.fromString(req.questId) }.getOrNull()
+                    ?: run { call.fail("Invalid quest id"); return@post }
+
+                val assigned = QuestService.assignQuest(studentId, questId, ctx.schoolId)
+                if (assigned) call.okMessage("Quest assigned to student")
+                else call.fail("Quest already assigned or invalid", HttpStatusCode.BadRequest, "QUEST_ALREADY_ASSIGNED")
+            }
+
+            // ── Teacher Tools: Active quests list ─────────────────────────
+            get("/quests") {
+                val quests = QuestService.getActiveQuests()
+                call.ok(quests, "Active quests (${quests.size})")
             }
         }
 
