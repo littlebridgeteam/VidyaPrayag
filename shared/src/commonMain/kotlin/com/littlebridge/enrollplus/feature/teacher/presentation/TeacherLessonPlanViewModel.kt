@@ -11,6 +11,7 @@ import com.littlebridge.enrollplus.feature.teacher.domain.model.LessonActivityDt
 import com.littlebridge.enrollplus.feature.teacher.domain.model.LessonCalendarDto
 import com.littlebridge.enrollplus.feature.teacher.domain.model.LessonPlanDto
 import com.littlebridge.enrollplus.feature.teacher.domain.model.LessonTemplateDto
+import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizDto
 import com.littlebridge.enrollplus.feature.teacher.domain.model.SaveLessonTemplateRequest
 import com.littlebridge.enrollplus.feature.teacher.domain.model.SyllabusNodeDto
 import com.littlebridge.enrollplus.feature.teacher.domain.model.UpdateLessonPlanRequest
@@ -108,6 +109,11 @@ data class TeacherLessonPlanState(
     val instantiateTemplateId: String? = null,
     val instantiateDate: String = "",
     val isInstantiating: Boolean = false,
+    // ── post-complete quiz suggestion ──
+    val showQuizSuggestion: Boolean = false,
+    val completedPlanTitle: String = "",
+    // ── quiz list for editor attach ──
+    val existingQuizzes: List<QuizDto> = emptyList(),
 )
 
 class TeacherLessonPlanViewModel(
@@ -214,6 +220,12 @@ class TeacherLessonPlanViewModel(
                 is NetworkResult.Success -> _state.update { it.copy(homeworkOptions = hwResult.data.data.items) }
                 else -> {}
             }
+            // Load existing quizzes for the quiz attach picker
+            val quizResult = repository.listQuizzes(t, asgId)
+            when (quizResult) {
+                is NetworkResult.Success -> _state.update { it.copy(existingQuizzes = quizResult.data.data.quizzes) }
+                else -> {}
+            }
         }
     }
 
@@ -284,13 +296,14 @@ class TeacherLessonPlanViewModel(
 
     fun completePlan() {
         val planId = _state.value.editor.planId ?: return
+        val planTitle = _state.value.editor.title
         viewModelScope.launch {
             val t = token() ?: return@launch
             _state.update { it.copy(editor = it.editor.copy(isSaving = true, error = null)) }
             val result = repository.completeLessonPlan(t, planId)
             when (result) {
                 is NetworkResult.Success -> {
-                    _state.update { it.copy(mode = LessonPlanMode.List, editor = LessonPlanEditorState()) }
+                    _state.update { it.copy(mode = LessonPlanMode.List, editor = LessonPlanEditorState(), showQuizSuggestion = true, completedPlanTitle = planTitle) }
                     load(_state.value.assignmentId, _state.value.scopeLabel)
                 }
                 is NetworkResult.Error -> _state.update { it.copy(editor = it.editor.copy(isSaving = false, error = result.message ?: "Complete failed")) }
@@ -331,6 +344,10 @@ class TeacherLessonPlanViewModel(
                 is NetworkResult.ConnectionError -> {}
             }
         }
+    }
+
+    fun dismissQuizSuggestion() {
+        _state.update { it.copy(showQuizSuggestion = false, completedPlanTitle = "") }
     }
 
     fun closeEditor() {

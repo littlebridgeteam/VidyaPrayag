@@ -50,8 +50,11 @@ import com.littlebridge.enrollplus.feature.teacher.domain.model.TeacherClassSumm
 import com.littlebridge.enrollplus.feature.teacher.presentation.ResolvedPeriodUi
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherCheckInState
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherCheckInViewModel
+import com.littlebridge.enrollplus.feature.teacher.presentation.InsightCard
+import com.littlebridge.enrollplus.feature.teacher.presentation.InsightSeverity
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherClassesState
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherClassesViewModel
+import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherInsightsViewModel
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherObligationsState
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherObligationsViewModel
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherTodayState
@@ -105,12 +108,14 @@ fun TeacherHomeScreenV2(
     obligationsViewModel: TeacherObligationsViewModel = koinViewModel(),
     classesViewModel: TeacherClassesViewModel = koinViewModel(),
     eventsViewModel: TeacherEventRegistrationViewModel = koinViewModel(),
+    insightsViewModel: TeacherInsightsViewModel = koinViewModel(),
 ) {
     val today by todayViewModel.state.collectAsStateV2()
     val checkIn by checkInViewModel.state.collectAsStateV2()
     val obligations by obligationsViewModel.state.collectAsStateV2()
     val classesState by classesViewModel.state.collectAsStateV2()
     val eventsState by eventsViewModel.state.collectAsStateV2()
+    val insightsState by insightsViewModel.state.collectAsStateV2()
 
     // Pull classes + events when the home tab appears; refresh every 60s alongside today/obligations.
     LaunchedEffect(Unit) {
@@ -125,6 +130,10 @@ fun TeacherHomeScreenV2(
             classesViewModel.load()
             eventsViewModel.loadPtmEvents()
         }
+    }
+
+    LaunchedEffect(classesState.classes) {
+        insightsViewModel.deriveFromClassSummaries(classesState.classes)
     }
 
     // First-login-of-day check-in popup gate (kept from the previous rebuild).
@@ -183,6 +192,13 @@ fun TeacherHomeScreenV2(
                 obligations = obligations,
                 onOpenUpdate = onOpenUpdateTab,
                 onOpenClasses = onOpenClasses,
+            )
+        }
+
+        if (insightsState.insights.isNotEmpty()) {
+            NeedsAttentionSection(
+                insights = insightsState.insights,
+                onOpenAttendanceForAssignment = onOpenAttendanceForAssignment,
             )
         }
 
@@ -901,6 +917,93 @@ private fun SkeletonEventRow() {
             Box(Modifier.size(140.dp, 16.dp).clip(VShapes.sm).background(VColors.lineSoft))
             Spacer(Modifier.height(6.dp))
             Box(Modifier.size(100.dp, 12.dp).clip(VShapes.sm).background(VColors.lineSoft))
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Needs Attention — insight cards derived from class summaries.
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun NeedsAttentionSection(
+    insights: List<InsightCard>,
+    onOpenAttendanceForAssignment: (assignmentId: String, scope: String) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        SectionHeader(title = "Needs Attention")
+        SurfaceCard {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                insights.take(4).forEachIndexed { idx, insight ->
+                    if (idx > 0) {
+                        Box(
+                            Modifier.fillMaxWidth().height(1.dp).background(VColors.lineSoft),
+                        )
+                    }
+                    InsightRow(insight = insight, onTap = {
+                        insight.assignmentId?.let { aid ->
+                            onOpenAttendanceForAssignment(aid, insight.scopeLabel)
+                        }
+                    })
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun InsightRow(insight: InsightCard, onTap: () -> Unit) {
+    val dotColor = when (insight.severity) {
+        InsightSeverity.HIGH -> VColors.coral
+        InsightSeverity.MEDIUM -> VColors.gold
+        InsightSeverity.LOW -> VColors.violet
+    }
+    val ix = remember { MutableInteractionSource() }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.md)
+            .clickable(interactionSource = ix, indication = null) { onTap() }
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .padding(top = 5.dp)
+                .size(7.dp)
+                .clip(CircleShape)
+                .background(dotColor),
+        )
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = insight.title,
+                style = VTypography.bodySmall.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    color = VColors.ink,
+                ),
+            )
+            if (insight.description.isNotBlank()) {
+                Text(
+                    text = insight.description,
+                    style = VTypography.caption.copy(color = VColors.ink3),
+                )
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.padding(top = 4.dp),
+            ) {
+                Text(
+                    text = insight.actionLabel,
+                    style = VTypography.caption.copy(
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = VColors.violet,
+                    ),
+                )
+                Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(12.dp))
+            }
         }
     }
 }

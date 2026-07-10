@@ -822,4 +822,36 @@ class TeacherApi(
             parameter("assignmentId", assignmentId)
         }
     }
+
+    // ── Attendance Analytics ───────────────────────────────────────────────
+
+    /** Class-level attendance analytics (overall %, at-risk, weekly trend, daily breakdown). */
+    suspend fun getAttendanceAnalytics(
+        token: String,
+        assignmentId: String,
+        from: String? = null,
+        to: String? = null,
+    ): NetworkResult<AttendanceAnalyticsResponse> = safeApiCall {
+        client.get(getUrl("api/v1/teacher/attendance/analytics")) {
+            parameter("assignmentId", assignmentId)
+            if (from != null) parameter("from", from)
+            if (to != null) parameter("to", to)
+        }
+    }
+
+    /** Per-student attendance analytics (history + summary). */
+    suspend fun getStudentAnalytics(
+        token: String,
+        assignmentId: String,
+        studentId: String,
+        from: String? = null,
+        to: String? = null,
+    ): NetworkResult<StudentAnalyticsResponse> = safeApiCall {
+        client.get(getUrl("api/v1/teacher/attendance/analytics/student")) {
+            parameter("assignmentId", assignmentId)
+            parameter("studentId", studentId)
+            if (from != null) parameter("from", from)
+            if (to != null) parameter("to", to)
+        }
+    }
 }

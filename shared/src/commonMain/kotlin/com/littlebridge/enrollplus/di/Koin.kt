@@ -632,6 +632,8 @@ val viewModelModule = module {
     factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherClassesViewModel(get(), get(), get()) }
     factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherStudentProfileViewModel(get(), get()) } // T-505
     factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherAttendanceViewModel(get(), get()) }
+    factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherAttendanceAnalyticsViewModel(get(), get()) }
+    factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherInsightsViewModel(get(), get()) }
     // T-305: the rebuilt gradebook state holder (replaces the legacy split of
     // TeacherMarksViewModel + TeacherAssessmentsViewModel, both deleted in T-305).
     factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherGradebookViewModel(get(), get()) }

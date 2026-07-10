@@ -267,4 +267,11 @@ class TeacherRepositoryImpl(
 
     override suspend fun getPaceWarning(token: String, assignmentId: String): NetworkResult<ApiResponse<SylPaceWarning>> =
         cacheFirstNetworkResult(cache, "teacher_pace_warning_$assignmentId", ApiResponse.serializer(SylPaceWarning.serializer())) { api.getPaceWarning(token, assignmentId) }
+
+    // ── Attendance Analytics ───────────────────────────────────────────────
+    override suspend fun getAttendanceAnalytics(token: String, assignmentId: String, from: String?, to: String?): NetworkResult<AttendanceAnalyticsResponse> =
+        api.getAttendanceAnalytics(token, assignmentId, from, to)
+
+    override suspend fun getStudentAnalytics(token: String, assignmentId: String, studentId: String, from: String?, to: String?): NetworkResult<StudentAnalyticsResponse> =
+        api.getStudentAnalytics(token, assignmentId, studentId, from, to)
 }

@@ -336,6 +336,7 @@ fun TeacherPortalV2(
                         teacherName = teacherName,
                         unreadCount = notifications.unreadCount,
                         onOpenNotifications = { overlay = TeacherOverlay.Notifications },
+                        onOpenMessages = { overlay = TeacherOverlay.Messages },
                     )
                 }
 

@@ -175,6 +175,9 @@ private fun ClassListPane(
             // Premium overview strip — a violet "you teach" hero with live totals.
             item { ClassesOverviewStrip(state = state) }
 
+            // Attendance Health mini-card
+            item { AttendanceHealthMiniCard(state = state) }
+
             // Search + filter live in one clean control block.
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -277,6 +280,80 @@ private fun OverviewStat(value: String, label: String, modifier: Modifier = Modi
             style = VtT.caption.coloredV(VColors.white.copy(alpha = 0.8f)).copy(fontSize = 10.sp),
             maxLines = 1,
         )
+    }
+}
+
+@Composable
+private fun AttendanceHealthMiniCard(
+    state: com.littlebridge.enrollplus.feature.teacher.presentation.TeacherClassesState,
+) {
+    val c = VtC
+    val classes = state.classes
+    if (classes.isEmpty()) return
+
+    val totalClasses = classes.size
+    val markedCount = classes.count { it.todayAttendanceMarked }
+    val pendingCount = totalClasses - markedCount
+    val totalAtRisk = classes.sumOf { it.atRiskCount }
+    val healthPct = if (totalClasses > 0) (markedCount * 100 / totalClasses) else 0
+    val healthColor = when {
+        healthPct >= 80 -> VColors.success
+        healthPct >= 50 -> VColors.gold
+        else -> VColors.coral
+    }
+
+    TCard {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                TEyebrow(appString(StringKeys.TC_ATTENDANCE_TODAY))
+                TPill(
+                    "$markedCount/$totalClasses",
+                    healthColor.copy(alpha = 0.14f),
+                    healthColor,
+                )
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                TRing(
+                    percent = healthPct,
+                    accent = healthColor,
+                    modifier = Modifier.size(56.dp),
+                    label = "$healthPct%",
+                    labelSize = 13.sp,
+                )
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Icon(VIcons.Check, contentDescription = null, tint = VColors.success, modifier = Modifier.size(14.dp))
+                        Text(
+                            "$markedCount class${if (markedCount != 1) "es" else ""} marked",
+                            style = VtT.body.coloredV(c.ink).copy(fontSize = 13.sp),
+                        )
+                    }
+                    if (pendingCount > 0) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Icon(VIcons.Clock, contentDescription = null, tint = VColors.gold, modifier = Modifier.size(14.dp))
+                            Text(
+                                "$pendingCount pending",
+                                style = VtT.body.coloredV(c.ink2).copy(fontSize = 13.sp),
+                            )
+                        }
+                    }
+                    if (totalAtRisk > 0) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Icon(VIcons.AlertTriangle, contentDescription = null, tint = VColors.coral, modifier = Modifier.size(14.dp))
+                            Text(
+                                "$totalAtRisk at-risk student${if (totalAtRisk != 1) "s" else ""}",
+                                style = VtT.body.coloredV(c.ink2).copy(fontSize = 13.sp),
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
