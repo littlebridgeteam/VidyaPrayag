@@ -31,7 +31,7 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 /** Full-screen overlays the teacher portal can push above its tab content. */
-private enum class TeacherOverlay { None, Notifications, HealthAlerts, TransportAttendance, Pews, ReportReview, ReportDraftEditor, Heatmap, DigitalIdCard, ScheduledMessages, EventRegistration, Messages, Calendar }
+private enum class TeacherOverlay { None, Notifications, HealthAlerts, TransportAttendance, Pews, ReportReview, ReportDraftEditor, Heatmap, DigitalIdCard, ScheduledMessages, EventRegistration, Messages, Calendar, AnnouncementDetail, LeaveRequests }
 
 /**
  * TeacherPortalV2 — the teacher shell, rebuilt FROM SCRATCH on the Parents-Portal
@@ -83,6 +83,10 @@ fun TeacherPortalV2(
     var reportTerm by remember { mutableStateOf("Term 1") }
     var reportDraftId by remember { mutableStateOf("") }
 
+    // Deep-link-driven state for timetable segment + announcement detail.
+    var showRequestsSegment by remember { mutableStateOf(false) }
+    var announcementId by remember { mutableStateOf<String?>(null) }
+
     // Apply deep-link routing: set tab from the typed target.
     LaunchedEffect(deepLinkTarget, localDeepLink) {
         val target = localDeepLink ?: deepLinkTarget ?: return@LaunchedEffect
@@ -98,11 +102,15 @@ fun TeacherPortalV2(
                     }
                     "tutor" -> overlay = TeacherOverlay.Heatmap
                     "events" -> overlay = TeacherOverlay.EventRegistration
-                    "announcements" -> { tab = "home"; overlay = TeacherOverlay.None }
-                    "leave-requests", "leave" -> { tab = "profile"; overlay = TeacherOverlay.None }
+                    "announcements" -> {
+                        announcementId = target.params["id"]
+                        overlay = TeacherOverlay.AnnouncementDetail
+                    }
+                    "leave-requests", "leave" -> overlay = TeacherOverlay.LeaveRequests
                     "library" -> { tab = "home"; overlay = TeacherOverlay.None }
                     "messages" -> overlay = TeacherOverlay.Messages
-                    "timetable-requests" -> { tab = "timetable"; overlay = TeacherOverlay.None }
+                    "timetable-requests" -> { tab = "timetable"; showRequestsSegment = true; overlay = TeacherOverlay.None }
+                    "timetable" -> { tab = "timetable"; showRequestsSegment = false; overlay = TeacherOverlay.None }
                     "calendar" -> overlay = TeacherOverlay.Calendar
                     // Valid bottom-nav tabs
                     "home", "update", "classes", "timetable", "profile" -> tab = target.screen
@@ -117,14 +125,18 @@ fun TeacherPortalV2(
                 val pathOnly = target.path.substringBefore("?").removePrefix("/")
                 when {
                     pathOnly.startsWith("messages") -> overlay = TeacherOverlay.Messages
-                    pathOnly.startsWith("announcements") -> { tab = "home"; overlay = TeacherOverlay.None }
-                    pathOnly.startsWith("leave") -> { tab = "profile"; overlay = TeacherOverlay.None }
+                    pathOnly.startsWith("announcements") -> {
+                        val queryStr = target.path.substringAfter("?", "")
+                        announcementId = queryStr.substringAfter("id=", "").substringBefore("&").takeIf { it.isNotBlank() }
+                        overlay = TeacherOverlay.AnnouncementDetail
+                    }
+                    pathOnly.startsWith("leave") -> overlay = TeacherOverlay.LeaveRequests
                     pathOnly.startsWith("transport") -> overlay = TeacherOverlay.TransportAttendance
                     pathOnly.startsWith("tutor") -> overlay = TeacherOverlay.Heatmap
                     pathOnly.startsWith("events") -> overlay = TeacherOverlay.EventRegistration
                     pathOnly.startsWith("calendar") -> overlay = TeacherOverlay.Calendar
-                    pathOnly.startsWith("timetable-requests") -> { tab = "timetable"; overlay = TeacherOverlay.None }
-                    pathOnly.startsWith("timetable") -> { tab = "timetable"; overlay = TeacherOverlay.None }
+                    pathOnly.startsWith("timetable-requests") -> { tab = "timetable"; showRequestsSegment = true; overlay = TeacherOverlay.None }
+                    pathOnly.startsWith("timetable") -> { tab = "timetable"; showRequestsSegment = false; overlay = TeacherOverlay.None }
                     else -> tab = "home"
                 }
             }
@@ -248,6 +260,21 @@ fun TeacherPortalV2(
             )
             return
         }
+        TeacherOverlay.AnnouncementDetail -> {
+            TeacherAnnouncementDetailScreen(
+                announcementId = announcementId,
+                onBack = { overlay = TeacherOverlay.None; announcementId = null },
+                modifier = modifier,
+            )
+            return
+        }
+        TeacherOverlay.LeaveRequests -> {
+            TeacherLeaveRequestsScreenV2(
+                onBack = { overlay = TeacherOverlay.None },
+                modifier = modifier,
+            )
+            return
+        }
         TeacherOverlay.None -> Unit
     }
 
@@ -315,6 +342,7 @@ fun TeacherPortalV2(
                         tab = "update"
                     },
                     onOpenClasses = { tab = "classes" },
+                    onOpenLeaveRequests = { overlay = TeacherOverlay.LeaveRequests },
                     onOpenHealthAlerts = { overlay = TeacherOverlay.HealthAlerts },
                     onOpenTransportAttendance = { overlay = TeacherOverlay.TransportAttendance },
                     onOpenPews = { overlay = TeacherOverlay.Pews },
@@ -350,6 +378,7 @@ fun TeacherPortalV2(
                     teacherName = teacherName,
                     unreadCount = notifications.unreadCount,
                     onOpenNotifications = { overlay = TeacherOverlay.Notifications },
+                    initialShowRequests = showRequestsSegment,
                 )
 
                 "profile" -> TeacherProfileScreenV2(

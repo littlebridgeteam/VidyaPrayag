@@ -91,6 +91,7 @@ fun TeacherHomeScreenV2(
     onOpenUpdateTab: () -> Unit,
     onOpenUpdateTool: (UpdateTool) -> Unit,
     onOpenClasses: () -> Unit,
+    onOpenLeaveRequests: () -> Unit = {},
     onOpenHealthAlerts: () -> Unit,
     onOpenTransportAttendance: () -> Unit,
     onOpenPews: () -> Unit,
@@ -192,6 +193,7 @@ fun TeacherHomeScreenV2(
                 obligations = obligations,
                 onOpenUpdate = onOpenUpdateTab,
                 onOpenClasses = onOpenClasses,
+                onOpenLeaveRequests = onOpenLeaveRequests,
             )
         }
 
@@ -531,6 +533,7 @@ private fun PendingActionsList(
     obligations: TeacherObligationsState,
     onOpenUpdate: () -> Unit,
     onOpenClasses: () -> Unit,
+    onOpenLeaveRequests: () -> Unit = {},
 ) {
     if (obligations.unavailable) {
         EmptyCard(text = appString(StringKeys.COMMON_ERROR_GENERIC))
@@ -575,7 +578,7 @@ private fun PendingActionsList(
                 suffix = appString(StringKeys.TC_PENDING_COUNT),
                 icon = VIcons.Calendar,
                 tint = VColors.coral,
-                onClick = onOpenClasses,
+                onClick = onOpenLeaveRequests,
             ))
         }
     }
