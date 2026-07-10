@@ -257,9 +257,8 @@ fun Route.gamificationRouting() {
                 }
                 if (owns == null) { call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@get }
 
-                val childRow = owns
-                val sid = childRow[ChildrenTable.schoolId]
-                if (sid == null) { call.fail("Child school not found", HttpStatusCode.NotFound, "SCHOOL_NOT_FOUND"); return@get }
+                val sid = owns[ChildrenTable.schoolId]
+                if (sid == null) { call.ok(emptyList<Map<String,*>>(), "Active boosts (0 — no school)"); return@get }
 
                 val now = Instant.now()
                 val boosts = dbQuery {
@@ -273,10 +272,10 @@ fun Route.gamificationRouting() {
                         .map {
                             mapOf(
                                 "id" to it[GameXpBoostsTable.id].value.toString(),
-                                "boostType" to it[GameXpBoostsTable.boostType],
+                                "boost_type" to it[GameXpBoostsTable.boostType],
                                 "multiplier" to it[GameXpBoostsTable.multiplier],
-                                "targetScope" to it[GameXpBoostsTable.targetScope],
-                                "endsAt" to it[GameXpBoostsTable.endsAt].toString()
+                                "target_scope" to it[GameXpBoostsTable.targetScope],
+                                "ends_at" to it[GameXpBoostsTable.endsAt].toString()
                             )
                         }
                 }
@@ -298,7 +297,7 @@ fun Route.gamificationRouting() {
                 }
                 if (owns == null) { call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@get }
                 val sid = owns[ChildrenTable.schoolId]
-                if (sid == null) { call.fail("Child school not found", HttpStatusCode.NotFound, "SCHOOL_NOT_FOUND"); return@get }
+                if (sid == null) { call.ok(emptyList<Map<String,*>>(), "Class goals (0 — no school)"); return@get }
 
                 val goals = dbQuery {
                     GameClassGoalsTable.selectAll()
@@ -321,6 +320,135 @@ fun Route.gamificationRouting() {
                         }
                 }
                 call.ok(goals, "Class goals (${goals.size})")
+            }
+
+            // ── Parent: Quests ─────────────────────────────────────────────
+            get("/{childId}/quests") {
+                val uid = call.principalUserUuid() ?: run {
+                    call.fail("Invalid token", HttpStatusCode.Unauthorized, "UNAUTHORIZED"); return@get
+                }
+                val childId = call.parameters["childId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                    ?: run { call.fail("Invalid child id"); return@get }
+
+                val owns = dbQuery {
+                    ChildrenTable.selectAll()
+                        .where { (ChildrenTable.id eq childId) and (ChildrenTable.parentId eq uid) }
+                        .firstOrNull()
+                }
+                if (owns == null) { call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@get }
+
+                val quests = QuestService.getStudentQuests(childId)
+                call.ok(quests, "Student quests (${quests.size})")
+            }
+
+            // ── Parent: House ──────────────────────────────────────────────
+            get("/{childId}/house") {
+                val uid = call.principalUserUuid() ?: run {
+                    call.fail("Invalid token", HttpStatusCode.Unauthorized, "UNAUTHORIZED"); return@get
+                }
+                val childId = call.parameters["childId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                    ?: run { call.fail("Invalid child id"); return@get }
+
+                val owns = dbQuery {
+                    ChildrenTable.selectAll()
+                        .where { (ChildrenTable.id eq childId) and (ChildrenTable.parentId eq uid) }
+                        .firstOrNull()
+                }
+                if (owns == null) { call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@get }
+
+                val house = HouseService.getStudentHouse(childId)
+                if (house != null) call.ok(house, "Student house")
+                else call.okMessage("No house assigned")
+            }
+
+            // ── Parent: Rewards ────────────────────────────────────────────
+            get("/{childId}/rewards") {
+                val uid = call.principalUserUuid() ?: run {
+                    call.fail("Invalid token", HttpStatusCode.Unauthorized, "UNAUTHORIZED"); return@get
+                }
+                val childId = call.parameters["childId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                    ?: run { call.fail("Invalid child id"); return@get }
+
+                val childRow = dbQuery {
+                    ChildrenTable.selectAll()
+                        .where { (ChildrenTable.id eq childId) and (ChildrenTable.parentId eq uid) }
+                        .firstOrNull()
+                }
+                if (childRow == null) { call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@get }
+                val sid = childRow[ChildrenTable.schoolId]
+                if (sid == null) { call.ok(emptyList<RewardDto>(), "Reward catalog (0 — no school)"); return@get }
+                val rewards = RewardService.getRewardCatalog(sid)
+                call.ok(rewards, "Reward catalog (${rewards.size})")
+            }
+
+            // ── Parent: Redeem reward ──────────────────────────────────────
+            post("/{childId}/rewards/{rewardId}/redeem") {
+                val uid = call.principalUserUuid() ?: run {
+                    call.fail("Invalid token", HttpStatusCode.Unauthorized, "UNAUTHORIZED"); return@post
+                }
+                val childId = call.parameters["childId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                    ?: run { call.fail("Invalid child id"); return@post }
+                val rewardId = call.parameters["rewardId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                    ?: run { call.fail("Invalid reward id"); return@post }
+
+                val childRow = dbQuery {
+                    ChildrenTable.selectAll()
+                        .where { (ChildrenTable.id eq childId) and (ChildrenTable.parentId eq uid) }
+                        .firstOrNull()
+                }
+                if (childRow == null) { call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@post }
+                val sid = childRow[ChildrenTable.schoolId]
+                if (sid == null) {
+                    call.fail("Child school not found", HttpStatusCode.NotFound, "SCHOOL_NOT_FOUND"); return@post
+                }
+
+                val redemption = RewardService.redeemReward(childId, rewardId, sid)
+                if (redemption != null) call.ok(redemption, "Reward redeemed")
+                else call.fail("Insufficient XP or reward unavailable", HttpStatusCode.BadRequest, "REDEMPTION_FAILED")
+            }
+
+            // ── Parent: Redemption history ─────────────────────────────────
+            get("/{childId}/redemptions") {
+                val uid = call.principalUserUuid() ?: run {
+                    call.fail("Invalid token", HttpStatusCode.Unauthorized, "UNAUTHORIZED"); return@get
+                }
+                val childId = call.parameters["childId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                    ?: run { call.fail("Invalid child id"); return@get }
+
+                val owns = dbQuery {
+                    ChildrenTable.selectAll()
+                        .where { (ChildrenTable.id eq childId) and (ChildrenTable.parentId eq uid) }
+                        .firstOrNull()
+                }
+                if (owns == null) { call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@get }
+
+                val redemptions = RewardService.getStudentRedemptions(childId)
+                call.ok(redemptions, "Redemptions (${redemptions.size})")
+            }
+
+            // ── Parent: Leaderboard ────────────────────────────────────────
+            get("/{childId}/leaderboard") {
+                val uid = call.principalUserUuid() ?: run {
+                    call.fail("Invalid token", HttpStatusCode.Unauthorized, "UNAUTHORIZED"); return@get
+                }
+                val childId = call.parameters["childId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                    ?: run { call.fail("Invalid child id"); return@get }
+
+                val childRow = dbQuery {
+                    ChildrenTable.selectAll()
+                        .where { (ChildrenTable.id eq childId) and (ChildrenTable.parentId eq uid) }
+                        .firstOrNull()
+                }
+                if (childRow == null) { call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@get }
+                val sid = childRow[ChildrenTable.schoolId]
+                if (sid == null) {
+                    call.ok(mapOf("leaderboard" to emptyList<LeaderboardEntryDto>(), "myRank" to 0), "Leaderboard (no school)")
+                    return@get
+                }
+
+                val leaderboard = LeaderboardService.getSchoolLeaderboard(sid)
+                val rank = LeaderboardService.getStudentRank(sid, childId)
+                call.ok(mapOf("leaderboard" to leaderboard, "myRank" to rank), "Leaderboard")
             }
         }
 
@@ -671,134 +799,6 @@ fun Route.gamificationRouting() {
                 val ctx = call.requireSchoolAdmin() ?: return@get
                 val levels = GamificationService.getLevelDefinitions()
                 call.ok(levels, "Level definitions (${levels.size})")
-            }
-        }
-
-        // ── Parent: Quests, Houses, Rewards, Leaderboard, Events ────────
-        route("/api/v1/parent/gamification/{childId}") {
-
-            get("/quests") {
-                val uid = call.principalUserUuid() ?: run {
-                    call.fail("Invalid token", HttpStatusCode.Unauthorized, "UNAUTHORIZED"); return@get
-                }
-                val childId = call.parameters["childId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
-                    ?: run { call.fail("Invalid child id"); return@get }
-
-                val owns = dbQuery {
-                    ChildrenTable.selectAll()
-                        .where { (ChildrenTable.id eq childId) and (ChildrenTable.parentId eq uid) }
-                        .firstOrNull()
-                }
-                if (owns == null) { call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@get }
-
-                val quests = QuestService.getStudentQuests(childId)
-                call.ok(quests, "Student quests (${quests.size})")
-            }
-
-            get("/house") {
-                val uid = call.principalUserUuid() ?: run {
-                    call.fail("Invalid token", HttpStatusCode.Unauthorized, "UNAUTHORIZED"); return@get
-                }
-                val childId = call.parameters["childId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
-                    ?: run { call.fail("Invalid child id"); return@get }
-
-                val owns = dbQuery {
-                    ChildrenTable.selectAll()
-                        .where { (ChildrenTable.id eq childId) and (ChildrenTable.parentId eq uid) }
-                        .firstOrNull()
-                }
-                if (owns == null) { call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@get }
-
-                val house = HouseService.getStudentHouse(childId)
-                if (house != null) call.ok(house, "Student house")
-                else call.okMessage("No house assigned")
-            }
-
-            get("/rewards") {
-                val uid = call.principalUserUuid() ?: run {
-                    call.fail("Invalid token", HttpStatusCode.Unauthorized, "UNAUTHORIZED"); return@get
-                }
-                val childId = call.parameters["childId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
-                    ?: run { call.fail("Invalid child id"); return@get }
-
-                val childRow = dbQuery {
-                    ChildrenTable.selectAll()
-                        .where { (ChildrenTable.id eq childId) and (ChildrenTable.parentId eq uid) }
-                        .firstOrNull()
-                }
-                if (childRow == null) { call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@get }
-                val sid = childRow[ChildrenTable.schoolId]
-                if (sid == null) {
-                    call.fail("Child school not found", HttpStatusCode.NotFound, "SCHOOL_NOT_FOUND"); return@get
-                }
-                val rewards = RewardService.getRewardCatalog(sid)
-                call.ok(rewards, "Reward catalog (${rewards.size})")
-            }
-
-            post("/rewards/{rewardId}/redeem") {
-                val uid = call.principalUserUuid() ?: run {
-                    call.fail("Invalid token", HttpStatusCode.Unauthorized, "UNAUTHORIZED"); return@post
-                }
-                val childId = call.parameters["childId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
-                    ?: run { call.fail("Invalid child id"); return@post }
-                val rewardId = call.parameters["rewardId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
-                    ?: run { call.fail("Invalid reward id"); return@post }
-
-                val childRow = dbQuery {
-                    ChildrenTable.selectAll()
-                        .where { (ChildrenTable.id eq childId) and (ChildrenTable.parentId eq uid) }
-                        .firstOrNull()
-                }
-                if (childRow == null) { call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@post }
-                val sid = childRow[ChildrenTable.schoolId]
-                if (sid == null) {
-                    call.fail("Child school not found", HttpStatusCode.NotFound, "SCHOOL_NOT_FOUND"); return@post
-                }
-
-                val redemption = RewardService.redeemReward(childId, rewardId, sid)
-                if (redemption != null) call.ok(redemption, "Reward redeemed")
-                else call.fail("Insufficient XP or reward unavailable", HttpStatusCode.BadRequest, "REDEMPTION_FAILED")
-            }
-
-            get("/redemptions") {
-                val uid = call.principalUserUuid() ?: run {
-                    call.fail("Invalid token", HttpStatusCode.Unauthorized, "UNAUTHORIZED"); return@get
-                }
-                val childId = call.parameters["childId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
-                    ?: run { call.fail("Invalid child id"); return@get }
-
-                val owns = dbQuery {
-                    ChildrenTable.selectAll()
-                        .where { (ChildrenTable.id eq childId) and (ChildrenTable.parentId eq uid) }
-                        .firstOrNull()
-                }
-                if (owns == null) { call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@get }
-
-                val redemptions = RewardService.getStudentRedemptions(childId)
-                call.ok(redemptions, "Redemptions (${redemptions.size})")
-            }
-
-            get("/leaderboard") {
-                val uid = call.principalUserUuid() ?: run {
-                    call.fail("Invalid token", HttpStatusCode.Unauthorized, "UNAUTHORIZED"); return@get
-                }
-                val childId = call.parameters["childId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
-                    ?: run { call.fail("Invalid child id"); return@get }
-
-                val childRow = dbQuery {
-                    ChildrenTable.selectAll()
-                        .where { (ChildrenTable.id eq childId) and (ChildrenTable.parentId eq uid) }
-                        .firstOrNull()
-                }
-                if (childRow == null) { call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@get }
-                val sid = childRow[ChildrenTable.schoolId]
-                if (sid == null) {
-                    call.fail("Child school not found", HttpStatusCode.NotFound, "SCHOOL_NOT_FOUND"); return@get
-                }
-
-                val leaderboard = LeaderboardService.getSchoolLeaderboard(sid)
-                val rank = LeaderboardService.getStudentRank(sid, childId)
-                call.ok(mapOf("leaderboard" to leaderboard, "myRank" to rank), "Leaderboard")
             }
         }
 
