@@ -5,7 +5,14 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -561,11 +568,23 @@ private fun AuthedFlow(
         modifier = modifier,
     ) { current ->
         when (current) {
-            // Brief resolving frame — themed background only, no spinner flash for the common
-            // (already-completed) case which resolves on the first composition.
-            AuthedRoute.Resolving -> androidx.compose.foundation.layout.Box(
-                Modifier.then(modifier),
-            ) {}
+            // Brief resolving frame — themed background + skeleton so the user
+            // never sees a blank screen between splash and portal.
+            AuthedRoute.Resolving -> {
+                val c = VTheme.colors
+                Box(
+                    Modifier
+                        .then(modifier)
+                        .fillMaxSize()
+                        .background(c.background),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator(
+                        color = c.accent,
+                        modifier = Modifier.size(36.dp),
+                    )
+                }
+            }
 
             AuthedRoute.ParentLinkChild -> ParentLinkChildScreenV2(
                 onDone = { route = AuthedRoute.Portal },

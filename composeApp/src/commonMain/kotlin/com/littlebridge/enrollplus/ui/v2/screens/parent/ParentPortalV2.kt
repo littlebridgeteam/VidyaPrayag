@@ -40,6 +40,7 @@ import com.littlebridge.enrollplus.feature.parent.presentation.TrackProgressView
 import com.littlebridge.enrollplus.ui.v2.components.VAvatar
 import com.littlebridge.enrollplus.ui.v2.components.VDivider
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.components.VOfflineBanner
 import com.littlebridge.enrollplus.ui.v2.components.VNavItem
 import com.littlebridge.enrollplus.ui.v2.components.VScreenScaffold
 import com.littlebridge.enrollplus.ui.v2.components.VStatusDot
@@ -49,6 +50,7 @@ import com.littlebridge.enrollplus.ui.v2.navigation.DeepLinkTarget
 import com.littlebridge.enrollplus.ui.v2.navigation.EntryRole
 import com.littlebridge.enrollplus.ui.v2.navigation.parseDeepLink
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
 import com.littlebridge.enrollplus.ui.v2.screens.auth.ParentLinkChildScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.discovery.AcademicCalendarScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.discovery.DiscoveryScreenV2
@@ -192,13 +194,12 @@ fun ParentPortalV2(
         return
     }
 
-    // First load with no cached children — show a loading indicator, not the unlinked screen.
+    // First load with no cached children — show a skeleton, not a blank spinner.
     if (dashboard.isLoading && dashboard.children.isEmpty()) {
-        Box(
-            modifier = modifier.fillMaxSize().background(VColors.surface),
-            contentAlignment = Alignment.Center,
+        Column(
+            modifier = modifier.fillMaxSize().background(VColors.cream).statusBarsPadding(),
         ) {
-            CircularProgressIndicator(color = VColors.primary)
+            SkeletonDashboard()
         }
         return
     }
@@ -416,7 +417,12 @@ fun ParentPortalV2(
         },
     ) { padding ->
         Box(Modifier.fillMaxSize()) {
-            when (tab) {
+            Column(Modifier.fillMaxSize()) {
+                VOfflineBanner(
+                    isOffline = dashboard.isOffline,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                )
+                when (tab) {
                 "home" -> ParentHomeScreenV2(
                     onDiscoverSchools = { overlay = ParentOverlay.Discovery },
                     onOpenNotifications = { overlay = ParentOverlay.Notifications },
@@ -480,6 +486,7 @@ fun ParentPortalV2(
                     onDiscoverSchools = { overlay = ParentOverlay.Discovery },
                     onOpenAccountSettings = { overlay = ParentOverlay.Profile },
                 )
+            }
             }
         }
     }

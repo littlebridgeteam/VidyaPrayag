@@ -56,6 +56,7 @@ data class SchoolDashboardState(
     val onboardingStatus: DashboardOnboardingStatus = DashboardOnboardingStatus.UNKNOWN,
     val adminName: String = "Admin",
     val isLoading: Boolean = true,
+    val isRefreshing: Boolean = false,
     val errorMessage: String? = null,
     val summary: AdminDashboardSummary? = null,
     val analytics: AdminDashboardAnalytics? = null,
@@ -102,12 +103,13 @@ class SchoolDashboardViewModel(
 
     fun refresh() {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, errorMessage = null) }
+            val hasData = _state.value.overview != null
+            _state.update { it.copy(isLoading = !hasData, isRefreshing = hasData, errorMessage = null) }
 
             val token = preferenceRepository.getUserToken().first()
             if (token.isNullOrBlank()) {
                 AppLogger.d("SchoolDashboardVM", "No auth token in prefs; skipping refresh")
-                _state.update { it.copy(isLoading = false) }
+                _state.update { it.copy(isLoading = false, isRefreshing = false) }
                 return@launch
             }
 
@@ -128,7 +130,7 @@ class SchoolDashboardViewModel(
 
             loadDashboard(token)
 
-            _state.update { it.copy(isLoading = false) }
+            _state.update { it.copy(isLoading = false, isRefreshing = false) }
         }
     }
 

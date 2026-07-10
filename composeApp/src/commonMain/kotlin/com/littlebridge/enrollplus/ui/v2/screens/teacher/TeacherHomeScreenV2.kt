@@ -60,6 +60,7 @@ import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.components.VOfflineBanner
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import kotlinx.coroutines.delay
@@ -150,6 +151,11 @@ fun TeacherHomeScreenV2(
             accent = appString(StringKeys.TC_YOUR_DAY),
             unreadCount = unreadCount,
             onOpenNotifications = onOpenNotifications,
+        )
+
+        VOfflineBanner(
+            isOffline = today.isOffline || obligations.isOffline,
+            modifier = Modifier.fillMaxWidth(),
         )
 
         NowTeachingCard(

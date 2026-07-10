@@ -85,6 +85,7 @@ data class ParentDashboardState(
     val greeting: String = "",
     val alerts: List<DashboardAlertDto> = emptyList(),
     val isLoading: Boolean = false,
+    val isRefreshing: Boolean = false,
     val error: String? = null,
     val isStale: Boolean = false,
     val isOffline: Boolean = false,
@@ -151,7 +152,8 @@ class ParentDashboardViewModel(
 
     fun load() {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, error = null) }
+            val hasData = _state.value.children.isNotEmpty()
+            _state.update { it.copy(isLoading = !hasData, isRefreshing = hasData, error = null) }
             val token = token() ?: run {
                 _state.update { it.copy(isLoading = false, error = "Not signed in") }
                 return@launch
@@ -169,6 +171,7 @@ class ParentDashboardViewModel(
                     _state.update {
                         it.copy(
                             isLoading = false,
+                            isRefreshing = false,
                             greeting = data.greeting,
                             alerts = data.alerts,
                             children = children,
@@ -180,9 +183,9 @@ class ParentDashboardViewModel(
                     resolved?.let { loadChildData(it) }
                 }
                 is NetworkResult.Error ->
-                    _state.update { it.copy(isLoading = false, error = result.message) }
+                    _state.update { it.copy(isLoading = false, isRefreshing = false, error = result.message) }
                 is NetworkResult.ConnectionError ->
-                    _state.update { it.copy(isLoading = false, error = "Connection error") }
+                    _state.update { it.copy(isLoading = false, isRefreshing = false, error = "Connection error") }
             }
         }
     }

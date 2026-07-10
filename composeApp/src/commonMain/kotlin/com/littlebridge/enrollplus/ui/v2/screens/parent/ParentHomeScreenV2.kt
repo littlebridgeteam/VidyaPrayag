@@ -89,8 +89,8 @@ fun ParentHomeScreenV2(
     val transport by transportViewModel.state.collectAsStateV2()
     var isRefreshing by remember { mutableStateOf(false) }
 
-    LaunchedEffect(state.isLoading) {
-        if (!state.isLoading) isRefreshing = false
+    LaunchedEffect(state.isLoading, state.isRefreshing) {
+        if (!state.isLoading && !state.isRefreshing) isRefreshing = false
     }
 
     LaunchedEffect(Unit) {

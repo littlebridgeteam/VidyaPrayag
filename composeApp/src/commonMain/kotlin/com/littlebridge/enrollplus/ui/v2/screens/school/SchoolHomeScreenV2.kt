@@ -67,6 +67,7 @@ import com.littlebridge.enrollplus.feature.parent.presentation.NotificationsView
 import com.littlebridge.enrollplus.platform.rememberNotificationPermissionLauncher
 import com.littlebridge.enrollplus.presentation.PermissionViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
+import com.littlebridge.enrollplus.ui.v2.components.VOfflineBanner
 import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
@@ -152,7 +153,7 @@ fun SchoolHomeScreenV2(
     }
 
     VPullRefresh(
-        isRefreshing = loading && overview != null,
+        isRefreshing = dashboardState.isRefreshing,
         onRefresh = { viewModel.refresh(); calendarViewModel.refresh() },
         modifier = modifier.fillMaxSize().background(VColors.cream),
     ) {
@@ -167,6 +168,10 @@ fun SchoolHomeScreenV2(
             modifier = Modifier.fillMaxSize(),
         ) {
             val ov = overview!!
+            VOfflineBanner(
+                isOffline = dashboardState.isOffline,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+            )
             CommandDesk(
                 overview = ov,
                 activity = activity,
