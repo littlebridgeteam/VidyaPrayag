@@ -32,23 +32,33 @@ class ParentRepositoryImpl(
         cacheFirstNetworkResult(cache, "parent_notifications", ParentNotificationsResponse.serializer()) { api.getNotifications(token) }
 
     override suspend fun markNotificationRead(token: String, id: String): NetworkResult<Unit> {
-        return api.markNotificationRead(token, id)
+        val result = api.markNotificationRead(token, id)
+        cache.delete("parent_notifications")
+        return result
     }
 
     override suspend fun markAllNotificationsRead(token: String): NetworkResult<Unit> {
-        return api.markAllNotificationsRead(token)
+        val result = api.markAllNotificationsRead(token)
+        cache.delete("parent_notifications")
+        return result
     }
 
     override suspend fun markNotificationByRef(token: String, refType: String, refId: String): NetworkResult<Unit> {
-        return api.markNotificationByRef(token, refType, refId)
+        val result = api.markNotificationByRef(token, refType, refId)
+        cache.delete("parent_notifications")
+        return result
     }
 
     override suspend fun clearReadNotifications(token: String): NetworkResult<Unit> {
-        return api.clearReadNotifications(token)
+        val result = api.clearReadNotifications(token)
+        cache.delete("parent_notifications")
+        return result
     }
 
     override suspend fun clearAllNotifications(token: String): NetworkResult<Unit> {
-        return api.clearAllNotifications(token)
+        val result = api.clearAllNotifications(token)
+        cache.delete("parent_notifications")
+        return result
     }
 
     override suspend fun getChildAttendance(token: String, childId: String): NetworkResult<ParentAttendanceResponse> =
@@ -134,11 +144,11 @@ class ParentRepositoryImpl(
     override suspend fun getQuizDetail(token: String, quizId: String): NetworkResult<ParentQuizDetailResponse> =
         cacheFirstNetworkResult(cache, "parent_quiz_detail_$quizId", ParentQuizDetailResponse.serializer()) { api.getQuizDetail(token, quizId) }
 
-    override suspend fun submitQuiz(token: String, request: QuizSubmitRequest): NetworkResult<QuizSubmitResponse> {
-        val result = api.submitQuiz(token, request)
+    override suspend fun submitQuiz(token: String, childId: String, request: QuizSubmitRequest): NetworkResult<QuizSubmitResponse> {
+        val result = api.submitQuiz(token, childId, request)
         if (result is NetworkResult.Success) {
             // Invalidate quiz list cache so the submitted quiz shows "SUBMITTED" status on next load
-            request.childId?.let { cache.delete("parent_quiz_list_$it") }
+            cache.delete("parent_quiz_list_$childId")
         }
         return result
     }

@@ -1286,11 +1286,28 @@ private fun UpdateItem(
                 )
             }
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "School Admin",
-                    style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
-                    color = VColors.ink3,
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = announcement.category.ifBlank { "Notice" },
+                        style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                        color = VColors.violet,
+                    )
+                    if (announcement.date.isNotBlank()) {
+                        Text(
+                            text = "·",
+                            style = VTypography.caption.copy(fontSize = 11.sp),
+                            color = VColors.ink3,
+                        )
+                        Text(
+                            text = announcement.date,
+                            style = VTypography.caption.copy(fontSize = 11.sp),
+                            color = VColors.ink3,
+                        )
+                    }
+                }
                 Text(
                     text = announcement.title,
                     style = VTypography.body.copy(fontWeight = FontWeight.Bold, fontSize = 15.sp),

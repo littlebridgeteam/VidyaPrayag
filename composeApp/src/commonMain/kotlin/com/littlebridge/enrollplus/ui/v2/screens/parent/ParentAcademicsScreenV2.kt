@@ -1628,6 +1628,7 @@ private fun LoadingState() {
 private fun ErrorState(message: String, onRetry: (() -> Unit)? = null) {
     CreamCard {
         Row(
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {

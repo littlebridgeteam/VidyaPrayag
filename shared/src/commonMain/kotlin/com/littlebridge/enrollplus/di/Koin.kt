@@ -724,6 +724,8 @@ val viewModelModule = module {
     factory { com.littlebridge.enrollplus.feature.admin.presentation.SchoolDayConfigViewModel(get(), get(), get()) }
     // Classes & Subjects consolidated management screen
     factory { com.littlebridge.enrollplus.feature.admin.presentation.ClassesSubjectsViewModel(get(), get(), get()) }
+    // Gamification — parent view model for child's gamification data
+    factory { com.littlebridge.enrollplus.feature.gamification.presentation.ParentGamificationViewModel(get(), get()) }
 }
 
 fun initKoin(

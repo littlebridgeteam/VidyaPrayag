@@ -42,6 +42,11 @@ import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
 import com.littlebridge.enrollplus.feature.parent.domain.model.DashboardChildSummary
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentMarkDto
+import com.littlebridge.enrollplus.feature.gamification.domain.model.StudentBadge as GameBadge
+import com.littlebridge.enrollplus.feature.gamification.domain.model.StudentQuest
+import com.littlebridge.enrollplus.feature.gamification.domain.model.SeasonalEvent
+import com.littlebridge.enrollplus.feature.gamification.presentation.ParentGamificationState
+import com.littlebridge.enrollplus.feature.gamification.presentation.ParentGamificationViewModel
 import com.littlebridge.enrollplus.feature.parent.presentation.AchievementBadge
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentAcademicsViewModel
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentDashboardState
@@ -75,11 +80,13 @@ fun ParentProfileCardScreenV2(
     profileViewModel: ParentProfileViewModel = koinViewModel(),
     academicsViewModel: ParentAcademicsViewModel = koinViewModel(),
     trackViewModel: TrackProgressViewModel = koinViewModel(),
+    gamificationViewModel: ParentGamificationViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
     val profile by profileViewModel.state.collectAsStateV2()
     val academics by academicsViewModel.state.collectAsStateV2()
     val track by trackViewModel.state.collectAsStateV2()
+    val gamification by gamificationViewModel.state.collectAsStateV2()
     var isRefreshing by remember { mutableStateOf(false) }
 
     LaunchedEffect(state.isLoading, state.isRefreshing) {
@@ -93,6 +100,7 @@ fun ParentProfileCardScreenV2(
     LaunchedEffect(state.selectedChild?.id) {
         state.selectedChild?.id?.let {
             academicsViewModel.selectChild(it)
+            gamificationViewModel.load(it)
         }
     }
 
@@ -110,6 +118,7 @@ fun ParentProfileCardScreenV2(
             profile = profile,
             academics = academics,
             track = track,
+            gamification = gamification,
             parentName = parentName,
             children = children,
             selectedChild = selectedChild,
@@ -132,6 +141,7 @@ private fun ProfileContent(
     profile: ParentProfileState,
     academics: com.littlebridge.enrollplus.feature.parent.presentation.ParentAcademicsState,
     track: TrackProgressState,
+    gamification: ParentGamificationState,
     parentName: String,
     children: List<DashboardChildSummary>,
     selectedChild: DashboardChildSummary?,
@@ -173,6 +183,7 @@ private fun ProfileContent(
                 profile = profile,
                 academics = academics,
                 track = track,
+                gamification = gamification,
                 onRetryProfile = onRetryProfile,
                 onLogout = onLogout,
                 onLinkChild = onLinkChild,
@@ -276,6 +287,7 @@ private fun ProfileLoaded(
     profile: ParentProfileState,
     academics: com.littlebridge.enrollplus.feature.parent.presentation.ParentAcademicsState,
     track: TrackProgressState,
+    gamification: ParentGamificationState,
     onRetryProfile: () -> Unit,
     onLogout: () -> Unit,
     onLinkChild: () -> Unit,
@@ -289,6 +301,12 @@ private fun ProfileLoaded(
         if (m.maxMarks > 0) ((m.marks ?: 0.0) / m.maxMarks * 100).roundToInt() else null
     }
 
+    val gameStats = gamification.stats
+    val gameLevel = gameStats?.currentLevel ?: track.currentLevel
+    val gameXp = gameStats?.totalXp ?: (track.overallProgress * 5000).roundToInt()
+    val gameLevelTitle = gameStats?.levelTitle ?: "Scholar"
+    val gameStreak = gameStats?.streakDays ?: 0
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -297,20 +315,44 @@ private fun ProfileLoaded(
     ) {
         ProfileHeroCard(
             childName = childName,
-            level = child?.currentLevel ?: track.currentLevel,
-            overallProgress = track.overallProgress,
+            level = gameLevel,
+            levelTitle = gameLevelTitle,
+            totalXp = gameXp,
+            streakDays = gameStreak,
         )
 
         SectionHeader(title = "Stats")
         StatsGrid(
             attendanceRate = attendanceRate,
             markPct = markPct,
-            xpPoints = (track.overallProgress * 5000).roundToInt(),
+            xpPoints = gameXp,
             quizzesDone = academics.quizzes.size,
+            streakDays = gameStreak,
+            houseName = gamification.house?.name,
+            leaderboardRank = gamification.leaderboard?.myRank,
         )
 
         SectionHeader(title = "Badges", action = "All", onAction = {})
-        BadgesRow(badges = track.badges)
+        if (gamification.badges.isNotEmpty()) {
+            GameBadgesRow(badges = gamification.badges)
+        } else {
+            BadgesRow(badges = track.badges)
+        }
+
+        if (gamification.quests.isNotEmpty()) {
+            SectionHeader(title = "Quests")
+            QuestsRow(quests = gamification.quests)
+        }
+
+        if (gamification.activeBoosts.isNotEmpty()) {
+            SectionHeader(title = "Active Boosts")
+            BoostsRow(boosts = gamification.activeBoosts)
+        }
+
+        if (gamification.events.isNotEmpty()) {
+            SectionHeader(title = "Seasonal Events")
+            EventsRow(events = gamification.events)
+        }
 
         SectionHeader(title = "Account")
         AccountCard(
@@ -332,10 +374,12 @@ private fun ProfileLoaded(
 private fun ProfileHeroCard(
     childName: String,
     level: Int,
-    overallProgress: Float,
+    levelTitle: String,
+    totalXp: Int,
+    streakDays: Int,
 ) {
-    val xp = (overallProgress * 5000).roundToInt()
     val xpMax = 5000
+    val xpProgress = (totalXp.toFloat() / xpMax.toFloat()).coerceIn(0f, 1f)
 
     Column(
         modifier = Modifier
@@ -382,7 +426,7 @@ private fun ProfileHeroCard(
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "Student",
+                    text = if (streakDays > 0) "\uD83D\uDD25 $streakDays day streak" else "Student",
                     style = VTypography.caption.copy(fontSize = 13.sp),
                     color = VColors.white.copy(alpha = 0.7f),
                     fontWeight = FontWeight.Medium,
@@ -395,7 +439,7 @@ private fun ProfileHeroCard(
                         .padding(horizontal = 12.dp, vertical = 5.dp),
                 ) {
                     Text(
-                        text = "🏆 Level $level Scholar",
+                        text = "🏆 Level $level $levelTitle",
                         style = VTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
                         color = VColors.white,
                     )
@@ -411,12 +455,12 @@ private fun ProfileHeroCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "Level $level — Scholar",
+                text = "Level $level — $levelTitle",
                 style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
                 color = VColors.white,
             )
             Text(
-                text = "$xp / $xpMax XP",
+                text = "$totalXp / $xpMax XP",
                 style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
                 color = VColors.white.copy(alpha = 0.8f),
             )
@@ -433,7 +477,7 @@ private fun ProfileHeroCard(
         ) {
             Box(
                 modifier = Modifier
-                    .fillMaxWidth((overallProgress).coerceIn(0f, 1f))
+                    .fillMaxWidth(xpProgress)
                     .height(8.dp)
                     .clip(VShapes.full)
                     .background(VColors.mint),
@@ -452,20 +496,23 @@ private fun StatsGrid(
     markPct: Int?,
     xpPoints: Int,
     quizzesDone: Int,
+    streakDays: Int = 0,
+    houseName: String? = null,
+    leaderboardRank: Int? = null,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             StatCard(
                 value = attendanceRate?.let { "$it%" } ?: "—",
                 label = "Attendance",
-                trend = "↑ 2% this month",
+                trend = null,
                 trendColor = VColors.mint,
                 modifier = Modifier.weight(1f),
             )
             StatCard(
                 value = markPct?.let { "$it%" } ?: "—",
                 label = "Avg Marks",
-                trend = "↑ 5% this term",
+                trend = null,
                 trendColor = VColors.mint,
                 modifier = Modifier.weight(1f),
             )
@@ -474,14 +521,30 @@ private fun StatsGrid(
             StatCard(
                 value = formatCompact(xpPoints),
                 label = "XP Points",
-                trend = "↑ ${formatCompact((xpPoints * 0.12f).roundToInt())} this week",
+                trend = null,
                 trendColor = VColors.mint,
                 modifier = Modifier.weight(1f),
             )
             StatCard(
-                value = quizzesDone.toString(),
-                label = "Quizzes Done",
-                trend = "↑ 3 this week",
+                value = if (streakDays > 0) "$streakDays" else "—",
+                label = "Day Streak",
+                trend = null,
+                trendColor = VColors.mint,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            StatCard(
+                value = houseName ?: "—",
+                label = "House",
+                trend = null,
+                trendColor = VColors.mint,
+                modifier = Modifier.weight(1f),
+            )
+            StatCard(
+                value = leaderboardRank?.let { "#$it" } ?: "—",
+                label = "Rank",
+                trend = null,
                 trendColor = VColors.mint,
                 modifier = Modifier.weight(1f),
             )
@@ -493,7 +556,7 @@ private fun StatsGrid(
 private fun StatCard(
     value: String,
     label: String,
-    trend: String,
+    trend: String? = null,
     trendColor: Color,
     modifier: Modifier = Modifier,
 ) {
@@ -518,11 +581,13 @@ private fun StatCard(
             fontWeight = FontWeight.SemiBold,
             letterSpacing = 0.4.sp,
         )
-        Text(
-            trend,
-            style = VTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
-            color = trendColor,
-        )
+        if (trend != null) {
+            Text(
+                trend,
+                style = VTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
+                color = trendColor,
+            )
+        }
     }
 }
 
@@ -615,6 +680,249 @@ private fun pickBadgeIcon(iconName: String): ImageVector = when (iconName.lowerc
     "check", "checkcircle" -> VIcons.Check
     "clipboard" -> VIcons.ClipboardList
     else -> VIcons.Star
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GAMIFICATION — badges from gamification API
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun GameBadgesRow(badges: List<GameBadge>) {
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        items(badges.size) { idx ->
+            val badge = badges[idx]
+            GameBadgeCard(badge = badge)
+        }
+    }
+}
+
+@Composable
+private fun GameBadgeCard(badge: GameBadge) {
+    Column(
+        modifier = Modifier
+            .width(152.dp)
+            .clip(VShapes.xl)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.xl)
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(64.dp)
+                .clip(CircleShape)
+                .background(VColors.violetSoft)
+                .border(
+                    width = 3.dp,
+                    brush = Brush.linearGradient(listOf(VColors.violet, VColors.mint, VColors.violet)),
+                    shape = CircleShape,
+                )
+                .padding(14.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = pickBadgeIcon(badge.badgeIcon),
+                contentDescription = null,
+                tint = VColors.violet,
+                modifier = Modifier.size(26.dp),
+            )
+        }
+        Text(
+            badge.badgeName,
+            style = VTypography.body.copy(fontWeight = FontWeight.ExtraBold, fontSize = 14.sp),
+            color = VColors.ink,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            text = badge.badgeRarity,
+            style = VTypography.caption.copy(fontWeight = FontWeight.ExtraBold, fontSize = 10.sp),
+            color = VColors.mint,
+            letterSpacing = 0.5.sp,
+        )
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GAMIFICATION — quests
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun QuestsRow(quests: List<StudentQuest>) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.xl)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.xl)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        quests.forEach { quest ->
+            QuestRow(quest = quest)
+        }
+    }
+}
+
+@Composable
+private fun QuestRow(quest: StudentQuest) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                quest.questName,
+                style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 14.sp),
+                color = VColors.ink,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = if (quest.completed) "Done" else "${quest.progress}/${quest.target}",
+                style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp),
+                color = if (quest.completed) VColors.mint else VColors.violet,
+            )
+        }
+        val progress = if (quest.target > 0) (quest.progress.toFloat() / quest.target).coerceIn(0f, 1f) else 0f
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(6.dp)
+                .clip(VShapes.full)
+                .background(VColors.lineSoft),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(progress)
+                    .height(6.dp)
+                    .clip(VShapes.full)
+                    .background(if (quest.completed) VColors.mint else VColors.violet),
+            )
+        }
+        Text(
+            text = "+${quest.xpReward} XP",
+            style = VTypography.caption.copy(fontSize = 11.sp),
+            color = VColors.ink3,
+        )
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GAMIFICATION — active boosts
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun BoostsRow(boosts: List<Map<String, *>>) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.xl)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.xl)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        boosts.forEach { boost ->
+            val type = boost["boost_type"]?.toString() ?: "Boost"
+            val multiplier = boost["multiplier"]
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(VShapes.md)
+                        .background(VColors.violetSoft),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = VIcons.Sparkles,
+                        contentDescription = null,
+                        tint = VColors.violet,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        type.replaceFirstChar { it.uppercase() },
+                        style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 14.sp),
+                        color = VColors.ink,
+                    )
+                    if (multiplier != null) {
+                        Text(
+                            "${multiplier}x XP multiplier",
+                            style = VTypography.caption.copy(fontSize = 12.sp),
+                            color = VColors.ink3,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GAMIFICATION — seasonal events
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun EventsRow(events: List<SeasonalEvent>) {
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        items(events.size) { idx ->
+            val event = events[idx]
+            Column(
+                modifier = Modifier
+                    .width(200.dp)
+                    .clip(VShapes.xl)
+                    .background(
+                        Brush.linearGradient(
+                            listOf(VColors.violetSoft, VColors.mintSoft),
+                        ),
+                    )
+                    .border(1.dp, VColors.line, VShapes.xl)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    event.name,
+                    style = VTypography.body.copy(fontWeight = FontWeight.ExtraBold, fontSize = 15.sp),
+                    color = VColors.ink,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    "${event.startDate} - ${event.endDate}",
+                    style = VTypography.caption.copy(fontSize = 11.sp),
+                    color = VColors.ink3,
+                )
+                if (event.isActive) {
+                    Box(
+                        modifier = Modifier
+                            .clip(VShapes.full)
+                            .background(VColors.mint)
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                    ) {
+                        Text(
+                            "Active",
+                            style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 10.sp),
+                            color = VColors.white,
+                        )
+                    }
+                }
+            }
+        }
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

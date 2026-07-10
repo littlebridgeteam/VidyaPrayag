@@ -255,9 +255,9 @@ class ParentApi(
     }
 
     /** Submit quiz answers → get result with correct answers + explanations. */
-    suspend fun submitQuiz(token: String, request: QuizSubmitRequest): NetworkResult<QuizSubmitResponse> {
+    suspend fun submitQuiz(token: String, childId: String, request: QuizSubmitRequest): NetworkResult<QuizSubmitResponse> {
         return safeApiCall {
-            client.post(getUrl("api/v1/parent/quiz/submit")) {
+            client.post(getUrl("api/v1/parent/child/$childId/quiz/submit")) {
                 contentType(ContentType.Application.Json)
                 setBody(request)
             }

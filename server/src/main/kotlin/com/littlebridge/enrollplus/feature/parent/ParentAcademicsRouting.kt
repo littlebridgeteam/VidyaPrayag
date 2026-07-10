@@ -1447,17 +1447,16 @@ fun Route.parentAcademicsRouting() {
                 // Resolve student ID from parent's token + child_id in request body
                 val uid = call.principalUserId()?.let { runCatching { UUID.fromString(it) }.getOrNull() }
                 val childIdUuid = req.childId?.let { runCatching { UUID.fromString(it) }.getOrNull() }
-                val childRow = if (uid != null && childIdUuid != null) {
+                if (childIdUuid == null) {
+                    call.fail("child_id is required", HttpStatusCode.BadRequest, "MISSING_CHILD_ID"); return@post
+                }
+                val childRow = if (uid != null) {
                     dbQuery {
                         ChildrenTable.selectAll().where {
                             (ChildrenTable.id eq childIdUuid) and
                                 (ChildrenTable.parentId eq uid) and
                                 (ChildrenTable.isActive eq true)
                         }.singleOrNull()
-                    }
-                } else if (uid != null) {
-                    dbQuery {
-                        ChildrenTable.selectAll().where { ChildrenTable.parentId eq uid }.firstOrNull()
                     }
                 } else null
                 val studentId = childRow?.get(ChildrenTable.studentCode) ?: "unknown"
