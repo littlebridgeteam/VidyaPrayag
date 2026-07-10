@@ -9,18 +9,51 @@
  *     GET  /api/v1/parent/gamification/{childId}/stats          — child's stats
  *     GET  /api/v1/parent/gamification/{childId}/badges         — child's badges
  *     GET  /api/v1/parent/gamification/{childId}/levels         — level definitions
+ *     GET  /api/v1/parent/gamification/{childId}/xp-history     — last 10 XP transactions
+ *     GET  /api/v1/parent/gamification/{childId}/boosts         — active XP boosts
+ *     GET  /api/v1/parent/gamification/{childId}/class-goals    — active class goals
+ *     GET  /api/v1/parent/gamification/{childId}/quests         — child's quests
+ *     GET  /api/v1/parent/gamification/{childId}/house          — child's house
+ *     GET  /api/v1/parent/gamification/{childId}/rewards        — reward catalog
+ *     POST /api/v1/parent/gamification/{childId}/rewards/{rid}/redeem — redeem reward
+ *     GET  /api/v1/parent/gamification/{childId}/redemptions    — redemption history
+ *     GET  /api/v1/parent/gamification/{childId}/leaderboard    — leaderboard
+ *     GET  /api/v1/parent/gamification/events                   — active seasonal events
  *
  *   Teacher:
  *     POST /api/v1/teacher/gamification/encourage               — award XP to student
  *     POST /api/v1/teacher/gamification/badge/award             — manually award badge
  *     GET  /api/v1/teacher/gamification/badges                  — all badge definitions
  *     GET  /api/v1/teacher/gamification/student/{id}/stats      — student stats
+ *     GET  /api/v1/teacher/gamification/student/{id}/badges     — student's earned badges
+ *     GET  /api/v1/teacher/gamification/class/leaderboard       — class leaderboard
+ *     POST /api/v1/teacher/gamification/shoutout                — send shoutout
+ *     GET  /api/v1/teacher/gamification/shoutouts               — list shoutouts (moderation)
+ *     DELETE /api/v1/teacher/gamification/shoutouts/{id}        — delete shoutout (moderation)
+ *     GET  /api/v1/teacher/gamification/class-goals             — list class goals
+ *     POST /api/v1/teacher/gamification/class-goals             — create class goal
+ *     PUT  /api/v1/teacher/gamification/class-goals/{id}/progress — update goal progress
+ *     POST /api/v1/teacher/gamification/quest/assign            — assign quest to student
+ *     GET  /api/v1/teacher/gamification/quests                  — active quest definitions
+ *     POST /api/v1/teacher/gamification/spotlight               — spotlight award (+50 XP)
+ *     POST /api/v1/teacher/gamification/pep-talk                — class pep talk (1.5x XP boost)
+ *     GET  /api/v1/teacher/gamification/overview                — gamification overview
  *
  *   Admin:
  *     GET  /api/v1/admin/gamification/flags                     — get kill switch state
  *     PUT  /api/v1/admin/gamification/flags                     — set kill switch state
  *     GET  /api/v1/admin/gamification/badges                    — all badge definitions
  *     GET  /api/v1/admin/gamification/levels                    — level definitions
+ *     GET  /api/v1/admin/gamification/houses                    — all houses
+ *     GET  /api/v1/admin/gamification/rewards                   — reward catalog
+ *     GET  /api/v1/admin/gamification/quests                    — active quests
+ *     GET  /api/v1/admin/gamification/events                    — seasonal events
+ *     GET  /api/v1/admin/gamification/leaderboard               — school leaderboard
+ *     GET  /api/v1/admin/gamification/redemptions               — all redemptions
+ *     PUT  /api/v1/admin/gamification/redemptions/status        — approve/reject/fulfill
+ *     GET  /api/v1/admin/gamification/boosts                    — all XP boosts
+ *     POST /api/v1/admin/gamification/boosts                    — create XP boost
+ *     GET  /api/v1/admin/gamification/analytics                 — analytics dashboard
  *
  * Spec ref: GAMIFICATION_SYSTEM_SPEC.md §27
  */

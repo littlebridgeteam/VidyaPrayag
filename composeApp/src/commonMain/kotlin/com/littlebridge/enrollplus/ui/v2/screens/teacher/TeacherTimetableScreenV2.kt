@@ -101,11 +101,16 @@ fun TeacherTimetableScreenV2(
     teacherName: String = "",
     unreadCount: Int = 0,
     onOpenNotifications: () -> Unit = {},
+    initialShowRequests: Boolean = false,
     viewModel: TeacherTimetableViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
 
-    var showSchedule by remember { mutableStateOf(true) }
+    var showSchedule by remember { mutableStateOf(!initialShowRequests) }
+
+    LaunchedEffect(initialShowRequests) {
+        if (initialShowRequests) showSchedule = false
+    }
     var selectedDay by remember { mutableStateOf(1) }
     var showRequestDialog by remember { mutableStateOf(false) }
     var requestKind by remember { mutableStateOf("NEW_PERIOD") }
