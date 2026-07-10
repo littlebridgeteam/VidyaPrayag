@@ -79,6 +79,27 @@ class GamificationApi(
         }
     }
 
+    // ── Parent: XP History ───────────────────────────────────────────
+    suspend fun getXpHistory(token: String, childId: String): NetworkResult<ApiResponse<List<Map<String, *>>>> = safeApiCall {
+        client.get(getUrl("api/v1/parent/gamification/$childId/xp-history")) {
+            bearerAuth(token)
+        }
+    }
+
+    // ── Parent: Active Boosts ────────────────────────────────────────
+    suspend fun getActiveBoosts(token: String, childId: String): NetworkResult<ApiResponse<List<Map<String, *>>>> = safeApiCall {
+        client.get(getUrl("api/v1/parent/gamification/$childId/boosts")) {
+            bearerAuth(token)
+        }
+    }
+
+    // ── Parent: Class Goals ──────────────────────────────────────────
+    suspend fun getClassGoalsForChild(token: String, childId: String): NetworkResult<ApiResponse<List<Map<String, *>>>> = safeApiCall {
+        client.get(getUrl("api/v1/parent/gamification/$childId/class-goals")) {
+            bearerAuth(token)
+        }
+    }
+
     // ── Teacher: Encourage ────────────────────────────────────────────
     suspend fun encourageStudent(token: String, request: EncourageRequest): NetworkResult<ApiResponse<Map<String, *>>> = safeApiCall {
         client.post(getUrl("api/v1/teacher/gamification/encourage")) {
@@ -89,11 +110,11 @@ class GamificationApi(
     }
 
     // ── Teacher: Award Badge ──────────────────────────────────────────
-    suspend fun awardBadge(token: String, studentId: String, badgeCode: String): NetworkResult<ApiResponse<StudentBadge>> = safeApiCall {
+    suspend fun awardBadge(token: String, studentId: String, badgeId: String): NetworkResult<ApiResponse<StudentBadge>> = safeApiCall {
         client.post(getUrl("api/v1/teacher/gamification/badge/award")) {
             bearerAuth(token)
             contentType(ContentType.Application.Json)
-            setBody(mapOf("studentId" to studentId, "badgeCode" to badgeCode))
+            setBody(mapOf("studentId" to studentId, "badgeId" to badgeId))
         }
     }
 
@@ -151,6 +172,51 @@ class GamificationApi(
         }
     }
 
+    // ── Teacher Tools: Spotlight ─────────────────────────────────────
+    suspend fun spotlightStudent(token: String, studentId: String, reason: String = "Spotlight award for improvement"): NetworkResult<ApiResponse<Map<String, *>>> = safeApiCall {
+        client.post(getUrl("api/v1/teacher/gamification/spotlight")) {
+            bearerAuth(token)
+            contentType(ContentType.Application.Json)
+            setBody(mapOf("studentId" to studentId, "reason" to reason))
+        }
+    }
+
+    // ── Teacher Tools: Pep Talk ──────────────────────────────────────
+    suspend fun pepTalk(token: String, className: String, section: String? = null): NetworkResult<ApiResponse<Map<String, *>>> = safeApiCall {
+        client.post(getUrl("api/v1/teacher/gamification/pep-talk")) {
+            bearerAuth(token)
+            contentType(ContentType.Application.Json)
+            setBody(mapOf("className" to className, "section" to (section ?: "")))
+        }
+    }
+
+    // ── Teacher Tools: Shoutout Moderation ───────────────────────────
+    suspend fun getShoutouts(token: String): NetworkResult<ApiResponse<List<Map<String, *>>>> = safeApiCall {
+        client.get(getUrl("api/v1/teacher/gamification/shoutouts")) {
+            bearerAuth(token)
+        }
+    }
+
+    suspend fun deleteShoutout(token: String, shoutoutId: String): NetworkResult<ApiResponse<Map<String, *>>> = safeApiCall {
+        client.delete(getUrl("api/v1/teacher/gamification/shoutouts/$shoutoutId")) {
+            bearerAuth(token)
+        }
+    }
+
+    // ── Teacher Tools: Gamification Overview ─────────────────────────
+    suspend fun getGamificationOverview(token: String): NetworkResult<ApiResponse<Map<String, *>>> = safeApiCall {
+        client.get(getUrl("api/v1/teacher/gamification/overview")) {
+            bearerAuth(token)
+        }
+    }
+
+    // ── Teacher Tools: Update Class Goal Progress ────────────────────
+    suspend fun updateClassGoalProgress(token: String, goalId: String, progress: Int): NetworkResult<ApiResponse<Map<String, *>>> = safeApiCall {
+        client.put(getUrl("api/v1/teacher/gamification/class-goals/$goalId/progress?progress=$progress")) {
+            bearerAuth(token)
+        }
+    }
+
     // ── Admin: Flags ──────────────────────────────────────────────────
     suspend fun getFlags(token: String): NetworkResult<ApiResponse<GamificationFlags>> = safeApiCall {
         client.get(getUrl("api/v1/admin/gamification/flags")) {
@@ -159,10 +225,10 @@ class GamificationApi(
     }
 
     suspend fun setEnabled(token: String, enabled: Boolean): NetworkResult<ApiResponse<Map<String, *>>> = safeApiCall {
-        client.post(getUrl("api/v1/admin/gamification/flags/toggle")) {
+        client.put(getUrl("api/v1/admin/gamification/flags")) {
             bearerAuth(token)
             contentType(ContentType.Application.Json)
-            setBody(mapOf("enabled" to enabled))
+            setBody(mapOf("isGamificationEnabled" to enabled))
         }
     }
 
@@ -211,6 +277,43 @@ class GamificationApi(
     // ── Admin: Leaderboard ────────────────────────────────────────────
     suspend fun getAdminLeaderboard(token: String): NetworkResult<ApiResponse<List<LeaderboardEntry>>> = safeApiCall {
         client.get(getUrl("api/v1/admin/gamification/leaderboard")) {
+            bearerAuth(token)
+        }
+    }
+
+    // ── Admin: Redemptions ───────────────────────────────────────────
+    suspend fun getAdminRedemptions(token: String): NetworkResult<ApiResponse<List<Map<String, *>>>> = safeApiCall {
+        client.get(getUrl("api/v1/admin/gamification/redemptions")) {
+            bearerAuth(token)
+        }
+    }
+
+    suspend fun updateRedemptionStatus(token: String, redemptionId: String, status: String): NetworkResult<ApiResponse<Map<String, *>>> = safeApiCall {
+        client.put(getUrl("api/v1/admin/gamification/redemptions/status")) {
+            bearerAuth(token)
+            contentType(ContentType.Application.Json)
+            setBody(mapOf("redemptionId" to redemptionId, "status" to status))
+        }
+    }
+
+    // ── Admin: Boosts ────────────────────────────────────────────────
+    suspend fun getAdminBoosts(token: String): NetworkResult<ApiResponse<List<Map<String, *>>>> = safeApiCall {
+        client.get(getUrl("api/v1/admin/gamification/boosts")) {
+            bearerAuth(token)
+        }
+    }
+
+    suspend fun createBoost(token: String, boostType: String, multiplier: Float, targetScope: String = "ALL", targetId: String? = null, durationHours: Int = 24): NetworkResult<ApiResponse<Map<String, *>>> = safeApiCall {
+        client.post(getUrl("api/v1/admin/gamification/boosts")) {
+            bearerAuth(token)
+            contentType(ContentType.Application.Json)
+            setBody(mapOf("boostType" to boostType, "multiplier" to multiplier, "targetScope" to targetScope, "targetId" to targetId, "durationHours" to durationHours))
+        }
+    }
+
+    // ── Admin: Analytics ─────────────────────────────────────────────
+    suspend fun getAnalytics(token: String): NetworkResult<ApiResponse<Map<String, *>>> = safeApiCall {
+        client.get(getUrl("api/v1/admin/gamification/analytics")) {
             bearerAuth(token)
         }
     }

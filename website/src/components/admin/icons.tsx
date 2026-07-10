@@ -89,6 +89,9 @@ export const IconMessage = (p: P) => (
 export const IconBolt = (p: P) => (
   <svg {...base(p)}><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" /></svg>
 );
+export const IconTrophy = (p: P) => (
+  <svg {...base(p)}><path d="M8 21h8m-4-4v4M6 4h12v3a6 6 0 0 1-12 0V4Zm0 0H4a2 2 0 0 0 0 4h2m12-4h2a2 2 0 0 1 0 4h-2" /></svg>
+);
 export const IconGrid = (p: P) => (
   <svg {...base(p)}><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></svg>
 );

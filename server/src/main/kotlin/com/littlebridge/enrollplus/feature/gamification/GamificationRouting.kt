@@ -36,8 +36,11 @@ import com.littlebridge.enrollplus.core.requireSchoolOrTeacherContext
 import com.littlebridge.enrollplus.db.ChildrenTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.GameClassGoalsTable
+import com.littlebridge.enrollplus.db.GameRewardRedemptionsTable
 import com.littlebridge.enrollplus.db.GameShoutoutsTable
 import com.littlebridge.enrollplus.db.GameStudentStatsTable
+import com.littlebridge.enrollplus.db.GameXpBoostsTable
+import com.littlebridge.enrollplus.db.GameXpLedgerTable
 import org.jetbrains.exposed.sql.*
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -45,6 +48,7 @@ import io.ktor.server.auth.*
 import io.ktor.server.routing.*
 import io.ktor.server.request.*
 import kotlinx.serialization.Serializable
+import java.time.Instant
 import java.util.UUID
 
 @Serializable
@@ -88,6 +92,33 @@ data class ClassGoalRequest(
 data class AssignQuestRequest(
     val studentId: String,
     val questId: String
+)
+
+@Serializable
+data class SpotlightRequest(
+    val studentId: String,
+    val reason: String = "Spotlight award for improvement"
+)
+
+@Serializable
+data class PepTalkRequest(
+    val className: String,
+    val section: String? = null
+)
+
+@Serializable
+data class CreateBoostRequest(
+    val boostType: String,
+    val multiplier: Float,
+    val targetScope: String = "ALL",
+    val targetId: String? = null,
+    val durationHours: Int = 24
+)
+
+@Serializable
+data class UpdateRedemptionRequest(
+    val redemptionId: String,
+    val status: String // APPROVED | REJECTED | FULFILLED
 )
 
 fun Route.gamificationRouting() {
@@ -141,6 +172,122 @@ fun Route.gamificationRouting() {
             get("/{childId}/levels") {
                 val levels = GamificationService.getLevelDefinitions()
                 call.ok(levels, "Level definitions (${levels.size})")
+            }
+
+            // ── Parent: XP history (last 10 transactions) ─────────────────
+            get("/{childId}/xp-history") {
+                val uid = call.principalUserUuid() ?: run {
+                    call.fail("Invalid token", HttpStatusCode.Unauthorized, "UNAUTHORIZED"); return@get
+                }
+                val childId = call.parameters["childId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                    ?: run { call.fail("Invalid child id"); return@get }
+
+                val owns = dbQuery {
+                    ChildrenTable.selectAll()
+                        .where { (ChildrenTable.id eq childId) and (ChildrenTable.parentId eq uid) }
+                        .firstOrNull()
+                }
+                if (owns == null) { call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@get }
+
+                val history = dbQuery {
+                    GameXpLedgerTable.selectAll()
+                        .where { GameXpLedgerTable.studentId eq childId }
+                        .orderBy(GameXpLedgerTable.createdAt, SortOrder.DESC)
+                        .limit(10)
+                        .map {
+                            mapOf(
+                                "id" to it[GameXpLedgerTable.id].value.toString(),
+                                "amount" to it[GameXpLedgerTable.amount],
+                                "reason" to it[GameXpLedgerTable.reason],
+                                "source" to it[GameXpLedgerTable.xpSource],
+                                "category" to it[GameXpLedgerTable.category],
+                                "multiplier" to it[GameXpLedgerTable.multiplier],
+                                "createdAt" to it[GameXpLedgerTable.createdAt].toString()
+                            )
+                        }
+                }
+                call.ok(history, "XP history (${history.size})")
+            }
+
+            // ── Parent: Active boosts for child ────────────────────────────
+            get("/{childId}/boosts") {
+                val uid = call.principalUserUuid() ?: run {
+                    call.fail("Invalid token", HttpStatusCode.Unauthorized, "UNAUTHORIZED"); return@get
+                }
+                val childId = call.parameters["childId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                    ?: run { call.fail("Invalid child id"); return@get }
+
+                val owns = dbQuery {
+                    ChildrenTable.selectAll()
+                        .where { (ChildrenTable.id eq childId) and (ChildrenTable.parentId eq uid) }
+                        .firstOrNull()
+                }
+                if (owns == null) { call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@get }
+
+                val childRow = owns
+                val sid = childRow[ChildrenTable.schoolId]
+                if (sid == null) { call.fail("Child school not found", HttpStatusCode.NotFound, "SCHOOL_NOT_FOUND"); return@get }
+
+                val now = Instant.now()
+                val boosts = dbQuery {
+                    GameXpBoostsTable.selectAll()
+                        .where {
+                            (GameXpBoostsTable.schoolId eq sid) and
+                            (GameXpBoostsTable.isActive eq true) and
+                            (GameXpBoostsTable.startsAt lessEq now) and
+                            (GameXpBoostsTable.endsAt greater now)
+                        }
+                        .map {
+                            mapOf(
+                                "id" to it[GameXpBoostsTable.id].value.toString(),
+                                "boostType" to it[GameXpBoostsTable.boostType],
+                                "multiplier" to it[GameXpBoostsTable.multiplier],
+                                "targetScope" to it[GameXpBoostsTable.targetScope],
+                                "endsAt" to it[GameXpBoostsTable.endsAt].toString()
+                            )
+                        }
+                }
+                call.ok(boosts, "Active boosts (${boosts.size})")
+            }
+
+            // ── Parent: Class goals for child's school ─────────────────────
+            get("/{childId}/class-goals") {
+                val uid = call.principalUserUuid() ?: run {
+                    call.fail("Invalid token", HttpStatusCode.Unauthorized, "UNAUTHORIZED"); return@get
+                }
+                val childId = call.parameters["childId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                    ?: run { call.fail("Invalid child id"); return@get }
+
+                val owns = dbQuery {
+                    ChildrenTable.selectAll()
+                        .where { (ChildrenTable.id eq childId) and (ChildrenTable.parentId eq uid) }
+                        .firstOrNull()
+                }
+                if (owns == null) { call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@get }
+                val sid = owns[ChildrenTable.schoolId]
+                if (sid == null) { call.fail("Child school not found", HttpStatusCode.NotFound, "SCHOOL_NOT_FOUND"); return@get }
+
+                val goals = dbQuery {
+                    GameClassGoalsTable.selectAll()
+                        .where {
+                            (GameClassGoalsTable.schoolId eq sid) and
+                            (GameClassGoalsTable.completed eq false)
+                        }
+                        .orderBy(GameClassGoalsTable.createdAt, SortOrder.DESC)
+                        .map {
+                            mapOf(
+                                "id" to it[GameClassGoalsTable.id].value.toString(),
+                                "className" to (it[GameClassGoalsTable.className] ?: ""),
+                                "section" to (it[GameClassGoalsTable.section] ?: ""),
+                                "goalType" to it[GameClassGoalsTable.goalType],
+                                "target" to it[GameClassGoalsTable.target],
+                                "currentProgress" to it[GameClassGoalsTable.currentProgress],
+                                "reward" to it[GameClassGoalsTable.reward],
+                                "deadline" to (it[GameClassGoalsTable.deadline]?.toString() ?: "")
+                            )
+                        }
+                }
+                call.ok(goals, "Class goals (${goals.size})")
             }
         }
 
@@ -313,6 +460,153 @@ fun Route.gamificationRouting() {
                 val quests = QuestService.getActiveQuests()
                 call.ok(quests, "Active quests (${quests.size})")
             }
+
+            // ── Teacher Tools: Spotlight award (+50 XP) ───────────────────
+            post("/spotlight") {
+                val ctx = call.requireSchoolOrTeacherContext() ?: return@post
+                val req = runCatching { call.receive<SpotlightRequest>() }.getOrNull()
+                    ?: run { call.fail("Invalid request body"); return@post }
+
+                val studentId = runCatching { UUID.fromString(req.studentId) }.getOrNull()
+                    ?: run { call.fail("Invalid student id"); return@post }
+
+                val result = GamificationService.awardXp(
+                    studentId = studentId,
+                    schoolId = ctx.schoolId,
+                    amount = 50,
+                    reason = "Spotlight: ${req.reason}",
+                    source = "teacher_spotlight",
+                    category = "CHARACTER"
+                )
+                val newBadges = BadgeCriteriaEvaluator.evaluateBadges(studentId, ctx.schoolId)
+                call.ok(mapOf("xpResult" to result, "newBadges" to newBadges), "Spotlight awarded: +50 XP")
+            }
+
+            // ── Teacher Tools: Class Pep Talk (x1.5 XP boost for 24h) ─────
+            post("/pep-talk") {
+                val ctx = call.requireSchoolOrTeacherContext() ?: return@post
+                val req = runCatching { call.receive<PepTalkRequest>() }.getOrNull()
+                    ?: run { call.fail("Invalid request body"); return@post }
+
+                val now = Instant.now()
+                dbQuery {
+                    GameXpBoostsTable.insert {
+                        it[GameXpBoostsTable.schoolId] = ctx.schoolId
+                        it[GameXpBoostsTable.boostType] = "PEP_TALK"
+                        it[GameXpBoostsTable.multiplier] = 1.5f
+                        it[GameXpBoostsTable.targetScope] = "SCHOOL"
+                        it[GameXpBoostsTable.targetId] = null
+                        it[GameXpBoostsTable.startsAt] = now
+                        it[GameXpBoostsTable.endsAt] = now.plusSeconds(24 * 3600)
+                        it[GameXpBoostsTable.isActive] = true
+                        it[GameXpBoostsTable.createdAt] = now
+                    }
+                }
+                call.okMessage("Class pep talk activated! 1.5x XP for 24 hours")
+            }
+
+            // ── Teacher Tools: Shoutout moderation (list) ─────────────────
+            get("/shoutouts") {
+                val ctx = call.requireSchoolOrTeacherContext() ?: return@get
+                val shoutouts = dbQuery {
+                    GameShoutoutsTable.selectAll()
+                        .where {
+                            (GameShoutoutsTable.schoolId eq ctx.schoolId) and
+                            (GameShoutoutsTable.isDeleted eq false)
+                        }
+                        .orderBy(GameShoutoutsTable.createdAt, SortOrder.DESC)
+                        .map {
+                            mapOf(
+                                "id" to it[GameShoutoutsTable.id].value.toString(),
+                                "senderId" to it[GameShoutoutsTable.senderId].toString(),
+                                "receiverId" to it[GameShoutoutsTable.receiverId].toString(),
+                                "message" to it[GameShoutoutsTable.message],
+                                "templateId" to it[GameShoutoutsTable.templateId],
+                                "isPublic" to it[GameShoutoutsTable.isPublic],
+                                "createdAt" to it[GameShoutoutsTable.createdAt].toString()
+                            )
+                        }
+                }
+                call.ok(shoutouts, "Shoutouts (${shoutouts.size})")
+            }
+
+            // ── Teacher Tools: Shoutout moderation (delete) ───────────────
+            delete("/shoutouts/{id}") {
+                val ctx = call.requireSchoolOrTeacherContext() ?: return@delete
+                val shoutoutId = call.parameters["id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                    ?: run { call.fail("Invalid shoutout id"); return@delete }
+
+                val updated = dbQuery {
+                    GameShoutoutsTable.update({
+                        (GameShoutoutsTable.id eq shoutoutId) and (GameShoutoutsTable.schoolId eq ctx.schoolId)
+                    }) {
+                        it[GameShoutoutsTable.isDeleted] = true
+                    }
+                }
+                if (updated > 0) call.okMessage("Shoutout removed")
+                else call.fail("Shoutout not found", HttpStatusCode.NotFound, "SHOUTOUT_NOT_FOUND")
+            }
+
+            // ── Teacher Tools: Gamification overview ──────────────────────
+            get("/overview") {
+                val ctx = call.requireSchoolOrTeacherContext() ?: return@get
+
+                val allStats = dbQuery {
+                    GameStudentStatsTable.selectAll()
+                        .where { GameStudentStatsTable.schoolId eq ctx.schoolId }
+                        .orderBy(GameStudentStatsTable.totalXp, SortOrder.DESC)
+                        .toList()
+                }
+
+                val totalStudents = allStats.size
+                val bottom25Threshold = if (totalStudents > 0) {
+                    allStats.sortedByDescending { it[GameStudentStatsTable.totalXp] }
+                        .drop((totalStudents * 0.75).toInt())
+                        .map { it[GameStudentStatsTable.studentId].toString() }
+                } else emptyList()
+
+                val levelDistribution = allStats.groupingBy { it[GameStudentStatsTable.currentLevel] }.eachCount()
+
+                val totalXp = allStats.sumOf { it[GameStudentStatsTable.totalXp] }
+
+                call.ok(mapOf(
+                    "totalStudents" to totalStudents,
+                    "totalXp" to totalXp,
+                    "levelDistribution" to levelDistribution,
+                    "bottom25Ids" to bottom25Threshold,
+                    "averageXp" to if (totalStudents > 0) totalXp / totalStudents else 0
+                ), "Gamification overview")
+            }
+
+            // ── Teacher Tools: Update class goal progress ─────────────────
+            put("/class-goals/{id}/progress") {
+                val ctx = call.requireSchoolOrTeacherContext() ?: return@put
+                val goalId = call.parameters["id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                    ?: run { call.fail("Invalid goal id"); return@put }
+                val progress = call.request.queryParameters["progress"]?.toIntOrNull()
+                    ?: run { call.fail("Invalid progress"); return@put }
+
+                val updated = dbQuery {
+                    val goal = GameClassGoalsTable.selectAll()
+                        .where { (GameClassGoalsTable.id eq goalId) and (GameClassGoalsTable.schoolId eq ctx.schoolId) }
+                        .firstOrNull() ?: return@dbQuery 0
+
+                    val target = goal[GameClassGoalsTable.target]
+                    val completed = progress >= target
+                    GameClassGoalsTable.update({
+                        (GameClassGoalsTable.id eq goalId) and (GameClassGoalsTable.schoolId eq ctx.schoolId)
+                    }) {
+                        it[GameClassGoalsTable.currentProgress] = progress
+                        if (completed) {
+                            it[GameClassGoalsTable.completed] = true
+                            it[GameClassGoalsTable.completedAt] = Instant.now()
+                        }
+                    }
+                    if (completed) 1 else 1
+                }
+                if (updated > 0) call.okMessage("Class goal progress updated")
+                else call.fail("Goal not found", HttpStatusCode.NotFound, "GOAL_NOT_FOUND")
+            }
         }
 
         // ── Admin: Kill switch + config ──────────────────────────────────
@@ -357,6 +651,13 @@ fun Route.gamificationRouting() {
                 val childId = call.parameters["childId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
                     ?: run { call.fail("Invalid child id"); return@get }
 
+                val owns = dbQuery {
+                    ChildrenTable.selectAll()
+                        .where { (ChildrenTable.id eq childId) and (ChildrenTable.parentId eq uid) }
+                        .firstOrNull()
+                }
+                if (owns == null) { call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@get }
+
                 val quests = QuestService.getStudentQuests(childId)
                 call.ok(quests, "Student quests (${quests.size})")
             }
@@ -367,6 +668,13 @@ fun Route.gamificationRouting() {
                 }
                 val childId = call.parameters["childId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
                     ?: run { call.fail("Invalid child id"); return@get }
+
+                val owns = dbQuery {
+                    ChildrenTable.selectAll()
+                        .where { (ChildrenTable.id eq childId) and (ChildrenTable.parentId eq uid) }
+                        .firstOrNull()
+                }
+                if (owns == null) { call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@get }
 
                 val house = HouseService.getStudentHouse(childId)
                 if (house != null) call.ok(house, "Student house")
@@ -380,15 +688,13 @@ fun Route.gamificationRouting() {
                 val childId = call.parameters["childId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
                     ?: run { call.fail("Invalid child id"); return@get }
 
-                val stats = GamificationService.getStudentStats(childId)
-                val schoolId = stats?.let { UUID.fromString(it.studentId) } // not ideal but works for now
-                // Get child's schoolId from ChildrenTable
                 val childRow = dbQuery {
                     ChildrenTable.selectAll()
-                        .where { ChildrenTable.id eq childId }
+                        .where { (ChildrenTable.id eq childId) and (ChildrenTable.parentId eq uid) }
                         .firstOrNull()
                 }
-                val sid = childRow?.get(ChildrenTable.schoolId)
+                if (childRow == null) { call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@get }
+                val sid = childRow[ChildrenTable.schoolId]
                 if (sid == null) {
                     call.fail("Child school not found", HttpStatusCode.NotFound, "SCHOOL_NOT_FOUND"); return@get
                 }
@@ -407,10 +713,11 @@ fun Route.gamificationRouting() {
 
                 val childRow = dbQuery {
                     ChildrenTable.selectAll()
-                        .where { ChildrenTable.id eq childId }
+                        .where { (ChildrenTable.id eq childId) and (ChildrenTable.parentId eq uid) }
                         .firstOrNull()
                 }
-                val sid = childRow?.get(ChildrenTable.schoolId)
+                if (childRow == null) { call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@post }
+                val sid = childRow[ChildrenTable.schoolId]
                 if (sid == null) {
                     call.fail("Child school not found", HttpStatusCode.NotFound, "SCHOOL_NOT_FOUND"); return@post
                 }
@@ -427,6 +734,13 @@ fun Route.gamificationRouting() {
                 val childId = call.parameters["childId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
                     ?: run { call.fail("Invalid child id"); return@get }
 
+                val owns = dbQuery {
+                    ChildrenTable.selectAll()
+                        .where { (ChildrenTable.id eq childId) and (ChildrenTable.parentId eq uid) }
+                        .firstOrNull()
+                }
+                if (owns == null) { call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@get }
+
                 val redemptions = RewardService.getStudentRedemptions(childId)
                 call.ok(redemptions, "Redemptions (${redemptions.size})")
             }
@@ -440,10 +754,11 @@ fun Route.gamificationRouting() {
 
                 val childRow = dbQuery {
                     ChildrenTable.selectAll()
-                        .where { ChildrenTable.id eq childId }
+                        .where { (ChildrenTable.id eq childId) and (ChildrenTable.parentId eq uid) }
                         .firstOrNull()
                 }
-                val sid = childRow?.get(ChildrenTable.schoolId)
+                if (childRow == null) { call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@get }
+                val sid = childRow[ChildrenTable.schoolId]
                 if (sid == null) {
                     call.fail("Child school not found", HttpStatusCode.NotFound, "SCHOOL_NOT_FOUND"); return@get
                 }
@@ -452,11 +767,15 @@ fun Route.gamificationRouting() {
                 val rank = LeaderboardService.getStudentRank(sid, childId)
                 call.ok(mapOf("leaderboard" to leaderboard, "myRank" to rank), "Leaderboard")
             }
+        }
 
-            get("/events") {
-                val events = SeasonalEventService.getActiveEvents()
-                call.ok(events, "Active events (${events.size})")
+        // ── Parent: Active seasonal events (not child-specific) ───────────
+        get("/api/v1/parent/gamification/events") {
+            val uid = call.principalUserUuid() ?: run {
+                call.fail("Invalid token", HttpStatusCode.Unauthorized, "UNAUTHORIZED"); return@get
             }
+            val events = SeasonalEventService.getActiveEvents()
+            call.ok(events, "Active events (${events.size})")
         }
 
         // ── Admin: Houses, Rewards, Quests, Events management ───────────
@@ -488,6 +807,144 @@ fun Route.gamificationRouting() {
                 val ctx = call.requireSchoolAdmin() ?: return@get
                 val leaderboard = LeaderboardService.getSchoolLeaderboard(ctx.schoolId)
                 call.ok(leaderboard, "School leaderboard (${leaderboard.size})")
+            }
+
+            // ── Admin: Pending redemptions ────────────────────────────────
+            get("/redemptions") {
+                val ctx = call.requireSchoolAdmin() ?: return@get
+                val redemptions = dbQuery {
+                    GameRewardRedemptionsTable.selectAll()
+                        .where { GameRewardRedemptionsTable.schoolId eq ctx.schoolId }
+                        .orderBy(GameRewardRedemptionsTable.createdAt, SortOrder.DESC)
+                        .map {
+                            mapOf(
+                                "id" to it[GameRewardRedemptionsTable.id].value.toString(),
+                                "studentId" to it[GameRewardRedemptionsTable.studentId].toString(),
+                                "rewardId" to it[GameRewardRedemptionsTable.rewardId].toString(),
+                                "xpSpent" to it[GameRewardRedemptionsTable.xpSpent],
+                                "status" to it[GameRewardRedemptionsTable.status],
+                                "createdAt" to it[GameRewardRedemptionsTable.createdAt].toString()
+                            )
+                        }
+                }
+                call.ok(redemptions, "Redemptions (${redemptions.size})")
+            }
+
+            // ── Admin: Approve/reject redemption ──────────────────────────
+            put("/redemptions/status") {
+                val ctx = call.requireSchoolAdmin() ?: return@put
+                val req = runCatching { call.receive<UpdateRedemptionRequest>() }.getOrNull()
+                    ?: run { call.fail("Invalid request body"); return@put }
+
+                val redemptionId = runCatching { UUID.fromString(req.redemptionId) }.getOrNull()
+                    ?: run { call.fail("Invalid redemption id"); return@put }
+
+                val validStatus = req.status in setOf("APPROVED", "REJECTED", "FULFILLED")
+                if (!validStatus) { call.fail("Invalid status"); return@put }
+
+                val updated = dbQuery {
+                    GameRewardRedemptionsTable.update({
+                        (GameRewardRedemptionsTable.id eq redemptionId) and
+                        (GameRewardRedemptionsTable.schoolId eq ctx.schoolId)
+                    }) {
+                        it[GameRewardRedemptionsTable.status] = req.status
+                        if (req.status == "APPROVED") {
+                            it[GameRewardRedemptionsTable.approvedBy] = ctx.userId
+                            it[GameRewardRedemptionsTable.approvedAt] = Instant.now()
+                        }
+                        if (req.status == "FULFILLED") {
+                            it[GameRewardRedemptionsTable.fulfilledAt] = Instant.now()
+                        }
+                    }
+                }
+                if (updated > 0) call.okMessage("Redemption $${req.status}")
+                else call.fail("Redemption not found", HttpStatusCode.NotFound, "REDEMPTION_NOT_FOUND")
+            }
+
+            // ── Admin: List active boosts ─────────────────────────────────
+            get("/boosts") {
+                val ctx = call.requireSchoolAdmin() ?: return@get
+                val boosts = dbQuery {
+                    GameXpBoostsTable.selectAll()
+                        .where { GameXpBoostsTable.schoolId eq ctx.schoolId }
+                        .orderBy(GameXpBoostsTable.createdAt, SortOrder.DESC)
+                        .map {
+                            mapOf(
+                                "id" to it[GameXpBoostsTable.id].value.toString(),
+                                "boostType" to it[GameXpBoostsTable.boostType],
+                                "multiplier" to it[GameXpBoostsTable.multiplier],
+                                "targetScope" to it[GameXpBoostsTable.targetScope],
+                                "isActive" to it[GameXpBoostsTable.isActive],
+                                "startsAt" to it[GameXpBoostsTable.startsAt].toString(),
+                                "endsAt" to it[GameXpBoostsTable.endsAt].toString()
+                            )
+                        }
+                }
+                call.ok(boosts, "Boosts (${boosts.size})")
+            }
+
+            // ── Admin: Create boost ───────────────────────────────────────
+            post("/boosts") {
+                val ctx = call.requireSchoolAdmin() ?: return@post
+                val req = runCatching { call.receive<CreateBoostRequest>() }.getOrNull()
+                    ?: run { call.fail("Invalid request body"); return@post }
+
+                val now = Instant.now()
+                dbQuery {
+                    GameXpBoostsTable.insert {
+                        it[GameXpBoostsTable.schoolId] = ctx.schoolId
+                        it[GameXpBoostsTable.boostType] = req.boostType
+                        it[GameXpBoostsTable.multiplier] = req.multiplier
+                        it[GameXpBoostsTable.targetScope] = req.targetScope
+                        it[GameXpBoostsTable.targetId] = req.targetId?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                        it[GameXpBoostsTable.startsAt] = now
+                        it[GameXpBoostsTable.endsAt] = now.plusSeconds(req.durationHours.toLong() * 3600)
+                        it[GameXpBoostsTable.isActive] = true
+                        it[GameXpBoostsTable.createdAt] = now
+                    }
+                }
+                call.okMessage("Boost created: ${req.boostType} x${req.multiplier}")
+            }
+
+            // ── Admin: Analytics dashboard ────────────────────────────────
+            get("/analytics") {
+                val ctx = call.requireSchoolAdmin() ?: return@get
+
+                val allStats = dbQuery {
+                    GameStudentStatsTable.selectAll()
+                        .where { GameStudentStatsTable.schoolId eq ctx.schoolId }
+                        .toList()
+                }
+
+                val totalStudents = allStats.size
+                val totalXp = allStats.sumOf { it[GameStudentStatsTable.totalXp] }
+                val levelDistribution = allStats.groupingBy { it[GameStudentStatsTable.currentLevel] }.eachCount()
+
+                val categoryXp = dbQuery {
+                    GameXpLedgerTable.selectAll()
+                        .where { GameXpLedgerTable.schoolId eq ctx.schoolId }
+                        .map { it[GameXpLedgerTable.category] to it[GameXpLedgerTable.amount] }
+                        .groupBy({ it.first }, { it.second })
+                        .mapValues { (_, amounts) -> amounts.sum() }
+                }
+
+                val pendingRedemptions = dbQuery {
+                    GameRewardRedemptionsTable.selectAll()
+                        .where {
+                            (GameRewardRedemptionsTable.schoolId eq ctx.schoolId) and
+                            (GameRewardRedemptionsTable.status eq "PENDING")
+                        }
+                        .count()
+                }
+
+                call.ok(mapOf(
+                    "totalStudents" to totalStudents,
+                    "totalXp" to totalXp,
+                    "averageXp" to if (totalStudents > 0) totalXp / totalStudents else 0,
+                    "levelDistribution" to levelDistribution,
+                    "categoryXp" to categoryXp,
+                    "pendingRedemptions" to pendingRedemptions
+                ), "Gamification analytics")
             }
         }
     }

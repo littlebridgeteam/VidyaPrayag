@@ -16,10 +16,13 @@ interface GamificationRepository {
     suspend fun getRedemptions(token: String, childId: String): NetworkResult<ApiResponse<List<RewardRedemption>>>
     suspend fun getLeaderboard(token: String, childId: String): NetworkResult<ApiResponse<LeaderboardResponse>>
     suspend fun getActiveEvents(token: String): NetworkResult<ApiResponse<List<SeasonalEvent>>>
+    suspend fun getXpHistory(token: String, childId: String): NetworkResult<ApiResponse<List<Map<String, *>>>>
+    suspend fun getActiveBoosts(token: String, childId: String): NetworkResult<ApiResponse<List<Map<String, *>>>>
+    suspend fun getClassGoalsForChild(token: String, childId: String): NetworkResult<ApiResponse<List<Map<String, *>>>>
 
     // Teacher
     suspend fun encourageStudent(token: String, request: EncourageRequest): NetworkResult<ApiResponse<Map<String, *>>>
-    suspend fun awardBadge(token: String, studentId: String, badgeCode: String): NetworkResult<ApiResponse<StudentBadge>>
+    suspend fun awardBadge(token: String, studentId: String, badgeId: String): NetworkResult<ApiResponse<StudentBadge>>
     suspend fun getClassLeaderboard(token: String, limit: Int = 50): NetworkResult<ApiResponse<List<LeaderboardEntry>>>
     suspend fun getStudentBadges(token: String, studentId: String): NetworkResult<ApiResponse<List<StudentBadge>>>
     suspend fun sendShoutout(token: String, receiverId: String, message: String, templateId: Int = 0, isPublic: Boolean = true): NetworkResult<ApiResponse<Map<String, *>>>
@@ -27,6 +30,12 @@ interface GamificationRepository {
     suspend fun createClassGoal(token: String, request: Map<String, *>): NetworkResult<ApiResponse<Map<String, *>>>
     suspend fun assignQuest(token: String, studentId: String, questId: String): NetworkResult<ApiResponse<Map<String, *>>>
     suspend fun getTeacherQuests(token: String): NetworkResult<ApiResponse<List<QuestDefinition>>>
+    suspend fun spotlightStudent(token: String, studentId: String, reason: String = "Spotlight award for improvement"): NetworkResult<ApiResponse<Map<String, *>>>
+    suspend fun pepTalk(token: String, className: String, section: String? = null): NetworkResult<ApiResponse<Map<String, *>>>
+    suspend fun getShoutouts(token: String): NetworkResult<ApiResponse<List<Map<String, *>>>>
+    suspend fun deleteShoutout(token: String, shoutoutId: String): NetworkResult<ApiResponse<Map<String, *>>>
+    suspend fun getGamificationOverview(token: String): NetworkResult<ApiResponse<Map<String, *>>>
+    suspend fun updateClassGoalProgress(token: String, goalId: String, progress: Int): NetworkResult<ApiResponse<Map<String, *>>>
 
     // Admin
     suspend fun getFlags(token: String): NetworkResult<ApiResponse<GamificationFlags>>
@@ -38,4 +47,9 @@ interface GamificationRepository {
     suspend fun getAdminQuests(token: String): NetworkResult<ApiResponse<List<QuestDefinition>>>
     suspend fun getAdminEvents(token: String): NetworkResult<ApiResponse<List<SeasonalEvent>>>
     suspend fun getAdminLeaderboard(token: String): NetworkResult<ApiResponse<List<LeaderboardEntry>>>
+    suspend fun getAdminRedemptions(token: String): NetworkResult<ApiResponse<List<Map<String, *>>>>
+    suspend fun updateRedemptionStatus(token: String, redemptionId: String, status: String): NetworkResult<ApiResponse<Map<String, *>>>
+    suspend fun getAdminBoosts(token: String): NetworkResult<ApiResponse<List<Map<String, *>>>>
+    suspend fun createBoost(token: String, boostType: String, multiplier: Float, targetScope: String = "ALL", targetId: String? = null, durationHours: Int = 24): NetworkResult<ApiResponse<Map<String, *>>>
+    suspend fun getAnalytics(token: String): NetworkResult<ApiResponse<Map<String, *>>>
 }

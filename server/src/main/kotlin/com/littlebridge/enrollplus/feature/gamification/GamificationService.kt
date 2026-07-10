@@ -241,8 +241,12 @@ object GamificationService {
             ?: return@dbQuery null
 
         val levelTitle = GameLevelDefinitionsTable.selectAll()
-            .firstOrNull { it[GameLevelDefinitionsTable.level] == stats[GameStudentStatsTable.currentLevel] }
-            ?.get(GameLevelDefinitionsTable.title) ?: "Beginner"
+            .where {
+                (GameLevelDefinitionsTable.schoolId.isNull()) and
+                (GameLevelDefinitionsTable.level eq stats[GameStudentStatsTable.currentLevel]) and
+                (GameLevelDefinitionsTable.isActive eq true)
+            }
+            .firstOrNull()?.get(GameLevelDefinitionsTable.title) ?: "Beginner"
 
         StudentStatsDto(
             studentId = studentId.toString(),

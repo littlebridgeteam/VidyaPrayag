@@ -21,7 +21,7 @@ class GamificationRepositoryImpl(
     override suspend fun getActiveEvents(token: String) = api.getActiveEvents(token)
 
     override suspend fun encourageStudent(token: String, request: EncourageRequest) = api.encourageStudent(token, request)
-    override suspend fun awardBadge(token: String, studentId: String, badgeCode: String) = api.awardBadge(token, studentId, badgeCode)
+    override suspend fun awardBadge(token: String, studentId: String, badgeId: String) = api.awardBadge(token, studentId, badgeId)
     override suspend fun getClassLeaderboard(token: String, limit: Int) = api.getClassLeaderboard(token, limit)
     override suspend fun getStudentBadges(token: String, studentId: String) = api.getStudentBadges(token, studentId)
     override suspend fun sendShoutout(token: String, receiverId: String, message: String, templateId: Int, isPublic: Boolean) = api.sendShoutout(token, receiverId, message, templateId, isPublic)
