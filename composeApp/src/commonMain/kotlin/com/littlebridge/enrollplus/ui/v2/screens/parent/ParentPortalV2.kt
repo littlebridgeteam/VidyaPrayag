@@ -127,7 +127,7 @@ fun ParentPortalV2(
                     "announcements" -> { tab = "conversations"; overlay = ParentOverlay.None; deepLinkSegment = ConversationsSegment.Announcements }
                     "report-card" -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Report"; target.params["draftId"]?.let { deepLinkReportDraftId = it } }
                     "tutor" -> { overlay = ParentOverlay.TutorChat }
-                    "timetable" -> { overlay = ParentOverlay.Calendar }
+                    "timetable" -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Timetable" }
                     "marks" -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Marks" }
                     "attendance" -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Attendance" }
                     "homework" -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Homework" }
@@ -164,7 +164,7 @@ fun ParentPortalV2(
                     pathOnly.startsWith("calendar") -> { tab = "home"; overlay = ParentOverlay.Calendar }
                     pathOnly.startsWith("report-card") -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Report" }
                     pathOnly.startsWith("tutor") -> { overlay = ParentOverlay.TutorChat }
-                    pathOnly.startsWith("timetable") -> { overlay = ParentOverlay.Calendar }
+                    pathOnly.startsWith("timetable") -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Timetable" }
                     pathOnly.startsWith("marks") -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Marks" }
                     pathOnly.startsWith("attendance") -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Attendance" }
                     pathOnly.startsWith("homework") -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Homework" }
@@ -454,6 +454,7 @@ fun ParentPortalV2(
                     onOpenNotifications = { overlay = ParentOverlay.Notifications },
                     onOpenFees = { tab = "fees" },
                     onOpenAcademics = { tab = "academics" },
+                    onOpenAcademicsTab = { subTab -> tab = "academics"; deepLinkAcademicsTab = subTab },
                     onOpenMessages = { overlay = ParentOverlay.Messages },
                     onOpenPulse = { overlay = ParentOverlay.Pulse },
                     onOpenTransport = { overlay = ParentOverlay.Transport },
@@ -479,6 +480,9 @@ fun ParentPortalV2(
                     initialReportDraftId = deepLinkReportDraftId,
                     onReportDraftIdConsumed = { deepLinkReportDraftId = null },
                     unreadNotificationsCount = notifications.unreadCount,
+                    timetable = dashboard.timetable,
+                    todayPeriods = dashboard.todayPeriods,
+                    timetableLoading = dashboard.timetableLoading,
                 )
                 "fees" -> ParentFeesScreenV2(
                     parentName = progress.accountName,

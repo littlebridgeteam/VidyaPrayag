@@ -67,6 +67,7 @@ fun ParentHomeScreenV2(
     onOpenNotifications: () -> Unit = {},
     onOpenFees: () -> Unit = {},
     onOpenAcademics: () -> Unit = {},
+    onOpenAcademicsTab: (String) -> Unit = {},
     onOpenMessages: () -> Unit = {},
     onOpenPulse: () -> Unit = {},
     onOpenTransport: () -> Unit = {},
@@ -140,6 +141,7 @@ fun ParentHomeScreenV2(
         onOpenNotifications = onOpenNotifications,
         onOpenFees = onOpenFees,
         onOpenAcademics = onOpenAcademics,
+        onOpenAcademicsTab = onOpenAcademicsTab,
         onOpenMessages = onOpenMessages,
         onOpenTransport = onOpenTransport,
         onOpenTutor = onOpenTutor,
@@ -168,6 +170,7 @@ private fun ParentHomeContent(
     onOpenNotifications: () -> Unit,
     onOpenFees: () -> Unit,
     onOpenAcademics: () -> Unit,
+    onOpenAcademicsTab: (String) -> Unit,
     onOpenMessages: () -> Unit,
     onOpenTransport: () -> Unit,
     onOpenTutor: () -> Unit,
@@ -217,6 +220,7 @@ private fun ParentHomeContent(
                     transportEnrolled = transportEnrolled,
                     onOpenFees = onOpenFees,
                     onOpenAcademics = onOpenAcademics,
+                    onOpenAcademicsTab = onOpenAcademicsTab,
                     onOpenMessages = onOpenMessages,
                     onOpenTransport = onOpenTransport,
                     onOpenTutor = onOpenTutor,
@@ -380,6 +384,7 @@ private fun HomeLoaded(
     transportEnrolled: Boolean,
     onOpenFees: () -> Unit,
     onOpenAcademics: () -> Unit,
+    onOpenAcademicsTab: (String) -> Unit,
     onOpenMessages: () -> Unit,
     onOpenTransport: () -> Unit,
     onOpenTutor: () -> Unit,
@@ -408,6 +413,7 @@ private fun HomeLoaded(
         unreadMessages = unreadMessages,
         onOpenFees = onOpenFees,
         onOpenAcademics = onOpenAcademics,
+        onOpenAcademicsTab = onOpenAcademicsTab,
         onOpenMessages = onOpenMessages,
     )
 
@@ -436,11 +442,11 @@ private fun HomeLoaded(
         SectionHeader(title = "Priority")
         PriorityCarousel(cards = priorityCards)
 
-        SectionHeader(title = "Today's Schedule", action = "Full timetable", onAction = onOpenAcademics)
+        SectionHeader(title = "Today's Schedule", action = "Full timetable", onAction = { onOpenAcademicsTab("Timetable") })
         TodayScheduleCard(
             periods = state.todayPeriods,
             isLoading = state.timetableLoading,
-            onOpenAcademics = onOpenAcademics,
+            onOpenAcademics = { onOpenAcademicsTab("Timetable") },
         )
 
         SectionHeader(title = "Today's Summary")
@@ -771,6 +777,7 @@ private fun rememberPriorityCards(
     unreadMessages: Int,
     onOpenFees: () -> Unit,
     onOpenAcademics: () -> Unit,
+    onOpenAcademicsTab: (String) -> Unit,
     onOpenMessages: () -> Unit,
 ): List<PriorityItem> {
     return remember(feesDue, overdue, attendanceRate, pendingCount, unreadMessages) {
@@ -800,7 +807,7 @@ private fun rememberPriorityCards(
             badge = if ((attendanceRate ?: 100) < 75) "Low" else "On Track",
             badgeBg = if ((attendanceRate ?: 100) < 75) VColors.gold else VColors.mint,
             urgency = if ((attendanceRate ?: 100) < 75) 90 else 40,
-            onClick = onOpenAcademics,
+            onClick = { onOpenAcademicsTab("Attendance") },
         )
 
         list += PriorityItem(
@@ -813,7 +820,7 @@ private fun rememberPriorityCards(
             badge = if (pendingCount > 0) "Due Today" else "Done",
             badgeBg = if (pendingCount > 0) VColors.gold else VColors.mint,
             urgency = if (pendingCount > 0) 80 else 30,
-            onClick = onOpenAcademics,
+            onClick = { onOpenAcademicsTab("Quizzes") },
         )
 
         list += PriorityItem(
