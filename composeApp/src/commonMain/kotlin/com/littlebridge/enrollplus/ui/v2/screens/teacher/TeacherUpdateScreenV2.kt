@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -24,6 +26,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,6 +48,9 @@ import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherClassesVi
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.ui.v2.components.VButton
+import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
+import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
@@ -168,6 +174,31 @@ fun TeacherUpdateScreenV2(
                 },
                 horizontalPadding = 16.dp,
             )
+
+            // 5b — loading / error / empty states when no classes to show.
+            if (classesState.classes.isEmpty()) {
+                item {
+                    Box(Modifier.padding(horizontal = 16.dp)) {
+                        when {
+                            classesState.isLoading -> TeacherCenterState { TeacherSpinner() }
+                            classesState.error != null -> TeacherCenterState {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(appString(StringKeys.TC_COULDNT_LOAD_CLASSES), style = VtT.bodyStrong.coloredV(VtC.navyDeep))
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(classesState.error ?: "", style = VtT.caption.coloredV(VtC.ink3))
+                                    Spacer(Modifier.height(14.dp))
+                                    VButton(appString(StringKeys.COMMON_BUTTON_TRY_AGAIN), onClick = classesViewModel::load, size = VButtonSize.Sm, tone = VButtonTone.Lavender)
+                                }
+                            }
+                            else -> VtEmptyCard(
+                                title = appString(StringKeys.TC_NO_ALLOCATIONS),
+                                subtext = "Your class assignments will appear here once allocated.",
+                                icon = VIcons.BookOpen,
+                            )
+                        }
+                    }
+                }
+            }
         }
     } else {
         // ── MODE B: scoped tool — fixed header + scope bar, bounded sub-screen.

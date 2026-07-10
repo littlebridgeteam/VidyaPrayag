@@ -208,6 +208,12 @@ private fun SchoolPeopleContent(
     var showAddStaff by remember { mutableStateOf(false) }
     var showAddStudent by remember { mutableStateOf(false) }
     var showImportStudents by remember { mutableStateOf(false) }
+    var isRefreshing by remember { mutableStateOf(false) }
+
+    val anyLoading = teachersState.isLoading || studentsState.isLoading || staffState.isLoading || analyticsState.isLoading
+    LaunchedEffect(anyLoading) {
+        if (!anyLoading) isRefreshing = false
+    }
 
     // Stagger entrance
     val headerAlpha = remember { Animatable(0f) }
@@ -232,13 +238,14 @@ private fun SchoolPeopleContent(
     }
 
     VPullRefresh(
-        isRefreshing = teachersState.isLoading || studentsState.isLoading || staffState.isLoading || analyticsState.isLoading,
+        isRefreshing = isRefreshing,
         onRefresh = {
+            isRefreshing = true
             when (subTab) {
                 PeopleSubTab.Teachers -> onTeachersRetry()
                 PeopleSubTab.Students -> { onStudentsRetry(); onAnalyticsRetry() }
                 PeopleSubTab.Staff -> onStaffRetry()
-                PeopleSubTab.Alumni -> {}
+                PeopleSubTab.Alumni -> { isRefreshing = false }
             }
         },
     ) {
