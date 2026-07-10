@@ -34,6 +34,10 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.util.concurrent.atomic.AtomicReference
+import io.ktor.server.auth.*
+import io.ktor.server.routing.*
+import io.ktor.server.response.*
+import io.ktor.http.*
 
 object DailySummaryAutoJob {
     private const val TAG = "DailySummaryAutoJob"
@@ -62,8 +66,9 @@ object DailySummaryAutoJob {
         val now = ZonedDateTime.now(ZoneOffset.UTC)
         val today = now.toLocalDate()
         if (now.hour != TARGET_HOUR_UTC) return
-        if (lastRunDate.get() == today) return
-        if (!lastRunDate.compareAndSet(null, today)) return
+        val prev = lastRunDate.get()
+        if (prev == today) return
+        if (!lastRunDate.compareAndSet(prev, today)) return
         log.info("[$TAG] Target hour reached, running for {}", today)
         runForDate(today)
     }
@@ -195,5 +200,24 @@ object DailySummaryAutoJob {
 
         log.info("[$TAG] Generated {} auto daily summaries for {}", generated, date)
         return generated
+    }
+}
+
+fun Route.dailySummaryAdminRouting() {
+    authenticate("jwt") {
+        route("/api/admin/daily-summary") {
+            // Manually trigger AI daily summary for today (or a specific date)
+            get("/trigger") {
+                val dateParam = call.request.queryParameters["date"]
+                val date = dateParam?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+                    ?: ZonedDateTime.now(ZoneOffset.UTC).toLocalDate()
+                val count = DailySummaryAutoJob.runForDate(date)
+                call.respondText(
+                    """{"generated": $count, "date": "$date"}""",
+                    ContentType.Application.Json,
+                    HttpStatusCode.OK,
+                )
+            }
+        }
     }
 }

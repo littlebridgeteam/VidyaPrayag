@@ -3808,7 +3808,7 @@ object GameXpLedgerTable : UUIDTable("game_xp_ledger", "id") {
     val schoolId   = uuid("school_id")
     val amount     = integer("amount")
     val reason     = text("reason")
-    val source     = varchar("source", 32)
+    val xpSource   = varchar("source", 32)
     val category   = varchar("category", 16)
     val multiplier = float("multiplier").default(1.0f)
     val createdAt  = timestamp("created_at")
@@ -3821,7 +3821,7 @@ object GameXpLedgerTable : UUIDTable("game_xp_ledger", "id") {
 }
 
 object GameStudentStatsTable : UUIDTable("game_student_stats", "id") {
-    val studentId      = uuid("student_id").unique()
+    val studentId      = uuid("student_id").uniqueIndex()
     val schoolId       = uuid("school_id")
     val totalXp        = integer("total_xp").default(0)
     val currentXp      = integer("current_xp").default(0)
@@ -3855,7 +3855,7 @@ object GameLevelDefinitionsTable : UUIDTable("game_level_definitions", "id") {
 
 object GameBadgeDefinitionsTable : UUIDTable("game_badge_definitions", "id") {
     val schoolId       = uuid("school_id").nullable()
-    val code           = varchar("code", 64).unique()
+    val code           = varchar("code", 64).uniqueIndex()
     val name           = varchar("name", 128)
     val description    = text("description")
     val iconName       = varchar("icon_name", 32)
@@ -3912,7 +3912,7 @@ object GameStudentHouseAssignmentsTable : UUIDTable("game_student_house_assignme
 
 object GameQuestDefinitionsTable : UUIDTable("game_quest_definitions", "id") {
     val schoolId     = uuid("school_id").nullable()
-    val code         = varchar("code", 64).unique()
+    val code         = varchar("code", 64).uniqueIndex()
     val name         = varchar("name", 128)
     val description  = text("description")
     val questType    = varchar("quest_type", 16)
@@ -4045,7 +4045,7 @@ object GameStudyBuddyPairsTable : UUIDTable("game_study_buddy_pairs", "id") {
 }
 
 object GameProgressionPathsTable : UUIDTable("game_progression_paths", "id") {
-    val code        = varchar("code", 32).unique()
+    val code        = varchar("code", 32).uniqueIndex()
     val name        = varchar("name", 64)
     val stage1Name  = varchar("stage1_name", 64)
     val stage1Xp    = integer("stage1_xp")
@@ -4072,7 +4072,7 @@ object GameStudentPathProgressTable : UUIDTable("game_student_path_progress", "i
 }
 
 object GameTitlesTable : UUIDTable("game_titles", "id") {
-    val code         = varchar("code", 64).unique()
+    val code         = varchar("code", 64).uniqueIndex()
     val name         = varchar("name", 128)
     val criteriaJson = text("criteria_json").default("{}")
     val iconName     = varchar("icon_name", 32)
@@ -4082,7 +4082,7 @@ object GameTitlesTable : UUIDTable("game_titles", "id") {
 
 object GameSeasonalEventsTable : UUIDTable("game_seasonal_events", "id") {
     val schoolId  = uuid("school_id").nullable()
-    val code      = varchar("code", 64).unique()
+    val code      = varchar("code", 64).uniqueIndex()
     val name      = varchar("name", 128)
     val badgeId   = uuid("badge_id")
     val questId   = uuid("quest_id")
@@ -4093,7 +4093,7 @@ object GameSeasonalEventsTable : UUIDTable("game_seasonal_events", "id") {
 }
 
 object GameMotivationMessagesTable : UUIDTable("game_motivation_messages", "id") {
-    val messageKey  = varchar("message_key", 64).unique()
+    val messageKey  = varchar("message_key", 64).uniqueIndex()
     val messageText = text("message_text")
     val language    = varchar("language", 8).default("en")
     val isActive    = bool("is_active").default(true)

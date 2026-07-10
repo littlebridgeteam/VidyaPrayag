@@ -138,13 +138,16 @@ fun ParentEventRegistrationScreenV2(
             ) {
                 SegmentChip(
                     text = "Upcoming Events",
-                    isSelected = true,
-                    onClick = { viewModel.loadEvents() },
+                    isSelected = !showMyRegistrations,
+                    onClick = {
+                        showMyRegistrations = false
+                        viewModel.loadEvents()
+                    },
                     modifier = Modifier.weight(1f),
                 )
                 SegmentChip(
                     text = "My Registrations",
-                    isSelected = false,
+                    isSelected = showMyRegistrations,
                     onClick = {
                         showMyRegistrations = true
                         viewModel.loadMyRegistrations()
@@ -562,7 +565,7 @@ private fun PremiumInput(
             placeholder = { Text(placeholder ?: "", style = VTypography.caption, color = VColors.ink3) },
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = keyboardType),
             modifier = Modifier.fillMaxWidth().clip(VShapes.lg),
-            shape = VShapes.lg as androidx.compose.ui.graphics.Shape,
+            shape = VShapes.lg,
             singleLine = true,
         )
     }

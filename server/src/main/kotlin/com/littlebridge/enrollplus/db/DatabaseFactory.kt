@@ -37,6 +37,7 @@
 package com.littlebridge.enrollplus.db
 
 import com.littlebridge.enrollplus.core.RuntimeEnvironment
+import com.littlebridge.enrollplus.feature.gamification.GamificationSeeder
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.github.cdimascio.dotenv.dotenv
@@ -544,6 +545,13 @@ object DatabaseFactory {
                     seedFailure = "Demo seed failed: ${e.message}"
                 }
             }
+        }
+
+        // Gamification seed (default levels, badges, quests, paths, titles, messages, kill switch flag)
+        try {
+            GamificationSeeder.seed()
+        } catch (e: Exception) {
+            logger.warn("DB_INIT_WARNING: Gamification seed failed: ${e.message}")
         }
     }
 
