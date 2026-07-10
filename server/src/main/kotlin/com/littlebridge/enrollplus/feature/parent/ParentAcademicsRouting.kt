@@ -1276,12 +1276,35 @@ fun Route.parentAcademicsRouting() {
                 val quizId = UUID.fromString(quizIdStr)
                 val studentId = child.studentCode ?: "unknown"
 
-                val answers = dbQuery {
+                var answers = dbQuery {
                     SyllabusQuizAnswersTable.selectAll().where {
                         (SyllabusQuizAnswersTable.quizId eq quizId) and
                             (SyllabusQuizAnswersTable.studentId eq studentId)
                     }.toList()
                 }
+
+                // Fallback for legacy submissions where the old parent-level submit
+                // endpoint resolved the first child instead of the selected child.
+                // If this quiz was submitted under a sibling's student_code, still
+                // return the result to the parent (they own both children).
+                if (answers.isEmpty()) {
+                    val parentId = call.principalUserId()?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                    val siblingCodes = if (parentId != null) dbQuery {
+                        ChildrenTable.selectAll().where {
+                            (ChildrenTable.parentId eq parentId) and
+                                (ChildrenTable.isActive eq true)
+                        }.mapNotNull { it[ChildrenTable.studentCode] }
+                    } else emptyList()
+                    if (siblingCodes.isNotEmpty()) {
+                        answers = dbQuery {
+                            SyllabusQuizAnswersTable.selectAll().where {
+                                (SyllabusQuizAnswersTable.quizId eq quizId) and
+                                    (SyllabusQuizAnswersTable.studentId inList siblingCodes)
+                            }.toList()
+                        }
+                    }
+                }
+
                 if (answers.isEmpty()) {
                     call.fail("No submission found for this quiz", HttpStatusCode.NotFound, "NO_SUBMISSION"); return@get
                 }

@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -1146,7 +1145,7 @@ private fun QuizDetailCard(
         Spacer(Modifier.height(16.dp))
 
         Column(
-            Modifier.fillMaxWidth().heightIn(max = 420.dp).verticalScroll(rememberScrollState()),
+            Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             detail.questions.forEachIndexed { qIdx, q ->
@@ -1259,7 +1258,7 @@ private fun QuizResultCard(
             Spacer(Modifier.height(16.dp))
 
             Column(
-                Modifier.fillMaxWidth().heightIn(max = 350.dp).verticalScroll(rememberScrollState()),
+                Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 result.questionResults.forEachIndexed { idx, qr ->
@@ -1294,7 +1293,18 @@ private fun QuizResultCard(
             if (academics.leaderboardLoading) {
                 Text("Loading leaderboard...", style = VTypography.caption, color = VColors.ink3)
             } else if (academics.leaderboardError != null) {
-                Text(academics.leaderboardError!!, style = VTypography.caption, color = VColors.ink3)
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(academics.leaderboardError!!, style = VTypography.caption, color = VColors.ink3, modifier = Modifier.weight(1f))
+                    VButton(
+                        "Retry",
+                        onClick = { onLoadLeaderboard(result.quizId) },
+                        variant = VButtonVariant.Secondary,
+                    )
+                }
             } else {
                 val lb = academics.leaderboard
                 if (lb != null && lb.entries.isNotEmpty()) {
@@ -1303,7 +1313,7 @@ private fun QuizResultCard(
                     Text("${lb.totalParticipants} participants", style = VTypography.caption, color = VColors.ink3)
                     Spacer(Modifier.height(10.dp))
                     Column(
-                        Modifier.fillMaxWidth().heightIn(max = 300.dp).verticalScroll(rememberScrollState()),
+                        Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
                         lb.entries.forEach { entry ->
