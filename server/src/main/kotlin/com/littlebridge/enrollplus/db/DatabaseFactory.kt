@@ -339,6 +339,33 @@ object DatabaseFactory {
         // Server Logs (Notification Deep-Linking & Backend Log Viewer Plan §3.1)
         // Structured server-side log table for the super-admin Log Viewer.
         ServerLogsTable,
+        // Gamification System (GAMIFICATION_SYSTEM_SPEC.md §26)
+        // Applied by docs/db/migration_100_gamification.sql (must run before
+        // deploy; AUTO_CREATE_TABLES is OFF in prod). Order matters for FKs:
+        // level/badge/house/quest definitions first, then student-scoped tables,
+        // then progress/social/event tables.
+        GameLevelDefinitionsTable,
+        GameBadgeDefinitionsTable,
+        GameHousesTable,
+        GameQuestDefinitionsTable,
+        GameProgressionPathsTable,
+        GameTitlesTable,
+        GameXpLedgerTable,
+        GameStudentStatsTable,
+        GameStudentBadgesTable,
+        GameStudentHouseAssignmentsTable,
+        GameStudentQuestsTable,
+        GameXpBoostsTable,
+        GameRewardCatalogTable,
+        GameRewardRedemptionsTable,
+        GameClassGoalsTable,
+        GameShoutoutsTable,
+        GameMentorAssignmentsTable,
+        GameStudyBuddyPairsTable,
+        GameStudentPathProgressTable,
+        GameSeasonalEventsTable,
+        GameMotivationMessagesTable,
+        GameTeacherEncouragementsTable,
     )
 
     /** True when DATABASE_URL is set → we're talking to Postgres / Supabase. */

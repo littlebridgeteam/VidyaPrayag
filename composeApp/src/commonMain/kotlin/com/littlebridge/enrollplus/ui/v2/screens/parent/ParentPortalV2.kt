@@ -249,7 +249,12 @@ fun ParentPortalV2(
             return
         }
         ParentOverlay.Calendar -> {
-            AcademicCalendarScreenV2(onBack = { overlay = ParentOverlay.None }, modifier = modifier, viewModelQualifier = named("parentCalendar"))
+            AcademicCalendarScreenV2(
+                onBack = { overlay = ParentOverlay.None },
+                onOpenEventRegistration = { overlay = ParentOverlay.EventRegistration },
+                modifier = modifier,
+                viewModelQualifier = named("parentCalendar"),
+            )
             return
         }
         ParentOverlay.Scholarships -> {
@@ -462,7 +467,7 @@ fun ParentPortalV2(
                     onOpenScholarships = { overlay = ParentOverlay.Scholarships },
                     onOpenIdCard = { overlay = ParentOverlay.DigitalIdCard },
                     onOpenLibrary = { overlay = ParentOverlay.Library },
-                    onOpenEvents = { overlay = ParentOverlay.EventRegistration },
+                    onOpenEvents = { overlay = ParentOverlay.Calendar },
                     onOpenReport = { overlay = ParentOverlay.Report },
                     onOpenPews = { overlay = ParentOverlay.Pews },
                     unreadNotificationsCount = notifications.unreadCount,

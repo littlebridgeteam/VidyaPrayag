@@ -468,6 +468,7 @@ private fun HomeLoaded(
             onOpenReport = onOpenReport,
             onOpenPews = onOpenPews,
             onOpenLibrary = onOpenLibrary,
+            onOpenCalendar = onOpenEvents,
         )
 
         Spacer(Modifier.height(24.dp))
@@ -1340,39 +1341,57 @@ private fun PremiumFeaturesGrid(
     onOpenReport: () -> Unit,
     onOpenPews: () -> Unit,
     onOpenLibrary: () -> Unit,
+    onOpenCalendar: () -> Unit,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        PremiumFeatureCard(
-            icon = VIcons.Sparkles,
-            iconBg = VColors.violet,
-            label = "AI Tutor",
-            modifier = Modifier.weight(1f),
-            onClick = onOpenTutor,
-        )
-        PremiumFeatureCard(
-            icon = VIcons.FileText,
-            iconBg = VColors.mint,
-            label = "AI Report",
-            modifier = Modifier.weight(1f),
-            onClick = onOpenReport,
-        )
-        PremiumFeatureCard(
-            icon = VIcons.Activity,
-            iconBg = VColors.coral,
-            label = "PEWS",
-            modifier = Modifier.weight(1f),
-            onClick = onOpenPews,
-        )
-        PremiumFeatureCard(
-            icon = VIcons.BookOpen,
-            iconBg = VColors.gold,
-            label = "Library",
-            modifier = Modifier.weight(1f),
-            onClick = onOpenLibrary,
-        )
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            PremiumFeatureCard(
+                icon = VIcons.Sparkles,
+                iconBg = VColors.violet,
+                label = "AI Tutor",
+                modifier = Modifier.weight(1f),
+                onClick = onOpenTutor,
+            )
+            PremiumFeatureCard(
+                icon = VIcons.FileText,
+                iconBg = VColors.mint,
+                label = "AI Report",
+                modifier = Modifier.weight(1f),
+                onClick = onOpenReport,
+            )
+            PremiumFeatureCard(
+                icon = VIcons.Activity,
+                iconBg = VColors.coral,
+                label = "PEWS",
+                modifier = Modifier.weight(1f),
+                onClick = onOpenPews,
+            )
+            PremiumFeatureCard(
+                icon = VIcons.BookOpen,
+                iconBg = VColors.gold,
+                label = "Library",
+                modifier = Modifier.weight(1f),
+                onClick = onOpenLibrary,
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            PremiumFeatureCard(
+                icon = VIcons.Calendar,
+                iconBg = VColors.sky,
+                label = "Calendar",
+                modifier = Modifier.weight(1f),
+                onClick = onOpenCalendar,
+            )
+            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.weight(1f))
+        }
     }
 }
 
