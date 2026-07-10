@@ -10,6 +10,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -449,10 +452,6 @@ fun ParentPortalV2(
     ) { padding ->
         Box(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize()) {
-                VOfflineBanner(
-                    isOffline = dashboard.isOffline,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                )
                 when (tab) {
                 "home" -> ParentHomeScreenV2(
                     onDiscoverSchools = { overlay = ParentOverlay.Discovery },
@@ -522,8 +521,25 @@ fun ParentPortalV2(
                     onLinkChild = { overlay = ParentOverlay.LinkChild },
                     onDiscoverSchools = { overlay = ParentOverlay.Discovery },
                     onOpenAccountSettings = { overlay = ParentOverlay.Profile },
+                    onOpenNotifications = { overlay = ParentOverlay.Notifications },
+                    unreadNotificationsCount = notifications.unreadCount,
                 )
             }
+            }
+            // Offline indicator overlay: sits in the status-bar dead-zone above the portal
+            // header so the header keeps the same vertical position as the online state.
+            if (dashboard.isOffline) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .fillMaxWidth()
+                        .height(
+                            WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 24.dp,
+                        ),
+                    contentAlignment = Alignment.BottomCenter,
+                ) {
+                    VOfflineBanner(isOffline = true)
+                }
             }
         }
     }
