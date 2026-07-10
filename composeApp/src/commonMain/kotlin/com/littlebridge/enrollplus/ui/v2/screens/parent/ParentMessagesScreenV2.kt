@@ -200,8 +200,6 @@ private fun PremiumMessageHeader(
             }
         }
     }
-
-    Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line).padding(horizontal = 24.dp))
 }
 
 /**

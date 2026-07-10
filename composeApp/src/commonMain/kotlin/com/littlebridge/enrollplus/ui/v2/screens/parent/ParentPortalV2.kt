@@ -64,7 +64,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import com.littlebridge.enrollplus.ui.v2.screens.parent.ParentHomeScreenV2
 
 /** Full-screen overlays a portal can push above its tab content (back returns to the tabs). */
-private enum class ParentOverlay { None, Notifications, Calendar, Scholarships, Profile, Leave, Messages, LinkChild, Discovery, Health, Pulse, Transport, TutorChat, TutorProgress, DigitalIdCard, Library, EventRegistration, FeePayment, FeeHistory }
+private enum class ParentOverlay { None, Notifications, Calendar, Scholarships, Profile, Leave, Messages, LinkChild, Discovery, Health, Pulse, Transport, TutorChat, TutorProgress, DigitalIdCard, Library, EventRegistration, FeePayment, FeeHistory, Pews, Report }
 
 /**
  * ParentPortalV2 — the 5-tab parent shell, a faithful copy of `Parent.tsx → ParentApp`.
@@ -138,6 +138,8 @@ fun ParentPortalV2(
                     "pulse" -> overlay = ParentOverlay.Pulse
                     "id-card", "digital-id" -> overlay = ParentOverlay.DigitalIdCard
                     "link-child" -> overlay = ParentOverlay.LinkChild
+                    "pews" -> overlay = ParentOverlay.Pews
+                    "report" -> overlay = ParentOverlay.Report
                     else -> overlay = ParentOverlay.None
                 }
             }
@@ -370,7 +372,7 @@ fun ParentPortalV2(
             ParentFeePaymentScreenV2(
                 onBack = { overlay = ParentOverlay.None },
                 modifier = modifier,
-                onPay = { /* TODO: invoke real payment gateway via FeeViewModel */ },
+                onPay = { overlay = ParentOverlay.None },
             )
             return
         }
@@ -378,6 +380,30 @@ fun ParentPortalV2(
             ParentFeeHistoryScreenV2(
                 onBack = { overlay = ParentOverlay.None },
                 modifier = modifier,
+            )
+            return
+        }
+        ParentOverlay.Pews -> {
+            val child = dashboard.selectedChild
+            if (child == null) { overlay = ParentOverlay.None; return }
+            ParentPewsScreenV2(
+                childId = child.id,
+                childName = child.name,
+                onBack = { overlay = ParentOverlay.None },
+                onDeepLink = { deepLinkString ->
+                    localDeepLink = parseDeepLink(deepLinkString, EntryRole.Parent)
+                    overlay = ParentOverlay.None
+                },
+                modifier = modifier,
+            )
+            return
+        }
+        ParentOverlay.Report -> {
+            val child = dashboard.selectedChild
+            if (child == null) { overlay = ParentOverlay.None; return }
+            ParentReportScreen(
+                childId = child.id,
+                onBack = { overlay = ParentOverlay.None },
             )
             return
         }
@@ -436,6 +462,8 @@ fun ParentPortalV2(
                     onOpenIdCard = { overlay = ParentOverlay.DigitalIdCard },
                     onOpenLibrary = { overlay = ParentOverlay.Library },
                     onOpenEvents = { overlay = ParentOverlay.EventRegistration },
+                    onOpenReport = { overlay = ParentOverlay.Report },
+                    onOpenPews = { overlay = ParentOverlay.Pews },
                     unreadNotificationsCount = notifications.unreadCount,
                 )
                 "academics" -> ParentAcademicsScreenV2(

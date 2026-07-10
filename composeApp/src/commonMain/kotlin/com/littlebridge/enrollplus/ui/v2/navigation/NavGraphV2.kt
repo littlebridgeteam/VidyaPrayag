@@ -224,6 +224,8 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
                     "homework" -> "homework"
                     "quizzes" -> "quizzes"
                     "syllabus" -> "syllabus"
+                    "pews" -> "pews"
+                    "report" -> "report"
                     else -> null
                 }
                 val params = parseQueryParams(queryStr).toMutableMap()
@@ -248,6 +250,8 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
                     "pulse" -> "home" to "pulse"
                     "id-card", "digital-id" -> "home" to "id-card"
                     "report-card" -> "academics" to "report-card"
+                    "pews" -> "home" to "pews"
+                    "report" -> "home" to "report"
                     "tutor" -> "academics" to "tutor"
                     "timetable" -> "academics" to "timetable"
                     "link-child" -> "profile" to "link-child"

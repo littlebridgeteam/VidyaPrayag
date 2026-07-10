@@ -75,6 +75,8 @@ fun ParentHomeScreenV2(
     onOpenIdCard: () -> Unit = {},
     onOpenLibrary: () -> Unit = {},
     onOpenEvents: () -> Unit = {},
+    onOpenReport: () -> Unit = {},
+    onOpenPews: () -> Unit = {},
     unreadNotificationsCount: Int = 0,
     viewModel: ParentDashboardViewModel = koinViewModel(),
     academicsViewModel: ParentAcademicsViewModel = koinViewModel(),
@@ -145,6 +147,8 @@ fun ParentHomeScreenV2(
         onOpenIdCard = onOpenIdCard,
         onOpenLibrary = onOpenLibrary,
         onOpenEvents = onOpenEvents,
+        onOpenReport = onOpenReport,
+        onOpenPews = onOpenPews,
         onDiscoverSchools = onDiscoverSchools,
         unreadNotificationsCount = unreadNotificationsCount,
         modifier = modifier,
@@ -171,6 +175,8 @@ private fun ParentHomeContent(
     onOpenIdCard: () -> Unit,
     onOpenLibrary: () -> Unit,
     onOpenEvents: () -> Unit,
+    onOpenReport: () -> Unit,
+    onOpenPews: () -> Unit,
     onDiscoverSchools: () -> Unit,
     unreadNotificationsCount: Int,
     modifier: Modifier = Modifier,
@@ -218,6 +224,9 @@ private fun ParentHomeContent(
                     onOpenIdCard = onOpenIdCard,
                     onOpenLibrary = onOpenLibrary,
                     onOpenEvents = onOpenEvents,
+                    onOpenReport = onOpenReport,
+                    onOpenPews = onOpenPews,
+                    unreadNotificationsCount = unreadNotificationsCount,
                 )
             }
         }
@@ -378,6 +387,9 @@ private fun HomeLoaded(
     onOpenIdCard: () -> Unit,
     onOpenLibrary: () -> Unit,
     onOpenEvents: () -> Unit,
+    onOpenReport: () -> Unit,
+    onOpenPews: () -> Unit,
+    unreadNotificationsCount: Int,
 ) {
     val child = state.selectedChild
     val childName = child?.name?.ifBlank { null } ?: "Your Child"
@@ -386,7 +398,7 @@ private fun HomeLoaded(
     val feesDue = state.fees?.outstandingFees ?: "₹0"
     val overdue = state.fees?.overdueCount ?: 0
     val pendingCount = academics.quizzes.count { it.status.uppercase() == "PENDING" }
-    val unreadMessages = 0 // TODO: wire from notifications/messages state
+    val unreadMessages = unreadNotificationsCount
 
     val priorityCards = rememberPriorityCards(
         feesDue = feesDue,
@@ -447,8 +459,8 @@ private fun HomeLoaded(
         SectionHeader(title = "Premium Features")
         PremiumFeaturesGrid(
             onOpenTutor = onOpenTutor,
-            onOpenScholarships = onOpenScholarships,
-            onOpenIdCard = onOpenIdCard,
+            onOpenReport = onOpenReport,
+            onOpenPews = onOpenPews,
             onOpenLibrary = onOpenLibrary,
         )
 
@@ -1318,8 +1330,8 @@ private fun UpdateItem(
 @Composable
 private fun PremiumFeaturesGrid(
     onOpenTutor: () -> Unit,
-    onOpenScholarships: () -> Unit,
-    onOpenIdCard: () -> Unit,
+    onOpenReport: () -> Unit,
+    onOpenPews: () -> Unit,
     onOpenLibrary: () -> Unit,
 ) {
     Row(
@@ -1338,14 +1350,14 @@ private fun PremiumFeaturesGrid(
             iconBg = VColors.mint,
             label = "AI Report",
             modifier = Modifier.weight(1f),
-            onClick = onOpenScholarships,
+            onClick = onOpenReport,
         )
         PremiumFeatureCard(
             icon = VIcons.Activity,
             iconBg = VColors.coral,
             label = "PEWS",
             modifier = Modifier.weight(1f),
-            onClick = onOpenIdCard,
+            onClick = onOpenPews,
         )
         PremiumFeatureCard(
             icon = VIcons.BookOpen,

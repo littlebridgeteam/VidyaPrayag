@@ -273,47 +273,44 @@ fun PremiumOverlayHeader(
     modifier: Modifier = Modifier,
     action: (@Composable () -> Unit)? = null,
 ) {
-    Column(modifier.fillMaxWidth()) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(VColors.surfaceCard)
+                    .border(1.dp, VColors.line, CircleShape)
+                    .clickable(onClick = onBack),
+                contentAlignment = Alignment.Center,
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(VColors.surfaceCard)
-                        .border(1.dp, VColors.line, CircleShape)
-                        .clickable(onClick = onBack),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = VColors.ink,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-                Text(
-                    title,
-                    style = VTypography.body.copy(fontWeight = FontWeight.Bold),
-                    color = VColors.ink,
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = VColors.ink,
+                    modifier = Modifier.size(20.dp),
                 )
             }
-            if (action != null) {
-                Box(Modifier.height(40.dp).wrapContentWidth(), contentAlignment = Alignment.Center) {
-                    action()
-                }
+            Text(
+                title,
+                style = VTypography.body.copy(fontWeight = FontWeight.Bold),
+                color = VColors.ink,
+            )
+        }
+        if (action != null) {
+            Box(Modifier.height(40.dp).wrapContentWidth(), contentAlignment = Alignment.Center) {
+                action()
             }
         }
-        Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line).padding(horizontal = 24.dp))
     }
 }
 
