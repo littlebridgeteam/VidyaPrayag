@@ -19,6 +19,9 @@ class GamificationRepositoryImpl(
     override suspend fun getRedemptions(token: String, childId: String) = api.getRedemptions(token, childId)
     override suspend fun getLeaderboard(token: String, childId: String) = api.getLeaderboard(token, childId)
     override suspend fun getActiveEvents(token: String) = api.getActiveEvents(token)
+    override suspend fun getXpHistory(token: String, childId: String) = api.getXpHistory(token, childId)
+    override suspend fun getActiveBoosts(token: String, childId: String) = api.getActiveBoosts(token, childId)
+    override suspend fun getClassGoalsForChild(token: String, childId: String) = api.getClassGoalsForChild(token, childId)
 
     override suspend fun encourageStudent(token: String, request: EncourageRequest) = api.encourageStudent(token, request)
     override suspend fun awardBadge(token: String, studentId: String, badgeId: String) = api.awardBadge(token, studentId, badgeId)
@@ -29,6 +32,12 @@ class GamificationRepositoryImpl(
     override suspend fun createClassGoal(token: String, request: Map<String, *>) = api.createClassGoal(token, request)
     override suspend fun assignQuest(token: String, studentId: String, questId: String) = api.assignQuest(token, studentId, questId)
     override suspend fun getTeacherQuests(token: String) = api.getTeacherQuests(token)
+    override suspend fun spotlightStudent(token: String, studentId: String, reason: String) = api.spotlightStudent(token, studentId, reason)
+    override suspend fun pepTalk(token: String, className: String, section: String?) = api.pepTalk(token, className, section)
+    override suspend fun getShoutouts(token: String) = api.getShoutouts(token)
+    override suspend fun deleteShoutout(token: String, shoutoutId: String) = api.deleteShoutout(token, shoutoutId)
+    override suspend fun getGamificationOverview(token: String) = api.getGamificationOverview(token)
+    override suspend fun updateClassGoalProgress(token: String, goalId: String, progress: Int) = api.updateClassGoalProgress(token, goalId, progress)
 
     override suspend fun getFlags(token: String) = api.getFlags(token)
     override suspend fun setEnabled(token: String, enabled: Boolean) = api.setEnabled(token, enabled)
@@ -39,4 +48,9 @@ class GamificationRepositoryImpl(
     override suspend fun getAdminQuests(token: String) = api.getAdminQuests(token)
     override suspend fun getAdminEvents(token: String) = api.getAdminEvents(token)
     override suspend fun getAdminLeaderboard(token: String) = api.getAdminLeaderboard(token)
+    override suspend fun getAdminRedemptions(token: String) = api.getAdminRedemptions(token)
+    override suspend fun updateRedemptionStatus(token: String, redemptionId: String, status: String) = api.updateRedemptionStatus(token, redemptionId, status)
+    override suspend fun getAdminBoosts(token: String) = api.getAdminBoosts(token)
+    override suspend fun createBoost(token: String, boostType: String, multiplier: Float, targetScope: String, targetId: String?, durationHours: Int) = api.createBoost(token, boostType, multiplier, targetScope, targetId, durationHours)
+    override suspend fun getAnalytics(token: String) = api.getAnalytics(token)
 }

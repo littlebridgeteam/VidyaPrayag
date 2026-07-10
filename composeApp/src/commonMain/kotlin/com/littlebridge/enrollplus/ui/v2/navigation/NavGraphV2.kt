@@ -85,10 +85,14 @@ fun NavGraphV2(
         if (brandedColors !== baseDef.colors) baseDef.copy(colors = brandedColors) else baseDef
     }
 
-    // Fetch school branding when authenticated; clear on logout
-    LaunchedEffect(isAuthenticated) {
-        if (isAuthenticated) brandingThemeManager.loadBranding()
-        else brandingThemeManager.clear()
+    // Fetch school branding when authenticated (school staff only — parents
+    // get 403 on /api/v1/school/branding and don't need branding customization).
+    LaunchedEffect(isAuthenticated, entryRole) {
+        if (isAuthenticated && entryRole != EntryRole.Parent) {
+            brandingThemeManager.loadBranding()
+        } else if (!isAuthenticated) {
+            brandingThemeManager.clear()
+        }
     }
 
     // Parse the deep link once when it arrives — but only if we know the user's role.
