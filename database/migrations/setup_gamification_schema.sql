@@ -419,7 +419,7 @@ WHERE NOT EXISTS (
 -- SEED DATA: Default badge definitions (global, school_id = NULL)
 -- =============================================================================
 INSERT INTO game_badge_definitions (school_id, code, name, description, icon_name, category, rarity, xp_requirement, criteria_json)
-SELECT NULL, b.code, b.name, b.desc, b.icon, b.cat, b.rarity, b.xp_req, b.criteria
+SELECT NULL, b.code, b.name, b.descr, b.icon, b.cat, b.rarity, b.xp_req, b.criteria
 FROM (VALUES
     ('FIRST_ATTENDANCE',   'First Attendance',      'Marked present for the first time',              'check_circle',     'ATTENDANCE',   'COMMON',    10, '{"type":"count","source":"attendance","threshold":1}'),
     ('PERFECT_WEEK',       'Perfect Week',          'Attended every day for a full week',             'verified',         'ATTENDANCE',   'RARE',      50, '{"type":"count","source":"attendance","threshold":5}'),
@@ -434,7 +434,7 @@ FROM (VALUES
     ('SPOTLIGHT',          'In the Spotlight',      'Received a spotlight award',                     'flare',            'CHARACTER',    'RARE',      50, '{"type":"manual"}'),
     ('1000_XP',            'XP Milestone: 1000',    'Earned 1000 total XP',                           'diamond',          'MILESTONE',    'EPIC',     100, '{"type":"xp","threshold":1000}'),
     ('5000_XP',            'XP Milestone: 5000',    'Earned 5000 total XP',                           'auto_awesome',     'MILESTONE',    'LEGENDARY',250, '{"type":"xp","threshold":5000}')
-) AS b(code, name, desc, icon, cat, rarity, xp_req, criteria)
+) AS b(code, name, descr, icon, cat, rarity, xp_req, criteria)
 WHERE NOT EXISTS (
     SELECT 1 FROM game_badge_definitions WHERE code = b.code
 );
