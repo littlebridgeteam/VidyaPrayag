@@ -53,6 +53,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.viewmodel.koinViewModel
@@ -118,10 +119,18 @@ fun TeacherUpdateScreenV2(
 
     if (asg == null) {
         // ── MODE A: scope gate — the WHOLE screen is a single scroll (like Classes).
+        var isRefreshing by remember { mutableStateOf(false) }
+        LaunchedEffect(classesState.isLoading) {
+            if (!classesState.isLoading) isRefreshing = false
+        }
+        VPullRefresh(
+            isRefreshing = isRefreshing,
+            onRefresh = { isRefreshing = true; classesViewModel.load() },
+            modifier = modifier.fillMaxSize().background(VColors.cream),
+        ) {
         LazyColumn(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxSize()
-                .background(VColors.cream)
                 .statusBarsPadding(),
             contentPadding = PaddingValues(top = 12.dp, bottom = TeacherDockClearance),
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -202,6 +211,7 @@ fun TeacherUpdateScreenV2(
                     }
                 }
             }
+        }
         }
     } else {
         // ── MODE B: scoped tool — fixed header + scope bar, bounded sub-screen.

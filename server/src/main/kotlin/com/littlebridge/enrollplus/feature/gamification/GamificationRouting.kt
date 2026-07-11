@@ -827,6 +827,11 @@ fun Route.gamificationRouting() {
                         category = "GAMIFICATION",
                         title = "Teacher Update",
                         body = req.message,
+                        schoolId = ctx.schoolId,
+                        actorId = ctx.userId,
+                        deepLink = "/parent/academics",
+                        refType = "gamification_update",
+                        refId = studentId?.toString(),
                     )
                     call.okMessage("Parent alert sent to ${parentUserIds.size} parent(s)")
                 } else {

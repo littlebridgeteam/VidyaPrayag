@@ -55,6 +55,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.components.VProgressRing
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.components.VThemePicker
 import com.littlebridge.enrollplus.ui.v2.components.VLanguagePicker
 import com.littlebridge.enrollplus.core.locale.LocaleManager
@@ -196,17 +197,27 @@ private fun SchoolSettingsContent(
         icon = VIcons.AlertTriangle,
     )
 
-    Column(
-        modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp)
-            .statusBarsPadding()
-            .imePadding()
-            .navigationBarsPadding()
-            .padding(top = 16.dp, bottom = 140.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+    var isRefreshing by remember { mutableStateOf(false) }
+    LaunchedEffect(state.isLoading) {
+        if (!state.isLoading) isRefreshing = false
+    }
+
+    VPullRefresh(
+        isRefreshing = isRefreshing,
+        onRefresh = { isRefreshing = true; onRetry() },
+        modifier = modifier.fillMaxSize(),
     ) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp)
+                .statusBarsPadding()
+                .imePadding()
+                .navigationBarsPadding()
+                .padding(top = 16.dp, bottom = 140.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
         // Premium header
         Column(
             modifier = Modifier
@@ -322,6 +333,7 @@ private fun SchoolSettingsContent(
                 VThemePicker(currentMode = themeMode, currentCustomId = customThemeId, onSelect = onThemeSelect)
             }
         }
+    }
     }
 }
 

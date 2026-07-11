@@ -92,8 +92,8 @@ fun NotificationsScreenV2(
     val state by viewModel.state.collectAsStateV2()
     NotificationsContent(
         state = state,
-        isRefreshing = state.isLoading,
-        onRefresh = viewModel::load,
+        isRefreshing = state.isRefreshing,
+        onRefresh = viewModel::refresh,
         onBack = onBack,
         onMarkAll = viewModel::markAllRead,
         onMarkRead = viewModel::markRead,

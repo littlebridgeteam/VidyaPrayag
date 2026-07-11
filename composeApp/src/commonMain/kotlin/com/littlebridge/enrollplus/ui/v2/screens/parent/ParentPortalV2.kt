@@ -73,7 +73,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import com.littlebridge.enrollplus.ui.v2.screens.parent.ParentHomeScreenV2
 
 /** Full-screen overlays a portal can push above its tab content (back returns to the tabs). */
-private enum class ParentOverlay { None, Notifications, Calendar, Scholarships, Profile, Leave, Messages, LinkChild, Discovery, Health, Pulse, Transport, TutorChat, TutorProgress, DigitalIdCard, Library, EventRegistration, FeePayment, FeeHistory, Pews, Report }
+private enum class ParentOverlay { None, Notifications, Calendar, Scholarships, Profile, Leave, Messages, LinkChild, Discovery, Health, Pulse, Transport, TutorChat, TutorProgress, DigitalIdCard, Library, EventRegistration, FeePayment, FeeHistory, Pews, Report, AnnouncementDetail, FeeDetail, LeaveDetail }
 
 /**
  * ParentPortalV2 — the 5-tab parent shell, a faithful copy of `Parent.tsx → ParentApp`.
@@ -109,6 +109,11 @@ fun ParentPortalV2(
     var deepLinkAcademicsTab by remember { mutableStateOf<String?>(null) }
     var deepLinkSegment by remember { mutableStateOf<ConversationsSegment?>(null) }
     var deepLinkReportDraftId by remember { mutableStateOf<String?>(null) }
+    // Detail screen data — populated from the tapped notification when a deep link
+    // carries a specific entity ID (announcement/fee/leave).
+    var detailTitle by remember { mutableStateOf("") }
+    var detailBody by remember { mutableStateOf("") }
+    var detailTime by remember { mutableStateOf("") }
 
     // Apply deep-link routing: set tab + overlay from the typed target.
     LaunchedEffect(deepLinkTarget, localDeepLink) {
@@ -133,7 +138,17 @@ fun ParentPortalV2(
                     "transport" -> overlay = ParentOverlay.Transport
                     "library" -> overlay = ParentOverlay.Library
                     "events" -> overlay = ParentOverlay.EventRegistration
-                    "announcements" -> { tab = "conversations"; overlay = ParentOverlay.None; deepLinkSegment = ConversationsSegment.Announcements }
+                    "announcements" -> {
+                        if (target.params["announcementId"] != null) {
+                            val n = notifications.notifications.firstOrNull { it.deepLink?.contains(target.params["announcementId"] == true) }
+                            detailTitle = n?.title ?: "Announcement"
+                            detailBody = n?.body ?: ""
+                            detailTime = n?.time ?: ""
+                            overlay = ParentOverlay.AnnouncementDetail
+                        } else {
+                            tab = "conversations"; overlay = ParentOverlay.None; deepLinkSegment = ConversationsSegment.Announcements
+                        }
+                    }
                     "report-card" -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Report"; target.params["draftId"]?.let { deepLinkReportDraftId = it } }
                     "tutor" -> { overlay = ParentOverlay.TutorChat }
                     "timetable" -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Timetable" }
@@ -151,6 +166,22 @@ fun ParentPortalV2(
                     "report" -> overlay = ParentOverlay.Report
                     else -> overlay = ParentOverlay.None
                 }
+                // If params carry a feeId, show FeeDetail overlay instead of Fees tab.
+                target.params["feeId"]?.let { fid ->
+                    val n = notifications.notifications.firstOrNull { it.deepLink?.contains(fid) == true }
+                    detailTitle = n?.title ?: "Fee Detail"
+                    detailBody = n?.body ?: ""
+                    detailTime = n?.time ?: ""
+                    overlay = ParentOverlay.FeeDetail
+                }
+                // If params carry a leaveId, show LeaveDetail overlay instead of Leave overlay.
+                target.params["leaveId"]?.let { lid ->
+                    val n = notifications.notifications.firstOrNull { it.deepLink?.contains(lid) == true }
+                    detailTitle = n?.title ?: "Leave Request"
+                    detailBody = n?.body ?: ""
+                    detailTime = n?.time ?: ""
+                    overlay = ParentOverlay.LeaveDetail
+                }
             }
             is DeepLinkTarget.Messages -> {
                 deepLinkThreadId = target.threadId
@@ -161,11 +192,27 @@ fun ParentPortalV2(
                 val pathOnly = target.path.substringBefore("?").removePrefix("/")
                 when {
                     pathOnly.startsWith("announcements") -> { tab = "conversations"; overlay = ParentOverlay.None; deepLinkSegment = ConversationsSegment.Announcements }
+                    pathOnly.startsWith("fees/") -> {
+                        val feeId = pathOnly.substringAfter("fees/").substringBefore("/")
+                        val n = notifications.notifications.firstOrNull { it.deepLink?.contains(feeId) == true }
+                        detailTitle = n?.title ?: "Fee Detail"
+                        detailBody = n?.body ?: ""
+                        detailTime = n?.time ?: ""
+                        overlay = ParentOverlay.FeeDetail
+                    }
                     pathOnly.startsWith("fees") -> { tab = "fees"; overlay = ParentOverlay.None }
                     pathOnly.startsWith("scholarships") -> { tab = "home"; overlay = ParentOverlay.Scholarships }
                     pathOnly.startsWith("transport") -> { tab = "home"; overlay = ParentOverlay.Transport }
                     pathOnly.startsWith("library") -> { tab = "home"; overlay = ParentOverlay.Library }
                     pathOnly.startsWith("events") -> { tab = "home"; overlay = ParentOverlay.EventRegistration }
+                    pathOnly.startsWith("leave/") -> {
+                        val leaveId = pathOnly.substringAfter("leave/").substringBefore("/").substringBefore("?")
+                        val n = notifications.notifications.firstOrNull { it.deepLink?.contains(leaveId) == true }
+                        detailTitle = n?.title ?: "Leave Request"
+                        detailBody = n?.body ?: ""
+                        detailTime = n?.time ?: ""
+                        overlay = ParentOverlay.LeaveDetail
+                    }
                     pathOnly.startsWith("leave") -> { tab = "home"; overlay = ParentOverlay.Leave }
                     pathOnly.startsWith("messages") -> { overlay = ParentOverlay.Messages }
                     pathOnly.startsWith("health") -> { tab = "home"; overlay = ParentOverlay.Health }
@@ -418,6 +465,48 @@ fun ParentPortalV2(
             ParentReportScreen(
                 childId = child.id,
                 onBack = { overlay = ParentOverlay.None },
+            )
+            return
+        }
+        ParentOverlay.AnnouncementDetail -> {
+            AnnouncementDetailScreen(
+                title = detailTitle,
+                body = detailBody,
+                time = detailTime,
+                onBack = { overlay = ParentOverlay.None },
+                onOpenInConversations = {
+                    tab = "conversations"
+                    overlay = ParentOverlay.None
+                    deepLinkSegment = ConversationsSegment.Announcements
+                },
+                modifier = modifier,
+            )
+            return
+        }
+        ParentOverlay.FeeDetail -> {
+            FeeDetailScreen(
+                title = detailTitle,
+                body = detailBody,
+                time = detailTime,
+                onBack = { overlay = ParentOverlay.None },
+                onOpenInFees = {
+                    tab = "fees"
+                    overlay = ParentOverlay.None
+                },
+                modifier = modifier,
+            )
+            return
+        }
+        ParentOverlay.LeaveDetail -> {
+            LeaveDetailScreen(
+                title = detailTitle,
+                body = detailBody,
+                time = detailTime,
+                onBack = { overlay = ParentOverlay.None },
+                onOpenLeave = {
+                    overlay = ParentOverlay.Leave
+                },
+                modifier = modifier,
             )
             return
         }
