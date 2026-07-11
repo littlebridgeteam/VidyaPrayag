@@ -59,10 +59,10 @@ fun AnnouncementDetailScreen(
         ) {
             VCard(modifier = Modifier.fillMaxWidth()) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    VBadge(text = "Announcement", tone = VBadgeTone.Info)
+                    VBadge(text = "Announcement", tone = VBadgeTone.Accent)
                     Text(
                         text = title,
-                        style = VTypography.heading,
+                        style = VTypography.h2,
                         color = VColors.ink,
                         fontWeight = FontWeight.Bold,
                     )
@@ -82,8 +82,8 @@ fun AnnouncementDetailScreen(
 
             VButton(
                 text = "Open in Conversations",
-                variant = VButtonVariant.Outlined,
-                tone = VButtonTone.Primary,
+                variant = VButtonVariant.Secondary,
+                tone = VButtonTone.Lavender,
                 onClick = onOpenInConversations,
                 modifier = Modifier.fillMaxWidth(),
             )

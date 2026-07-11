@@ -62,7 +62,7 @@ fun FeeDetailScreen(
                     VBadge(text = "Fee", tone = VBadgeTone.Warning)
                     Text(
                         text = title,
-                        style = VTypography.heading,
+                        style = VTypography.h2,
                         color = VColors.ink,
                         fontWeight = FontWeight.Bold,
                     )
@@ -82,8 +82,8 @@ fun FeeDetailScreen(
 
             VButton(
                 text = "Open in Fees",
-                variant = VButtonVariant.Outlined,
-                tone = VButtonTone.Primary,
+                variant = VButtonVariant.Secondary,
+                tone = VButtonTone.Lavender,
                 onClick = onOpenInFees,
                 modifier = Modifier.fillMaxWidth(),
             )

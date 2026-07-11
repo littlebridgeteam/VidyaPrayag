@@ -115,6 +115,11 @@ fun ParentPortalV2(
     var detailBody by remember { mutableStateOf("") }
     var detailTime by remember { mutableStateOf("") }
 
+    val dashboard by dashboardViewModel.state.collectAsStateV2()
+    val progress by headerViewModel.state.collectAsStateV2()
+    val notifications by notificationsViewModel.state.collectAsStateV2()
+    val messageState by messageViewModel.state.collectAsStateV2()
+
     // Apply deep-link routing: set tab + overlay from the typed target.
     LaunchedEffect(deepLinkTarget, localDeepLink) {
         val target = localDeepLink ?: deepLinkTarget ?: return@LaunchedEffect
@@ -140,7 +145,7 @@ fun ParentPortalV2(
                     "events" -> overlay = ParentOverlay.EventRegistration
                     "announcements" -> {
                         if (target.params["announcementId"] != null) {
-                            val n = notifications.notifications.firstOrNull { it.deepLink?.contains(target.params["announcementId"] == true) }
+                            val n = notifications.notifications.firstOrNull { it.deepLink?.contains(target.params["announcementId"] ?: "") == true }
                             detailTitle = n?.title ?: "Announcement"
                             detailBody = n?.body ?: ""
                             detailTime = n?.time ?: ""
@@ -232,10 +237,6 @@ fun ParentPortalV2(
         }
         localDeepLink = null
     }
-    val dashboard by dashboardViewModel.state.collectAsStateV2()
-    val progress by headerViewModel.state.collectAsStateV2()
-    val notifications by notificationsViewModel.state.collectAsStateV2()
-    val messageState by messageViewModel.state.collectAsStateV2()
 
     // ── Unlinked-parent gate ────────────────────────────────────────────────────
     // Show the unlinked screen ONLY when the dashboard has fully resolved (not loading,

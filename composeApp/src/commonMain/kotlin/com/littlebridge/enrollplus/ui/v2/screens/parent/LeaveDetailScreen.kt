@@ -59,10 +59,10 @@ fun LeaveDetailScreen(
         ) {
             VCard(modifier = Modifier.fillMaxWidth()) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    VBadge(text = "Leave", tone = VBadgeTone.Info)
+                    VBadge(text = "Leave", tone = VBadgeTone.Warning)
                     Text(
                         text = title,
-                        style = VTypography.heading,
+                        style = VTypography.h2,
                         color = VColors.ink,
                         fontWeight = FontWeight.Bold,
                     )
@@ -82,8 +82,8 @@ fun LeaveDetailScreen(
 
             VButton(
                 text = "Open Leave",
-                variant = VButtonVariant.Outlined,
-                tone = VButtonTone.Primary,
+                variant = VButtonVariant.Secondary,
+                tone = VButtonTone.Lavender,
                 onClick = onOpenLeave,
                 modifier = Modifier.fillMaxWidth(),
             )
