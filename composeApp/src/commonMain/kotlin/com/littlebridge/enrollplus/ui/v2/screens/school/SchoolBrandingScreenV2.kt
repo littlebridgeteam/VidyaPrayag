@@ -85,6 +85,7 @@ fun SchoolBrandingScreenV2(
         VBackHeader(
             title = "Branding & Photos",
             onBack = onBack,
+            pinRouteId = "overlay_branding",
         )
 
         VStateHost(

@@ -74,7 +74,7 @@ fun AdmissionsCrmScreenV2(
     Column(modifier.fillMaxSize().statusBarsPadding()
         .imePadding()
         .navigationBarsPadding()) {
-        VBackHeader(title = "Admissions CRM", onBack = onBack)
+        VBackHeader(title = "Admissions CRM", onBack = onBack, pinRouteId = "overlay_admissions")
         VPullRefresh(isRefreshing = isLoading && state.totalEnquiries > 0, onRefresh = { viewModel.refresh() }) {
             AdmissionsCrmContent(
                 state = state,

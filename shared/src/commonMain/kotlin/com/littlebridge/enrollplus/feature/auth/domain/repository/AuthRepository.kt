@@ -21,6 +21,10 @@ interface AuthRepository {
     suspend fun getUserDetails(token: String): NetworkResult<UserDetailsResponse>
     /** Update the authenticated user's profile picture URL. */
     suspend fun updateProfilePic(url: String): NetworkResult<ApiResponse<PersonalDetails>>
+    /** Fetch the authenticated user's pinned home-screen shortcuts. */
+    suspend fun getPinnedScreens(): NetworkResult<ApiResponse<PinnedScreensResponse>>
+    /** Replace the authenticated user's pinned home-screen shortcuts. */
+    suspend fun updatePinnedScreens(screens: List<String>): NetworkResult<ApiResponse<PinnedScreensResponse>>
     /** Phase 6: sync theme preference to server for cross-device persistence. */
     suspend fun syncThemePref(themePref: String): NetworkResult<Unit>
 }

@@ -132,7 +132,7 @@ fun ClassesSubjectsScreenV2(
     Column(modifier.fillMaxSize().statusBarsPadding()
         .imePadding()
         .navigationBarsPadding()) {
-        VBackHeader(title = appString(StringKeys.CS_TITLE), onBack = onBack)
+        VBackHeader(title = appString(StringKeys.CS_TITLE), onBack = onBack, pinRouteId = "overlay_classes_subjects")
         val tabLabels = ClassesSubjectsTab.entries.map { it.label() }
         VTopTabs(tabs = tabLabels, selected = tabLabels[activeTab.ordinal], onSelect = { label ->
             activeTab = ClassesSubjectsTab.entries[tabLabels.indexOf(label)]

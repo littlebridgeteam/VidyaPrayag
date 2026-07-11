@@ -87,7 +87,7 @@ fun AlumniScreen(
             .verticalScroll(rememberScrollState())
             .padding(bottom = 24.dp),
     ) {
-        VBackHeader(title = appString(StringKeys.ALM_TITLE), onBack = onBack)
+        VBackHeader(title = appString(StringKeys.ALM_TITLE), onBack = onBack, pinRouteId = "overlay_alumni")
 
         val subTabLabels = AlumniTab.entries.map { it.label() }
         VTopTabs(

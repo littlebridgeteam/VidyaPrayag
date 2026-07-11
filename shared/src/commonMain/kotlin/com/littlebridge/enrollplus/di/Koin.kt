@@ -15,6 +15,7 @@ import com.littlebridge.enrollplus.feature.parent.presentation.ParentHomeViewMod
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentProfileViewModel
 import com.littlebridge.enrollplus.feature.parent.presentation.TrackProgressViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.SchoolDashboardViewModel
+import com.littlebridge.enrollplus.feature.admin.presentation.PinnedScreensViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.InstitutionalBasicOBViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.BrandingInfoOBViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.AcademicInfoOBViewModel
@@ -582,6 +583,7 @@ val viewModelModule = module {
     factory { com.littlebridge.enrollplus.feature.parent.presentation.ParentMessageViewModel(get(), get()) }
     factory { com.littlebridge.enrollplus.feature.parent.presentation.ParentPulseViewModel(get(), get(), get()) }
     factory { SchoolDashboardViewModel(get(), get(), get()) }
+    factory { PinnedScreensViewModel(get(), get()) }
     factory { InstitutionalBasicOBViewModel(get(), get()) }
     factory { BrandingInfoOBViewModel(get(), get(), get()) }
     factory { AcademicInfoOBViewModel(get(), get()) }

@@ -92,6 +92,27 @@ class AuthApi(
     }
 
     /**
+     * Fetch the authenticated user's pinned home-screen shortcuts.
+     */
+    suspend fun getPinnedScreens(): NetworkResult<ApiResponse<PinnedScreensResponse>> {
+        return safeApiCall {
+            client.get(getUrl("api/v1/user/pinned-screens"))
+        }
+    }
+
+    /**
+     * Replace the authenticated user's pinned home-screen shortcuts.
+     */
+    suspend fun updatePinnedScreens(screens: List<String>): NetworkResult<ApiResponse<PinnedScreensResponse>> {
+        return safeApiCall {
+            client.put(getUrl("api/v1/user/pinned-screens")) {
+                contentType(ContentType.Application.Json)
+                setBody(UpdatePinnedScreensRequest(screens))
+            }
+        }
+    }
+
+    /**
      * Phase 6: sync the user's theme preference to the server so it persists
      * across devices. The bearer token is attached automatically by the Ktor
      * Auth plugin.

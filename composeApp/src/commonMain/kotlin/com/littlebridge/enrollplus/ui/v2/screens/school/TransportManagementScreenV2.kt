@@ -84,7 +84,7 @@ fun TransportManagementScreenV2(
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
-        VBackHeader(title = appString(StringKeys.TRANS_TITLE), onBack = onBack)
+        VBackHeader(title = appString(StringKeys.TRANS_TITLE), onBack = onBack, pinRouteId = "overlay_transport")
 
         VStateHost(
             loading = state.isLoading,

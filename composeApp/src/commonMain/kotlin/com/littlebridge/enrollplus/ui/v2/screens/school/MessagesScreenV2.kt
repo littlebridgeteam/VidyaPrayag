@@ -132,7 +132,7 @@ fun MessagesScreenV2(
     Column(modifier.fillMaxSize().statusBarsPadding()
         .imePadding()
         .navigationBarsPadding()) {
-        VBackHeader(title = title, onBack = backHandler)
+        VBackHeader(title = title, onBack = backHandler, pinRouteId = "overlay_messages")
 
         if (conversation.threadId != null) {
             ConversationContent(

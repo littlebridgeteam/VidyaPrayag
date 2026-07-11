@@ -32,6 +32,7 @@
  *   - schoolDashboardRouting()            — /api/v1/school/dashboard
  *   - adminDashboardRouting()             — /api/admin/dashboard/{summary,analytics,activity}
  *   - adminDashboardOverviewRouting()     — /api/admin/dashboard/overview
+ *   - adminDashboardDigestRouting()       — /api/admin/dashboard/digest
  *   - schoolAnalyticsRouting()            — /api/v1/school/analytics/{overview,class-performance,teacher-performance,student/{id},syllabus-coverage}
  *   - leaveRequestsRouting()              — /api/v1/school/leave-requests[…]
  *   - ptmRouting()                        — /api/v1/school/ptm
@@ -112,6 +113,7 @@ import com.littlebridge.enrollplus.feature.pews.pewsRouting
 import com.littlebridge.enrollplus.feature.scheduling.scheduledMessageRouting
 import com.littlebridge.enrollplus.feature.scheduling.MessageDispatchScheduler
 import com.littlebridge.enrollplus.feature.school.adminDashboardRouting
+import com.littlebridge.enrollplus.feature.school.adminDashboardDigestRouting
 import com.littlebridge.enrollplus.feature.event.eventRegistrationRouting
 import com.littlebridge.enrollplus.feature.school.adminDashboardOverviewRouting
 import com.littlebridge.enrollplus.feature.school.leaveRequestsRouting
@@ -534,6 +536,7 @@ fun Application.module() {
         schoolDashboardRouting()     // /api/v1/school/dashboard
         adminDashboardRouting()      // /api/admin/dashboard/{summary,analytics,activity} — redesigned SchoolHomeScreenV2 data
         adminDashboardOverviewRouting() // /api/admin/dashboard/overview — consolidated command-center payload for SchoolHomeScreenV2
+        adminDashboardDigestRouting() // /api/admin/dashboard/digest — daily focus hero for SchoolHomeScreenV2
         schoolIntelligenceRouting()  // /api/v1/school/dashboard/intelligence — Command Center: attendance timeline+anomalies+exam overlay, early-warning students, academic health grid, activity feed (all real-data)
 
         // AI gateway + PEWS (AI_FEATURES_PLAN.md feature #1)

@@ -76,6 +76,8 @@ object AppUsersTable : UUIDTable("app_users", "id") {
     // "system" | "light" | "dark" | "custom:<themeId>"). Synced from the client
     // via PUT /api/v1/user/theme-pref and read back in GET /api/v1/user/details.
     val themePref         = varchar("theme_pref", 64).nullable()
+    // Home-screen pinned shortcuts: ordered list of route IDs stored as JSON array.
+    val pinnedScreens     = text("pinned_screens").nullable()
     // Multi-Branch (MULTI_BRANCH_SPEC.md): org-level admin claims.
     // Nullable for backward compatibility — standalone school admins remain unlinked.
     val organizationId  = uuid("organization_id").nullable()

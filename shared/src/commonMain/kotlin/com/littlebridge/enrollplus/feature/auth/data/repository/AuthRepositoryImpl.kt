@@ -230,6 +230,14 @@ class AuthRepositoryImpl(
         return api.updateProfilePic(url)
     }
 
+    override suspend fun getPinnedScreens(): NetworkResult<ApiResponse<PinnedScreensResponse>> {
+        return api.getPinnedScreens()
+    }
+
+    override suspend fun updatePinnedScreens(screens: List<String>): NetworkResult<ApiResponse<PinnedScreensResponse>> {
+        return api.updatePinnedScreens(screens)
+    }
+
     override suspend fun syncThemePref(themePref: String): NetworkResult<Unit> {
         val result = api.setThemePref(themePref)
         return when (result) {

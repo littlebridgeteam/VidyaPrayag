@@ -123,7 +123,7 @@ fun SchoolLibraryScreen(
     Column(
         modifier = Modifier.fillMaxSize(),
     ) {
-        com.littlebridge.enrollplus.ui.v2.components.VBackHeader(title = "Library", onBack = onBack)
+        com.littlebridge.enrollplus.ui.v2.components.VBackHeader(title = "Library", onBack = onBack, pinRouteId = "overlay_library")
 
         if (state.isOffline) {
             Row(
