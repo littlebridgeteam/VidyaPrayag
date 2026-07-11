@@ -22,6 +22,7 @@ data class SkillTestEligibilityData(
     @SerialName("next_eligible_at") val nextEligibleAt: String? = null,
     @SerialName("best_score") val bestScore: SkillTestBestScoreData? = null,
     @SerialName("has_questions") val hasQuestions: Boolean = false,
+    @SerialName("grade_level") val gradeLevel: String? = null,
 )
 
 @Serializable

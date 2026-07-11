@@ -19,7 +19,6 @@ package com.littlebridge.enrollplus.feature.skilltest
 
 import com.littlebridge.enrollplus.db.ChildrenTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
-import com.littlebridge.enrollplus.db.SkillTestQuestionsTable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -75,20 +74,18 @@ object SkillTestJobScheduler {
         if (!lastWeeklyRunDate.compareAndSet(null, today)) return
         log.info("[$TAG] Running weekly question generation for {}", today)
 
-        // Get all distinct grade levels from active children
-        val gradeLevels = getActiveGradeLevels()
-        if (gradeLevels.isEmpty()) {
-            log.info("[$TAG] No active children found — skipping generation")
-            return
-        }
+        // Always generate for all 14 canonical grades (Nursery–Class 12)
+        val allGrades = SkillTestService.ALL_GRADES
 
-        // Also generate for any grade that already has questions (to refresh)
-        val existingGrades = getExistingQuestionGrades()
-        val allGrades = (gradeLevels + existingGrades).distinct()
+        // Also include any grades from active children that didn't normalize
+        // to a canonical grade (edge case — child has a non-standard grade text)
+        val childGrades = getActiveGradeLevels()
+        val extraGrades = childGrades.filter { it !in allGrades }
 
-        log.info("[$TAG] Generating questions for {} grade levels: {}", allGrades.size, allGrades)
+        val gradesToGenerate = allGrades + extraGrades
+        log.info("[$TAG] Generating questions for {} grade levels: {}", gradesToGenerate.size, gradesToGenerate)
 
-        for (grade in allGrades) {
+        for (grade in gradesToGenerate) {
             runCatching { SkillTestService.generateWeeklyBatch(grade) }
                 .onFailure { log.warn("[$TAG] Generation failed for grade {}: {}", grade, it.message) }
         }
@@ -101,13 +98,6 @@ object SkillTestJobScheduler {
             .where { ChildrenTable.isActive eq true }
             .mapNotNull { it[ChildrenTable.currentGrade] }
             .filter { it.isNotBlank() }
-            .distinct()
-    }
-
-    private suspend fun getExistingQuestionGrades(): List<String> = dbQuery {
-        SkillTestQuestionsTable.selectAll()
-            .where { SkillTestQuestionsTable.isActive eq true }
-            .map { it[SkillTestQuestionsTable.gradeLevel] }
             .distinct()
     }
 

@@ -34,6 +34,7 @@ data class SkillTestState(
     val nextEligibleAt: String? = null,
     val bestScore: SkillTestBestScoreData? = null,
     val hasQuestions: Boolean = false,
+    val gradeLevel: String? = null,
 
     val isLoadingEligibility: Boolean = false,
     val eligibilityError: String? = null,
@@ -104,6 +105,7 @@ class SkillTestViewModel(
                             nextEligibleAt = data.nextEligibleAt,
                             bestScore = data.bestScore,
                             hasQuestions = data.hasQuestions,
+                            gradeLevel = data.gradeLevel,
                         )
                     }
                 }

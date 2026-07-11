@@ -25,6 +25,7 @@
  */
 package com.littlebridge.enrollplus.feature.skilltest
 
+import com.littlebridge.enrollplus.db.ChildrenTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.GameBadgeDefinitionsTable
 import com.littlebridge.enrollplus.db.GameStudentBadgesTable
@@ -40,6 +41,8 @@ import com.littlebridge.enrollplus.feature.gamification.GamificationService
 import com.littlebridge.enrollplus.feature.gamification.XpHooks
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.serializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -50,6 +53,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.less
 import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -66,6 +70,47 @@ object SkillTestService {
     private const val XP_SKILL_TEST_BASE = 20
     private const val XP_SKILL_TEST_BONUS_PER_CORRECT = 1
     private const val BADGE_CODE = "skill_test_first_pass"
+
+    /** All 14 supported grade levels, in order from youngest to oldest. */
+    val ALL_GRADES: List<String> = listOf(
+        "Nursery", "LKG", "UKG",
+        "Class 1", "Class 2", "Class 3", "Class 4", "Class 5",
+        "Class 6", "Class 7", "Class 8", "Class 9", "Class 10",
+        "Class 11", "Class 12",
+    )
+
+    /**
+     * Normalize a free-text grade string (from children.current_grade) to one
+     * of the 14 canonical grades. Returns null if the grade cannot be recognized.
+     */
+    fun normalizeGrade(raw: String?): String? {
+        if (raw.isNullOrBlank()) return null
+        val trimmed = raw.trim()
+
+        // Direct match (case-insensitive)
+        ALL_GRADES.forEach { if (trimmed.equals(it, ignoreCase = true)) return it }
+
+        val lower = trimmed.lowercase().replace(".", "").replace("-", " ").replace("_", " ").trim()
+
+        // Pre-primary
+        if (lower in setOf("nursery", "pre nursery", "playgroup", "play group", "prekg", "pre kg")) return "Nursery"
+        if (lower in setOf("lkg", "junior kg", "jkg", "lower kg", "jk")) return "LKG"
+        if (lower in setOf("ukg", "senior kg", "skg", "upper kg", "sk")) return "UKG"
+
+        // Class 1–12: match "class N", "grade n", "nth", "n std", "std n", or just "n"
+        val classMatch = Regex("""^(?:class|grade|std|standard)\s*(\d{1,2})$""").find(lower)
+        if (classMatch != null) {
+            val n = classMatch.groupValues[1].toIntOrNull()
+            if (n in 1..12) return "Class $n"
+        }
+        val ordinalMatch = Regex("""^(\d{1,2})(?:st|nd|rd|th)?$""").find(lower)
+        if (ordinalMatch != null) {
+            val n = ordinalMatch.groupValues[1].toIntOrNull()
+            if (n in 1..12) return "Class $n"
+        }
+
+        return null
+    }
 
     // ── DTOs ──────────────────────────────────────────────────────────────
 
@@ -131,6 +176,7 @@ object SkillTestService {
         @SerialName("next_eligible_at") val nextEligibleAt: String? = null,
         @SerialName("best_score") val bestScore: BestScoreDto? = null,
         @SerialName("has_questions") val hasQuestions: Boolean,
+        @SerialName("grade_level") val gradeLevel: String? = null,
     )
 
     // ── 1. AI Question Generation ─────────────────────────────────────────
@@ -147,7 +193,13 @@ object SkillTestService {
     suspend fun generateWeeklyBatch(gradeLevel: String): Int {
         log.info("Generating weekly skill test batch for grade: {}", gradeLevel)
 
-        val subjects = listOf("Mathematics", "English", "Science", "General Knowledge")
+        // Pre-primary (Nursery, LKG, UKG) gets age-appropriate subjects
+        val isPrePrimary = gradeLevel in setOf("Nursery", "LKG", "UKG")
+        val subjects = if (isPrePrimary) {
+            listOf("English", "Mathematics", "General Knowledge", "Environmental Awareness")
+        } else {
+            listOf("Mathematics", "English", "Science", "General Knowledge")
+        }
         val questionsPerSubject = QUESTIONS_PER_BATCH / subjects.size // 25 each
         val batchId = UUID.randomUUID()
         var totalGenerated = 0
@@ -190,6 +242,17 @@ object SkillTestService {
         subject: String,
         count: Int,
     ): List<GeneratedMcq>? {
+        val isPrePrimary = gradeLevel in setOf("Nursery", "LKG", "UKG")
+        val ageGuidance = if (isPrePrimary) {
+            """- The student is 3-5 years old. Use very simple language and picture-based concepts.
+            - Focus on: colors, shapes, counting 1-20, alphabet recognition, rhymes, animals, fruits, good habits.
+            - Keep questions very short and easy to understand."""
+        } else {
+            """- The student is in $gradeLevel (CBSE/NCERT curriculum).
+            - Cover age-appropriate topics from the NCERT syllabus for this grade level.
+            - For higher classes (9-12), include application-based and conceptual questions."""
+        }
+
         val prompt = """
             Generate $count multiple-choice questions (MCQs) for a $gradeLevel student in $subject.
             These are for an Indian school student (CBSE/NCERT aligned).
@@ -198,8 +261,8 @@ object SkillTestService {
             - Each question must have exactly 4 options labeled A, B, C, D
             - Only one correct answer per question
             - Mix of difficulty: ~40% easy, ~40% medium, ~20% hard
-            - Questions should cover age-appropriate topics for $gradeLevel $subject
             - Include a brief explanation for why the correct answer is right
+            $ageGuidance
 
             Return ONLY a JSON array:
             [
@@ -255,7 +318,7 @@ object SkillTestService {
         }
     }
 
-    private fun persistQuestions(
+    private suspend fun persistQuestions(
         batchId: UUID,
         gradeLevel: String,
         subject: String,
@@ -268,7 +331,7 @@ object SkillTestService {
                 it[SkillTestQuestionsTable.subject] = subject
                 it[SkillTestQuestionsTable.questionText] = q.questionText
                 it[SkillTestQuestionsTable.options] = json.encodeToString(
-                    kotlinx.serialization.builtins.ListSerializer(kotlinx.serialization.builtins.serializer()),
+                    ListSerializer(serializer<String>()),
                     q.options,
                 )
                 it[SkillTestQuestionsTable.correctAnswer] = q.correctAnswer
@@ -288,18 +351,38 @@ object SkillTestService {
      * Eligible if: no prior attempt OR 7 days have passed since last completed attempt.
      */
     suspend fun checkEligibility(childId: UUID): EligibilityDto = dbQuery {
+        // Look up the child's grade
+        val child = ChildrenTable.selectAll()
+            .where { ChildrenTable.id eq childId }
+            .firstOrNull()
+        val rawGrade = child?.get(ChildrenTable.currentGrade)
+        val gradeLevel = normalizeGrade(rawGrade)
+
+        if (gradeLevel == null) {
+            return@dbQuery EligibilityDto(
+                eligible = false,
+                reason = "Please update your child's class in the profile to access skill tests.",
+                hasQuestions = false,
+                gradeLevel = null,
+            )
+        }
+
         val bestScore = SkillTestBestScoresTable.selectAll()
             .firstOrNull { it[SkillTestBestScoresTable.childId] == childId }
 
         val hasQuestions = SkillTestQuestionsTable.selectAll()
-            .where { SkillTestQuestionsTable.isActive eq true }
+            .where {
+                (SkillTestQuestionsTable.isActive eq true) and
+                (SkillTestQuestionsTable.gradeLevel eq gradeLevel)
+            }
             .count() > 0
 
         if (bestScore == null) {
             return@dbQuery EligibilityDto(
                 eligible = hasQuestions,
-                reason = if (hasQuestions) "Ready to take your first test!" else "Questions are being generated. Please check back soon.",
+                reason = if (hasQuestions) "Ready to take your first test!" else "Questions are being generated for $gradeLevel. Please check back soon.",
                 hasQuestions = hasQuestions,
+                gradeLevel = gradeLevel,
             )
         }
 
@@ -310,7 +393,7 @@ object SkillTestService {
         EligibilityDto(
             eligible = eligible && hasQuestions,
             reason = when {
-                !hasQuestions -> "Questions are being generated. Please check back soon."
+                !hasQuestions -> "Questions are being generated for $gradeLevel. Please check back soon."
                 eligible -> "Ready for your next attempt!"
                 else -> "You can retake the test after the cooldown period."
             },
@@ -323,6 +406,7 @@ object SkillTestService {
                 nextEligibleAt = nextEligible?.toString(),
             ),
             hasQuestions = hasQuestions,
+            gradeLevel = gradeLevel,
         )
     }
 
@@ -335,6 +419,12 @@ object SkillTestService {
         parentId: UUID,
         schoolId: UUID? = null,
     ): Pair<String, List<QuestionDto>>? = dbQuery {
+        // Look up the child's grade
+        val child = ChildrenTable.selectAll()
+            .where { ChildrenTable.id eq childId }
+            .firstOrNull() ?: return@dbQuery null
+        val gradeLevel = normalizeGrade(child[ChildrenTable.currentGrade]) ?: return@dbQuery null
+
         // Check eligibility
         val bestScore = SkillTestBestScoresTable.selectAll()
             .firstOrNull { it[SkillTestBestScoresTable.childId] == childId }
@@ -343,15 +433,16 @@ object SkillTestService {
             return@dbQuery null // not eligible yet
         }
 
-        // Get active questions
+        // Get active questions for this child's grade only
         val questions = SkillTestQuestionsTable.selectAll()
-            .where { SkillTestQuestionsTable.isActive eq true }
+            .where {
+                (SkillTestQuestionsTable.isActive eq true) and
+                (SkillTestQuestionsTable.gradeLevel eq gradeLevel)
+            }
             .toList()
 
         if (questions.isEmpty()) return@dbQuery null
 
-        // Determine grade from child's record (use first question's grade as fallback)
-        val gradeLevel = questions.first()[SkillTestQuestionsTable.gradeLevel]
         val batchId = questions.first()[SkillTestQuestionsTable.batchId]
 
         // Create the attempt
@@ -416,10 +507,10 @@ object SkillTestService {
         } catch (e: Exception) {
             // Already answered — return existing result
             val existing = SkillTestAnswersTable.selectAll()
-                .firstOrNull {
+                .where {
                     (SkillTestAnswersTable.attemptId eq attemptId) and
                     (SkillTestAnswersTable.questionId eq questionId)
-                } ?: return@dbQuery null
+                }.firstOrNull() ?: return@dbQuery null
             return@dbQuery buildAnswerResult(existing[SkillTestAnswersTable.isCorrect], question, attemptId)
         }
 
@@ -558,17 +649,17 @@ object SkillTestService {
      */
     private suspend fun awardSkillTestBadge(childId: UUID) = dbQuery {
         val badgeDef = GameBadgeDefinitionsTable.selectAll()
-            .firstOrNull { it[GameBadgeDefinitionsTable.code] eq BADGE_CODE }
-            ?: return@dbQuery
+            .where { GameBadgeDefinitionsTable.code eq BADGE_CODE }
+            .firstOrNull() ?: return@dbQuery
 
         val badgeId = badgeDef[GameBadgeDefinitionsTable.id].value
 
         // Check if already earned
         val alreadyEarned = GameStudentBadgesTable.selectAll()
-            .firstOrNull {
+            .where {
                 (GameStudentBadgesTable.studentId eq childId) and
                 (GameStudentBadgesTable.badgeId eq badgeId)
-            } != null
+            }.firstOrNull() != null
 
         if (!alreadyEarned) {
             GameStudentBadgesTable.insert {
@@ -656,14 +747,14 @@ object SkillTestService {
         val count = SkillTestQuestionsTable.selectAll()
             .where {
                 (SkillTestQuestionsTable.isActive eq false) and
-                (SkillTestQuestionsTable.createdAt less cutoff)
+(SkillTestQuestionsTable.createdAt less cutoff)
             }
             .count().toInt()
 
         if (count > 0) {
             SkillTestQuestionsTable.deleteWhere {
                 (SkillTestQuestionsTable.isActive eq false) and
-                (SkillTestQuestionsTable.createdAt less cutoff)
+(SkillTestQuestionsTable.createdAt less cutoff)
             }
             log.info("Purged {} old skill test questions", count)
         }

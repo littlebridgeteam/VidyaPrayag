@@ -187,6 +187,18 @@ private fun SkillTestCardContent(
                 }
             }
 
+            // Not eligible — grade not set
+            !state.eligible && state.gradeLevel == null && state.bestScore == null -> {
+                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        state.eligibilityReason.ifBlank { "Please update your child's class in the profile to access skill tests." },
+                        style = VTypography.body.copy(fontSize = 13.sp),
+                        color = VColors.ink3,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+
             // Not eligible — cooldown
             !state.eligible && state.bestScore != null -> {
                 SkillTestCooldown(state = state)
@@ -223,6 +235,16 @@ private fun SkillTestCardContent(
 
 @Composable
 private fun SkillTestReady(state: SkillTestState, onStartTest: () -> Unit) {
+    // Show grade level
+    state.gradeLevel?.let { grade ->
+        Text(
+            "$grade Skill Test",
+            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
+            color = VColors.ink3,
+        )
+        Spacer(Modifier.height(8.dp))
+    }
+
     // Show best score if exists
     state.bestScore?.let { bs ->
         if (bs.attemptsCount > 0) {

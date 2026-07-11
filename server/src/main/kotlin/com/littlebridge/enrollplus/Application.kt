@@ -150,6 +150,7 @@ import com.littlebridge.enrollplus.feature.teacher.teacherStudentRouting
 import com.littlebridge.enrollplus.feature.teacher.teacherSyllabusRouting
 import com.littlebridge.enrollplus.feature.teacher.teacherQuizRouting
 import com.littlebridge.enrollplus.feature.school.syllabusPaceRouting
+import com.littlebridge.enrollplus.feature.skilltest.skillTestRouting
 import com.littlebridge.enrollplus.feature.user.parentRouting
 import com.littlebridge.enrollplus.feature.user.parentMessagesRouting
 import com.littlebridge.enrollplus.feature.user.userDetailsRouting
@@ -702,6 +703,6 @@ fun Application.module() {
         //   /api/v1/parent/skill-test/{childId}/{eligibility,start,best-score,history}
         //   /api/v1/parent/skill-test/{attemptId}/{answer,review}
         //   /api/v1/parent/skill-test/generate/{gradeLevel}  — admin trigger
-        com.littlebridge.enrollplus.feature.skilltest.skillTestRouting()
+        skillTestRouting()
     }
 }
