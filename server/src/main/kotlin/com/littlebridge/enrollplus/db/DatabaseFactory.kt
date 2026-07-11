@@ -127,6 +127,7 @@ object DatabaseFactory {
         TeacherSubjectAssignmentsTable,
         AnnouncementsTable,
         WhatsappLogsTable,
+        AnnouncementDeliveryLogsTable,
         AdmissionEnquiriesTable,
         SchoolPhilosophyTable,
         SchoolMediaTable,

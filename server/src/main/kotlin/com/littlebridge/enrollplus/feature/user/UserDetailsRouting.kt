@@ -126,6 +126,11 @@ data class ThemePrefRequest(
     @SerialName("theme_pref") val themePref: String
 )
 
+@Serializable
+data class UpdateProfilePicRequest(
+    @SerialName("profile_pic_url") val profilePicUrl: String
+)
+
 fun Route.userDetailsRouting() {
     authenticate("jwt") {
         route("/api/v1/user") {
@@ -251,6 +256,49 @@ fun Route.userDetailsRouting() {
                     }
                 }
                 call.ok(mapOf("theme_pref" to pref), message = "Theme preference saved")
+            }
+
+            // ── Update profile picture ─────────────────────────────────────────
+            put("/details/profile-pic") {
+                val uid = call.principalUserId() ?: run {
+                    call.fail("Invalid token", HttpStatusCode.Unauthorized); return@put
+                }
+                val userUuid = runCatching { UUID.fromString(uid) }.getOrNull() ?: run {
+                    call.fail("Malformed token subject", HttpStatusCode.Unauthorized); return@put
+                }
+
+                val body = runCatching { call.receive<UpdateProfilePicRequest>() }.getOrNull()
+                    ?: run { call.fail("Invalid request body", HttpStatusCode.BadRequest); return@put }
+
+                if (body.profilePicUrl.isBlank()) {
+                    call.fail("profile_pic_url is required", HttpStatusCode.BadRequest); return@put
+                }
+
+                val updated = dbQuery {
+                    AppUsersTable.update({ AppUsersTable.id eq userUuid }) {
+                        it[AppUsersTable.profilePicUrl] = body.profilePicUrl
+                    }
+                    AppUsersTable.selectAll()
+                        .where { AppUsersTable.id eq userUuid }
+                        .singleOrNull()
+                        ?.let {
+                            PersonalDetails(
+                                role = it[AppUsersTable.role].uppercase(),
+                                id = it[AppUsersTable.id].value.toString(),
+                                name = it[AppUsersTable.fullName],
+                                profilePic = it[AppUsersTable.profilePicUrl],
+                                email = it[AppUsersTable.email],
+                                mobile = it[AppUsersTable.phone],
+                                themePref = it[AppUsersTable.themePref]
+                            )
+                        }
+                }
+
+                if (updated == null) {
+                    call.fail("User not found", HttpStatusCode.NotFound)
+                } else {
+                    call.ok(updated, message = "Profile picture updated")
+                }
             }
         }
     }

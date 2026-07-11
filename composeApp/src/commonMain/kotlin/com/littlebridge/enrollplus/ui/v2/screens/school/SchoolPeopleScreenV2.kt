@@ -3,6 +3,7 @@ package com.littlebridge.enrollplus.ui.v2.screens.school
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,7 +23,10 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -273,14 +277,6 @@ private fun SchoolPeopleContent(
                 activeColor = VColors.violet,
             )
 
-            // Violet link-request banner — only meaningful on Students tab, below tabs.
-            if (subTab == PeopleSubTab.Students) {
-                LinkRequestsBanner(
-                    count = studentsState.linkRequestCount,
-                    onClick = onOpenLinkRequests,
-                )
-            }
-
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxWidth().weight(1f),
@@ -299,6 +295,7 @@ private fun SchoolPeopleContent(
                         state = studentsState,
                         onRetry = onStudentsRetry,
                         onOpenStudent = onOpenStudent,
+                        onOpenLinkRequests = onOpenLinkRequests,
                         onAddClick = { showAddStudent = true },
                         onImportClick = { showImportStudents = true },
                         onGraduateClick = { studentIds, year -> onGraduateStudents(studentIds, year) },
@@ -395,30 +392,47 @@ private fun TeachersSubTab(
         q && subjectOk && gradeOk && availabilityOk
     }
 
+    var menuExpanded by remember { mutableStateOf(false) }
+
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(appString(StringKeys.PPL_TAB_TEACHERS), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
-            VButton(
-                text = appString(StringKeys.PPL_ADD_TEACHER),
-                onClick = onAddClick,
-                variant = VButtonVariant.Secondary,
-                size = VButtonSize.Sm,
-                leading = { Icon(VIcons.Plus, contentDescription = null, modifier = Modifier.size(14.dp)) },
-                enabled = !state.isMutating,
+            VInput(
+                value = query,
+                onValueChange = { query = it },
+                label = "",
+                placeholder = appString(StringKeys.PPL_SEARCH_TEACHERS),
+                leadingIcon = VIcons.Search,
+                modifier = Modifier.weight(1f),
             )
+            Box {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(VColors.surfaceCard)
+                        .clickable { menuExpanded = true },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(VIcons.More, contentDescription = "More", tint = VColors.ink, modifier = Modifier.size(20.dp))
+                }
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false },
+                    modifier = Modifier.background(VColors.surfaceCard, RoundedCornerShape(14.dp)),
+                ) {
+                    DropdownMenuItem(
+                        text = { Text(appString(StringKeys.PPL_ADD_TEACHER)) },
+                        onClick = { menuExpanded = false; onAddClick() },
+                        enabled = !state.isMutating,
+                        leadingIcon = { Icon(VIcons.Plus, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                    )
+                }
+            }
         }
-        VInput(
-            value = query,
-            onValueChange = { query = it },
-            label = "",
-            placeholder = appString(StringKeys.PPL_SEARCH_TEACHERS),
-            leadingIcon = VIcons.Search,
-            modifier = Modifier.fillMaxWidth(),
-        )
         FilterChipRow(
             chips = listOf(
                 FilterChipSpec(
@@ -509,6 +523,7 @@ private fun StudentsSubTab(
     state: StudentRosterState,
     onRetry: () -> Unit,
     onOpenStudent: (String) -> Unit,
+    onOpenLinkRequests: () -> Unit,
     onAddClick: () -> Unit,
     onImportClick: () -> Unit,
     onGraduateClick: (List<String>, Int) -> Unit,
@@ -536,46 +551,57 @@ private fun StudentsSubTab(
         q && classOk && sectionOk && statusOk
     }
 
+    var menuExpanded by remember { mutableStateOf(false) }
+
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(appString(StringKeys.PPL_TAB_STUDENTS), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
-        FlowRow(
+        Row(
             Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            VButton(
-                text = appString(StringKeys.PPL_ADD_STUDENT),
-                onClick = onAddClick,
-                variant = VButtonVariant.Secondary,
-                size = VButtonSize.Sm,
-                leading = { Icon(VIcons.Plus, contentDescription = null, modifier = Modifier.size(14.dp)) },
-                enabled = !state.isSaving && !state.isImporting,
+            VInput(
+                value = query,
+                onValueChange = { query = it },
+                label = "",
+                placeholder = appString(StringKeys.PPL_SEARCH_STUDENTS),
+                leadingIcon = VIcons.Search,
+                modifier = Modifier.weight(1f),
             )
-            VButton(
-                text = appString(StringKeys.PPL_IMPORT_CSV),
-                onClick = onImportClick,
-                variant = VButtonVariant.Ghost,
-                size = VButtonSize.Sm,
-                leading = { Icon(VIcons.Upload, contentDescription = null, modifier = Modifier.size(14.dp)) },
-                enabled = !state.isImporting && !state.isSaving,
-            )
-            VButton(
-                text = appString(StringKeys.PPL_GRADUATE),
-                onClick = { showGraduate = true },
-                variant = VButtonVariant.Ghost,
-                size = VButtonSize.Sm,
-                leading = { Icon(VIcons.Users, contentDescription = null, modifier = Modifier.size(14.dp)) },
-                enabled = !state.isLoading && state.students.isNotEmpty(),
-            )
+            Box {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(VColors.surfaceCard)
+                        .clickable { menuExpanded = true },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(VIcons.More, contentDescription = "More", tint = VColors.ink, modifier = Modifier.size(20.dp))
+                }
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false },
+                    modifier = Modifier.background(VColors.surfaceCard, RoundedCornerShape(14.dp)),
+                ) {
+                    DropdownMenuItem(
+                        text = { Text(appString(StringKeys.PPL_ADD_STUDENT)) },
+                        onClick = { menuExpanded = false; onAddClick() },
+                        leadingIcon = { Icon(VIcons.Plus, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(appString(StringKeys.PPL_IMPORT_CSV)) },
+                        onClick = { menuExpanded = false; onImportClick() },
+                        leadingIcon = { Icon(VIcons.Upload, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(appString(StringKeys.PPL_GRADUATE)) },
+                        onClick = { menuExpanded = false; showGraduate = true },
+                        enabled = !state.isLoading && state.students.isNotEmpty(),
+                        leadingIcon = { Icon(VIcons.Users, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                    )
+                }
+            }
         }
-        VInput(
-            value = query,
-            onValueChange = { query = it },
-            label = "",
-            placeholder = appString(StringKeys.PPL_SEARCH_STUDENTS),
-            leadingIcon = VIcons.Search,
-            modifier = Modifier.fillMaxWidth(),
-        )
         FilterChipRow(
             chips = listOf(
                 FilterChipSpec(
@@ -610,6 +636,10 @@ private fun StudentsSubTab(
                 selectedSections = emptySet()
                 selectedStatus = emptySet()
             },
+        )
+        LinkRequestsBanner(
+            count = state.linkRequestCount,
+            onClick = onOpenLinkRequests,
         )
         VStateHost(
             modifier = Modifier.fillMaxWidth().weight(1f),
@@ -725,30 +755,47 @@ private fun StaffSubTab(
         q && deptOk && roleOk && statusOk
     }
 
+    var menuExpanded by remember { mutableStateOf(false) }
+
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(appString(StringKeys.PPL_TAB_STAFF), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
-            VButton(
-                text = appString(StringKeys.PPL_ADD_STAFF),
-                onClick = onAddClick,
-                variant = VButtonVariant.Secondary,
-                size = VButtonSize.Sm,
-                leading = { Icon(VIcons.Plus, contentDescription = null, modifier = Modifier.size(14.dp)) },
-                enabled = !state.isSaving,
+            VInput(
+                value = state.query,
+                onValueChange = onSearch,
+                label = "",
+                placeholder = appString(StringKeys.PPL_SEARCH_STAFF),
+                leadingIcon = VIcons.Search,
+                modifier = Modifier.weight(1f),
             )
+            Box {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(VColors.surfaceCard)
+                        .clickable { menuExpanded = true },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(VIcons.More, contentDescription = "More", tint = VColors.ink, modifier = Modifier.size(20.dp))
+                }
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false },
+                    modifier = Modifier.background(VColors.surfaceCard, RoundedCornerShape(14.dp)),
+                ) {
+                    DropdownMenuItem(
+                        text = { Text(appString(StringKeys.PPL_ADD_STAFF)) },
+                        onClick = { menuExpanded = false; onAddClick() },
+                        enabled = !state.isSaving,
+                        leadingIcon = { Icon(VIcons.Plus, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                    )
+                }
+            }
         }
-        VInput(
-            value = state.query,
-            onValueChange = onSearch,
-            label = "",
-            placeholder = appString(StringKeys.PPL_SEARCH_STAFF),
-            leadingIcon = VIcons.Search,
-            modifier = Modifier.fillMaxWidth(),
-        )
         FilterChipRow(
             chips = listOf(
                 FilterChipSpec(

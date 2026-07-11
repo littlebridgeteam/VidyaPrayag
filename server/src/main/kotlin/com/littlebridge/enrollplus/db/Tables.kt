@@ -212,6 +212,7 @@ object SchoolsTable : UUIDTable("schools", "id") {
     val state          = text("state").default("Uttar Pradesh")
     val pincode        = text("pincode").nullable()
     val logoUrl        = text("logo_url").nullable()
+    val coverImageUrl  = text("cover_image_url").nullable()
     val brandColor     = text("brand_color").default("#2563EB")
     // Geo coordinates persisted during onboarding / profile update so the
     // parent side can discover onboarded schools by distance ("near me").
@@ -379,6 +380,24 @@ object WhatsappLogsTable : UUIDTable("whatsapp_logs", "id") {
     val providerMessageId = text("provider_message_id").nullable()
     val errorMessage      = text("error_message").nullable()
     val createdAt         = timestamp("created_at")
+}
+
+object AnnouncementDeliveryLogsTable : UUIDTable("announcement_delivery_logs", "id") {
+    val schoolId            = uuid("school_id")
+    val announcementId      = text("announcement_id")
+    val channel             = varchar("channel", 16) // whatsapp | push | sms | email
+    val recipientId         = uuid("recipient_id").nullable()
+    val recipientIdentifier = text("recipient_identifier")
+    val status              = varchar("status", 16) // queued | sent | delivered | read | failed | skipped
+    val providerMessageId   = text("provider_message_id").nullable()
+    val errorMessage        = text("error_message").nullable()
+    val createdAt           = timestamp("created_at")
+    val updatedAt           = timestamp("updated_at")
+
+    init {
+        index(isUnique = false, schoolId, announcementId)
+        index(isUnique = false, schoolId, createdAt)
+    }
 }
 
 // =====================================================================

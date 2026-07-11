@@ -18,10 +18,13 @@ import com.littlebridge.enrollplus.feature.alumni.domain.model.GraduateStudentsR
 import com.littlebridge.enrollplus.feature.alumni.domain.repository.AlumniRepository
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.ui.v2.components.VBottomNav
+import com.littlebridge.enrollplus.ui.v2.components.VComingSoon
 import com.littlebridge.enrollplus.ui.v2.components.VCreamBottomNav
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VNavItem
 import com.littlebridge.enrollplus.ui.v2.components.VScreenScaffold
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.navigation.DeepLinkTarget
 import com.littlebridge.enrollplus.ui.v2.navigation.EntryRole
 import com.littlebridge.enrollplus.ui.v2.navigation.parseDeepLink
@@ -50,6 +53,7 @@ private enum class SchoolOverlay {
     AdmissionsCRM,
     Results,
     SchedulePTM,
+    DeliveryLog,
     DailyAttendance,
     ClassPerformance,
     TeacherPerformance,
@@ -296,7 +300,13 @@ fun SchoolPortalV2(
             }
             SchoolOverlay.LinkRequests -> {
                 // RA-48: the parent→child link approval queue.
-                LinkRequestsScreenV2(onBack = { overlay = SchoolOverlay.None }, modifier = modifier)
+                LinkRequestsScreenV2(
+                    onBack = {
+                        overlay = SchoolOverlay.None
+                        studentRefreshKey++
+                    },
+                    modifier = modifier,
+                )
                 return
             }
             SchoolOverlay.AdmissionsCRM -> {
@@ -309,6 +319,14 @@ fun SchoolPortalV2(
             }
             SchoolOverlay.SchedulePTM -> {
                 SchedulePtmScreenV2(onBack = { overlay = SchoolOverlay.None }, modifier = modifier)
+                return
+            }
+            SchoolOverlay.DeliveryLog -> {
+                VComingSoon(
+                    title = appString(StringKeys.SCH_DELIVERY_LOG),
+                    description = appString(StringKeys.SCH_DELIVERY_LOG_DESC),
+                    modifier = modifier,
+                )
                 return
             }
             SchoolOverlay.DailyAttendance -> {
@@ -494,7 +512,7 @@ fun SchoolPortalV2(
                 return
             }
             SchoolOverlay.BrandingKit -> {
-                BrandingSettingsScreen(
+                SchoolBrandingScreenV2(
                     onBack = { overlay = SchoolOverlay.None },
                     modifier = modifier,
                 )
@@ -629,6 +647,7 @@ fun SchoolPortalV2(
                         onOpenMessages = { overlay = SchoolOverlay.Messages },
                         onOpenPtm = { overlay = SchoolOverlay.SchedulePTM },
                         onOpenScheduledMessages = { overlay = SchoolOverlay.ScheduledMessages },
+                        onOpenDeliveryLog = { overlay = SchoolOverlay.DeliveryLog },
                         // Unified create-event entry from Announcements tab.
                         onCreateEvent = {
                             createEventOrigin = SchoolOverlay.None

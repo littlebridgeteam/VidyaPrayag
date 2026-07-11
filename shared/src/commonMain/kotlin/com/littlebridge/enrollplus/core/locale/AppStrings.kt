@@ -1217,6 +1217,16 @@ object StringKeys {
     const val SCH_ANNOUNCEMENT         = "sch.announcement"
     const val SCH_ANNOUNCEMENT_UNAVAILABLE = "sch.announcement_unavailable"
     const val SCH_POSTED_BY            = "sch.posted_by"
+    const val SCH_NO_MESSAGES          = "sch.no_messages"
+    const val SCH_NO_MESSAGES_DESC     = "sch.no_messages_desc"
+    const val SCH_SEE_ALL_MESSAGES     = "sch.see_all_messages"
+    const val SCH_SEE_ALL_MESSAGES_DESC = "sch.see_all_messages_desc"
+    const val SCH_SEE_ALL_PTM          = "sch.see_all_ptm"
+    const val SCH_SEE_ALL_PTM_DESC     = "sch.see_all_ptm_desc"
+    const val SCH_NO_DELIVERY_LOG      = "sch.no_delivery_log"
+    const val SCH_NO_DELIVERY_LOG_DESC = "sch.no_delivery_log_desc"
+    const val SCH_SEE_ALL_DELIVERY_LOG = "sch.see_all_delivery_log"
+    const val SCH_SEE_ALL_DELIVERY_LOG_DESC = "sch.see_all_delivery_log_desc"
 
     // ClassPerformanceScreenV2
     const val SCH_CLASS_PERFORMANCE    = "sch.class_performance"
@@ -4199,6 +4209,16 @@ object AppStrings {
         StringKeys.SCH_ANNOUNCEMENT         to "Announcement",
         StringKeys.SCH_ANNOUNCEMENT_UNAVAILABLE to "Announcement unavailable",
         StringKeys.SCH_POSTED_BY            to "{date} • Posted by School Administration",
+        StringKeys.SCH_NO_MESSAGES          to "No messages yet",
+        StringKeys.SCH_NO_MESSAGES_DESC     to "Start a conversation with parents or staff to see threads here.",
+        StringKeys.SCH_SEE_ALL_MESSAGES     to "See all messages",
+        StringKeys.SCH_SEE_ALL_MESSAGES_DESC to "Open the full parent messages inbox.",
+        StringKeys.SCH_SEE_ALL_PTM          to "See all PTMs",
+        StringKeys.SCH_SEE_ALL_PTM_DESC     to "Open the full parent-teacher meeting history.",
+        StringKeys.SCH_NO_DELIVERY_LOG      to "No delivery records yet",
+        StringKeys.SCH_NO_DELIVERY_LOG_DESC to "Delivery receipts for WhatsApp, push, SMS, and email will appear here.",
+        StringKeys.SCH_SEE_ALL_DELIVERY_LOG to "See all delivery records",
+        StringKeys.SCH_SEE_ALL_DELIVERY_LOG_DESC to "Open the full announcement delivery log.",
         // ClassPerformanceScreenV2
         StringKeys.SCH_CLASS_PERFORMANCE    to "Class Performance",
         StringKeys.SCH_CLASS_PERFORMANCE_DESC to "Class-level analytics will appear here once teachers post marks and attendance.",
@@ -7160,6 +7180,16 @@ object AppStrings {
         StringKeys.SCH_ANNOUNCEMENT         to "घोषणा",
         StringKeys.SCH_ANNOUNCEMENT_UNAVAILABLE to "घोषणा अनुपलब्ध",
         StringKeys.SCH_POSTED_BY            to "{date} • स्कूल प्रशासन द्वारा पोस्ट किया गया",
+        StringKeys.SCH_NO_MESSAGES          to "अभी कोई संदेश नहीं",
+        StringKeys.SCH_NO_MESSAGES_DESC     to "अभिभावकों या स्टाफ से बातचीत शुरू करें ताकि थ्रेड यहाँ दिखाई दें।",
+        StringKeys.SCH_SEE_ALL_MESSAGES     to "सभी संदेश देखें",
+        StringKeys.SCH_SEE_ALL_MESSAGES_DESC to "पूर्ण अभिभावक संदेश इनबॉक्स खोलें।",
+        StringKeys.SCH_SEE_ALL_PTM          to "सभी PTM देखें",
+        StringKeys.SCH_SEE_ALL_PTM_DESC     to "पूर्ण अभिभावक-शिक्षक बैठक इतिहास खोलें।",
+        StringKeys.SCH_NO_DELIVERY_LOG      to "अभी कोई डिलीवरी रिकॉर्ड नहीं",
+        StringKeys.SCH_NO_DELIVERY_LOG_DESC to "WhatsApp, push, SMS और email की डिलीवरी रसीदें यहाँ दिखाई देंगी।",
+        StringKeys.SCH_SEE_ALL_DELIVERY_LOG to "सभी डिलीवरी रिकॉर्ड देखें",
+        StringKeys.SCH_SEE_ALL_DELIVERY_LOG_DESC to "पूर्ण घोषणा डिलीवरी लॉग खोलें।",
         // ClassPerformanceScreenV2
         StringKeys.SCH_CLASS_PERFORMANCE    to "कक्षा प्रदर्शन",
         StringKeys.SCH_CLASS_PERFORMANCE_DESC to "शिक्षकों द्वारा अंक और उपस्थिति दर्ज करने पर कक्षा-स्तरीय एनालिटिक्स यहाँ दिखाई देगा।",

@@ -79,6 +79,19 @@ class AuthApi(
     }
 
     /**
+     * Update the authenticated user's profile picture URL.
+     * The bearer token is attached automatically by the Ktor Auth plugin.
+     */
+    suspend fun updateProfilePic(url: String): NetworkResult<ApiResponse<PersonalDetails>> {
+        return safeApiCall {
+            client.put(getUrl("api/v1/user/details/profile-pic")) {
+                contentType(ContentType.Application.Json)
+                setBody(mapOf("profile_pic_url" to url))
+            }
+        }
+    }
+
+    /**
      * Phase 6: sync the user's theme preference to the server so it persists
      * across devices. The bearer token is attached automatically by the Ktor
      * Auth plugin.

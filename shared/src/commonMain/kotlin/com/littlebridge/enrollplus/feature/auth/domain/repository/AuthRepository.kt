@@ -1,5 +1,6 @@
 package com.littlebridge.enrollplus.feature.auth.domain.repository
 
+import com.littlebridge.enrollplus.core.model.ApiResponse
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.feature.auth.domain.model.*
 
@@ -18,6 +19,8 @@ interface AuthRepository {
     suspend fun changePassword(oldPassword: String?, newPassword: String): NetworkResult<Unit>
     suspend fun logout()
     suspend fun getUserDetails(token: String): NetworkResult<UserDetailsResponse>
+    /** Update the authenticated user's profile picture URL. */
+    suspend fun updateProfilePic(url: String): NetworkResult<ApiResponse<PersonalDetails>>
     /** Phase 6: sync theme preference to server for cross-device persistence. */
     suspend fun syncThemePref(themePref: String): NetworkResult<Unit>
 }
