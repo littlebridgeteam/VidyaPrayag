@@ -1,8 +1,19 @@
 package com.littlebridge.enrollplus.ui.v2.screens.teacher
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -12,14 +23,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.backhandler.BackHandler
+import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.feature.parent.presentation.NotificationsViewModel
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherObligationsViewModel
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherProfileViewModel
 import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.v2.components.VBackOnlineBanner
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VNavItem
+import com.littlebridge.enrollplus.ui.v2.components.VOfflineBanner
 import com.littlebridge.enrollplus.ui.v2.components.VScreenScaffold
 import com.littlebridge.enrollplus.ui.v2.navigation.DeepLinkTarget
 import com.littlebridge.enrollplus.ui.v2.navigation.EntryRole
@@ -310,6 +325,23 @@ fun TeacherPortalV2(
                 .fillMaxSize()
                 .background(VColors.cream),
         ) {
+            // Track offline→online transition for the "Back online" confirmation.
+            val isPortalOffline = obligations.isOffline
+            var wasOffline by remember { mutableStateOf(isPortalOffline) }
+            var showBackOnline by remember { mutableStateOf(false) }
+            LaunchedEffect(isPortalOffline) {
+                if (wasOffline && !isPortalOffline) {
+                    showBackOnline = true
+                }
+                wasOffline = isPortalOffline
+            }
+            LaunchedEffect(showBackOnline) {
+                if (showBackOnline) {
+                    kotlinx.coroutines.delay(2500L)
+                    showBackOnline = false
+                }
+            }
+
             when (tab) {
                 "home" -> TeacherHomeScreenV2(
                     onOpenAttendanceForAssignment = { assignmentId, scope ->
@@ -387,6 +419,44 @@ fun TeacherPortalV2(
                     unreadCount = notifications.unreadCount,
                     onOpenNotifications = { overlay = TeacherOverlay.Notifications },
                 )
+            }
+
+            // Offline indicator overlay — animated slide-in/out so it never jumps.
+            AnimatedVisibility(
+                visible = isPortalOffline,
+                enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+                exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+                modifier = Modifier.align(Alignment.TopCenter),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(
+                            WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 24.dp,
+                        ),
+                    contentAlignment = Alignment.BottomCenter,
+                ) {
+                    VOfflineBanner(isOffline = true)
+                }
+            }
+
+            // "Back online" transient confirmation.
+            AnimatedVisibility(
+                visible = showBackOnline,
+                enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+                exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+                modifier = Modifier.align(Alignment.TopCenter),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(
+                            WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 24.dp,
+                        ),
+                    contentAlignment = Alignment.BottomCenter,
+                ) {
+                    VBackOnlineBanner()
+                }
             }
         }
     }
