@@ -58,6 +58,8 @@ data class TeacherTimetableState(
 
     val isOffline: Boolean = false,
 
+    val refreshEpoch: Int = 0,
+
 )
 
 
@@ -292,6 +294,34 @@ class TeacherTimetableViewModel(
 
         _state.update { it.copy(errorMessage = null, infoMessage = null) }
 
+    }
+
+    /** Pull-to-refresh: re-fetch week + assignments + change requests without setting loading. */
+    fun refresh() {
+        viewModelScope.launch {
+            val token = preferenceRepository.getUserToken().first() ?: return@launch
+            when (val result = repository.getWeek(token, date = null)) {
+                is NetworkResult.Success -> {
+                    val w = result.data.data
+                    _state.update { it.copy(week = w.days, weekStart = w.weekStart, isStale = result.isStale, isOffline = result.isOffline, refreshEpoch = it.refreshEpoch + 1) }
+                }
+                is NetworkResult.Error, is NetworkResult.ConnectionError ->
+                    _state.update { it.copy(isStale = true, isOffline = true, refreshEpoch = it.refreshEpoch + 1) }
+            }
+            when (val result = repository.listClassesV2(token)) {
+                is NetworkResult.Success -> {
+                    val classes = result.data.data?.classes ?: emptyList()
+                    _state.update { it.copy(assignments = classes) }
+                }
+                is NetworkResult.Error, is NetworkResult.ConnectionError -> {}
+            }
+            when (val result = repository.getTimetableChangeRequests(token)) {
+                is NetworkResult.Success -> {
+                    _state.update { it.copy(changeRequests = result.data.requests) }
+                }
+                is NetworkResult.Error, is NetworkResult.ConnectionError -> {}
+            }
+        }
     }
 
 }

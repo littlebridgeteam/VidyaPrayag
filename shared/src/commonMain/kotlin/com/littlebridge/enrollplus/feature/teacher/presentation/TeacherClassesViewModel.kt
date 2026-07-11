@@ -39,6 +39,7 @@ data class TeacherClassesState(
     val error: String? = null,
     val isStale: Boolean = false,
     val isOffline: Boolean = false,
+    val refreshEpoch: Int = 0,
     // filter: null = all, true = class-teacher only, false = subject-only
     val classTeacherFilter: Boolean? = null,
     val search: String = "",
@@ -99,6 +100,23 @@ class TeacherClassesViewModel(
     fun refresh() {
         detailCache.clear()
         load()
+    }
+
+    /** Pull-to-refresh: re-fetch classes without clearing existing data or setting loading. */
+    fun refreshForPull() {
+        viewModelScope.launch {
+            val token = preferenceRepository.getUserToken().first() ?: return@launch
+            when (val result = repository.listClassesV2(token)) {
+                is NetworkResult.Success ->
+                    _state.update {
+                        it.copy(classes = result.data.data?.classes ?: emptyList(), isStale = result.isStale, isOffline = result.isOffline, refreshEpoch = it.refreshEpoch + 1)
+                    }
+                is NetworkResult.Error ->
+                    _state.update { it.copy(isStale = true, isOffline = true, refreshEpoch = it.refreshEpoch + 1) }
+                is NetworkResult.ConnectionError ->
+                    _state.update { it.copy(isStale = true, isOffline = true, refreshEpoch = it.refreshEpoch + 1) }
+            }
+        }
     }
 
     // ---------------- filters ----------------

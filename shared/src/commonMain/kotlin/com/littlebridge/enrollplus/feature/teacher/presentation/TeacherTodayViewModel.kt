@@ -43,6 +43,7 @@ data class TeacherTodayState(
     val weekStart: String = "",
     val isStale: Boolean = false,
     val isOffline: Boolean = false,
+    val refreshEpoch: Int = 0,
 ) {
     /** True only when there is genuinely no schedule to show and it isn't a holiday. */
     val isUnseeded: Boolean
@@ -171,6 +172,32 @@ class TeacherTodayViewModel(
      */
     fun refreshIfStale(deviceTodayIso: String) {
         if (loadedDate != null && loadedDate != deviceTodayIso) load()
+    }
+
+    /** Pull-to-refresh: re-fetch today + week without clearing existing data or setting loading. */
+    fun refresh() {
+        viewModelScope.launch {
+            val token = preferenceRepository.getUserToken().first() ?: return@launch
+            when (val dayResult = repository.getDay(token, date = null)) {
+                is NetworkResult.Success -> {
+                    val ui = dayResult.data.data.toUi()
+                    loadedDate = ui.date
+                    _state.update { it.copy(day = ui, isStale = dayResult.isStale, isOffline = dayResult.isOffline, refreshEpoch = it.refreshEpoch + 1) }
+                }
+                is NetworkResult.Error ->
+                    _state.update { it.copy(isStale = true, isOffline = true, refreshEpoch = it.refreshEpoch + 1) }
+                is NetworkResult.ConnectionError ->
+                    _state.update { it.copy(isStale = true, isOffline = true, refreshEpoch = it.refreshEpoch + 1) }
+            }
+            when (val weekResult = repository.getWeek(token, date = null)) {
+                is NetworkResult.Success -> {
+                    val w = weekResult.data.data
+                    _state.update { it.copy(week = w.days.map { d -> d.toUi() }, weekStart = w.weekStart, isStale = weekResult.isStale) }
+                }
+                is NetworkResult.Error, is NetworkResult.ConnectionError ->
+                    _state.update { it.copy(week = emptyList()) }
+            }
+        }
     }
 }
 

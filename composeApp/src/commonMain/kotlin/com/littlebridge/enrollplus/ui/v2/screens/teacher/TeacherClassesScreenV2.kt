@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,6 +54,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
+import com.littlebridge.enrollplus.ui.v2.components.VStaleChip
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.viewmodel.koinViewModel
@@ -134,6 +137,19 @@ private fun ClassListPane(
 ) {
     val c = VtC
 
+    var isRefreshing by remember { mutableStateOf(false) }
+    LaunchedEffect(state.refreshEpoch) {
+        if (state.refreshEpoch > 0) isRefreshing = false
+    }
+
+    VPullRefresh(
+        isRefreshing = isRefreshing,
+        onRefresh = {
+            isRefreshing = true
+            onRefresh()
+        },
+        modifier = Modifier.fillMaxSize(),
+    ) {
     // The shared premium header sits at the very top of the tab (identical to
     // Home/Update/Timetable/Profile) so the whole portal wears one chrome — this
     // replaces the old slim canonical header the shell used to mount for Classes.
@@ -175,6 +191,10 @@ private fun ClassListPane(
             // Premium overview strip — a violet "you teach" hero with live totals.
             item { ClassesOverviewStrip(state = state) }
 
+            if (state.isStale) {
+                item { VStaleChip(modifier = Modifier.padding(horizontal = 4.dp)) }
+            }
+
             // Attendance Health mini-card
             item { AttendanceHealthMiniCard(state = state) }
 
@@ -206,6 +226,7 @@ private fun ClassListPane(
                 }
             }
         }
+    }
     }
 }
 

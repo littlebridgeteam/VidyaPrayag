@@ -63,7 +63,8 @@ import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
-import com.littlebridge.enrollplus.ui.v2.components.VOfflineBanner
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
+import com.littlebridge.enrollplus.ui.v2.components.VStaleChip
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import kotlinx.coroutines.delay
@@ -145,16 +146,34 @@ fun TeacherHomeScreenV2(
         checkIn.date.isNotBlank() &&
         popupDismissedForDate != checkIn.date
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(VColors.cream)
-            .verticalScroll(rememberScrollState())
-            .statusBarsPadding()
-            .padding(horizontal = 24.dp)
-            .padding(top = 12.dp, bottom = TeacherDockClearance),
-        verticalArrangement = Arrangement.spacedBy(24.dp),
+    // Pull-to-refresh: isRefreshing resets when both today + obligations refreshEpochs bump.
+    var isRefreshing by remember { mutableStateOf(false) }
+    LaunchedEffect(today.refreshEpoch, obligations.refreshEpoch) {
+        if ((today.refreshEpoch > 0 || obligations.refreshEpoch > 0) && !today.isLoading && !obligations.isLoading) {
+            isRefreshing = false
+        }
+    }
+
+    VPullRefresh(
+        isRefreshing = isRefreshing,
+        onRefresh = {
+            isRefreshing = true
+            todayViewModel.refresh()
+            obligationsViewModel.refresh()
+            classesViewModel.refreshForPull()
+        },
+        modifier = modifier.fillMaxSize(),
     ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(VColors.cream)
+                .verticalScroll(rememberScrollState())
+                .statusBarsPadding()
+                .padding(horizontal = 24.dp)
+                .padding(top = 12.dp, bottom = TeacherDockClearance),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
+        ) {
         TeacherPremiumHeader(
             teacherName = today.teacherName,
             lead = "here's",
@@ -163,10 +182,9 @@ fun TeacherHomeScreenV2(
             onOpenNotifications = onOpenNotifications,
         )
 
-        VOfflineBanner(
-            isOffline = today.isOffline || obligations.isOffline,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        if (today.isStale || obligations.isStale) {
+            VStaleChip()
+        }
 
         NowTeachingCard(
             today = today,
@@ -246,6 +264,7 @@ fun TeacherHomeScreenV2(
             onDismiss = { popupDismissedForDate = checkIn.date.ifBlank { com.littlebridge.enrollplus.util.todayIso() } },
             onCheckIn = { method -> checkInViewModel.checkIn(method) },
         )
+    }
     }
 }
 
