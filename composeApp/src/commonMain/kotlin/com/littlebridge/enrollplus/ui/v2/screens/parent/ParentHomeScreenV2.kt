@@ -130,7 +130,7 @@ fun ParentHomeScreenV2(
         isRefreshing = isRefreshing,
         onRefresh = {
             isRefreshing = true
-            viewModel.load()
+            viewModel.refresh()
             state.selectedChild?.id?.let { childId ->
                 academicsViewModel.selectChild(childId)
                 academicsViewModel.loadDailySummary()

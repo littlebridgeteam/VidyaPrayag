@@ -137,9 +137,9 @@ fun ParentAcademicsScreenV2(
         isRefreshing = isRefreshing,
         onRefresh = {
             isRefreshing = true
-            academicsViewModel.loadAttendance()
-            academicsViewModel.loadMarks()
-            academicsViewModel.loadSyllabus()
+            academicsViewModel.refreshAttendance()
+            academicsViewModel.refreshMarks()
+            academicsViewModel.refreshSyllabus()
             academicsViewModel.loadSyllabusV2()
             academicsViewModel.loadDailySummary()
             academicsViewModel.loadQuizzes()
