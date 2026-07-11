@@ -37,6 +37,19 @@ interface GamificationRepository {
     suspend fun getGamificationOverview(token: String): NetworkResult<ApiResponse<Map<String, *>>>
     suspend fun updateClassGoalProgress(token: String, goalId: String, progress: Int): NetworkResult<ApiResponse<Map<String, *>>>
 
+    // Teacher: Parent Alert
+    suspend fun sendParentAlert(token: String, studentId: String, message: String): NetworkResult<ApiResponse<Map<String, *>>>
+
+    // Teacher: Mentor Assignment
+    suspend fun assignMentor(token: String, mentorId: String, menteeId: String): NetworkResult<ApiResponse<Map<String, *>>>
+    suspend fun unassignMentor(token: String, assignmentId: String): NetworkResult<ApiResponse<Map<String, *>>>
+    suspend fun getMentorAssignments(token: String): NetworkResult<ApiResponse<List<Map<String, *>>>>
+
+    // Teacher: Study Buddy Assignment
+    suspend fun assignStudyBuddy(token: String, student1Id: String, student2Id: String, classId: String? = null): NetworkResult<ApiResponse<Map<String, *>>>
+    suspend fun unassignStudyBuddy(token: String, pairId: String): NetworkResult<ApiResponse<Map<String, *>>>
+    suspend fun getStudyBuddyPairs(token: String): NetworkResult<ApiResponse<List<Map<String, *>>>>
+
     // Admin
     suspend fun getFlags(token: String): NetworkResult<ApiResponse<GamificationFlags>>
     suspend fun setEnabled(token: String, enabled: Boolean): NetworkResult<ApiResponse<Map<String, *>>>

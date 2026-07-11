@@ -217,6 +217,57 @@ class GamificationApi(
         }
     }
 
+    // ── Teacher Tools: Parent Alert ──────────────────────────────────
+    suspend fun sendParentAlert(token: String, studentId: String, message: String): NetworkResult<ApiResponse<Map<String, *>>> = safeApiCall {
+        client.post(getUrl("api/v1/teacher/gamification/parent-alert")) {
+            bearerAuth(token)
+            contentType(ContentType.Application.Json)
+            setBody(mapOf("studentId" to studentId, "message" to message))
+        }
+    }
+
+    // ── Teacher Tools: Mentor Assignment ─────────────────────────────
+    suspend fun assignMentor(token: String, mentorId: String, menteeId: String): NetworkResult<ApiResponse<Map<String, *>>> = safeApiCall {
+        client.post(getUrl("api/v1/teacher/gamification/mentor/assign")) {
+            bearerAuth(token)
+            contentType(ContentType.Application.Json)
+            setBody(mapOf("mentorId" to mentorId, "menteeId" to menteeId))
+        }
+    }
+
+    suspend fun unassignMentor(token: String, assignmentId: String): NetworkResult<ApiResponse<Map<String, *>>> = safeApiCall {
+        client.delete(getUrl("api/v1/teacher/gamification/mentor/$assignmentId")) {
+            bearerAuth(token)
+        }
+    }
+
+    suspend fun getMentorAssignments(token: String): NetworkResult<ApiResponse<List<Map<String, *>>>> = safeApiCall {
+        client.get(getUrl("api/v1/teacher/gamification/mentors")) {
+            bearerAuth(token)
+        }
+    }
+
+    // ── Teacher Tools: Study Buddy Assignment ────────────────────────
+    suspend fun assignStudyBuddy(token: String, student1Id: String, student2Id: String, classId: String? = null): NetworkResult<ApiResponse<Map<String, *>>> = safeApiCall {
+        client.post(getUrl("api/v1/teacher/gamification/study-buddy/assign")) {
+            bearerAuth(token)
+            contentType(ContentType.Application.Json)
+            setBody(mapOf("student1Id" to student1Id, "student2Id" to student2Id, "classId" to (classId ?: "")))
+        }
+    }
+
+    suspend fun unassignStudyBuddy(token: String, pairId: String): NetworkResult<ApiResponse<Map<String, *>>> = safeApiCall {
+        client.delete(getUrl("api/v1/teacher/gamification/study-buddy/$pairId")) {
+            bearerAuth(token)
+        }
+    }
+
+    suspend fun getStudyBuddyPairs(token: String): NetworkResult<ApiResponse<List<Map<String, *>>>> = safeApiCall {
+        client.get(getUrl("api/v1/teacher/gamification/study-buddies")) {
+            bearerAuth(token)
+        }
+    }
+
     // ── Admin: Flags ──────────────────────────────────────────────────
     suspend fun getFlags(token: String): NetworkResult<ApiResponse<GamificationFlags>> = safeApiCall {
         client.get(getUrl("api/v1/admin/gamification/flags")) {

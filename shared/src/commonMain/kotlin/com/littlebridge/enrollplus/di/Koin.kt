@@ -726,6 +726,10 @@ val viewModelModule = module {
     factory { com.littlebridge.enrollplus.feature.admin.presentation.ClassesSubjectsViewModel(get(), get(), get()) }
     // Gamification — parent view model for child's gamification data
     factory { com.littlebridge.enrollplus.feature.gamification.presentation.ParentGamificationViewModel(get(), get()) }
+    // Gamification — teacher view model for class/student gamification actions
+    factory { com.littlebridge.enrollplus.feature.gamification.presentation.TeacherGamificationViewModel(get(), get()) }
+    // Gamification — admin view model for gamification management
+    factory { com.littlebridge.enrollplus.feature.gamification.presentation.AdminGamificationViewModel(get(), get()) }
 }
 
 fun initKoin(

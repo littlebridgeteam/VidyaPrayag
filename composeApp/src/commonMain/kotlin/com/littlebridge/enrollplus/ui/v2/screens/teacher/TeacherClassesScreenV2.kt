@@ -577,6 +577,13 @@ private fun ClassDetailBody(detail: ClassDetailData, onOpenStudent: (String) -> 
                 }
             }
         }
+
+        item {
+            TeacherClassGamificationCard(
+                className = detail.header.className,
+                section = detail.header.section,
+            )
+        }
     }
 }
 

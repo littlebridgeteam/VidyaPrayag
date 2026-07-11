@@ -38,6 +38,13 @@ class GamificationRepositoryImpl(
     override suspend fun deleteShoutout(token: String, shoutoutId: String) = api.deleteShoutout(token, shoutoutId)
     override suspend fun getGamificationOverview(token: String) = api.getGamificationOverview(token)
     override suspend fun updateClassGoalProgress(token: String, goalId: String, progress: Int) = api.updateClassGoalProgress(token, goalId, progress)
+    override suspend fun sendParentAlert(token: String, studentId: String, message: String) = api.sendParentAlert(token, studentId, message)
+    override suspend fun assignMentor(token: String, mentorId: String, menteeId: String) = api.assignMentor(token, mentorId, menteeId)
+    override suspend fun unassignMentor(token: String, assignmentId: String) = api.unassignMentor(token, assignmentId)
+    override suspend fun getMentorAssignments(token: String) = api.getMentorAssignments(token)
+    override suspend fun assignStudyBuddy(token: String, student1Id: String, student2Id: String, classId: String?) = api.assignStudyBuddy(token, student1Id, student2Id, classId)
+    override suspend fun unassignStudyBuddy(token: String, pairId: String) = api.unassignStudyBuddy(token, pairId)
+    override suspend fun getStudyBuddyPairs(token: String) = api.getStudyBuddyPairs(token)
 
     override suspend fun getFlags(token: String) = api.getFlags(token)
     override suspend fun setEnabled(token: String, enabled: Boolean) = api.setEnabled(token, enabled)

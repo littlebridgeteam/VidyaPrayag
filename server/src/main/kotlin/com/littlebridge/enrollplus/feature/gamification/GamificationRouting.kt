@@ -38,6 +38,13 @@
  *     POST /api/v1/teacher/gamification/spotlight               — spotlight award (+50 XP)
  *     POST /api/v1/teacher/gamification/pep-talk                — class pep talk (1.5x XP boost)
  *     GET  /api/v1/teacher/gamification/overview                — gamification overview
+ *     POST /api/v1/teacher/gamification/parent-alert             — send positive nudge to parent
+ *     POST /api/v1/teacher/gamification/mentor/assign            — assign mentor to student
+ *     DELETE /api/v1/teacher/gamification/mentor/{id}            — unassign mentor
+ *     GET  /api/v1/teacher/gamification/mentors                  — list mentor assignments
+ *     POST /api/v1/teacher/gamification/study-buddy/assign       — pair two students as study buddies
+ *     DELETE /api/v1/teacher/gamification/study-buddy/{id}       — unpair study buddies
+ *     GET  /api/v1/teacher/gamification/study-buddies            — list study buddy pairs
  *
  *   Admin:
  *     GET  /api/v1/admin/gamification/flags                     — get kill switch state
@@ -74,6 +81,10 @@ import com.littlebridge.enrollplus.db.GameShoutoutsTable
 import com.littlebridge.enrollplus.db.GameStudentStatsTable
 import com.littlebridge.enrollplus.db.GameXpBoostsTable
 import com.littlebridge.enrollplus.db.GameXpLedgerTable
+import com.littlebridge.enrollplus.db.GameMentorAssignmentsTable
+import com.littlebridge.enrollplus.db.GameStudyBuddyPairsTable
+import com.littlebridge.enrollplus.db.StudentsTable
+import com.littlebridge.enrollplus.feature.notifications.Notify
 import org.jetbrains.exposed.sql.*
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -146,6 +157,25 @@ data class CreateBoostRequest(
     val targetScope: String = "ALL",
     val targetId: String? = null,
     val durationHours: Int = 24
+)
+
+@Serializable
+data class ParentAlertRequest(
+    val studentId: String,
+    val message: String = "Your child is making great progress! Keep encouraging them at home."
+)
+
+@Serializable
+data class MentorAssignRequest(
+    val mentorId: String,
+    val menteeId: String
+)
+
+@Serializable
+data class StudyBuddyAssignRequest(
+    val student1Id: String,
+    val student2Id: String,
+    val classId: String? = null
 )
 
 @Serializable
@@ -767,6 +797,207 @@ fun Route.gamificationRouting() {
                 }
                 if (updated > 0) call.okMessage("Class goal progress updated")
                 else call.fail("Goal not found", HttpStatusCode.NotFound, "GOAL_NOT_FOUND")
+            }
+
+            // ── Teacher Tools: Parent Alert ───────────────────────────────
+            post("/parent-alert") {
+                val ctx = call.requireSchoolOrTeacherContext() ?: return@post
+                val req = runCatching { call.receive<ParentAlertRequest>() }.getOrNull()
+                    ?: run { call.fail("Invalid request body"); return@post }
+
+                val studentId = runCatching { UUID.fromString(req.studentId) }.getOrNull()
+                    ?: run { call.fail("Invalid student id"); return@post }
+
+                // Find the student's parent via StudentsTable → studentCode → ChildrenTable.parentId
+                val parentUserIds = dbQuery {
+                    val student = StudentsTable.selectAll()
+                        .where { StudentsTable.id eq studentId }
+                        .firstOrNull()
+                    if (student == null) return@dbQuery emptyList()
+
+                    val code = student[StudentsTable.studentCode]
+                    ChildrenTable.selectAll()
+                        .where { ChildrenTable.studentCode eq code }
+                        .map { it[ChildrenTable.parentId] }
+                }
+
+                if (parentUserIds.isNotEmpty()) {
+                    Notify.toUsers(
+                        userIds = parentUserIds,
+                        category = "GAMIFICATION",
+                        title = "Teacher Update",
+                        body = req.message,
+                    )
+                    call.okMessage("Parent alert sent to ${parentUserIds.size} parent(s)")
+                } else {
+                    call.fail("No parent linked to this student", HttpStatusCode.NotFound, "NO_PARENT_LINKED")
+                }
+            }
+
+            // ── Teacher Tools: Mentor Assignment ──────────────────────────
+            post("/mentor/assign") {
+                val ctx = call.requireSchoolOrTeacherContext() ?: return@post
+                val req = runCatching { call.receive<MentorAssignRequest>() }.getOrNull()
+                    ?: run { call.fail("Invalid request body"); return@post }
+
+                val mentorId = runCatching { UUID.fromString(req.mentorId) }.getOrNull()
+                    ?: run { call.fail("Invalid mentor id"); return@post }
+                val menteeId = runCatching { UUID.fromString(req.menteeId) }.getOrNull()
+                    ?: run { call.fail("Invalid mentee id"); return@post }
+
+                if (mentorId == menteeId) {
+                    call.fail("Cannot assign student as their own mentor", HttpStatusCode.BadRequest, "INVALID_MENTOR")
+                    return@post
+                }
+
+                val inserted = dbQuery {
+                    val existing = GameMentorAssignmentsTable.selectAll()
+                        .where {
+                            (GameMentorAssignmentsTable.mentorId eq mentorId) and
+                            (GameMentorAssignmentsTable.menteeId eq menteeId) and
+                            (GameMentorAssignmentsTable.schoolId eq ctx.schoolId) and
+                            (GameMentorAssignmentsTable.isActive eq true)
+                        }
+                        .count() > 0
+                    if (existing) return@dbQuery false
+
+                    GameMentorAssignmentsTable.insert {
+                        it[GameMentorAssignmentsTable.mentorId] = mentorId
+                        it[GameMentorAssignmentsTable.menteeId] = menteeId
+                        it[GameMentorAssignmentsTable.schoolId] = ctx.schoolId
+                        it[GameMentorAssignmentsTable.assignedBy] = ctx.userId
+                        it[GameMentorAssignmentsTable.isActive] = true
+                        it[GameMentorAssignmentsTable.createdAt] = Instant.now()
+                    }
+                    true
+                }
+                if (inserted) call.okMessage("Mentor assigned")
+                else call.fail("Mentor already assigned", HttpStatusCode.BadRequest, "MENTOR_ALREADY_ASSIGNED")
+            }
+
+            delete("/mentor/{id}") {
+                val ctx = call.requireSchoolOrTeacherContext() ?: return@delete
+                val assignmentId = call.parameters["id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                    ?: run { call.fail("Invalid assignment id"); return@delete }
+
+                val updated = dbQuery {
+                    GameMentorAssignmentsTable.update({
+                        (GameMentorAssignmentsTable.id eq assignmentId) and
+                        (GameMentorAssignmentsTable.schoolId eq ctx.schoolId)
+                    }) {
+                        it[GameMentorAssignmentsTable.isActive] = false
+                    }
+                }
+                if (updated > 0) call.okMessage("Mentor unassigned")
+                else call.fail("Assignment not found", HttpStatusCode.NotFound, "MENTOR_NOT_FOUND")
+            }
+
+            get("/mentors") {
+                val ctx = call.requireSchoolOrTeacherContext() ?: return@get
+                val assignments = dbQuery {
+                    GameMentorAssignmentsTable.selectAll()
+                        .where {
+                            (GameMentorAssignmentsTable.schoolId eq ctx.schoolId) and
+                            (GameMentorAssignmentsTable.isActive eq true)
+                        }
+                        .orderBy(GameMentorAssignmentsTable.createdAt, SortOrder.DESC)
+                        .map {
+                            mapOf(
+                                "id" to it[GameMentorAssignmentsTable.id].value.toString(),
+                                "mentorId" to it[GameMentorAssignmentsTable.mentorId].toString(),
+                                "menteeId" to it[GameMentorAssignmentsTable.menteeId].toString(),
+                                "assignedBy" to it[GameMentorAssignmentsTable.assignedBy].toString(),
+                                "createdAt" to it[GameMentorAssignmentsTable.createdAt].toString()
+                            )
+                        }
+                }
+                call.ok(assignments, "Mentor assignments (${assignments.size})")
+            }
+
+            // ── Teacher Tools: Study Buddy Assignment ─────────────────────
+            post("/study-buddy/assign") {
+                val ctx = call.requireSchoolOrTeacherContext() ?: return@post
+                val req = runCatching { call.receive<StudyBuddyAssignRequest>() }.getOrNull()
+                    ?: run { call.fail("Invalid request body"); return@post }
+
+                val student1Id = runCatching { UUID.fromString(req.student1Id) }.getOrNull()
+                    ?: run { call.fail("Invalid student1 id"); return@post }
+                val student2Id = runCatching { UUID.fromString(req.student2Id) }.getOrNull()
+                    ?: run { call.fail("Invalid student2 id"); return@post }
+                val classId = req.classId?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+
+                if (student1Id == student2Id) {
+                    call.fail("Cannot pair a student with themselves", HttpStatusCode.BadRequest, "INVALID_BUDDY")
+                    return@post
+                }
+
+                val inserted = dbQuery {
+                    val existing = GameStudyBuddyPairsTable.selectAll()
+                        .where {
+                            (GameStudyBuddyPairsTable.schoolId eq ctx.schoolId) and
+                            (GameStudyBuddyPairsTable.isActive eq true) and
+                            (
+                                ((GameStudyBuddyPairsTable.student1Id eq student1Id) and (GameStudyBuddyPairsTable.student2Id eq student2Id)) or
+                                ((GameStudyBuddyPairsTable.student1Id eq student2Id) and (GameStudyBuddyPairsTable.student2Id eq student1Id))
+                            )
+                        }
+                        .count() > 0
+                    if (existing) return@dbQuery false
+
+                    GameStudyBuddyPairsTable.insert {
+                        it[GameStudyBuddyPairsTable.student1Id] = student1Id
+                        it[GameStudyBuddyPairsTable.student2Id] = student2Id
+                        it[GameStudyBuddyPairsTable.schoolId] = ctx.schoolId
+                        it[GameStudyBuddyPairsTable.classId] = classId
+                        it[GameStudyBuddyPairsTable.assignedBy] = ctx.userId
+                        it[GameStudyBuddyPairsTable.isActive] = true
+                        it[GameStudyBuddyPairsTable.expiresAt] = Instant.now().plusSeconds(7 * 24 * 3600)
+                        it[GameStudyBuddyPairsTable.createdAt] = Instant.now()
+                    }
+                    true
+                }
+                if (inserted) call.okMessage("Study buddy pair created")
+                else call.fail("Pair already exists", HttpStatusCode.BadRequest, "BUDDY_ALREADY_PAIRED")
+            }
+
+            delete("/study-buddy/{id}") {
+                val ctx = call.requireSchoolOrTeacherContext() ?: return@delete
+                val pairId = call.parameters["id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                    ?: run { call.fail("Invalid pair id"); return@delete }
+
+                val updated = dbQuery {
+                    GameStudyBuddyPairsTable.update({
+                        (GameStudyBuddyPairsTable.id eq pairId) and
+                        (GameStudyBuddyPairsTable.schoolId eq ctx.schoolId)
+                    }) {
+                        it[GameStudyBuddyPairsTable.isActive] = false
+                    }
+                }
+                if (updated > 0) call.okMessage("Study buddy pair removed")
+                else call.fail("Pair not found", HttpStatusCode.NotFound, "BUDDY_NOT_FOUND")
+            }
+
+            get("/study-buddies") {
+                val ctx = call.requireSchoolOrTeacherContext() ?: return@get
+                val pairs = dbQuery {
+                    GameStudyBuddyPairsTable.selectAll()
+                        .where {
+                            (GameStudyBuddyPairsTable.schoolId eq ctx.schoolId) and
+                            (GameStudyBuddyPairsTable.isActive eq true)
+                        }
+                        .orderBy(GameStudyBuddyPairsTable.createdAt, SortOrder.DESC)
+                        .map {
+                            mapOf(
+                                "id" to it[GameStudyBuddyPairsTable.id].value.toString(),
+                                "student1Id" to it[GameStudyBuddyPairsTable.student1Id].toString(),
+                                "student2Id" to it[GameStudyBuddyPairsTable.student2Id].toString(),
+                                "assignedBy" to it[GameStudyBuddyPairsTable.assignedBy].toString(),
+                                "expiresAt" to it[GameStudyBuddyPairsTable.expiresAt].toString(),
+                                "createdAt" to it[GameStudyBuddyPairsTable.createdAt].toString()
+                            )
+                        }
+                }
+                call.ok(pairs, "Study buddy pairs (${pairs.size})")
             }
         }
 

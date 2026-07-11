@@ -1664,16 +1664,25 @@ Gamification UI appears in exactly these places. NOWHERE else.
   - **Class Roster actions**: "Assign Mentor" / "Assign Study Buddy" buttons
   - NO separate gamification tab — all woven into existing screens
 
-### Admin Portal (Mobile App)
-  - **Settings**: Gamification card with master toggle + granular toggles
-  - **Dashboard**: Gamification analytics card (if enabled)
-  - **Gamification Management** (in settings/admin section):
-    - Badge catalog management
-    - Reward catalog management
-    - Level configuration
-    - House management
-    - Seasonal events management
-    - Redemption approvals
+### Admin Portal (Mobile App) — IMPLEMENTED
+  - **Settings**: "Gamification" row in settings list opens full management overlay
+  - **Gamification Management Screen** (`AdminGamificationScreenV2.kt`):
+    - Feature Flags card: master kill switch + 10 granular toggles (leaderboards, rewards, houses, quests, mentor, shoutouts, events, class goals, combos, boosts)
+    - Analytics Overview card: total XP awarded, total badges earned, active quests, redemption rate
+    - Badge Catalog card: all badge definitions with icon, name, category, rarity, XP requirement, seasonal pill
+    - Level Definitions card: all levels with number, title, XP required
+    - Houses card: all houses with name, member count, total points
+    - Rewards Catalog card: all rewards with name, description, XP cost, active/inactive pill
+    - Quest Pool card: all quest definitions with name, type, XP reward, active/inactive pill
+    - Seasonal Events card: all events with name, date range, active/ended pill
+    - School Leaderboard card: top 10 students with rank (gold/silver/bronze for top 3), student ID, level, total XP
+    - Redemption Approvals card: pending redemptions with approve/reject buttons, approved/rejected status pills
+    - XP Boosts card: active boosts list + create new boost form (type, multiplier, target scope, duration)
+  - **ViewModel**: `AdminGamificationViewModel` — loads all admin data, setEnabled, updateRedemptionStatus, createBoost
+  - **Koin DI**: Registered in `Koin.kt` as factory
+  - **Navigation**: `SchoolOverlay.GamificationManagement` in `SchoolPortalV2.kt`, deep link path `gamification`
+  - **Style**: Admin portal tokens (VColors cream/violet, VTypography, VShapes), white surface cards, violet accent for primary actions, mint for approve, error red for reject
+  - **Layout**: LazyColumn with spacedBy(12.dp), no fixed heights, all content scrolls naturally
 
 ### Admin Portal (Website)
   - **Settings page**: Gamification card with master toggle

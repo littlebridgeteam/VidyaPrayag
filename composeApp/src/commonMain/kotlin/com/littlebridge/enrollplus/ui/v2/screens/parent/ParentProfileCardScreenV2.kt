@@ -42,6 +42,8 @@ import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
 import com.littlebridge.enrollplus.feature.parent.domain.model.DashboardChildSummary
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentMarkDto
+import com.littlebridge.enrollplus.feature.gamification.domain.model.Reward
+import com.littlebridge.enrollplus.feature.gamification.domain.model.RewardRedemption
 import com.littlebridge.enrollplus.feature.gamification.domain.model.StudentBadge as GameBadge
 import com.littlebridge.enrollplus.feature.gamification.domain.model.StudentQuest
 import com.littlebridge.enrollplus.feature.gamification.domain.model.SeasonalEvent
@@ -125,6 +127,7 @@ fun ParentProfileCardScreenV2(
             onSelectChild = onSelectChild,
             onRetry = viewModel::load,
             onRetryProfile = profileViewModel::load,
+            onRedeemReward = gamificationViewModel::redeemReward,
             onLogout = onLogout,
             onLinkChild = onLinkChild,
             onDiscoverSchools = onDiscoverSchools,
@@ -148,6 +151,7 @@ private fun ProfileContent(
     onSelectChild: (String) -> Unit,
     onRetry: () -> Unit,
     onRetryProfile: () -> Unit,
+    onRedeemReward: (String, String) -> Unit,
     onLogout: () -> Unit,
     onLinkChild: () -> Unit,
     onDiscoverSchools: () -> Unit,
@@ -185,6 +189,7 @@ private fun ProfileContent(
                 track = track,
                 gamification = gamification,
                 onRetryProfile = onRetryProfile,
+                onRedeemReward = onRedeemReward,
                 onLogout = onLogout,
                 onLinkChild = onLinkChild,
                 onDiscoverSchools = onDiscoverSchools,
@@ -289,6 +294,7 @@ private fun ProfileLoaded(
     track: TrackProgressState,
     gamification: ParentGamificationState,
     onRetryProfile: () -> Unit,
+    onRedeemReward: (String, String) -> Unit,
     onLogout: () -> Unit,
     onLinkChild: () -> Unit,
     onDiscoverSchools: () -> Unit,
@@ -352,6 +358,34 @@ private fun ProfileLoaded(
         if (gamification.events.isNotEmpty()) {
             SectionHeader(title = "Seasonal Events")
             EventsRow(events = gamification.events)
+        }
+
+        if (gamification.rewards.isNotEmpty()) {
+            SectionHeader(title = "Rewards Shop")
+            RewardsRow(
+                rewards = gamification.rewards,
+                currentXp = gameStats?.currentXp ?: 0,
+                onRedeem = { rewardId ->
+                    state.selectedChild?.id?.let { childId ->
+                        onRedeemReward(childId, rewardId)
+                    }
+                },
+            )
+        }
+
+        if (gamification.redemptions.isNotEmpty()) {
+            SectionHeader(title = "Redemption History")
+            RedemptionsRow(redemptions = gamification.redemptions)
+        }
+
+        if (gamification.xpHistory.isNotEmpty()) {
+            SectionHeader(title = "XP History")
+            XpHistoryRow(history = gamification.xpHistory)
+        }
+
+        if (gamification.classGoals.isNotEmpty()) {
+            SectionHeader(title = "Class Goals")
+            ClassGoalsRow(goals = gamification.classGoals)
         }
 
         SectionHeader(title = "Account")
@@ -919,6 +953,277 @@ private fun EventsRow(events: List<SeasonalEvent>) {
                             color = VColors.white,
                         )
                     }
+                }
+            }
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GAMIFICATION — rewards shop
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun RewardsRow(
+    rewards: List<Reward>,
+    currentXp: Int,
+    onRedeem: (String) -> Unit,
+) {
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        items(rewards.size) { idx ->
+            val reward = rewards[idx]
+            RewardCard(reward = reward, currentXp = currentXp, onRedeem = onRedeem)
+        }
+    }
+}
+
+@Composable
+private fun RewardCard(
+    reward: Reward,
+    currentXp: Int,
+    onRedeem: (String) -> Unit,
+) {
+    val canAfford = currentXp >= reward.xpCost && reward.isActive
+    Column(
+        modifier = Modifier
+            .width(160.dp)
+            .clip(VShapes.xl)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.xl)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(VShapes.md)
+                .background(VColors.violetSoft),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = VIcons.Star,
+                contentDescription = null,
+                tint = VColors.violet,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+        Text(
+            reward.name,
+            style = VTypography.body.copy(fontWeight = FontWeight.ExtraBold, fontSize = 14.sp),
+            color = VColors.ink,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            reward.description,
+            style = VTypography.caption.copy(fontSize = 11.sp),
+            color = VColors.ink3,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "${reward.xpCost} XP",
+                style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp),
+                color = if (canAfford) VColors.mint else VColors.ink3,
+            )
+            if (reward.stockRemaining != null && reward.stockRemaining!! <= 0) {
+                Text(
+                    "Out of stock",
+                    style = VTypography.caption.copy(fontSize = 10.sp),
+                    color = VColors.error,
+                )
+            } else if (canAfford) {
+                Box(
+                    modifier = Modifier
+                        .clip(VShapes.full)
+                        .background(VColors.violet)
+                        .clickable { onRedeem(reward.id) }
+                        .padding(horizontal = 12.dp, vertical = 5.dp),
+                ) {
+                    Text(
+                        "Redeem",
+                        style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                        color = VColors.white,
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GAMIFICATION — redemption history
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun RedemptionsRow(redemptions: List<RewardRedemption>) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.xl)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.xl)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        redemptions.forEach { redemption ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        redemption.rewardName,
+                        style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 14.sp),
+                        color = VColors.ink,
+                    )
+                    Text(
+                        "-${redemption.xpSpent} XP · ${redemption.createdAt.take(10)}",
+                        style = VTypography.caption.copy(fontSize = 11.sp),
+                        color = VColors.ink3,
+                    )
+                }
+                val statusColor = when (redemption.status.uppercase()) {
+                    "APPROVED", "FULFILLED" -> VColors.mint
+                    "REJECTED" -> VColors.error
+                    else -> VColors.gold
+                }
+                Box(
+                    modifier = Modifier
+                        .clip(VShapes.full)
+                        .background(statusColor.copy(alpha = 0.15f))
+                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                ) {
+                    Text(
+                        redemption.status,
+                        style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 10.sp),
+                        color = statusColor,
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GAMIFICATION — XP history
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun XpHistoryRow(history: List<Map<String, *>>) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.xl)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.xl)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        history.take(10).forEach { entry ->
+            val amount = entry["amount"] as? Int ?: entry["xp_amount"] as? Int ?: 0
+            val reason = entry["reason"]?.toString() ?: entry["description"]?.toString() ?: "XP earned"
+            val source = entry["source"]?.toString() ?: ""
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        reason,
+                        style = VTypography.body.copy(fontWeight = FontWeight.Medium, fontSize = 13.sp),
+                        color = VColors.ink,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (source.isNotBlank()) {
+                        Text(
+                            source.replace("_", " ").replaceFirstChar { it.uppercase() },
+                            style = VTypography.caption.copy(fontSize = 10.sp),
+                            color = VColors.ink3,
+                        )
+                    }
+                }
+                Text(
+                    "+${amount} XP",
+                    style = VTypography.body.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp),
+                    color = VColors.mint,
+                )
+            }
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GAMIFICATION — class goals
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun ClassGoalsRow(goals: List<Map<String, *>>) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.xl)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.xl)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        goals.forEach { goal ->
+            val goalType = goal["goalType"]?.toString() ?: "Goal"
+            val target = goal["target"] as? Int ?: 0
+            val current = goal["currentProgress"] as? Int ?: 0
+            val reward = goal["reward"]?.toString() ?: ""
+            val className = goal["className"]?.toString() ?: ""
+            val progress = if (target > 0) (current.toFloat() / target).coerceIn(0f, 1f) else 0f
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "$goalType${if (className.isNotBlank()) " · $className" else ""}",
+                        style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 14.sp),
+                        color = VColors.ink,
+                    )
+                    Text(
+                        "$current/$target",
+                        style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp),
+                        color = VColors.violet,
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(6.dp)
+                        .clip(VShapes.full)
+                        .background(VColors.lineSoft),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(progress)
+                            .height(6.dp)
+                            .clip(VShapes.full)
+                            .background(VColors.violet),
+                    )
+                }
+                if (reward.isNotBlank()) {
+                    Text(
+                        "Reward: $reward",
+                        style = VTypography.caption.copy(fontSize = 11.sp),
+                        color = VColors.ink3,
+                    )
                 }
             }
         }
