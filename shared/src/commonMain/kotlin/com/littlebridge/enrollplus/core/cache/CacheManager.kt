@@ -15,6 +15,11 @@ class CacheManager(
 
     suspend fun <T> read(key: String, serializer: KSerializer<T>): T? {
         val entry = storage.get(key) ?: return null
+        if (entry.ttlMs > 0 && (System.currentTimeMillis() - entry.cachedAt) > entry.ttlMs) {
+            AppLogger.d(TAG, "Cache expired for key=$key (ttl=${entry.ttlMs}ms)")
+            storage.delete(key)
+            return null
+        }
         return try {
             json.decodeFromString(serializer, entry.dataJson)
         } catch (e: Exception) {

@@ -4,7 +4,6 @@ import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.domain.util.UiState
 import com.littlebridge.enrollplus.util.AppLogger
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.KSerializer
 
 private const val TAG = "CacheHelpers"
@@ -17,7 +16,7 @@ const val TTL_24_HOURS = 24 * 60 * 60 * 1000L
  *
  * 1. Read cache → if exists, emit UiState.Success(isStale=true) immediately
  * 2. If no cache, emit UiState.Loading
- * 3. Call network → on success: write cache, emit UiState.Success(isStale=false)
+ * 3. Call network (full Ktor timeout) → on success: write cache, emit UiState.Success(isStale=false)
  * 4. On network failure + cache exists: emit UiState.Success(isStale=true, isOffline=true)
  * 5. On network failure + no cache: emit UiState.Error
  *
@@ -44,12 +43,7 @@ suspend fun <T> loadWithCache(
         state.value = UiState.Loading
     }
 
-    val result = if (cached != null) {
-        withTimeoutOrNull(CACHE_NETWORK_TIMEOUT_MS) { networkCall() }
-            ?: NetworkResult.ConnectionError
-    } else {
-        networkCall()
-    }
+    val result = networkCall()
 
     when (result) {
         is NetworkResult.Success -> {
@@ -129,10 +123,9 @@ sealed class CacheResult<out T> {
  * Use this in repository implementations to wrap GET methods with minimal boilerplate.
  *
  * 1. Read cache → if exists, remember it
- * 2. If cache exists: call network with a short 5s timeout (cache-first fast fallback)
- *    If cache does NOT exist: call network with the full configured timeout
+ * 2. Call network (full Ktor timeout — no artificial cutoff)
  * 3. On network success: write cache, return fresh NetworkResult.Success
- * 4. On network failure/timeout + cache exists: return NetworkResult.Success(isStale=true, isOffline=true)
+ * 4. On network failure + cache exists: return NetworkResult.Success(isStale=true, isOffline=true)
  * 5. On network failure + no cache: return the original error result
  */
 suspend fun <T> cacheFirstNetworkResult(
@@ -142,12 +135,7 @@ suspend fun <T> cacheFirstNetworkResult(
     networkCall: suspend () -> NetworkResult<T>,
 ): NetworkResult<T> {
     val cached = cache.read(cacheKey, serializer)
-    val result = if (cached != null) {
-        withTimeoutOrNull(CACHE_NETWORK_TIMEOUT_MS) { networkCall() }
-            ?: NetworkResult.ConnectionError
-    } else {
-        networkCall()
-    }
+    val result = networkCall()
     if (result is NetworkResult.Success) {
         cache.write(cacheKey, result.data, serializer)
         return result
@@ -159,7 +147,28 @@ suspend fun <T> cacheFirstNetworkResult(
     return result
 }
 
-private const val CACHE_NETWORK_TIMEOUT_MS = 5_000L
+/**
+ * Network-first helper for pull-to-refresh. Always hits network, writes cache on success.
+ * On failure, falls back to cache if available.
+ */
+suspend fun <T> networkFirstWithCache(
+    cache: CacheManager,
+    cacheKey: String,
+    serializer: KSerializer<T>,
+    networkCall: suspend () -> NetworkResult<T>,
+): NetworkResult<T> {
+    val result = networkCall()
+    if (result is NetworkResult.Success) {
+        cache.write(cacheKey, result.data, serializer)
+        return result
+    }
+    val cached = cache.read(cacheKey, serializer)
+    if (cached != null) {
+        AppLogger.d(TAG, "Refresh failed for key=$cacheKey, serving from cache")
+        return NetworkResult.Success(cached, isStale = true, isOffline = true)
+    }
+    return result
+}
 
 suspend fun <T> cacheFirst(
     cache: CacheManager,
@@ -169,12 +178,7 @@ suspend fun <T> cacheFirst(
     networkCall: suspend () -> NetworkResult<T>,
 ): CacheResult<T> {
     val cached = cache.read(cacheKey, serializer)
-    val result = if (cached != null) {
-        withTimeoutOrNull(CACHE_NETWORK_TIMEOUT_MS) { networkCall() }
-            ?: NetworkResult.ConnectionError
-    } else {
-        networkCall()
-    }
+    val result = networkCall()
 
     when (result) {
         is NetworkResult.Success -> {

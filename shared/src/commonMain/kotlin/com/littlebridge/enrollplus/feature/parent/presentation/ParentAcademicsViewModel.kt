@@ -188,6 +188,19 @@ class ParentAcademicsViewModel(
         }
     }
 
+    /** Pull-to-refresh: re-fetch attendance without setting loading flag. */
+    fun refreshAttendance(childId: String? = null) {
+        val resolvedChildId = childId ?: currentChildId() ?: return
+        viewModelScope.launch {
+            val token = token() ?: return@launch
+            when (val r = repository.getChildAttendance(token, resolvedChildId)) {
+                is NetworkResult.Success -> _state.update { it.copy(attendance = r.data.data, attendanceStale = r.isStale) }
+                is NetworkResult.Error -> _state.update { it.copy(attendanceStale = true) }
+                is NetworkResult.ConnectionError -> _state.update { it.copy(attendanceStale = true) }
+            }
+        }
+    }
+
     fun loadMarks(childId: String? = null) {
         val resolvedChildId = childId ?: currentChildId() ?: return
         viewModelScope.launch {
@@ -203,6 +216,19 @@ class ParentAcademicsViewModel(
         }
     }
 
+    /** Pull-to-refresh: re-fetch marks without setting loading flag. */
+    fun refreshMarks(childId: String? = null) {
+        val resolvedChildId = childId ?: currentChildId() ?: return
+        viewModelScope.launch {
+            val token = token() ?: return@launch
+            when (val r = repository.getChildMarks(token, resolvedChildId)) {
+                is NetworkResult.Success -> _state.update { it.copy(marks = r.data.data, marksStale = r.isStale) }
+                is NetworkResult.Error -> _state.update { it.copy(marksStale = true) }
+                is NetworkResult.ConnectionError -> _state.update { it.copy(marksStale = true) }
+            }
+        }
+    }
+
     fun loadSyllabus(childId: String? = null) {
         val resolvedChildId = childId ?: currentChildId() ?: return
         viewModelScope.launch {
@@ -214,6 +240,19 @@ class ParentAcademicsViewModel(
                 is NetworkResult.Success -> _state.update { it.copy(syllabusLoading = false, syllabus = r.data.data, syllabusStale = r.isStale) }
                 is NetworkResult.Error -> _state.update { it.copy(syllabusLoading = false, syllabusError = r.message) }
                 is NetworkResult.ConnectionError -> _state.update { it.copy(syllabusLoading = false, syllabusError = "Connection error") }
+            }
+        }
+    }
+
+    /** Pull-to-refresh: re-fetch syllabus without setting loading flag. */
+    fun refreshSyllabus(childId: String? = null) {
+        val resolvedChildId = childId ?: currentChildId() ?: return
+        viewModelScope.launch {
+            val token = token() ?: return@launch
+            when (val r = repository.getChildSyllabus(token, resolvedChildId)) {
+                is NetworkResult.Success -> _state.update { it.copy(syllabus = r.data.data, syllabusStale = r.isStale) }
+                is NetworkResult.Error -> _state.update { it.copy(syllabusStale = true) }
+                is NetworkResult.ConnectionError -> _state.update { it.copy(syllabusStale = true) }
             }
         }
     }

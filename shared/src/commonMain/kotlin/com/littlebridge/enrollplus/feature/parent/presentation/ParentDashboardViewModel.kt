@@ -190,6 +190,37 @@ class ParentDashboardViewModel(
         }
     }
 
+    /** Pull-to-refresh: re-fetch dashboard + child data without clearing existing data. */
+    fun refresh() {
+        viewModelScope.launch {
+            val token = token() ?: return@launch
+            when (val result = repository.getDashboard(token)) {
+                is NetworkResult.Success -> {
+                    val data = result.data.data
+                    val children = data.children.ifEmpty { listOfNotNull(data.childSummary) }
+                    val keep = _state.value.selectedChildId?.takeIf { id -> children.any { c -> c.id == id } }
+                    val resolved = keep ?: children.firstOrNull()?.id
+                    _state.update {
+                        it.copy(
+                            isRefreshing = false,
+                            greeting = data.greeting,
+                            alerts = data.alerts,
+                            children = children,
+                            selectedChildId = resolved,
+                            isStale = result.isStale,
+                            isOffline = result.isOffline,
+                        )
+                    }
+                    resolved?.let { loadChildData(it) }
+                }
+                is NetworkResult.Error ->
+                    _state.update { it.copy(isRefreshing = false, isStale = true, isOffline = true) }
+                is NetworkResult.ConnectionError ->
+                    _state.update { it.copy(isRefreshing = false, isStale = true, isOffline = true) }
+            }
+        }
+    }
+
     /** Switch the active child — reactively re-drives the entire dashboard. */
     fun selectChild(childId: String) {
         if (childId == _state.value.selectedChildId) return

@@ -115,6 +115,40 @@ class ParentHomeViewModel(
         }
     }
 
+    /** Pull-to-refresh: re-fetch dashboard without clearing existing data. */
+    fun refresh() {
+        viewModelScope.launch {
+            val token = preferenceRepository.getUserToken().first() ?: return@launch
+            when (val result = repository.getDashboard(token)) {
+                is NetworkResult.Success -> {
+                    val data = result.data.data
+                    val children = data.children.ifEmpty { listOfNotNull(data.childSummary) }
+                    _state.update {
+                        val sharedSel = selectedChildHolder.selectedChildId.value
+                            ?.takeIf { id -> children.any { c -> c.id == id } }
+                        val keepSelected = sharedSel
+                            ?: it.selectedChildId?.takeIf { id -> children.any { c -> c.id == id } }
+                        val resolved = keepSelected ?: children.firstOrNull()?.id
+                        it.copy(
+                            greeting = data.greeting,
+                            children = children,
+                            selectedChildId = resolved,
+                            alerts = data.alerts,
+                            featuredSchools = data.featuredSchools,
+                            curationLogic = data.curationLogic,
+                            isStale = result.isStale,
+                            isOffline = result.isOffline,
+                        )
+                    }
+                }
+                is NetworkResult.Error ->
+                    _state.update { it.copy(isStale = true, isOffline = true) }
+                is NetworkResult.ConnectionError ->
+                    _state.update { it.copy(isStale = true, isOffline = true) }
+            }
+        }
+    }
+
     /** RA-31: switch the child shown in the hero (no network round-trip). */
     fun selectChild(childId: String) {
         _state.update { it.copy(selectedChildId = childId) }

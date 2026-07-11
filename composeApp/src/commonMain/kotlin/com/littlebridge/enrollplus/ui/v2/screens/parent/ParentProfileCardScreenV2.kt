@@ -1,5 +1,10 @@
 package com.littlebridge.enrollplus.ui.v2.screens.parent
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -341,69 +346,29 @@ private fun ProfileLoaded(
             leaderboardRank = gamification.leaderboard?.myRank,
         )
 
-        SectionHeader(title = "Badges")
-        if (gamification.badges.isNotEmpty()) {
-            GameBadgesRow(badges = gamification.badges)
-        } else {
-            BadgesRow(badges = track.badges)
-        }
-
-        SectionHeader(title = "Quests")
-        if (gamification.quests.isNotEmpty()) {
-            QuestsRow(quests = gamification.quests)
-        } else {
-            GamificationEmptyState(text = "No active quests. Check back soon!")
-        }
-
-        SectionHeader(title = "Active Boosts")
-        if (gamification.activeBoosts.isNotEmpty()) {
-            BoostsRow(boosts = gamification.activeBoosts)
-        } else {
-            GamificationEmptyState(text = "No active XP boosts right now.")
-        }
-
-        SectionHeader(title = "Seasonal Events")
-        if (gamification.events.isNotEmpty()) {
-            EventsRow(events = gamification.events)
-        } else {
-            GamificationEmptyState(text = "No seasonal events running right now.")
-        }
-
-        SectionHeader(title = "Rewards Shop")
-        if (gamification.rewards.isNotEmpty()) {
-            RewardsRow(
-                rewards = gamification.rewards,
-                currentXp = gameStats?.currentXp ?: 0,
-                onRedeem = { rewardId ->
-                    state.selectedChild?.id?.let { childId ->
-                        onRedeemReward(childId, rewardId)
-                    }
-                },
-            )
-        } else {
-            GamificationEmptyState(text = "No rewards available in the shop yet.")
-        }
-
-        SectionHeader(title = "Redemption History")
-        if (gamification.redemptions.isNotEmpty()) {
-            RedemptionsRow(redemptions = gamification.redemptions)
-        } else {
-            GamificationEmptyState(text = "No reward redemptions yet.")
-        }
-
-        SectionHeader(title = "XP History")
-        if (gamification.xpHistory.isNotEmpty()) {
-            XpHistoryRow(history = gamification.xpHistory)
-        } else {
-            GamificationEmptyState(text = "No XP earned yet. Encourage your child to complete activities!")
-        }
-
-        SectionHeader(title = "Class Goals")
-        if (gamification.classGoals.isNotEmpty()) {
-            ClassGoalsRow(goals = gamification.classGoals)
-        } else {
-            GamificationEmptyState(text = "No class goals set yet.")
-        }
+        GamificationCollapsibleSection(
+            level = gameLevel,
+            levelTitle = gameLevelTitle,
+            totalXp = gameXp,
+            streakDays = gameStreak,
+            houseName = gamification.house?.name,
+            leaderboardRank = gamification.leaderboard?.myRank,
+            badges = gamification.badges,
+            fallbackBadges = track.badges,
+            quests = gamification.quests,
+            activeBoosts = gamification.activeBoosts,
+            events = gamification.events,
+            rewards = gamification.rewards,
+            currentXp = gameStats?.currentXp ?: 0,
+            redemptions = gamification.redemptions,
+            xpHistory = gamification.xpHistory,
+            classGoals = gamification.classGoals,
+            onRedeemReward = { rewardId ->
+                state.selectedChild?.id?.let { childId ->
+                    onRedeemReward(childId, rewardId)
+                }
+            },
+        )
 
         SectionHeader(title = "Account")
         AccountCard(
@@ -1327,6 +1292,310 @@ private fun AccountRow(
             tint = VColors.ink3,
             modifier = Modifier.size(22.dp),
         )
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GAMIFICATION — COLLAPSIBLE SECTION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun GamificationCollapsibleSection(
+    level: Int,
+    levelTitle: String,
+    totalXp: Int,
+    streakDays: Int,
+    houseName: String?,
+    leaderboardRank: Int?,
+    badges: List<GameBadge>,
+    fallbackBadges: List<com.littlebridge.enrollplus.feature.parent.presentation.AchievementBadge>,
+    quests: List<StudentQuest>,
+    activeBoosts: List<XpBoost>,
+    events: List<SeasonalEvent>,
+    rewards: List<Reward>,
+    currentXp: Int,
+    redemptions: List<RewardRedemption>,
+    xpHistory: List<XpHistoryEntry>,
+    classGoals: List<ClassGoal>,
+    onRedeemReward: (String) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    val activeCount = badges.size + quests.size + activeBoosts.size + events.size +
+        rewards.size + redemptions.size + xpHistory.size + classGoals.size
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.xxl)
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(
+                        VColors.violetSoft,
+                        VColors.surfaceCard,
+                        VColors.surfaceCard,
+                    ),
+                    start = androidx.compose.ui.geometry.Offset(0f, 0f),
+                    end = androidx.compose.ui.geometry.Offset(0f, Float.POSITIVE_INFINITY),
+                )
+            )
+            .border(1.dp, VColors.line, VShapes.xxl),
+    ) {
+        // ── Header (always visible, click to toggle) ──
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = !expanded }
+                .padding(horizontal = 20.dp, vertical = 18.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(VShapes.lg)
+                        .background(VColors.violet.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = VIcons.Sparkles,
+                        contentDescription = null,
+                        tint = VColors.violet,
+                        modifier = Modifier.size(22.dp),
+                    )
+                }
+                Column {
+                    Text(
+                        "Gamification",
+                        style = VTypography.h3.copy(fontSize = 18.sp),
+                        color = VColors.ink,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        buildString {
+                            append("Level $level · $levelTitle")
+                            if (totalXp > 0) append(" · $totalXp XP")
+                            if (streakDays > 0) append(" · $streakDays day streak")
+                        },
+                        style = VTypography.caption.copy(fontSize = 12.sp),
+                        color = VColors.ink3,
+                        fontWeight = FontWeight.Medium,
+                    )
+                }
+            }
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (activeCount > 0) {
+                    Box(
+                        modifier = Modifier
+                            .clip(VShapes.full)
+                            .background(VColors.violet)
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                    ) {
+                        Text(
+                            "$activeCount",
+                            style = VTypography.caption.copy(
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                            ),
+                            color = VColors.white,
+                        )
+                    }
+                }
+                Icon(
+                    imageVector = if (expanded) VIcons.ChevronUp else VIcons.ChevronDown,
+                    contentDescription = if (expanded) "Collapse" else "Expand",
+                    tint = VColors.ink3,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
+        }
+
+        // ── Expandable content ──
+        AnimatedVisibility(
+            visible = expanded,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut(),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                // Quick stats row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    GamificationMiniStat(
+                        label = "Level",
+                        value = "$level",
+                        color = VColors.violet,
+                        modifier = Modifier.weight(1f),
+                    )
+                    GamificationMiniStat(
+                        label = "XP",
+                        value = if (totalXp > 0) formatCompact(totalXp) else "0",
+                        color = VColors.mint,
+                        modifier = Modifier.weight(1f),
+                    )
+                    GamificationMiniStat(
+                        label = "Streak",
+                        value = if (streakDays > 0) "${streakDays}d" else "—",
+                        color = VColors.gold,
+                        modifier = Modifier.weight(1f),
+                    )
+                    GamificationMiniStat(
+                        label = "Rank",
+                        value = leaderboardRank?.let { "#$it" } ?: "—",
+                        color = VColors.sky,
+                        modifier = Modifier.weight(1f),
+                    )
+                    GamificationMiniStat(
+                        label = "House",
+                        value = houseName ?: "—",
+                        color = VColors.coral,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+
+                // Badges
+                GamificationSubSection(title = "Badges") {
+                    if (badges.isNotEmpty()) {
+                        GameBadgesRow(badges = badges)
+                    } else {
+                        BadgesRow(badges = fallbackBadges)
+                    }
+                }
+
+                // Quests
+                GamificationSubSection(title = "Quests") {
+                    if (quests.isNotEmpty()) {
+                        QuestsRow(quests = quests)
+                    } else {
+                        GamificationEmptyState(text = "No active quests. Check back soon!")
+                    }
+                }
+
+                // Active Boosts
+                GamificationSubSection(title = "Active Boosts") {
+                    if (activeBoosts.isNotEmpty()) {
+                        BoostsRow(boosts = activeBoosts)
+                    } else {
+                        GamificationEmptyState(text = "No active XP boosts right now.")
+                    }
+                }
+
+                // Seasonal Events
+                GamificationSubSection(title = "Seasonal Events") {
+                    if (events.isNotEmpty()) {
+                        EventsRow(events = events)
+                    } else {
+                        GamificationEmptyState(text = "No seasonal events running right now.")
+                    }
+                }
+
+                // Rewards Shop
+                GamificationSubSection(title = "Rewards Shop") {
+                    if (rewards.isNotEmpty()) {
+                        RewardsRow(
+                            rewards = rewards,
+                            currentXp = currentXp,
+                            onRedeem = onRedeemReward,
+                        )
+                    } else {
+                        GamificationEmptyState(text = "No rewards available in the shop yet.")
+                    }
+                }
+
+                // Redemption History
+                GamificationSubSection(title = "Redemption History") {
+                    if (redemptions.isNotEmpty()) {
+                        RedemptionsRow(redemptions = redemptions)
+                    } else {
+                        GamificationEmptyState(text = "No reward redemptions yet.")
+                    }
+                }
+
+                // XP History
+                GamificationSubSection(title = "XP History") {
+                    if (xpHistory.isNotEmpty()) {
+                        XpHistoryRow(history = xpHistory)
+                    } else {
+                        GamificationEmptyState(text = "No XP earned yet. Encourage your child to complete activities!")
+                    }
+                }
+
+                // Class Goals
+                GamificationSubSection(title = "Class Goals") {
+                    if (classGoals.isNotEmpty()) {
+                        ClassGoalsRow(goals = classGoals)
+                    } else {
+                        GamificationEmptyState(text = "No class goals set yet.")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GamificationMiniStat(
+    label: String,
+    value: String,
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .clip(VShapes.md)
+            .background(VColors.surfaceTint)
+            .padding(vertical = 10.dp, horizontal = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Text(
+            value,
+            style = VTypography.body.copy(
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+            ),
+            color = color,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            label,
+            style = VTypography.caption.copy(fontSize = 10.sp),
+            color = VColors.ink3,
+            fontWeight = FontWeight.Medium,
+        )
+    }
+}
+
+@Composable
+private fun GamificationSubSection(
+    title: String,
+    content: @Composable () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            title,
+            style = VTypography.caption.copy(
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+            ),
+            color = VColors.ink2,
+        )
+        content()
     }
 }
 

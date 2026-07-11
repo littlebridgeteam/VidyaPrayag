@@ -99,6 +99,21 @@ class ParentMessageViewModel(
         }
     }
 
+    /** Pull-to-refresh: re-fetch threads without setting loading flag. */
+    fun refreshThreads() {
+        viewModelScope.launch {
+            val token = token() ?: return@launch
+            when (val r = repository.getMessageThreads(token)) {
+                is NetworkResult.Success ->
+                    _state.update { it.copy(threads = r.data.data.threads, isStale = r.isStale, isOffline = r.isOffline) }
+                is NetworkResult.Error ->
+                    _state.update { it.copy(isStale = true, isOffline = true) }
+                is NetworkResult.ConnectionError ->
+                    _state.update { it.copy(isStale = true, isOffline = true) }
+            }
+        }
+    }
+
     fun openThread(threadId: String, fallbackName: String) {
         stopPolling()
         viewModelScope.launch {

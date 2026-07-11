@@ -55,18 +55,18 @@ class FeeViewModel(
         }
     }
 
-    /** Pull-to-refresh: re-fetch fees for the currently selected child. */
+    /** Pull-to-refresh: re-fetch fees for the currently selected child without clearing existing data. */
     fun reload() {
-        loadFees(selectedChildHolder.selectedChildId.value)
+        loadFees(selectedChildHolder.selectedChildId.value, isRefresh = true)
     }
 
     /** RA-S05: load fees scoped to [childId] (null = all of the parent's records). */
-    private fun loadFees(childId: String?) {
+    private fun loadFees(childId: String?, isRefresh: Boolean = false) {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, error = null) }
+            if (!isRefresh) _state.update { it.copy(isLoading = true, error = null) }
             val token = preferenceRepository.getUserToken().first()
             if (token == null) {
-                _state.update { it.copy(isLoading = false, error = "Not signed in") }
+                if (!isRefresh) _state.update { it.copy(isLoading = false, error = "Not signed in") }
                 return@launch
             }
             when (val result = repository.getFees(token, childId)) {
@@ -88,10 +88,18 @@ class FeeViewModel(
                     }
                 }
                 is NetworkResult.Error -> {
-                    _state.update { it.copy(isLoading = false, error = result.message) }
+                    if (isRefresh) {
+                        _state.update { it.copy(isStale = true, isOffline = true) }
+                    } else {
+                        _state.update { it.copy(isLoading = false, error = result.message) }
+                    }
                 }
                 is NetworkResult.ConnectionError -> {
-                    _state.update { it.copy(isLoading = false, error = "Connection error") }
+                    if (isRefresh) {
+                        _state.update { it.copy(isStale = true, isOffline = true) }
+                    } else {
+                        _state.update { it.copy(isLoading = false, error = "Connection error") }
+                    }
                 }
             }
         }

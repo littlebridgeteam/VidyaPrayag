@@ -134,7 +134,6 @@ class NotificationsViewModel(
         viewModelScope.launch {
             val token = preferenceRepository.getUserToken().first() ?: return@launch
             repository.clearAllNotifications(token)
-            load()
         }
     }
 }
