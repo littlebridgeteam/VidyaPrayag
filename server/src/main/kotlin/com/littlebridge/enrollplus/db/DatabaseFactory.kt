@@ -185,6 +185,10 @@ object DatabaseFactory {
         ParentChildLinksTable,
         // Non-teaching staff vertical (RA-S17 — Admin People sub-tabs)
         NonTeachingStaffTable,
+        // People Tab enrichment — staff shifts, check-ins, teacher ratings
+        StaffShiftsTable,
+        StaffCheckInsTable,
+        TeacherRatingsTable,
         // Parents Portal — Profile tab "Missions & Achievements" (optional, CMS-fallback safe)
         ParentAchievementsTable,
         // Academic Calendar platform (VP-CAL — centralized planning & scheduling)

@@ -29,7 +29,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
@@ -37,7 +36,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -62,6 +60,10 @@ import com.littlebridge.enrollplus.feature.library.domain.model.LibraryBookDto
 import com.littlebridge.enrollplus.ui.v2.components.QrCodeImage
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
+import com.littlebridge.enrollplus.ui.v2.components.VBottomSheet
+import com.littlebridge.enrollplus.ui.v2.components.VBottomSheetHeader
+import com.littlebridge.enrollplus.ui.v2.components.VButton
+import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
@@ -70,6 +72,7 @@ import com.littlebridge.enrollplus.platform.rememberShareHelper
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.util.nowMinutesOfDay
 
 // ── UIX-001: Book Shelf View ─────────────────────────────────────────────────
 
@@ -273,7 +276,7 @@ fun RecentlyViewedStrip(books: List<LibraryBookDto>, onBookClick: (String) -> Un
 @Composable
 fun GreetingHeader(userName: String, overdueCount: Int, dueTomorrowCount: Int, reservationReadyCount: Int, modifier: Modifier = Modifier) {
     val c = VTheme.colors
-    val h = remember { java.time.LocalTime.now().hour }
+    val h = remember { nowMinutesOfDay() / 60 }
     val g = when { h < 12 -> appString(StringKeys.LIB_UIX_GOOD_MORNING); h < 17 -> appString(StringKeys.LIB_UIX_GOOD_AFTERNOON); else -> appString(StringKeys.LIB_UIX_GOOD_EVENING) }
     val s = when { overdueCount > 0 -> appString(StringKeys.LIB_UIX_OVERDUE_BOOKS, "count" to overdueCount); dueTomorrowCount > 0 -> appString(StringKeys.LIB_UIX_DUE_TOMORROW, "count" to dueTomorrowCount); reservationReadyCount > 0 -> appString(StringKeys.LIB_UIX_READY_FOR_PICKUP, "count" to reservationReadyCount); else -> appString(StringKeys.LIB_UIX_READY_TO_EXPLORE) }
     Column(modifier.fillMaxWidth().semantics { contentDescription = "$g $userName. $s" }) {
@@ -314,17 +317,31 @@ fun QrShareDialog(bookId: String, bookTitle: String, onDismiss: () -> Unit, modi
     val c = VTheme.colors
     val shareHelper = rememberShareHelper()
     val deepLink = "vidyaprayag://app/library/book/$bookId"
-    AlertDialog(onDismiss, modifier = modifier, title = { Text(bookTitle) }, text = {
+    VBottomSheet(
+        visible = true,
+        onDismiss = onDismiss,
+        modifier = modifier,
+    ) {
+        VBottomSheetHeader(title = bookTitle)
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(appString(StringKeys.LIB_UIX_SCAN_TO_VIEW), style = VTheme.type.caption.colored(c.ink2))
             QrCodeImage(deepLink, size = 200.dp)
         }
-    }, confirmButton = {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TextButton(onClick = { shareHelper.shareText(deepLink, subject = bookTitle) }) { Text(appString(StringKeys.COMMON_BUTTON_SHARE)) }
-            TextButton(onDismiss) { Text(appString(StringKeys.COMMON_BUTTON_CLOSE)) }
+            VButton(
+                text = appString(StringKeys.COMMON_BUTTON_SHARE),
+                onClick = { shareHelper.shareText(deepLink, subject = bookTitle) },
+                modifier = Modifier.weight(1f),
+                variant = VButtonVariant.Secondary,
+            )
+            VButton(
+                text = appString(StringKeys.COMMON_BUTTON_CLOSE),
+                onClick = onDismiss,
+                modifier = Modifier.weight(1f),
+                variant = VButtonVariant.Ghost,
+            )
         }
-    })
+    }
 }
 
 // ── UIX-021: Coach Marks Overlay ─────────────────────────────────────────────

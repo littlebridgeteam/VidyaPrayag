@@ -10,7 +10,7 @@ import com.littlebridge.enrollplus.feature.event.domain.model.RescheduleRequest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.UUID
+import com.littlebridge.enrollplus.util.currentTimeMillis
 
 class EventSyncEngine(
     private val db: AppDatabase,
@@ -48,7 +48,7 @@ class EventSyncEngine(
                         status = "FAILED",
                         attempts = op.attempts,
                         lastError = "Max attempts reached",
-                        updatedAt = System.currentTimeMillis(),
+                        updatedAt = currentTimeMillis(),
                     )
                     continue
                 }
@@ -61,7 +61,7 @@ class EventSyncEngine(
 
     private suspend fun processOp(op: EventOutboxEntity) {
         val token = "offline-sync"
-        val now = System.currentTimeMillis()
+        val now = currentTimeMillis()
         val result = when (op.operation) {
             "REGISTER" -> repository.register(
                 token = token,

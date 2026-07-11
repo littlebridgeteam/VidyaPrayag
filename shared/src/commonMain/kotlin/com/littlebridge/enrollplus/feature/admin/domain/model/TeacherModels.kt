@@ -41,7 +41,10 @@ data class TeacherCardProfileDto(
     val name: String = "",
     val avatarUrl: String? = null,
     val role: String = "",
-    val status: String = "ACTIVE"                            // ACTIVE | INACTIVE
+    val status: String = "ACTIVE",                            // ACTIVE | INACTIVE
+    @SerialName("is_class_teacher") val isClassTeacher: Boolean = false,
+    val experience: String? = null,
+    val rating: Float? = null
 )
 
 @Serializable
@@ -53,7 +56,9 @@ data class TeacherCardAcademicAssignmentDto(
 @Serializable
 data class TeacherCardWorkloadDto(
     val totalClasses: Int = 0,
-    val totalStudents: Int = 0
+    val totalStudents: Int = 0,
+    @SerialName("workload_percent") val workloadPercent: Int = 0,
+    val schedule: String = ""
 )
 
 @Serializable
@@ -76,7 +81,8 @@ data class TeacherCardDto(
     val academicAssignment: TeacherCardAcademicAssignmentDto = TeacherCardAcademicAssignmentDto(),
     val workload: TeacherCardWorkloadDto = TeacherCardWorkloadDto(),
     val activity: TeacherCardActivityDto = TeacherCardActivityDto(),
-    val actions: TeacherCardActionsDto = TeacherCardActionsDto()
+    val actions: TeacherCardActionsDto = TeacherCardActionsDto(),
+    val availability: String = "break"
 )
 
 @Serializable

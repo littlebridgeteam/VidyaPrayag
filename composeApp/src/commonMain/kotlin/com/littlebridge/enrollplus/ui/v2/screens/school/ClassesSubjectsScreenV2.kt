@@ -42,7 +42,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 import com.littlebridge.enrollplus.feature.admin.domain.model.BulkPeriodItem
@@ -62,6 +61,8 @@ import com.littlebridge.enrollplus.platform.rememberMediaPicker
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
+import com.littlebridge.enrollplus.ui.v2.components.VBottomSheet
+import com.littlebridge.enrollplus.ui.v2.components.VBottomSheetHeader
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
@@ -229,7 +230,7 @@ private fun ClassesTab(
     }
 
     if (showAddDialog) {
-        ClassEditDialog(
+        ClassEditSheet(
             title = appString(StringKeys.CS_ADD_CLASS),
             initialCode = "",
             initialName = "",
@@ -242,7 +243,7 @@ private fun ClassesTab(
         )
     }
     editingClass?.let { cls ->
-        ClassEditDialog(
+        ClassEditSheet(
             title = appString(StringKeys.CS_EDIT_CLASS),
             initialCode = cls.code,
             initialName = cls.name,
@@ -328,7 +329,7 @@ private fun ClassCard(
 }
 
 @Composable
-private fun ClassEditDialog(
+private fun ClassEditSheet(
     title: String,
     initialCode: String,
     initialName: String,
@@ -341,10 +342,12 @@ private fun ClassEditDialog(
     var name by remember { mutableStateOf(initialName) }
     var sectionsText by remember { mutableStateOf(initialSections.joinToString(", ")) }
 
-    Dialog(onDismissRequest = onDismiss) {
-    VCard(Modifier.fillMaxWidth().padding(16.dp)) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(title, style = VTypography.h3, fontWeight = FontWeight.Bold, color = VColors.ink)
+    VBottomSheet(
+        visible = true,
+        onDismiss = onDismiss,
+    ) {
+        VBottomSheetHeader(title = title)
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             VInput(value = code, onValueChange = { code = it }, label = appString(StringKeys.CS_CLASS_CODE), hint = "e.g. 10A", placeholder = "10A")
             VInput(value = name, onValueChange = { name = it }, label = appString(StringKeys.CS_CLASS_NAME), hint = "e.g. Grade 10", placeholder = "Grade 10")
             VInput(
@@ -354,22 +357,22 @@ private fun ClassEditDialog(
                 hint = "A, B, C",
                 placeholder = "A, B, C",
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                VButton(text = appString(StringKeys.CS_CANCEL), onClick = onDismiss, variant = VButtonVariant.Ghost)
-                VButton(
-                    text = appString(StringKeys.CS_SAVE),
-                    onClick = {
-                        val sections = sectionsText.split(",").map { it.trim() }.filter { it.isNotBlank() }
-                        val finalSections = if (sections.isEmpty()) listOf("A") else sections
-                        onSave(code, name, finalSections)
-                    },
-                    variant = VButtonVariant.Primary,
-                    tone = VButtonTone.Teal,
-                    loading = isSaving,
-                )
-            }
         }
-    }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            VButton(text = appString(StringKeys.CS_CANCEL), onClick = onDismiss, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost)
+            VButton(
+                text = appString(StringKeys.CS_SAVE),
+                onClick = {
+                    val sections = sectionsText.split(",").map { it.trim() }.filter { it.isNotBlank() }
+                    val finalSections = if (sections.isEmpty()) listOf("A") else sections
+                    onSave(code, name, finalSections)
+                },
+                modifier = Modifier.weight(1f),
+                variant = VButtonVariant.Primary,
+                tone = VButtonTone.Teal,
+                loading = isSaving,
+            )
+        }
     }
 }
 
@@ -448,7 +451,7 @@ private fun SubjectsTab(
     }
 
     if (showAddDialog && selectedClassId != null) {
-        SubjectEditDialog(
+        SubjectEditSheet(
             title = appString(StringKeys.CS_ADD_SUBJECT),
             initialName = "",
             initialCode = "",
@@ -461,7 +464,7 @@ private fun SubjectsTab(
     }
     editingSubject?.let { subj ->
         val classId = selectedClassId ?: subj.classId
-        SubjectEditDialog(
+        SubjectEditSheet(
             title = appString(StringKeys.CS_EDIT_SUBJECT),
             initialName = subj.name,
             initialCode = subj.code,
@@ -513,7 +516,7 @@ private fun SubjectCard(
 }
 
 @Composable
-private fun SubjectEditDialog(
+private fun SubjectEditSheet(
     title: String,
     initialName: String,
     initialCode: String,
@@ -524,24 +527,26 @@ private fun SubjectEditDialog(
     var name by remember { mutableStateOf(initialName) }
     var code by remember { mutableStateOf(initialCode) }
 
-    Dialog(onDismissRequest = onDismiss) {
-    VCard(Modifier.fillMaxWidth().padding(16.dp)) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(title, style = VTypography.h3, fontWeight = FontWeight.Bold, color = VColors.ink)
+    VBottomSheet(
+        visible = true,
+        onDismiss = onDismiss,
+    ) {
+        VBottomSheetHeader(title = title)
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             VInput(value = name, onValueChange = { name = it }, label = appString(StringKeys.CS_SUBJECT_NAME), hint = "e.g. Mathematics", placeholder = "Mathematics")
             VInput(value = code, onValueChange = { code = it }, label = appString(StringKeys.CS_SUBJECT_CODE), hint = "e.g. MATH", placeholder = "MATH")
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                VButton(text = appString(StringKeys.CS_CANCEL), onClick = onDismiss, variant = VButtonVariant.Ghost)
-                VButton(
-                    text = appString(StringKeys.CS_SAVE),
-                    onClick = { onSave(name, code) },
-                    variant = VButtonVariant.Primary,
-                    tone = VButtonTone.Teal,
-                    loading = isSaving,
-                )
-            }
         }
-    }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            VButton(text = appString(StringKeys.CS_CANCEL), onClick = onDismiss, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost)
+            VButton(
+                text = appString(StringKeys.CS_SAVE),
+                onClick = { onSave(name, code) },
+                modifier = Modifier.weight(1f),
+                variant = VButtonVariant.Primary,
+                tone = VButtonTone.Teal,
+                loading = isSaving,
+            )
+        }
     }
 }
 
@@ -677,7 +682,7 @@ private fun ScheduleStepStructure(
     var templateName by remember { mutableStateOf("Standard Day") }
     var slots by remember { mutableStateOf(DEFAULT_TEMPLATE_SLOTS.toMutableList()) }
     var selectedDays by remember { mutableStateOf(setOf(1, 2, 3, 4, 5)) }
-    var showImportDialog by remember { mutableStateOf(false) }
+    var showImportSheet by remember { mutableStateOf(false) }
 
     Column(
         Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -689,7 +694,7 @@ private fun ScheduleStepStructure(
         // Import button
         VButton(
             text = appString(StringKeys.CS_IMPORT),
-            onClick = { showImportDialog = true },
+            onClick = { showImportSheet = true },
             full = true,
             variant = VButtonVariant.Secondary,
             tone = VButtonTone.Navy,
@@ -801,15 +806,15 @@ private fun ScheduleStepStructure(
         Spacer(Modifier.height(80.dp))
     }
 
-    if (showImportDialog) {
-        ImportDialog(
-            onDismiss = { showImportDialog = false },
+    if (showImportSheet) {
+        ImportSheet(
+            onDismiss = { showImportSheet = false },
             onParsed = { parsedSlots, parsedName ->
                 if (parsedSlots.isNotEmpty()) {
                     slots = parsedSlots.toMutableList()
                     if (parsedName.isNotBlank()) templateName = parsedName
                 }
-                showImportDialog = false
+                showImportSheet = false
             },
             dayConfigViewModel = dayConfigViewModel,
         )
@@ -818,7 +823,7 @@ private fun ScheduleStepStructure(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun ImportDialog(
+private fun ImportSheet(
     onDismiss: () -> Unit,
     onParsed: (List<SchoolDaySlotDto>, String) -> Unit,
     dayConfigViewModel: SchoolDayConfigViewModel,
@@ -828,216 +833,216 @@ private fun ImportDialog(
     var parseError by remember { mutableStateOf<String?>(null) }
     var isImporting by remember { mutableStateOf(false) }
 
-    Dialog(onDismissRequest = onDismiss) {
-        VCard(Modifier.fillMaxWidth().padding(16.dp)) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(appString(StringKeys.CS_IMPORT_SCHEDULE), style = VTypography.h3, fontWeight = FontWeight.Bold, color = VColors.ink)
+    VBottomSheet(
+        visible = true,
+        onDismiss = onDismiss,
+    ) {
+        VBottomSheetHeader(title = appString(StringKeys.CS_IMPORT_SCHEDULE))
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (importMode == null) {
+                Text(appString(StringKeys.CS_CHOOSE_IMPORT), style = VTypography.caption.copy(color = VColors.ink2))
 
-                if (importMode == null) {
-                    Text(appString(StringKeys.CS_CHOOSE_IMPORT), style = VTypography.caption.copy(color = VColors.ink2))
-
-                    // Photo (OCR)
-                    VCard(Modifier.fillMaxWidth().clickable { importMode = "photo" }) {
-                        Row(
-                            Modifier.fillMaxWidth().padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                // Photo (OCR)
+                VCard(Modifier.fillMaxWidth().clickable { importMode = "photo" }) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Box(
+                            Modifier.size(40.dp).clip(CircleShape)
+                                .background(VColors.sky.copy(alpha = 0.12f)),
+                            contentAlignment = Alignment.Center,
                         ) {
-                            Box(
-                                Modifier.size(40.dp).clip(CircleShape)
-                                    .background(VColors.sky.copy(alpha = 0.12f)),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text("📷", style = VTypography.body)
-                            }
-                            Column(Modifier.weight(1f)) {
-                                Text(appString(StringKeys.CS_PHOTO_OCR), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
-                                Text(appString(StringKeys.CS_PHOTO_OCR_DESC), style = VTypography.caption.copy(color = VColors.ink2))
-                            }
+                            Text("📷", style = VTypography.body)
                         }
-                    }
-
-                    // PDF
-                    VCard(Modifier.fillMaxWidth().clickable { importMode = "pdf" }) {
-                        Row(
-                            Modifier.fillMaxWidth().padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            Box(
-                                Modifier.size(40.dp).clip(CircleShape)
-                                    .background(VColors.violet.copy(alpha = 0.12f)),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text("📄", style = VTypography.body)
-                            }
-                            Column(Modifier.weight(1f)) {
-                                Text(appString(StringKeys.CS_PDF_DOCUMENT), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
-                                Text(appString(StringKeys.CS_PDF_DESC), style = VTypography.caption.copy(color = VColors.ink2))
-                            }
+                        Column(Modifier.weight(1f)) {
+                            Text(appString(StringKeys.CS_PHOTO_OCR), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                            Text(appString(StringKeys.CS_PHOTO_OCR_DESC), style = VTypography.caption.copy(color = VColors.ink2))
                         }
-                    }
-
-                    // Paste Text
-                    VCard(Modifier.fillMaxWidth().clickable { importMode = "text" }) {
-                        Row(
-                            Modifier.fillMaxWidth().padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            Box(
-                                Modifier.size(40.dp).clip(CircleShape)
-                                    .background(VColors.gold.copy(alpha = 0.3f)),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text("📋", style = VTypography.body)
-                            }
-                            Column(Modifier.weight(1f)) {
-                                Text(appString(StringKeys.CS_PASTE_TEXT), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
-                                Text(appString(StringKeys.CS_PASTE_TEXT_DESC), style = VTypography.caption.copy(color = VColors.ink2))
-                            }
-                        }
-                    }
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        VButton(text = appString(StringKeys.CS_CANCEL), onClick = onDismiss, variant = VButtonVariant.Ghost)
                     }
                 }
 
-                // Photo / PDF — AI OCR via server
-                if (importMode == "photo" || importMode == "pdf") {
-                    val label = if (importMode == "photo") appString(StringKeys.CS_PHOTO_OCR_LABEL) else appString(StringKeys.CS_PDF_IMPORT_LABEL)
-                    val pdfNotAvailableMsg = appString(StringKeys.CS_PDF_NOT_AVAILABLE)
-                    val mediaPicker = rememberMediaPicker(
-                        onPicked = { bytes, mimeType, fileName ->
-                            isImporting = true
-                            parseError = null
-                            val base64 = bytes.encodeToBase64()
-                            val isPdf = mimeType == "application/pdf"
-                            if (isPdf) {
-                                parseError = pdfNotAvailableMsg
-                                isImporting = false
-                            } else {
-                                dayConfigViewModel.importOcr(
-                                    imageBase64 = base64,
-                                    mimeType = mimeType,
-                                    onResult = { slots, name ->
-                                        isImporting = false
-                                        onParsed(slots, name)
-                                    },
-                                    onError = { msg ->
-                                        isImporting = false
-                                        parseError = msg
-                                    },
-                                )
-                            }
-                        },
-                        onUnsupported = { message ->
-                            parseError = message
-                        },
-                    )
-                    if (isImporting) {
-                        Column(
-                            Modifier.fillMaxWidth().padding(24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                // PDF
+                VCard(Modifier.fillMaxWidth().clickable { importMode = "pdf" }) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Box(
+                            Modifier.size(40.dp).clip(CircleShape)
+                                .background(VColors.violet.copy(alpha = 0.12f)),
+                            contentAlignment = Alignment.Center,
                         ) {
-                            Text("⏳", style = VTypography.h1)
-                            Text(appString(StringKeys.CS_AI_READING), style = VTypography.body.copy(color = VColors.ink))
-                            Text(appString(StringKeys.CS_AI_VISION_DESC), style = VTypography.caption.copy(color = VColors.ink2))
+                            Text("📄", style = VTypography.body)
                         }
-                    } else {
-                        VEmptyState(
-                            title = appString(StringKeys.CS_AI_VISION_OCR, "label" to label),
-                            icon = VIcons.FileText,
-                            body = if (importMode == "photo")
-                                appString(StringKeys.CS_PHOTO_OCR_BODY)
-                            else
-                                appString(StringKeys.CS_PDF_BODY),
-                        )
-                        parseError?.let {
-                            Text(it, style = VTypography.caption.copy(color = VColors.error))
+                        Column(Modifier.weight(1f)) {
+                            Text(appString(StringKeys.CS_PDF_DOCUMENT), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                            Text(appString(StringKeys.CS_PDF_DESC), style = VTypography.caption.copy(color = VColors.ink2))
                         }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            VButton(text = appString(StringKeys.CS_BACK), onClick = { importMode = null; parseError = null }, variant = VButtonVariant.Ghost)
-                            VButton(
-                                text = if (importMode == "photo") appString(StringKeys.CS_PICK_PHOTO) else appString(StringKeys.CS_PICK_PDF),
-                                onClick = {
-                                    parseError = null
-                                    if (importMode == "photo") mediaPicker.launchImage() else mediaPicker.launchPdf()
+                    }
+                }
+
+                // Paste Text
+                VCard(Modifier.fillMaxWidth().clickable { importMode = "text" }) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Box(
+                            Modifier.size(40.dp).clip(CircleShape)
+                                .background(VColors.gold.copy(alpha = 0.3f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text("📋", style = VTypography.body)
+                        }
+                        Column(Modifier.weight(1f)) {
+                            Text(appString(StringKeys.CS_PASTE_TEXT), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                            Text(appString(StringKeys.CS_PASTE_TEXT_DESC), style = VTypography.caption.copy(color = VColors.ink2))
+                        }
+                    }
+                }
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    VButton(text = appString(StringKeys.CS_CANCEL), onClick = onDismiss, variant = VButtonVariant.Ghost)
+                }
+            }
+
+            // Photo / PDF — AI OCR via server
+            if (importMode == "photo" || importMode == "pdf") {
+                val label = if (importMode == "photo") appString(StringKeys.CS_PHOTO_OCR_LABEL) else appString(StringKeys.CS_PDF_IMPORT_LABEL)
+                val pdfNotAvailableMsg = appString(StringKeys.CS_PDF_NOT_AVAILABLE)
+                val mediaPicker = rememberMediaPicker(
+                    onPicked = { bytes, mimeType, fileName ->
+                        isImporting = true
+                        parseError = null
+                        val base64 = bytes.encodeToBase64()
+                        val isPdf = mimeType == "application/pdf"
+                        if (isPdf) {
+                            parseError = pdfNotAvailableMsg
+                            isImporting = false
+                        } else {
+                            dayConfigViewModel.importOcr(
+                                imageBase64 = base64,
+                                mimeType = mimeType,
+                                onResult = { slots, name ->
+                                    isImporting = false
+                                    onParsed(slots, name)
                                 },
-                                variant = VButtonVariant.Primary,
-                                tone = VButtonTone.Teal,
-                            )
-                            VButton(
-                                text = appString(StringKeys.CS_USE_PASTE),
-                                onClick = { importMode = "text"; parseError = null },
-                                variant = VButtonVariant.Secondary,
+                                onError = { msg ->
+                                    isImporting = false
+                                    parseError = msg
+                                },
                             )
                         }
+                    },
+                    onUnsupported = { message ->
+                        parseError = message
+                    },
+                )
+                if (isImporting) {
+                    Column(
+                        Modifier.fillMaxWidth().padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Text("⏳", style = VTypography.h1)
+                        Text(appString(StringKeys.CS_AI_READING), style = VTypography.body.copy(color = VColors.ink))
+                        Text(appString(StringKeys.CS_AI_VISION_DESC), style = VTypography.caption.copy(color = VColors.ink2))
                     }
-                }
-
-                // Paste Text mode
-                if (importMode == "text") {
-                    Text(appString(StringKeys.CS_PASTE_BELOW), style = VTypography.caption.copy(color = VColors.ink2))
-                    Text(appString(StringKeys.CS_SUPPORTED_FORMATS), style = VTypography.caption.copy(color = VColors.ink3))
-                    VInput(
-                        value = pastedText,
-                        onValueChange = { pastedText = it; parseError = null },
-                        label = appString(StringKeys.CS_TIMETABLE_TEXT),
-                        hint = "One slot per line, e.g.\n08:00-08:40 Period 1\n08:40-09:20 Period 2\n09:20-09:35 Short Break",
-                        placeholder = "08:00-08:40 Period 1\n08:40-09:20 Period 2...",
+                } else {
+                    VEmptyState(
+                        title = appString(StringKeys.CS_AI_VISION_OCR, "label" to label),
+                        icon = VIcons.FileText,
+                        body = if (importMode == "photo")
+                            appString(StringKeys.CS_PHOTO_OCR_BODY)
+                        else
+                            appString(StringKeys.CS_PDF_BODY),
                     )
-
                     parseError?.let {
                         Text(it, style = VTypography.caption.copy(color = VColors.error))
                     }
-
-                    val parseErrorMsg = appString(StringKeys.CS_PARSE_ERROR)
-                    val pasteFirstMsg = appString(StringKeys.CS_PASTE_FIRST)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        VButton(text = appString(StringKeys.CS_BACK), onClick = { importMode = null }, variant = VButtonVariant.Ghost)
+                        VButton(text = appString(StringKeys.CS_BACK), onClick = { importMode = null; parseError = null }, variant = VButtonVariant.Ghost)
                         VButton(
-                            text = appString(StringKeys.CS_PARSE_FILL),
+                            text = if (importMode == "photo") appString(StringKeys.CS_PICK_PHOTO) else appString(StringKeys.CS_PICK_PDF),
                             onClick = {
                                 parseError = null
-                                val result = parseTimetableText(pastedText)
-                                if (result.first.isEmpty()) {
-                                    parseError = parseErrorMsg
-                                } else {
-                                    onParsed(result.first, result.second)
-                                }
-                            },
-                            variant = VButtonVariant.Secondary,
-                            tone = VButtonTone.Teal,
-                        )
-                        VButton(
-                            text = appString(StringKeys.CS_AI_PARSE),
-                            onClick = {
-                                if (pastedText.isBlank()) {
-                                    parseError = pasteFirstMsg
-                                    return@VButton
-                                }
-                                parseError = null
-                                isImporting = true
-                                dayConfigViewModel.importText(
-                                    text = pastedText,
-                                    onResult = { slots, name ->
-                                        isImporting = false
-                                        onParsed(slots, name)
-                                    },
-                                    onError = { msg ->
-                                        isImporting = false
-                                        parseError = msg
-                                    },
-                                )
+                                if (importMode == "photo") mediaPicker.launchImage() else mediaPicker.launchPdf()
                             },
                             variant = VButtonVariant.Primary,
                             tone = VButtonTone.Teal,
-                            loading = isImporting,
+                        )
+                        VButton(
+                            text = appString(StringKeys.CS_USE_PASTE),
+                            onClick = { importMode = "text"; parseError = null },
+                            variant = VButtonVariant.Secondary,
                         )
                     }
+                }
+            }
+
+            // Paste Text mode
+            if (importMode == "text") {
+                Text(appString(StringKeys.CS_PASTE_BELOW), style = VTypography.caption.copy(color = VColors.ink2))
+                Text(appString(StringKeys.CS_SUPPORTED_FORMATS), style = VTypography.caption.copy(color = VColors.ink3))
+                VInput(
+                    value = pastedText,
+                    onValueChange = { pastedText = it; parseError = null },
+                    label = appString(StringKeys.CS_TIMETABLE_TEXT),
+                    hint = "One slot per line, e.g.\n08:00-08:40 Period 1\n08:40-09:20 Period 2\n09:20-09:35 Short Break",
+                    placeholder = "08:00-08:40 Period 1\n08:40-09:20 Period 2...",
+                )
+
+                parseError?.let {
+                    Text(it, style = VTypography.caption.copy(color = VColors.error))
+                }
+
+                val parseErrorMsg = appString(StringKeys.CS_PARSE_ERROR)
+                val pasteFirstMsg = appString(StringKeys.CS_PASTE_FIRST)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    VButton(text = appString(StringKeys.CS_BACK), onClick = { importMode = null }, variant = VButtonVariant.Ghost)
+                    VButton(
+                        text = appString(StringKeys.CS_PARSE_FILL),
+                        onClick = {
+                            parseError = null
+                            val result = parseTimetableText(pastedText)
+                            if (result.first.isEmpty()) {
+                                parseError = parseErrorMsg
+                            } else {
+                                onParsed(result.first, result.second)
+                            }
+                        },
+                        variant = VButtonVariant.Secondary,
+                        tone = VButtonTone.Teal,
+                    )
+                    VButton(
+                        text = appString(StringKeys.CS_AI_PARSE),
+                        onClick = {
+                            if (pastedText.isBlank()) {
+                                parseError = pasteFirstMsg
+                                return@VButton
+                            }
+                            parseError = null
+                            isImporting = true
+                            dayConfigViewModel.importText(
+                                text = pastedText,
+                                onResult = { slots, name ->
+                                    isImporting = false
+                                    onParsed(slots, name)
+                                },
+                                onError = { msg ->
+                                    isImporting = false
+                                    parseError = msg
+                                },
+                            )
+                        },
+                        variant = VButtonVariant.Primary,
+                        tone = VButtonTone.Teal,
+                        loading = isImporting,
+                    )
                 }
             }
         }
@@ -1519,7 +1524,7 @@ private fun ScheduleStepAssign(
 
     // ── Slot assignment editor dialog ─────────────────────────────────────
     editingSlot?.let { slot ->
-        SlotAssignmentEditorDialog(
+        SlotAssignmentEditorSheet(
             state = state,
             slot = slot,
             editingPeriod = editingPeriod,
@@ -1561,7 +1566,7 @@ private fun ScheduleStepAssign(
 
     // ── Copy day dialog ───────────────────────────────────────────────────
     if (showCopyDayDialog) {
-        CopyDayConfirmDialog(
+        CopyDayConfirmSheet(
             sourceDay = selectedDay,
             targetDays = applicableDayNums.filter { it != selectedDay },
             onConfirm = { targetDays ->
@@ -1594,7 +1599,7 @@ private fun ScheduleStepAssign(
 
     // ── Copy class dialog ─────────────────────────────────────────────────
     if (showCopyClassDialog) {
-        CopyClassConfirmDialog(
+        CopyClassConfirmSheet(
             targetClassName = selectedClassName ?: "",
             sourceClasses = state.classes.map { it.name }.filter { it != selectedClassName },
             onConfirm = { sourceClass ->
@@ -1627,7 +1632,7 @@ private fun ScheduleStepAssign(
 
     // ── Manual period editor dialog (no-slot fallback) ────────────────────
     if (showManualAddDialog) {
-        ManualPeriodEditorDialog(
+        ManualPeriodEditorSheet(
             state = state,
             editingPeriod = editingPeriod,
             className = selectedClassName ?: "",
@@ -1773,7 +1778,7 @@ private fun ManualPeriodRow(
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
-private fun ManualPeriodEditorDialog(
+private fun ManualPeriodEditorSheet(
     state: ClassesSubjectsState,
     editingPeriod: TimetablePeriodDto?,
     className: String,
@@ -1799,150 +1804,146 @@ private fun ManualPeriodEditorDialog(
     val selectedClass = classes.find { it.name == className }
     val subjectsForClass = selectedClass?.let { state.subjectsByClass[it.id] } ?: emptyList()
 
-    Dialog(onDismissRequest = onDismiss) {
-        VCard(Modifier.fillMaxWidth().padding(16.dp)) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                // Header
-                Text(
-                    appString(StringKeys.CS_DAY_CLASS_SECTION, "day" to csWeekdayLabel(weekday), "class" to className, "section" to section),
-                    style = VTypography.h3, fontWeight = FontWeight.Bold, color = VColors.ink,
+    VBottomSheet(
+        visible = true,
+        onDismiss = onDismiss,
+    ) {
+        VBottomSheetHeader(title = appString(StringKeys.CS_DAY_CLASS_SECTION, "day" to csWeekdayLabel(weekday), "class" to className, "section" to section))
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            // Time inputs
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(Modifier.weight(1f)) {
+                    VInput(value = startTime, onValueChange = { startTime = it }, label = appString(StringKeys.CS_START), hint = "HH:mm", placeholder = "09:00")
+                }
+                Box(Modifier.weight(1f)) {
+                    VInput(value = endTime, onValueChange = { endTime = it }, label = appString(StringKeys.CS_END), hint = "HH:mm", placeholder = "10:00")
+                }
+            }
+
+            // Teacher dropdown
+            Text(appString(StringKeys.CS_TEACHER), style = VTypography.caption.copy(color = VColors.ink2))
+            var teacherMenuExpanded by remember { mutableStateOf(false) }
+            ExposedDropdownMenuBox(
+                expanded = teacherMenuExpanded,
+                onExpandedChange = { teacherMenuExpanded = it },
+            ) {
+                OutlinedTextField(
+                    value = teachers.find { it.id == selectedTeacherId }?.let { t -> t.profile.name.ifBlank { t.id.take(8) } } ?: "",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text(appString(StringKeys.CS_SELECT_TEACHER)) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = teacherMenuExpanded) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(),
                 )
-
-                // Time inputs
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Box(Modifier.weight(1f)) {
-                        VInput(value = startTime, onValueChange = { startTime = it }, label = appString(StringKeys.CS_START), hint = "HH:mm", placeholder = "09:00")
-                    }
-                    Box(Modifier.weight(1f)) {
-                        VInput(value = endTime, onValueChange = { endTime = it }, label = appString(StringKeys.CS_END), hint = "HH:mm", placeholder = "10:00")
-                    }
-                }
-
-                // Teacher dropdown
-                Text(appString(StringKeys.CS_TEACHER), style = VTypography.caption.copy(color = VColors.ink2))
-                var teacherMenuExpanded by remember { mutableStateOf(false) }
-                ExposedDropdownMenuBox(
+                ExposedDropdownMenu(
                     expanded = teacherMenuExpanded,
-                    onExpandedChange = { teacherMenuExpanded = it },
+                    onDismissRequest = { teacherMenuExpanded = false },
                 ) {
-                    OutlinedTextField(
-                        value = teachers.find { it.id == selectedTeacherId }?.let { t -> t.profile.name.ifBlank { t.id.take(8) } } ?: "",
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text(appString(StringKeys.CS_SELECT_TEACHER)) },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = teacherMenuExpanded) },
-                        modifier = Modifier.fillMaxWidth().menuAnchor(),
-                    )
-                    ExposedDropdownMenu(
-                        expanded = teacherMenuExpanded,
-                        onDismissRequest = { teacherMenuExpanded = false },
-                    ) {
-                        if (teachers.isEmpty()) {
-                            DropdownMenuItem(
-                                text = { Text(appString(StringKeys.CS_NO_TEACHERS), color = VColors.ink3) },
-                                onClick = { teacherMenuExpanded = false },
-                            )
-                        } else {
-                            teachers.forEach { teacher ->
-                                DropdownMenuItem(
-                                    text = { Text(teacher.profile.name.ifBlank { teacher.id.take(8) }) },
-                                    onClick = {
-                                        selectedTeacherId = teacher.id
-                                        teacherMenuExpanded = false
-                                    },
-                                )
-                            }
-                        }
+                    if (teachers.isEmpty()) {
                         DropdownMenuItem(
-                            text = { Text(appString(StringKeys.CS_ADD_NEW_TEACHER), color = VColors.violet, fontWeight = FontWeight.Bold) },
-                            onClick = {
-                                teacherMenuExpanded = false
-                                showNewTeacher = true
-                            },
+                            text = { Text(appString(StringKeys.CS_NO_TEACHERS), color = VColors.ink3) },
+                            onClick = { teacherMenuExpanded = false },
                         )
-                    }
-                }
-
-                // Subject dropdown
-                Text(appString(StringKeys.CS_SUBJECT_LABEL), style = VTypography.caption.copy(color = VColors.ink2))
-                var subjectMenuExpanded by remember { mutableStateOf(false) }
-                ExposedDropdownMenuBox(
-                    expanded = subjectMenuExpanded,
-                    onExpandedChange = { subjectMenuExpanded = it },
-                ) {
-                    OutlinedTextField(
-                        value = subjectName,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text(appString(StringKeys.CS_SELECT_SUBJECT)) },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = subjectMenuExpanded) },
-                        modifier = Modifier.fillMaxWidth().menuAnchor(),
-                    )
-                    ExposedDropdownMenu(
-                        expanded = subjectMenuExpanded,
-                        onDismissRequest = { subjectMenuExpanded = false },
-                    ) {
-                        if (subjectsForClass.isEmpty()) {
+                    } else {
+                        teachers.forEach { teacher ->
                             DropdownMenuItem(
-                                text = { Text(appString(StringKeys.CS_NO_SUBJECTS_CLASS), color = VColors.ink3) },
-                                onClick = { subjectMenuExpanded = false },
-                            )
-                        } else {
-                            subjectsForClass.forEach { sub ->
-                                DropdownMenuItem(
-                                    text = { Text(sub.name) },
-                                    onClick = {
-                                        subjectName = sub.name
-                                        subjectMenuExpanded = false
-                                    },
-                                )
-                            }
-                        }
-                        if (selectedClass != null) {
-                            DropdownMenuItem(
-                                text = { Text(appString(StringKeys.CS_ADD_NEW_SUBJECT), color = VColors.violet, fontWeight = FontWeight.Bold) },
+                                text = { Text(teacher.profile.name.ifBlank { teacher.id.take(8) }) },
                                 onClick = {
-                                    subjectMenuExpanded = false
-                                    showNewSubject = true
+                                    selectedTeacherId = teacher.id
+                                    teacherMenuExpanded = false
                                 },
                             )
                         }
                     }
-                }
-
-                // Room
-                VInput(value = room, onValueChange = { room = it }, label = appString(StringKeys.CS_ROOM), hint = "e.g. 101", placeholder = "101")
-
-                // Actions
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    VButton(text = appString(StringKeys.CS_CANCEL), onClick = onDismiss, variant = VButtonVariant.Ghost)
-                    if (editingPeriod != null) {
-                        VButton(
-                            text = appString(StringKeys.CS_REMOVE),
-                            onClick = onRemove,
-                            variant = VButtonVariant.Destructive,
-                        )
-                    }
-                    VButton(
-                        text = if (editingPeriod != null) appString(StringKeys.CS_UPDATE) else appString(StringKeys.CS_ADD_PERIOD),
+                    DropdownMenuItem(
+                        text = { Text(appString(StringKeys.CS_ADD_NEW_TEACHER), color = VColors.violet, fontWeight = FontWeight.Bold) },
                         onClick = {
-                            val tid = selectedTeacherId.ifBlank { return@VButton }
-                            val sn = subjectName.trim().ifBlank { return@VButton }
-                            val st = startTime.trim().ifBlank { return@VButton }
-                            val et = endTime.trim().ifBlank { return@VButton }
-                            onSave(tid, sn, st, et, room.trim())
+                            teacherMenuExpanded = false
+                            showNewTeacher = true
                         },
-                        variant = VButtonVariant.Primary,
-                        tone = VButtonTone.Teal,
-                        loading = isSaving,
                     )
                 }
+            }
+
+            // Subject dropdown
+            Text(appString(StringKeys.CS_SUBJECT_LABEL), style = VTypography.caption.copy(color = VColors.ink2))
+            var subjectMenuExpanded by remember { mutableStateOf(false) }
+            ExposedDropdownMenuBox(
+                expanded = subjectMenuExpanded,
+                onExpandedChange = { subjectMenuExpanded = it },
+            ) {
+                OutlinedTextField(
+                    value = subjectName,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text(appString(StringKeys.CS_SELECT_SUBJECT)) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = subjectMenuExpanded) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                )
+                ExposedDropdownMenu(
+                    expanded = subjectMenuExpanded,
+                    onDismissRequest = { subjectMenuExpanded = false },
+                ) {
+                    if (subjectsForClass.isEmpty()) {
+                        DropdownMenuItem(
+                            text = { Text(appString(StringKeys.CS_NO_SUBJECTS_CLASS), color = VColors.ink3) },
+                            onClick = { subjectMenuExpanded = false },
+                        )
+                    } else {
+                        subjectsForClass.forEach { sub ->
+                            DropdownMenuItem(
+                                text = { Text(sub.name) },
+                                onClick = {
+                                    subjectName = sub.name
+                                    subjectMenuExpanded = false
+                                },
+                            )
+                        }
+                    }
+                    if (selectedClass != null) {
+                        DropdownMenuItem(
+                            text = { Text(appString(StringKeys.CS_ADD_NEW_SUBJECT), color = VColors.violet, fontWeight = FontWeight.Bold) },
+                            onClick = {
+                                subjectMenuExpanded = false
+                                showNewSubject = true
+                            },
+                        )
+                    }
+                }
+            }
+
+            // Room
+            VInput(value = room, onValueChange = { room = it }, label = appString(StringKeys.CS_ROOM), hint = "e.g. 101", placeholder = "101")
+
+            // Actions
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                VButton(text = appString(StringKeys.CS_CANCEL), onClick = onDismiss, variant = VButtonVariant.Ghost)
+                if (editingPeriod != null) {
+                    VButton(
+                        text = appString(StringKeys.CS_REMOVE),
+                        onClick = onRemove,
+                        variant = VButtonVariant.Destructive,
+                    )
+                }
+                VButton(
+                    text = if (editingPeriod != null) appString(StringKeys.CS_UPDATE) else appString(StringKeys.CS_ADD_PERIOD),
+                    onClick = {
+                        val tid = selectedTeacherId.ifBlank { return@VButton }
+                        val sn = subjectName.trim().ifBlank { return@VButton }
+                        val st = startTime.trim().ifBlank { return@VButton }
+                        val et = endTime.trim().ifBlank { return@VButton }
+                        onSave(tid, sn, st, et, room.trim())
+                    },
+                    variant = VButtonVariant.Primary,
+                    tone = VButtonTone.Teal,
+                    loading = isSaving,
+                )
             }
         }
     }
 
     if (showNewTeacher) {
-        InlineCreateTeacherDialog(
+        InlineCreateTeacherSheet(
             isSaving = isSaving,
             onCreate = { name, identifier ->
                 onCreateTeacherInline(name, identifier) {
@@ -1955,7 +1956,7 @@ private fun ManualPeriodEditorDialog(
     }
 
     if (showNewSubject && selectedClass != null) {
-        InlineCreateSubjectDialog(
+        InlineCreateSubjectSheet(
             isSaving = isSaving,
             onCreate = { name, code ->
                 onCreateSubjectInline(selectedClass.id, name, code) {
@@ -1970,7 +1971,7 @@ private fun ManualPeriodEditorDialog(
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
-private fun SlotAssignmentEditorDialog(
+private fun SlotAssignmentEditorSheet(
     state: ClassesSubjectsState,
     slot: SchoolDaySlotDto,
     editingPeriod: TimetablePeriodDto?,
@@ -1995,142 +1996,134 @@ private fun SlotAssignmentEditorDialog(
     val selectedClass = classes.find { it.name == className }
     val subjectsForClass = selectedClass?.let { state.subjectsByClass[it.id] } ?: emptyList()
 
-    Dialog(onDismissRequest = onDismiss) {
-        VCard(Modifier.fillMaxWidth().padding(16.dp)) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                // Header
-                Text(
-                    "${slot.label.ifBlank { appString(StringKeys.CS_SLOT_N, "n" to (slot.slotIndex + 1)) }} — ${csWeekdayLabel(weekday)}",
-                    style = VTypography.h3, fontWeight = FontWeight.Bold, color = VColors.ink,
+    VBottomSheet(
+        visible = true,
+        onDismiss = onDismiss,
+    ) {
+        VBottomSheetHeader(title = "${slot.label.ifBlank { appString(StringKeys.CS_SLOT_N, "n" to (slot.slotIndex + 1)) }} — ${csWeekdayLabel(weekday)}", subtitle = "${slot.startTime} – ${slot.endTime} · $className · $section")
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            // Teacher dropdown
+            Text(appString(StringKeys.CS_TEACHER), style = VTypography.caption.copy(color = VColors.ink2))
+            var teacherMenuExpanded by remember { mutableStateOf(false) }
+            ExposedDropdownMenuBox(
+                expanded = teacherMenuExpanded,
+                onExpandedChange = { teacherMenuExpanded = it },
+            ) {
+                OutlinedTextField(
+                    value = teachers.find { it.id == selectedTeacherId }?.let { t -> t.profile.name.ifBlank { t.id.take(8) } } ?: "",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text(appString(StringKeys.CS_SELECT_TEACHER)) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = teacherMenuExpanded) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(),
                 )
-                Text(
-                    "${slot.startTime} – ${slot.endTime} · $className · $section",
-                    style = VTypography.caption.copy(color = VColors.ink2),
-                )
-
-                // Teacher dropdown
-                Text(appString(StringKeys.CS_TEACHER), style = VTypography.caption.copy(color = VColors.ink2))
-                var teacherMenuExpanded by remember { mutableStateOf(false) }
-                ExposedDropdownMenuBox(
+                ExposedDropdownMenu(
                     expanded = teacherMenuExpanded,
-                    onExpandedChange = { teacherMenuExpanded = it },
+                    onDismissRequest = { teacherMenuExpanded = false },
                 ) {
-                    OutlinedTextField(
-                        value = teachers.find { it.id == selectedTeacherId }?.let { t -> t.profile.name.ifBlank { t.id.take(8) } } ?: "",
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text(appString(StringKeys.CS_SELECT_TEACHER)) },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = teacherMenuExpanded) },
-                        modifier = Modifier.fillMaxWidth().menuAnchor(),
-                    )
-                    ExposedDropdownMenu(
-                        expanded = teacherMenuExpanded,
-                        onDismissRequest = { teacherMenuExpanded = false },
-                    ) {
-                        if (teachers.isEmpty()) {
-                            DropdownMenuItem(
-                                text = { Text(appString(StringKeys.CS_NO_TEACHERS), color = VColors.ink3) },
-                                onClick = { teacherMenuExpanded = false },
-                            )
-                        } else {
-                            teachers.forEach { teacher ->
-                                DropdownMenuItem(
-                                    text = { Text(teacher.profile.name.ifBlank { teacher.id.take(8) }) },
-                                    onClick = {
-                                        selectedTeacherId = teacher.id
-                                        teacherMenuExpanded = false
-                                    },
-                                )
-                            }
-                        }
+                    if (teachers.isEmpty()) {
                         DropdownMenuItem(
-                            text = { Text(appString(StringKeys.CS_ADD_NEW_TEACHER), color = VColors.violet, fontWeight = FontWeight.Bold) },
-                            onClick = {
-                                teacherMenuExpanded = false
-                                showNewTeacher = true
-                            },
+                            text = { Text(appString(StringKeys.CS_NO_TEACHERS), color = VColors.ink3) },
+                            onClick = { teacherMenuExpanded = false },
                         )
-                    }
-                }
-
-                // Subject dropdown
-                Text(appString(StringKeys.CS_SUBJECT_LABEL), style = VTypography.caption.copy(color = VColors.ink2))
-                var subjectMenuExpanded by remember { mutableStateOf(false) }
-                ExposedDropdownMenuBox(
-                    expanded = subjectMenuExpanded,
-                    onExpandedChange = { subjectMenuExpanded = it },
-                ) {
-                    OutlinedTextField(
-                        value = subjectName,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text(appString(StringKeys.CS_SELECT_SUBJECT)) },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = subjectMenuExpanded) },
-                        modifier = Modifier.fillMaxWidth().menuAnchor(),
-                    )
-                    ExposedDropdownMenu(
-                        expanded = subjectMenuExpanded,
-                        onDismissRequest = { subjectMenuExpanded = false },
-                    ) {
-                        if (subjectsForClass.isEmpty()) {
+                    } else {
+                        teachers.forEach { teacher ->
                             DropdownMenuItem(
-                                text = { Text(appString(StringKeys.CS_NO_SUBJECTS_CLASS), color = VColors.ink3) },
-                                onClick = { subjectMenuExpanded = false },
-                            )
-                        } else {
-                            subjectsForClass.forEach { sub ->
-                                DropdownMenuItem(
-                                    text = { Text(sub.name) },
-                                    onClick = {
-                                        subjectName = sub.name
-                                        subjectMenuExpanded = false
-                                    },
-                                )
-                            }
-                        }
-                        if (selectedClass != null) {
-                            DropdownMenuItem(
-                                text = { Text(appString(StringKeys.CS_ADD_NEW_SUBJECT), color = VColors.violet, fontWeight = FontWeight.Bold) },
+                                text = { Text(teacher.profile.name.ifBlank { teacher.id.take(8) }) },
                                 onClick = {
-                                    subjectMenuExpanded = false
-                                    showNewSubject = true
+                                    selectedTeacherId = teacher.id
+                                    teacherMenuExpanded = false
                                 },
                             )
                         }
                     }
-                }
-
-                // Room
-                VInput(value = room, onValueChange = { room = it }, label = appString(StringKeys.CS_ROOM), hint = "e.g. 101", placeholder = "101")
-
-                // Actions
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    VButton(text = appString(StringKeys.CS_CANCEL), onClick = onDismiss, variant = VButtonVariant.Ghost)
-                    if (editingPeriod != null) {
-                        VButton(
-                            text = appString(StringKeys.CS_REMOVE),
-                            onClick = onRemove,
-                            variant = VButtonVariant.Destructive,
-                        )
-                    }
-                    VButton(
-                        text = if (editingPeriod != null) appString(StringKeys.CS_UPDATE) else appString(StringKeys.CS_ASSIGN),
+                    DropdownMenuItem(
+                        text = { Text(appString(StringKeys.CS_ADD_NEW_TEACHER), color = VColors.violet, fontWeight = FontWeight.Bold) },
                         onClick = {
-                            val tid = selectedTeacherId.ifBlank { return@VButton }
-                            val sn = subjectName.trim().ifBlank { return@VButton }
-                            onSave(tid, sn, room.trim())
+                            teacherMenuExpanded = false
+                            showNewTeacher = true
                         },
-                        variant = VButtonVariant.Primary,
-                        tone = VButtonTone.Teal,
-                        loading = isSaving,
                     )
                 }
+            }
+
+            // Subject dropdown
+            Text(appString(StringKeys.CS_SUBJECT_LABEL), style = VTypography.caption.copy(color = VColors.ink2))
+            var subjectMenuExpanded by remember { mutableStateOf(false) }
+            ExposedDropdownMenuBox(
+                expanded = subjectMenuExpanded,
+                onExpandedChange = { subjectMenuExpanded = it },
+            ) {
+                OutlinedTextField(
+                    value = subjectName,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text(appString(StringKeys.CS_SELECT_SUBJECT)) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = subjectMenuExpanded) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                )
+                ExposedDropdownMenu(
+                    expanded = subjectMenuExpanded,
+                    onDismissRequest = { subjectMenuExpanded = false },
+                ) {
+                    if (subjectsForClass.isEmpty()) {
+                        DropdownMenuItem(
+                            text = { Text(appString(StringKeys.CS_NO_SUBJECTS_CLASS), color = VColors.ink3) },
+                            onClick = { subjectMenuExpanded = false },
+                        )
+                    } else {
+                        subjectsForClass.forEach { sub ->
+                            DropdownMenuItem(
+                                text = { Text(sub.name) },
+                                onClick = {
+                                    subjectName = sub.name
+                                    subjectMenuExpanded = false
+                                },
+                            )
+                        }
+                    }
+                    if (selectedClass != null) {
+                        DropdownMenuItem(
+                            text = { Text(appString(StringKeys.CS_ADD_NEW_SUBJECT), color = VColors.violet, fontWeight = FontWeight.Bold) },
+                            onClick = {
+                                subjectMenuExpanded = false
+                                showNewSubject = true
+                            },
+                        )
+                    }
+                }
+            }
+
+            // Room
+            VInput(value = room, onValueChange = { room = it }, label = appString(StringKeys.CS_ROOM), hint = "e.g. 101", placeholder = "101")
+
+            // Actions
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                VButton(text = appString(StringKeys.CS_CANCEL), onClick = onDismiss, variant = VButtonVariant.Ghost)
+                if (editingPeriod != null) {
+                    VButton(
+                        text = appString(StringKeys.CS_REMOVE),
+                        onClick = onRemove,
+                        variant = VButtonVariant.Destructive,
+                    )
+                }
+                VButton(
+                    text = if (editingPeriod != null) appString(StringKeys.CS_UPDATE) else appString(StringKeys.CS_ASSIGN),
+                    onClick = {
+                        val tid = selectedTeacherId.ifBlank { return@VButton }
+                        val sn = subjectName.trim().ifBlank { return@VButton }
+                        onSave(tid, sn, room.trim())
+                    },
+                    variant = VButtonVariant.Primary,
+                    tone = VButtonTone.Teal,
+                    loading = isSaving,
+                )
             }
         }
     }
 
     if (showNewTeacher) {
-        InlineCreateTeacherDialog(
+        InlineCreateTeacherSheet(
             isSaving = isSaving,
             onCreate = { name, identifier ->
                 onCreateTeacherInline(name, identifier) {
@@ -2143,7 +2136,7 @@ private fun SlotAssignmentEditorDialog(
     }
 
     if (showNewSubject && selectedClass != null) {
-        InlineCreateSubjectDialog(
+        InlineCreateSubjectSheet(
             isSaving = isSaving,
             onCreate = { name, code ->
                 onCreateSubjectInline(selectedClass.id, name, code) {
@@ -2157,7 +2150,7 @@ private fun SlotAssignmentEditorDialog(
 }
 
 @Composable
-private fun CopyDayConfirmDialog(
+private fun CopyDayConfirmSheet(
     sourceDay: Int,
     targetDays: List<Int>,
     onConfirm: (List<Int>) -> Unit,
@@ -2176,38 +2169,38 @@ private fun CopyDayConfirmDialog(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun CopyClassConfirmDialog(
+private fun CopyClassConfirmSheet(
     targetClassName: String,
     sourceClasses: List<String>,
     onConfirm: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var selectedSource by remember { mutableStateOf(sourceClasses.firstOrNull() ?: "") }
-    Dialog(onDismissRequest = onDismiss) {
-        VCard(Modifier.fillMaxWidth().padding(16.dp)) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(appString(StringKeys.CS_COPY_FROM_CLASS_TITLE), style = VTypography.h3, fontWeight = FontWeight.Bold, color = VColors.ink)
-                Text(appString(StringKeys.CS_COPY_FROM_CLASS_DESC, "class" to targetClassName), style = VTypography.caption.copy(color = VColors.ink2))
-                if (sourceClasses.isEmpty()) {
-                    Text(appString(StringKeys.CS_NO_OTHER_CLASSES), style = VTypography.caption.copy(color = VColors.ink3))
-                } else {
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        sourceClasses.forEach { cls ->
-                            VBadge(
-                                text = cls,
-                                tone = if (selectedSource == cls) VBadgeTone.Arctic else VBadgeTone.Neutral,
-                                modifier = Modifier.clickable { selectedSource = cls },
-                            )
-                        }
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        VButton(text = appString(StringKeys.CS_CANCEL), onClick = onDismiss, variant = VButtonVariant.Ghost)
-                        VButton(text = appString(StringKeys.CS_COPY),
-                            onClick = { if (selectedSource.isNotBlank()) onConfirm(selectedSource) },
-                            variant = VButtonVariant.Primary,
-                            tone = VButtonTone.Teal,
+    VBottomSheet(
+        visible = true,
+        onDismiss = onDismiss,
+    ) {
+        VBottomSheetHeader(title = appString(StringKeys.CS_COPY_FROM_CLASS_TITLE), subtitle = appString(StringKeys.CS_COPY_FROM_CLASS_DESC, "class" to targetClassName))
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            if (sourceClasses.isEmpty()) {
+                Text(appString(StringKeys.CS_NO_OTHER_CLASSES), style = VTypography.caption.copy(color = VColors.ink3))
+            } else {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    sourceClasses.forEach { cls ->
+                        VBadge(
+                            text = cls,
+                            tone = if (selectedSource == cls) VBadgeTone.Arctic else VBadgeTone.Neutral,
+                            modifier = Modifier.clickable { selectedSource = cls },
                         )
                     }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    VButton(text = appString(StringKeys.CS_CANCEL), onClick = onDismiss, variant = VButtonVariant.Ghost)
+                    VButton(text = appString(StringKeys.CS_COPY),
+                        onClick = { if (selectedSource.isNotBlank()) onConfirm(selectedSource) },
+                        variant = VButtonVariant.Primary,
+                        tone = VButtonTone.Teal,
+                    )
                 }
             }
         }
@@ -2388,7 +2381,7 @@ private fun detectConflicts(periods: List<TimetablePeriodDto>): List<ConflictInf
 // ── Inline Create Dialogs ─────────────────────────────────────────────────────
 
 @Composable
-private fun InlineCreateTeacherDialog(
+private fun InlineCreateTeacherSheet(
     isSaving: Boolean,
     onCreate: (name: String, identifier: String) -> Unit,
     onDismiss: () -> Unit,
@@ -2396,29 +2389,30 @@ private fun InlineCreateTeacherDialog(
     var name by remember { mutableStateOf("") }
     var identifier by remember { mutableStateOf("") }
 
-    Dialog(onDismissRequest = onDismiss) {
-        VCard(Modifier.fillMaxWidth().padding(16.dp)) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(appString(StringKeys.CS_NEW_TEACHER), style = VTypography.h3, fontWeight = FontWeight.Bold, color = VColors.ink)
-                VInput(value = name, onValueChange = { name = it }, label = appString(StringKeys.CS_FULL_NAME), hint = "Teacher name", placeholder = "John Doe")
-                VInput(value = identifier, onValueChange = { identifier = it }, label = appString(StringKeys.CS_EMAIL_PHONE), hint = "Login identifier", placeholder = "john@school.edu")
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    VButton(text = appString(StringKeys.CS_CANCEL), onClick = onDismiss, variant = VButtonVariant.Ghost)
-                    VButton(
-                        text = appString(StringKeys.CS_CREATE),
-                        onClick = { onCreate(name.trim(), identifier.trim()) },
-                        variant = VButtonVariant.Primary,
-                        tone = VButtonTone.Teal,
-                        loading = isSaving,
-                    )
-                }
+    VBottomSheet(
+        visible = true,
+        onDismiss = onDismiss,
+    ) {
+        VBottomSheetHeader(title = appString(StringKeys.CS_NEW_TEACHER))
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            VInput(value = name, onValueChange = { name = it }, label = appString(StringKeys.CS_FULL_NAME), hint = "Teacher name", placeholder = "John Doe")
+            VInput(value = identifier, onValueChange = { identifier = it }, label = appString(StringKeys.CS_EMAIL_PHONE), hint = "Login identifier", placeholder = "john@school.edu")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                VButton(text = appString(StringKeys.CS_CANCEL), onClick = onDismiss, variant = VButtonVariant.Ghost)
+                VButton(
+                    text = appString(StringKeys.CS_CREATE),
+                    onClick = { onCreate(name.trim(), identifier.trim()) },
+                    variant = VButtonVariant.Primary,
+                    tone = VButtonTone.Teal,
+                    loading = isSaving,
+                )
             }
         }
     }
 }
 
 @Composable
-private fun InlineCreateSubjectDialog(
+private fun InlineCreateSubjectSheet(
     isSaving: Boolean,
     onCreate: (name: String, code: String) -> Unit,
     onDismiss: () -> Unit,
@@ -2426,22 +2420,23 @@ private fun InlineCreateSubjectDialog(
     var name by remember { mutableStateOf("") }
     var code by remember { mutableStateOf("") }
 
-    Dialog(onDismissRequest = onDismiss) {
-        VCard(Modifier.fillMaxWidth().padding(16.dp)) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(appString(StringKeys.CS_NEW_SUBJECT), style = VTypography.h3, fontWeight = FontWeight.Bold, color = VColors.ink)
-                VInput(value = name, onValueChange = { name = it }, label = appString(StringKeys.CS_SUBJECT_NAME), hint = "e.g. Mathematics", placeholder = "Mathematics")
-                VInput(value = code, onValueChange = { code = it }, label = appString(StringKeys.CS_SUBJECT_CODE), hint = "e.g. MATH", placeholder = "MATH")
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    VButton(text = appString(StringKeys.CS_CANCEL), onClick = onDismiss, variant = VButtonVariant.Ghost)
-                    VButton(
-                        text = appString(StringKeys.CS_CREATE),
-                        onClick = { onCreate(name.trim(), code.trim()) },
-                        variant = VButtonVariant.Primary,
-                        tone = VButtonTone.Teal,
-                        loading = isSaving,
-                    )
-                }
+    VBottomSheet(
+        visible = true,
+        onDismiss = onDismiss,
+    ) {
+        VBottomSheetHeader(title = appString(StringKeys.CS_NEW_SUBJECT))
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            VInput(value = name, onValueChange = { name = it }, label = appString(StringKeys.CS_SUBJECT_NAME), hint = "e.g. Mathematics", placeholder = "Mathematics")
+            VInput(value = code, onValueChange = { code = it }, label = appString(StringKeys.CS_SUBJECT_CODE), hint = "e.g. MATH", placeholder = "MATH")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                VButton(text = appString(StringKeys.CS_CANCEL), onClick = onDismiss, variant = VButtonVariant.Ghost)
+                VButton(
+                    text = appString(StringKeys.CS_CREATE),
+                    onClick = { onCreate(name.trim(), code.trim()) },
+                    variant = VButtonVariant.Primary,
+                    tone = VButtonTone.Teal,
+                    loading = isSaving,
+                )
             }
         }
     }
@@ -2559,7 +2554,7 @@ private fun ExceptionsRequestsTab(
     }
 
     if (showAddException) {
-        AddExceptionDialog(
+        AddExceptionSheet(
             isSaving = state.isSaving,
             onCreate = { req, onDone -> onCreateException(req, onDone) },
             onDismiss = { showAddException = false },
@@ -2608,7 +2603,7 @@ private fun ExceptionCard(
 }
 
 @Composable
-private fun AddExceptionDialog(
+private fun AddExceptionSheet(
     isSaving: Boolean,
     onCreate: (CreateExceptionRequest, () -> Unit) -> Unit,
     onDismiss: () -> Unit,
@@ -2617,29 +2612,30 @@ private fun AddExceptionDialog(
     var kind by remember { mutableStateOf("CANCEL") }
     var note by remember { mutableStateOf("") }
 
-    Dialog(onDismissRequest = onDismiss) {
-        VCard(Modifier.fillMaxWidth().padding(16.dp)) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(appString(StringKeys.CS_ADD_EXCEPTION_TITLE), style = VTypography.h3, fontWeight = FontWeight.Bold, color = VColors.ink)
-                VDatePicker(value = date, onValueChange = { date = it }, label = appString(StringKeys.CS_DATE))
-                VInput(value = kind, onValueChange = { kind = it }, label = appString(StringKeys.CS_KIND), hint = "CANCEL, RESCHEDULE, SUBSTITUTE", placeholder = "CANCEL")
-                VInput(value = note, onValueChange = { note = it }, label = appString(StringKeys.CS_NOTE), hint = "Optional note", placeholder = "Holiday")
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    VButton(text = appString(StringKeys.CS_CANCEL), onClick = onDismiss, variant = VButtonVariant.Ghost)
-                    VButton(
-                        text = appString(StringKeys.CS_CREATE),
-                        onClick = {
-                            if (date.isNotBlank()) {
-                                onCreate(CreateExceptionRequest(date = date.trim(), kind = kind.trim(), note = note.trim())) {
-                                    onDismiss()
-                                }
+    VBottomSheet(
+        visible = true,
+        onDismiss = onDismiss,
+    ) {
+        VBottomSheetHeader(title = appString(StringKeys.CS_ADD_EXCEPTION_TITLE))
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            VDatePicker(value = date, onValueChange = { date = it }, label = appString(StringKeys.CS_DATE))
+            VInput(value = kind, onValueChange = { kind = it }, label = appString(StringKeys.CS_KIND), hint = "CANCEL, RESCHEDULE, SUBSTITUTE", placeholder = "CANCEL")
+            VInput(value = note, onValueChange = { note = it }, label = appString(StringKeys.CS_NOTE), hint = "Optional note", placeholder = "Holiday")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                VButton(text = appString(StringKeys.CS_CANCEL), onClick = onDismiss, variant = VButtonVariant.Ghost)
+                VButton(
+                    text = appString(StringKeys.CS_CREATE),
+                    onClick = {
+                        if (date.isNotBlank()) {
+                            onCreate(CreateExceptionRequest(date = date.trim(), kind = kind.trim(), note = note.trim())) {
+                                onDismiss()
                             }
-                        },
-                        variant = VButtonVariant.Primary,
-                        tone = VButtonTone.Teal,
-                        loading = isSaving,
-                    )
-                }
+                        }
+                    },
+                    variant = VButtonVariant.Primary,
+                    tone = VButtonTone.Teal,
+                    loading = isSaving,
+                )
             }
         }
     }

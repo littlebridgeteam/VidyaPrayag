@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -104,6 +103,10 @@ fun SchoolSettingsScreenV2(
     onOpenLibrary: () -> Unit = {},
     // Classes & Subjects — consolidated management (classes, subjects, bell schedule, timetable).
     onOpenClassesSubjects: () -> Unit = {},
+    // Alumni Management — directory, campaigns & graduation records.
+    onOpenAlumni: () -> Unit = {},
+    // Cohort Analytics — at-risk students, subject engagement & grade comparisons.
+    onOpenCohort: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: InstitutionalProfileViewModel = koinViewModel(),
     preferenceRepository: PreferenceRepository = koinInject(),
@@ -136,10 +139,11 @@ fun SchoolSettingsScreenV2(
         onOpenIdCards = onOpenIdCards,
         onOpenLibrary = onOpenLibrary,
         onOpenClassesSubjects = onOpenClassesSubjects,
+        onOpenAlumni = onOpenAlumni,
+        onOpenCohort = onOpenCohort,
         onRetry = viewModel::load,
         modifier = modifier.statusBarsPadding()
-            .imePadding()
-            .navigationBarsPadding(),
+            .imePadding(),
     )
 }
 
@@ -161,6 +165,8 @@ private fun SchoolSettingsContent(
     onOpenIdCards: () -> Unit,
     onOpenLibrary: () -> Unit,
     onOpenClassesSubjects: () -> Unit,
+    onOpenAlumni: () -> Unit,
+    onOpenCohort: () -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -197,10 +203,7 @@ private fun SchoolSettingsContent(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp)
-            .statusBarsPadding()
-            .imePadding()
-            .navigationBarsPadding()
-            .padding(top = 16.dp, bottom = 140.dp),
+            .padding(top = 16.dp, bottom = 120.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         // Premium header
@@ -237,6 +240,7 @@ private fun SchoolSettingsContent(
             onRetry = onRetry,
             skeleton = { SkeletonList(rows = 6) },
         ) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             InstitutionalProfileHealthCard(state = state, onClick = onOpenProfile)
 
             val rows = listOf(
@@ -248,6 +252,8 @@ private fun SchoolSettingsContent(
                 SettingRow(VIcons.School, "Branding Kit", "Logo, colors & custom subdomain", false, onClick = onOpenBranding),
                 SettingRow(VIcons.IdCard, "ID Cards", "Templates, generation & PDF export", false, onClick = onOpenIdCards),
                 SettingRow(VIcons.BookOpen, "Library Management", "Catalog, issues, returns & fines", false, onClick = onOpenLibrary),
+                SettingRow(VIcons.UsersGroup, "Alumni Management", "Graduates, campaigns & engagement", false, onClick = onOpenAlumni),
+                SettingRow(VIcons.TrendingUp, "Cohort Analytics", "At-risk students, engagement & grade comparisons", false, onClick = onOpenCohort),
                 SettingRow(VIcons.Wallet, "Fee structure", "Edit heads & amounts for next cycle", true),
                 SettingRow(VIcons.Bell, "Notifications", "Channels & quiet hours", true),
                 SettingRow(VIcons.Download, "Data export", "CSV / PDF / UDISE", true),
@@ -315,6 +321,7 @@ private fun SchoolSettingsContent(
             // Theme picker
             SettingsCreamCard {
                 VThemePicker(currentMode = themeMode, currentCustomId = customThemeId, onSelect = onThemeSelect)
+            }
             }
         }
     }

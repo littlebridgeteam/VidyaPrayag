@@ -25,11 +25,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import com.littlebridge.enrollplus.feature.alumni.domain.model.*
 import com.littlebridge.enrollplus.feature.alumni.presentation.AlumniScreenState
 import com.littlebridge.enrollplus.feature.alumni.presentation.AlumniViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
+import com.littlebridge.enrollplus.ui.v2.components.VBottomSheet
+import com.littlebridge.enrollplus.ui.v2.components.VBottomSheetHeader
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
@@ -208,7 +209,7 @@ private fun AlumniDirectoryTab(
     }
 
     if (showAddDialog) {
-        AddAlumniDialog(
+        AddAlumniSheet(
             loading = state.isLoading,
             onDismiss = { showAddDialog = false },
             onSubmit = { request ->
@@ -219,7 +220,7 @@ private fun AlumniDirectoryTab(
     }
 
     if (showImportDialog) {
-        BulkImportDialog(
+        BulkImportSheet(
             loading = state.isLoading,
             onDismiss = { showImportDialog = false },
             onSubmit = { rows ->
@@ -231,7 +232,7 @@ private fun AlumniDirectoryTab(
 }
 
 @Composable
-private fun AddAlumniDialog(
+private fun AddAlumniSheet(
     loading: Boolean,
     onDismiss: () -> Unit,
     onSubmit: (CreateAlumniRequest) -> Unit,
@@ -247,10 +248,12 @@ private fun AddAlumniDialog(
 
     val canSubmit = name.isNotBlank() && graduationYear.toIntOrNull() != null
 
-    Dialog(onDismissRequest = onDismiss) {
-        VCard {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(appString(StringKeys.ALM_ADD_ALUMNI), style = VTypography.h3, color = VColors.ink)
+    VBottomSheet(
+        visible = true,
+        onDismiss = onDismiss,
+    ) {
+        VBottomSheetHeader(title = appString(StringKeys.ALM_ADD_ALUMNI))
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
 
                 VInput(
                     value = name,
@@ -304,44 +307,43 @@ private fun AddAlumniDialog(
                     placeholder = appString(StringKeys.ALM_CITY_PH),
                 )
 
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    VButton(
-                        text = appString(StringKeys.COMMON_BUTTON_CANCEL),
-                        onClick = onDismiss,
-                        variant = VButtonVariant.Ghost,
-                        size = VButtonSize.Sm,
-                        modifier = Modifier.weight(1f),
-                    )
-                    VButton(
-                        text = appString(StringKeys.ALM_ADD),
-                        onClick = {
-                            onSubmit(
-                                CreateAlumniRequest(
-                                    studentId = studentId.ifBlank { null },
-                                    name = name.trim(),
-                                    graduationYear = graduationYear.toInt(),
-                                    email = email.ifBlank { null },
-                                    phone = phone.ifBlank { null },
-                                    currentProfession = profession.ifBlank { null },
-                                    company = company.ifBlank { null },
-                                    city = city.ifBlank { null },
-                                ),
-                            )
-                        },
-                        variant = VButtonVariant.Primary,
-                        size = VButtonSize.Sm,
-                        modifier = Modifier.weight(1f),
-                        enabled = canSubmit,
-                        loading = loading,
-                    )
-                }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                VButton(
+                    text = appString(StringKeys.COMMON_BUTTON_CANCEL),
+                    onClick = onDismiss,
+                    variant = VButtonVariant.Ghost,
+                    size = VButtonSize.Sm,
+                    modifier = Modifier.weight(1f),
+                )
+                VButton(
+                    text = appString(StringKeys.ALM_ADD),
+                    onClick = {
+                        onSubmit(
+                            CreateAlumniRequest(
+                                studentId = studentId.ifBlank { null },
+                                name = name.trim(),
+                                graduationYear = graduationYear.toInt(),
+                                email = email.ifBlank { null },
+                                phone = phone.ifBlank { null },
+                                currentProfession = profession.ifBlank { null },
+                                company = company.ifBlank { null },
+                                city = city.ifBlank { null },
+                            ),
+                        )
+                    },
+                    variant = VButtonVariant.Primary,
+                    size = VButtonSize.Sm,
+                    modifier = Modifier.weight(1f),
+                    enabled = canSubmit,
+                    loading = loading,
+                )
             }
         }
     }
 }
 
 @Composable
-private fun BulkImportDialog(
+private fun BulkImportSheet(
     loading: Boolean,
     onDismiss: () -> Unit,
     onSubmit: (List<CreateAlumniRequest>) -> Unit,
@@ -351,46 +353,47 @@ private fun BulkImportDialog(
     val rows = parseAlumniCsv(csvText)
     val canSubmit = rows.isNotEmpty()
 
-    Dialog(onDismissRequest = onDismiss) {
-        VCard {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(appString(StringKeys.ALM_BULK_IMPORT_TITLE), style = VTypography.h3, color = VColors.ink)
-                Text(
-                    appString(StringKeys.ALM_BULK_IMPORT_INSTR),
-                    style = VTypography.caption,
-                    color = VColors.ink3,
+    VBottomSheet(
+        visible = true,
+        onDismiss = onDismiss,
+    ) {
+        VBottomSheetHeader(title = appString(StringKeys.ALM_BULK_IMPORT_TITLE))
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                appString(StringKeys.ALM_BULK_IMPORT_INSTR),
+                style = VTypography.caption,
+                color = VColors.ink3,
+            )
+
+            OutlinedTextField(
+                value = csvText,
+                onValueChange = { csvText = it },
+                modifier = Modifier.fillMaxWidth().height(160.dp),
+                placeholder = { Text(appString(StringKeys.ALM_CSV_PH)) },
+                textStyle = VTypography.body,
+            )
+
+            if (rows.isNotEmpty()) {
+                Text(appString(StringKeys.ALM_ROWS_READY, "count" to rows.size), style = VTypography.caption, color = VColors.violet)
+            }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                VButton(
+                    text = appString(StringKeys.COMMON_BUTTON_CANCEL),
+                    onClick = onDismiss,
+                    variant = VButtonVariant.Ghost,
+                    size = VButtonSize.Sm,
+                    modifier = Modifier.weight(1f),
                 )
-
-                OutlinedTextField(
-                    value = csvText,
-                    onValueChange = { csvText = it },
-                    modifier = Modifier.fillMaxWidth().height(160.dp),
-                    placeholder = { Text(appString(StringKeys.ALM_CSV_PH)) },
-                    textStyle = VTypography.body,
+                VButton(
+                    text = if (rows.isNotEmpty()) appString(StringKeys.ALM_IMPORT_WITH_COUNT, "count" to rows.size) else appString(StringKeys.ALM_IMPORT),
+                    onClick = { onSubmit(rows) },
+                    variant = VButtonVariant.Primary,
+                    size = VButtonSize.Sm,
+                    modifier = Modifier.weight(1f),
+                    enabled = canSubmit,
+                    loading = loading,
                 )
-
-                if (rows.isNotEmpty()) {
-                    Text(appString(StringKeys.ALM_ROWS_READY, "count" to rows.size), style = VTypography.caption, color = VColors.violet)
-                }
-
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    VButton(
-                        text = appString(StringKeys.COMMON_BUTTON_CANCEL),
-                        onClick = onDismiss,
-                        variant = VButtonVariant.Ghost,
-                        size = VButtonSize.Sm,
-                        modifier = Modifier.weight(1f),
-                    )
-                    VButton(
-                        text = if (rows.isNotEmpty()) appString(StringKeys.ALM_IMPORT_WITH_COUNT, "count" to rows.size) else appString(StringKeys.ALM_IMPORT),
-                        onClick = { onSubmit(rows) },
-                        variant = VButtonVariant.Primary,
-                        size = VButtonSize.Sm,
-                        modifier = Modifier.weight(1f),
-                        enabled = canSubmit,
-                        loading = loading,
-                    )
-                }
             }
         }
     }

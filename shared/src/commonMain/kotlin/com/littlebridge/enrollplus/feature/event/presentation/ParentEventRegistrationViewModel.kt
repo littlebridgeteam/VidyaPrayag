@@ -103,7 +103,7 @@ class ParentEventRegistrationViewModel(
                 return@launch
             }
             val request = RegisterRequest(slotId = slotId, studentId = studentId, attendeeCount = attendeeCount)
-            val clientRequestId = "reg-${System.currentTimeMillis()}-${eventId}"
+            val clientRequestId = "reg-${kotlin.random.Random.nextLong()}-${eventId}"
             when (val result = repository.register(token, eventId, request, clientRequestId)) {
                 is NetworkResult.Success -> {
                     _state.value = _state.value.copy(

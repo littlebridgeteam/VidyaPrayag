@@ -34,7 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.admin.domain.model.StudentDto
 import com.littlebridge.enrollplus.feature.admin.presentation.StudentRosterState
 import com.littlebridge.enrollplus.feature.admin.presentation.StudentRosterViewModel
@@ -42,13 +42,17 @@ import com.littlebridge.enrollplus.ui.v2.components.VAvatar
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
+import com.littlebridge.enrollplus.ui.v2.components.VBottomSheet
+import com.littlebridge.enrollplus.ui.v2.components.VBottomSheetHeader
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
+import com.littlebridge.enrollplus.ui.v2.components.VStatusDot
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.locale.appString
@@ -115,7 +119,7 @@ fun StudentRosterScreenV2(
     }
 
     if (showAdd) {
-        AddStudentDialog(
+        AddStudentSheet(
             isSubmitting = state.isSaving,
             error = state.addError,
             onDismiss = { showAdd = false; viewModel.clearMessages() },
@@ -177,10 +181,7 @@ private fun StudentRosterContent(
 }
 
 /**
- * RA-SP: the modern, relationship-aware student card replacing the old plain
- * row. Shows avatar, name, class+section, status/new-admission/low-attendance
- * badges, then a metric strip (attendance %, parents linked, teacher count) and
- * an overflow menu exposing View Profile · Edit · Contact Parent · Remove.
+ * RA-SP: enriched student card matching the People tab prototype.
  */
 @Composable
 private fun StudentCard(
@@ -190,98 +191,173 @@ private fun StudentCard(
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-        var menuOpen by remember { mutableStateOf(false) }
+    var menuOpen by remember { mutableStateOf(false) }
     val lowAttendance = student.attendancePercent in 0.1f..74.9f
+    val homeworkLow = student.homeworkPercent < 80f
 
-    VCard(modifier = modifier.fillMaxWidth(), padding = 16.dp, onClick = onOpen) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            VAvatar(name = student.fullName, src = student.profilePhotoUrl, size = 48.dp)
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(student.fullName, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink), maxLines = 1)
+    VCard(modifier = modifier.fillMaxWidth(), padding = 0.dp, onClick = onOpen) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            // Header: avatar · name · class badge · more
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                VAvatar(name = student.fullName, src = student.profilePhotoUrl, size = 52.dp)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(student.fullName, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink, maxLines = 1)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            "Roll #${student.rollNumber}",
+                            style = VTypography.caption,
+                            color = VColors.ink3,
+                        )
+                        Text(
+                            "Admission #${student.studentCode}",
+                            style = VTypography.caption,
+                            color = VColors.ink3,
+                        )
+                    }
+                }
+                VBadge(
+                    text = "Class ${student.className}-${student.section}",
+                    tone = VBadgeTone.Arctic,
+                )
+                // Overflow menu (quick actions).
+                Box {
+                    Box(
+                        Modifier.size(34.dp).clip(RoundedCornerShape(10.dp))
+                            .background(VColors.ink.copy(alpha = 0.06f))
+                            .clickable(enabled = !removing) { menuOpen = true },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(VIcons.More, contentDescription = "Actions", tint = VColors.ink2, modifier = Modifier.size(18.dp))
+                    }
+                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        DropdownMenuItem(
+                            text = { Text(appString(StringKeys.SCH_VIEW_PROFILE)) },
+                            onClick = { menuOpen = false; onOpen() },
+                            leadingIcon = { Icon(VIcons.User, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(appString(StringKeys.COMMON_BUTTON_EDIT)) },
+                            onClick = { menuOpen = false; onOpen() },
+                            leadingIcon = { Icon(VIcons.Settings, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(appString(StringKeys.SCH_CONTACT_PARENT)) },
+                            onClick = { menuOpen = false; onOpen() },
+                            leadingIcon = { Icon(VIcons.Phone, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(appString(StringKeys.SCH_REMOVE), style = VTypography.body.copy(color = VColors.error)) },
+                            onClick = { menuOpen = false; onRemove() },
+                            leadingIcon = { Icon(VIcons.Close, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                        )
+                    }
+                }
+            }
+
+            // Parent contact row
+            if (student.parentName != null || student.parentPhone != null) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                    student.parentName?.takeIf { it.isNotBlank() }?.let { parentName ->
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Icon(VIcons.User, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(14.dp))
+                            Text(parentName, style = VTypography.caption, color = VColors.ink2)
+                        }
+                    }
+                    student.parentPhone?.takeIf { it.isNotBlank() }?.let { phone ->
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Icon(VIcons.Phone, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(14.dp))
+                            Text(maskStudentPhone(phone), style = VTypography.caption, color = VColors.ink2)
+                        }
+                    }
+                }
+            }
+
+            // Status alerts
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                VStatusDot(
+                    color = when {
+                        student.status.equals("active", ignoreCase = true) && !lowAttendance && !homeworkLow && !student.feesPending && !student.isNewAdmission -> VColors.mint
+                        lowAttendance || student.feesPending -> VColors.coral
+                        homeworkLow || student.isNewAdmission -> VColors.gold
+                        else -> VColors.sky
+                    },
+                    ring = false,
+                )
                 Text(
-                    "${student.className} · Sec ${student.section} · Roll ${student.rollNumber}",
-                    style = VTypography.caption.copy(color = VColors.ink2),
-                    maxLines = 1,
+                    when {
+                        student.status.equals("inactive", ignoreCase = true) -> appString(StringKeys.SCH_INACTIVE)
+                        lowAttendance -> appString(StringKeys.SCH_LOW_ATTENDANCE)
+                        student.feesPending -> "Fees Pending"
+                        student.isNewAdmission -> appString(StringKeys.SCH_NEW_ADMISSION)
+                        homeworkLow -> "Homework Due"
+                        else -> "Healthy"
+                    },
+                    style = VTypography.caption.copy(fontWeight = FontWeight.Medium),
+                    color = VColors.ink,
                 )
             }
-            // Overflow menu (quick actions).
-            Box {
-                Box(
-                    Modifier.size(34.dp).clip(RoundedCornerShape(10.dp))
-                        .background(VColors.ink.copy(alpha = 0.06f))
-                        .clickable(enabled = !removing) { menuOpen = true },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(VIcons.More, contentDescription = "Actions", tint = VColors.ink2, modifier = Modifier.size(18.dp))
-                }
-                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                    DropdownMenuItem(
-                        text = { Text(appString(StringKeys.SCH_VIEW_PROFILE)) },
-                        onClick = { menuOpen = false; onOpen() },
-                        leadingIcon = { Icon(VIcons.User, contentDescription = null, modifier = Modifier.size(18.dp)) },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(appString(StringKeys.COMMON_BUTTON_EDIT)) },
-                        onClick = { menuOpen = false; onOpen() },
-                        leadingIcon = { Icon(VIcons.Settings, contentDescription = null, modifier = Modifier.size(18.dp)) },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(appString(StringKeys.SCH_CONTACT_PARENT)) },
-                        onClick = { menuOpen = false; onOpen() },
-                        leadingIcon = { Icon(VIcons.Phone, contentDescription = null, modifier = Modifier.size(18.dp)) },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(appString(StringKeys.SCH_REMOVE), style = VTypography.body.copy(color = VColors.error)) },
-                        onClick = { menuOpen = false; onRemove() },
-                        leadingIcon = { Icon(VIcons.Close, contentDescription = null, modifier = Modifier.size(18.dp)) },
-                    )
-                }
-            }
-        }
 
-        // Status badges.
-        Spacer(Modifier.height(10.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            VBadge(
-                text = if (student.status.equals("active", ignoreCase = true)) appString(StringKeys.SCH_ACTIVE) else appString(StringKeys.SCH_INACTIVE),
-                tone = if (student.status.equals("active", ignoreCase = true)) VBadgeTone.Success else VBadgeTone.Neutral,
-            )
-            if (student.isNewAdmission) {
-                VBadge(text = appString(StringKeys.SCH_NEW_ADMISSION), tone = VBadgeTone.Arctic)
+            // Attendance + Homework bars
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                StudentProgressLabel(
+                    label = "ATTENDANCE",
+                    value = student.attendancePercent,
+                    valueText = "${student.attendancePercent.toInt()}%",
+                    tone = if (lowAttendance) VBadgeTone.Warning else VBadgeTone.Success,
+                    modifier = Modifier.weight(1f),
+                )
+                StudentProgressLabel(
+                    label = "HOMEWORK",
+                    value = student.homeworkPercent,
+                    valueText = "${student.homeworkPercent.toInt()}%",
+                    tone = if (homeworkLow) VBadgeTone.Warning else VBadgeTone.Success,
+                    modifier = Modifier.weight(1f),
+                )
             }
-            if (lowAttendance) {
-                VBadge(text = appString(StringKeys.SCH_LOW_ATTENDANCE), tone = VBadgeTone.Warning)
-            }
-        }
 
-        // Metric strip.
-        Spacer(Modifier.height(12.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            MetricChip(
-                icon = VIcons.Check,
-                value = if (student.attendancePercent > 0f) "${student.attendancePercent.toInt()}%" else "—",
-                label = appString(StringKeys.SCH_ATTENDANCE),
-                modifier = Modifier.weight(1f),
-            )
-            MetricChip(
-                icon = VIcons.Heart,
-                value = student.parentCount.toString(),
-                label = appString(StringKeys.SCH_PARENTS),
-                modifier = Modifier.weight(1f),
-            )
-            MetricChip(
-                icon = VIcons.Users,
-                value = student.teacherCount.toString(),
-                label = appString(StringKeys.SCH_TEACHERS),
-                modifier = Modifier.weight(1f),
-            )
+            // Metric strip: parents + teachers
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                MetricChip(
+                    icon = VIcons.Heart,
+                    value = student.parentCount.toString(),
+                    label = appString(StringKeys.SCH_PARENTS),
+                    modifier = Modifier.weight(1f),
+                )
+                MetricChip(
+                    icon = VIcons.Users,
+                    value = student.teacherCount.toString(),
+                    label = appString(StringKeys.SCH_TEACHERS),
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
     }
 }
 
 @Composable
+private fun StudentProgressLabel(
+    label: String,
+    value: Float,
+    valueText: String,
+    tone: VBadgeTone,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Text(label, style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold), color = VColors.ink3)
+            Text(valueText, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+        }
+        VProgressBar(value = value, tone = tone, height = 6.dp)
+    }
+}
+
+@Composable
 private fun MetricChip(icon: ImageVector, value: String, label: String, modifier: Modifier = Modifier) {
-        Column(
+    Column(
         modifier = modifier.clip(RoundedCornerShape(12.dp)).background(VColors.cream).padding(vertical = 10.dp, horizontal = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(3.dp),
@@ -292,15 +368,20 @@ private fun MetricChip(icon: ImageVector, value: String, label: String, modifier
     }
 }
 
+private fun maskStudentPhone(phone: String): String {
+    val digits = phone.filter { it.isDigit() }
+    return if (digits.length > 4) "+${digits.take(digits.length - 4)}XXXX${digits.takeLast(2)}" else phone
+}
+
 /** RA-45: add-student form. Class + roll + name required; section defaults A. */
 @Composable
-private fun AddStudentDialog(
+private fun AddStudentSheet(
     isSubmitting: Boolean,
     error: String?,
     onDismiss: () -> Unit,
     onSubmit: (name: String, className: String, section: String, rollNumber: String, parentPhone: String) -> Unit,
 ) {
-        var name by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
     var className by remember { mutableStateOf("") }
     var section by remember { mutableStateOf("") }
     var roll by remember { mutableStateOf("") }
@@ -313,46 +394,50 @@ private fun AddStudentDialog(
     val canSubmit = name.isNotBlank() && className.isNotBlank() &&
         roll.isNotBlank() && phoneOk && !isSubmitting
 
-    Dialog(onDismissRequest = onDismiss) {
-        VCard(modifier = Modifier.fillMaxWidth()) {
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(appString(StringKeys.SCH_ADD_STUDENT), style = VTypography.h3.copy(color = VColors.ink))
-                VInput(name, { name = it }, label = appString(StringKeys.SCH_FULL_NAME), placeholder = appString(StringKeys.SCH_FULL_NAME_PH), leadingIcon = VIcons.User)
-                VInput(className, { className = it }, label = appString(StringKeys.SCH_CLASS), placeholder = appString(StringKeys.SCH_CLASS_PH))
-                VInput(section, { section = it }, label = appString(StringKeys.SCH_SECTION), placeholder = "A")
-                VInput(roll, { roll = it }, label = appString(StringKeys.SCH_ROLL_NUMBER), placeholder = appString(StringKeys.SCH_ROLL_NUMBER_PH), keyboardType = KeyboardType.Number)
-                // ISSUE 2b: parent phone is optional but used by parent-link phone-match.
-                VInput(
-                    parentPhone,
-                    // keep digits + a leading + and common separators while typing
-                    { input -> parentPhone = input.filter { it.isDigit() || it == '+' || it == ' ' || it == '-' } },
-                    label = appString(StringKeys.SCH_PARENT_PHONE_OPTIONAL),
-                    placeholder = appString(StringKeys.SCH_PARENT_PHONE_PH),
-                    keyboardType = KeyboardType.Phone,
-                )
-                if (parentPhone.isNotBlank() && !phoneOk) {
-                    Text(appString(StringKeys.SCH_PHONE_MIN_DIGITS), style = VTypography.label.copy(color = VColors.error))
-                }
-                if (error != null) {
-                    Text(error, style = VTypography.body.copy(color = VColors.error))
-                }
-                Spacer(Modifier.height(2.dp))
-                VButton(
-                    text = appString(StringKeys.SCH_ADD_STUDENT),
-                    onClick = { onSubmit(name, className, section, roll, parentPhone) },
-                    variant = VButtonVariant.Primary,
-                    full = true,
-                    enabled = canSubmit,
-                    loading = isSubmitting,
-                )
-                VButton(
-                    text = appString(StringKeys.COMMON_BUTTON_CLOSE),
-                    onClick = onDismiss,
-                    variant = VButtonVariant.Ghost,
-                    full = true,
-                    enabled = !isSubmitting,
-                )
+    VBottomSheet(
+        visible = true,
+        onDismiss = onDismiss,
+    ) {
+        VBottomSheetHeader(title = appString(StringKeys.SCH_ADD_STUDENT))
+        Column(
+            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            VInput(name, { name = it }, label = appString(StringKeys.SCH_FULL_NAME), placeholder = appString(StringKeys.SCH_FULL_NAME_PH), leadingIcon = VIcons.User)
+            VInput(className, { className = it }, label = appString(StringKeys.SCH_CLASS), placeholder = appString(StringKeys.SCH_CLASS_PH))
+            VInput(section, { section = it }, label = appString(StringKeys.SCH_SECTION), placeholder = "A")
+            VInput(roll, { roll = it }, label = appString(StringKeys.SCH_ROLL_NUMBER), placeholder = appString(StringKeys.SCH_ROLL_NUMBER_PH), keyboardType = KeyboardType.Number)
+            // ISSUE 2b: parent phone is optional but used by parent-link phone-match.
+            VInput(
+                parentPhone,
+                // keep digits + a leading + and common separators while typing
+                { input -> parentPhone = input.filter { it.isDigit() || it == '+' || it == ' ' || it == '-' } },
+                label = appString(StringKeys.SCH_PARENT_PHONE_OPTIONAL),
+                placeholder = appString(StringKeys.SCH_PARENT_PHONE_PH),
+                keyboardType = KeyboardType.Phone,
+            )
+            if (parentPhone.isNotBlank() && !phoneOk) {
+                Text(appString(StringKeys.SCH_PHONE_MIN_DIGITS), style = VTypography.label.copy(color = VColors.error))
             }
+            if (error != null) {
+                Text(error, style = VTypography.body.copy(color = VColors.error))
+            }
+            Spacer(Modifier.height(2.dp))
+            VButton(
+                text = appString(StringKeys.SCH_ADD_STUDENT),
+                onClick = { onSubmit(name, className, section, roll, parentPhone) },
+                variant = VButtonVariant.Primary,
+                full = true,
+                enabled = canSubmit,
+                loading = isSubmitting,
+            )
+            VButton(
+                text = appString(StringKeys.COMMON_BUTTON_CLOSE),
+                onClick = onDismiss,
+                variant = VButtonVariant.Ghost,
+                full = true,
+                enabled = !isSubmitting,
+            )
         }
     }
 }

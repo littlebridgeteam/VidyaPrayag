@@ -143,7 +143,7 @@ private fun ScopeSearchField(value: String, onChange: (String) -> Unit) {
 @Composable
 private fun ScopeRow(cls: TeacherClassSummaryDto, onPick: (TeacherClassSummaryDto) -> Unit) {
     val c = VtC
-    val accent = teacherSubjectColor(c, cls.subject.ifBlank { cls.className })
+    val accent = vtSubjectColor(cls.subject.ifBlank { cls.className })
     val ix = remember { MutableInteractionSource() }
     Row(
         Modifier

@@ -1669,9 +1669,49 @@ object NonTeachingStaffTable : UUIDTable("non_teaching_staff", "id") {
     val phone       = varchar("phone", 32).nullable()
     val email       = text("email").nullable()
     val photoUrl    = text("photo_url").nullable()
+    val employeeId  = varchar("employee_id", 32).nullable()     // e.g. "EMP-001"
+    val shiftId     = uuid("shift_id").nullable()               // FK staff_shifts.id
     val isActive    = bool("is_active").default(true)           // soft-delete flag
     val createdAt   = timestamp("created_at")
     val updatedAt   = timestamp("updated_at")
+}
+
+// =====================================================================
+// staff_shifts  (People Tab enrichment — shift definitions per staff member)
+// =====================================================================
+object StaffShiftsTable : UUIDTable("staff_shifts", "id") {
+    val schoolId    = uuid("school_id")                         // FK schools.id — tenant scope
+    val staffId     = uuid("staff_id")                          // FK non_teaching_staff.id
+    val shiftName   = varchar("shift_name", 64)                 // e.g. "Morning", "Full Day"
+    val startTime   = varchar("start_time", 8)                  // e.g. "09:00"
+    val endTime     = varchar("end_time", 8)                    // e.g. "17:00"
+    val isActive    = bool("is_active").default(true)
+    val createdAt   = timestamp("created_at")
+    val updatedAt   = timestamp("updated_at")
+}
+
+// =====================================================================
+// staff_check_ins  (People Tab enrichment — daily check-in/check-out tracking)
+// =====================================================================
+object StaffCheckInsTable : UUIDTable("staff_check_ins", "id") {
+    val schoolId    = uuid("school_id")                         // FK schools.id — tenant scope
+    val staffId     = uuid("staff_id")                          // FK non_teaching_staff.id
+    val checkInAt   = timestamp("check_in_at")
+    val checkOutAt  = timestamp("check_out_at").nullable()
+    val date        = date("date")                              // for quick daily lookup
+    val createdAt   = timestamp("created_at")
+}
+
+// =====================================================================
+// teacher_ratings  (People Tab enrichment — teacher rating for card display)
+// =====================================================================
+object TeacherRatingsTable : UUIDTable("teacher_ratings", "id") {
+    val schoolId    = uuid("school_id")                         // FK schools.id — tenant scope
+    val teacherId   = uuid("teacher_id")                        // FK app_users.id (role=teacher)
+    val rating      = integer("rating")                         // 1-5
+    val ratedBy     = uuid("rated_by").nullable()               // FK app_users.id (optional)
+    val feedback    = text("feedback").nullable()
+    val createdAt   = timestamp("created_at")
 }
 
 // =====================================================================

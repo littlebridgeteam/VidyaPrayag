@@ -17,6 +17,7 @@ import com.littlebridge.enrollplus.core.model.ApiResponse
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.core.network.safeApiCall
 import com.littlebridge.enrollplus.feature.admin.domain.model.LinkDecisionResult
+import com.littlebridge.enrollplus.feature.admin.domain.model.LinkRequestCountDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.LinkRequestsResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
@@ -42,6 +43,12 @@ class LinkRequestsApi(
         client.get(getUrl("api/v1/school/link-requests")) {
             parameter("status", status)
         }
+    }
+
+    suspend fun getLinkRequestCount(
+        token: String,
+    ): NetworkResult<ApiResponse<LinkRequestCountDto>> = safeApiCall {
+        client.get(getUrl("api/v1/school/link-requests/count"))
     }
 
     suspend fun approve(

@@ -579,7 +579,7 @@ val viewModelModule = module {
     factory { com.littlebridge.enrollplus.feature.admin.presentation.OnboardingGateViewModel(get(), get()) }
     factory { InstitutionalProfileViewModel(get(), get(), get()) }
     factory { com.littlebridge.enrollplus.feature.admin.presentation.SchoolProfileViewModel(get(), get()) } // RA-47
-    factory { com.littlebridge.enrollplus.feature.admin.presentation.StudentRosterViewModel(get(), get()) } // RA-45
+    factory { com.littlebridge.enrollplus.feature.admin.presentation.StudentRosterViewModel(get(), get(), get()) } // RA-45 + link count
     factory { com.littlebridge.enrollplus.feature.admin.presentation.StaffViewModel(get(), get()) } // RA-S17
     factory { com.littlebridge.enrollplus.feature.admin.presentation.StudentProfileViewModel(get(), get()) } // RA-45
     factory { com.littlebridge.enrollplus.feature.admin.presentation.TeacherProfileViewModel(get(), get(), get()) } // RA-45 (+RA-S17 delete-in-profile)

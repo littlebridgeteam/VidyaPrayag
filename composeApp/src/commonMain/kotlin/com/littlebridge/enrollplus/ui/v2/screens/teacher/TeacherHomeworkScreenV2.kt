@@ -245,7 +245,7 @@ private fun HomeworkBoardMode(viewModel: TeacherHomeworkViewModel) {
 
     if (state.isExtensionOpen) ExtensionSheet(viewModel)
     if (closeConfirm) {
-        TeacherConfirmDialog(
+        TeacherConfirmSheet(
             title = appString(StringKeys.TC_CLOSE_HOMEWORK_Q),
             body = appString(StringKeys.TC_CLOSE_HOMEWORK_DESC),
             confirmLabel = appString(StringKeys.TC_CLOSE_IT),

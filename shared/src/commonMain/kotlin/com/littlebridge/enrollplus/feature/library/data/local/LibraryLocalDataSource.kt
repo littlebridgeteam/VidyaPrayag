@@ -55,5 +55,5 @@ data class LibraryPendingAction(
     val bookId: String? = null,
     val issueId: String? = null,
     val payloadJson: String? = null,
-    val createdAt: Long = System.currentTimeMillis(),
+    val createdAt: Long = 0L,
 )

@@ -617,8 +617,6 @@ fun SchoolPortalV2(
                         // RA-TAM — Teacher Listing entry point into the reusable module.
                         onAssignClasses = { id -> selectedTeacherId = id; overlay = SchoolOverlay.TeacherAssignments },
                         onOpenStaff = { id -> selectedStaffId = id; overlay = SchoolOverlay.Staff },
-                        // Alumni Management — opens the alumni directory overlay.
-                        onOpenAlumni = { overlay = SchoolOverlay.Alumni },
                         // Mark students as alumni (graduation bulk action)
                         onGraduateStudents = { studentIds, year ->
                             graduateStudents(studentIds, year)
@@ -658,6 +656,10 @@ fun SchoolPortalV2(
                         onOpenLibrary = { overlay = SchoolOverlay.Library },
                         // Classes & Subjects — consolidated management (classes, subjects, bell schedule, timetable).
                         onOpenClassesSubjects = { overlay = SchoolOverlay.ClassesSubjects },
+                        // Alumni Management — directory, campaigns & graduation records.
+                        onOpenAlumni = { overlay = SchoolOverlay.Alumni },
+                        // Cohort Analytics — at-risk students, subject engagement & grade comparisons.
+                        onOpenCohort = { overlay = SchoolOverlay.AnalyticsDashboard },
                     )
                 }
             }

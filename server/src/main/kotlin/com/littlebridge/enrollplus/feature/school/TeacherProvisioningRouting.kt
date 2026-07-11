@@ -32,9 +32,12 @@ import com.littlebridge.enrollplus.db.AttendanceRecordsTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.DeviceTokensTable
 import com.littlebridge.enrollplus.db.FacultyTable
+import com.littlebridge.enrollplus.db.LeaveRequestsTable
 import com.littlebridge.enrollplus.db.NotificationsTable
 import com.littlebridge.enrollplus.db.StudentsTable
+import com.littlebridge.enrollplus.db.TeacherRatingsTable
 import com.littlebridge.enrollplus.db.TeacherSubjectAssignmentsTable
+import com.littlebridge.enrollplus.db.TeacherPeriodsTable
 import com.littlebridge.enrollplus.db.UserSessionsTable
 import com.littlebridge.enrollplus.feature.auth.hashPassword
 import com.littlebridge.enrollplus.feature.auth.normaliseIdentifier
@@ -44,6 +47,7 @@ import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
@@ -89,7 +93,11 @@ data class TeacherCardProfileDto(
     val name: String,
     val avatarUrl: String? = null,
     val role: String,
-    val status: String                                    // ACTIVE | INACTIVE
+    val status: String,                                   // ACTIVE | INACTIVE
+    // People Tab enrichment — new fields for enriched teacher card.
+    @SerialName("is_class_teacher") val isClassTeacher: Boolean = false,
+    val experience: String? = null,                       // e.g. "12 yrs"
+    val rating: Float? = null                             // average from teacher_ratings, null when no ratings
 )
 
 @Serializable
@@ -101,7 +109,10 @@ data class TeacherCardAcademicAssignmentDto(
 @Serializable
 data class TeacherCardWorkloadDto(
     val totalClasses: Int = 0,
-    val totalStudents: Int = 0
+    val totalStudents: Int = 0,
+    // People Tab enrichment — new fields.
+    @SerialName("workload_percent") val workloadPercent: Int = 0,  // 0-100
+    val schedule: String = ""                              // e.g. "3 classes today"
 )
 
 @Serializable
@@ -124,7 +135,9 @@ data class TeacherCardDto(
     val academicAssignment: TeacherCardAcademicAssignmentDto,
     val workload: TeacherCardWorkloadDto,
     val activity: TeacherCardActivityDto,
-    val actions: TeacherCardActionsDto
+    val actions: TeacherCardActionsDto,
+    // People Tab enrichment — teacher availability status.
+    val availability: String = "break"                    // "teaching"|"break"|"meeting"|"leave"
 )
 
 @Serializable
@@ -313,7 +326,7 @@ fun Route.teacherProvisioningRouting() {
 
                 val page = (call.request.queryParameters["page"]?.toIntOrNull() ?: 1)
                     .coerceAtLeast(1)
-                val pageSize = (call.request.queryParameters["pageSize"]?.toIntOrNull() ?: 20)
+                val pageSize = (call.request.queryParameters["pageSize"]?.toIntOrNull() ?: 10)
                     .coerceIn(1, 100)
                 val offset = (page - 1).toLong() * pageSize
 
@@ -434,6 +447,63 @@ fun Route.teacherProvisioningRouting() {
                             }
                             .eachCount()
 
+                    // People Tab enrichment: batched queries for new fields.
+                    // (6) Teacher ratings — average per teacher.
+                    val ratingsPredicate = teacherIds
+                        .map { tid -> TeacherRatingsTable.teacherId eq tid }
+                        .reduce { acc, next -> acc or next }
+                    val ratingsByTeacher: Map<UUID, Float> = if (teacherIds.isNotEmpty()) {
+                        TeacherRatingsTable.selectAll()
+                            .where {
+                                (TeacherRatingsTable.schoolId eq ctx.schoolId) and ratingsPredicate
+                            }
+                            .toList()
+                            .groupBy { it[TeacherRatingsTable.teacherId] }
+                            .mapValues { (_, rows) ->
+                                rows.map { it[TeacherRatingsTable.rating] }.average().toFloat()
+                            }
+                    } else emptyMap()
+
+                    // (7) Today's timetable periods per teacher — for schedule + availability.
+                    val today = LocalDate.now()
+                    val todayDayOfWeek = today.dayOfWeek.value  // 1=Monday..7=Sunday
+                    val periodsPredicate = teacherIds
+                        .map { tid -> TeacherPeriodsTable.teacherId eq tid }
+                        .reduce { acc, next -> acc or next }
+                    val periodsByTeacher: Map<UUID, List<ResultRow>> = if (teacherIds.isNotEmpty()) {
+                        TeacherPeriodsTable.selectAll()
+                            .where {
+                                (TeacherPeriodsTable.schoolId eq ctx.schoolId) and
+                                    (TeacherPeriodsTable.weekday eq todayDayOfWeek) and
+                                    periodsPredicate
+                            }
+                            .toList()
+                            .groupBy { it[TeacherPeriodsTable.teacherId] }
+                    } else emptyMap()
+
+                    // (8) Leave requests for today — check if teacher is on leave.
+                    val leavePredicate = teacherIds
+                        .map { tid -> LeaveRequestsTable.requesterId eq tid }
+                        .reduce { acc, next -> acc or next }
+                    val teachersOnLeave: Set<UUID> = if (teacherIds.isNotEmpty()) {
+                        LeaveRequestsTable.selectAll()
+                            .where {
+                                (LeaveRequestsTable.schoolId eq ctx.schoolId) and
+                                    (LeaveRequestsTable.requesterRole eq "teacher") and
+                                    (LeaveRequestsTable.status eq "Approved") and
+                                    leavePredicate
+                            }
+                            .toList()
+                            .filter { row ->
+                                val dateFrom = runCatching { LocalDate.parse(row[LeaveRequestsTable.dateFrom]) }.getOrNull()
+                                val dateTo = runCatching { LocalDate.parse(row[LeaveRequestsTable.dateTo]) }.getOrNull()
+                                dateFrom != null && dateTo != null &&
+                                    !today.isBefore(dateFrom) && !today.isAfter(dateTo)
+                            }
+                            .mapNotNull { it[LeaveRequestsTable.requesterId] }
+                            .toSet()
+                    } else emptySet()
+
                     val cards = teacherRows.map { row ->
                         val teacherId = row[AppUsersTable.id].value
                         val assignments = assignmentsByTeacher[teacherId].orEmpty()
@@ -480,13 +550,55 @@ fun Route.teacherProvisioningRouting() {
                             else -> "Teacher"
                         }
 
+                        // People Tab enrichment: isClassTeacher from assignments.
+                        val isClassTeacher = assignments.any { it[TeacherSubjectAssignmentsTable.isClassTeacher] }
+
+                        // People Tab enrichment: experience from app_users.createdAt.
+                        val experienceYears = runCatching {
+                            java.time.Duration.between(row[AppUsersTable.createdAt], Instant.now()).toDays() / 365
+                        }.getOrDefault(0L).toInt().coerceAtLeast(0)
+                        val experienceLabel = if (experienceYears > 0) "$experienceYears yrs" else null
+
+                        // People Tab enrichment: rating from teacher_ratings.
+                        val rating = ratingsByTeacher[teacherId]
+
+                        // People Tab enrichment: workload percent (max 10 classes = 100%).
+                        val workloadPercent = (totalClasses * 10).coerceAtMost(100)
+
+                        // People Tab enrichment: schedule from today's periods.
+                        val todayPeriods = periodsByTeacher[teacherId].orEmpty()
+                        val scheduleLabel = if (todayPeriods.isNotEmpty()) {
+                            "${todayPeriods.size} class${if (todayPeriods.size > 1) "es" else ""} today"
+                        } else {
+                            "No classes today"
+                        }
+
+                        // People Tab enrichment: availability derivation.
+                        val availability = when {
+                            teacherId in teachersOnLeave -> "leave"
+                            todayPeriods.isNotEmpty() -> {
+                                // Check if currently within a period time range.
+                                val now = java.time.LocalTime.now()
+                                val currentlyTeaching = todayPeriods.any { p ->
+                                    val start = p[TeacherPeriodsTable.startTime]
+                                    val end = p[TeacherPeriodsTable.endTime]
+                                    !now.isBefore(start) && now.isBefore(end)
+                                }
+                                if (currentlyTeaching) "teaching" else "break"
+                            }
+                            else -> "break"
+                        }
+
                         TeacherCardDto(
                             id = teacherId.toString(),
                             profile = TeacherCardProfileDto(
                                 name = row[AppUsersTable.fullName],
                                 avatarUrl = row[AppUsersTable.profilePicUrl],
                                 role = roleLabel,
-                                status = if (isActive) "ACTIVE" else "INACTIVE"
+                                status = if (isActive) "ACTIVE" else "INACTIVE",
+                                isClassTeacher = isClassTeacher,
+                                experience = experienceLabel,
+                                rating = rating
                             ),
                             academicAssignment = TeacherCardAcademicAssignmentDto(
                                 grades = grades,
@@ -494,7 +606,9 @@ fun Route.teacherProvisioningRouting() {
                             ),
                             workload = TeacherCardWorkloadDto(
                                 totalClasses = totalClasses,
-                                totalStudents = totalStudents
+                                totalStudents = totalStudents,
+                                workloadPercent = workloadPercent,
+                                schedule = scheduleLabel
                             ),
                             activity = TeacherCardActivityDto(
                                 attendancePercentage = attendancePercentage,
@@ -502,12 +616,10 @@ fun Route.teacherProvisioningRouting() {
                             ),
                             actions = TeacherCardActionsDto(
                                 canViewProfile = true,
-                                // Only privileged school admins may assign classes
-                                // or deactivate; the UI hides these for everyone
-                                // else (and never hardcodes them).
                                 canAssignClass = isAdmin && isActive,
                                 canDeactivate = isAdmin && isActive
-                            )
+                            ),
+                            availability = availability
                         )
                     }
 

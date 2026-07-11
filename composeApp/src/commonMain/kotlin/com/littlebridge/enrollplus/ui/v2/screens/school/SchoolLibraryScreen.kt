@@ -21,11 +21,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -45,11 +43,14 @@ import com.littlebridge.enrollplus.feature.library.presentation.SchoolLibrarySta
 import com.littlebridge.enrollplus.feature.library.presentation.SchoolLibraryViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
+import com.littlebridge.enrollplus.ui.v2.components.VBottomSheet
+import com.littlebridge.enrollplus.ui.v2.components.VBottomSheetHeader
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
+import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VEmptyState
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.components.VLabel
@@ -63,6 +64,7 @@ import com.littlebridge.enrollplus.ui.v2.screens.library.BookCardSkeleton
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.util.formatDecimal
 import org.koin.compose.viewmodel.koinViewModel
 
 private enum class LibraryTab(val label: String) {
@@ -276,13 +278,13 @@ private fun DashboardTab(state: SchoolLibraryState, viewModel: SchoolLibraryView
                 Text("Outstanding Fines", style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
                 Text("${d?.outstandingFinesCount ?: 0} pending", style = VTypography.caption.copy(color = VColors.ink2))
                 Text(
-                    "₹${"%.2f".format(d?.outstandingFinesAmount ?: 0.0)}",
+                    "₹${formatDecimal(d?.outstandingFinesAmount ?: 0.0)}",
                     style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.error).copy(fontSize = 24.sp, fontWeight = FontWeight.SemiBold),
                 )
                 Spacer(Modifier.height(4.dp))
                 Text("Collected this month", style = VTypography.caption.copy(color = VColors.ink2))
                 Text(
-                    "₹${"%.2f".format(d?.finesCollectedThisMonth ?: 0.0)}",
+                    "₹${formatDecimal(d?.finesCollectedThisMonth ?: 0.0)}",
                     style = VTypography.bodySmall.copy(color = VColors.success).copy(fontWeight = FontWeight.SemiBold),
                 )
             }
@@ -493,7 +495,7 @@ private fun BooksTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewMode
 
     // Add Book Dialog
     if (showAddBook) {
-        AddBookDialog(
+        AddBookSheet(
             categories = state.categories,
             onDismiss = { showAddBook = false },
             onCreate = { req ->
@@ -505,7 +507,7 @@ private fun BooksTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewMode
 
     // Issue Book Dialog
     if (showIssueBook != null) {
-        IssueBookDialog(
+        IssueBookSheet(
             bookId = showIssueBook!!,
             onDismiss = { showIssueBook = null },
             onIssue = { req ->
@@ -517,29 +519,38 @@ private fun BooksTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewMode
 
     // Cover Upload Dialog
     if (showCoverUpload != null) {
-        AlertDialog(
-            onDismissRequest = { showCoverUpload = null },
-            title = { Text("Set Cover URL") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    VInput(value = coverUrl, onValueChange = { coverUrl = it }, label = "Cover image URL", modifier = Modifier.fillMaxWidth())
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    if (coverUrl.isNotBlank()) {
-                        viewModel.uploadCover(showCoverUpload!!, coverUrl)
-                    }
-                    showCoverUpload = null
-                }) { Text("Save") }
-            },
-            dismissButton = { TextButton(onClick = { showCoverUpload = null }) { Text("Cancel") } },
-        )
+        VBottomSheet(
+            visible = true,
+            onDismiss = { showCoverUpload = null },
+        ) {
+            VBottomSheetHeader(title = "Set Cover URL")
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                VInput(value = coverUrl, onValueChange = { coverUrl = it }, label = "Cover image URL", modifier = Modifier.fillMaxWidth())
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                VButton(
+                    text = "Cancel",
+                    onClick = { showCoverUpload = null },
+                    modifier = Modifier.weight(1f),
+                    variant = VButtonVariant.Ghost,
+                )
+                VButton(
+                    text = "Save",
+                    onClick = {
+                        if (coverUrl.isNotBlank()) {
+                            viewModel.uploadCover(showCoverUpload!!, coverUrl)
+                        }
+                        showCoverUpload = null
+                    },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
     }
 }
 
 @Composable
-private fun AddBookDialog(
+private fun AddBookSheet(
     categories: List<LibraryCategoryDto>,
     onDismiss: () -> Unit,
     onCreate: (CreateBookRequest) -> Unit,
@@ -555,63 +566,72 @@ private fun AddBookDialog(
     var language by remember { mutableStateOf("en") }
     var synopsis by remember { mutableStateOf("") }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Add New Book") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                VInput(value = title, onValueChange = { title = it }, label = "Title *", modifier = Modifier.fillMaxWidth())
-                VInput(value = author, onValueChange = { author = it }, label = "Author", modifier = Modifier.fillMaxWidth())
-                VInput(value = isbn, onValueChange = { isbn = it }, label = "ISBN", modifier = Modifier.fillMaxWidth())
-                VInput(value = publisher, onValueChange = { publisher = it }, label = "Publisher", modifier = Modifier.fillMaxWidth())
-                VInput(value = totalCopies, onValueChange = { totalCopies = it }, label = "Total Copies", modifier = Modifier.fillMaxWidth())
-                VInput(value = shelfLocation, onValueChange = { shelfLocation = it }, label = "Shelf Location", modifier = Modifier.fillMaxWidth())
-                VInput(value = replacementCost, onValueChange = { replacementCost = it }, label = "Replacement Cost (₹)", modifier = Modifier.fillMaxWidth())
-                VInput(value = language, onValueChange = { language = it }, label = "Language", modifier = Modifier.fillMaxWidth())
-                VInput(value = synopsis, onValueChange = { synopsis = it }, label = "Synopsis", modifier = Modifier.fillMaxWidth())
-                Text("Category", style = VTypography.caption.copy(color = VColors.ink2))
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+    VBottomSheet(
+        visible = true,
+        onDismiss = onDismiss,
+    ) {
+        VBottomSheetHeader(title = "Add New Book")
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            VInput(value = title, onValueChange = { title = it }, label = "Title *", modifier = Modifier.fillMaxWidth())
+            VInput(value = author, onValueChange = { author = it }, label = "Author", modifier = Modifier.fillMaxWidth())
+            VInput(value = isbn, onValueChange = { isbn = it }, label = "ISBN", modifier = Modifier.fillMaxWidth())
+            VInput(value = publisher, onValueChange = { publisher = it }, label = "Publisher", modifier = Modifier.fillMaxWidth())
+            VInput(value = totalCopies, onValueChange = { totalCopies = it }, label = "Total Copies", modifier = Modifier.fillMaxWidth())
+            VInput(value = shelfLocation, onValueChange = { shelfLocation = it }, label = "Shelf Location", modifier = Modifier.fillMaxWidth())
+            VInput(value = replacementCost, onValueChange = { replacementCost = it }, label = "Replacement Cost (₹)", modifier = Modifier.fillMaxWidth())
+            VInput(value = language, onValueChange = { language = it }, label = "Language", modifier = Modifier.fillMaxWidth())
+            VInput(value = synopsis, onValueChange = { synopsis = it }, label = "Synopsis", modifier = Modifier.fillMaxWidth())
+            Text("Category", style = VTypography.caption.copy(color = VColors.ink2))
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                VBadge(
+                    text = "None",
+                    tone = if (category == null) VBadgeTone.Accent else VBadgeTone.Neutral,
+                    modifier = Modifier.clickable { category = null },
+                )
+                categories.forEach { cat ->
                     VBadge(
-                        text = "None",
-                        tone = if (category == null) VBadgeTone.Accent else VBadgeTone.Neutral,
-                        modifier = Modifier.clickable { category = null },
+                        text = cat.name,
+                        tone = if (category == cat.name) VBadgeTone.Accent else VBadgeTone.Neutral,
+                        modifier = Modifier.clickable { category = cat.name },
                     )
-                    categories.forEach { cat ->
-                        VBadge(
-                            text = cat.name,
-                            tone = if (category == cat.name) VBadgeTone.Accent else VBadgeTone.Neutral,
-                            modifier = Modifier.clickable { category = cat.name },
-                        )
-                    }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = {
-                if (title.isNotBlank()) {
-                    onCreate(
-                        CreateBookRequest(
-                            title = title,
-                            author = author.ifBlank { null },
-                            isbn = isbn.ifBlank { null },
-                            publisher = publisher.ifBlank { null },
-                            category = category,
-                            totalCopies = totalCopies.toIntOrNull() ?: 1,
-                            shelfLocation = shelfLocation.ifBlank { null },
-                            replacementCost = replacementCost.toDoubleOrNull(),
-                            language = language.ifBlank { "en" },
-                            synopsis = synopsis.ifBlank { null },
-                        ),
-                    )
-                }
-            }) { Text("Create") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
-    )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            VButton(
+                text = "Cancel",
+                onClick = onDismiss,
+                modifier = Modifier.weight(1f),
+                variant = VButtonVariant.Ghost,
+            )
+            VButton(
+                text = "Create",
+                onClick = {
+                    if (title.isNotBlank()) {
+                        onCreate(
+                            CreateBookRequest(
+                                title = title,
+                                author = author.ifBlank { null },
+                                isbn = isbn.ifBlank { null },
+                                publisher = publisher.ifBlank { null },
+                                category = category,
+                                totalCopies = totalCopies.toIntOrNull() ?: 1,
+                                shelfLocation = shelfLocation.ifBlank { null },
+                                replacementCost = replacementCost.toDoubleOrNull(),
+                                language = language.ifBlank { "en" },
+                                synopsis = synopsis.ifBlank { null },
+                            ),
+                        )
+                    }
+                },
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
 }
 
 @Composable
-private fun IssueBookDialog(
+private fun IssueBookSheet(
     bookId: String,
     onDismiss: () -> Unit,
     onIssue: (IssueBookRequest) -> Unit,
@@ -621,43 +641,52 @@ private fun IssueBookDialog(
     var borrowerType by remember { mutableStateOf("student") }
     var copyId by remember { mutableStateOf("") }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Issue Book") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                VInput(value = borrowerId, onValueChange = { borrowerId = it }, label = "Borrower ID *", modifier = Modifier.fillMaxWidth())
-                VInput(value = borrowerName, onValueChange = { borrowerName = it }, label = "Borrower Name *", modifier = Modifier.fillMaxWidth())
-                VInput(value = copyId, onValueChange = { copyId = it }, label = "Copy ID (optional)", modifier = Modifier.fillMaxWidth())
-                Text("Borrower Type", style = VTypography.caption.copy(color = VColors.ink2))
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    listOf("student" to "Student", "teacher" to "Teacher").forEach { (key, label) ->
-                        VBadge(
-                            text = label,
-                            tone = if (borrowerType == key) VBadgeTone.Accent else VBadgeTone.Neutral,
-                            modifier = Modifier.clickable { borrowerType = key },
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = {
-                if (borrowerId.isNotBlank() && borrowerName.isNotBlank()) {
-                    onIssue(
-                        IssueBookRequest(
-                            bookId = bookId,
-                            copyId = copyId.ifBlank { null },
-                            borrowerId = borrowerId,
-                            borrowerType = borrowerType,
-                            borrowerName = borrowerName,
-                        ),
+    VBottomSheet(
+        visible = true,
+        onDismiss = onDismiss,
+    ) {
+        VBottomSheetHeader(title = "Issue Book")
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            VInput(value = borrowerId, onValueChange = { borrowerId = it }, label = "Borrower ID *", modifier = Modifier.fillMaxWidth())
+            VInput(value = borrowerName, onValueChange = { borrowerName = it }, label = "Borrower Name *", modifier = Modifier.fillMaxWidth())
+            VInput(value = copyId, onValueChange = { copyId = it }, label = "Copy ID (optional)", modifier = Modifier.fillMaxWidth())
+            Text("Borrower Type", style = VTypography.caption.copy(color = VColors.ink2))
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                listOf("student" to "Student", "teacher" to "Teacher").forEach { (key, label) ->
+                    VBadge(
+                        text = label,
+                        tone = if (borrowerType == key) VBadgeTone.Accent else VBadgeTone.Neutral,
+                        modifier = Modifier.clickable { borrowerType = key },
                     )
                 }
-            }) { Text("Issue") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
-    )
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            VButton(
+                text = "Cancel",
+                onClick = onDismiss,
+                modifier = Modifier.weight(1f),
+                variant = VButtonVariant.Ghost,
+            )
+            VButton(
+                text = "Issue",
+                onClick = {
+                    if (borrowerId.isNotBlank() && borrowerName.isNotBlank()) {
+                        onIssue(
+                            IssueBookRequest(
+                                bookId = bookId,
+                                copyId = copyId.ifBlank { null },
+                                borrowerId = borrowerId,
+                                borrowerType = borrowerType,
+                                borrowerName = borrowerName,
+                            ),
+                        )
+                    }
+                },
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
 }
 
 @Composable
@@ -752,7 +781,7 @@ private fun IssueCard(
                 )
                 if (issue.fineAmount > 0) {
                     VBadge(
-                        text = "₹${"%.2f".format(issue.fineAmount)} ${issue.fineStatus}",
+                        text = "₹${formatDecimal(issue.fineAmount)} ${issue.fineStatus}",
                         tone = when (issue.fineStatus) {
                             "pending" -> VBadgeTone.Warning
                             "paid" -> VBadgeTone.Success
@@ -829,76 +858,91 @@ private fun IssueCard(
     if (showReturnDialog) {
         var condition by remember { mutableStateOf("good") }
         var damageNotes by remember { mutableStateOf("") }
-        AlertDialog(
-            onDismissRequest = { showReturnDialog = false },
-            title = { Text("Return Book") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(issue.bookTitle, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
-                    Text("Select condition:", style = VTypography.caption.copy(color = VColors.ink2))
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        listOf("good" to "Good", "fair" to "Fair", "damaged" to "Damaged").forEach { (key, label) ->
-                            VBadge(
-                                text = label,
-                                tone = if (condition == key) VBadgeTone.Accent else VBadgeTone.Neutral,
-                                modifier = Modifier.clickable { condition = key },
-                            )
-                        }
-                    }
-                    if (condition == "damaged") {
-                        VInput(value = damageNotes, onValueChange = { damageNotes = it }, label = "Damage notes", modifier = Modifier.fillMaxWidth())
+        VBottomSheet(
+            visible = true,
+            onDismiss = { showReturnDialog = false },
+        ) {
+            VBottomSheetHeader(title = "Return Book")
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(issue.bookTitle, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                Text("Select condition:", style = VTypography.caption.copy(color = VColors.ink2))
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    listOf("good" to "Good", "fair" to "Fair", "damaged" to "Damaged").forEach { (key, label) ->
+                        VBadge(
+                            text = label,
+                            tone = if (condition == key) VBadgeTone.Accent else VBadgeTone.Neutral,
+                            modifier = Modifier.clickable { condition = key },
+                        )
                     }
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.returnBook(issue.id, condition, damageNotes.ifBlank { null })
-                    showReturnDialog = false
-                }) { Text("Confirm Return") }
-            },
-            dismissButton = { TextButton(onClick = { showReturnDialog = false }) { Text("Cancel") } },
-        )
+                if (condition == "damaged") {
+                    VInput(value = damageNotes, onValueChange = { damageNotes = it }, label = "Damage notes", modifier = Modifier.fillMaxWidth())
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                VButton(
+                    text = "Cancel",
+                    onClick = { showReturnDialog = false },
+                    modifier = Modifier.weight(1f),
+                    variant = VButtonVariant.Ghost,
+                )
+                VButton(
+                    text = "Confirm Return",
+                    onClick = {
+                        viewModel.returnBook(issue.id, condition, damageNotes.ifBlank { null })
+                        showReturnDialog = false
+                    },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
     }
 
     // Mark Lost Confirmation Dialog
     if (showMarkLostConfirm) {
-        AlertDialog(
-            onDismissRequest = { showMarkLostConfirm = false },
-            title = { Text("Mark as Lost?") },
-            text = { Text("This will mark \"${issue.bookTitle}\" as lost and may incur a fine for the borrower.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.markLost(issue.id)
-                    showMarkLostConfirm = false
-                }) { Text("Mark Lost") }
+        VConfirmDialog(
+            visible = true,
+            title = "Mark as Lost?",
+            message = "This will mark \"${issue.bookTitle}\" as lost and may incur a fine for the borrower.",
+            confirmLabel = "Mark Lost",
+            onConfirm = {
+                viewModel.markLost(issue.id)
+                showMarkLostConfirm = false
             },
-            dismissButton = { TextButton(onClick = { showMarkLostConfirm = false }) { Text("Cancel") } },
+            onDismiss = { showMarkLostConfirm = false },
         )
     }
 
     // Waive Fine Dialog with reason
     if (showWaiveDialog) {
         var waiveReason by remember { mutableStateOf("") }
-        AlertDialog(
-            onDismissRequest = { showWaiveDialog = false },
-            title = { Text("Waive Fine?") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Fine: \u20b9${"%.2f".format(issue.fineAmount)} for \"${issue.bookTitle}\"", style = VTypography.body.copy(color = VColors.ink2))
-                    VInput(value = waiveReason, onValueChange = { waiveReason = it }, label = "Reason for waiver *", modifier = Modifier.fillMaxWidth())
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    enabled = waiveReason.isNotBlank(),
+        VBottomSheet(
+            visible = true,
+            onDismiss = { showWaiveDialog = false },
+        ) {
+            VBottomSheetHeader(title = "Waive Fine?")
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Fine: \u20b9${formatDecimal(issue.fineAmount)} for \"${issue.bookTitle}\"", style = VTypography.body.copy(color = VColors.ink2))
+                VInput(value = waiveReason, onValueChange = { waiveReason = it }, label = "Reason for waiver *", modifier = Modifier.fillMaxWidth())
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                VButton(
+                    text = "Cancel",
+                    onClick = { showWaiveDialog = false },
+                    modifier = Modifier.weight(1f),
+                    variant = VButtonVariant.Ghost,
+                )
+                VButton(
+                    text = "Waive Fine",
                     onClick = {
                         viewModel.waiveFine(issue.id, waiveReason)
                         showWaiveDialog = false
                     },
-                ) { Text("Waive Fine") }
-            },
-            dismissButton = { TextButton(onClick = { showWaiveDialog = false }) { Text("Cancel") } },
-        )
+                    modifier = Modifier.weight(1f),
+                    enabled = waiveReason.isNotBlank(),
+                )
+            }
+        }
     }
 }
 
@@ -1216,18 +1260,17 @@ private fun BulkReturnTab(state: SchoolLibraryState, viewModel: SchoolLibraryVie
         }
 
         if (showConfirm) {
-            AlertDialog(
-                onDismissRequest = { showConfirm = false },
-                title = { Text("Confirm Bulk Return") },
-                text = { Text("Return ${barcodes.size} book(s)?") },
-                confirmButton = {
-                    TextButton(onClick = {
-                        viewModel.bulkReturn(barcodes.toList())
-                        barcodes.clear()
-                        showConfirm = false
-                    }) { Text("Return All") }
+            VConfirmDialog(
+                visible = true,
+                title = "Confirm Bulk Return",
+                message = "Return ${barcodes.size} book(s)?",
+                confirmLabel = "Return All",
+                onConfirm = {
+                    viewModel.bulkReturn(barcodes.toList())
+                    barcodes.clear()
+                    showConfirm = false
                 },
-                dismissButton = { TextButton(onClick = { showConfirm = false }) { Text("Cancel") } },
+                onDismiss = { showConfirm = false },
             )
         }
     }
@@ -1312,39 +1355,47 @@ private fun CategoriesTab(state: SchoolLibraryState, viewModel: SchoolLibraryVie
         }
 
         if (showCreate) {
-            AlertDialog(
-                onDismissRequest = { showCreate = false },
-                title = { Text("New Category") },
-                text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        VInput(value = newName, onValueChange = { newName = it }, label = "Name", modifier = Modifier.fillMaxWidth())
-                        VInput(value = newColor, onValueChange = { newColor = it }, label = "Color (hex)", modifier = Modifier.fillMaxWidth())
-                        VInput(value = newIcon, onValueChange = { newIcon = it }, label = "Icon name", modifier = Modifier.fillMaxWidth())
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = {
-                        viewModel.createCategory(CreateCategoryRequest(newName, newColor, newIcon))
-                        newName = ""; showCreate = false
-                    }) { Text("Create") }
-                },
-                dismissButton = { TextButton(onClick = { showCreate = false }) { Text("Cancel") } },
-            )
+            VBottomSheet(
+                visible = true,
+                onDismiss = { showCreate = false },
+            ) {
+                VBottomSheetHeader(title = "New Category")
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    VInput(value = newName, onValueChange = { newName = it }, label = "Name", modifier = Modifier.fillMaxWidth())
+                    VInput(value = newColor, onValueChange = { newColor = it }, label = "Color (hex)", modifier = Modifier.fillMaxWidth())
+                    VInput(value = newIcon, onValueChange = { newIcon = it }, label = "Icon name", modifier = Modifier.fillMaxWidth())
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    VButton(
+                        text = "Cancel",
+                        onClick = { showCreate = false },
+                        modifier = Modifier.weight(1f),
+                        variant = VButtonVariant.Ghost,
+                    )
+                    VButton(
+                        text = "Create",
+                        onClick = {
+                            viewModel.createCategory(CreateCategoryRequest(newName, newColor, newIcon))
+                            newName = ""; showCreate = false
+                        },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
         }
 
         if (showDeleteConfirm != null) {
             val catName = state.categories.find { it.id == showDeleteConfirm }?.name ?: ""
-            AlertDialog(
-                onDismissRequest = { showDeleteConfirm = null },
-                title = { Text("Delete Category?") },
-                text = { Text("Are you sure you want to delete \"$catName\"? Books in this category will remain but lose their category label.") },
-                confirmButton = {
-                    TextButton(onClick = {
-                        viewModel.deleteCategory(showDeleteConfirm!!)
-                        showDeleteConfirm = null
-                    }) { Text("Delete") }
+            VConfirmDialog(
+                visible = true,
+                title = "Delete Category?",
+                message = "Are you sure you want to delete \"$catName\"? Books in this category will remain but lose their category label.",
+                confirmLabel = "Delete",
+                onConfirm = {
+                    viewModel.deleteCategory(showDeleteConfirm!!)
+                    showDeleteConfirm = null
                 },
-                dismissButton = { TextButton(onClick = { showDeleteConfirm = null }) { Text("Cancel") } },
+                onDismiss = { showDeleteConfirm = null },
             )
         }
     }
@@ -1458,39 +1509,47 @@ private fun AnnouncementsTab(state: SchoolLibraryState, viewModel: SchoolLibrary
         }
 
         if (showCreate) {
-            AlertDialog(
-                onDismissRequest = { showCreate = false },
-                title = { Text("New Announcement") },
-                text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        VInput(value = title, onValueChange = { title = it }, label = "Title", modifier = Modifier.fillMaxWidth())
-                        VInput(value = body, onValueChange = { body = it }, label = "Body", modifier = Modifier.fillMaxWidth())
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = {
-                        viewModel.createAnnouncement(CreateAnnouncementRequest(title, body))
-                        title = ""; body = ""; showCreate = false
-                        // Note: CreateAnnouncementRequest uses 'message' field, but we pass 'body' as positional
-                    }) { Text("Post") }
-                },
-                dismissButton = { TextButton(onClick = { showCreate = false }) { Text("Cancel") } },
-            )
+            VBottomSheet(
+                visible = true,
+                onDismiss = { showCreate = false },
+            ) {
+                VBottomSheetHeader(title = "New Announcement")
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    VInput(value = title, onValueChange = { title = it }, label = "Title", modifier = Modifier.fillMaxWidth())
+                    VInput(value = body, onValueChange = { body = it }, label = "Body", modifier = Modifier.fillMaxWidth())
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    VButton(
+                        text = "Cancel",
+                        onClick = { showCreate = false },
+                        modifier = Modifier.weight(1f),
+                        variant = VButtonVariant.Ghost,
+                    )
+                    VButton(
+                        text = "Post",
+                        onClick = {
+                            viewModel.createAnnouncement(CreateAnnouncementRequest(title, body))
+                            title = ""; body = ""; showCreate = false
+                            // Note: CreateAnnouncementRequest uses 'message' field, but we pass 'body' as positional
+                        },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
         }
 
         if (showDeleteAnnouncement != null) {
             val annTitle = state.announcements.find { it.id == showDeleteAnnouncement }?.title ?: ""
-            AlertDialog(
-                onDismissRequest = { showDeleteAnnouncement = null },
-                title = { Text("Delete Announcement?") },
-                text = { Text("Are you sure you want to delete \"$annTitle\"? This cannot be undone.") },
-                confirmButton = {
-                    TextButton(onClick = {
-                        viewModel.deleteAnnouncement(showDeleteAnnouncement!!)
-                        showDeleteAnnouncement = null
-                    }) { Text("Delete") }
+            VConfirmDialog(
+                visible = true,
+                title = "Delete Announcement?",
+                message = "Are you sure you want to delete \"$annTitle\"? This cannot be undone.",
+                confirmLabel = "Delete",
+                onConfirm = {
+                    viewModel.deleteAnnouncement(showDeleteAnnouncement!!)
+                    showDeleteAnnouncement = null
                 },
-                dismissButton = { TextButton(onClick = { showDeleteAnnouncement = null }) { Text("Cancel") } },
+                onDismiss = { showDeleteAnnouncement = null },
             )
         }
     }
@@ -1649,26 +1708,35 @@ private fun MoreTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewModel
         }
 
         if (showImport) {
-            AlertDialog(
-                onDismissRequest = { showImport = false },
-                title = { Text("Import Books (JSON)") },
-                text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Paste JSON array of book objects:", style = VTypography.caption.copy(color = VColors.ink2))
-                        VInput(value = importJson, onValueChange = { importJson = it }, label = "JSON", modifier = Modifier.fillMaxWidth())
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = {
-                        runCatching {
-                            val rows = kotlinx.serialization.json.Json.decodeFromString<List<CreateBookRequest>>(importJson)
-                            viewModel.bulkImport(rows)
-                        }
-                        importJson = ""; showImport = false
-                    }) { Text("Import") }
-                },
-                dismissButton = { TextButton(onClick = { showImport = false }) { Text("Cancel") } },
-            )
+            VBottomSheet(
+                visible = true,
+                onDismiss = { showImport = false },
+            ) {
+                VBottomSheetHeader(title = "Import Books (JSON)")
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Paste JSON array of book objects:", style = VTypography.caption.copy(color = VColors.ink2))
+                    VInput(value = importJson, onValueChange = { importJson = it }, label = "JSON", modifier = Modifier.fillMaxWidth())
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    VButton(
+                        text = "Cancel",
+                        onClick = { showImport = false },
+                        modifier = Modifier.weight(1f),
+                        variant = VButtonVariant.Ghost,
+                    )
+                    VButton(
+                        text = "Import",
+                        onClick = {
+                            runCatching {
+                                val rows = kotlinx.serialization.json.Json.decodeFromString<List<CreateBookRequest>>(importJson)
+                                viewModel.bulkImport(rows)
+                            }
+                            importJson = ""; showImport = false
+                        },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
         }
     }
 }
@@ -1773,31 +1841,40 @@ private fun CopiesTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewMod
         }
 
         if (showAddCopy) {
-            AlertDialog(
-                onDismissRequest = { showAddCopy = false },
-                title = { Text("Add Copy") },
-                text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Condition:", style = VTypography.caption.copy(color = VColors.ink2))
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            listOf("new" to "New", "good" to "Good", "fair" to "Fair", "poor" to "Poor").forEach { (key, label) ->
-                                VBadge(
-                                    text = label,
-                                    tone = if (newCopyCondition == key) VBadgeTone.Accent else VBadgeTone.Neutral,
-                                    modifier = Modifier.clickable { newCopyCondition = key },
-                                )
-                            }
+            VBottomSheet(
+                visible = true,
+                onDismiss = { showAddCopy = false },
+            ) {
+                VBottomSheetHeader(title = "Add Copy")
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Condition:", style = VTypography.caption.copy(color = VColors.ink2))
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        listOf("new" to "New", "good" to "Good", "fair" to "Fair", "poor" to "Poor").forEach { (key, label) ->
+                            VBadge(
+                                text = label,
+                                tone = if (newCopyCondition == key) VBadgeTone.Accent else VBadgeTone.Neutral,
+                                modifier = Modifier.clickable { newCopyCondition = key },
+                            )
                         }
                     }
-                },
-                confirmButton = {
-                    TextButton(onClick = {
-                        viewModel.addCopy(bookIdInput, newCopyCondition)
-                        showAddCopy = false
-                    }) { Text("Add") }
-                },
-                dismissButton = { TextButton(onClick = { showAddCopy = false }) { Text("Cancel") } },
-            )
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    VButton(
+                        text = "Cancel",
+                        onClick = { showAddCopy = false },
+                        modifier = Modifier.weight(1f),
+                        variant = VButtonVariant.Ghost,
+                    )
+                    VButton(
+                        text = "Add",
+                        onClick = {
+                            viewModel.addCopy(bookIdInput, newCopyCondition)
+                            showAddCopy = false
+                        },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
         }
     }
 }
@@ -1863,7 +1940,7 @@ private fun HistoryTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewMo
                             }
                             if (issue.fineAmount > 0) {
                                 VBadge(
-                                    text = "₹${"%.2f".format(issue.fineAmount)} ${issue.fineStatus}",
+                                    text = "₹${formatDecimal(issue.fineAmount)} ${issue.fineStatus}",
                                     tone = when (issue.fineStatus) {
                                         "pending" -> VBadgeTone.Warning
                                         "paid" -> VBadgeTone.Success
