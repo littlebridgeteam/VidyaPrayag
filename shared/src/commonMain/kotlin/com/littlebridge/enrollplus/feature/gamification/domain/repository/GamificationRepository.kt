@@ -16,9 +16,9 @@ interface GamificationRepository {
     suspend fun getRedemptions(token: String, childId: String): NetworkResult<ApiResponse<List<RewardRedemption>>>
     suspend fun getLeaderboard(token: String, childId: String): NetworkResult<ApiResponse<LeaderboardResponse>>
     suspend fun getActiveEvents(token: String): NetworkResult<ApiResponse<List<SeasonalEvent>>>
-    suspend fun getXpHistory(token: String, childId: String): NetworkResult<ApiResponse<List<Map<String, *>>>>
-    suspend fun getActiveBoosts(token: String, childId: String): NetworkResult<ApiResponse<List<Map<String, *>>>>
-    suspend fun getClassGoalsForChild(token: String, childId: String): NetworkResult<ApiResponse<List<Map<String, *>>>>
+    suspend fun getXpHistory(token: String, childId: String): NetworkResult<ApiResponse<List<XpHistoryEntry>>>
+    suspend fun getActiveBoosts(token: String, childId: String): NetworkResult<ApiResponse<List<XpBoost>>>
+    suspend fun getClassGoalsForChild(token: String, childId: String): NetworkResult<ApiResponse<List<ClassGoal>>>
 
     // Teacher
     suspend fun encourageStudent(token: String, request: EncourageRequest): NetworkResult<ApiResponse<Map<String, *>>>

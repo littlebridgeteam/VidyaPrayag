@@ -101,6 +101,44 @@ data class LeaderboardEntryDto(
     val streakDays: Int
 )
 
+@Serializable
+data class LeaderboardResponseDto(
+    val leaderboard: List<LeaderboardEntryDto>,
+    val myRank: Int
+)
+
+@Serializable
+data class XpHistoryEntryDto(
+    val id: String,
+    val amount: Int,
+    val reason: String,
+    val source: String,
+    val category: String,
+    val multiplier: Float,
+    val createdAt: String
+)
+
+@Serializable
+data class XpBoostDto(
+    val id: String,
+    val boostType: String,
+    val multiplier: Float,
+    val targetScope: String,
+    val endsAt: String
+)
+
+@Serializable
+data class ClassGoalDto(
+    val id: String,
+    val className: String,
+    val section: String,
+    val goalType: String,
+    val target: Int,
+    val currentProgress: Int,
+    val reward: String,
+    val deadline: String
+)
+
 // ── Seasonal Event DTOs ───────────────────────────────────────────────
 
 @Serializable

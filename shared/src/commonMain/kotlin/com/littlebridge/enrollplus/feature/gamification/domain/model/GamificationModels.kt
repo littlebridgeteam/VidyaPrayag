@@ -160,3 +160,35 @@ data class EncourageRequest(
     val amount: Int = 10,
     val reason: String = "Keep up the great work!"
 )
+
+@Serializable
+data class XpHistoryEntry(
+    val id: String,
+    val amount: Int,
+    val reason: String,
+    val source: String,
+    val category: String,
+    val multiplier: Float,
+    val createdAt: String
+)
+
+@Serializable
+data class XpBoost(
+    val id: String,
+    val boostType: String,
+    val multiplier: Float,
+    val targetScope: String,
+    val endsAt: String
+)
+
+@Serializable
+data class ClassGoal(
+    val id: String,
+    val className: String,
+    val section: String,
+    val goalType: String,
+    val target: Int,
+    val currentProgress: Int,
+    val reward: String,
+    val deadline: String
+)

@@ -80,21 +80,21 @@ class GamificationApi(
     }
 
     // ── Parent: XP History ───────────────────────────────────────────
-    suspend fun getXpHistory(token: String, childId: String): NetworkResult<ApiResponse<List<Map<String, *>>>> = safeApiCall {
+    suspend fun getXpHistory(token: String, childId: String): NetworkResult<ApiResponse<List<XpHistoryEntry>>> = safeApiCall {
         client.get(getUrl("api/v1/parent/gamification/$childId/xp-history")) {
             bearerAuth(token)
         }
     }
 
     // ── Parent: Active Boosts ────────────────────────────────────────
-    suspend fun getActiveBoosts(token: String, childId: String): NetworkResult<ApiResponse<List<Map<String, *>>>> = safeApiCall {
+    suspend fun getActiveBoosts(token: String, childId: String): NetworkResult<ApiResponse<List<XpBoost>>> = safeApiCall {
         client.get(getUrl("api/v1/parent/gamification/$childId/boosts")) {
             bearerAuth(token)
         }
     }
 
     // ── Parent: Class Goals ──────────────────────────────────────────
-    suspend fun getClassGoalsForChild(token: String, childId: String): NetworkResult<ApiResponse<List<Map<String, *>>>> = safeApiCall {
+    suspend fun getClassGoalsForChild(token: String, childId: String): NetworkResult<ApiResponse<List<ClassGoal>>> = safeApiCall {
         client.get(getUrl("api/v1/parent/gamification/$childId/class-goals")) {
             bearerAuth(token)
         }

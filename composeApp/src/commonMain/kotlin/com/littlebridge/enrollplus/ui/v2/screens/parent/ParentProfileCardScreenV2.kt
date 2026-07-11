@@ -47,6 +47,9 @@ import com.littlebridge.enrollplus.feature.gamification.domain.model.RewardRedem
 import com.littlebridge.enrollplus.feature.gamification.domain.model.StudentBadge as GameBadge
 import com.littlebridge.enrollplus.feature.gamification.domain.model.StudentQuest
 import com.littlebridge.enrollplus.feature.gamification.domain.model.SeasonalEvent
+import com.littlebridge.enrollplus.feature.gamification.domain.model.XpHistoryEntry
+import com.littlebridge.enrollplus.feature.gamification.domain.model.XpBoost
+import com.littlebridge.enrollplus.feature.gamification.domain.model.ClassGoal
 import com.littlebridge.enrollplus.feature.gamification.presentation.ParentGamificationState
 import com.littlebridge.enrollplus.feature.gamification.presentation.ParentGamificationViewModel
 import com.littlebridge.enrollplus.feature.parent.presentation.AchievementBadge
@@ -852,7 +855,7 @@ private fun QuestRow(quest: StudentQuest) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 @Composable
-private fun BoostsRow(boosts: List<Map<String, *>>) {
+private fun BoostsRow(boosts: List<XpBoost>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -863,8 +866,6 @@ private fun BoostsRow(boosts: List<Map<String, *>>) {
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         boosts.forEach { boost ->
-            val type = boost["boost_type"]?.toString() ?: "Boost"
-            val multiplier = boost["multiplier"]
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -886,17 +887,15 @@ private fun BoostsRow(boosts: List<Map<String, *>>) {
                 }
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        type.replaceFirstChar { it.uppercase() },
+                        boost.boostType.replaceFirstChar { it.uppercase() },
                         style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 14.sp),
                         color = VColors.ink,
                     )
-                    if (multiplier != null) {
-                        Text(
-                            "${multiplier}x XP multiplier",
-                            style = VTypography.caption.copy(fontSize = 12.sp),
-                            color = VColors.ink3,
-                        )
-                    }
+                    Text(
+                        "${boost.multiplier}x XP multiplier",
+                        style = VTypography.caption.copy(fontSize = 12.sp),
+                        color = VColors.ink3,
+                    )
                 }
             }
         }
@@ -1119,7 +1118,7 @@ private fun RedemptionsRow(redemptions: List<RewardRedemption>) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 @Composable
-private fun XpHistoryRow(history: List<Map<String, *>>) {
+private fun XpHistoryRow(history: List<XpHistoryEntry>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -1130,9 +1129,6 @@ private fun XpHistoryRow(history: List<Map<String, *>>) {
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         history.take(10).forEach { entry ->
-            val amount = entry["amount"] as? Int ?: entry["xp_amount"] as? Int ?: 0
-            val reason = entry["reason"]?.toString() ?: entry["description"]?.toString() ?: "XP earned"
-            val source = entry["source"]?.toString() ?: ""
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1140,22 +1136,22 @@ private fun XpHistoryRow(history: List<Map<String, *>>) {
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        reason,
+                        entry.reason,
                         style = VTypography.body.copy(fontWeight = FontWeight.Medium, fontSize = 13.sp),
                         color = VColors.ink,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    if (source.isNotBlank()) {
+                    if (entry.source.isNotBlank()) {
                         Text(
-                            source.replace("_", " ").replaceFirstChar { it.uppercase() },
+                            entry.source.replace("_", " ").replaceFirstChar { it.uppercase() },
                             style = VTypography.caption.copy(fontSize = 10.sp),
                             color = VColors.ink3,
                         )
                     }
                 }
                 Text(
-                    "+${amount} XP",
+                    "+${entry.amount} XP",
                     style = VTypography.body.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp),
                     color = VColors.mint,
                 )
@@ -1169,7 +1165,7 @@ private fun XpHistoryRow(history: List<Map<String, *>>) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 @Composable
-private fun ClassGoalsRow(goals: List<Map<String, *>>) {
+private fun ClassGoalsRow(goals: List<ClassGoal>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -1180,12 +1176,7 @@ private fun ClassGoalsRow(goals: List<Map<String, *>>) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         goals.forEach { goal ->
-            val goalType = goal["goalType"]?.toString() ?: "Goal"
-            val target = goal["target"] as? Int ?: 0
-            val current = goal["currentProgress"] as? Int ?: 0
-            val reward = goal["reward"]?.toString() ?: ""
-            val className = goal["className"]?.toString() ?: ""
-            val progress = if (target > 0) (current.toFloat() / target).coerceIn(0f, 1f) else 0f
+            val progress = if (goal.target > 0) (goal.currentProgress.toFloat() / goal.target).coerceIn(0f, 1f) else 0f
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -1193,12 +1184,12 @@ private fun ClassGoalsRow(goals: List<Map<String, *>>) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        "$goalType${if (className.isNotBlank()) " · $className" else ""}",
+                        "${goal.goalType}${if (goal.className.isNotBlank()) " · ${goal.className}" else ""}",
                         style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 14.sp),
                         color = VColors.ink,
                     )
                     Text(
-                        "$current/$target",
+                        "${goal.currentProgress}/${goal.target}",
                         style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp),
                         color = VColors.violet,
                     )
@@ -1218,9 +1209,9 @@ private fun ClassGoalsRow(goals: List<Map<String, *>>) {
                             .background(VColors.violet),
                     )
                 }
-                if (reward.isNotBlank()) {
+                if (goal.reward.isNotBlank()) {
                     Text(
-                        "Reward: $reward",
+                        "Reward: ${goal.reward}",
                         style = VTypography.caption.copy(fontSize = 11.sp),
                         color = VColors.ink3,
                     )

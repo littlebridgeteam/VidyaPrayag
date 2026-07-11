@@ -258,14 +258,14 @@ fun Route.gamificationRouting() {
                         .orderBy(GameXpLedgerTable.createdAt, SortOrder.DESC)
                         .limit(10)
                         .map {
-                            mapOf(
-                                "id" to it[GameXpLedgerTable.id].value.toString(),
-                                "amount" to it[GameXpLedgerTable.amount],
-                                "reason" to it[GameXpLedgerTable.reason],
-                                "source" to it[GameXpLedgerTable.xpSource],
-                                "category" to it[GameXpLedgerTable.category],
-                                "multiplier" to it[GameXpLedgerTable.multiplier],
-                                "createdAt" to it[GameXpLedgerTable.createdAt].toString()
+                            XpHistoryEntryDto(
+                                id = it[GameXpLedgerTable.id].value.toString(),
+                                amount = it[GameXpLedgerTable.amount],
+                                reason = it[GameXpLedgerTable.reason],
+                                source = it[GameXpLedgerTable.xpSource],
+                                category = it[GameXpLedgerTable.category],
+                                multiplier = it[GameXpLedgerTable.multiplier],
+                                createdAt = it[GameXpLedgerTable.createdAt].toString()
                             )
                         }
                 }
@@ -288,7 +288,7 @@ fun Route.gamificationRouting() {
                 if (owns == null) { call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@get }
 
                 val sid = owns[ChildrenTable.schoolId]
-                if (sid == null) { call.ok(emptyList<Map<String,*>>(), "Active boosts (0 — no school)"); return@get }
+                if (sid == null) { call.ok(emptyList<XpBoostDto>(), "Active boosts (0 — no school)"); return@get }
 
                 val now = Instant.now()
                 val boosts = dbQuery {
@@ -300,12 +300,12 @@ fun Route.gamificationRouting() {
                             (GameXpBoostsTable.endsAt greater now)
                         }
                         .map {
-                            mapOf(
-                                "id" to it[GameXpBoostsTable.id].value.toString(),
-                                "boost_type" to it[GameXpBoostsTable.boostType],
-                                "multiplier" to it[GameXpBoostsTable.multiplier],
-                                "target_scope" to it[GameXpBoostsTable.targetScope],
-                                "ends_at" to it[GameXpBoostsTable.endsAt].toString()
+                            XpBoostDto(
+                                id = it[GameXpBoostsTable.id].value.toString(),
+                                boostType = it[GameXpBoostsTable.boostType],
+                                multiplier = it[GameXpBoostsTable.multiplier],
+                                targetScope = it[GameXpBoostsTable.targetScope],
+                                endsAt = it[GameXpBoostsTable.endsAt].toString()
                             )
                         }
                 }
@@ -327,7 +327,7 @@ fun Route.gamificationRouting() {
                 }
                 if (owns == null) { call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@get }
                 val sid = owns[ChildrenTable.schoolId]
-                if (sid == null) { call.ok(emptyList<Map<String,*>>(), "Class goals (0 — no school)"); return@get }
+                if (sid == null) { call.ok(emptyList<ClassGoalDto>(), "Class goals (0 — no school)"); return@get }
 
                 val goals = dbQuery {
                     GameClassGoalsTable.selectAll()
@@ -337,15 +337,15 @@ fun Route.gamificationRouting() {
                         }
                         .orderBy(GameClassGoalsTable.createdAt, SortOrder.DESC)
                         .map {
-                            mapOf(
-                                "id" to it[GameClassGoalsTable.id].value.toString(),
-                                "className" to (it[GameClassGoalsTable.className] ?: ""),
-                                "section" to (it[GameClassGoalsTable.section] ?: ""),
-                                "goalType" to it[GameClassGoalsTable.goalType],
-                                "target" to it[GameClassGoalsTable.target],
-                                "currentProgress" to it[GameClassGoalsTable.currentProgress],
-                                "reward" to it[GameClassGoalsTable.reward],
-                                "deadline" to (it[GameClassGoalsTable.deadline]?.toString() ?: "")
+                            ClassGoalDto(
+                                id = it[GameClassGoalsTable.id].value.toString(),
+                                className = it[GameClassGoalsTable.className] ?: "",
+                                section = it[GameClassGoalsTable.section] ?: "",
+                                goalType = it[GameClassGoalsTable.goalType],
+                                target = it[GameClassGoalsTable.target],
+                                currentProgress = it[GameClassGoalsTable.currentProgress],
+                                reward = it[GameClassGoalsTable.reward],
+                                deadline = it[GameClassGoalsTable.deadline]?.toString() ?: ""
                             )
                         }
                 }
@@ -472,13 +472,13 @@ fun Route.gamificationRouting() {
                 if (childRow == null) { call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@get }
                 val sid = childRow[ChildrenTable.schoolId]
                 if (sid == null) {
-                    call.ok(mapOf("leaderboard" to emptyList<LeaderboardEntryDto>(), "myRank" to 0), "Leaderboard (no school)")
+                    call.ok(LeaderboardResponseDto(emptyList(), 0), "Leaderboard (no school)")
                     return@get
                 }
 
                 val leaderboard = LeaderboardService.getSchoolLeaderboard(sid)
                 val rank = LeaderboardService.getStudentRank(sid, childId)
-                call.ok(mapOf("leaderboard" to leaderboard, "myRank" to rank), "Leaderboard")
+                call.ok(LeaderboardResponseDto(leaderboard, rank), "Leaderboard")
             }
         }
 
