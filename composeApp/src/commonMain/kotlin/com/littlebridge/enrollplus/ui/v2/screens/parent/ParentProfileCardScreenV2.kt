@@ -341,30 +341,36 @@ private fun ProfileLoaded(
             leaderboardRank = gamification.leaderboard?.myRank,
         )
 
-        SectionHeader(title = "Badges", action = "All", onAction = {})
+        SectionHeader(title = "Badges")
         if (gamification.badges.isNotEmpty()) {
             GameBadgesRow(badges = gamification.badges)
         } else {
             BadgesRow(badges = track.badges)
         }
 
+        SectionHeader(title = "Quests")
         if (gamification.quests.isNotEmpty()) {
-            SectionHeader(title = "Quests")
             QuestsRow(quests = gamification.quests)
+        } else {
+            GamificationEmptyState(text = "No active quests. Check back soon!")
         }
 
+        SectionHeader(title = "Active Boosts")
         if (gamification.activeBoosts.isNotEmpty()) {
-            SectionHeader(title = "Active Boosts")
             BoostsRow(boosts = gamification.activeBoosts)
+        } else {
+            GamificationEmptyState(text = "No active XP boosts right now.")
         }
 
+        SectionHeader(title = "Seasonal Events")
         if (gamification.events.isNotEmpty()) {
-            SectionHeader(title = "Seasonal Events")
             EventsRow(events = gamification.events)
+        } else {
+            GamificationEmptyState(text = "No seasonal events running right now.")
         }
 
+        SectionHeader(title = "Rewards Shop")
         if (gamification.rewards.isNotEmpty()) {
-            SectionHeader(title = "Rewards Shop")
             RewardsRow(
                 rewards = gamification.rewards,
                 currentXp = gameStats?.currentXp ?: 0,
@@ -374,21 +380,29 @@ private fun ProfileLoaded(
                     }
                 },
             )
+        } else {
+            GamificationEmptyState(text = "No rewards available in the shop yet.")
         }
 
+        SectionHeader(title = "Redemption History")
         if (gamification.redemptions.isNotEmpty()) {
-            SectionHeader(title = "Redemption History")
             RedemptionsRow(redemptions = gamification.redemptions)
+        } else {
+            GamificationEmptyState(text = "No reward redemptions yet.")
         }
 
+        SectionHeader(title = "XP History")
         if (gamification.xpHistory.isNotEmpty()) {
-            SectionHeader(title = "XP History")
             XpHistoryRow(history = gamification.xpHistory)
+        } else {
+            GamificationEmptyState(text = "No XP earned yet. Encourage your child to complete activities!")
         }
 
+        SectionHeader(title = "Class Goals")
         if (gamification.classGoals.isNotEmpty()) {
-            SectionHeader(title = "Class Goals")
             ClassGoalsRow(goals = gamification.classGoals)
+        } else {
+            GamificationEmptyState(text = "No class goals set yet.")
         }
 
         SectionHeader(title = "Account")
@@ -1319,6 +1333,26 @@ private fun AccountRow(
 // ═══════════════════════════════════════════════════════════════════════════════
 // SHARED
 // ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun GamificationEmptyState(text: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.xl)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.xl)
+            .padding(horizontal = 16.dp, vertical = 20.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = text,
+            style = VTypography.caption.copy(fontSize = 13.sp),
+            color = VColors.ink3,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
 
 @Composable
 private fun SectionHeader(
