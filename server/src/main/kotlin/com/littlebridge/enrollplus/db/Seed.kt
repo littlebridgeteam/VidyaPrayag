@@ -209,12 +209,9 @@ object CmsSeed {
                 // Track Progress
                 "parent_track_journey_description" to "\"On track for next grade transition\"",
                 "parent_track_academic_label" to "\"NEP ALIGNED\"",
-                "parent_track_badges" to """
-                    [
-                      {"title":"Social Star","icon":"workspace_premium","is_locked":false,"colors":["#B6C7EB","#006C49"]},
-                      {"title":"Math Whiz","icon":"calculate","is_locked":true,"colors":["#FFD580","#B26A00"]}
-                    ]
-                """.trimIndent(),
+                // NOTE: parent_track_badges removed — badges now come from the
+                // gamification system (game_student_badges) earned by real actions
+                // like the skill test. See setup_skill_test_schema.sql.
                 "parent_track_academic_competencies" to """
                     [
                       {"title":"Literacy","progress":0.85,"icon":"translate"},

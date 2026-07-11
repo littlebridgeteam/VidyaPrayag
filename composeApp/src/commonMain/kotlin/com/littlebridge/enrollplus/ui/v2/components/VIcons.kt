@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Favorite
@@ -62,6 +63,7 @@ object VIcons {
     val Mail get() = Icons.Filled.Email                      // Mail
     val Lock get() = Icons.Filled.Lock                       // Lock
     val Check get() = Icons.Filled.Check                     // Check
+    val CheckCircle get() = Icons.Filled.CheckCircle         // CheckCircle
     val Close get() = Icons.Filled.Close                     // X
     val Plus get() = Icons.Filled.Add                        // Plus
     val Send get() = Icons.Filled.Send                       // Send

@@ -276,6 +276,11 @@ fun main() {
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)
     )
 
+    // Start the Skill Test job scheduler (weekly AI question generation + daily old question purge).
+    com.littlebridge.enrollplus.feature.skilltest.SkillTestJobScheduler.start(
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)
+    )
+
     // Register event-driven cache invalidation for library (spec §17).
     com.littlebridge.enrollplus.feature.library.LibraryCacheInit.register()
 
@@ -692,5 +697,11 @@ fun Application.module() {
         //   /api/v1/teacher/gamification/{encourage,badge/award,badges,student/{id}/stats}  — teacher
         //   /api/v1/admin/gamification/{flags,badges,levels}  — admin kill switch + config
         gamificationRouting()
+
+        // Skill Test System — AI-generated weekly MCQ tests for children
+        //   /api/v1/parent/skill-test/{childId}/{eligibility,start,best-score,history}
+        //   /api/v1/parent/skill-test/{attemptId}/{answer,review}
+        //   /api/v1/parent/skill-test/generate/{gradeLevel}  — admin trigger
+        com.littlebridge.enrollplus.feature.skilltest.skillTestRouting()
     }
 }

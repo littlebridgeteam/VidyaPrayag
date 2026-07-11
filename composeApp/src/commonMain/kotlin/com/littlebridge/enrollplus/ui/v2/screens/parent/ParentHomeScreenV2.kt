@@ -57,6 +57,7 @@ import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
+import com.littlebridge.enrollplus.ui.v2.components.VStaleChip
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -92,8 +93,8 @@ fun ParentHomeScreenV2(
     val transport by transportViewModel.state.collectAsStateV2()
     var isRefreshing by remember { mutableStateOf(false) }
 
-    LaunchedEffect(state.isLoading, state.isRefreshing) {
-        if (!state.isLoading && !state.isRefreshing) isRefreshing = false
+    LaunchedEffect(state.refreshEpoch) {
+        if (state.refreshEpoch > 0) isRefreshing = false
     }
 
     LaunchedEffect(Unit) {
@@ -207,6 +208,10 @@ private fun ParentHomeContent(
                 greetingLead = "here's",
                 greetingAccent = "${state.selectedChild?.name?.ifBlank { null } ?: "Your Child"}'s day",
             )
+
+            if (state.isStale) {
+                VStaleChip(modifier = Modifier.padding(horizontal = 24.dp, vertical = 2.dp))
+            }
 
             when {
                 state.isLoading && state.children.isEmpty() -> HomeSkeleton()

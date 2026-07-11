@@ -89,6 +89,7 @@ data class ParentDashboardState(
     val error: String? = null,
     val isStale: Boolean = false,
     val isOffline: Boolean = false,
+    val refreshEpoch: Int = 0,
 
     // attendance
     val attendance: ParentAttendanceData? = null,
@@ -209,14 +210,15 @@ class ParentDashboardViewModel(
                             selectedChildId = resolved,
                             isStale = result.isStale,
                             isOffline = result.isOffline,
+                            refreshEpoch = it.refreshEpoch + 1,
                         )
                     }
                     resolved?.let { loadChildData(it) }
                 }
                 is NetworkResult.Error ->
-                    _state.update { it.copy(isRefreshing = false, isStale = true, isOffline = true) }
+                    _state.update { it.copy(isRefreshing = false, isStale = true, isOffline = true, refreshEpoch = it.refreshEpoch + 1) }
                 is NetworkResult.ConnectionError ->
-                    _state.update { it.copy(isRefreshing = false, isStale = true, isOffline = true) }
+                    _state.update { it.copy(isRefreshing = false, isStale = true, isOffline = true, refreshEpoch = it.refreshEpoch + 1) }
             }
         }
     }

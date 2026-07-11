@@ -277,4 +277,51 @@ class ParentApi(
             client.get(getUrl("api/v1/parent/child/$childId/quiz/$quizId/result"))
         }
     }
+
+    // ── Skill Test System (AI-generated weekly MCQ tests) ───────────────────
+    // SEPARATE from teacher-generated quizzes above. These endpoints hit
+    // /api/v1/parent/skill-test/* — see SkillTestRouting.kt on the server.
+
+    suspend fun getSkillTestEligibility(token: String, childId: String): NetworkResult<SkillTestEligibilityResponse> {
+        return safeApiCall {
+            client.get(getUrl("api/v1/parent/skill-test/$childId/eligibility"))
+        }
+    }
+
+    suspend fun startSkillTest(token: String, childId: String): NetworkResult<SkillTestStartResponse> {
+        return safeApiCall {
+            client.post(getUrl("api/v1/parent/skill-test/$childId/start"))
+        }
+    }
+
+    suspend fun submitSkillTestAnswer(
+        token: String,
+        attemptId: String,
+        request: SkillTestAnswerRequest,
+    ): NetworkResult<SkillTestAnswerResponse> {
+        return safeApiCall {
+            client.post(getUrl("api/v1/parent/skill-test/$attemptId/answer")) {
+                contentType(ContentType.Application.Json)
+                setBody(request)
+            }
+        }
+    }
+
+    suspend fun getSkillTestBestScore(token: String, childId: String): NetworkResult<SkillTestBestScoreResponse> {
+        return safeApiCall {
+            client.get(getUrl("api/v1/parent/skill-test/$childId/best-score"))
+        }
+    }
+
+    suspend fun getSkillTestHistory(token: String, childId: String): NetworkResult<SkillTestHistoryResponse> {
+        return safeApiCall {
+            client.get(getUrl("api/v1/parent/skill-test/$childId/history"))
+        }
+    }
+
+    suspend fun getSkillTestReview(token: String, attemptId: String): NetworkResult<SkillTestReviewResponse> {
+        return safeApiCall {
+            client.get(getUrl("api/v1/parent/skill-test/$attemptId/review"))
+        }
+    }
 }

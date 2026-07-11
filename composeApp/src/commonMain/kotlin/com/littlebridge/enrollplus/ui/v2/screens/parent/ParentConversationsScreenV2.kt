@@ -28,6 +28,7 @@ import com.littlebridge.enrollplus.feature.parent.domain.model.DashboardChildSum
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentMessageViewModel
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
+import com.littlebridge.enrollplus.ui.v2.components.VStaleChip
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VMotion
 import org.koin.compose.viewmodel.koinViewModel
@@ -72,8 +73,8 @@ fun ParentConversationsScreenV2(
     val isChatOpen = messageState.openThreadId != null || messageState.composeOpen
     var isRefreshing by remember { mutableStateOf(false) }
 
-    LaunchedEffect(messageState.loading) {
-        if (!messageState.loading) isRefreshing = false
+    LaunchedEffect(messageState.refreshEpoch) {
+        if (messageState.refreshEpoch > 0) isRefreshing = false
     }
 
     // §11 — system/predictive back peels the drilled-in layers (compose-new → open conversation)
@@ -89,10 +90,13 @@ fun ParentConversationsScreenV2(
         isRefreshing = isRefreshing,
         onRefresh = {
             isRefreshing = true
-            messageViewModel.loadThreads()
+            messageViewModel.refreshThreads()
         },
         modifier = modifier.fillMaxSize(),
     ) {
+    if (messageState.isStale && !isChatOpen) {
+        VStaleChip(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+    }
     Column(
         modifier
             .fillMaxSize()

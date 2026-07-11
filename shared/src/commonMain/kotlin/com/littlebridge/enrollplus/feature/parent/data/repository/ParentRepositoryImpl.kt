@@ -158,4 +158,24 @@ class ParentRepositoryImpl(
 
     override suspend fun getQuizResult(token: String, childId: String, quizId: String): NetworkResult<QuizSubmitResponse> =
         cacheFirstNetworkResult(cache, "parent_quiz_result_${childId}_$quizId", QuizSubmitResponse.serializer()) { api.getQuizResult(token, childId, quizId) }
+
+    // ── Skill Test System (AI-generated weekly MCQ tests) ───────────────────
+    // No caching for start/answer — always fresh from server.
+    override suspend fun getSkillTestEligibility(token: String, childId: String): NetworkResult<SkillTestEligibilityResponse> =
+        api.getSkillTestEligibility(token, childId)
+
+    override suspend fun startSkillTest(token: String, childId: String): NetworkResult<SkillTestStartResponse> =
+        api.startSkillTest(token, childId)
+
+    override suspend fun submitSkillTestAnswer(token: String, attemptId: String, request: SkillTestAnswerRequest): NetworkResult<SkillTestAnswerResponse> =
+        api.submitSkillTestAnswer(token, attemptId, request)
+
+    override suspend fun getSkillTestBestScore(token: String, childId: String): NetworkResult<SkillTestBestScoreResponse> =
+        api.getSkillTestBestScore(token, childId)
+
+    override suspend fun getSkillTestHistory(token: String, childId: String): NetworkResult<SkillTestHistoryResponse> =
+        api.getSkillTestHistory(token, childId)
+
+    override suspend fun getSkillTestReview(token: String, attemptId: String): NetworkResult<SkillTestReviewResponse> =
+        api.getSkillTestReview(token, attemptId)
 }

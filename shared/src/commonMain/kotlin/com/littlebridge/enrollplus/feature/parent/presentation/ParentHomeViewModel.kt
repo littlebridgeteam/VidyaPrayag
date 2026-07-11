@@ -30,6 +30,7 @@ data class ParentHomeState(
     val error: String? = null,
     val isStale: Boolean = false,
     val isOffline: Boolean = false,
+    val refreshEpoch: Int = 0,
 ) {
     /** The child currently selected (falls back to the first child). */
     val childSummary: DashboardChildSummary?
@@ -138,13 +139,14 @@ class ParentHomeViewModel(
                             curationLogic = data.curationLogic,
                             isStale = result.isStale,
                             isOffline = result.isOffline,
+                            refreshEpoch = it.refreshEpoch + 1,
                         )
                     }
                 }
                 is NetworkResult.Error ->
-                    _state.update { it.copy(isStale = true, isOffline = true) }
+                    _state.update { it.copy(isStale = true, isOffline = true, refreshEpoch = it.refreshEpoch + 1) }
                 is NetworkResult.ConnectionError ->
-                    _state.update { it.copy(isStale = true, isOffline = true) }
+                    _state.update { it.copy(isStale = true, isOffline = true, refreshEpoch = it.refreshEpoch + 1) }
             }
         }
     }

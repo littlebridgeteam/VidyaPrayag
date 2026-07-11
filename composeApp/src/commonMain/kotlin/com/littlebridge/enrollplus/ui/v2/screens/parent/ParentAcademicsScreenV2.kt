@@ -95,8 +95,10 @@ import com.littlebridge.enrollplus.ui.tokens.VMotion
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
+import com.littlebridge.enrollplus.ui.v2.components.VStaleChip
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.feature.parent.presentation.SkillTestViewModel
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SCREEN ENTRY POINT
@@ -127,8 +129,12 @@ fun ParentAcademicsScreenV2(
     val academics by academicsViewModel.state.collectAsState()
     var isRefreshing by remember { mutableStateOf(false) }
 
-    LaunchedEffect(academics.attendanceLoading || academics.marksLoading || academics.syllabusLoading) {
-        if (!(academics.attendanceLoading || academics.marksLoading || academics.syllabusLoading)) {
+    LaunchedEffect(academics.refreshEpoch, academics.syllabusV2Loading, academics.dailySummaryLoading, academics.quizzesLoading) {
+        if (academics.refreshEpoch > 0 &&
+            !academics.syllabusV2Loading &&
+            !academics.dailySummaryLoading &&
+            !academics.quizzesLoading
+        ) {
             isRefreshing = false
         }
     }
@@ -146,6 +152,9 @@ fun ParentAcademicsScreenV2(
         },
         modifier = modifier.fillMaxSize(),
     ) {
+        if (academics.attendanceStale || academics.marksStale || academics.syllabusStale) {
+            VStaleChip(modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp))
+        }
         ParentAcademicsContent(
             state = state,
             academics = academics,
@@ -408,6 +417,9 @@ private fun OverviewTab(
         averageScore = averageScore,
         syllabusProgress = syllabusProgress,
     )
+
+    // ── Skill Test Card (AI-generated weekly MCQ test) ──
+    SkillTestCard(childId = academics.selectedChildId)
 
     // ── Academic competencies ──
     if (state.academicCompetencies.isNotEmpty()) {

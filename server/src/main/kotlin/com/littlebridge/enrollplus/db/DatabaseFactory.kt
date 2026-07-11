@@ -187,6 +187,11 @@ object DatabaseFactory {
         NonTeachingStaffTable,
         // Parents Portal — Profile tab "Missions & Achievements" (optional, CMS-fallback safe)
         ParentAchievementsTable,
+        // Skill Test System — AI-generated weekly MCQ tests for children
+        SkillTestQuestionsTable,
+        SkillTestAttemptsTable,
+        SkillTestAnswersTable,
+        SkillTestBestScoresTable,
         // Academic Calendar platform (VP-CAL — centralized planning & scheduling)
         CalendarEventsTable,
         AcademicYearsTable,

@@ -99,8 +99,8 @@ fun ParentProfileCardScreenV2(
     val gamification by gamificationViewModel.state.collectAsStateV2()
     var isRefreshing by remember { mutableStateOf(false) }
 
-    LaunchedEffect(state.isLoading, state.isRefreshing) {
-        if (!state.isLoading && !state.isRefreshing) isRefreshing = false
+    LaunchedEffect(state.refreshEpoch, profile.refreshEpoch) {
+        if (state.refreshEpoch > 0 || profile.refreshEpoch > 0) isRefreshing = false
     }
 
     LaunchedEffect(Unit) {
@@ -118,8 +118,8 @@ fun ParentProfileCardScreenV2(
         isRefreshing = isRefreshing,
         onRefresh = {
             isRefreshing = true
-            viewModel.load()
-            profileViewModel.load()
+            viewModel.refresh()
+            profileViewModel.refresh()
         },
         modifier = modifier.fillMaxSize(),
     ) {

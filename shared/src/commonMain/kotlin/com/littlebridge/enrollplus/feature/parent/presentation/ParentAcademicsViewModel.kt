@@ -81,6 +81,7 @@ data class ParentAcademicsState(
     val leaderboardLoading: Boolean = false,
     val leaderboardError: String? = null,
     val leaderboardStale: Boolean = false,
+    val refreshEpoch: Int = 0,
 ) {
     val selectedChild: DashboardChildSummary?
         get() = children.firstOrNull { it.id == selectedChildId } ?: children.firstOrNull()
@@ -194,9 +195,9 @@ class ParentAcademicsViewModel(
         viewModelScope.launch {
             val token = token() ?: return@launch
             when (val r = repository.getChildAttendance(token, resolvedChildId)) {
-                is NetworkResult.Success -> _state.update { it.copy(attendance = r.data.data, attendanceStale = r.isStale) }
-                is NetworkResult.Error -> _state.update { it.copy(attendanceStale = true) }
-                is NetworkResult.ConnectionError -> _state.update { it.copy(attendanceStale = true) }
+                is NetworkResult.Success -> _state.update { it.copy(attendance = r.data.data, attendanceStale = r.isStale, refreshEpoch = it.refreshEpoch + 1) }
+                is NetworkResult.Error -> _state.update { it.copy(attendanceStale = true, refreshEpoch = it.refreshEpoch + 1) }
+                is NetworkResult.ConnectionError -> _state.update { it.copy(attendanceStale = true, refreshEpoch = it.refreshEpoch + 1) }
             }
         }
     }
@@ -222,9 +223,9 @@ class ParentAcademicsViewModel(
         viewModelScope.launch {
             val token = token() ?: return@launch
             when (val r = repository.getChildMarks(token, resolvedChildId)) {
-                is NetworkResult.Success -> _state.update { it.copy(marks = r.data.data, marksStale = r.isStale) }
-                is NetworkResult.Error -> _state.update { it.copy(marksStale = true) }
-                is NetworkResult.ConnectionError -> _state.update { it.copy(marksStale = true) }
+                is NetworkResult.Success -> _state.update { it.copy(marks = r.data.data, marksStale = r.isStale, refreshEpoch = it.refreshEpoch + 1) }
+                is NetworkResult.Error -> _state.update { it.copy(marksStale = true, refreshEpoch = it.refreshEpoch + 1) }
+                is NetworkResult.ConnectionError -> _state.update { it.copy(marksStale = true, refreshEpoch = it.refreshEpoch + 1) }
             }
         }
     }
@@ -250,9 +251,9 @@ class ParentAcademicsViewModel(
         viewModelScope.launch {
             val token = token() ?: return@launch
             when (val r = repository.getChildSyllabus(token, resolvedChildId)) {
-                is NetworkResult.Success -> _state.update { it.copy(syllabus = r.data.data, syllabusStale = r.isStale) }
-                is NetworkResult.Error -> _state.update { it.copy(syllabusStale = true) }
-                is NetworkResult.ConnectionError -> _state.update { it.copy(syllabusStale = true) }
+                is NetworkResult.Success -> _state.update { it.copy(syllabus = r.data.data, syllabusStale = r.isStale, refreshEpoch = it.refreshEpoch + 1) }
+                is NetworkResult.Error -> _state.update { it.copy(syllabusStale = true, refreshEpoch = it.refreshEpoch + 1) }
+                is NetworkResult.ConnectionError -> _state.update { it.copy(syllabusStale = true, refreshEpoch = it.refreshEpoch + 1) }
             }
         }
     }

@@ -1721,6 +1721,86 @@ object ParentAchievementsTable : UUIDTable("parent_achievements", "id") {
 }
 
 // =====================================================================
+// Skill Test System — AI-generated weekly MCQ tests for children
+//   4 tables: questions pool, attempts, per-question answers, best scores.
+//   Applied by database/migrations/setup_skill_test_schema.sql
+// =====================================================================
+
+object SkillTestQuestionsTable : UUIDTable("skill_test_questions", "id") {
+    val batchId       = uuid("batch_id")
+    val gradeLevel    = varchar("grade_level", 32)
+    val subject       = varchar("subject", 64)
+    val questionText  = text("question_text")
+    val options       = text("options").default("[]")              // JSON array
+    val correctAnswer = varchar("correct_answer", 8)               // A | B | C | D
+    val explanation   = text("explanation").default("")
+    val difficulty    = varchar("difficulty", 8).default("medium") // easy | medium | hard
+    val isActive      = bool("is_active").default(true)
+    val aiProvider    = varchar("ai_provider", 32).nullable()
+    val createdAt     = timestamp("created_at")
+
+    init {
+        index("ix_stq_batch", false, batchId)
+        index("ix_stq_grade", false, gradeLevel, isActive)
+        index("ix_stq_batch_grade", false, batchId, gradeLevel, isActive)
+        index("ix_stq_active", false, isActive, createdAt)
+    }
+}
+
+object SkillTestAttemptsTable : UUIDTable("skill_test_attempts", "id") {
+    val childId        = uuid("child_id")
+    val parentId       = uuid("parent_id")
+    val schoolId       = uuid("school_id").nullable()
+    val batchId        = uuid("batch_id")
+    val gradeLevel     = varchar("grade_level", 32)
+    val totalQuestions = integer("total_questions").default(0)
+    val correctCount   = integer("correct_count").default(0)
+    val scorePercentage = integer("score_percentage").default(0)   // 0-100
+    val status         = varchar("status", 16).default("in_progress") // in_progress | completed
+    val startedAt      = timestamp("started_at")
+    val completedAt    = timestamp("completed_at").nullable()
+    val nextEligibleAt = timestamp("next_eligible_at").nullable()  // completed_at + 7 days
+    val createdAt      = timestamp("created_at")
+
+    init {
+        index("ix_sta_child", false, childId)
+        index("ix_sta_child_status", false, childId, status)
+        index("ix_sta_parent", false, parentId)
+        index("ix_sta_next_eligible", false, childId, nextEligibleAt)
+    }
+}
+
+object SkillTestAnswersTable : UUIDTable("skill_test_answers", "id") {
+    val attemptId     = uuid("attempt_id")
+    val questionId    = uuid("question_id")
+    val selectedAnswer = varchar("selected_answer", 8)
+    val isCorrect     = bool("is_correct").default(false)
+    val answeredAt    = timestamp("answered_at")
+
+    init {
+        index("ix_stans_attempt", false, attemptId)
+        index("ix_stans_question", false, questionId)
+        uniqueIndex("ux_stans_attempt_question", attemptId, questionId)
+    }
+}
+
+object SkillTestBestScoresTable : UUIDTable("skill_test_best_scores", "id") {
+    val childId       = uuid("child_id").uniqueIndex()
+    val bestScore     = integer("best_score").default(0)           // 0-100
+    val bestAttemptId = uuid("best_attempt_id").nullable()
+    val attemptsCount = integer("attempts_count").default(0)
+    val badgeEarned   = bool("badge_earned").default(false)
+    val lastAttemptAt = timestamp("last_attempt_at").nullable()
+    val nextEligibleAt = timestamp("next_eligible_at").nullable()
+    val updatedAt     = timestamp("updated_at")
+
+    init {
+        index("ix_stbs_child", false, childId)
+        index("ix_stbs_badge", false, badgeEarned)
+    }
+}
+
+// =====================================================================
 // Academic Calendar Platform (VP-CAL)
 // =====================================================================
 //

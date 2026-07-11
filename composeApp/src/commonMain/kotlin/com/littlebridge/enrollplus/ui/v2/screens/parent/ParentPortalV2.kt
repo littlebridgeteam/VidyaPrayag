@@ -22,6 +22,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,6 +49,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VAvatar
 import com.littlebridge.enrollplus.ui.v2.components.VDivider
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VOfflineBanner
+import com.littlebridge.enrollplus.ui.v2.components.VBackOnlineBanner
 import com.littlebridge.enrollplus.ui.v2.components.VNavItem
 import com.littlebridge.enrollplus.ui.v2.components.VScreenScaffold
 import com.littlebridge.enrollplus.ui.v2.components.VStatusDot
@@ -451,6 +457,22 @@ fun ParentPortalV2(
         },
     ) { padding ->
         Box(Modifier.fillMaxSize()) {
+            // Track offline→online transition for the "Back online" confirmation.
+            var wasOffline by remember { mutableStateOf(dashboard.isOffline) }
+            var showBackOnline by remember { mutableStateOf(false) }
+            LaunchedEffect(dashboard.isOffline) {
+                if (wasOffline && !dashboard.isOffline) {
+                    showBackOnline = true
+                }
+                wasOffline = dashboard.isOffline
+            }
+            LaunchedEffect(showBackOnline) {
+                if (showBackOnline) {
+                    kotlinx.coroutines.delay(2500L)
+                    showBackOnline = false
+                }
+            }
+
             Column(Modifier.fillMaxSize()) {
                 when (tab) {
                 "home" -> ParentHomeScreenV2(
@@ -526,12 +548,17 @@ fun ParentPortalV2(
                 )
             }
             }
-            // Offline indicator overlay: sits in the status-bar dead-zone above the portal
-            // header so the header keeps the same vertical position as the online state.
-            if (dashboard.isOffline) {
+            // Offline indicator overlay — animated slide-in/out so it never jumps.
+            // Sits in the status-bar dead-zone above the portal header so the header
+            // keeps the same vertical position as the online state.
+            AnimatedVisibility(
+                visible = dashboard.isOffline,
+                enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+                exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+                modifier = Modifier.align(Alignment.TopCenter),
+            ) {
                 Box(
                     modifier = Modifier
-                        .align(Alignment.TopCenter)
                         .fillMaxWidth()
                         .height(
                             WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 24.dp,
@@ -539,6 +566,26 @@ fun ParentPortalV2(
                     contentAlignment = Alignment.BottomCenter,
                 ) {
                     VOfflineBanner(isOffline = true)
+                }
+            }
+
+            // "Back online" transient confirmation — briefly confirms the transition
+            // from offline→online so the user knows fresh data has loaded.
+            AnimatedVisibility(
+                visible = showBackOnline,
+                enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+                exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+                modifier = Modifier.align(Alignment.TopCenter),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(
+                            WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 24.dp,
+                        ),
+                    contentAlignment = Alignment.BottomCenter,
+                ) {
+                    VBackOnlineBanner()
                 }
             }
         }

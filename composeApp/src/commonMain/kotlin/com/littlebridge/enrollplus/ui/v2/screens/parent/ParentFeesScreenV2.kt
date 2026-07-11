@@ -70,8 +70,8 @@ fun ParentFeesScreenV2(
 ) {
     val state by viewModel.state.collectAsStateV2()
     var isRefreshing by remember { mutableStateOf(false) }
-    LaunchedEffect(state.isLoading) {
-        if (!state.isLoading) isRefreshing = false
+    LaunchedEffect(state.refreshEpoch) {
+        if (state.refreshEpoch > 0) isRefreshing = false
     }
     VPullRefresh(
         isRefreshing = isRefreshing,

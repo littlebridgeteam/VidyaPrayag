@@ -35,6 +35,7 @@ data class ParentMessageState(
     val error: String? = null,
     val isStale: Boolean = false,
     val isOffline: Boolean = false,
+    val refreshEpoch: Int = 0,
 
     // open conversation
     val openThreadId: String? = null,
@@ -105,11 +106,11 @@ class ParentMessageViewModel(
             val token = token() ?: return@launch
             when (val r = repository.getMessageThreads(token)) {
                 is NetworkResult.Success ->
-                    _state.update { it.copy(threads = r.data.data.threads, isStale = r.isStale, isOffline = r.isOffline) }
+                    _state.update { it.copy(threads = r.data.data.threads, isStale = r.isStale, isOffline = r.isOffline, refreshEpoch = it.refreshEpoch + 1) }
                 is NetworkResult.Error ->
-                    _state.update { it.copy(isStale = true, isOffline = true) }
+                    _state.update { it.copy(isStale = true, isOffline = true, refreshEpoch = it.refreshEpoch + 1) }
                 is NetworkResult.ConnectionError ->
-                    _state.update { it.copy(isStale = true, isOffline = true) }
+                    _state.update { it.copy(isStale = true, isOffline = true, refreshEpoch = it.refreshEpoch + 1) }
             }
         }
     }
