@@ -114,7 +114,7 @@ fun TeacherClassesScreenV2(
                 onSearch = viewModel::setSearch,
                 onCycleFilter = viewModel::cycleFilter,
                 onOpenClass = viewModel::openClass,
-                onRefresh = viewModel::refresh,
+                onRefresh = viewModel::refreshForPull,
             )
         }
     }
