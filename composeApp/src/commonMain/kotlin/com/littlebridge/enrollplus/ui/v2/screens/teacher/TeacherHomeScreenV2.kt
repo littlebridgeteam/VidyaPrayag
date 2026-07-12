@@ -52,6 +52,7 @@ import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherCheckInSt
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherCheckInViewModel
 import com.littlebridge.enrollplus.feature.teacher.presentation.InsightCard
 import com.littlebridge.enrollplus.feature.teacher.presentation.InsightSeverity
+import com.littlebridge.enrollplus.feature.teacher.presentation.InsightTarget
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherClassesState
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherClassesViewModel
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherInsightsViewModel
@@ -102,6 +103,8 @@ fun TeacherHomeScreenV2(
     onOpenScheduledMessages: () -> Unit,
     onOpenEvents: () -> Unit,
     onOpenMessages: () -> Unit,
+    onOpenExamTimetable: () -> Unit = {},
+    onOpenExport: () -> Unit = {},
     onOpenNotifications: () -> Unit = {},
     unreadCount: Int = 0,
     modifier: Modifier = Modifier,
@@ -218,6 +221,7 @@ fun TeacherHomeScreenV2(
         if (insightsState.insights.isNotEmpty()) {
             NeedsAttentionSection(
                 insights = insightsState.insights,
+                onOpenPews = onOpenPews,
                 onOpenAttendanceForAssignment = onOpenAttendanceForAssignment,
             )
         }
@@ -229,6 +233,9 @@ fun TeacherHomeScreenV2(
                 onMarks = { onOpenUpdateTool(UpdateTool.Marks) },
                 onHomework = { onOpenUpdateTool(UpdateTool.Homework) },
                 onMessages = onOpenMessages,
+                onExams = onOpenExamTimetable,
+                onReports = onOpenReportReview,
+                onExport = onOpenExport,
             )
         }
 
@@ -671,7 +678,7 @@ private fun PendingRow(item: PendingItem) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Quick actions — 2×2 grid with fixed, non-repeated actions.
+// Quick actions — 2×4 grid with fixed, non-repeated actions.
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
@@ -680,12 +687,18 @@ private fun QuickActionsGrid(
     onMarks: () -> Unit,
     onHomework: () -> Unit,
     onMessages: () -> Unit,
+    onExams: () -> Unit = {},
+    onReports: () -> Unit = {},
+    onExport: () -> Unit = {},
 ) {
     val actions = listOf(
         QuickAction(appString(StringKeys.TEACHER_ATTENDANCE), VColors.violetSoft, VColors.violet, VIcons.ListChecks, onAttendance),
         QuickAction(appString(StringKeys.TC_MARKS), VColors.mintSoft, VColors.mint, VIcons.GraduationCap, onMarks),
         QuickAction(appString(StringKeys.TEACHER_HOMEWORK), VColors.goldSoft, VColors.gold, VIcons.FileText, onHomework),
         QuickAction(appString(StringKeys.TC_MESSAGES), VColors.coralSoft, VColors.coral, VIcons.Chat, onMessages),
+        QuickAction("Exams", VColors.skySoft, VColors.sky, VIcons.Calendar, onExams),
+        QuickAction("Reports", VColors.violetSoft, VColors.violetInk, VIcons.ClipboardList, onReports),
+        QuickAction("Export", VColors.mintSoft, VColors.mint, VIcons.FileText, onExport),
     )
 
     SurfaceCard {
@@ -950,6 +963,7 @@ private fun SkeletonEventRow() {
 @Composable
 private fun NeedsAttentionSection(
     insights: List<InsightCard>,
+    onOpenPews: () -> Unit,
     onOpenAttendanceForAssignment: (assignmentId: String, scope: String) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -962,11 +976,17 @@ private fun NeedsAttentionSection(
                             Modifier.fillMaxWidth().height(1.dp).background(VColors.lineSoft),
                         )
                     }
-                    InsightRow(insight = insight, onTap = {
-                        insight.assignmentId?.let { aid ->
-                            onOpenAttendanceForAssignment(aid, insight.scopeLabel)
-                        }
-                    })
+                    InsightRow(
+                        insight = insight,
+                        onTap = {
+                            when (insight.target) {
+                                InsightTarget.Pews -> onOpenPews()
+                                InsightTarget.Attendance -> insight.assignmentId?.let { aid ->
+                                    onOpenAttendanceForAssignment(aid, insight.scopeLabel)
+                                }
+                            }
+                        },
+                    )
                 }
             }
         }

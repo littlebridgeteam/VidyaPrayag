@@ -39,6 +39,8 @@ import com.littlebridge.enrollplus.feature.ai.AiService
 import com.littlebridge.enrollplus.feature.ai.LlmMessage
 import com.littlebridge.enrollplus.feature.gamification.GamificationService
 import com.littlebridge.enrollplus.feature.gamification.XpHooks
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
@@ -58,6 +60,7 @@ import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 object SkillTestService {
     private val log = LoggerFactory.getLogger("SkillTestService")
@@ -78,6 +81,53 @@ object SkillTestService {
         "Class 6", "Class 7", "Class 8", "Class 9", "Class 10",
         "Class 11", "Class 12",
     )
+
+    /** Per-grade mutex so concurrent eligibility checks don't all fire AI generation. */
+    private val generationLocks = ConcurrentHashMap<String, Mutex>()
+
+    /**
+     * Ensure a grade has active questions. If none exist, immediately generate
+     * a fresh weekly batch. Used by the eligibility endpoint so parents never
+     * see "Questions are being generated" without the backend actually trying.
+     * The weekly scheduled job still runs on top of this.
+     *
+     * Returns true if active questions exist (or were just generated).
+     */
+    suspend fun ensureQuestionsForGrade(gradeLevel: String): Boolean {
+        // Fast path: already has questions
+        val hasQuestions = dbQuery {
+            SkillTestQuestionsTable.selectAll()
+                .where {
+                    (SkillTestQuestionsTable.isActive eq true) and
+                    (SkillTestQuestionsTable.gradeLevel eq gradeLevel)
+                }
+                .count() > 0
+        }
+        if (hasQuestions) return true
+
+        // Serialize generation per grade. If another caller is already
+        // generating, wait for it and then re-check.
+        val lock = generationLocks.computeIfAbsent(gradeLevel) { Mutex() }
+        return lock.withLock {
+            val stillHasQuestions = dbQuery {
+                SkillTestQuestionsTable.selectAll()
+                    .where {
+                        (SkillTestQuestionsTable.isActive eq true) and
+                        (SkillTestQuestionsTable.gradeLevel eq gradeLevel)
+                    }
+                    .count() > 0
+            }
+            if (stillHasQuestions) return@withLock true
+
+            log.info("No active questions for grade {} — triggering immediate generation", gradeLevel)
+            val generatedCount = generateWeeklyBatch(gradeLevel)
+            val success = generatedCount > 0
+            if (!success) {
+                log.warn("Immediate generation produced no questions for grade {}", gradeLevel)
+            }
+            success
+        }
+    }
 
     /**
      * Normalize a free-text grade string (from children.current_grade) to one

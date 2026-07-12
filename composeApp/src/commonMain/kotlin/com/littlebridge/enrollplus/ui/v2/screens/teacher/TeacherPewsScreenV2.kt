@@ -337,17 +337,18 @@ private fun TeacherStudentCard(
                         }
                         // action-type-specific workflow
                         if (isParentAction) {
-                            // Parent-contact action: Send the message
+                            // Parent-contact action: one-tap send to parent. The backend generates the
+                            // draft if the case file does not already have one. Draft/Preview is kept as
+                            // a secondary option for teachers who want to review first.
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                if (hasDraft) {
-                                    VButton(
-                                        appString(StringKeys.TC_SEND_TO_PARENT),
-                                        { onSendParentMessage(iv.id) },
-                                        variant = VButtonVariant.Primary,
-                                        size = VButtonSize.Sm,
-                                        enabled = !isUpdating,
-                                    )
-                                } else {
+                                VButton(
+                                    appString(StringKeys.TC_SEND_TO_PARENT),
+                                    { onSendParentMessage(iv.id) },
+                                    variant = VButtonVariant.Primary,
+                                    size = VButtonSize.Sm,
+                                    enabled = !isUpdating,
+                                )
+                                if (!hasDraft) {
                                     var draftLang by remember { mutableStateOf("en") }
                                     var langDropdownOpen by remember { mutableStateOf(false) }
                                     Row(

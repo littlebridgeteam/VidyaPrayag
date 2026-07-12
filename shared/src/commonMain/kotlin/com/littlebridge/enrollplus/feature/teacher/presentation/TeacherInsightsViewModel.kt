@@ -21,9 +21,12 @@ data class InsightCard(
     val scopeLabel: String,
     val actionLabel: String,
     val icon: String,
+    val target: InsightTarget = InsightTarget.Attendance,
 )
 
 enum class InsightSeverity { HIGH, MEDIUM, LOW }
+
+enum class InsightTarget { Pews, Attendance }
 
 data class TeacherInsightsState(
     val insights: List<InsightCard> = emptyList(),
@@ -56,6 +59,7 @@ class TeacherInsightsViewModel(
                         scopeLabel = scope,
                         actionLabel = "View Insights",
                         icon = "trending_down",
+                        target = InsightTarget.Pews,
                     ))
                 }
 
@@ -69,6 +73,7 @@ class TeacherInsightsViewModel(
                         scopeLabel = scope,
                         actionLabel = "Mark Now",
                         icon = "clock",
+                        target = InsightTarget.Attendance,
                     ))
                 }
             }

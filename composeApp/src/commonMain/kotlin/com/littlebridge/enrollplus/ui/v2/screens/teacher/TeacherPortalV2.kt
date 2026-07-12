@@ -46,7 +46,7 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 /** Full-screen overlays the teacher portal can push above its tab content. */
-private enum class TeacherOverlay { None, Notifications, HealthAlerts, TransportAttendance, Pews, ReportReview, ReportDraftEditor, Heatmap, DigitalIdCard, ScheduledMessages, EventRegistration, Messages, Calendar, AnnouncementDetail, LeaveRequests, ExamTimetableList, ExamTimetableUpload, ExamTimetableDetail, ExamSyllabusMapping, ExamMarksImport }
+private enum class TeacherOverlay { None, Notifications, HealthAlerts, TransportAttendance, Pews, ReportReview, ReportDraftEditor, Heatmap, DigitalIdCard, ScheduledMessages, EventRegistration, Messages, Calendar, AnnouncementDetail, LeaveRequests, ExamTimetableList, ExamTimetableUpload, ExamTimetableDetail, ExamSyllabusMapping, ExamMarksImport, Export }
 
 /**
  * TeacherPortalV2 — the teacher shell, rebuilt FROM SCRATCH on the Parents-Portal
@@ -136,6 +136,7 @@ fun TeacherPortalV2(
                         examAssessmentId = target.params["assessmentId"]
                         overlay = TeacherOverlay.ExamSyllabusMapping
                     }
+                    "export" -> overlay = TeacherOverlay.Export
                     // Valid bottom-nav tabs
                     "home", "update", "classes", "timetable", "profile" -> tab = target.screen
                     else -> tab = "home"
@@ -165,6 +166,7 @@ fun TeacherPortalV2(
                         examAssessmentId = queryStr.substringAfter("assessmentId=", "").substringBefore("&").takeIf { it.isNotBlank() }
                         overlay = TeacherOverlay.ExamSyllabusMapping
                     }
+                    pathOnly.startsWith("export") -> overlay = TeacherOverlay.Export
                     pathOnly.startsWith("timetable-requests") -> { tab = "timetable"; showRequestsSegment = true; overlay = TeacherOverlay.None }
                     pathOnly.startsWith("timetable") -> { tab = "timetable"; showRequestsSegment = false; overlay = TeacherOverlay.None }
                     else -> tab = "home"
@@ -350,6 +352,13 @@ fun TeacherPortalV2(
             )
             return
         }
+        TeacherOverlay.Export -> {
+            com.littlebridge.enrollplus.ui.v2.screens.teacher.export.ExportScreen(
+                onBack = { overlay = TeacherOverlay.None },
+                modifier = modifier,
+            )
+            return
+        }
         TeacherOverlay.None -> Unit
     }
 
@@ -445,6 +454,8 @@ fun TeacherPortalV2(
                     onOpenEvents = { overlay = TeacherOverlay.EventRegistration },
                     onOpenMessages = { overlay = TeacherOverlay.Messages },
                     onOpenNotifications = { overlay = TeacherOverlay.Notifications },
+                    onOpenExamTimetable = { overlay = TeacherOverlay.ExamTimetableList },
+                    onOpenExport = { overlay = TeacherOverlay.Export },
                     unreadCount = notifications.unreadCount,
                 )
 

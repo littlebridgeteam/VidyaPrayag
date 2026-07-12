@@ -2,7 +2,7 @@ package com.littlebridge.enrollplus.feature.export
 
 import com.littlebridge.enrollplus.core.fail
 import com.littlebridge.enrollplus.core.ok
-import com.littlebridge.enrollplus.core.requireSchoolContext
+import com.littlebridge.enrollplus.core.requireSchoolOrTeacherContext
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -18,14 +18,14 @@ fun Route.exportRouting() {
 
             // GET available export types for the user's role
             get("/types") {
-                val ctx = call.requireSchoolContext() ?: return@get
+                val ctx = call.requireSchoolOrTeacherContext() ?: return@get
                 val types = service.getExportTypes(ctx.role)
                 call.ok(types)
             }
 
             // POST generate an export
             post {
-                val ctx = call.requireSchoolContext() ?: return@post
+                val ctx = call.requireSchoolOrTeacherContext() ?: return@post
                 val req = call.receive<ExportRequest>()
 
                 if (req.type.isBlank()) {
