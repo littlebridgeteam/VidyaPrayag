@@ -28,7 +28,10 @@ data class NotificationsState(
     val notifications: List<NotificationItem> = emptyList(),
     val unreadCount: Int = 0,
     val isLoading: Boolean = false,
+    val isRefreshing: Boolean = false,
     val error: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class NotificationsViewModel(
@@ -70,6 +73,8 @@ class NotificationsViewModel(
                                 )
                             },
                             unreadCount = data.unreadCount,
+                            isStale = result.isStale,
+                            isOffline = result.isOffline,
                         )
                     }
                 }
@@ -78,6 +83,49 @@ class NotificationsViewModel(
                 }
                 is NetworkResult.ConnectionError -> {
                     _state.update { it.copy(isLoading = false, error = "Connection error") }
+                }
+            }
+        }
+    }
+
+    fun refresh() {
+        viewModelScope.launch {
+            _state.update { it.copy(isRefreshing = true, error = null) }
+            val token = preferenceRepository.getUserToken().first()
+            if (token == null) {
+                _state.update { it.copy(isRefreshing = false, error = "Not signed in") }
+                return@launch
+            }
+            when (val result = repository.getNotifications(token)) {
+                is NetworkResult.Success -> {
+                    val data = result.data.data
+                    _state.update {
+                        it.copy(
+                            isRefreshing = false,
+                            notifications = data.notifications.map { n ->
+                                NotificationItem(
+                                    id = n.id,
+                                    category = n.category,
+                                    title = n.title,
+                                    body = n.body,
+                                    time = n.time,
+                                    unread = n.unread,
+                                    deepLink = n.deepLink,
+                                    refType = n.refType,
+                                    refId = n.refId,
+                                )
+                            },
+                            unreadCount = data.unreadCount,
+                            isStale = result.isStale,
+                            isOffline = result.isOffline,
+                        )
+                    }
+                }
+                is NetworkResult.Error -> {
+                    _state.update { it.copy(isRefreshing = false, error = result.message) }
+                }
+                is NetworkResult.ConnectionError -> {
+                    _state.update { it.copy(isRefreshing = false, error = "Connection error") }
                 }
             }
         }

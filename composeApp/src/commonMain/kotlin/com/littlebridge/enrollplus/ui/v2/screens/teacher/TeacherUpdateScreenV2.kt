@@ -16,14 +16,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,7 +49,11 @@ import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherClassesVi
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.ui.v2.components.VButton
+import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
+import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.viewmodel.koinViewModel
@@ -97,6 +105,8 @@ fun TeacherUpdateScreenV2(
     teacherName: String = "",
     unreadCount: Int = 0,
     onOpenNotifications: () -> Unit = {},
+    onOpenMessages: () -> Unit = {},
+    onImportMarks: () -> Unit = {},
     classesViewModel: TeacherClassesViewModel = koinViewModel(),
 ) {
     val classesState by classesViewModel.state.collectAsStateV2()
@@ -104,15 +114,24 @@ fun TeacherUpdateScreenV2(
     var tool by rememberSaveable { mutableStateOf(initialTool) }
     var pickedAssignment by rememberSaveable { mutableStateOf(initialAssignmentId) }
     var pickedLabel by rememberSaveable { mutableStateOf(initialScopeLabel) }
+    var dismissedSuggestions by remember { mutableStateOf(setOf<UpdateTool>()) }
 
     val asg = pickedAssignment
 
     if (asg == null) {
         // ── MODE A: scope gate — the WHOLE screen is a single scroll (like Classes).
+        var isRefreshing by remember { mutableStateOf(false) }
+        LaunchedEffect(classesState.isLoading) {
+            if (!classesState.isLoading) isRefreshing = false
+        }
+        VPullRefresh(
+            isRefreshing = isRefreshing,
+            onRefresh = { isRefreshing = true; classesViewModel.load() },
+            modifier = modifier.fillMaxSize().background(VColors.cream),
+        ) {
         LazyColumn(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxSize()
-                .background(VColors.cream)
                 .statusBarsPadding(),
             contentPadding = PaddingValues(top = 12.dp, bottom = TeacherDockClearance),
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -168,6 +187,32 @@ fun TeacherUpdateScreenV2(
                 },
                 horizontalPadding = 16.dp,
             )
+
+            // 5b — loading / error / empty states when no classes to show.
+            if (classesState.classes.isEmpty()) {
+                item {
+                    Box(Modifier.padding(horizontal = 16.dp)) {
+                        when {
+                            classesState.isLoading -> TeacherCenterState { TeacherSpinner() }
+                            classesState.error != null -> TeacherCenterState {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(appString(StringKeys.TC_COULDNT_LOAD_CLASSES), style = VtT.bodyStrong.coloredV(VtC.navyDeep))
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(classesState.error ?: "", style = VtT.caption.coloredV(VtC.ink3))
+                                    Spacer(Modifier.height(14.dp))
+                                    VButton(appString(StringKeys.COMMON_BUTTON_TRY_AGAIN), onClick = classesViewModel::load, size = VButtonSize.Sm, tone = VButtonTone.Lavender)
+                                }
+                            }
+                            else -> VtEmptyCard(
+                                title = appString(StringKeys.TC_NO_ALLOCATIONS),
+                                subtext = "Your class assignments will appear here once allocated.",
+                                icon = VIcons.BookOpen,
+                            )
+                        }
+                    }
+                }
+            }
+        }
         }
     } else {
         // ── MODE B: scoped tool — fixed header + scope bar, bounded sub-screen.
@@ -213,13 +258,28 @@ fun TeacherUpdateScreenV2(
                         label = "updateTool",
                     ) { active ->
                         when (active) {
-                            UpdateTool.Attendance -> TeacherAttendanceScreenV2(asg, pickedLabel)
-                            UpdateTool.Marks -> TeacherMarksScreenV2(asg, pickedLabel)
+                            UpdateTool.Attendance -> TeacherAttendanceScreenV2(asg, pickedLabel, onOpenMessages = onOpenMessages)
+                            UpdateTool.Marks -> TeacherMarksScreenV2(asg, pickedLabel, onImportMarks = onImportMarks)
                             UpdateTool.Syllabus -> TeacherSyllabusScreenV2(asg, pickedLabel)
                             UpdateTool.Homework -> TeacherHomeworkScreenV2(asg, pickedLabel)
                             UpdateTool.LessonPlan -> TeacherLessonPlanScreenV2(asg, pickedLabel)
                         }
                     }
+                }
+
+                // Cross-tool switch suggestion (non-blocking toast)
+                val suggestedTool = crossToolSuggestion(tool, dismissedSuggestions)
+                if (suggestedTool != null) {
+                    CrossToolSuggestionToast(
+                        fromTool = tool,
+                        toTool = suggestedTool,
+                        onSwitch = {
+                            tool = suggestedTool
+                        },
+                        onDismiss = {
+                            dismissedSuggestions = dismissedSuggestions + suggestedTool
+                        },
+                    )
                 }
             }
         }
@@ -394,4 +454,89 @@ private fun ScopeBar(tool: UpdateTool, label: String, onChange: () -> Unit) {
 private fun scopeLabelFor(cls: TeacherClassSummaryDto): String {
     val classLabel = if (cls.section.isBlank()) cls.className else "${cls.className}-${cls.section}"
     return "$classLabel · ${cls.subject}"
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Cross-tool switch suggestions — non-blocking toast that suggests switching
+// to a related tool after the teacher finishes with the current one.
+// ─────────────────────────────────────────────────────────────────────────────
+
+private fun crossToolSuggestion(
+    current: UpdateTool,
+    dismissed: Set<UpdateTool>,
+): UpdateTool? {
+    val next = when (current) {
+        UpdateTool.Attendance -> UpdateTool.Marks
+        UpdateTool.Marks -> UpdateTool.Homework
+        UpdateTool.Homework -> UpdateTool.LessonPlan
+        UpdateTool.LessonPlan -> UpdateTool.Syllabus
+        UpdateTool.Syllabus -> UpdateTool.Attendance
+    }
+    return if (next in dismissed) null else next
+}
+
+private fun suggestionMessage(from: UpdateTool, to: UpdateTool): String = when (from) {
+    UpdateTool.Attendance -> "Attendance done? Try updating ${to.labelKey.lowercase()} for this class."
+    UpdateTool.Marks -> "Marks updated? Consider assigning ${to.labelKey.lowercase()} next."
+    UpdateTool.Homework -> "Homework set? Plan a ${to.labelKey.lowercase()} to support it."
+    UpdateTool.LessonPlan -> "Lesson planned? Track it in the ${to.labelKey.lowercase()}."
+    UpdateTool.Syllabus -> "Syllabus updated? Mark ${to.labelKey.lowercase()} for today."
+}
+
+@Composable
+private fun CrossToolSuggestionToast(
+    fromTool: UpdateTool,
+    toTool: UpdateTool,
+    onSwitch: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val ixDismiss = remember { MutableInteractionSource() }
+    val ixSwitch = remember { MutableInteractionSource() }
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(VShapes.lg)
+            .background(VColors.violetSoft)
+            .border(1.dp, VColors.violet.copy(alpha = 0.2f), VShapes.lg)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(
+            Modifier.size(32.dp).clip(VShapes.md).background(toTool.accent.copy(alpha = 0.16f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(toTool.icon, contentDescription = null, tint = toTool.accent, modifier = Modifier.size(16.dp))
+        }
+        Text(
+            suggestionMessage(fromTool, toTool),
+            style = VTypography.caption.copy(fontSize = 12.sp, color = VColors.ink2, fontWeight = FontWeight.Medium),
+            modifier = Modifier.weight(1f),
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Row(
+            Modifier
+                .clip(VShapes.full)
+                .background(VColors.violet)
+                .clickable(interactionSource = ixSwitch, indication = null) { onSwitch() }
+                .padding(horizontal = 12.dp, vertical = 7.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                appString(toTool.labelKey),
+                style = VTypography.label.copy(color = VColors.white, fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                maxLines = 1,
+            )
+            Icon(VIcons.ArrowRight, contentDescription = null, tint = VColors.white, modifier = Modifier.size(12.dp))
+        }
+        Box(
+            Modifier.size(24.dp).clip(VShapes.full)
+                .clickable(interactionSource = ixDismiss, indication = null) { onDismiss() },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(VIcons.Close, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(14.dp))
+        }
+    }
 }

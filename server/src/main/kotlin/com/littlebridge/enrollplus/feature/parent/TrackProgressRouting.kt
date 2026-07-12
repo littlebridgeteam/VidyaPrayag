@@ -29,6 +29,8 @@ import com.littlebridge.enrollplus.core.principalUserId
 import com.littlebridge.enrollplus.db.AppConfigTable
 import com.littlebridge.enrollplus.db.ChildrenTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
+import com.littlebridge.enrollplus.db.GameBadgeDefinitionsTable
+import com.littlebridge.enrollplus.db.GameStudentBadgesTable
 import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.routing.*
@@ -101,9 +103,9 @@ data class TrackProgressResponse(
 
 private val lenientJson = Json { ignoreUnknownKeys = true; isLenient = true; encodeDefaults = true }
 
-private val DEFAULT_BADGES = listOf(
-    Badge("Social Star", "workspace_premium", false, listOf("#B6C7EB", "#006C49"))
-)
+// Badges now come from the gamification system (game_student_badges).
+// If no badges are earned yet, return an empty list — the UI shows a
+// motivating empty state ("Take the skill test to earn your first badge!").
 private val DEFAULT_COMPETENCIES = listOf(
     Competency("Literacy", 0.85, "translate"),
     Competency("Numeracy", 0.78, "calculate"),
@@ -152,14 +154,27 @@ fun Route.trackProgressRouting() {
                         journeyDescription = journey
                     )
 
-                    val badgesRaw = AppConfigTable.selectAll()
-                        .where { AppConfigTable.key eq "parent_track_badges" }
-                        .singleOrNull()?.get(AppConfigTable.value)
-                    val badges: List<Badge> = badgesRaw?.let {
-                        runCatching {
-                            lenientJson.decodeFromString(ListSerializer(Badge.serializer()), it)
-                        }.getOrNull()
-                    } ?: DEFAULT_BADGES
+                    // Badges: read from the gamification system (game_student_badges +
+                    // game_badge_definitions) — real, earned badges per child.
+                    val childId = child?.get(ChildrenTable.id)?.value
+                    val badges: List<Badge> = if (childId != null) {
+                        GameStudentBadgesTable
+                            .join(GameBadgeDefinitionsTable,
+                                org.jetbrains.exposed.sql.JoinType.INNER,
+                                GameStudentBadgesTable.badgeId, GameBadgeDefinitionsTable.id)
+                            .selectAll()
+                            .where { GameStudentBadgesTable.studentId eq childId }
+                            .map { row ->
+                                Badge(
+                                    title = row[GameBadgeDefinitionsTable.name],
+                                    icon = row[GameBadgeDefinitionsTable.iconName],
+                                    isLocked = false, // earned = not locked
+                                    colors = listOf("#B6C7EB", "#006C49"), // default gradient
+                                )
+                            }
+                    } else {
+                        emptyList()
+                    }
 
                     val competenciesRaw = AppConfigTable.selectAll()
                         .where { AppConfigTable.key eq "parent_track_academic_competencies" }

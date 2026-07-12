@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,6 +54,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
+import com.littlebridge.enrollplus.ui.v2.components.VStaleChip
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.viewmodel.koinViewModel
@@ -111,7 +114,7 @@ fun TeacherClassesScreenV2(
                 onSearch = viewModel::setSearch,
                 onCycleFilter = viewModel::cycleFilter,
                 onOpenClass = viewModel::openClass,
-                onRefresh = viewModel::refresh,
+                onRefresh = viewModel::refreshForPull,
             )
         }
     }
@@ -134,6 +137,19 @@ private fun ClassListPane(
 ) {
     val c = VtC
 
+    var isRefreshing by remember { mutableStateOf(false) }
+    LaunchedEffect(state.refreshEpoch) {
+        if (state.refreshEpoch > 0) isRefreshing = false
+    }
+
+    VPullRefresh(
+        isRefreshing = isRefreshing,
+        onRefresh = {
+            isRefreshing = true
+            onRefresh()
+        },
+        modifier = Modifier.fillMaxSize(),
+    ) {
     // The shared premium header sits at the very top of the tab (identical to
     // Home/Update/Timetable/Profile) so the whole portal wears one chrome — this
     // replaces the old slim canonical header the shell used to mount for Classes.
@@ -175,6 +191,13 @@ private fun ClassListPane(
             // Premium overview strip — a violet "you teach" hero with live totals.
             item { ClassesOverviewStrip(state = state) }
 
+            if (state.isStale) {
+                item { VStaleChip(modifier = Modifier.padding(horizontal = 4.dp)) }
+            }
+
+            // Attendance Health mini-card
+            item { AttendanceHealthMiniCard(state = state) }
+
             // Search + filter live in one clean control block.
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -203,6 +226,7 @@ private fun ClassListPane(
                 }
             }
         }
+    }
     }
 }
 
@@ -277,6 +301,80 @@ private fun OverviewStat(value: String, label: String, modifier: Modifier = Modi
             style = VtT.caption.coloredV(VColors.white.copy(alpha = 0.8f)).copy(fontSize = 10.sp),
             maxLines = 1,
         )
+    }
+}
+
+@Composable
+private fun AttendanceHealthMiniCard(
+    state: com.littlebridge.enrollplus.feature.teacher.presentation.TeacherClassesState,
+) {
+    val c = VtC
+    val classes = state.classes
+    if (classes.isEmpty()) return
+
+    val totalClasses = classes.size
+    val markedCount = classes.count { it.todayAttendanceMarked }
+    val pendingCount = totalClasses - markedCount
+    val totalAtRisk = classes.sumOf { it.atRiskCount }
+    val healthPct = if (totalClasses > 0) (markedCount * 100 / totalClasses) else 0
+    val healthColor = when {
+        healthPct >= 80 -> VColors.success
+        healthPct >= 50 -> VColors.gold
+        else -> VColors.coral
+    }
+
+    TCard {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                TEyebrow(appString(StringKeys.TC_ATTENDANCE_TODAY))
+                TPill(
+                    "$markedCount/$totalClasses",
+                    healthColor.copy(alpha = 0.14f),
+                    healthColor,
+                )
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                TRing(
+                    percent = healthPct,
+                    accent = healthColor,
+                    modifier = Modifier.size(56.dp),
+                    label = "$healthPct%",
+                    labelSize = 13.sp,
+                )
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Icon(VIcons.Check, contentDescription = null, tint = VColors.success, modifier = Modifier.size(14.dp))
+                        Text(
+                            "$markedCount class${if (markedCount != 1) "es" else ""} marked",
+                            style = VtT.body.coloredV(c.ink).copy(fontSize = 13.sp),
+                        )
+                    }
+                    if (pendingCount > 0) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Icon(VIcons.Clock, contentDescription = null, tint = VColors.gold, modifier = Modifier.size(14.dp))
+                            Text(
+                                "$pendingCount pending",
+                                style = VtT.body.coloredV(c.ink2).copy(fontSize = 13.sp),
+                            )
+                        }
+                    }
+                    if (totalAtRisk > 0) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Icon(VIcons.AlertTriangle, contentDescription = null, tint = VColors.coral, modifier = Modifier.size(14.dp))
+                            Text(
+                                "$totalAtRisk at-risk student${if (totalAtRisk != 1) "s" else ""}",
+                                style = VtT.body.coloredV(c.ink2).copy(fontSize = 13.sp),
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -499,6 +597,13 @@ private fun ClassDetailBody(detail: ClassDetailData, onOpenStudent: (String) -> 
                     Text(appString(StringKeys.TC_NO_STUDENTS_ENROLLED), style = VtT.body.coloredV(c.ink3), modifier = Modifier.fillMaxWidth())
                 }
             }
+        }
+
+        item {
+            TeacherClassGamificationCard(
+                className = detail.header.className,
+                section = detail.header.section,
+            )
         }
     }
 }

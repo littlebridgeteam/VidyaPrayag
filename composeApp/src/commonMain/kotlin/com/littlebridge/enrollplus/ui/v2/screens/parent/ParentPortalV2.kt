@@ -10,14 +10,23 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -39,6 +48,8 @@ import com.littlebridge.enrollplus.feature.parent.presentation.TrackProgressView
 import com.littlebridge.enrollplus.ui.v2.components.VAvatar
 import com.littlebridge.enrollplus.ui.v2.components.VDivider
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.components.VOfflineBanner
+import com.littlebridge.enrollplus.ui.v2.components.VBackOnlineBanner
 import com.littlebridge.enrollplus.ui.v2.components.VNavItem
 import com.littlebridge.enrollplus.ui.v2.components.VScreenScaffold
 import com.littlebridge.enrollplus.ui.v2.components.VStatusDot
@@ -48,10 +59,13 @@ import com.littlebridge.enrollplus.ui.v2.navigation.DeepLinkTarget
 import com.littlebridge.enrollplus.ui.v2.navigation.EntryRole
 import com.littlebridge.enrollplus.ui.v2.navigation.parseDeepLink
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
 import com.littlebridge.enrollplus.ui.v2.screens.auth.ParentLinkChildScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.discovery.AcademicCalendarScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.discovery.DiscoveryScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.notifications.NotificationsScreenV2
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import org.koin.core.qualifier.named
 import com.littlebridge.enrollplus.ui.v2.theme.colored
@@ -59,7 +73,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import com.littlebridge.enrollplus.ui.v2.screens.parent.ParentHomeScreenV2
 
 /** Full-screen overlays a portal can push above its tab content (back returns to the tabs). */
-private enum class ParentOverlay { None, Notifications, Calendar, Scholarships, Profile, Leave, Messages, LinkChild, Discovery, Health, Pulse, Transport, TutorChat, TutorProgress, DigitalIdCard, Library, EventRegistration, FeePayment, FeeHistory }
+private enum class ParentOverlay { None, Notifications, Calendar, Scholarships, Profile, Leave, Messages, LinkChild, Discovery, Health, Pulse, Transport, TutorChat, TutorProgress, DigitalIdCard, Library, EventRegistration, FeePayment, FeeHistory, Pews, Report, AnnouncementDetail, FeeDetail, LeaveDetail, ExamDetail }
 
 /**
  * ParentPortalV2 — the 5-tab parent shell, a faithful copy of `Parent.tsx → ParentApp`.
@@ -95,6 +109,20 @@ fun ParentPortalV2(
     var deepLinkAcademicsTab by remember { mutableStateOf<String?>(null) }
     var deepLinkSegment by remember { mutableStateOf<ConversationsSegment?>(null) }
     var deepLinkReportDraftId by remember { mutableStateOf<String?>(null) }
+    // Detail screen data — populated from the tapped notification when a deep link
+    // carries a specific entity ID (announcement/fee/leave).
+    var detailTitle by remember { mutableStateOf("") }
+    var detailBody by remember { mutableStateOf("") }
+    var detailTime by remember { mutableStateOf("") }
+
+    // Exam ecosystem deep-link params.
+    var examAssessmentId by remember { mutableStateOf<String?>(null) }
+    var examTitle by remember { mutableStateOf("") }
+
+    val dashboard by dashboardViewModel.state.collectAsStateV2()
+    val progress by headerViewModel.state.collectAsStateV2()
+    val notifications by notificationsViewModel.state.collectAsStateV2()
+    val messageState by messageViewModel.state.collectAsStateV2()
 
     // Apply deep-link routing: set tab + overlay from the typed target.
     LaunchedEffect(deepLinkTarget, localDeepLink) {
@@ -119,10 +147,20 @@ fun ParentPortalV2(
                     "transport" -> overlay = ParentOverlay.Transport
                     "library" -> overlay = ParentOverlay.Library
                     "events" -> overlay = ParentOverlay.EventRegistration
-                    "announcements" -> { tab = "conversations"; overlay = ParentOverlay.None; deepLinkSegment = ConversationsSegment.Announcements }
+                    "announcements" -> {
+                        if (target.params["announcementId"] != null) {
+                            val n = notifications.notifications.firstOrNull { it.deepLink?.contains(target.params["announcementId"] ?: "") == true }
+                            detailTitle = n?.title ?: "Announcement"
+                            detailBody = n?.body ?: ""
+                            detailTime = n?.time ?: ""
+                            overlay = ParentOverlay.AnnouncementDetail
+                        } else {
+                            tab = "conversations"; overlay = ParentOverlay.None; deepLinkSegment = ConversationsSegment.Announcements
+                        }
+                    }
                     "report-card" -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Report"; target.params["draftId"]?.let { deepLinkReportDraftId = it } }
                     "tutor" -> { overlay = ParentOverlay.TutorChat }
-                    "timetable" -> { overlay = ParentOverlay.Calendar }
+                    "timetable" -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Timetable" }
                     "marks" -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Marks" }
                     "attendance" -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Attendance" }
                     "homework" -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Homework" }
@@ -133,7 +171,30 @@ fun ParentPortalV2(
                     "pulse" -> overlay = ParentOverlay.Pulse
                     "id-card", "digital-id" -> overlay = ParentOverlay.DigitalIdCard
                     "link-child" -> overlay = ParentOverlay.LinkChild
+                    "pews" -> overlay = ParentOverlay.Pews
+                    "report" -> overlay = ParentOverlay.Report
+                    "exam" -> {
+                        examAssessmentId = target.params["assessmentId"]
+                        examTitle = target.params["title"] ?: "Exam Details"
+                        overlay = ParentOverlay.ExamDetail
+                    }
                     else -> overlay = ParentOverlay.None
+                }
+                // If params carry a feeId, show FeeDetail overlay instead of Fees tab.
+                target.params["feeId"]?.let { fid ->
+                    val n = notifications.notifications.firstOrNull { it.deepLink?.contains(fid) == true }
+                    detailTitle = n?.title ?: "Fee Detail"
+                    detailBody = n?.body ?: ""
+                    detailTime = n?.time ?: ""
+                    overlay = ParentOverlay.FeeDetail
+                }
+                // If params carry a leaveId, show LeaveDetail overlay instead of Leave overlay.
+                target.params["leaveId"]?.let { lid ->
+                    val n = notifications.notifications.firstOrNull { it.deepLink?.contains(lid) == true }
+                    detailTitle = n?.title ?: "Leave Request"
+                    detailBody = n?.body ?: ""
+                    detailTime = n?.time ?: ""
+                    overlay = ParentOverlay.LeaveDetail
                 }
             }
             is DeepLinkTarget.Messages -> {
@@ -145,11 +206,27 @@ fun ParentPortalV2(
                 val pathOnly = target.path.substringBefore("?").removePrefix("/")
                 when {
                     pathOnly.startsWith("announcements") -> { tab = "conversations"; overlay = ParentOverlay.None; deepLinkSegment = ConversationsSegment.Announcements }
+                    pathOnly.startsWith("fees/") -> {
+                        val feeId = pathOnly.substringAfter("fees/").substringBefore("/")
+                        val n = notifications.notifications.firstOrNull { it.deepLink?.contains(feeId) == true }
+                        detailTitle = n?.title ?: "Fee Detail"
+                        detailBody = n?.body ?: ""
+                        detailTime = n?.time ?: ""
+                        overlay = ParentOverlay.FeeDetail
+                    }
                     pathOnly.startsWith("fees") -> { tab = "fees"; overlay = ParentOverlay.None }
                     pathOnly.startsWith("scholarships") -> { tab = "home"; overlay = ParentOverlay.Scholarships }
                     pathOnly.startsWith("transport") -> { tab = "home"; overlay = ParentOverlay.Transport }
                     pathOnly.startsWith("library") -> { tab = "home"; overlay = ParentOverlay.Library }
                     pathOnly.startsWith("events") -> { tab = "home"; overlay = ParentOverlay.EventRegistration }
+                    pathOnly.startsWith("leave/") -> {
+                        val leaveId = pathOnly.substringAfter("leave/").substringBefore("/").substringBefore("?")
+                        val n = notifications.notifications.firstOrNull { it.deepLink?.contains(leaveId) == true }
+                        detailTitle = n?.title ?: "Leave Request"
+                        detailBody = n?.body ?: ""
+                        detailTime = n?.time ?: ""
+                        overlay = ParentOverlay.LeaveDetail
+                    }
                     pathOnly.startsWith("leave") -> { tab = "home"; overlay = ParentOverlay.Leave }
                     pathOnly.startsWith("messages") -> { overlay = ParentOverlay.Messages }
                     pathOnly.startsWith("health") -> { tab = "home"; overlay = ParentOverlay.Health }
@@ -157,35 +234,71 @@ fun ParentPortalV2(
                     pathOnly.startsWith("calendar") -> { tab = "home"; overlay = ParentOverlay.Calendar }
                     pathOnly.startsWith("report-card") -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Report" }
                     pathOnly.startsWith("tutor") -> { overlay = ParentOverlay.TutorChat }
-                    pathOnly.startsWith("timetable") -> { overlay = ParentOverlay.Calendar }
+                    pathOnly.startsWith("timetable") -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Timetable" }
                     pathOnly.startsWith("marks") -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Marks" }
                     pathOnly.startsWith("attendance") -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Attendance" }
                     pathOnly.startsWith("homework") -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Homework" }
                     pathOnly.startsWith("syllabus") -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Syllabus" }
                     pathOnly.startsWith("link-child") -> { tab = "profile"; overlay = ParentOverlay.LinkChild }
+                    pathOnly.startsWith("exam") -> {
+                        val queryStr = target.path.substringAfter("?", "")
+                        examAssessmentId = queryStr.substringAfter("assessmentId=", "").substringBefore("&").takeIf { it.isNotBlank() }
+                        examTitle = queryStr.substringAfter("title=", "").substringBefore("&").takeIf { it.isNotBlank() } ?: "Exam Details"
+                        overlay = ParentOverlay.ExamDetail
+                    }
                 }
             }
             else -> Unit
         }
         localDeepLink = null
     }
-    val dashboard by dashboardViewModel.state.collectAsStateV2()
-    val progress by headerViewModel.state.collectAsStateV2()
-    val notifications by notificationsViewModel.state.collectAsStateV2()
-    val messageState by messageViewModel.state.collectAsStateV2()
 
     // ── Unlinked-parent gate ────────────────────────────────────────────────────
-    // A parent with NO child linked yet shouldn't land in the 5-tab portal where every tab is an
-    // empty state. Show the focused unlinked landing while the dashboard is still resolving AND
-    // once it confirms zero children. This prevents the home-tab skeleton from flashing before
-    // the carousel appears for a genuinely unlinked parent.
-    if (dashboard.isLoading || (dashboard.error == null && dashboard.children.isEmpty())) {
+    // Show the unlinked screen ONLY when the dashboard has fully resolved (not loading,
+    // no error) and confirmed zero children. This prevents:
+    //   - Flashing the unlinked screen on every reload for linked parents
+    //   - Showing the unlinked screen when offline with cached data
+    if (!dashboard.isLoading && dashboard.error == null && dashboard.children.isEmpty()) {
         ParentUnlinkedScreenV2(
             // After a successful link request the dashboard reloads — once the school approves and
             // a child appears, this gate falls through to the full portal automatically.
             onLinked = { dashboardViewModel.load() },
             modifier = modifier,
         )
+        return
+    }
+
+    // First load with no cached children — show a skeleton, not a blank spinner.
+    if (dashboard.isLoading && dashboard.children.isEmpty()) {
+        Column(
+            modifier = modifier.fillMaxSize().background(VColors.cream).statusBarsPadding(),
+        ) {
+            SkeletonDashboard()
+        }
+        return
+    }
+
+    // Offline/error with no cached children — show error with retry, not the unlinked screen.
+    if (dashboard.error != null && dashboard.children.isEmpty()) {
+        val errorMsg = dashboard.error ?: return
+        Column(
+            modifier = modifier.fillMaxSize().background(VColors.surface).statusBarsPadding(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = errorMsg,
+                color = VColors.error,
+                style = VTypography.body,
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Retry",
+                color = VColors.primary,
+                style = VTypography.label,
+                modifier = Modifier.clickable { dashboardViewModel.load() },
+            )
+        }
         return
     }
 
@@ -208,7 +321,12 @@ fun ParentPortalV2(
             return
         }
         ParentOverlay.Calendar -> {
-            AcademicCalendarScreenV2(onBack = { overlay = ParentOverlay.None }, modifier = modifier, viewModelQualifier = named("parentCalendar"))
+            AcademicCalendarScreenV2(
+                onBack = { overlay = ParentOverlay.None },
+                onOpenEventRegistration = { overlay = ParentOverlay.EventRegistration },
+                modifier = modifier,
+                viewModelQualifier = named("parentCalendar"),
+            )
             return
         }
         ParentOverlay.Scholarships -> {
@@ -331,13 +449,91 @@ fun ParentPortalV2(
             ParentFeePaymentScreenV2(
                 onBack = { overlay = ParentOverlay.None },
                 modifier = modifier,
-                onPay = { /* TODO: invoke real payment gateway via FeeViewModel */ },
+                onPay = { overlay = ParentOverlay.None },
             )
             return
         }
         ParentOverlay.FeeHistory -> {
             ParentFeeHistoryScreenV2(
                 onBack = { overlay = ParentOverlay.None },
+                modifier = modifier,
+            )
+            return
+        }
+        ParentOverlay.Pews -> {
+            val child = dashboard.selectedChild
+            if (child == null) { overlay = ParentOverlay.None; return }
+            ParentPewsScreenV2(
+                childId = child.id,
+                childName = child.name,
+                onBack = { overlay = ParentOverlay.None },
+                onDeepLink = { deepLinkString ->
+                    localDeepLink = parseDeepLink(deepLinkString, EntryRole.Parent)
+                    overlay = ParentOverlay.None
+                },
+                modifier = modifier,
+            )
+            return
+        }
+        ParentOverlay.Report -> {
+            val child = dashboard.selectedChild
+            if (child == null) { overlay = ParentOverlay.None; return }
+            ParentReportScreen(
+                childId = child.id,
+                onBack = { overlay = ParentOverlay.None },
+            )
+            return
+        }
+        ParentOverlay.AnnouncementDetail -> {
+            AnnouncementDetailScreen(
+                title = detailTitle,
+                body = detailBody,
+                time = detailTime,
+                onBack = { overlay = ParentOverlay.None },
+                onOpenInConversations = {
+                    tab = "conversations"
+                    overlay = ParentOverlay.None
+                    deepLinkSegment = ConversationsSegment.Announcements
+                },
+                modifier = modifier,
+            )
+            return
+        }
+        ParentOverlay.FeeDetail -> {
+            FeeDetailScreen(
+                title = detailTitle,
+                body = detailBody,
+                time = detailTime,
+                onBack = { overlay = ParentOverlay.None },
+                onOpenInFees = {
+                    tab = "fees"
+                    overlay = ParentOverlay.None
+                },
+                modifier = modifier,
+            )
+            return
+        }
+        ParentOverlay.LeaveDetail -> {
+            LeaveDetailScreen(
+                title = detailTitle,
+                body = detailBody,
+                time = detailTime,
+                onBack = { overlay = ParentOverlay.None },
+                onOpenLeave = {
+                    overlay = ParentOverlay.Leave
+                },
+                modifier = modifier,
+            )
+            return
+        }
+        ParentOverlay.ExamDetail -> {
+            val child = dashboard.selectedChild
+            if (child == null || examAssessmentId == null) { overlay = ParentOverlay.None; return }
+            com.littlebridge.enrollplus.ui.v2.screens.parent.exam.ParentExamDetailScreen(
+                childId = child.id,
+                assessmentId = examAssessmentId!!,
+                examTitle = examTitle,
+                onBack = { overlay = ParentOverlay.None; examAssessmentId = null },
                 modifier = modifier,
             )
             return
@@ -378,12 +574,30 @@ fun ParentPortalV2(
         },
     ) { padding ->
         Box(Modifier.fillMaxSize()) {
-            when (tab) {
+            // Track offline→online transition for the "Back online" confirmation.
+            var wasOffline by remember { mutableStateOf(dashboard.isOffline) }
+            var showBackOnline by remember { mutableStateOf(false) }
+            LaunchedEffect(dashboard.isOffline) {
+                if (wasOffline && !dashboard.isOffline) {
+                    showBackOnline = true
+                }
+                wasOffline = dashboard.isOffline
+            }
+            LaunchedEffect(showBackOnline) {
+                if (showBackOnline) {
+                    kotlinx.coroutines.delay(2500L)
+                    showBackOnline = false
+                }
+            }
+
+            Column(Modifier.fillMaxSize()) {
+                when (tab) {
                 "home" -> ParentHomeScreenV2(
                     onDiscoverSchools = { overlay = ParentOverlay.Discovery },
                     onOpenNotifications = { overlay = ParentOverlay.Notifications },
                     onOpenFees = { tab = "fees" },
                     onOpenAcademics = { tab = "academics" },
+                    onOpenAcademicsTab = { subTab -> tab = "academics"; deepLinkAcademicsTab = subTab },
                     onOpenMessages = { overlay = ParentOverlay.Messages },
                     onOpenPulse = { overlay = ParentOverlay.Pulse },
                     onOpenTransport = { overlay = ParentOverlay.Transport },
@@ -391,7 +605,9 @@ fun ParentPortalV2(
                     onOpenScholarships = { overlay = ParentOverlay.Scholarships },
                     onOpenIdCard = { overlay = ParentOverlay.DigitalIdCard },
                     onOpenLibrary = { overlay = ParentOverlay.Library },
-                    onOpenEvents = { overlay = ParentOverlay.EventRegistration },
+                    onOpenEvents = { overlay = ParentOverlay.Calendar },
+                    onOpenReport = { overlay = ParentOverlay.Report },
+                    onOpenPews = { overlay = ParentOverlay.Pews },
                     unreadNotificationsCount = notifications.unreadCount,
                 )
                 "academics" -> ParentAcademicsScreenV2(
@@ -407,6 +623,9 @@ fun ParentPortalV2(
                     initialReportDraftId = deepLinkReportDraftId,
                     onReportDraftIdConsumed = { deepLinkReportDraftId = null },
                     unreadNotificationsCount = notifications.unreadCount,
+                    timetable = dashboard.timetable,
+                    todayPeriods = dashboard.todayPeriods,
+                    timetableLoading = dashboard.timetableLoading,
                 )
                 "fees" -> ParentFeesScreenV2(
                     parentName = progress.accountName,
@@ -441,7 +660,50 @@ fun ParentPortalV2(
                     onLinkChild = { overlay = ParentOverlay.LinkChild },
                     onDiscoverSchools = { overlay = ParentOverlay.Discovery },
                     onOpenAccountSettings = { overlay = ParentOverlay.Profile },
+                    onOpenNotifications = { overlay = ParentOverlay.Notifications },
+                    unreadNotificationsCount = notifications.unreadCount,
                 )
+            }
+            }
+            // Offline indicator overlay — animated slide-in/out so it never jumps.
+            // Sits in the status-bar dead-zone above the portal header so the header
+            // keeps the same vertical position as the online state.
+            AnimatedVisibility(
+                visible = dashboard.isOffline,
+                enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+                exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+                modifier = Modifier.align(Alignment.TopCenter),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(
+                            WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 24.dp,
+                        ),
+                    contentAlignment = Alignment.BottomCenter,
+                ) {
+                    VOfflineBanner(isOffline = true)
+                }
+            }
+
+            // "Back online" transient confirmation — briefly confirms the transition
+            // from offline→online so the user knows fresh data has loaded.
+            AnimatedVisibility(
+                visible = showBackOnline,
+                enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+                exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+                modifier = Modifier.align(Alignment.TopCenter),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(
+                            WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 24.dp,
+                        ),
+                    contentAlignment = Alignment.BottomCenter,
+                ) {
+                    VBackOnlineBanner()
+                }
             }
         }
     }

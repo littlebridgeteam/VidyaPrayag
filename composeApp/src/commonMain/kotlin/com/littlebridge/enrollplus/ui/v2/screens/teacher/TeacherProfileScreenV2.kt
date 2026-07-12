@@ -33,8 +33,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.feature.teacher.domain.model.TeacherSelfLeaveDto
 import com.littlebridge.enrollplus.feature.teacher.presentation.ActionResult
@@ -49,6 +51,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VDatePicker
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.components.VThemePicker
 import com.littlebridge.enrollplus.ui.v2.components.VLanguagePicker
 import com.littlebridge.enrollplus.core.locale.LocaleManager
@@ -107,11 +110,21 @@ fun TeacherProfileScreenV2(
     var showPasswordForm by remember { mutableStateOf(false) }
     var confirmLogout by remember { mutableStateOf(false) }
 
-    LazyColumn(
-        modifier = modifier.fillMaxSize().background(VColors.cream).statusBarsPadding(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = TeacherDockClearance),
-        verticalArrangement = Arrangement.spacedBy(18.dp),
+    var isRefreshing by remember { mutableStateOf(false) }
+    LaunchedEffect(profileState.isLoading) {
+        if (!profileState.isLoading) isRefreshing = false
+    }
+
+    VPullRefresh(
+        isRefreshing = isRefreshing,
+        onRefresh = { isRefreshing = true; profileViewModel.load() },
+        modifier = modifier.fillMaxSize().background(VColors.cream),
     ) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().statusBarsPadding(),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = TeacherDockClearance),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
+        ) {
         item {
             TeacherPremiumHeader(
                 teacherName = headerName,
@@ -237,6 +250,7 @@ fun TeacherProfileScreenV2(
                 }
             }
         }
+    }
     }
 
     if (confirmLogout) {

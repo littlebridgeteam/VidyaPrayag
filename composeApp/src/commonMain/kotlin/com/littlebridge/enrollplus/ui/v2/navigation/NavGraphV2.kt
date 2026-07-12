@@ -5,7 +5,14 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -78,10 +85,14 @@ fun NavGraphV2(
         if (brandedColors !== baseDef.colors) baseDef.copy(colors = brandedColors) else baseDef
     }
 
-    // Fetch school branding when authenticated; clear on logout
-    LaunchedEffect(isAuthenticated) {
-        if (isAuthenticated) brandingThemeManager.loadBranding()
-        else brandingThemeManager.clear()
+    // Fetch school branding when authenticated (school staff only — parents
+    // get 403 on /api/v1/school/branding and don't need branding customization).
+    LaunchedEffect(isAuthenticated, entryRole) {
+        if (isAuthenticated && entryRole != EntryRole.Parent) {
+            brandingThemeManager.loadBranding()
+        } else if (!isAuthenticated) {
+            brandingThemeManager.clear()
+        }
     }
 
     // Parse the deep link once when it arrives — but only if we know the user's role.
@@ -217,11 +228,17 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
                     "homework" -> "homework"
                     "quizzes" -> "quizzes"
                     "syllabus" -> "syllabus"
+                    "pews" -> "pews"
+                    "report" -> "report"
                     else -> null
                 }
                 val params = parseQueryParams(queryStr).toMutableMap()
                 if (thirdSeg == "report-card") {
                     segments.getOrNull(3)?.let { params["draftId"] = it }
+                }
+                // Capture fee ID when path is /parent/fees/{id} (thirdSeg is a UUID, not a known overlay)
+                if (secondSeg == "fees" && thirdSeg != null && overlay == null) {
+                    params["feeId"] = thirdSeg
                 }
                 DeepLinkTarget.ParentTab(EntryRole.Parent, secondSeg, overlay, params)
             } else {
@@ -241,6 +258,8 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
                     "pulse" -> "home" to "pulse"
                     "id-card", "digital-id" -> "home" to "id-card"
                     "report-card" -> "academics" to "report-card"
+                    "pews" -> "home" to "pews"
+                    "report" -> "home" to "report"
                     "tutor" -> "academics" to "tutor"
                     "timetable" -> "academics" to "timetable"
                     "link-child" -> "profile" to "link-child"
@@ -249,6 +268,9 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
                 val params = parseQueryParams(queryStr).toMutableMap()
                 if (secondSeg == "report-card") {
                     segments.getOrNull(2)?.let { params["draftId"] = it }
+                }
+                if (secondSeg == "announcements") {
+                    segments.getOrNull(2)?.let { params["announcementId"] = it }
                 }
                 DeepLinkTarget.ParentTab(EntryRole.Parent, mappedTab, mappedOverlay, params)
             }
@@ -287,7 +309,12 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
         "announcements" -> {
             val annId = segments.getOrNull(1)
             when (currentRole) {
-                EntryRole.Parent -> DeepLinkTarget.ParentTab(EntryRole.Parent, "conversations", "announcements")
+                EntryRole.Parent -> DeepLinkTarget.ParentTab(
+                    EntryRole.Parent,
+                    "conversations",
+                    "announcements",
+                    if (annId != null) mapOf("announcementId" to annId) else emptyMap(),
+                )
                 EntryRole.Teacher -> DeepLinkTarget.TeacherScreen(EntryRole.Teacher, "announcements", if (annId != null) mapOf("id" to annId) else emptyMap())
                 EntryRole.SchoolAdmin, EntryRole.SuperAdmin ->
                     DeepLinkTarget.SchoolScreen(currentRole, "announcements", if (annId != null) mapOf("id" to annId) else emptyMap())
@@ -315,15 +342,26 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
         "fees" -> {
             val feeId = segments.getOrNull(1)
             when (currentRole) {
-                EntryRole.Parent -> DeepLinkTarget.ParentTab(EntryRole.Parent, "fees", feeId)
+                EntryRole.Parent -> DeepLinkTarget.ParentTab(
+                    EntryRole.Parent,
+                    "fees",
+                    null,
+                    if (feeId != null) mapOf("feeId" to feeId) else emptyMap(),
+                )
                 EntryRole.SchoolAdmin, EntryRole.SuperAdmin ->
                     DeepLinkTarget.SchoolScreen(currentRole, "fees", if (feeId != null) mapOf("id" to feeId) else emptyMap())
                 else -> DeepLinkTarget.Generic(currentRole, path)
             }
         }
         "leave" -> {
+            val leaveId = segments.getOrNull(1)
             when (currentRole) {
-                EntryRole.Parent -> DeepLinkTarget.ParentTab(EntryRole.Parent, "home", "leave")
+                EntryRole.Parent -> DeepLinkTarget.ParentTab(
+                    EntryRole.Parent,
+                    "home",
+                    "leave",
+                    if (leaveId != null) mapOf("leaveId" to leaveId) else parseQueryParams(queryStr),
+                )
                 EntryRole.Teacher -> DeepLinkTarget.TeacherScreen(EntryRole.Teacher, "leave-requests")
                 EntryRole.SchoolAdmin, EntryRole.SuperAdmin ->
                     DeepLinkTarget.SchoolScreen(currentRole, "leave-requests")
@@ -561,11 +599,23 @@ private fun AuthedFlow(
         modifier = modifier,
     ) { current ->
         when (current) {
-            // Brief resolving frame — themed background only, no spinner flash for the common
-            // (already-completed) case which resolves on the first composition.
-            AuthedRoute.Resolving -> androidx.compose.foundation.layout.Box(
-                Modifier.then(modifier),
-            ) {}
+            // Brief resolving frame — themed background + skeleton so the user
+            // never sees a blank screen between splash and portal.
+            AuthedRoute.Resolving -> {
+                val c = VTheme.colors
+                Box(
+                    Modifier
+                        .then(modifier)
+                        .fillMaxSize()
+                        .background(c.background),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator(
+                        color = c.accent,
+                        modifier = Modifier.size(36.dp),
+                    )
+                }
+            }
 
             AuthedRoute.ParentLinkChild -> ParentLinkChildScreenV2(
                 onDone = { route = AuthedRoute.Portal },

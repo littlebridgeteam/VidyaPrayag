@@ -45,7 +45,9 @@ data class StudentAnalyticsState(
     val cohortComparison: List<Float> = emptyList(), // per-grade averages
     val cohortLabels: List<String> = emptyList(),     // grade labels matching cohortComparison
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class StudentAnalyticsViewModel(
@@ -67,7 +69,7 @@ class StudentAnalyticsViewModel(
             }
             when (val result = analyticsRepository.getStudentCohort(token)) {
                 is NetworkResult.Success -> {
-                    _state.value = parseCohort(result.data.data).copy(isLoading = false)
+                    _state.value = parseCohort(result.data.data).copy(isLoading = false, isStale = result.isStale, isOffline = result.isOffline)
                 }
                 is NetworkResult.Error -> {
                     AppLogger.e("StudentAnalyticsVM", "getStudentCohort error: ${result.message}")

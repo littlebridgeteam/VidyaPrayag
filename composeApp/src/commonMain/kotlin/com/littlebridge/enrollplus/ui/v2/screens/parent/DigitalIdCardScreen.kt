@@ -118,7 +118,7 @@ fun DigitalIdCardScreen(
 
                 Text(
                     text = appString(StringKeys.DID_VALID_TILL, "date" to (card.validTill ?: "N/A")),
-                    style = VTypography.bodyStrong,
+                    style = VTypography.body,
                 )
             } else if (state.isLoading) {
                 Text(
@@ -173,7 +173,7 @@ private fun DigitalCard(card: IdCardDto, showFront: Boolean) {
             } else {
                 Text(
                     text = appString(StringKeys.DID_QR_CODE),
-                    style = VTypography.bodyStrong,
+                    style = VTypography.body,
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 QrCodeImage(

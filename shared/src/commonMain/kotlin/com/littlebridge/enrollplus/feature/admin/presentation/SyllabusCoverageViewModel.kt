@@ -54,7 +54,9 @@ data class SyllabusCoverageState(
     val overallPercentage: Int = 0,
     val overallTrend: String = "",
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class SyllabusCoverageViewModel(
@@ -76,7 +78,7 @@ class SyllabusCoverageViewModel(
             }
             when (val result = analyticsRepository.getSyllabusCoverage(token)) {
                 is NetworkResult.Success -> {
-                    _state.value = parseSyllabus(result.data.data).copy(isLoading = false)
+                    _state.value = parseSyllabus(result.data.data).copy(isLoading = false, isStale = result.isStale, isOffline = result.isOffline)
                 }
                 is NetworkResult.Error -> {
                     AppLogger.e("SyllabusCoverageVM", "getSyllabusCoverage error: ${result.message}")

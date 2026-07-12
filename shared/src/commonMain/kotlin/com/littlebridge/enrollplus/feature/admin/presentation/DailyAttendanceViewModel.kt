@@ -34,7 +34,9 @@ data class DailyAttendanceState(
     val presentCount: Int = 0,
     val attendancePercentage: String = "0%",
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class DailyAttendanceViewModel(
@@ -85,7 +87,9 @@ class DailyAttendanceViewModel(
                         totalCount = data?.totalCount ?: 0,
                         presentCount = data?.presentCount ?: 0,
                         attendancePercentage = data?.attendancePercentage ?: "0%",
-                        isLoading = false
+                        isLoading = false,
+                        isStale = result.isStale,
+                        isOffline = result.isOffline,
                     )
                 }
                 is NetworkResult.Error -> {

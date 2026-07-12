@@ -38,6 +38,7 @@ import com.littlebridge.enrollplus.core.fail
 import com.littlebridge.enrollplus.core.ok
 import com.littlebridge.enrollplus.core.requireSchoolAdmin
 import com.littlebridge.enrollplus.core.requireSchoolContext
+import com.littlebridge.enrollplus.core.requireSchoolOrTeacherContext
 import com.littlebridge.enrollplus.db.AnnouncementsTable
 import com.littlebridge.enrollplus.db.AppUsersTable
 import com.littlebridge.enrollplus.db.ChildrenTable
@@ -144,9 +145,9 @@ fun Route.announcementRouting() {
     authenticate("jwt") {
         route("/api/v1/school/announcements") {
 
-            // ---- list ----
+            // ---- list (teachers can read; only admins can create) ----
             get {
-                val ctx = call.requireSchoolContext() ?: return@get
+                val ctx = call.requireSchoolOrTeacherContext() ?: return@get
                 val schoolId = effectiveSchoolId(
                     ctx.schoolId, ctx.role, call.request.queryParameters["school_id"]
                 )
@@ -163,7 +164,7 @@ fun Route.announcementRouting() {
             get("/search") {
                 val q = call.request.queryParameters["query"]?.lowercase().orEmpty()
                 if (q.isBlank()) { call.fail("query is required"); return@get }
-                val ctx = call.requireSchoolContext() ?: return@get
+                val ctx = call.requireSchoolOrTeacherContext() ?: return@get
                 val schoolId = effectiveSchoolId(
                     ctx.schoolId, ctx.role, call.request.queryParameters["school_id"]
                 )

@@ -2,6 +2,8 @@ package com.littlebridge.enrollplus.di
 
 import com.littlebridge.enrollplus.core.prefs.LocalStoragePreferenceManager
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
+import com.littlebridge.enrollplus.core.cache.CacheStorage
+import com.littlebridge.enrollplus.core.cache.NoopCacheStorage
 import com.littlebridge.enrollplus.feature.schools.data.local.InMemorySchoolLocalDataSource
 import com.littlebridge.enrollplus.feature.schools.data.local.SchoolLocalDataSource
 import com.littlebridge.enrollplus.feature.library.data.local.InMemoryLibraryLocalDataSource
@@ -13,6 +15,7 @@ import org.koin.dsl.module
 actual fun platformModule(): Module = module {
     single<com.littlebridge.enrollplus.Platform> { com.littlebridge.enrollplus.getPlatform() }
     single { Js.create() }
+    single<CacheStorage> { NoopCacheStorage() }
     single<SchoolLocalDataSource> { InMemorySchoolLocalDataSource() }
     single<LibraryLocalDataSource> { InMemoryLibraryLocalDataSource() }
     single<PreferenceRepository> { LocalStoragePreferenceManager() }

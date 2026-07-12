@@ -115,6 +115,11 @@ private fun SchoolCommsContent(
 ) {
     var tab by remember { mutableStateOf("Announcements") }
     var openAnnouncement by remember { mutableStateOf<String?>(null) }
+    var isRefreshing by remember { mutableStateOf(false) }
+
+    LaunchedEffect(state.isLoading) {
+        if (!state.isLoading) isRefreshing = false
+    }
 
     openAnnouncement?.let { id ->
         AnnouncementDetailV2(
@@ -139,8 +144,11 @@ private fun SchoolCommsContent(
     }
 
     VPullRefresh(
-        isRefreshing = state.isLoading,
-        onRefresh = onRetry,
+        isRefreshing = isRefreshing,
+        onRefresh = {
+            isRefreshing = true
+            onRetry()
+        },
         modifier = modifier.fillMaxSize(),
     ) {
         Column(

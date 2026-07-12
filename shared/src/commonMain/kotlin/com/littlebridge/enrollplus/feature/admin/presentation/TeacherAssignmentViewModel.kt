@@ -50,6 +50,8 @@ data class TeacherAssignmentUiState(
     // per-card removal
     val removingId: String? = null,
     val removeError: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class TeacherAssignmentViewModel(
@@ -73,7 +75,7 @@ class TeacherAssignmentViewModel(
             // Overview is the primary payload; options are best-effort (selector).
             when (val r = repository.getOverview(token, id)) {
                 is NetworkResult.Success ->
-                    _state.value = _state.value.copy(isLoading = false, error = null, overview = r.data.data)
+                    _state.value = _state.value.copy(isLoading = false, error = null, overview = r.data.data, isStale = r.isStale, isOffline = r.isOffline)
                 is NetworkResult.Error -> {
                     AppLogger.e(TAG, "getOverview error: ${r.message}")
                     _state.value = _state.value.copy(isLoading = false, error = r.message)
@@ -87,7 +89,7 @@ class TeacherAssignmentViewModel(
 
     private suspend fun loadOptions(token: String) {
         when (val r = repository.getOptions(token)) {
-            is NetworkResult.Success -> _state.value = _state.value.copy(options = r.data.data)
+            is NetworkResult.Success -> _state.value = _state.value.copy(options = r.data.data, isStale = r.isStale, isOffline = r.isOffline)
             is NetworkResult.Error -> AppLogger.e(TAG, "getOptions error: ${r.message}")
             is NetworkResult.ConnectionError -> AppLogger.e(TAG, "getOptions connection error")
         }
@@ -232,7 +234,7 @@ class TeacherAssignmentViewModel(
     private suspend fun refreshOverview(token: String) {
         val id = teacherId ?: return
         when (val r = repository.getOverview(token, id)) {
-            is NetworkResult.Success -> _state.value = _state.value.copy(overview = r.data.data)
+            is NetworkResult.Success -> _state.value = _state.value.copy(overview = r.data.data, isStale = r.isStale, isOffline = r.isOffline)
             else -> { /* keep existing overview on a refresh failure */ }
         }
     }

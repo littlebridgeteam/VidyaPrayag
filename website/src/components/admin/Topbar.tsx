@@ -68,6 +68,8 @@ export function mapDeepLinkToAdminRoute(deepLink: string): string | null {
     case "pace-alerts":
     case "pace":
       return "/admin/pace-alerts";
+    case "gamification":
+      return "/admin/gamification";
     default:
       return null;
   }

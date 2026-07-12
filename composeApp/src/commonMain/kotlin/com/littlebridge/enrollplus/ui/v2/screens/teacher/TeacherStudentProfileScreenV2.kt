@@ -112,6 +112,7 @@ private fun StudentProfileBody(p: StudentProfileData) {
                 item { ParentContactCard(pc.name, pc.phone) }
             }
         }
+        item { TeacherStudentGamificationCard(studentId = p.studentId, studentName = p.name) }
     }
 }
 
@@ -201,14 +202,14 @@ private fun TrendPill(trend: String) {
     TPill(label, bg, fg)
 }
 
-private fun attendanceColor(c: com.littlebridge.enrollplus.ui.v2.theme.VColors, pct: Int?): Color = when {
+private fun attendanceColor(c: VtC, pct: Int?): Color = when {
     pct == null -> c.ink3
     pct >= 85 -> c.success
     pct >= 70 -> c.warning
     else -> c.danger
 }
 
-private fun attendanceDayColor(c: com.littlebridge.enrollplus.ui.v2.theme.VColors, status: String): Color = when (status.lowercase()) {
+private fun attendanceDayColor(c: VtC, status: String): Color = when (status.lowercase()) {
     "present" -> c.success
     "late" -> c.warning
     "leave" -> c.accent
@@ -292,7 +293,7 @@ private fun flagMetaKey(code: String): String = when (code) {
     else -> ""
 }
 
-private fun flagMetaColors(c: com.littlebridge.enrollplus.ui.v2.theme.VColors, code: String): Pair<Color, Color> = when (code) {
+private fun flagMetaColors(c: VtC, code: String): Pair<Color, Color> = when (code) {
     "low_attendance" -> c.dangerInk to c.danger.copy(alpha = 0.10f)
     "recent_absences" -> c.dangerInk to c.danger.copy(alpha = 0.10f)
     "failing_trend" -> c.dangerInk to c.danger.copy(alpha = 0.10f)

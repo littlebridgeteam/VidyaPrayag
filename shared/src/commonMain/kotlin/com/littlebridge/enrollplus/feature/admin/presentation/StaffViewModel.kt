@@ -36,7 +36,9 @@ data class StaffRosterState(
     val addError: String? = null,
     val infoMessage: String? = null,
     // profile / edit / delete
-    val removingIds: Set<String> = emptySet()
+    val removingIds: Set<String> = emptySet(),
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class StaffViewModel(
@@ -60,7 +62,7 @@ class StaffViewModel(
             val q = query ?: _state.value.query
             when (val r = repository.getStaff(token, query = q.ifBlank { null })) {
                 is NetworkResult.Success -> {
-                    _state.value = _state.value.copy(isLoading = false, error = null, staff = r.data.data?.staff.orEmpty())
+                    _state.value = _state.value.copy(isLoading = false, error = null, staff = r.data.data?.staff.orEmpty(), isStale = r.isStale, isOffline = r.isOffline)
                 }
                 is NetworkResult.Error -> {
                     AppLogger.e("StaffVM", "getStaff error: ${r.message}")

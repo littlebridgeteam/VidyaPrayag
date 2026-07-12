@@ -60,6 +60,7 @@ import com.littlebridge.enrollplus.ui.v2.screens.library.LibraryViewMode
 import com.littlebridge.enrollplus.ui.v2.screens.library.QrShareDialog
 import com.littlebridge.enrollplus.ui.v2.screens.library.ReadingTimeEstimate
 import com.littlebridge.enrollplus.ui.v2.screens.library.ViewModeToggle
+import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
@@ -103,17 +104,10 @@ fun ParentLibraryScreenV2(
         Column(
             modifier = Modifier.fillMaxSize(),
         ) {
-            // Header
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(appString(StringKeys.PL_LIBRARY), style = VTheme.type.h2.colored(c.ink))
-                TextButton(onClick = onBack) { Text(appString(StringKeys.PL_BACK)) }
-            }
+            PremiumOverlayHeader(
+                title = appString(StringKeys.PL_LIBRARY),
+                onBack = onBack,
+            )
 
             // Child selector hint
             if (dashboard.children.size > 1) {

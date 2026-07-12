@@ -64,6 +64,7 @@ import com.littlebridge.enrollplus.db.HomeworkAttachmentsTable
 import com.littlebridge.enrollplus.db.HomeworkExtensionsTable
 import com.littlebridge.enrollplus.db.HomeworkSubmissionsTable
 import com.littlebridge.enrollplus.db.HomeworkTable
+import com.littlebridge.enrollplus.feature.gamification.XpHooks
 import com.littlebridge.enrollplus.feature.notifications.Notify
 import com.littlebridge.enrollplus.feature.notifications.NotifyRecipients
 import io.ktor.http.HttpStatusCode
@@ -728,6 +729,10 @@ private fun Route.homeworkReview() {
                 }
             }
         }
+
+        // Gamification XP hook — homework reviewed/graded
+        XpHooks.onHomeworkReviewed(targetStudentId, ctx.schoolId, req.grade)
+
         call.ok(HwMutationData(success = true, message = "Submission updated"), message = "Submission updated")
     }
 }

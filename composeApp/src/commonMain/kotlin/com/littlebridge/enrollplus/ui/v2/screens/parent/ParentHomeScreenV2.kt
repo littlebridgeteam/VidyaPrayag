@@ -57,6 +57,7 @@ import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
+import com.littlebridge.enrollplus.ui.v2.components.VStaleChip
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -67,6 +68,7 @@ fun ParentHomeScreenV2(
     onOpenNotifications: () -> Unit = {},
     onOpenFees: () -> Unit = {},
     onOpenAcademics: () -> Unit = {},
+    onOpenAcademicsTab: (String) -> Unit = {},
     onOpenMessages: () -> Unit = {},
     onOpenPulse: () -> Unit = {},
     onOpenTransport: () -> Unit = {},
@@ -75,6 +77,8 @@ fun ParentHomeScreenV2(
     onOpenIdCard: () -> Unit = {},
     onOpenLibrary: () -> Unit = {},
     onOpenEvents: () -> Unit = {},
+    onOpenReport: () -> Unit = {},
+    onOpenPews: () -> Unit = {},
     unreadNotificationsCount: Int = 0,
     viewModel: ParentDashboardViewModel = koinViewModel(),
     academicsViewModel: ParentAcademicsViewModel = koinViewModel(),
@@ -88,6 +92,10 @@ fun ParentHomeScreenV2(
     val track by trackViewModel.state.collectAsStateV2()
     val transport by transportViewModel.state.collectAsStateV2()
     var isRefreshing by remember { mutableStateOf(false) }
+
+    LaunchedEffect(state.refreshEpoch) {
+        if (state.refreshEpoch > 0) isRefreshing = false
+    }
 
     LaunchedEffect(Unit) {
         if (state.children.isEmpty()) viewModel.load()
@@ -123,18 +131,18 @@ fun ParentHomeScreenV2(
         isRefreshing = isRefreshing,
         onRefresh = {
             isRefreshing = true
-            viewModel.load()
+            viewModel.refresh()
             state.selectedChild?.id?.let { childId ->
                 academicsViewModel.selectChild(childId)
                 academicsViewModel.loadDailySummary()
                 transportViewModel.loadChildRoute(childId)
             }
-            isRefreshing = false
         },
         onSelectChild = viewModel::selectChild,
         onOpenNotifications = onOpenNotifications,
         onOpenFees = onOpenFees,
         onOpenAcademics = onOpenAcademics,
+        onOpenAcademicsTab = onOpenAcademicsTab,
         onOpenMessages = onOpenMessages,
         onOpenTransport = onOpenTransport,
         onOpenTutor = onOpenTutor,
@@ -142,6 +150,8 @@ fun ParentHomeScreenV2(
         onOpenIdCard = onOpenIdCard,
         onOpenLibrary = onOpenLibrary,
         onOpenEvents = onOpenEvents,
+        onOpenReport = onOpenReport,
+        onOpenPews = onOpenPews,
         onDiscoverSchools = onDiscoverSchools,
         unreadNotificationsCount = unreadNotificationsCount,
         modifier = modifier,
@@ -161,6 +171,7 @@ private fun ParentHomeContent(
     onOpenNotifications: () -> Unit,
     onOpenFees: () -> Unit,
     onOpenAcademics: () -> Unit,
+    onOpenAcademicsTab: (String) -> Unit,
     onOpenMessages: () -> Unit,
     onOpenTransport: () -> Unit,
     onOpenTutor: () -> Unit,
@@ -168,6 +179,8 @@ private fun ParentHomeContent(
     onOpenIdCard: () -> Unit,
     onOpenLibrary: () -> Unit,
     onOpenEvents: () -> Unit,
+    onOpenReport: () -> Unit,
+    onOpenPews: () -> Unit,
     onDiscoverSchools: () -> Unit,
     unreadNotificationsCount: Int,
     modifier: Modifier = Modifier,
@@ -192,7 +205,13 @@ private fun ParentHomeContent(
                 onSelectChild = onSelectChild,
                 onOpenNotifications = onOpenNotifications,
                 unreadNotificationsCount = unreadNotificationsCount,
+                greetingLead = "here's",
+                greetingAccent = "${state.selectedChild?.name?.ifBlank { null } ?: "Your Child"}'s day",
             )
+
+            if (state.isStale) {
+                VStaleChip(modifier = Modifier.padding(horizontal = 24.dp, vertical = 2.dp))
+            }
 
             when {
                 state.isLoading && state.children.isEmpty() -> HomeSkeleton()
@@ -206,6 +225,7 @@ private fun ParentHomeContent(
                     transportEnrolled = transportEnrolled,
                     onOpenFees = onOpenFees,
                     onOpenAcademics = onOpenAcademics,
+                    onOpenAcademicsTab = onOpenAcademicsTab,
                     onOpenMessages = onOpenMessages,
                     onOpenTransport = onOpenTransport,
                     onOpenTutor = onOpenTutor,
@@ -213,6 +233,9 @@ private fun ParentHomeContent(
                     onOpenIdCard = onOpenIdCard,
                     onOpenLibrary = onOpenLibrary,
                     onOpenEvents = onOpenEvents,
+                    onOpenReport = onOpenReport,
+                    onOpenPews = onOpenPews,
+                    unreadNotificationsCount = unreadNotificationsCount,
                 )
             }
         }
@@ -366,6 +389,7 @@ private fun HomeLoaded(
     transportEnrolled: Boolean,
     onOpenFees: () -> Unit,
     onOpenAcademics: () -> Unit,
+    onOpenAcademicsTab: (String) -> Unit,
     onOpenMessages: () -> Unit,
     onOpenTransport: () -> Unit,
     onOpenTutor: () -> Unit,
@@ -373,6 +397,9 @@ private fun HomeLoaded(
     onOpenIdCard: () -> Unit,
     onOpenLibrary: () -> Unit,
     onOpenEvents: () -> Unit,
+    onOpenReport: () -> Unit,
+    onOpenPews: () -> Unit,
+    unreadNotificationsCount: Int,
 ) {
     val child = state.selectedChild
     val childName = child?.name?.ifBlank { null } ?: "Your Child"
@@ -381,7 +408,7 @@ private fun HomeLoaded(
     val feesDue = state.fees?.outstandingFees ?: "₹0"
     val overdue = state.fees?.overdueCount ?: 0
     val pendingCount = academics.quizzes.count { it.status.uppercase() == "PENDING" }
-    val unreadMessages = 0 // TODO: wire from notifications/messages state
+    val unreadMessages = unreadNotificationsCount
 
     val priorityCards = rememberPriorityCards(
         feesDue = feesDue,
@@ -391,6 +418,7 @@ private fun HomeLoaded(
         unreadMessages = unreadMessages,
         onOpenFees = onOpenFees,
         onOpenAcademics = onOpenAcademics,
+        onOpenAcademicsTab = onOpenAcademicsTab,
         onOpenMessages = onOpenMessages,
     )
 
@@ -419,11 +447,11 @@ private fun HomeLoaded(
         SectionHeader(title = "Priority")
         PriorityCarousel(cards = priorityCards)
 
-        SectionHeader(title = "Today's Schedule", action = "Full timetable", onAction = onOpenAcademics)
+        SectionHeader(title = "Today's Schedule", action = "Full timetable", onAction = { onOpenAcademicsTab("Timetable") })
         TodayScheduleCard(
             periods = state.todayPeriods,
             isLoading = state.timetableLoading,
-            onOpenAcademics = onOpenAcademics,
+            onOpenAcademics = { onOpenAcademicsTab("Timetable") },
         )
 
         SectionHeader(title = "Today's Summary")
@@ -442,9 +470,10 @@ private fun HomeLoaded(
         SectionHeader(title = "Premium Features")
         PremiumFeaturesGrid(
             onOpenTutor = onOpenTutor,
-            onOpenScholarships = onOpenScholarships,
-            onOpenIdCard = onOpenIdCard,
+            onOpenReport = onOpenReport,
+            onOpenPews = onOpenPews,
             onOpenLibrary = onOpenLibrary,
+            onOpenCalendar = onOpenEvents,
         )
 
         Spacer(Modifier.height(24.dp))
@@ -754,6 +783,7 @@ private fun rememberPriorityCards(
     unreadMessages: Int,
     onOpenFees: () -> Unit,
     onOpenAcademics: () -> Unit,
+    onOpenAcademicsTab: (String) -> Unit,
     onOpenMessages: () -> Unit,
 ): List<PriorityItem> {
     return remember(feesDue, overdue, attendanceRate, pendingCount, unreadMessages) {
@@ -783,7 +813,7 @@ private fun rememberPriorityCards(
             badge = if ((attendanceRate ?: 100) < 75) "Low" else "On Track",
             badgeBg = if ((attendanceRate ?: 100) < 75) VColors.gold else VColors.mint,
             urgency = if ((attendanceRate ?: 100) < 75) 90 else 40,
-            onClick = onOpenAcademics,
+            onClick = { onOpenAcademicsTab("Attendance") },
         )
 
         list += PriorityItem(
@@ -796,7 +826,7 @@ private fun rememberPriorityCards(
             badge = if (pendingCount > 0) "Due Today" else "Done",
             badgeBg = if (pendingCount > 0) VColors.gold else VColors.mint,
             urgency = if (pendingCount > 0) 80 else 30,
-            onClick = onOpenAcademics,
+            onClick = { onOpenAcademicsTab("Quizzes") },
         )
 
         list += PriorityItem(
@@ -1261,11 +1291,28 @@ private fun UpdateItem(
                 )
             }
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "School Admin",
-                    style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
-                    color = VColors.ink3,
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = announcement.category.ifBlank { "Notice" },
+                        style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                        color = VColors.violet,
+                    )
+                    if (announcement.date.isNotBlank()) {
+                        Text(
+                            text = "·",
+                            style = VTypography.caption.copy(fontSize = 11.sp),
+                            color = VColors.ink3,
+                        )
+                        Text(
+                            text = announcement.date,
+                            style = VTypography.caption.copy(fontSize = 11.sp),
+                            color = VColors.ink3,
+                        )
+                    }
+                }
                 Text(
                     text = announcement.title,
                     style = VTypography.body.copy(fontWeight = FontWeight.Bold, fontSize = 15.sp),
@@ -1313,42 +1360,60 @@ private fun UpdateItem(
 @Composable
 private fun PremiumFeaturesGrid(
     onOpenTutor: () -> Unit,
-    onOpenScholarships: () -> Unit,
-    onOpenIdCard: () -> Unit,
+    onOpenReport: () -> Unit,
+    onOpenPews: () -> Unit,
     onOpenLibrary: () -> Unit,
+    onOpenCalendar: () -> Unit,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        PremiumFeatureCard(
-            icon = VIcons.Sparkles,
-            iconBg = VColors.violet,
-            label = "AI Tutor",
-            modifier = Modifier.weight(1f),
-            onClick = onOpenTutor,
-        )
-        PremiumFeatureCard(
-            icon = VIcons.FileText,
-            iconBg = VColors.mint,
-            label = "AI Report",
-            modifier = Modifier.weight(1f),
-            onClick = onOpenScholarships,
-        )
-        PremiumFeatureCard(
-            icon = VIcons.Activity,
-            iconBg = VColors.coral,
-            label = "PEWS",
-            modifier = Modifier.weight(1f),
-            onClick = onOpenIdCard,
-        )
-        PremiumFeatureCard(
-            icon = VIcons.BookOpen,
-            iconBg = VColors.gold,
-            label = "Library",
-            modifier = Modifier.weight(1f),
-            onClick = onOpenLibrary,
-        )
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            PremiumFeatureCard(
+                icon = VIcons.Sparkles,
+                iconBg = VColors.violet,
+                label = "AI Tutor",
+                modifier = Modifier.weight(1f),
+                onClick = onOpenTutor,
+            )
+            PremiumFeatureCard(
+                icon = VIcons.FileText,
+                iconBg = VColors.mint,
+                label = "AI Report",
+                modifier = Modifier.weight(1f),
+                onClick = onOpenReport,
+            )
+            PremiumFeatureCard(
+                icon = VIcons.Activity,
+                iconBg = VColors.coral,
+                label = "PEWS",
+                modifier = Modifier.weight(1f),
+                onClick = onOpenPews,
+            )
+            PremiumFeatureCard(
+                icon = VIcons.BookOpen,
+                iconBg = VColors.gold,
+                label = "Library",
+                modifier = Modifier.weight(1f),
+                onClick = onOpenLibrary,
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            PremiumFeatureCard(
+                icon = VIcons.Calendar,
+                iconBg = VColors.sky,
+                label = "Calendar",
+                modifier = Modifier.weight(1f),
+                onClick = onOpenCalendar,
+            )
+            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.weight(1f))
+        }
     }
 }
 

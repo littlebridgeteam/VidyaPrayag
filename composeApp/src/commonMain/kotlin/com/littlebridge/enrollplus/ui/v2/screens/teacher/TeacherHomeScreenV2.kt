@@ -50,8 +50,11 @@ import com.littlebridge.enrollplus.feature.teacher.domain.model.TeacherClassSumm
 import com.littlebridge.enrollplus.feature.teacher.presentation.ResolvedPeriodUi
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherCheckInState
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherCheckInViewModel
+import com.littlebridge.enrollplus.feature.teacher.presentation.InsightCard
+import com.littlebridge.enrollplus.feature.teacher.presentation.InsightSeverity
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherClassesState
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherClassesViewModel
+import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherInsightsViewModel
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherObligationsState
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherObligationsViewModel
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherTodayState
@@ -60,6 +63,8 @@ import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
+import com.littlebridge.enrollplus.ui.v2.components.VStaleChip
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import kotlinx.coroutines.delay
@@ -87,6 +92,7 @@ fun TeacherHomeScreenV2(
     onOpenUpdateTab: () -> Unit,
     onOpenUpdateTool: (UpdateTool) -> Unit,
     onOpenClasses: () -> Unit,
+    onOpenLeaveRequests: () -> Unit = {},
     onOpenHealthAlerts: () -> Unit,
     onOpenTransportAttendance: () -> Unit,
     onOpenPews: () -> Unit,
@@ -104,12 +110,14 @@ fun TeacherHomeScreenV2(
     obligationsViewModel: TeacherObligationsViewModel = koinViewModel(),
     classesViewModel: TeacherClassesViewModel = koinViewModel(),
     eventsViewModel: TeacherEventRegistrationViewModel = koinViewModel(),
+    insightsViewModel: TeacherInsightsViewModel = koinViewModel(),
 ) {
     val today by todayViewModel.state.collectAsStateV2()
     val checkIn by checkInViewModel.state.collectAsStateV2()
     val obligations by obligationsViewModel.state.collectAsStateV2()
     val classesState by classesViewModel.state.collectAsStateV2()
     val eventsState by eventsViewModel.state.collectAsStateV2()
+    val insightsState by insightsViewModel.state.collectAsStateV2()
 
     // Pull classes + events when the home tab appears; refresh every 60s alongside today/obligations.
     LaunchedEffect(Unit) {
@@ -126,6 +134,10 @@ fun TeacherHomeScreenV2(
         }
     }
 
+    LaunchedEffect(classesState.classes) {
+        insightsViewModel.deriveFromClassSummaries(classesState.classes)
+    }
+
     // First-login-of-day check-in popup gate (kept from the previous rebuild).
     var popupDismissedForDate by rememberSaveable { mutableStateOf<String?>(null) }
     val popupVisible = !checkIn.isLoading &&
@@ -134,16 +146,34 @@ fun TeacherHomeScreenV2(
         checkIn.date.isNotBlank() &&
         popupDismissedForDate != checkIn.date
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(VColors.cream)
-            .verticalScroll(rememberScrollState())
-            .statusBarsPadding()
-            .padding(horizontal = 24.dp)
-            .padding(top = 12.dp, bottom = TeacherDockClearance),
-        verticalArrangement = Arrangement.spacedBy(24.dp),
+    // Pull-to-refresh: isRefreshing resets when both today + obligations refreshEpochs bump.
+    var isRefreshing by remember { mutableStateOf(false) }
+    LaunchedEffect(today.refreshEpoch, obligations.refreshEpoch) {
+        if ((today.refreshEpoch > 0 || obligations.refreshEpoch > 0) && !today.isLoading && !obligations.isLoading) {
+            isRefreshing = false
+        }
+    }
+
+    VPullRefresh(
+        isRefreshing = isRefreshing,
+        onRefresh = {
+            isRefreshing = true
+            todayViewModel.refresh()
+            obligationsViewModel.refresh()
+            classesViewModel.refreshForPull()
+        },
+        modifier = modifier.fillMaxSize(),
     ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(VColors.cream)
+                .verticalScroll(rememberScrollState())
+                .statusBarsPadding()
+                .padding(horizontal = 24.dp)
+                .padding(top = 12.dp, bottom = TeacherDockClearance),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
+        ) {
         TeacherPremiumHeader(
             teacherName = today.teacherName,
             lead = "here's",
@@ -151,6 +181,10 @@ fun TeacherHomeScreenV2(
             unreadCount = unreadCount,
             onOpenNotifications = onOpenNotifications,
         )
+
+        if (today.isStale || obligations.isStale) {
+            VStaleChip()
+        }
 
         NowTeachingCard(
             today = today,
@@ -177,6 +211,14 @@ fun TeacherHomeScreenV2(
                 obligations = obligations,
                 onOpenUpdate = onOpenUpdateTab,
                 onOpenClasses = onOpenClasses,
+                onOpenLeaveRequests = onOpenLeaveRequests,
+            )
+        }
+
+        if (insightsState.insights.isNotEmpty()) {
+            NeedsAttentionSection(
+                insights = insightsState.insights,
+                onOpenAttendanceForAssignment = onOpenAttendanceForAssignment,
             )
         }
 
@@ -222,6 +264,7 @@ fun TeacherHomeScreenV2(
             onDismiss = { popupDismissedForDate = checkIn.date.ifBlank { com.littlebridge.enrollplus.util.todayIso() } },
             onCheckIn = { method -> checkInViewModel.checkIn(method) },
         )
+    }
     }
 }
 
@@ -509,6 +552,7 @@ private fun PendingActionsList(
     obligations: TeacherObligationsState,
     onOpenUpdate: () -> Unit,
     onOpenClasses: () -> Unit,
+    onOpenLeaveRequests: () -> Unit = {},
 ) {
     if (obligations.unavailable) {
         EmptyCard(text = appString(StringKeys.COMMON_ERROR_GENERIC))
@@ -553,7 +597,7 @@ private fun PendingActionsList(
                 suffix = appString(StringKeys.TC_PENDING_COUNT),
                 icon = VIcons.Calendar,
                 tint = VColors.coral,
-                onClick = onOpenClasses,
+                onClick = onOpenLeaveRequests,
             ))
         }
     }
@@ -895,6 +939,93 @@ private fun SkeletonEventRow() {
             Box(Modifier.size(140.dp, 16.dp).clip(VShapes.sm).background(VColors.lineSoft))
             Spacer(Modifier.height(6.dp))
             Box(Modifier.size(100.dp, 12.dp).clip(VShapes.sm).background(VColors.lineSoft))
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Needs Attention — insight cards derived from class summaries.
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun NeedsAttentionSection(
+    insights: List<InsightCard>,
+    onOpenAttendanceForAssignment: (assignmentId: String, scope: String) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        SectionHeader(title = "Needs Attention")
+        SurfaceCard {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                insights.take(4).forEachIndexed { idx, insight ->
+                    if (idx > 0) {
+                        Box(
+                            Modifier.fillMaxWidth().height(1.dp).background(VColors.lineSoft),
+                        )
+                    }
+                    InsightRow(insight = insight, onTap = {
+                        insight.assignmentId?.let { aid ->
+                            onOpenAttendanceForAssignment(aid, insight.scopeLabel)
+                        }
+                    })
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun InsightRow(insight: InsightCard, onTap: () -> Unit) {
+    val dotColor = when (insight.severity) {
+        InsightSeverity.HIGH -> VColors.coral
+        InsightSeverity.MEDIUM -> VColors.gold
+        InsightSeverity.LOW -> VColors.violet
+    }
+    val ix = remember { MutableInteractionSource() }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.md)
+            .clickable(interactionSource = ix, indication = null) { onTap() }
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .padding(top = 5.dp)
+                .size(7.dp)
+                .clip(CircleShape)
+                .background(dotColor),
+        )
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = insight.title,
+                style = VTypography.bodySmall.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    color = VColors.ink,
+                ),
+            )
+            if (insight.description.isNotBlank()) {
+                Text(
+                    text = insight.description,
+                    style = VTypography.caption.copy(color = VColors.ink3),
+                )
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.padding(top = 4.dp),
+            ) {
+                Text(
+                    text = insight.actionLabel,
+                    style = VTypography.caption.copy(
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = VColors.violet,
+                    ),
+                )
+                Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(12.dp))
+            }
         }
     }
 }

@@ -89,6 +89,9 @@ export const IconMessage = (p: P) => (
 export const IconBolt = (p: P) => (
   <svg {...base(p)}><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" /></svg>
 );
+export const IconTrophy = (p: P) => (
+  <svg {...base(p)}><path d="M8 21h8m-4-4v4M6 4h12v3a6 6 0 0 1-12 0V4Zm0 0H4a2 2 0 0 0 0 4h2m12-4h2a2 2 0 0 1 0 4h-2" /></svg>
+);
 export const IconGrid = (p: P) => (
   <svg {...base(p)}><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></svg>
 );
@@ -163,4 +166,7 @@ export const IconPace = (p: P) => (
 );
 export const IconKey = (p: P) => (
   <svg {...base(p)}><circle cx="8" cy="15" r="4" /><path d="M10.8 12.2 21 2" /><path d="m16 7 3 3" /><path d="m18 5 3 3" /></svg>
+);
+export const IconExport = (p: P) => (
+  <svg {...base(p)}><path d="M12 3v12m0 0 4-4m-4 4-4-4" /><path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2" /></svg>
 );

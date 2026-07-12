@@ -61,6 +61,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VComingSoon
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
@@ -168,17 +169,39 @@ private fun SchoolRecordsContent(
         }
     }
 
-    Column(
-        modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp)
-            .statusBarsPadding()
-            .imePadding()
-            .navigationBarsPadding()
-            .padding(top = 16.dp, bottom = 140.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+    var isRefreshing by remember { mutableStateOf(false) }
+    val anyLoading = state.isLoading || pace.isLoading ||
+        records.attendance.isLoading || records.marks.isLoading || records.fees.isLoading
+    LaunchedEffect(anyLoading) {
+        if (!anyLoading) isRefreshing = false
+    }
+
+    VPullRefresh(
+        isRefreshing = isRefreshing,
+        onRefresh = {
+            isRefreshing = true
+            when (tab) {
+                RecordsTab.Coverage -> onRetry()
+                RecordsTab.Pace -> onRetryPace()
+                RecordsTab.Attendance -> onRetryAttendance()
+                RecordsTab.Marks -> onRetryMarks()
+                RecordsTab.Fee -> onRetryFees()
+                RecordsTab.Documents -> {}
+            }
+        },
+        modifier = modifier.fillMaxSize(),
     ) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp)
+                .statusBarsPadding()
+                .imePadding()
+                .navigationBarsPadding()
+                .padding(top = 16.dp, bottom = 140.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
         // Premium header
         Column(
             modifier = Modifier
@@ -225,6 +248,7 @@ private fun SchoolRecordsContent(
                 )
             }
         }
+    }
     }
 }
 

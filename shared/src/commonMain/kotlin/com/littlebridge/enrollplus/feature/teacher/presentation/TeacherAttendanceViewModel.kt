@@ -89,6 +89,8 @@ data class TeacherAttendanceState(
     // inline so a failed save never wipes the roster the teacher is mid-way through.
     val error: String? = null,      // load-path error (VStateHost)
     val saveError: String? = null,  // save-path error (inline)
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 ) {
     val presentCount: Int get() = students.count { it.status == AttendanceStatus.PRESENT }
     val absentCount: Int get() = students.count { it.status == AttendanceStatus.ABSENT }
@@ -162,6 +164,8 @@ class TeacherAttendanceViewModel(
                             holidayName = d.holidayName,
                             isCancelled = d.isCancelled,
                             backDateWindowDays = d.backDateWindowDays,
+                            isStale = result.isStale,
+                            isOffline = result.isOffline,
                         )
                     }
                 }

@@ -1,6 +1,7 @@
 package com.littlebridge.enrollplus.ui.v2.screens.discovery
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,7 +19,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -29,44 +29,34 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.admin.domain.model.CalendarEventDto
 import com.littlebridge.enrollplus.feature.admin.presentation.AcademicCalendarState
 import com.littlebridge.enrollplus.feature.admin.presentation.AcademicCalendarViewModel
 import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.v2.components.VCard
+import com.littlebridge.enrollplus.ui.tokens.VShapes
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
-import com.littlebridge.enrollplus.ui.v2.components.VLabel
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
-import com.littlebridge.enrollplus.ui.v2.screens.teacher.VtC
-import com.littlebridge.enrollplus.ui.v2.screens.teacher.VtT
-import com.littlebridge.enrollplus.ui.v2.screens.teacher.coloredV
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.qualifier.Qualifier
 
 /**
- * AcademicCalendarScreenV2 — month grid + upcoming-events list, wired to the real
- * [AcademicCalendarViewModel] → `GET /api/v1/school/calendar?date=&view_type=` endpoint.
- * (Phase C batch 4; BACKEND_GAPS.md §4.1.)
- *
- * The previous implementation was driven by `MockV2.calendarEvents` (a fixed June 2026 seed).
- * This rewrite wires the real backend:
- *  - The VM's `currentMonth` label drives the header ("June 2026").
- *  - The day grid tints a day when the real `CalendarEventDto.date` falls on it.
- *  - The "Upcoming events" list renders one card per real event with title + ISO date.
- *
- * The server today does not categorise events (no `type` field), so the per-day color coding
- * collapses to a single accent tone. When the backend adds an event-type taxonomy we'll
- * restore the four-color scheme exactly as the React design specifies.
+ * AcademicCalendarScreenV2 — premium month grid + events list for the parent portal.
+ * Wired to [AcademicCalendarViewModel] → `GET /api/v1/school/calendar?date=&view_type=`.
+ * Events are clickable and navigate to event registration. Uses the parent portal's
+ * warm cream theme (VColors/VShapes/VTypography) consistent with system-wide UI/UX.
  */
 @Composable
 fun AcademicCalendarScreenV2(
     onBack: () -> Unit,
+    onOpenEventRegistration: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModelQualifier: Qualifier? = null,
     viewModel: AcademicCalendarViewModel = koinViewModel(qualifier = viewModelQualifier),
@@ -78,6 +68,7 @@ fun AcademicCalendarScreenV2(
         onPrev = viewModel::goToPreviousMonth,
         onNext = viewModel::goToNextMonth,
         onRetry = { viewModel.loadCalendar() },
+        onOpenEventRegistration = onOpenEventRegistration,
         modifier = modifier.statusBarsPadding()
             .imePadding()
             .navigationBarsPadding(),
@@ -91,18 +82,15 @@ private fun AcademicCalendarContent(
     onPrev: () -> Unit,
     onNext: () -> Unit,
     onRetry: () -> Unit,
+    onOpenEventRegistration: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VtC
     Column(modifier.fillMaxSize().background(VColors.cream)) {
         PremiumOverlayHeader(title = appString(StringKeys.CAL_ACADEMIC_TITLE), onBack = onBack)
 
         VStateHost(
             loading = state.isLoading,
             error = state.errorMessage,
-            // The grid itself is always shown even when no events exist this month —
-            // a school can have zero events without being "empty". Only suppress when
-            // we never got back a month label (i.e. the call never resolved).
             isEmpty = !state.isLoading && state.errorMessage == null && state.currentMonth.isBlank(),
             modifier = Modifier.weight(1f).fillMaxWidth(),
             emptyTitle = appString(StringKeys.CAL_NOT_AVAILABLE),
@@ -115,10 +103,10 @@ private fun AcademicCalendarContent(
                 Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                // Month header (the chevron pills navigate via the VM).
+                // Month header with navigation pills
                 Row(
                     Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -127,13 +115,13 @@ private fun AcademicCalendarContent(
                     MonthPill(appString(StringKeys.CAL_PREV), onClick = onPrev)
                     Text(
                         state.currentMonth.ifBlank { "—" },
-                        style = VtT.bodyStrong.coloredV(c.ink),
+                        style = VTypography.body.copy(fontWeight = FontWeight.Bold, fontSize = 18.sp),
+                        color = VColors.ink,
                     )
                     MonthPill(appString(StringKeys.CAL_NEXT_BTN), onClick = onNext)
                 }
 
-                // Day grid — derive the visible month from `currentDate` (ISO YYYY-MM-DD),
-                // then render N days for that month, tinting any day that hosts an event.
+                // Day grid
                 val (year, monthIdx, _) = parseIsoDate(state.currentDate) ?: Triple(0, 0, 0)
                 val daysInMonth = if (year != 0 && monthIdx != 0) daysInMonth(year, monthIdx) else 30
                 val eventsByDay: Map<Int, List<CalendarEventDto>> = remember(state.calendarEvents) {
@@ -141,43 +129,55 @@ private fun AcademicCalendarContent(
                         .filterKeys { it in 1..31 }
                 }
 
-                VCard {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(VShapes.xl)
+                        .background(VColors.surfaceCard)
+                        .border(1.dp, VColors.line, VShapes.xl)
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         listOf("S", "M", "T", "W", "T", "F", "S").forEach { d ->
                             Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                                Text(d, style = VtT.label.coloredV(c.ink3))
+                                Text(d, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink3)
                             }
                         }
                     }
-                    Spacer(Modifier.height(6.dp))
+                    Spacer(Modifier.height(4.dp))
                     val weeks = (1..daysInMonth).toList().chunked(7)
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        weeks.forEach { week ->
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                week.forEach { day ->
-                                    val hasEvent = day in eventsByDay
-                                    // Server doesn't categorise events yet — single accent tone
-                                    // for every event day. When the backend grows a type/category
-                                    // taxonomy we restore the React four-color palette.
-                                    val tone = if (hasEvent) c.teal.copy(alpha = 0.16f) else Color.Transparent
+                    weeks.forEach { week ->
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            week.forEach { day ->
+                                val hasEvent = day in eventsByDay
+                                val tone = if (hasEvent) VColors.violet.copy(alpha = 0.12f) else Color.Transparent
+                                val dotColor = if (hasEvent) VColors.violet else Color.Transparent
+                                Box(
+                                    Modifier
+                                        .weight(1f)
+                                        .aspectRatio(1f)
+                                        .clip(CircleShape)
+                                        .background(tone),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(day.toString(), style = VTypography.caption, color = VColors.ink)
                                     Box(
                                         Modifier
-                                            .weight(1f)
-                                            .aspectRatio(1f)
+                                            .align(Alignment.BottomCenter)
+                                            .padding(bottom = 4.dp)
+                                            .size(4.dp)
                                             .clip(CircleShape)
-                                            .background(tone),
-                                        contentAlignment = Alignment.Center,
-                                    ) {
-                                        Text(day.toString(), style = VtT.caption.coloredV(c.ink))
-                                    }
+                                            .background(dotColor),
+                                    )
                                 }
-                                repeat(7 - week.size) { Box(Modifier.weight(1f)) {} }
                             }
+                            repeat(7 - week.size) { Box(Modifier.weight(1f)) {} }
                         }
                     }
                 }
 
-                // Optional summary row — only show when the server returned non-zero stats.
+                // Stats row
                 if (state.workingDays > 0 || state.holidays > 0) {
                     Row(
                         Modifier.fillMaxWidth(),
@@ -196,68 +196,117 @@ private fun AcademicCalendarContent(
                     }
                 }
 
-                VLabel(appString(StringKeys.CAL_UPCOMING_EVENTS))
+                // Events section
+                Text(
+                    appString(StringKeys.CAL_UPCOMING_EVENTS),
+                    style = VTypography.body.copy(fontWeight = FontWeight.Bold, fontSize = 16.sp),
+                    color = VColors.ink,
+                )
                 if (state.calendarEvents.isEmpty()) {
                     Text(
                         appString(StringKeys.CAL_NO_EVENTS),
-                        style = VtT.caption.coloredV(c.ink2),
+                        style = VTypography.caption,
+                        color = VColors.ink2,
                     )
                 } else {
                     state.calendarEvents.forEach { e ->
-                        EventRow(e)
+                        EventRow(e, onClick = onOpenEventRegistration)
                     }
                 }
+
+                // Register for events CTA
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(VShapes.lg)
+                        .background(VColors.violet)
+                        .clickable { onOpenEventRegistration() }
+                        .padding(vertical = 14.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        "Register for Events",
+                        style = VTypography.body.copy(fontWeight = FontWeight.Bold),
+                        color = VColors.white,
+                    )
+                }
+
+                Spacer(Modifier.height(24.dp))
             }
         }
     }
 }
 
 @Composable
-private fun EventRow(e: CalendarEventDto) {
-    val c = VtC
+private fun EventRow(e: CalendarEventDto, onClick: () -> Unit) {
     val day = dayOfIsoDate(e.date)
     val monthShort = monthShortOfIsoDate(e.date)
-    VCard {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Column(Modifier.size(width = 48.dp, height = 44.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    (day?.toString() ?: "—"),
-                    style = VtT.dataLg.coloredV(c.ink).copy(fontSize = 20.sp),
-                )
-                Text((monthShort ?: ""), style = VtT.label.coloredV(c.ink3))
-            }
-            Column(Modifier.weight(1f)) {
-                Text(e.eventTitle, style = VtT.bodyStrong.coloredV(c.ink))
-                Text(
-                    e.eventDescription.ifBlank { e.day.ifBlank { e.date } },
-                    style = VtT.label.coloredV(c.ink3),
-                )
-            }
-            Icon(VIcons.ChevronRight, contentDescription = null, tint = c.ink3, modifier = Modifier.size(16.dp))
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(VShapes.lg)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.lg)
+            .clickable { onClick() }
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Column(
+            Modifier.size(width = 52.dp, height = 52.dp)
+                .clip(VShapes.md)
+                .background(VColors.violetSoft),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                (day?.toString() ?: "—"),
+                style = VTypography.body.copy(fontWeight = FontWeight.Bold, fontSize = 20.sp),
+                color = VColors.violet,
+            )
+            Text(
+                (monthShort ?: ""),
+                style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
+                color = VColors.violet,
+            )
         }
+        Column(Modifier.weight(1f)) {
+            Text(e.eventTitle, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+            Text(
+                e.eventDescription.ifBlank { e.day.ifBlank { e.date } },
+                style = VTypography.caption,
+                color = VColors.ink3,
+                maxLines = 2,
+            )
+        }
+        Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(18.dp))
     }
 }
 
 @Composable
 private fun StatPill(label: String, value: String, modifier: Modifier = Modifier) {
-    val c = VtC
-    VCard(modifier = modifier) {
-        Text(value, style = VtT.h3.coloredV(c.ink))
-        Text(label, style = VtT.label.coloredV(c.ink3))
+    Column(
+        modifier
+            .clip(VShapes.lg)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.lg)
+            .padding(16.dp),
+    ) {
+        Text(value, style = VTypography.body.copy(fontWeight = FontWeight.Bold, fontSize = 22.sp), color = VColors.ink)
+        Text(label, style = VTypography.caption, color = VColors.ink3)
     }
 }
 
 @Composable
 private fun MonthPill(label: String, onClick: () -> Unit) {
-    val c = VtC
     Box(
         Modifier
-            .clip(RoundedCornerShape(999.dp))
-            .background(c.cream)
+            .clip(VShapes.full)
+            .background(VColors.creamDeep)
             .clickable { onClick() }
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .padding(horizontal = 14.dp, vertical = 7.dp),
     ) {
-        Text(label, style = VtT.caption.coloredV(c.ink2))
+        Text(label, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink2)
     }
 }
 

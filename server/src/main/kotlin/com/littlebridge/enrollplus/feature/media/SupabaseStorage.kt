@@ -112,6 +112,7 @@ object SupabaseStorage {
         "application/vnd.ms-powerpoint" to "ppt",
         "application/vnd.openxmlformats-officedocument.presentationml.presentation" to "pptx",
         "text/plain" to "txt",
+        "text/csv" to "csv",
     )
     private val AUDIO_TYPES = mapOf(
         "audio/mpeg" to "mp3",

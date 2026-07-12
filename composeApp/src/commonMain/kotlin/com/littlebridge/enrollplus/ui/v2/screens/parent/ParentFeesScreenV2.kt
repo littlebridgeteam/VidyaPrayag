@@ -24,7 +24,11 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,6 +44,8 @@ import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonFee
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -63,18 +69,30 @@ fun ParentFeesScreenV2(
     viewModel: FeeViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
-    ParentFeesContent(
-        state = state,
-        parentName = parentName,
-        children = children,
-        selectedChild = selectedChild,
-        onSelectChild = onSelectChild,
-        onOpenNotifications = onOpenNotifications,
-        unreadNotificationsCount = unreadNotificationsCount,
-        onPayNow = onPayNow,
-        onFeeHistory = onFeeHistory,
-        modifier = modifier,
-    )
+    var isRefreshing by remember { mutableStateOf(false) }
+    LaunchedEffect(state.refreshEpoch) {
+        if (state.refreshEpoch > 0) isRefreshing = false
+    }
+    VPullRefresh(
+        isRefreshing = isRefreshing,
+        onRefresh = {
+            isRefreshing = true
+            viewModel.reload()
+        },
+        modifier = modifier.fillMaxSize(),
+    ) {
+        ParentFeesContent(
+            state = state,
+            parentName = parentName,
+            children = children,
+            selectedChild = selectedChild,
+            onSelectChild = onSelectChild,
+            onOpenNotifications = onOpenNotifications,
+            unreadNotificationsCount = unreadNotificationsCount,
+            onPayNow = onPayNow,
+            onFeeHistory = onFeeHistory,
+        )
+    }
 }
 
 /** Stateless body — also used by the @Preview with seeded state (no MockV2 in the live path). */
@@ -110,6 +128,8 @@ private fun ParentFeesContent(
             onSelectChild = onSelectChild,
             onOpenNotifications = onOpenNotifications,
             unreadNotificationsCount = unreadNotificationsCount,
+            greetingLead = "${selectedChild?.name?.ifBlank { null } ?: "Your Child"}'s",
+            greetingAccent = "fees",
         )
 
         PortalQuickActionChips(
@@ -149,9 +169,7 @@ private fun ParentFeesContent(
 
         when {
             state.isLoading && isEmpty ->
-                Box(Modifier.fillMaxWidth().height(240.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(36.dp))
-                }
+                SkeletonFee()
 
             state.error != null && isEmpty ->
                 FeeStateCard(

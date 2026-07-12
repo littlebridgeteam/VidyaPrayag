@@ -158,6 +158,13 @@ object DatabaseFactory {
         // before deploy; AUTO_CREATE_TABLES is OFF in prod). Closes D-SYL-1..4.
         CurriculumUnitsTable,
         SyllabusProgressTable,
+        // Exam Ecosystem (EXAM_ECOSYSTEM_PLAN.md) — exam timetable, entries,
+        // syllabus mapping, and reminder log. Applied by
+        // database/migrations/setup_exam_ecosystem_schema.sql.
+        ExamTimetablesTable,
+        ExamTimetableEntriesTable,
+        ExamSyllabusMappingTable,
+        ExamReminderLogTable,
         HomeworkTable,
         HomeworkSubmissionsTable,
         // T-404 (Doc 08 §5.3): typed homework attachments + teacher cutoff
@@ -187,6 +194,11 @@ object DatabaseFactory {
         NonTeachingStaffTable,
         // Parents Portal — Profile tab "Missions & Achievements" (optional, CMS-fallback safe)
         ParentAchievementsTable,
+        // Skill Test System — AI-generated weekly MCQ tests for children
+        SkillTestQuestionsTable,
+        SkillTestAttemptsTable,
+        SkillTestAnswersTable,
+        SkillTestBestScoresTable,
         // Academic Calendar platform (VP-CAL — centralized planning & scheduling)
         CalendarEventsTable,
         AcademicYearsTable,
@@ -339,6 +351,11 @@ object DatabaseFactory {
         // Server Logs (Notification Deep-Linking & Backend Log Viewer Plan §3.1)
         // Structured server-side log table for the super-admin Log Viewer.
         ServerLogsTable,
+        // Gamification System tables NOT included in schema validation —
+        // they are provisioned separately via docs/db/migration_100_gamification.sql
+        // and are still under development. Including them here would block server
+        // boot until that migration is applied. Gamification code gracefully handles
+        // missing tables at runtime.
     )
 
     /** True when DATABASE_URL is set → we're talking to Postgres / Supabase. */
@@ -518,6 +535,7 @@ object DatabaseFactory {
                 }
             }
         }
+
     }
 
     /**

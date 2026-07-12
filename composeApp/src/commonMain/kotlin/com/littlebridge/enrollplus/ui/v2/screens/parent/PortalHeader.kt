@@ -47,6 +47,8 @@ fun PortalTopHeader(
     unreadNotificationsCount: Int,
     modifier: Modifier = Modifier,
     showGreeting: Boolean = true,
+    greetingLead: String = "here's",
+    greetingAccent: String = "$childName's day",
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -122,21 +124,15 @@ fun PortalTopHeader(
                 ) { expanded = true },
             ) {
                 Text(
-                    text = "here's",
+                    text = greetingLead,
                     style = VTypography.h2.copy(fontSize = 28.sp),
                     color = VColors.ink,
                     fontWeight = FontWeight.ExtraBold,
                 )
                 Text(
-                    text = "$childName's",
+                    text = greetingAccent,
                     style = VTypography.h2.copy(fontSize = 28.sp),
                     color = VColors.violet,
-                    fontWeight = FontWeight.ExtraBold,
-                )
-                Text(
-                    text = "day",
-                    style = VTypography.h2.copy(fontSize = 28.sp),
-                    color = VColors.ink,
                     fontWeight = FontWeight.ExtraBold,
                 )
                 if (children.size > 1) {

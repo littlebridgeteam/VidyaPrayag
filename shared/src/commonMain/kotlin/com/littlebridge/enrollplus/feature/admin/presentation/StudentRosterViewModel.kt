@@ -35,7 +35,9 @@ data class StudentRosterState(
     val removingIds: Set<String> = emptySet(),
     // bulk import dialog (manual multi-add + CSV)
     val isImporting: Boolean = false,
-    val importError: String? = null
+    val importError: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false
 )
 
 class StudentRosterViewModel(
@@ -58,7 +60,7 @@ class StudentRosterViewModel(
             }
             when (val r = repository.getStudents(token)) {
                 is NetworkResult.Success -> {
-                    _state.value = _state.value.copy(isLoading = false, error = null, students = r.data.data?.students.orEmpty())
+                    _state.value = _state.value.copy(isLoading = false, error = null, students = r.data.data?.students.orEmpty(), isStale = r.isStale, isOffline = r.isOffline)
                 }
                 is NetworkResult.Error -> {
                     AppLogger.e("StudentRosterVM", "getStudents error: ${r.message}")

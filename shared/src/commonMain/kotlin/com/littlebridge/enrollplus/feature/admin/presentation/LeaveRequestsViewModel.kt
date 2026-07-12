@@ -28,7 +28,9 @@ data class LeaveRequestsState(
     val weeklyCount: Int = 0,
     val requests: List<LeaveRequestItem> = emptyList(),
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class LeaveRequestsViewModel(
@@ -67,7 +69,9 @@ class LeaveRequestsViewModel(
                         requests = data?.requests?.map { it.toUiModel() } ?: emptyList(),
                         approvalRate = data?.approvalRate ?: 0,
                         weeklyCount = data?.weeklyCount ?: 0,
-                        isLoading = false
+                        isLoading = false,
+                        isStale = result.isStale,
+                        isOffline = result.isOffline,
                     )
                 }
                 is NetworkResult.Error -> {
