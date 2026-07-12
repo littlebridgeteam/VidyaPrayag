@@ -112,6 +112,7 @@ private fun StudentProfileBody(p: StudentProfileData) {
                 item { ParentContactCard(pc.name, pc.phone) }
             }
         }
+        item { TeacherStudentGamificationCard(studentId = p.studentId, studentName = p.name) }
     }
 }
 

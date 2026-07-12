@@ -56,6 +56,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.components.VProgressRing
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.components.VThemePicker
 import com.littlebridge.enrollplus.ui.v2.components.VLanguagePicker
 import com.littlebridge.enrollplus.feature.i18n.domain.model.SUPPORTED_LANGUAGES
@@ -107,10 +108,8 @@ fun SchoolSettingsScreenV2(
     onOpenLibrary: () -> Unit = {},
     // Classes & Subjects — consolidated management (classes, subjects, bell schedule, timetable).
     onOpenClassesSubjects: () -> Unit = {},
-    // Alumni Management — directory, campaigns & graduation records.
-    onOpenAlumni: () -> Unit = {},
-    // Cohort Analytics — at-risk students, subject engagement & grade comparisons.
-    onOpenCohort: () -> Unit = {},
+    // Gamification Management — feature flags, badges, rewards, leaderboard, redemptions, boosts.
+    onOpenGamification: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: InstitutionalProfileViewModel = koinViewModel(),
     preferenceRepository: PreferenceRepository = koinInject(),
@@ -143,8 +142,7 @@ fun SchoolSettingsScreenV2(
         onOpenIdCards = onOpenIdCards,
         onOpenLibrary = onOpenLibrary,
         onOpenClassesSubjects = onOpenClassesSubjects,
-        onOpenAlumni = onOpenAlumni,
-        onOpenCohort = onOpenCohort,
+        onOpenGamification = onOpenGamification,
         onRetry = viewModel::load,
         modifier = modifier.statusBarsPadding()
             .imePadding(),
@@ -169,8 +167,7 @@ private fun SchoolSettingsContent(
     onOpenIdCards: () -> Unit,
     onOpenLibrary: () -> Unit,
     onOpenClassesSubjects: () -> Unit,
-    onOpenAlumni: () -> Unit,
-    onOpenCohort: () -> Unit,
+    onOpenGamification: () -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -204,14 +201,27 @@ private fun SchoolSettingsContent(
         icon = VIcons.AlertTriangle,
     )
 
-    Column(
-        modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp)
-            .padding(top = 16.dp, bottom = 120.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+    var isRefreshing by remember { mutableStateOf(false) }
+    LaunchedEffect(state.isLoading) {
+        if (!state.isLoading) isRefreshing = false
+    }
+
+    VPullRefresh(
+        isRefreshing = isRefreshing,
+        onRefresh = { isRefreshing = true; onRetry() },
+        modifier = modifier.fillMaxSize(),
     ) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp)
+                .statusBarsPadding()
+                .imePadding()
+                .navigationBarsPadding()
+                .padding(top = 16.dp, bottom = 140.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
         // Premium header
         Column(
             modifier = Modifier
@@ -258,8 +268,7 @@ private fun SchoolSettingsContent(
                 SettingRow(VIcons.School, "Branding & Photos", "Logo, cover, gallery & your profile picture", false, onClick = onOpenBranding),
                 SettingRow(VIcons.IdCard, "ID Cards", "Templates, generation & PDF export", false, onClick = onOpenIdCards),
                 SettingRow(VIcons.BookOpen, "Library Management", "Catalog, issues, returns & fines", false, onClick = onOpenLibrary),
-                SettingRow(VIcons.UsersGroup, "Alumni Management", "Graduates, campaigns & engagement", false, onClick = onOpenAlumni),
-                SettingRow(VIcons.TrendingUp, "Cohort Analytics", "At-risk students, engagement & grade comparisons", false, onClick = onOpenCohort),
+                SettingRow(VIcons.Sparkles, "Gamification", "Feature flags, badges, rewards, boosts & analytics", false, onClick = onOpenGamification),
                 SettingRow(VIcons.Wallet, "Fee structure", "Edit heads & amounts for next cycle", true),
                 SettingRow(VIcons.Bell, "Notifications", "Channels & quiet hours", true),
                 SettingRow(VIcons.Download, "Data export", "CSV / PDF / UDISE", true),

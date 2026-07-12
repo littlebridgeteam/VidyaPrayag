@@ -926,33 +926,30 @@ fun VBackHeader(
     pinRouteId: String? = null,
 ) {
     val c = VTheme.colors
-    Column(modifier.fillMaxWidth().background(c.card)) {
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
+    Row(
+        modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        // back button
+        val interaction = remember { MutableInteractionSource() }
+        Box(
+            Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(c.cream)
+                .clickable(interactionSource = interaction, indication = null, enabled = onBack != null) { onBack?.invoke() },
+            contentAlignment = Alignment.Center,
         ) {
-            // back button
-            val interaction = remember { MutableInteractionSource() }
-            Box(
-                Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(c.cream)
-                    .clickable(interactionSource = interaction, indication = null, enabled = onBack != null) { onBack?.invoke() },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(VIcons.ChevronLeft, contentDescription = "Back", tint = c.ink, modifier = Modifier.size(20.dp))
-            }
-            Text(title, style = VTheme.type.h3.colored(c.ink))
-            Box(Modifier.height(40.dp).wrapContentWidth(), contentAlignment = Alignment.Center) {
-                if (pinRouteId != null) {
-                    RoutePinButton(routeId = pinRouteId)
-                }
-                action?.invoke()
-            }
+            Icon(VIcons.ChevronLeft, contentDescription = "Back", tint = c.ink, modifier = Modifier.size(20.dp))
         }
-        VDivider()
+        Text(title, style = VTheme.type.h3.colored(c.ink))
+        Box(Modifier.height(40.dp).wrapContentWidth(), contentAlignment = Alignment.Center) {
+            if (pinRouteId != null) {
+                RoutePinButton(routeId = pinRouteId)
+            }
+            action?.invoke()
+        }
     }
 }
 

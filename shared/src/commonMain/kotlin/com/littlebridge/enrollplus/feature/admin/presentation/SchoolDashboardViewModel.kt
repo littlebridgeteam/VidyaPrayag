@@ -59,11 +59,14 @@ data class SchoolDashboardState(
     val onboardingStatus: DashboardOnboardingStatus = DashboardOnboardingStatus.UNKNOWN,
     val adminName: String = "Admin",
     val isLoading: Boolean = true,
+    val isRefreshing: Boolean = false,
     val errorMessage: String? = null,
     val summary: AdminDashboardSummary? = null,
     val analytics: AdminDashboardAnalytics? = null,
     val activity: AdminDashboardActivity? = null,
     val overview: AdminDashboardOverview? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
     val digest: DailyDigest? = null,
     val pinnedScreens: List<String> = emptyList(),
     val isDigestLoading: Boolean = false,
@@ -106,17 +109,21 @@ class SchoolDashboardViewModel(
 
     fun refresh() {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, errorMessage = null) }
+            val hasData = _state.value.overview != null
+            _state.update { it.copy(isLoading = !hasData, isRefreshing = hasData, errorMessage = null) }
 
             val token = preferenceRepository.getUserToken().first()
             if (token.isNullOrBlank()) {
                 AppLogger.d("SchoolDashboardVM", "No auth token in prefs; skipping refresh")
-                _state.update { it.copy(isLoading = false) }
+                _state.update { it.copy(isLoading = false, isRefreshing = false) }
                 return@launch
             }
 
             when (val result = authRepository.getUserDetails(token)) {
-                is NetworkResult.Success -> applyUserDetails(result.data.data)
+                is NetworkResult.Success -> {
+                    applyUserDetails(result.data.data)
+                    _state.update { it.copy(isStale = result.isStale, isOffline = result.isOffline) }
+                }
                 is NetworkResult.Error -> {
                     _state.update { it.copy(errorMessage = result.message) }
                     AppLogger.e("SchoolDashboardVM", "getUserDetails failed: ${result.message}")
@@ -132,7 +139,7 @@ class SchoolDashboardViewModel(
                 launch { loadDigest(token) }
             }
 
-            _state.update { it.copy(isLoading = false, isDigestLoading = false) }
+            _state.update { it.copy(isLoading = false, isRefreshing = false, isDigestLoading = false) }
         }
     }
 
@@ -150,7 +157,9 @@ class SchoolDashboardViewModel(
                     _state.update { s ->
                         s.copy(
                             overview = o,
-                            adminName = o.header.adminName.takeIf { it.isNotBlank() } ?: s.adminName
+                            adminName = o.header.adminName.takeIf { it.isNotBlank() } ?: s.adminName,
+                            isStale = r.isStale,
+                            isOffline = r.isOffline,
                         )
                     }
                 }
@@ -165,7 +174,9 @@ class SchoolDashboardViewModel(
                     _state.update { st ->
                         st.copy(
                             summary = s,
-                            adminName = s.admin.name.takeIf { it.isNotBlank() } ?: st.adminName
+                            adminName = s.admin.name.takeIf { it.isNotBlank() } ?: st.adminName,
+                            isStale = r.isStale,
+                            isOffline = r.isOffline,
                         )
                     }
                 }
@@ -175,13 +186,13 @@ class SchoolDashboardViewModel(
         }
 
         when (val r = dashboardRepository.getAnalytics(token)) {
-            is NetworkResult.Success -> r.data.data?.let { a -> _state.update { it.copy(analytics = a) } }
+            is NetworkResult.Success -> r.data.data?.let { a -> _state.update { it.copy(analytics = a, isStale = r.isStale, isOffline = r.isOffline) } }
             is NetworkResult.Error -> AppLogger.e("SchoolDashboardVM", "getAnalytics failed: ${r.message}")
             is NetworkResult.ConnectionError -> AppLogger.e("SchoolDashboardVM", "getAnalytics connection error")
         }
 
         when (val r = dashboardRepository.getActivity(token)) {
-            is NetworkResult.Success -> r.data.data?.let { a -> _state.update { it.copy(activity = a) } }
+            is NetworkResult.Success -> r.data.data?.let { a -> _state.update { it.copy(activity = a, isStale = r.isStale, isOffline = r.isOffline) } }
             is NetworkResult.Error -> AppLogger.e("SchoolDashboardVM", "getActivity failed: ${r.message}")
             is NetworkResult.ConnectionError -> AppLogger.e("SchoolDashboardVM", "getActivity connection error")
         }

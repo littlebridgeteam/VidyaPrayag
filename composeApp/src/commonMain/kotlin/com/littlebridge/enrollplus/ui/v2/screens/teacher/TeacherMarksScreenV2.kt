@@ -73,6 +73,7 @@ fun TeacherMarksScreenV2(
     assignmentId: String,
     scopeLabel: String,
     modifier: Modifier = Modifier,
+    onImportMarks: () -> Unit = {},
     viewModel: TeacherGradebookViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
@@ -84,7 +85,7 @@ fun TeacherMarksScreenV2(
     Box(modifier.fillMaxSize().background(VColors.cream)) {
         when (state.mode) {
             GradebookMode.List -> MarksListMode(viewModel, scopeLabel)
-            GradebookMode.Marks -> MarksGridMode(viewModel)
+            GradebookMode.Marks -> MarksGridMode(viewModel, onImportMarks)
             GradebookMode.History -> MarksListMode(viewModel, scopeLabel) // history not surfaced in update flow
         }
     }
@@ -241,7 +242,7 @@ private fun AssessmentRow(a: AssessmentDto, viewModel: TeacherGradebookViewModel
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun MarksGridMode(viewModel: TeacherGradebookViewModel) {
+private fun MarksGridMode(viewModel: TeacherGradebookViewModel, onImportMarks: () -> Unit = {}) {
     val state by viewModel.state.collectAsStateV2()
     val a = state.activeAssessment
     var publishConfirm by remember { mutableStateOf(false) }
@@ -300,6 +301,17 @@ private fun MarksGridMode(viewModel: TeacherGradebookViewModel) {
         if (a?.isPublished != true) {
             item {
                 Spacer(Modifier.height(4.dp))
+                // ── Import marks via AI OCR / text ───────────────────────────
+                VButton(
+                    text = "Import Marks (OCR / Text)",
+                    onClick = onImportMarks,
+                    full = true,
+                    variant = VButtonVariant.Secondary,
+                    tone = VButtonTone.Navy,
+                    size = VButtonSize.Md,
+                    leading = { Icon(VIcons.Upload, contentDescription = null, modifier = Modifier.size(15.dp)) },
+                )
+                Spacer(Modifier.height(8.dp))
                 if (state.saveError != null) { Text(state.saveError ?: "", style = VTypography.caption.copy(fontSize = 12.sp, color = VColors.coral)); Spacer(Modifier.height(8.dp)) }
                 VButton(
                     text = appString(StringKeys.TC_SAVE_MARKS),

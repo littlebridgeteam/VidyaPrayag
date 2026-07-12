@@ -185,6 +185,11 @@ private fun LessonPlanListMode(viewModel: TeacherLessonPlanViewModel, scopeLabel
             }
         }
 
+        // Post-complete quiz suggestion banner
+        if (state.showQuizSuggestion) {
+            item { QuizSuggestionBanner(viewModel, state.completedPlanTitle) }
+        }
+
         when {
             state.isLoading && state.items.isEmpty() -> item {
                 Box(Modifier.fillMaxWidth().height(80.dp), contentAlignment = Alignment.Center) { TeacherSpinner() }
@@ -377,6 +382,39 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
                             selectedId = e.homeworkId,
                             onPick = viewModel::setEditorHomework,
                         )
+                    }
+                }
+            }
+        }
+
+        // Quiz attach — show existing quizzes for this assignment
+        item {
+            VtCard(padding = 16.dp) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Icon(VIcons.GraduationCap, contentDescription = null, tint = c.accent, modifier = Modifier.size(16.dp))
+                        Text("Quiz", style = LpType.label.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
+                    }
+                    if (state.existingQuizzes.isEmpty()) {
+                        Text("No quizzes created yet for this class.", style = LpType.caption.colored(c.ink3).copy(fontSize = 12.sp))
+                    } else {
+                        state.existingQuizzes.forEach { quiz ->
+                            Row(
+                                Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(c.cream).padding(10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Box(
+                                    Modifier.size(28.dp).clip(CircleShape).background(c.accent.copy(alpha = 0.12f)),
+                                    contentAlignment = Alignment.Center,
+                                ) { Icon(VIcons.GraduationCap, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(14.dp)) }
+                                Column(Modifier.weight(1f)) {
+                                    Text(quiz.title.ifBlank { "Untitled Quiz" }, style = LpType.body.colored(c.ink).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
+                                    Text("${quiz.questions.size} questions · ${quiz.status}", style = LpType.caption.colored(c.ink3).copy(fontSize = 11.sp))
+                                }
+                                VtPill(quiz.status.uppercase(), bg = c.accent.copy(alpha = 0.12f), fg = c.accentDeep)
+                            }
+                        }
                     }
                 }
             }
@@ -889,5 +927,55 @@ private fun PickerRow(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Post-complete quiz suggestion banner
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun QuizSuggestionBanner(
+    viewModel: TeacherLessonPlanViewModel,
+    completedPlanTitle: String,
+) {
+    val c = LpColors
+    VtCard(padding = 14.dp) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Box(
+                    Modifier.size(36.dp).clip(CircleShape).background(c.accent.copy(alpha = 0.12f)),
+                    contentAlignment = Alignment.Center,
+                ) { Icon(VIcons.GraduationCap, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(18.dp)) }
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        "Lesson completed!",
+                        style = LpType.bodyStrong.colored(c.ink).copy(fontSize = 14.sp, fontWeight = FontWeight.Bold),
+                    )
+                    Text(
+                        "Create a quiz to assess \"$completedPlanTitle\".",
+                        style = LpType.caption.colored(c.ink2).copy(fontSize = 12.sp),
+                    )
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                VButton(
+                    text = "Not Now",
+                    onClick = { viewModel.dismissQuizSuggestion() },
+                    modifier = Modifier.weight(1f),
+                    variant = VButtonVariant.Ghost,
+                    size = VButtonSize.Sm,
+                )
+                VButton(
+                    text = "Create Quiz",
+                    onClick = { viewModel.dismissQuizSuggestion() },
+                    modifier = Modifier.weight(1f),
+                    variant = VButtonVariant.Secondary,
+                    tone = VButtonTone.Lavender,
+                    size = VButtonSize.Sm,
+                    leading = { Icon(VIcons.GraduationCap, contentDescription = null, modifier = Modifier.size(14.dp)) },
+                )
+            }
+        }
     }
 }

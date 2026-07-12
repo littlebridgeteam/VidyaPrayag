@@ -1,5 +1,6 @@
 package com.littlebridge.enrollplus.feature.library.data.local
 
+import com.littlebridge.enrollplus.core.currentTimeMillis
 import com.littlebridge.enrollplus.feature.library.domain.model.LibraryBookDto
 import com.littlebridge.enrollplus.feature.library.domain.model.LibraryIssueDto
 import com.littlebridge.enrollplus.feature.library.domain.model.LibraryDashboardDto
@@ -55,5 +56,5 @@ data class LibraryPendingAction(
     val bookId: String? = null,
     val issueId: String? = null,
     val payloadJson: String? = null,
-    val createdAt: Long = 0L,
+    val createdAt: Long = currentTimeMillis(),
 )

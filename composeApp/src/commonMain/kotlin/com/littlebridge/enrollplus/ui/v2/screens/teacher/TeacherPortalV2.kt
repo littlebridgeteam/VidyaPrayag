@@ -1,8 +1,19 @@
 package com.littlebridge.enrollplus.ui.v2.screens.teacher
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -12,14 +23,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.backhandler.BackHandler
+import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.feature.parent.presentation.NotificationsViewModel
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherObligationsViewModel
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherProfileViewModel
 import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.v2.components.VBackOnlineBanner
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VNavItem
+import com.littlebridge.enrollplus.ui.v2.components.VOfflineBanner
 import com.littlebridge.enrollplus.ui.v2.components.VScreenScaffold
 import com.littlebridge.enrollplus.ui.v2.navigation.DeepLinkTarget
 import com.littlebridge.enrollplus.ui.v2.navigation.EntryRole
@@ -31,7 +46,7 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 /** Full-screen overlays the teacher portal can push above its tab content. */
-private enum class TeacherOverlay { None, Notifications, HealthAlerts, TransportAttendance, Pews, ReportReview, ReportDraftEditor, Heatmap, DigitalIdCard, ScheduledMessages, EventRegistration, Messages, Calendar }
+private enum class TeacherOverlay { None, Notifications, HealthAlerts, TransportAttendance, Pews, ReportReview, ReportDraftEditor, Heatmap, DigitalIdCard, ScheduledMessages, EventRegistration, Messages, Calendar, AnnouncementDetail, LeaveRequests, ExamTimetableList, ExamTimetableUpload, ExamTimetableDetail, ExamSyllabusMapping, ExamMarksImport, Export }
 
 /**
  * TeacherPortalV2 — the teacher shell, rebuilt FROM SCRATCH on the Parents-Portal
@@ -83,6 +98,14 @@ fun TeacherPortalV2(
     var reportTerm by remember { mutableStateOf("Term 1") }
     var reportDraftId by remember { mutableStateOf("") }
 
+    // Deep-link-driven state for timetable segment + announcement detail.
+    var showRequestsSegment by remember { mutableStateOf(false) }
+    var announcementId by remember { mutableStateOf<String?>(null) }
+
+    // Exam ecosystem deep-link params.
+    var examTimetableId by remember { mutableStateOf<String?>(null) }
+    var examAssessmentId by remember { mutableStateOf<String?>(null) }
+
     // Apply deep-link routing: set tab from the typed target.
     LaunchedEffect(deepLinkTarget, localDeepLink) {
         val target = localDeepLink ?: deepLinkTarget ?: return@LaunchedEffect
@@ -98,12 +121,22 @@ fun TeacherPortalV2(
                     }
                     "tutor" -> overlay = TeacherOverlay.Heatmap
                     "events" -> overlay = TeacherOverlay.EventRegistration
-                    "announcements" -> { tab = "home"; overlay = TeacherOverlay.None }
-                    "leave-requests", "leave" -> { tab = "profile"; overlay = TeacherOverlay.None }
+                    "announcements" -> {
+                        announcementId = target.params["id"]
+                        overlay = TeacherOverlay.AnnouncementDetail
+                    }
+                    "leave-requests", "leave" -> overlay = TeacherOverlay.LeaveRequests
                     "library" -> { tab = "home"; overlay = TeacherOverlay.None }
                     "messages" -> overlay = TeacherOverlay.Messages
-                    "timetable-requests" -> { tab = "timetable"; overlay = TeacherOverlay.None }
+                    "timetable-requests" -> { tab = "timetable"; showRequestsSegment = true; overlay = TeacherOverlay.None }
+                    "timetable" -> { tab = "timetable"; showRequestsSegment = false; overlay = TeacherOverlay.None }
                     "calendar" -> overlay = TeacherOverlay.Calendar
+                    "exam-timetable" -> overlay = TeacherOverlay.ExamTimetableList
+                    "exam-syllabus" -> {
+                        examAssessmentId = target.params["assessmentId"]
+                        overlay = TeacherOverlay.ExamSyllabusMapping
+                    }
+                    "export" -> overlay = TeacherOverlay.Export
                     // Valid bottom-nav tabs
                     "home", "update", "classes", "timetable", "profile" -> tab = target.screen
                     else -> tab = "home"
@@ -117,14 +150,25 @@ fun TeacherPortalV2(
                 val pathOnly = target.path.substringBefore("?").removePrefix("/")
                 when {
                     pathOnly.startsWith("messages") -> overlay = TeacherOverlay.Messages
-                    pathOnly.startsWith("announcements") -> { tab = "home"; overlay = TeacherOverlay.None }
-                    pathOnly.startsWith("leave") -> { tab = "profile"; overlay = TeacherOverlay.None }
+                    pathOnly.startsWith("announcements") -> {
+                        val queryStr = target.path.substringAfter("?", "")
+                        announcementId = queryStr.substringAfter("id=", "").substringBefore("&").takeIf { it.isNotBlank() }
+                        overlay = TeacherOverlay.AnnouncementDetail
+                    }
+                    pathOnly.startsWith("leave") -> overlay = TeacherOverlay.LeaveRequests
                     pathOnly.startsWith("transport") -> overlay = TeacherOverlay.TransportAttendance
                     pathOnly.startsWith("tutor") -> overlay = TeacherOverlay.Heatmap
                     pathOnly.startsWith("events") -> overlay = TeacherOverlay.EventRegistration
                     pathOnly.startsWith("calendar") -> overlay = TeacherOverlay.Calendar
-                    pathOnly.startsWith("timetable-requests") -> { tab = "timetable"; overlay = TeacherOverlay.None }
-                    pathOnly.startsWith("timetable") -> { tab = "timetable"; overlay = TeacherOverlay.None }
+                    pathOnly.startsWith("exam-timetable") -> overlay = TeacherOverlay.ExamTimetableList
+                    pathOnly.startsWith("exam-syllabus") -> {
+                        val queryStr = target.path.substringAfter("?", "")
+                        examAssessmentId = queryStr.substringAfter("assessmentId=", "").substringBefore("&").takeIf { it.isNotBlank() }
+                        overlay = TeacherOverlay.ExamSyllabusMapping
+                    }
+                    pathOnly.startsWith("export") -> overlay = TeacherOverlay.Export
+                    pathOnly.startsWith("timetable-requests") -> { tab = "timetable"; showRequestsSegment = true; overlay = TeacherOverlay.None }
+                    pathOnly.startsWith("timetable") -> { tab = "timetable"; showRequestsSegment = false; overlay = TeacherOverlay.None }
                     else -> tab = "home"
                 }
             }
@@ -248,6 +292,73 @@ fun TeacherPortalV2(
             )
             return
         }
+        TeacherOverlay.AnnouncementDetail -> {
+            TeacherAnnouncementDetailScreen(
+                announcementId = announcementId,
+                onBack = { overlay = TeacherOverlay.None; announcementId = null },
+                modifier = modifier,
+            )
+            return
+        }
+        TeacherOverlay.LeaveRequests -> {
+            TeacherLeaveRequestsScreenV2(
+                onBack = { overlay = TeacherOverlay.None },
+                modifier = modifier,
+            )
+            return
+        }
+        TeacherOverlay.ExamTimetableList -> {
+            com.littlebridge.enrollplus.ui.v2.screens.teacher.exam.ExamTimetableListScreen(
+                onBack = { overlay = TeacherOverlay.None },
+                onNew = { overlay = TeacherOverlay.ExamTimetableUpload },
+                onOpenTimetable = { id ->
+                    examTimetableId = id
+                    overlay = TeacherOverlay.ExamTimetableDetail
+                },
+            )
+            return
+        }
+        TeacherOverlay.ExamTimetableUpload -> {
+            com.littlebridge.enrollplus.ui.v2.screens.teacher.exam.ExamTimetableUploadScreen(
+                onBack = { overlay = TeacherOverlay.ExamTimetableList },
+                onCreated = { id ->
+                    examTimetableId = id
+                    overlay = TeacherOverlay.ExamTimetableDetail
+                },
+            )
+            return
+        }
+        TeacherOverlay.ExamTimetableDetail -> {
+            com.littlebridge.enrollplus.ui.v2.screens.teacher.exam.ExamTimetableDetailScreen(
+                timetableId = examTimetableId ?: "",
+                onBack = { overlay = TeacherOverlay.ExamTimetableList },
+                onMapSyllabus = { assessmentId ->
+                    examAssessmentId = assessmentId
+                    overlay = TeacherOverlay.ExamSyllabusMapping
+                },
+            )
+            return
+        }
+        TeacherOverlay.ExamSyllabusMapping -> {
+            com.littlebridge.enrollplus.ui.v2.screens.teacher.exam.ExamSyllabusMappingScreen(
+                assessmentId = examAssessmentId ?: "",
+                onBack = { overlay = TeacherOverlay.ExamTimetableDetail },
+            )
+            return
+        }
+        TeacherOverlay.ExamMarksImport -> {
+            com.littlebridge.enrollplus.ui.v2.screens.teacher.exam.ExamMarksImportScreen(
+                onBack = { overlay = TeacherOverlay.None },
+            )
+            return
+        }
+        TeacherOverlay.Export -> {
+            com.littlebridge.enrollplus.ui.v2.screens.teacher.export.ExportScreen(
+                onBack = { overlay = TeacherOverlay.None },
+                modifier = modifier,
+            )
+            return
+        }
         TeacherOverlay.None -> Unit
     }
 
@@ -283,6 +394,23 @@ fun TeacherPortalV2(
                 .fillMaxSize()
                 .background(VColors.cream),
         ) {
+            // Track offline→online transition for the "Back online" confirmation.
+            val isPortalOffline = obligations.isOffline
+            var wasOffline by remember { mutableStateOf(isPortalOffline) }
+            var showBackOnline by remember { mutableStateOf(false) }
+            LaunchedEffect(isPortalOffline) {
+                if (wasOffline && !isPortalOffline) {
+                    showBackOnline = true
+                }
+                wasOffline = isPortalOffline
+            }
+            LaunchedEffect(showBackOnline) {
+                if (showBackOnline) {
+                    kotlinx.coroutines.delay(2500L)
+                    showBackOnline = false
+                }
+            }
+
             when (tab) {
                 "home" -> TeacherHomeScreenV2(
                     onOpenAttendanceForAssignment = { assignmentId, scope ->
@@ -315,6 +443,7 @@ fun TeacherPortalV2(
                         tab = "update"
                     },
                     onOpenClasses = { tab = "classes" },
+                    onOpenLeaveRequests = { overlay = TeacherOverlay.LeaveRequests },
                     onOpenHealthAlerts = { overlay = TeacherOverlay.HealthAlerts },
                     onOpenTransportAttendance = { overlay = TeacherOverlay.TransportAttendance },
                     onOpenPews = { overlay = TeacherOverlay.Pews },
@@ -325,6 +454,8 @@ fun TeacherPortalV2(
                     onOpenEvents = { overlay = TeacherOverlay.EventRegistration },
                     onOpenMessages = { overlay = TeacherOverlay.Messages },
                     onOpenNotifications = { overlay = TeacherOverlay.Notifications },
+                    onOpenExamTimetable = { overlay = TeacherOverlay.ExamTimetableList },
+                    onOpenExport = { overlay = TeacherOverlay.Export },
                     unreadCount = notifications.unreadCount,
                 )
 
@@ -336,6 +467,8 @@ fun TeacherPortalV2(
                         teacherName = teacherName,
                         unreadCount = notifications.unreadCount,
                         onOpenNotifications = { overlay = TeacherOverlay.Notifications },
+                        onOpenMessages = { overlay = TeacherOverlay.Messages },
+                        onImportMarks = { overlay = TeacherOverlay.ExamMarksImport },
                     )
                 }
 
@@ -349,6 +482,7 @@ fun TeacherPortalV2(
                     teacherName = teacherName,
                     unreadCount = notifications.unreadCount,
                     onOpenNotifications = { overlay = TeacherOverlay.Notifications },
+                    initialShowRequests = showRequestsSegment,
                 )
 
                 "profile" -> TeacherProfileScreenV2(
@@ -357,6 +491,44 @@ fun TeacherPortalV2(
                     unreadCount = notifications.unreadCount,
                     onOpenNotifications = { overlay = TeacherOverlay.Notifications },
                 )
+            }
+
+            // Offline indicator overlay — animated slide-in/out so it never jumps.
+            AnimatedVisibility(
+                visible = isPortalOffline,
+                enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+                exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+                modifier = Modifier.align(Alignment.TopCenter),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(
+                            WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 24.dp,
+                        ),
+                    contentAlignment = Alignment.BottomCenter,
+                ) {
+                    VOfflineBanner(isOffline = true)
+                }
+            }
+
+            // "Back online" transient confirmation.
+            AnimatedVisibility(
+                visible = showBackOnline,
+                enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+                exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+                modifier = Modifier.align(Alignment.TopCenter),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(
+                            WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 24.dp,
+                        ),
+                    contentAlignment = Alignment.BottomCenter,
+                ) {
+                    VBackOnlineBanner()
+                }
             }
         }
     }

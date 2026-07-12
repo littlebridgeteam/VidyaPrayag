@@ -36,7 +36,9 @@ data class ScholarshipsState(
     val streakDays: Int = 0,
     val currentLevel: Int = 0,
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class ScholarshipsViewModel(
@@ -69,7 +71,9 @@ class ScholarshipsViewModel(
                                     },
                                     profileStrength = data.profileStrength,
                                     streakDays = data.streakDays,
-                                    currentLevel = data.currentLevel
+                                    currentLevel = data.currentLevel,
+                                    isStale = result.isStale,
+                                    isOffline = result.isOffline,
                                 )
                             }
                         }

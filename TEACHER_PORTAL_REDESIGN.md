@@ -712,3 +712,63 @@ A follow-up verification pass was run against §12 (Non-Negotiable Rules):
   structural errors) and a brace/paren balance sweep across all 26 teacher
   source files (0 mismatches). The full Gradle build should be run on a
   developer machine or a CI runner with ≥6 GB RAM before release.
+
+---
+
+## 12. Teacher Portal Gamification UI Specification
+
+The teacher portal must include gamification tools at two levels: **per-student** (inside the student profile drill-down) and **per-class** (inside the class detail pane).
+
+### 12.1 Per-Student Gamification Card
+**Location:** `TeacherStudentProfileScreenV2.kt` — embedded as last item in `StudentProfileBody` LazyColumn.
+**File:** `TeacherGamificationScreenV2.kt` — `TeacherStudentGamificationCard` composable.
+
+**Features:**
+1. **Earned Badges** — Horizontal scroll of student's earned badges (gold soft chips with star icon + badge name).
+2. **Encourage Button** — Sends XP encouragement to student. Violet tint, heart icon.
+3. **Spotlight Button** — Spotlights student for improvement. Gold tint, star icon.
+4. **Send Shoutout** — Toggle to reveal text field + send button. Teal tint, megaphone icon.
+5. **Assign Quest** — Toggle to reveal available quest list. Each quest row: name, description, XP reward. Tap to assign. Coral tint, target icon.
+6. **Action Feedback** — Success/error message banner that auto-dismisses after 3s.
+
+### 12.2 Per-Class Gamification Card
+**Location:** `TeacherClassesScreenV2.kt` — embedded as last item in `ClassDetailBody` LazyColumn.
+**File:** `TeacherGamificationScreenV2.kt` — `TeacherClassGamificationCard` composable.
+
+**Features:**
+1. **Overview Metrics** — Total XP, total badges awarded, active quests count. Three metric tiles in a row.
+2. **Class Leaderboard** — Top 5 students by XP. Rank disc (gold/silver/bronze for top 3), student ID, total XP.
+3. **Class Goals** — List of active class goals with progress bar (current/target), reward text.
+4. **Pep Talk Button** — Send motivational pep talk to entire class. Confirm-then-send pattern. Violet tint.
+5. **Create Class Goal** — Toggle form with goal type, target (number), reward text. Submit creates goal via API. Coral tint.
+6. **Shoutout Moderation** — Recent shoutouts list with sender → receiver, message, delete button.
+7. **Action Feedback** — Success/error message banner that auto-dismisses after 3s.
+
+### 12.3 TeacherGamificationViewModel
+**File:** `shared/.../gamification/presentation/ParentGamificationViewModel.kt` (appended below `ParentGamificationViewModel`)
+
+**State:** `TeacherGamificationState` — overview, classLeaderboard, classGoals, availableQuests, shoutouts, studentBadges, isLoading, isActionLoading, error, actionMessage.
+
+**Methods:**
+- `load()` — Fetches overview, class leaderboard, class goals, available quests, shoutouts
+- `loadStudentBadges(studentId)` — Fetches a student's earned badges
+- `encourageStudent(studentId, amount, reason)` — Sends XP encouragement
+- `spotlightStudent(studentId, reason)` — Spotlights a student
+- `awardBadge(studentId, badgeId)` — Awards a badge
+- `sendShoutout(receiverId, message, templateId, isPublic)` — Sends a shoutout
+- `assignQuest(studentId, questId)` — Assigns a quest to a student
+- `pepTalk(className, section)` — Sends pep talk to a class
+- `createClassGoal(goalType, target, reward, className)` — Creates a class goal
+- `updateClassGoalProgress(goalId, progress)` — Updates goal progress
+- `deleteShoutout(shoutoutId)` — Deletes a shoutout
+- `clearActionMessage()` — Clears the action feedback banner
+
+### 12.4 Style Rules
+- Use teacher portal tokens: `VtC` (violet accent, cream base, teal success), `VtT` (typography), `VtCard`, `VtEyebrow`, `VtPill`, `VtIconDisc`, `VtMetricTile`
+- All cards use `VtCard` (white surface + hairline border)
+- Action buttons use `VtC` accent colors with 10% alpha background
+- No fixed heights on growing content — all inside `LazyColumn` with `verticalArrangement = spacedBy(12.dp)`
+- All buttons within screen bounds — no overflow, no hidden actions
+- Loading state: `CircularProgressIndicator` at 16dp inside button
+- Data flows from ViewModel → API → backend — zero hardcoded data
+- Koin DI: `factory { TeacherGamificationViewModel(get(), get()) }` registered in `Koin.kt`

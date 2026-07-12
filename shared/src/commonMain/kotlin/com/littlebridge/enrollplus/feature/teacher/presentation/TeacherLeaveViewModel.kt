@@ -24,6 +24,8 @@ data class TeacherLeaveState(
     val pendingCount: Int = 0,
     val loading: Boolean = false,
     val error: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
     /** Id currently being decided, so the row can show a spinner. */
     val decidingId: String? = null,
     val decisionError: String? = null,
@@ -53,7 +55,7 @@ class TeacherLeaveViewModel(
             }
             when (val r = repository.getLeaveRequests(token, status)) {
                 is NetworkResult.Success -> _state.update {
-                    it.copy(loading = false, requests = r.data.data.requests, pendingCount = r.data.data.pendingCount)
+                    it.copy(loading = false, requests = r.data.data.requests, pendingCount = r.data.data.pendingCount, isStale = r.isStale, isOffline = r.isOffline)
                 }
                 is NetworkResult.Error -> _state.update { it.copy(loading = false, error = r.message) }
                 is NetworkResult.ConnectionError -> _state.update { it.copy(loading = false, error = "Connection error") }

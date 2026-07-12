@@ -62,7 +62,9 @@ data class ClassPerformanceState(
     val topPerformerDetails: String = "",
     val recentProgress: List<ProgressMonitoringItem> = emptyList(),
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class ClassPerformanceViewModel(
@@ -86,7 +88,7 @@ class ClassPerformanceViewModel(
             when (val result = analyticsRepository.getClassPerformance(token, className)) {
                 is NetworkResult.Success -> {
                     val data = result.data.data
-                    _state.value = parseClassPerformance(data).copy(isLoading = false)
+                    _state.value = parseClassPerformance(data).copy(isLoading = false, isStale = result.isStale, isOffline = result.isOffline)
                 }
                 is NetworkResult.Error -> {
                     AppLogger.e("ClassPerformanceVM", "getClassPerformance error: ${result.message}")

@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -80,6 +79,9 @@ import com.littlebridge.enrollplus.feature.parent.domain.model.ParentSyllabusV2D
 import com.littlebridge.enrollplus.feature.parent.domain.model.QuizLeaderboardData
 import com.littlebridge.enrollplus.feature.parent.presentation.AcademicCompetency
 import com.littlebridge.enrollplus.feature.parent.presentation.AchievementBadge
+import com.littlebridge.enrollplus.feature.parent.domain.model.ParentTimetableData
+import com.littlebridge.enrollplus.feature.parent.domain.model.ParentPeriodDto
+import com.littlebridge.enrollplus.feature.parent.presentation.LivePeriod
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentAcademicsState
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentAcademicsViewModel
 import com.littlebridge.enrollplus.feature.parent.presentation.TrackProgressState
@@ -92,8 +94,11 @@ import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VMotion
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
+import com.littlebridge.enrollplus.ui.v2.components.VStaleChip
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.feature.parent.presentation.SkillTestViewModel
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SCREEN ENTRY POINT
@@ -114,43 +119,76 @@ fun ParentAcademicsScreenV2(
     initialReportDraftId: String? = null,
     onReportDraftIdConsumed: () -> Unit = {},
     unreadNotificationsCount: Int = 0,
+    timetable: ParentTimetableData? = null,
+    todayPeriods: List<LivePeriod> = emptyList(),
+    timetableLoading: Boolean = false,
     viewModel: TrackProgressViewModel = koinViewModel(),
     academicsViewModel: ParentAcademicsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
     val academics by academicsViewModel.state.collectAsState()
+    var isRefreshing by remember { mutableStateOf(false) }
 
-    ParentAcademicsContent(
-        state = state,
-        academics = academics,
-        parentName = parentName,
-        children = children,
-        selectedChild = selectedChild,
-        onSelectChild = {
-            onSelectChild(it)
-            academicsViewModel.selectChild(it)
+    LaunchedEffect(academics.refreshEpoch, academics.syllabusV2Loading, academics.dailySummaryLoading, academics.quizzesLoading) {
+        if (academics.refreshEpoch > 0 &&
+            !academics.syllabusV2Loading &&
+            !academics.dailySummaryLoading &&
+            !academics.quizzesLoading
+        ) {
+            isRefreshing = false
+        }
+    }
+
+    VPullRefresh(
+        isRefreshing = isRefreshing,
+        onRefresh = {
+            isRefreshing = true
+            academicsViewModel.refreshAttendance()
+            academicsViewModel.refreshMarks()
+            academicsViewModel.refreshSyllabus()
+            academicsViewModel.loadSyllabusV2()
+            academicsViewModel.loadDailySummary()
+            academicsViewModel.loadQuizzes()
         },
-        onLoadAttendance = { academicsViewModel.loadAttendance() },
-        onLoadMarks = { academicsViewModel.loadMarks() },
-        onLoadSyllabus = { academicsViewModel.loadSyllabus() },
-        onLoadSyllabusV2 = { academicsViewModel.loadSyllabusV2() },
-        onLoadDailySummary = { academicsViewModel.loadDailySummary() },
-        onLoadQuizzes = { academicsViewModel.loadQuizzes() },
-        onOpenQuiz = { academicsViewModel.loadQuizDetail(it) },
-        onViewQuizResult = { academicsViewModel.loadQuizResult(it) },
-        onSubmitQuiz = { id, ans, txt -> academicsViewModel.submitQuiz(id, ans, txt) },
-        onClearQuizResult = { academicsViewModel.clearQuizResult() },
-        onLoadLeaderboard = { academicsViewModel.loadLeaderboard(it) },
-        onOpenLeave = onOpenLeave,
-        onOpenHealth = onOpenHealth,
-        onOpenNotifications = onOpenNotifications,
-        unreadNotificationsCount = unreadNotificationsCount,
-        initialTab = initialTab,
-        onTabConsumed = onTabConsumed,
-        initialReportDraftId = initialReportDraftId,
-        onReportDraftIdConsumed = onReportDraftIdConsumed,
-        modifier = modifier,
-    )
+        modifier = modifier.fillMaxSize(),
+    ) {
+        if (academics.attendanceStale || academics.marksStale || academics.syllabusStale) {
+            VStaleChip(modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp))
+        }
+        ParentAcademicsContent(
+            state = state,
+            academics = academics,
+            parentName = parentName,
+            children = children,
+            selectedChild = selectedChild,
+            onSelectChild = {
+                onSelectChild(it)
+                academicsViewModel.selectChild(it)
+            },
+            onLoadAttendance = { academicsViewModel.loadAttendance() },
+            onLoadMarks = { academicsViewModel.loadMarks() },
+            onLoadSyllabus = { academicsViewModel.loadSyllabus() },
+            onLoadSyllabusV2 = { academicsViewModel.loadSyllabusV2() },
+            onLoadDailySummary = { academicsViewModel.loadDailySummary() },
+            onLoadQuizzes = { academicsViewModel.loadQuizzes() },
+            onOpenQuiz = { academicsViewModel.loadQuizDetail(it) },
+            onViewQuizResult = { academicsViewModel.loadQuizResult(it) },
+            onSubmitQuiz = { id, ans, txt -> academicsViewModel.submitQuiz(id, ans, txt) },
+            onClearQuizResult = { academicsViewModel.clearQuizResult() },
+            onLoadLeaderboard = { academicsViewModel.loadLeaderboard(it) },
+            onOpenLeave = onOpenLeave,
+            onOpenHealth = onOpenHealth,
+            onOpenNotifications = onOpenNotifications,
+            unreadNotificationsCount = unreadNotificationsCount,
+            initialTab = initialTab,
+            onTabConsumed = onTabConsumed,
+            initialReportDraftId = initialReportDraftId,
+            onReportDraftIdConsumed = onReportDraftIdConsumed,
+            timetable = timetable,
+            todayPeriods = todayPeriods,
+            timetableLoading = timetableLoading,
+        )
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -184,9 +222,12 @@ private fun ParentAcademicsContent(
     onTabConsumed: () -> Unit = {},
     initialReportDraftId: String? = null,
     onReportDraftIdConsumed: () -> Unit = {},
+    timetable: ParentTimetableData? = null,
+    todayPeriods: List<LivePeriod> = emptyList(),
+    timetableLoading: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
-    val staticTabs = listOf("Overview", "Attendance", "Marks", "Syllabus", "Quizzes", "Homework")
+    val staticTabs = listOf("Overview", "Attendance", "Marks", "Syllabus", "Quizzes", "Homework", "Timetable")
     var tab by remember { mutableStateOf("Overview") }
     val showReport = tab == "Report" || initialReportDraftId != null
     val visibleTabs = remember(staticTabs, showReport) {
@@ -235,6 +276,8 @@ private fun ParentAcademicsContent(
             onSelectChild = onSelectChild,
             onOpenNotifications = onOpenNotifications,
             unreadNotificationsCount = unreadNotificationsCount,
+            greetingLead = "${selectedChild?.name?.ifBlank { null } ?: "Your Child"}'s",
+            greetingAccent = "academics",
         )
 
         // ── Tab chips row (white selected pill like screenshot) ──
@@ -303,6 +346,11 @@ private fun ParentAcademicsContent(
                         onLoadLeaderboard = onLoadLeaderboard,
                     )
                     "Homework" -> HomeworkTab(academics, onLoadDailySummary)
+                    "Timetable" -> TimetableTab(
+                        timetable = timetable,
+                        todayPeriods = todayPeriods,
+                        isLoading = timetableLoading,
+                    )
                     "Report" -> {
                         val childId = academics.selectedChildId
                         if (childId != null) {
@@ -369,6 +417,9 @@ private fun OverviewTab(
         averageScore = averageScore,
         syllabusProgress = syllabusProgress,
     )
+
+    // ── Skill Test Card (AI-generated weekly MCQ test) ──
+    SkillTestCard(childId = academics.selectedChildId)
 
     // ── Academic competencies ──
     if (state.academicCompetencies.isNotEmpty()) {
@@ -1013,6 +1064,14 @@ private fun QuizzesTab(
         QuizResultCard(academics, onBackToList, onLoadLeaderboard)
         return
     }
+    if (academics.quizDetailLoading) {
+        LoadingState()
+        return
+    }
+    academics.quizDetailError?.let {
+        ErrorState(message = it, onRetry = onBackToList)
+        return
+    }
 
     if (academics.quizzesLoading) {
         LoadingState()
@@ -1098,7 +1157,7 @@ private fun QuizDetailCard(
         Spacer(Modifier.height(16.dp))
 
         Column(
-            Modifier.fillMaxWidth().heightIn(max = 420.dp).verticalScroll(rememberScrollState()),
+            Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             detail.questions.forEachIndexed { qIdx, q ->
@@ -1211,7 +1270,7 @@ private fun QuizResultCard(
             Spacer(Modifier.height(16.dp))
 
             Column(
-                Modifier.fillMaxWidth().heightIn(max = 350.dp).verticalScroll(rememberScrollState()),
+                Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 result.questionResults.forEachIndexed { idx, qr ->
@@ -1246,7 +1305,18 @@ private fun QuizResultCard(
             if (academics.leaderboardLoading) {
                 Text("Loading leaderboard...", style = VTypography.caption, color = VColors.ink3)
             } else if (academics.leaderboardError != null) {
-                Text(academics.leaderboardError!!, style = VTypography.caption, color = VColors.ink3)
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(academics.leaderboardError!!, style = VTypography.caption, color = VColors.ink3, modifier = Modifier.weight(1f))
+                    VButton(
+                        "Retry",
+                        onClick = { onLoadLeaderboard(result.quizId) },
+                        variant = VButtonVariant.Secondary,
+                    )
+                }
             } else {
                 val lb = academics.leaderboard
                 if (lb != null && lb.entries.isNotEmpty()) {
@@ -1255,7 +1325,7 @@ private fun QuizResultCard(
                     Text("${lb.totalParticipants} participants", style = VTypography.caption, color = VColors.ink3)
                     Spacer(Modifier.height(10.dp))
                     Column(
-                        Modifier.fillMaxWidth().heightIn(max = 300.dp).verticalScroll(rememberScrollState()),
+                        Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
                         lb.entries.forEach { entry ->
@@ -1353,6 +1423,152 @@ private fun HomeworkTab(academics: ParentAcademicsState, onRetry: () -> Unit) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// TIMETABLE TAB
+// ═══════════════════════════════════════════════════════════════════════════════
+
+private val dayLabels = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+
+@Composable
+private fun TimetableTab(
+    timetable: ParentTimetableData?,
+    todayPeriods: List<LivePeriod>,
+    isLoading: Boolean,
+) {
+    if (isLoading) {
+        LoadingState()
+        return
+    }
+
+    if (timetable == null || timetable.weekdays.isEmpty()) {
+        EmptyState("No Timetable", "The weekly class schedule will appear here once published by the school.")
+        return
+    }
+
+    var selectedDay by remember { mutableStateOf(com.littlebridge.enrollplus.util.todayWeekday()) }
+
+    val dayData = timetable.weekdays.firstOrNull { it.weekday == selectedDay }
+    val periods = dayData?.periods ?: emptyList()
+
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        if (timetable.className.isNotBlank()) {
+            CreamCard {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Box(
+                        Modifier.size(36.dp).clip(CircleShape).background(VColors.violetSoft),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.Filled.CalendarMonth, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text("Class Schedule", style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
+                        Text(timetable.className, style = VTypography.caption, color = VColors.ink2)
+                    }
+                }
+            }
+        }
+
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 0.dp),
+        ) {
+            items(dayLabels.indices.toList()) { idx ->
+                val dayNum = idx + 1
+                val hasSchedule = timetable.weekdays.any { it.weekday == dayNum && it.periods.isNotEmpty() }
+                if (!hasSchedule) return@items
+                val isSelected = selectedDay == dayNum
+                val isToday = com.littlebridge.enrollplus.util.todayWeekday() == dayNum
+                Box(
+                    Modifier
+                        .clip(VShapes.full)
+                        .background(if (isSelected) VColors.violet else VColors.surfaceCard)
+                        .border(1.dp, if (isSelected) VColors.violet else VColors.line, VShapes.full)
+                        .clickable { selectedDay = dayNum }
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        dayLabels[idx],
+                        style = VTypography.caption.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium),
+                        color = if (isSelected) VColors.white else VColors.ink,
+                    )
+                    if (isToday && !isSelected) {
+                        Box(
+                            Modifier.align(Alignment.BottomEnd).size(6.dp).clip(CircleShape).background(VColors.violet),
+                        )
+                    }
+                }
+            }
+        }
+
+        if (periods.isEmpty()) {
+            EmptyState("No Classes", "No scheduled periods for ${dayLabels[selectedDay - 1]}.")
+        } else {
+            periods.forEachIndexed { idx, period ->
+                val isLive = todayPeriods.any { it.startTime == period.startTime && it.relation == 0 }
+                val isDone = todayPeriods.any { it.startTime == period.startTime && it.relation == -1 }
+                val accentColor = subjectPalette[idx % subjectPalette.size]
+
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(VShapes.lg)
+                        .background(if (isLive) accentColor.copy(alpha = 0.08f) else VColors.surfaceCard)
+                        .border(1.dp, if (isLive) accentColor.copy(alpha = 0.3f) else VColors.line, VShapes.lg)
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        Modifier.size(44.dp).clip(VShapes.md).background(accentColor.copy(alpha = 0.12f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            "${idx + 1}",
+                            style = VTypography.body.copy(fontWeight = FontWeight.Bold),
+                            color = accentColor,
+                        )
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            period.subject.ifBlank { "Free Period" },
+                            style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
+                            color = VColors.ink,
+                        )
+                        if (period.teacherName.isNotBlank()) {
+                            Text(period.teacherName, style = VTypography.caption, color = VColors.ink2)
+                        }
+                        if (period.room.isNotBlank()) {
+                            Text("Room ${period.room}", style = VTypography.caption, color = VColors.ink3)
+                        }
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            period.startTime,
+                            style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
+                            color = VColors.ink,
+                        )
+                        Text(
+                            period.endTime,
+                            style = VTypography.caption,
+                            color = VColors.ink3,
+                        )
+                    }
+                    if (isLive) {
+                        Box(
+                            Modifier.clip(VShapes.full).background(accentColor).padding(horizontal = 8.dp, vertical = 3.dp),
+                        ) {
+                            Text("LIVE", style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold), color = VColors.white)
+                        }
+                    } else if (isDone) {
+                        Icon(Icons.Filled.Check, contentDescription = null, tint = VColors.success, modifier = Modifier.size(16.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // SHARED HELPERS — matching onboarding patterns exactly
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -1434,6 +1650,7 @@ private fun LoadingState() {
 private fun ErrorState(message: String, onRetry: (() -> Unit)? = null) {
     CreamCard {
         Row(
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {

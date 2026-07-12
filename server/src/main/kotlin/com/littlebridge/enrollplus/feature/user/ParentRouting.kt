@@ -4,6 +4,7 @@ import com.littlebridge.enrollplus.core.ok
 import com.littlebridge.enrollplus.core.principalUserUuid
 import com.littlebridge.enrollplus.db.AcademicCalendarTable
 import com.littlebridge.enrollplus.db.AnnouncementsTable
+import com.littlebridge.enrollplus.db.CalendarEventsTable
 import com.littlebridge.enrollplus.db.AppConfigTable
 import com.littlebridge.enrollplus.db.ChildrenTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
@@ -331,21 +332,40 @@ fun Route.parentRouting() {
                 }
 
                 val events = dbQuery {
-                    AcademicCalendarTable.selectAll()
-                        .where { AcademicCalendarTable.schoolId inList schoolIds }
-                        .filter { row ->
-                            val d = runCatching { LocalDate.parse(row[AcademicCalendarTable.date]) }.getOrNull()
-                                ?: return@filter false
-                            !d.isBefore(rangeStart) && !d.isAfter(rangeEnd)
+                    // Read from CalendarEventsTable (the new academic calendar system)
+                    // — only PUBLISHED, active events visible to parents.
+                    CalendarEventsTable.selectAll()
+                        .where {
+                            (CalendarEventsTable.schoolId inList schoolIds) and
+                                (CalendarEventsTable.isActive eq true) and
+                                (CalendarEventsTable.status eq "PUBLISHED")
                         }
-                        .map {
-                            com.littlebridge.enrollplus.feature.school.CalendarEventDto(
-                                date = it[AcademicCalendarTable.date],
-                                day = it[AcademicCalendarTable.day],
-                                eventId = it[AcademicCalendarTable.eventId],
-                                eventTitle = it[AcademicCalendarTable.eventTitle],
-                                eventDescription = it[AcademicCalendarTable.eventDescription] ?: ""
-                            )
+                        .filter { row ->
+                            val s = row[CalendarEventsTable.startDate]
+                            val e = row[CalendarEventsTable.endDate]
+                            // Event overlaps [rangeStart, rangeEnd] if startDate <= rangeEnd && endDate >= rangeStart
+                            !s.isAfter(rangeEnd) && !e.isBefore(rangeStart)
+                        }
+                        .sortedBy { it[CalendarEventsTable.startDate] }
+                        .flatMap { row ->
+                            // Expand multi-day events into individual day entries
+                            val s = row[CalendarEventsTable.startDate]
+                            val e = row[CalendarEventsTable.endDate]
+                            val dates = if (s == e) listOf(s) else {
+                                generateSequence(s) { it.plusDays(1) }
+                                    .takeWhile { !it.isAfter(e) }
+                                    .toList()
+                            }
+                            dates.filter { d -> !d.isBefore(rangeStart) && !d.isAfter(rangeEnd) }
+                                .map { d ->
+                                    com.littlebridge.enrollplus.feature.school.CalendarEventDto(
+                                        date = d.toString(),
+                                        day = d.dayOfWeek.name.lowercase().replaceFirstChar { it.uppercase() },
+                                        eventId = row[CalendarEventsTable.eventCode],
+                                        eventTitle = row[CalendarEventsTable.title],
+                                        eventDescription = row[CalendarEventsTable.description]
+                                    )
+                                }
                         }
                 }
 

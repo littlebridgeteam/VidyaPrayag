@@ -1,11 +1,14 @@
 package com.littlebridge.enrollplus.ui.v2.screens.school
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -18,12 +21,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -71,10 +77,12 @@ import com.littlebridge.enrollplus.platform.rememberNotificationPermissionLaunch
 import com.littlebridge.enrollplus.presentation.PermissionViewModel
 import com.littlebridge.enrollplus.ui.v2.components.PinButton
 import com.littlebridge.enrollplus.ui.v2.components.ShimmerBox
+import com.littlebridge.enrollplus.ui.v2.components.VBackOnlineBanner
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VGlassCard
+import com.littlebridge.enrollplus.ui.v2.components.VOfflineBanner
 import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
@@ -205,42 +213,98 @@ fun SchoolHomeScreenV2(
     }
 
     VPullRefresh(
-        isRefreshing = loading && overview != null,
+        isRefreshing = dashboardState.isRefreshing,
         onRefresh = { viewModel.refresh(); calendarViewModel.refresh() },
         modifier = modifier.fillMaxSize().background(brush = homeBackgroundGradient()),
     ) {
-        VStateHost(
-            loading = loading && overview == null,
-            error = if (error != null && overview == null) error else null,
-            isEmpty = overview == null && !loading && error == null,
-            emptyTitle = "Nothing to show yet",
-            emptyBody = "Your dashboard will appear here once data is available.",
-            onRetry = { viewModel.refresh(); calendarViewModel.refresh() },
-            skeleton = { SkeletonDashboard() },
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            val ov = overview!!
-            CommandDesk(
-                overview = ov,
-                activity = activity,
-                adminName = adminName,
-                digest = digest,
-                isDigestLoading = isDigestLoading,
-                pinnedScreens = pinnedScreens,
-                unreadCount = notifications.unreadCount,
-                onOpenNotifications = onOpenNotifications,
-                onOpenCalendar = onOpenCalendar,
-                onOpenAnalytics = onOpenAnalytics,
-                onOpenPews = onOpenPews,
-                onOpenTransport = onOpenTransport,
-                onOpenReportPublish = onOpenReportPublish,
-                onOpenEvents = onOpenEvents,
-                onCreateEvent = onCreateEvent,
-                onOpenPinnedScreen = onOpenPinnedScreen,
-                onOpenCommandPalette = { commandPaletteVisible = true },
-                onUnpin = pinnedVm::unpin,
-                onExit = onExit,
-            )
+        Box(Modifier.fillMaxSize()) {
+            // Track offline→online transition for the "Back online" confirmation.
+            var wasOffline by remember { mutableStateOf(dashboardState.isOffline) }
+            var showBackOnline by remember { mutableStateOf(false) }
+            LaunchedEffect(dashboardState.isOffline) {
+                if (wasOffline && !dashboardState.isOffline) {
+                    showBackOnline = true
+                }
+                wasOffline = dashboardState.isOffline
+            }
+            LaunchedEffect(showBackOnline) {
+                if (showBackOnline) {
+                    kotlinx.coroutines.delay(2500L)
+                    showBackOnline = false
+                }
+            }
+
+            VStateHost(
+                loading = loading && overview == null,
+                error = if (error != null && overview == null) error else null,
+                isEmpty = overview == null && !loading && error == null,
+                emptyTitle = "Nothing to show yet",
+                emptyBody = "Your dashboard will appear here once data is available.",
+                onRetry = { viewModel.refresh(); calendarViewModel.refresh() },
+                skeleton = { SkeletonDashboard() },
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                val ov = overview!!
+                CommandDesk(
+                    overview = ov,
+                    activity = activity,
+                    adminName = adminName,
+                    digest = digest,
+                    isDigestLoading = isDigestLoading,
+                    pinnedScreens = pinnedScreens,
+                    unreadCount = notifications.unreadCount,
+                    onOpenNotifications = onOpenNotifications,
+                    onOpenCalendar = onOpenCalendar,
+                    onOpenAnalytics = onOpenAnalytics,
+                    onOpenPews = onOpenPews,
+                    onOpenTransport = onOpenTransport,
+                    onOpenReportPublish = onOpenReportPublish,
+                    onOpenEvents = onOpenEvents,
+                    onCreateEvent = onCreateEvent,
+                    onOpenPinnedScreen = onOpenPinnedScreen,
+                    onOpenCommandPalette = { commandPaletteVisible = true },
+                    onUnpin = pinnedVm::unpin,
+                    onExit = onExit,
+                )
+            }
+
+            // Offline indicator overlay — animated slide-in/out so it never jumps.
+            AnimatedVisibility(
+                visible = dashboardState.isOffline,
+                enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+                exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+                modifier = Modifier.align(Alignment.TopCenter),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(
+                            WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 24.dp,
+                        ),
+                    contentAlignment = Alignment.BottomCenter,
+                ) {
+                    VOfflineBanner(isOffline = true)
+                }
+            }
+
+            // "Back online" transient confirmation.
+            AnimatedVisibility(
+                visible = showBackOnline,
+                enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+                exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+                modifier = Modifier.align(Alignment.TopCenter),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(
+                            WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 24.dp,
+                        ),
+                    contentAlignment = Alignment.BottomCenter,
+                ) {
+                    VBackOnlineBanner()
+                }
+            }
         }
     }
 

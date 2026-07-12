@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enroll+ — Product Launch</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--cream:#FBF8F4;--cream-deep:#F5F0E8;--white:#FFFFFF;--surface:#F8F4EF;--surface-warm:#FFF6EE;--ink:#1A1614;--ink-2:#5C544E;--ink-3:#8A8078;--line:#E8E0D6;--line-soft:#F0EAE0;--violet:#5B41D5;--violet-hover:#4A30C4;--violet-soft:#EEE8FB;--coral:#F82B60;--coral-soft:#FFE4EC;--gold:#FCB400;--gold-soft:#FFF4D1;--sky:#18BFFF;--sky-soft:#E0F6FF;--mint:#2DCE89;--mint-soft:#DCF5E8;--success:#2D7A4A;--r-sm:10px;--r-md:14px;--r-lg:18px;--r-xl:24px;--r-2xl:32px;--r-full:9999px;--shadow-1:0 1px 2px rgba(26,22,20,.04),0 1px 3px rgba(26,22,20,.06);--shadow-2:0 2px 8px -2px rgba(26,22,20,.08),0 1px 3px rgba(26,22,20,.04);--shadow-3:0 8px 24px -6px rgba(26,22,20,.1),0 2px 8px rgba(26,22,20,.04);--shadow-card:0 0 0 1px rgba(232,224,214,.6),0 1px 2px rgba(26,22,20,.04),0 1px 3px rgba(26,22,20,.06);--shadow-primary:0 4px 14px -2px rgba(91,65,213,.22);--ease:cubic-bezier(.16,1,.3,1);--ease-slow:cubic-bezier(.6,0,.2,1)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Inter',-apple-system,system-ui,sans-serif;background:var(--cream);-webkit-font-smoothing:antialiased;color:var(--ink)}
+#stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+.scene{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .9s var(--ease)}
+.scene.active{opacity:1;pointer-events:auto}
+.scene.exit{opacity:0}
+#progress-track{position:fixed;bottom:0;left:0;right:0;height:3px;background:rgba(26,22,20,.06);z-index:100}
+#progress-bar{height:100%;width:0;background:var(--violet);transition:width .05s linear}
+#indicators{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:100}
+.indicator{width:6px;height:6px;border-radius:50%;background:rgba(26,22,20,.12);transition:all .4s var(--ease)}
+.indicator.active{background:var(--violet);width:18px;border-radius:3px}
+#replay{position:fixed;top:18px;right:18px;z-index:100;width:36px;height:36px;border-radius:50%;border:1px solid rgba(26,22,20,.08);background:var(--white);color:var(--ink-2);cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .5s;font-size:15px;box-shadow:var(--shadow-1)}
+#replay.visible{opacity:1}
+#replay:hover{background:var(--violet-soft);color:var(--violet)}
+#start-overlay{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:rgba(251,248,244,.92);backdrop-filter:blur(8px);opacity:1;transition:opacity .5s}
+#start-overlay.hidden{opacity:0;pointer-events:none}
+.start-card{background:var(--white);padding:32px 40px;border-radius:var(--r-xl);box-shadow:var(--shadow-3);text-align:center;max-width:360px}
+.start-card h2{font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:8px}
+.start-card p{font-size:14px;color:var(--ink-2);margin-bottom:22px;line-height:1.5}
+.start-btn{background:var(--ink);color:var(--cream);border:none;border-radius:var(--r-full);padding:14px 32px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:transform .2s}
+.start-btn:hover{transform:translateY(-2px)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeDown{from{opacity:0;transform:translateY(-28px)}to{opacity:1;transform:translateY(0)}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+@keyframes blurIn{from{opacity:0;filter:blur(12px);transform:scale(1.03)}to{opacity:1;filter:blur(0);transform:scale(1)}}
+@keyframes slideLeft{from{opacity:0;transform:translateX(-50px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideRight{from{opacity:0;transform:translateX(50px)}to{opacity:1;transform:translateX(0)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes pulseDot{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes drift{0%{transform:translateX(0) translateY(0)}50%{transform:translateX(-10px) translateY(-6px)}100%{transform:translateX(0) translateY(0)}}
+@keyframes drift2{0%{transform:translateX(0) translateY(0)}50%{transform:translateX(12px) translateY(8px)}100%{transform:translateX(0) translateY(0)}}
+@keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+@keyframes lineGrow{from{width:0}to{width:var(--w,100%)}}
+@keyframes countUp{from{--num:0}to{--num:var(--target)}}
+
+.anim-fade-up{animation:fadeUp .9s var(--ease) forwards;opacity:0}
+.anim-fade-down{animation:fadeDown .9s var(--ease) forwards;opacity:0}
+.anim-scale-in{animation:scaleIn 1.1s var(--ease) forwards;opacity:0}
+.anim-blur-in{animation:blurIn 1.2s var(--ease) forwards;opacity:0}
+.anim-slide-left{animation:slideLeft .9s var(--ease) forwards;opacity:0}
+.anim-slide-right{animation:slideRight .9s var(--ease) forwards;opacity:0}
+.anim-float{animation:float 5s ease-in-out infinite}
+.anim-drift{animation:drift 8s ease-in-out infinite}
+.anim-drift2{animation:drift2 9s ease-in-out infinite}
+.s1{animation-delay:.1s}.s2{animation-delay:.25s}.s3{animation-delay:.45s}.s4{animation-delay:.65s}.s5{animation-delay:.85s}.s6{animation-delay:1.05s}.s7{animation-delay:1.25s}
+
+.kicker{font-size:12px;font-weight:700;color:var(--ink-3);letter-spacing:2.5px;text-transform:uppercase}
+.headline{font-size:52px;font-weight:900;letter-spacing:-1.6px;line-height:1.05;margin-top:8px}
+.body{font-size:17px;font-weight:400;color:var(--ink-2);line-height:1.55;margin-top:14px;max-width:460px}
+
+/* Orbs */
+.orb{position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none}
+.orb-violet{background:rgba(91,65,213,.06)}
+.orb-coral{background:rgba(248,43,96,.04)}
+.orb-gold{background:rgba(252,180,0,.05)}
+
+/* Problem notification cards */
+.notif-card{position:absolute;background:var(--white);border:1px solid var(--line-soft);border-radius:var(--r-md);padding:10px 14px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow-2);white-space:nowrap}
+.notif-card .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.notif-card .txt{font-size:12px;font-weight:600;color:var(--ink);letter-spacing:-.1px}
+.notif-card .meta{font-size:10px;color:var(--ink-3);margin-left:4px;font-weight:500}
+
+/* Phone mockups */
+.phone{width:260px;height:560px;background:#0A0A0A;border-radius:38px;padding:6px;box-shadow:0 0 0 1px rgba(255,255,255,.05),0 0 0 4px rgba(10,10,10,.3),0 24px 55px rgba(0,0,0,.18),0 8px 22px rgba(0,0,0,.12);flex-shrink:0;position:relative}
+.phone-screen{width:100%;height:100%;background:var(--cream);border-radius:32px;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.phone-island{position:absolute;top:6px;left:50%;transform:translateX(-50%);width:74px;height:20px;background:#0A0A0A;border-radius:14px;z-index:100}
+.phone-statusbar{display:flex;justify-content:space-between;align-items:center;padding:8px 18px 2px;font-size:11px;font-weight:600;flex-shrink:0;z-index:10;color:var(--ink)}
+.phone-scroll{flex:1;overflow:hidden;padding-bottom:48px}
+.phone-dock{position:absolute;bottom:0;left:0;right:0;display:flex;align-items:center;justify-content:space-around;padding:6px 4px 12px;background:var(--white);box-shadow:0 -1px 0 var(--line-soft)}
+.phone-dock .tab{display:flex;flex-direction:column;align-items:center;gap:2px}
+.phone-dock .tab-icon{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--ink-3)}
+.phone-dock .tab-icon svg{width:15px;height:15px;stroke:currentColor;stroke-width:2;fill:none}
+.phone-dock .tab-label{font-size:8px;font-weight:600;color:var(--ink-3)}
+.phone-dock .tab.active .tab-icon{background:var(--violet-soft);color:var(--violet)}
+.phone-dock .tab.active .tab-label{color:var(--violet);font-weight:700}
+
+/* Website screenshot card */
+.web-card{width:680px;height:420px;background:var(--white);border-radius:var(--r-xl);box-shadow:var(--shadow-3);overflow:hidden;position:relative;display:flex;flex-direction:column}
+.web-header{height:42px;background:var(--cream-deep);border-bottom:1px solid var(--line-soft);display:flex;align-items:center;padding:0 16px;gap:8px;flex-shrink:0}
+.web-dot{width:8px;height:8px;border-radius:50%}.web-dot.r{background:var(--coral)}.web-dot.y{background:var(--gold)}.web-dot.g{background:var(--mint)}
+.web-url{font-size:10px;color:var(--ink-3);background:var(--white);padding:3px 10px;border-radius:var(--r-full);margin-left:auto;font-weight:500}
+.web-body{flex:1;padding:18px 22px;background:var(--cream);display:flex;gap:18px;overflow:hidden}
+.web-sidebar{width:140px;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:12px;flex-shrink:0}
+.web-main{flex:1;display:flex;flex-direction:column;gap:12px;overflow:hidden}
+.web-hero{height:100px;background:var(--white);border-radius:var(--r-lg);box-shadow:var(--shadow-1);padding:16px;display:flex;align-items:center;gap:16px;position:relative;overflow:hidden}
+.web-hero::before{content:'';position:absolute;right:-30px;top:-30px;width:110px;height:110px;border-radius:50%;background:var(--violet-soft);opacity:.35}
+.web-avatar{width:44px;height:44px;border-radius:50%;background:var(--violet-soft);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:var(--violet);position:relative;z-index:1}
+.web-hero-info{position:relative;z-index:1}
+.web-hero-name{font-size:16px;font-weight:800}
+.web-hero-sub{font-size:11px;color:var(--ink-3);margin-top:2px}
+.web-row{display:flex;gap:12px}
+.web-stat{flex:1;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:12px;position:relative;overflow:hidden}
+.web-stat::after{content:'';position:absolute;left:0;bottom:0;right:0;height:3px;border-radius:0 0 var(--r-md) var(--r-md)}
+.web-stat.att::after{background:var(--mint);opacity:.6}
+.web-stat.fees::after{background:var(--coral);opacity:.6}
+.web-stat-title{font-size:9px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.5px}
+.web-stat-val{font-size:20px;font-weight:800;margin-top:4px;letter-spacing:-.5px}
+.web-table{background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-1);flex:1;padding:10px 14px}
+.web-table-row{display:flex;justify-content:space-between;padding:7px 0;font-size:11px;font-weight:500;border-bottom:1px solid var(--line-soft)}
+.web-table-row:last-child{border-bottom:none}
+
+/* Admin dashboard card */
+.admin-card{width:700px;height:440px;background:var(--surface);border-radius:var(--r-xl);box-shadow:var(--shadow-3);overflow:hidden;display:flex;flex-direction:column}
+.admin-topbar{height:48px;background:var(--white);border-bottom:1px solid var(--line-soft);display:flex;align-items:center;justify-content:space-between;padding:0 20px}
+.admin-logo{font-size:15px;font-weight:800;color:var(--violet)}.admin-nav{display:flex;gap:16px}.admin-nav span{font-size:11px;font-weight:600;color:var(--ink-3)}
+.admin-body{padding:20px;display:flex;gap:16px;flex:1;overflow:hidden}
+.admin-side{width:170px;background:var(--white);border-radius:var(--r-md);padding:12px;display:flex;flex-direction:column;gap:8px}
+.admin-menu{height:32px;background:var(--surface);border-radius:var(--r-sm);display:flex;align-items:center;padding:0 10px;font-size:11px;font-weight:600;color:var(--ink-2)}
+.admin-menu.active{background:var(--violet-soft);color:var(--violet)}
+.admin-main{flex:1;display:flex;flex-direction:column;gap:14px}
+.admin-metric-row{display:flex;gap:12px}
+.admin-metric{flex:1;background:var(--white);border-radius:var(--r-lg);padding:16px;box-shadow:var(--shadow-1)}
+.admin-metric-num{font-size:26px;font-weight:900;letter-spacing:-.8px}
+.admin-metric-label{font-size:10px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.5px;margin-top:4px}
+.admin-metric-trend{font-size:11px;font-weight:700;color:var(--mint);margin-top:4px}
+.admin-chart{flex:1;background:var(--white);border-radius:var(--r-lg);box-shadow:var(--shadow-1);padding:16px;position:relative;overflow:hidden}
+.admin-chart-title{font-size:12px;font-weight:800;color:var(--ink);margin-bottom:12px}
+.admin-bars{display:flex;align-items:flex-end;gap:10px;height:calc(100% - 30px);padding-top:10px}
+.admin-bar{flex:1;background:linear-gradient(180deg,var(--violet),#7C6FF0);border-radius:6px 6px 0 0;opacity:.85}
+
+/* Ecosystem grid */
+.eco-grid{display:flex;gap:20px;align-items:flex-end}
+.eco-phone{transform-origin:bottom center;transition:transform .8s var(--ease)}
+.eco-phone:nth-child(1){transform:scale(.85) translateY(20px)}
+.eco-phone:nth-child(2){transform:scale(.95) translateY(10px)}
+.eco-phone:nth-child(3){transform:scale(.85) translateY(20px)}
+.eco-grid:hover .eco-phone{transform:scale(.92) translateY(0)}
+.eco-grid:hover .eco-phone:nth-child(2){transform:scale(1) translateY(0)}
+
+/* Final logo */
+.bridge{width:64px;height:64px}.bridge svg{width:100%;height:100%}
+.violet-gradient{background:linear-gradient(135deg,var(--violet),#7C6FF0);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+
+/* Layout helpers */
+.side-by-side{display:flex;align-items:center;gap:55px}
+.text-left{text-align:left;max-width:340px}
+.text-right{text-align:right;max-width:340px}
+
+#audio-hint{position:fixed;top:18px;left:18px;z-index:90;background:var(--white);padding:6px 12px;border-radius:var(--r-full);font-size:11px;font-weight:600;color:var(--ink-2);box-shadow:var(--shadow-1);opacity:0;transition:opacity .5s}
+#audio-hint.visible{opacity:1}
+</style>
+</head>
+<body>
+
+<div id="stage">
+
+<div class="scene active" id="scene0">
+  <div class="orb orb-violet" style="width:400px;height:400px;top:-120px;right:-100px"></div>
+  <div class="anim-fade-down" style="font-size:12px;font-weight:700;color:var(--ink-3);letter-spacing:3px;text-transform:uppercase">Every morning</div>
+  <div class="anim-blur-in s2" style="font-size:48px;font-weight:900;letter-spacing:-1.4px;line-height:1.1;margin-top:12px;text-align:center">Parents ask.<br>Teachers search.<br>Admins scramble.</div>
+  <div class="notif-card anim-fade-up s5" style="top:18%;left:10%"><div class="dot" style="background:var(--coral)"></div><div class="txt">Fee pending — ₹12,500</div><div class="meta">2m</div></div>
+  <div class="notif-card anim-fade-up s6" style="top:22%;right:10%"><div class="dot" style="background:var(--gold)"></div><div class="txt">Leave request — Aarav</div><div class="meta">5m</div></div>
+  <div class="notif-card anim-fade-up s7" style="top:74%;left:12%"><div class="dot" style="background:var(--sky)"></div><div class="txt">PTM rescheduled to 4 PM</div><div class="meta">12m</div></div>
+</div>
+
+<div class="scene" id="scene1">
+  <div class="orb orb-coral" style="width:350px;height:350px;bottom:-100px;left:-80px"></div>
+  <div class="orb orb-violet" style="width:300px;height:300px;top:-80px;right:-60px"></div>
+  <div class="anim-fade-down" style="font-size:12px;font-weight:700;color:var(--ink-3);letter-spacing:3px;text-transform:uppercase">Across every screen</div>
+  <div class="anim-fade-up s2" style="font-size:46px;font-weight:900;letter-spacing:-1.3px;line-height:1.1;text-align:center;margin-top:12px">A thousand tabs.<br>Zero clarity.</div>
+  <div class="anim-fade-up s4" style="font-size:17px;color:var(--ink-2);margin-top:18px;text-align:center;max-width:420px">Schools run on WhatsApp, spreadsheets, paper registers, and memory. Each stakeholder lives in a different world.</div>
+  <div class="web-card anim-scale-in s6" style="transform:scale(.72);margin-top:34px;opacity:.55">
+    <div class="web-header"><div class="web-dot r"></div><div class="web-dot y"></div><div class="web-dot g"></div><div class="web-url">legacy-portal.edu/dashboard</div></div>
+    <div class="web-body" style="gap:12px">
+      <div class="web-sidebar"><div style="height:14px;background:var(--surface);border-radius:4px;margin-bottom:8px"></div><div style="height:10px;background:var(--surface);border-radius:4px;margin-bottom:6px"></div><div style="height:10px;background:var(--surface);border-radius:4px"></div></div>
+      <div class="web-main"><div class="web-hero" style="height:70px"><div class="web-avatar">?</div><div class="web-hero-info"><div class="web-hero-name">Untracked data</div><div class="web-hero-sub">Last updated: unknown</div></div></div><div class="web-row"><div class="web-stat att"><div class="web-stat-title">Attendance</div><div class="web-stat-val">—</div></div><div class="web-stat fees"><div class="web-stat-title">Fees</div><div class="web-stat-val">—</div></div></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="scene" id="scene2">
+  <div class="side-by-side">
+    <div class="text-right">
+      <div class="anim-fade-down" style="font-size:12px;font-weight:700;color:var(--coral);letter-spacing:2.5px;text-transform:uppercase">For parents</div>
+      <div class="anim-fade-up s2" style="font-size:40px;font-weight:900;letter-spacing:-1.2px;line-height:1.08;margin-top:8px">Their child's day<br>is a black box.</div>
+      <div class="anim-fade-up s4" style="font-size:16px;color:var(--ink-2);margin-top:14px;line-height:1.5">Did they reach school? Is homework done? Where is the bus? They deserve answers, not silence.</div>
+    </div>
+    <div class="phone anim-slide-right s2" style="transform:scale(.9)">
+      <div class="phone-screen"><div class="phone-island"></div><div class="phone-statusbar"><span>9:15</span><span class="icons">5G ▮</span></div>
+        <div class="phone-scroll" style="padding:20px 18px">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="height:36px;background:var(--surface);border-radius:10px"></div>
+            <div style="height:120px;background:var(--surface);border-radius:16px"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div style="height:70px;background:var(--surface);border-radius:12px"></div><div style="height:70px;background:var(--surface);border-radius:12px"></div></div>
+            <div style="height:80px;background:var(--surface);border-radius:14px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="scene" id="scene3">
+  <div class="side-by-side">
+    <div class="phone anim-slide-left s2" style="transform:scale(.9)">
+      <div class="phone-screen"><div class="phone-island"></div><div class="phone-statusbar"><span>10:45</span><span class="icons">5G ▮</span></div>
+        <div class="phone-scroll" style="padding:20px 18px">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="height:36px;background:var(--surface);border-radius:10px"></div>
+            <div style="height:90px;background:var(--surface);border-radius:16px"></div>
+            <div style="height:180px;background:var(--surface);border-radius:16px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="text-left">
+      <div class="anim-fade-down" style="font-size:12px;font-weight:700;color:var(--violet);letter-spacing:2.5px;text-transform:uppercase">For teachers</div>
+      <div class="anim-fade-up s2" style="font-size:40px;font-weight:900;letter-spacing:-1.2px;line-height:1.08;margin-top:8px">Admin overhead<br>kills teaching time.</div>
+      <div class="anim-fade-up s4" style="font-size:16px;color:var(--ink-2);margin-top:14px;line-height:1.5">Attendance. Marks. Homework. Lesson plans. Each one in a different app, spreadsheet, or notebook.</div>
+    </div>
+  </div>
+</div>
+
+<div class="scene" id="scene4">
+  <div class="anim-fade-down" style="font-size:12px;font-weight:700;color:var(--gold);letter-spacing:2.5px;text-transform:uppercase;margin-bottom:16px">For administrators</div>
+  <div class="anim-fade-up s2" style="font-size:42px;font-weight:900;letter-spacing:-1.3px;line-height:1.05;text-align:center">The school runs on gut feel.</div>
+  <div class="anim-fade-up s4" style="font-size:17px;color:var(--ink-2);margin-top:14px;text-align:center;max-width:500px">No live data. No unified view. Just yesterday's reports and tomorrow's firefighting.</div>
+  <div class="admin-card anim-scale-in s6" style="transform:scale(.75);margin-top:30px;opacity:.7">
+    <div class="admin-topbar"><div class="admin-logo">Legacy ERP</div><div class="admin-nav"><span>Dashboard</span><span>Fees</span><span>Admissions</span><span>Reports</span></div></div>
+    <div class="admin-body">
+      <div class="admin-side"><div class="admin-menu active">Dashboard</div><div class="admin-menu">Students</div><div class="admin-menu">Fees</div><div class="admin-menu">Staff</div></div>
+      <div class="admin-main">
+        <div class="admin-metric-row"><div class="admin-metric"><div class="admin-metric-num">—</div><div class="admin-metric-label">Total Students</div></div><div class="admin-metric"><div class="admin-metric-num">—</div><div class="admin-metric-label">Fee Collection</div></div><div class="admin-metric"><div class="admin-metric-num">—</div><div class="admin-metric-label">Attendance</div></div></div>
+        <div class="admin-chart"><div class="admin-chart-title">No live analytics</div><div class="admin-bars"><div class="admin-bar" style="height:30%"></div><div class="admin-bar" style="height:45%"></div><div class="admin-bar" style="height:20%"></div><div class="admin-bar" style="height:60%"></div><div class="admin-bar" style="height:35%"></div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="scene" id="scene5">
+  <div class="orb orb-violet" style="width:600px;height:600px;top:-250px;right:-200px"></div>
+  <div class="orb orb-coral" style="width:350px;height:350px;bottom:-150px;left:-150px"></div>
+  <div class="anim-fade-down" style="font-size:12px;font-weight:700;color:var(--violet);letter-spacing:3px;text-transform:uppercase">Until now</div>
+  <div class="anim-fade-up s2" style="font-size:52px;font-weight:900;letter-spacing:-1.6px;line-height:1.05;text-align:center;margin-top:12px">One platform.<br>Three portals.<br>Zero chaos.</div>
+  <div class="anim-scale-in s5" style="margin-top:36px">
+    <div class="bridge anim-float"><svg viewBox="0 0 64 64" fill="none"><defs><linearGradient id="bridgeGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#544AB8"/><stop offset=".5" stop-color="#5B41D5"/><stop offset="1" stop-color="#544AB8"/></linearGradient></defs><path d="M16 36 Q32 16 48 36" stroke="url(#bridgeGrad)" stroke-width="3.4" stroke-linecap="round" fill="none"/><path d="M14 44 H50" stroke="#1A1614" stroke-width="4" stroke-linecap="round"/><path d="M22 36 V44" stroke="#1A1614" stroke-opacity=".78" stroke-width="1.8" stroke-linecap="round"/><path d="M32 26 V44" stroke="#1A1614" stroke-opacity=".78" stroke-width="1.8" stroke-linecap="round"/><path d="M42 36 V44" stroke="#1A1614" stroke-opacity=".78" stroke-width="1.8" stroke-linecap="round"/><circle cx="16" cy="36" r="2.9" fill="#1A1614"/><circle cx="48" cy="36" r="2.9" fill="#1A1614"/><circle cx="32" cy="26" r="3" fill="#5B41D5"/></svg></div>
+  </div>
+</div>
+
+<div class="scene" id="scene6">
+  <div class="side-by-side">
+    <div class="text-right">
+      <div class="anim-fade-down" style="font-size:12px;font-weight:700;color:var(--violet);letter-spacing:2.5px;text-transform:uppercase">Parent Portal</div>
+      <div class="anim-fade-up s2" style="font-size:38px;font-weight:900;letter-spacing:-1.1px;line-height:1.05;margin-top:8px">One calm feed.<br>Everything that matters.</div>
+      <div class="anim-fade-up s4" style="font-size:15px;color:var(--ink-2);margin-top:14px;line-height:1.5">Attendance, marks, fees, bus, homework, health, ID card — every update in a single, glanceable screen.</div>
+      <div class="anim-fade-up s6" style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:16px"><div class="feature-pill"><div class="dot" style="background:var(--mint)"></div>Live attendance</div><div class="feature-pill"><div class="dot" style="background:var(--coral)"></div>Fee payments</div><div class="feature-pill"><div class="dot" style="background:var(--sky)"></div>Bus tracking</div></div>
+    </div>
+    <div class="phone anim-slide-right s2">
+      <div class="phone-screen"><div class="phone-island"></div><div class="phone-statusbar"><span>9:42</span><span class="icons">5G ▮</span></div>
+        <div class="phone-scroll" id="parent-real">
+          <div style="padding:6px 16px 6px"><div style="font-size:10px;color:var(--ink-3);font-weight:500">Good morning</div><div style="font-size:18px;font-weight:800;color:var(--ink);letter-spacing:-.4px">Aarav's day</div></div>
+          <div style="margin:0 14px 10px;padding:14px;background:var(--white);border-radius:16px;box-shadow:var(--shadow-1);display:flex;align-items:center;gap:10px;position:relative;overflow:hidden"><div style="position:absolute;top:-25px;right:-12px;width:80px;height:80px;border-radius:50%;background:var(--violet-soft);opacity:.4"></div><div style="width:40px;height:40px;border-radius:50%;background:var(--violet-soft);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--violet);outline:2px solid var(--white);box-shadow:0 0 0 2px var(--violet-soft)">A</div><div style="flex:1;position:relative;z-index:1"><div style="font-size:13px;font-weight:800;color:var(--ink)">Aarav Sharma</div><div style="font-size:10px;color:var(--ink-3);font-weight:500">Class 7-B · Roll 14</div><div style="display:flex;gap:4px;margin-top:5px"><span style="font-size:8px;font-weight:700;padding:2px 6px;border-radius:9999px;background:var(--coral-soft);color:var(--coral)">Red House</span><span style="font-size:8px;font-weight:700;padding:2px 6px;border-radius:9999px;background:var(--surface);color:var(--ink-2)">Roll 14</span></div></div></div>
+          <div style="margin:0 14px 10px;background:var(--white);border-radius:12px;box-shadow:var(--shadow-1);padding:10px 12px;position:relative"><div style="position:absolute;left:17px;top:10px;bottom:10px;width:2px;background:var(--line-soft);border-radius:1px;z-index:0"></div><div style="display:flex;align-items:center;gap:8px;padding:5px 0;position:relative;z-index:1"><div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;border:2px solid var(--line);background:var(--white);z-index:2"></div><div style="font-size:9px;font-weight:600;color:var(--ink-3);min-width:32px;flex-shrink:0">08:30</div><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:700;color:var(--ink)">English</div><div style="font-size:9px;color:var(--ink-3);font-weight:500">Ms. Kavita</div></div><span style="font-size:8px;font-weight:700;padding:2px 6px;border-radius:9999px;background:var(--mint-soft);color:var(--success);flex-shrink:0">Done</span></div><div style="display:flex;align-items:center;gap:8px;padding:5px 0;position:relative;z-index:1"><div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--violet);border:2px solid var(--violet);z-index:2;box-shadow:0 0 0 3px var(--violet-soft);animation:pulseDot 2s infinite"></div><div style="font-size:9px;font-weight:600;color:var(--ink-3);min-width:32px;flex-shrink:0">09:30</div><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:700;color:var(--ink)">Mathematics</div><div style="font-size:9px;color:var(--ink-3);font-weight:500">Mr. Rajesh</div></div><span style="font-size:8px;font-weight:700;padding:2px 6px;border-radius:9999px;background:var(--violet-soft);color:var(--violet);flex-shrink:0">Now</span></div><div style="display:flex;align-items:center;gap:8px;padding:5px 0;position:relative;z-index:1"><div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--white);border:2px solid var(--ink-3);z-index:2"></div><div style="font-size:9px;font-weight:600;color:var(--ink-3);min-width:32px;flex-shrink:0">10:30</div><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:700;color:var(--ink)">Science</div><div style="font-size:9px;color:var(--ink-3);font-weight:500">Ms. Priya</div></div><span style="font-size:8px;font-weight:700;padding:2px 6px;border-radius:9999px;background:var(--surface);color:var(--ink-3);flex-shrink:0">Next</span></div></div>
+          <div style="display:flex;gap:7px;margin:0 14px 10px"><div style="flex:1;padding:10px;background:var(--white);border-radius:12px;box-shadow:var(--shadow-1);position:relative;overflow:hidden"><div style="position:absolute;left:0;bottom:0;right:0;height:3px;border-radius:0 0 12px 12px;background:var(--mint);opacity:.6"></div><div style="width:22px;height:22px;border-radius:7px;background:var(--mint-soft);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:var(--success);stroke-width:2;fill:none"><polyline points="20 6 9 17 4 12"/></svg></div><div style="font-size:15px;font-weight:800;color:var(--ink);margin-top:6px;letter-spacing:-.2px">94%</div><div style="font-size:8px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.3px">Attendance</div></div><div style="flex:1;padding:10px;background:var(--white);border-radius:12px;box-shadow:var(--shadow-1);position:relative;overflow:hidden"><div style="position:absolute;left:0;bottom:0;right:0;height:3px;border-radius:0 0 12px 12px;background:var(--coral);opacity:.6"></div><div style="width:22px;height:22px;border-radius:7px;background:var(--coral-soft);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:var(--coral);stroke-width:2;fill:none"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div style="font-size:15px;font-weight:800;color:var(--ink);margin-top:6px;letter-spacing:-.2px">₹12.5k</div><div style="font-size:8px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.3px">Fees Due</div></div></div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin:0 14px 10px"><div style="padding:10px;background:var(--white);border-radius:12px;box-shadow:var(--shadow-1)"><div style="width:24px;height:24px;border-radius:7px;background:var(--violet-soft);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:var(--violet);stroke-width:2;fill:none"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div><div style="font-size:10px;font-weight:700;color:var(--ink);margin-top:6px">Homework</div><div style="font-size:8px;color:var(--ink-3);font-weight:500">3 pending</div></div><div style="padding:10px;background:var(--white);border-radius:12px;box-shadow:var(--shadow-1)"><div style="width:24px;height:24px;border-radius:7px;background:var(--mint-soft);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:var(--success);stroke-width:2;fill:none"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div><div style="font-size:10px;font-weight:700;color:var(--ink);margin-top:6px">Bus Track</div><div style="font-size:8px;color:var(--ink-3);font-weight:500">On the way</div></div><div style="padding:10px;background:var(--white);border-radius:12px;box-shadow:var(--shadow-1)"><div style="width:24px;height:24px;border-radius:7px;background:var(--coral-soft);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:var(--coral);stroke-width:2;fill:none"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div><div style="font-size:10px;font-weight:700;color:var(--ink);margin-top:6px">Health</div><div style="font-size:8px;color:var(--ink-3);font-weight:500">Pulse: Good</div></div><div style="padding:10px;background:var(--white);border-radius:12px;box-shadow:var(--shadow-1)"><div style="width:24px;height:24px;border-radius:7px;background:var(--surface);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:var(--ink-2);stroke-width:2;fill:none"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M15 8h3M15 12h3M7 16h10"/></svg></div><div style="font-size:10px;font-weight:700;color:var(--ink);margin-top:6px">Digital ID</div><div style="font-size:8px;color:var(--ink-3);font-weight:500">View card</div></div></div>
+        </div>
+        <div class="phone-dock"><div class="tab active"><div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div><div class="tab-label">Home</div></div><div class="tab"><div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div><div class="tab-label">Academics</div></div><div class="tab"><div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="tab-label">Chats</div></div><div class="tab"><div class="tab-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg></div><div class="tab-label">Profile</div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="scene" id="scene7">
+  <div class="side-by-side">
+    <div class="phone anim-slide-left s2">
+      <div class="phone-screen"><div class="phone-island"></div><div class="phone-statusbar"><span>12:50</span><span class="icons">5G ▮</span></div>
+        <div class="phone-scroll" id="teacher-real">
+          <div style="padding:4px 18px 6px;display:flex;align-items:center;justify-content:space-between"><div style="font-size:15px;font-weight:800;color:var(--violet);letter-spacing:-.4px">Enroll<span style="color:var(--coral)">+</span></div></div>
+          <div style="padding:0 18px 10px"><div style="font-size:11px;font-weight:500;color:var(--violet)">Hi Mrs. Sharma</div><div style="font-size:19px;font-weight:800;color:var(--ink);letter-spacing:-.5px;line-height:1.2">here's <span style="color:var(--violet)">your teaching</span> day</div></div>
+          <div style="margin:0 14px 10px;background:linear-gradient(135deg,var(--violet),var(--violet-hover));border-radius:20px;box-shadow:var(--shadow-primary);overflow:hidden;color:#fff">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px 4px"><div style="font-size:9px;font-weight:700;color:rgba(255,255,255,.75);letter-spacing:.06em;text-transform:uppercase">Now teaching</div><div style="display:flex;align-items:center;gap:4px;padding:3px 7px;border-radius:9999px;background:rgba(255,255,255,.14);font-size:9px;font-weight:700"><span style="width:4px;height:4px;border-radius:50%;background:#fff;animation:pulseDot 1.8s infinite"></span>In progress</div></div>
+            <div style="padding:0 12px 10px"><div style="font-size:19px;font-weight:800;color:#fff;letter-spacing:-.4px;line-height:1.1">Class 7-B</div><div style="font-size:12px;font-weight:500;color:rgba(255,255,255,.85);margin-top:3px">Mathematics · Quadratic Equations</div></div>
+            <div style="display:flex;gap:12px;padding:10px 12px;border-top:1px solid rgba(255,255,255,.12)"><div style="display:flex;align-items:center;gap:4px;font-size:10px;font-weight:500;color:rgba(255,255,255,.85)"><svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:rgba(255,255,255,.7);stroke-width:2;fill:none"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>09:30–10:15</div><div style="display:flex;align-items:center;gap:4px;font-size:10px;font-weight:500;color:rgba(255,255,255,.85)"><svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:rgba(255,255,255,.7);stroke-width:2;fill:none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>32 students</div></div>
+            <div style="display:flex;gap:5px;padding:0 12px 10px"><button style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:8px;border-radius:9999px;border:none;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;background:#fff;color:var(--violet)"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>Attendance</button><button style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:8px;border-radius:9999px;border:1px solid rgba(255,255,255,.2);font-family:'Inter',sans-serif;font-size:11px;font-weight:600;background:rgba(255,255,255,.1);color:#fff"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Lesson</button></div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 18px 4px"><div style="font-size:12px;font-weight:700;color:var(--ink)">Today's schedule</div></div>
+          <div style="display:flex;gap:6px;overflow:hidden;padding:0 14px 10px">
+            <div style="flex-shrink:0;width:100px;padding:10px;border-radius:14px;background:var(--white);box-shadow:0 0 0 1.5px var(--violet),var(--shadow-2)"><div style="font-size:9px;font-weight:500;color:var(--ink-3)">09:30</div><div style="font-size:13px;font-weight:800;color:var(--ink);margin-top:2px;letter-spacing:-.2px">7-B</div><div style="font-size:10px;font-weight:500;color:var(--ink-2);margin-top:1px">Maths</div><span style="display:inline-block;margin-top:5px;padding:2px 6px;border-radius:9999px;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.2px;background:var(--violet);color:#fff">Now</span></div>
+            <div style="flex-shrink:0;width:100px;padding:10px;border-radius:14px;background:var(--white);box-shadow:var(--shadow-card)"><div style="font-size:9px;font-weight:500;color:var(--ink-3)">10:30</div><div style="font-size:13px;font-weight:800;color:var(--ink);margin-top:2px;letter-spacing:-.2px">8-A</div><div style="font-size:10px;font-weight:500;color:var(--ink-2);margin-top:1px">Maths</div><span style="display:inline-block;margin-top:5px;padding:2px 6px;border-radius:9999px;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.2px;background:var(--surface);color:var(--ink-2)">Next</span></div>
+            <div style="flex-shrink:0;width:100px;padding:10px;border-radius:14px;background:var(--white);box-shadow:var(--shadow-card);opacity:.55"><div style="font-size:9px;font-weight:500;color:var(--ink-3)">08:30</div><div style="font-size:13px;font-weight:800;color:var(--ink);margin-top:2px;letter-spacing:-.2px">9-A</div><div style="font-size:10px;font-weight:500;color:var(--ink-2);margin-top:1px">Maths</div><span style="display:inline-block;margin-top:5px;padding:2px 6px;border-radius:9999px;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.2px;background:var(--mint-soft);color:var(--success)">Done</span></div>
+          </div>
+          <div style="margin:0 14px 10px;padding:10px 12px;background:var(--white);border-radius:16px;box-shadow:var(--shadow-card)">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><div style="font-size:13px;font-weight:700;color:var(--ink)">Pending actions</div><div><span style="font-size:18px;font-weight:800;color:var(--coral);letter-spacing:-.4px">4</span> <span style="font-size:10px;font-weight:500;color:var(--ink-3)">need attention</span></div></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-top:1px solid var(--line-soft)"><div style="display:flex;align-items:center;gap:7px"><div style="width:6px;height:6px;border-radius:50%;background:var(--coral)"></div><div style="font-size:12px;font-weight:500;color:var(--ink)">Mark attendance</div></div><div style="font-size:11px;font-weight:700;color:var(--ink-2)">2 classes</div></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-top:1px solid var(--line-soft)"><div style="display:flex;align-items:center;gap:7px"><div style="width:6px;height:6px;border-radius:50%;background:var(--gold)"></div><div style="font-size:12px;font-weight:500;color:var(--ink)">Review homework</div></div><div style="font-size:11px;font-weight:700;color:var(--ink-2)">14 submissions</div></div>
+          </div>
+        </div>
+        <div class="phone-dock"><div class="tab active"><div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div><div class="tab-label">Home</div></div><div class="tab"><div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg></div><div class="tab-label">Update</div></div><div class="tab"><div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div class="tab-label">Classes</div></div><div class="tab"><div class="tab-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg></div><div class="tab-label">Profile</div></div></div>
+      </div>
+    </div>
+    <div class="text-left">
+      <div class="anim-fade-down" style="font-size:12px;font-weight:700;color:var(--violet);letter-spacing:2.5px;text-transform:uppercase">Teacher Portal</div>
+      <div class="anim-fade-up s2" style="font-size:38px;font-weight:900;letter-spacing:-1.1px;line-height:1.05;margin-top:8px">One command<br>center.</div>
+      <div class="anim-fade-up s4" style="font-size:15px;color:var(--ink-2);margin-top:14px;line-height:1.5">Current class, schedule, attendance, marks, homework — all in a single view. Teaching first. Paperwork second.</div>
+      <div class="anim-fade-up s6" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px"><div class="feature-pill"><div class="dot" style="background:var(--violet)"></div>1-tap attendance</div><div class="feature-pill"><div class="dot" style="background:var(--gold)"></div>Marks entry</div><div class="feature-pill"><div class="dot" style="background:var(--sky)"></div>Lesson plans</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="scene" id="scene8">
+  <div class="anim-fade-down" style="font-size:12px;font-weight:700;color:var(--violet);letter-spacing:2.5px;text-transform:uppercase;margin-bottom:14px">Admin Command Center</div>
+  <div class="anim-fade-up s2" style="font-size:42px;font-weight:900;letter-spacing:-1.3px;line-height:1.05;text-align:center">See everything.<br>Decide faster.</div>
+  <div class="anim-fade-up s4" style="font-size:16px;color:var(--ink-2);margin-top:12px;text-align:center;max-width:480px;line-height:1.5">Live admissions, fees, attendance, staff, and analytics on a single dashboard. No more waiting for end-of-day reports.</div>
+  <div class="admin-card anim-scale-in s6" style="margin-top:26px">
+    <div class="admin-topbar"><div class="admin-logo">Enroll<span style="color:var(--coral)">+</span> Admin</div><div class="admin-nav"><span>Overview</span><span>Admissions</span><span>Fees</span><span>Staff</span><span>Reports</span></div></div>
+    <div class="admin-body">
+      <div class="admin-side"><div class="admin-menu active">Overview</div><div class="admin-menu">Students</div><div class="admin-menu">Classes</div><div class="admin-menu">Teachers</div><div class="admin-menu">Finance</div><div class="admin-menu">Transport</div></div>
+      <div class="admin-main">
+        <div class="admin-metric-row">
+          <div class="admin-metric"><div class="admin-metric-num">1,248</div><div class="admin-metric-label">Total Students</div><div class="admin-metric-trend">↑ 4.2% vs last year</div></div>
+          <div class="admin-metric"><div class="admin-metric-num">₹4.2Cr</div><div class="admin-metric-label">Fee Collection</div><div class="admin-metric-trend">92% collected</div></div>
+          <div class="admin-metric"><div class="admin-metric-num">96.4%</div><div class="admin-metric-label">Attendance</div><div class="admin-metric-trend">↑ 1.1% this week</div></div>
+          <div class="admin-metric"><div class="admin-metric-num">87</div><div class="admin-metric-label">Teaching Staff</div><div class="admin-metric-trend">All active</div></div>
+        </div>
+        <div class="admin-chart"><div class="admin-chart-title">Monthly fee collection vs. target</div><div class="admin-bars"><div class="admin-bar" style="height:45%"></div><div class="admin-bar" style="height:62%"></div><div class="admin-bar" style="height:78%"></div><div class="admin-bar" style="height:55%"></div><div class="admin-bar" style="height:88%"></div><div class="admin-bar" style="height:72%"></div><div class="admin-bar" style="height:95%"></div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="scene" id="scene9">
+  <div class="orb orb-violet" style="width:500px;height:500px;top:-200px;right:-150px"></div>
+  <div class="orb orb-gold" style="width:300px;height:300px;bottom:-120px;left:-100px"></div>
+  <div class="anim-fade-down" style="font-size:12px;font-weight:700;color:var(--ink-3);letter-spacing:3px;text-transform:uppercase">Built for every device</div>
+  <div class="anim-fade-up s2" style="font-size:48px;font-weight:900;letter-spacing:-1.5px;line-height:1.05;text-align:center;margin-top:12px">Android. iOS. Web.<br>Desktop. Server.</div>
+  <div class="anim-fade-up s4" style="font-size:17px;color:var(--ink-2);margin-top:14px;text-align:center;max-width:450px">One codebase. One design system. Every stakeholder, every platform.</div>
+  <div class="anim-fade-up s6" style="display:flex;gap:12px;margin-top:30px">
+    <div class="feature-pill"><div class="dot" style="background:var(--violet)"></div>Parent App</div>
+    <div class="feature-pill"><div class="dot" style="background:var(--coral)"></div>Teacher App</div>
+    <div class="feature-pill"><div class="dot" style="background:var(--gold)"></div>Admin Web</div>
+    <div class="feature-pill"><div class="dot" style="background:var(--mint)"></div>Ktor Backend</div>
+  </div>
+</div>
+
+<div class="scene" id="scene10">
+  <div class="orb orb-violet" style="width:600px;height:600px;top:-250px;right:-200px"></div>
+  <div class="orb orb-coral" style="width:350px;height:350px;bottom:-150px;left:-150px"></div>
+  <div class="anim-scale-in" style="margin-bottom:24px"><div class="bridge anim-float"><svg viewBox="0 0 64 64" fill="none"><defs><linearGradient id="fGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#544AB8"/><stop offset=".5" stop-color="#5B41D5"/><stop offset="1" stop-color="#544AB8"/></linearGradient></defs><path d="M16 36 Q32 16 48 36" stroke="url(#fGrad)" stroke-width="3.4" stroke-linecap="round" fill="none"/><path d="M14 44 H50" stroke="#1A1614" stroke-width="4" stroke-linecap="round"/><path d="M22 36 V44" stroke="#1A1614" stroke-opacity=".78" stroke-width="1.8" stroke-linecap="round"/><path d="M32 26 V44" stroke="#1A1614" stroke-opacity=".78" stroke-width="1.8" stroke-linecap="round"/><path d="M42 36 V44" stroke="#1A1614" stroke-opacity=".78" stroke-width="1.8" stroke-linecap="round"/><circle cx="16" cy="36" r="2.9" fill="#1A1614"/><circle cx="48" cy="36" r="2.9" fill="#1A1614"/><circle cx="32" cy="26" r="3" fill="#5B41D5"/></svg></div></div>
+  <div class="anim-blur-in s2" style="font-size:60px;font-weight:900;color:var(--ink);letter-spacing:-2px">Enroll<span style="color:var(--violet)">+</span></div>
+  <div class="anim-fade-up s3" style="font-size:22px;font-weight:300;color:var(--ink-2);margin-top:8px">The OS for your campus.</div>
+  <div class="anim-fade-up s5" style="margin-top:32px;display:flex;gap:10px"><div class="feature-pill"><div class="dot" style="background:var(--mint)"></div>Available now</div><div class="feature-pill"><div class="dot" style="background:var(--violet)"></div>enrollplus.in</div></div>
+</div>
+
+</div>
+
+<div id="start-overlay"><div class="start-card"><h2>Enroll+ Product Launch</h2><p>Headphones recommended. Press play to watch with premium generated audio.</p><button class="start-btn" onclick="startWithAudio()">Play Video</button></div></div>
+<div id="audio-hint">♫ Audio playing</div>
+<div id="progress-track"><div id="progress-bar"></div></div>
+<div id="indicators"><div class="indicator active"></div><div class="indicator"></div><div class="indicator"></div><div class="indicator"></div><div class="indicator"></div><div class="indicator"></div><div class="indicator"></div><div class="indicator"></div><div class="indicator"></div><div class="indicator"></div><div class="indicator"></div></div>
+<button id="replay" onclick="startWithAudio()">↻</button>
+
+<script>
+const scenes=[
+  {id:'scene0',duration:5000, audio:'ambient'},
+  {id:'scene1',duration:5000, audio:'ambient'},
+  {id:'scene2',duration:4500, audio:'ambient'},
+  {id:'scene3',duration:4500, audio:'ambient'},
+  {id:'scene4',duration:5000, audio:'ambient'},
+  {id:'scene5',duration:5500, audio:'swell'},
+  {id:'scene6',duration:5500, audio:'chime'},
+  {id:'scene7',duration:5500, audio:'chime'},
+  {id:'scene8',duration:5500, audio:'chime'},
+  {id:'scene9',duration:5000, audio:'swell'},
+  {id:'scene10',duration:6500, audio:'final'}
+];
+let currentScene=0,startTime=0,rafId=null,audioCtx=null,masterGain=null,bgmOsc=null,isPlaying=false,paused=false,pauseTime=0;
+const totalTime=scenes.reduce((s,x)=>s+x.duration,0);
+const indicators=document.querySelectorAll('.indicator');
+const progressBar=document.getElementById('progress-bar');
+const replayBtn=document.getElementById('replay');
+const overlay=document.getElementById('start-overlay');
+const audioHint=document.getElementById('audio-hint');
+
+function showScene(i){
+  scenes.forEach((s,j)=>{
+    const el=document.getElementById(s.id);
+    if(j===i){el.classList.remove('exit');el.classList.add('active');}
+    else if(j<i){el.classList.remove('active');el.classList.add('exit');}
+    else{el.classList.remove('active','exit');}
+  });
+  indicators.forEach((ind,j)=>ind.classList.toggle('active',j===i));
+}
+
+function loop(ts){
+  if(!startTime)startTime=ts;
+  const elapsed=ts-startTime;
+  progressBar.style.width=Math.min(elapsed/totalTime,1)*100+'%';
+  let acc=0,idx=0;
+  for(let i=0;i<scenes.length;i++){acc+=scenes[i].duration;if(elapsed<acc){idx=i;break;}idx=i;}
+  if(idx!==currentScene){currentScene=idx;showScene(currentScene);triggerAudioForScene(currentScene);}
+  if(elapsed<totalTime){rafId=requestAnimationFrame(loop);}
+  else{finish();}
+}
+
+function finish(){isPlaying=false;replayBtn.classList.add('visible');audioHint.classList.remove('visible');stopAudio();}
+
+function startWithAudio(){
+  initAudio();
+  overlay.classList.add('hidden');
+  cancelAnimationFrame(rafId);startTime=0;currentScene=0;isPlaying=true;paused=false;
+  replayBtn.classList.remove('visible');audioHint.classList.add('visible');
+  showScene(0);triggerAudioForScene(0);startDrone();rafId=requestAnimationFrame(loop);
+}
+
+function startSilent(){
+  cancelAnimationFrame(rafId);startTime=0;currentScene=0;isPlaying=true;paused=false;
+  replayBtn.classList.remove('visible');showScene(0);rafId=requestAnimationFrame(loop);
+}
+
+function initAudio(){
+  if(audioCtx)return;
+  audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  masterGain=audioCtx.createGain();masterGain.gain.value=0.18;
+  const compressor=audioCtx.createDynamicsCompressor();compressor.threshold.value=-24;compressor.knee.value=12;compressor.ratio.value=6;
+  masterGain.connect(compressor);compressor.connect(audioCtx.destination);
+}
+
+function startDrone(){
+  if(!audioCtx||bgmOsc)return;
+  const now=audioCtx.currentTime;
+  const osc=audioCtx.createOscillator();osc.type='sine';osc.frequency.value=55;
+  const lfo=audioCtx.createOscillator();lfo.type='sine';lfo.frequency.value=0.1;
+  const lfoGain=audioCtx.createGain();lfoGain.gain.value=2.5;
+  const droneGain=audioCtx.createGain();droneGain.gain.setValueAtTime(0,now);droneGain.gain.linearRampToValueAtTime(0.18,now+2);
+  lfo.connect(lfoGain);lfoGain.connect(osc.frequency);osc.connect(droneGain);droneGain.connect(masterGain);
+  const pad=audioCtx.createOscillator();pad.type='triangle';pad.frequency.value=110;
+  const padGain=audioCtx.createGain();padGain.gain.value=0.035;pad.connect(padGain);padGain.connect(masterGain);
+  osc.start(now);lfo.start(now);pad.start(now);
+  bgmOsc={osc,lfo,pad,droneGain};
+}
+
+function stopAudio(){
+  if(bgmOsc){const now=audioCtx.currentTime;bgmOsc.droneGain.gain.setValueAtTime(bgmOsc.droneGain.gain.value,now);bgmOsc.droneGain.gain.exponentialRampToValueAtTime(0.001,now+0.8);setTimeout(()=>{try{bgmOsc.osc.stop();bgmOsc.lfo.stop();bgmOsc.pad.stop();}catch(e){}bgmOsc=null;},900);}
+}
+
+function triggerAudioForScene(i){
+  if(!audioCtx||audioCtx.state!=='running')return;
+  const cue=scenes[i].audio;
+  if(cue==='chime')playChime(523.25+Math.random()*180);
+  if(cue==='swell')playSwell();
+  if(cue==='final'){playChime(659.25);setTimeout(()=>playChime(880),150);}
+}
+
+function playChime(freq){
+  const t=audioCtx.currentTime;
+  const osc=audioCtx.createOscillator();osc.type='sine';osc.frequency.setValueAtTime(freq,t);
+  const gain=audioCtx.createGain();gain.gain.setValueAtTime(0,t);gain.gain.linearRampToValueAtTime(0.07,t+0.05);gain.gain.exponentialRampToValueAtTime(0.001,t+1.5);
+  osc.connect(gain);gain.connect(masterGain);osc.start(t);osc.stop(t+1.7);
+  const osc2=audioCtx.createOscillator();osc2.type='triangle';osc2.frequency.setValueAtTime(freq*1.5,t);
+  const g2=audioCtx.createGain();g2.gain.setValueAtTime(0,t);g2.gain.linearRampToValueAtTime(0.025,t+0.05);g2.gain.exponentialRampToValueAtTime(0.001,t+1.3);
+  osc2.connect(g2);g2.connect(masterGain);osc2.start(t);osc2.stop(t+1.5);
+}
+
+function playSwell(){
+  const t=audioCtx.currentTime;
+  const osc=audioCtx.createOscillator();osc.type='sine';osc.frequency.setValueAtTime(110,t);osc.frequency.exponentialRampToValueAtTime(220,t+1.2);
+  const gain=audioCtx.createGain();gain.gain.setValueAtTime(0,t);gain.gain.linearRampToValueAtTime(0.11,t+0.8);gain.gain.exponentialRampToValueAtTime(0.001,t+2.2);
+  osc.connect(gain);gain.connect(masterGain);osc.start(t);osc.stop(t+2.4);
+}
+
+window.addEventListener('keydown',e=>{
+  if(e.code==='Space'){e.preventDefault();
+    if(!isPlaying&&!overlay.classList.contains('hidden')){startWithAudio();return;}
+    if(!isPlaying&&overlay.classList.contains('hidden')){startWithAudio();return;}
+    if(isPlaying){paused=!paused;if(paused){cancelAnimationFrame(rafId);pauseTime=performance.now();}else{startTime+=performance.now()-pauseTime;rafId=requestAnimationFrame(loop);}}
+  }else if(e.code==='KeyR'){startWithAudio();}
+});
+</script>
+</body>
+</html>

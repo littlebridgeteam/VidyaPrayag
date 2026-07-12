@@ -47,7 +47,9 @@ data class AdmissionCRMState(
     val conversions: Int = 0,
     val conversionRate: Float = 0f,
     val efficiencyLabel: String = "0%",
-    val recentEnquiries: List<Enquiry> = emptyList()
+    val recentEnquiries: List<Enquiry> = emptyList(),
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class AdmissionCRMViewModel(
@@ -81,7 +83,10 @@ class AdmissionCRMViewModel(
             }
 
             when (val result = admissionRepository.getSummary(token)) {
-                is NetworkResult.Success -> applySummary(result.data)
+                is NetworkResult.Success -> {
+                    applySummary(result.data)
+                    _state.value = _state.value.copy(isStale = result.isStale, isOffline = result.isOffline)
+                }
                 is NetworkResult.Error -> {
                     _errorMessage.value = result.message
                     AppLogger.e("AdmissionCRMVM", "getSummary failed: ${result.message}")

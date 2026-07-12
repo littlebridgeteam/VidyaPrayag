@@ -22,11 +22,14 @@ data class TeacherMessageState(
     val threads: List<TeacherMessageThreadDto> = emptyList(),
     val loading: Boolean = false,
     val error: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
     val openThreadId: String? = null,
     val openThreadName: String = "",
     val messages: List<TeacherMessageDto> = emptyList(),
     val conversationLoading: Boolean = false,
     val conversationError: String? = null,
+    val conversationStale: Boolean = false,
     val sending: Boolean = false,
     val replyError: String? = null,
 ) {
@@ -63,7 +66,7 @@ class TeacherMessageViewModel(
             }
             when (val r = repository.getMessageThreads(token)) {
                 is NetworkResult.Success ->
-                    _state.update { it.copy(loading = false, threads = r.data.data.threads) }
+                    _state.update { it.copy(loading = false, threads = r.data.data.threads, isStale = r.isStale, isOffline = r.isOffline) }
                 is NetworkResult.Error ->
                     _state.update { it.copy(loading = false, error = r.message) }
                 is NetworkResult.ConnectionError ->
@@ -97,6 +100,7 @@ class TeacherMessageViewModel(
                             conversationLoading = false,
                             messages = data?.messages ?: emptyList(),
                             openThreadName = data?.senderName ?: fallbackName,
+                            conversationStale = r.isStale,
                         )
                     }
                     loadThreads()

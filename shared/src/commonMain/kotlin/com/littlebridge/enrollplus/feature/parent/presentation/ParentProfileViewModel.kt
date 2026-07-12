@@ -29,6 +29,9 @@ data class ParentProfileState(
     val profile: ParentProfile? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
+    val refreshEpoch: Int = 0,
 )
 
 /**
@@ -77,12 +80,29 @@ class ParentProfileViewModel(
             when (val result = authRepository.getUserDetails(token)) {
                 is NetworkResult.Success -> {
                     val profile = result.data.data.personalDetails.toUi()
-                    _state.update { it.copy(isLoading = false, profile = profile) }
+                    _state.update { it.copy(isLoading = false, profile = profile, isStale = result.isStale, isOffline = result.isOffline) }
                 }
                 is NetworkResult.Error ->
                     _state.update { it.copy(isLoading = false, error = result.message) }
                 is NetworkResult.ConnectionError ->
                     _state.update { it.copy(isLoading = false, error = "Connection error") }
+            }
+        }
+    }
+
+    /** Pull-to-refresh: re-fetch profile without clearing existing data. */
+    fun refresh() {
+        viewModelScope.launch {
+            val token = preferenceRepository.getUserToken().first() ?: return@launch
+            when (val result = authRepository.getUserDetails(token)) {
+                is NetworkResult.Success -> {
+                    val profile = result.data.data.personalDetails.toUi()
+                    _state.update { it.copy(profile = profile, isStale = result.isStale, isOffline = result.isOffline, refreshEpoch = it.refreshEpoch + 1) }
+                }
+                is NetworkResult.Error ->
+                    _state.update { it.copy(isStale = true, isOffline = true, refreshEpoch = it.refreshEpoch + 1) }
+                is NetworkResult.ConnectionError ->
+                    _state.update { it.copy(isStale = true, isOffline = true, refreshEpoch = it.refreshEpoch + 1) }
             }
         }
     }

@@ -82,6 +82,7 @@ private enum class SchoolOverlay {
     EventRegistration,
     ClassesSubjects,
     ClassDetail,
+    GamificationManagement,
 }
 
 /**
@@ -143,6 +144,7 @@ fun SchoolPortalV2(
                     "scheduled-messages" -> overlay = SchoolOverlay.ScheduledMessages
                     "ptm" -> overlay = SchoolOverlay.SchedulePTM
                     "link-requests" -> overlay = SchoolOverlay.LinkRequests
+                    "gamification" -> overlay = SchoolOverlay.GamificationManagement
                     "admissions" -> overlay = SchoolOverlay.AdmissionsCRM
                     "health-records" -> overlay = SchoolOverlay.HealthRecords
                     "leave-requests", "leave" -> overlay = SchoolOverlay.LeaveRequests
@@ -186,6 +188,7 @@ fun SchoolPortalV2(
                     pathOnly.startsWith("leave") -> overlay = SchoolOverlay.LeaveRequests
                     pathOnly.startsWith("pews") -> overlay = SchoolOverlay.PewsCohort
                     pathOnly.startsWith("link-requests") -> overlay = SchoolOverlay.LinkRequests
+                    pathOnly.startsWith("gamification") -> overlay = SchoolOverlay.GamificationManagement
                     pathOnly.startsWith("admissions") -> overlay = SchoolOverlay.AdmissionsCRM
                     pathOnly.startsWith("calendar") -> overlay = SchoolOverlay.AcademicCalendarPlatform
                     pathOnly.startsWith("timetable-requests") -> overlay = SchoolOverlay.ClassesSubjects
@@ -582,6 +585,13 @@ fun SchoolPortalV2(
                 )
                 return
             }
+            SchoolOverlay.GamificationManagement -> {
+                AdminGamificationScreenV2(
+                    onBack = { overlay = SchoolOverlay.None },
+                    modifier = modifier,
+                )
+                return
+            }
             SchoolOverlay.None -> Unit
         }
 
@@ -714,10 +724,8 @@ fun SchoolPortalV2(
                         onOpenLibrary = { overlay = SchoolOverlay.Library },
                         // Classes & Subjects — consolidated management (classes, subjects, bell schedule, timetable).
                         onOpenClassesSubjects = { overlay = SchoolOverlay.ClassesSubjects },
-                        // Alumni Management — directory, campaigns & graduation records.
-                        onOpenAlumni = { overlay = SchoolOverlay.Alumni },
-                        // Cohort Analytics — at-risk students, subject engagement & grade comparisons.
-                        onOpenCohort = { overlay = SchoolOverlay.AnalyticsDashboard },
+                        // Gamification Management — feature flags, badges, rewards, leaderboard, redemptions, boosts.
+                        onOpenGamification = { overlay = SchoolOverlay.GamificationManagement },
                     )
                 }
             }

@@ -44,6 +44,9 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNotNull
 import org.jetbrains.exposed.sql.update
 import java.time.Instant
 import java.util.UUID
@@ -87,7 +90,7 @@ fun Route.notificationsRouting() {
 
                     // 1) Real notification rows for this recipient (any role).
                     NotificationsTable.selectAll()
-                        .where { NotificationsTable.userId eq uid }
+                        .where { (NotificationsTable.userId eq uid) and (NotificationsTable.archivedAt.isNull()) }
                         .orderBy(NotificationsTable.createdAt, SortOrder.DESC)
                         .limit(200)
                         .forEach { row ->
@@ -107,6 +110,17 @@ fun Route.notificationsRouting() {
                     // 2) Parent-only synth BRIDGE (announcements + outstanding
                     //    fees). Kept so a parent who has no real rows yet still
                     //    sees actionable items; non-parents get only real rows.
+                    //    Synth items the user has dismissed (via Clear All) are
+                    //    tracked as tombstone rows with archivedAt set and filtered out.
+                    val dismissedKeys = NotificationsTable.selectAll()
+                        .where { (NotificationsTable.userId eq uid) and (NotificationsTable.archivedAt.isNotNull()) }
+                        .mapNotNull { row ->
+                            val rt = row[NotificationsTable.refType]
+                            val ri = row[NotificationsTable.refId]
+                            if (rt != null && ri != null) rt to ri else null
+                        }
+                        .toSet()
+
                     val role = AppUsersTable.selectAll()
                         .where { AppUsersTable.id eq uid }
                         .singleOrNull()?.get(AppUsersTable.role) ?: "parent"
@@ -125,8 +139,10 @@ fun Route.notificationsRouting() {
                                 .where { schoolFilter }
                                 .orderBy(AnnouncementsTable.createdAt, SortOrder.DESC)
                                 .forEach { row ->
+                                    val annId = row[AnnouncementsTable.id].value.toString()
+                                    if ("announcement" to annId in dismissedKeys) return@forEach
                                     items += row[AnnouncementsTable.createdAt] to NotificationDto(
-                                        id = "ann_" + row[AnnouncementsTable.id].value.toString(),
+                                        id = "ann_" + annId,
                                         category = "announcement",
                                         title = row[AnnouncementsTable.title],
                                         body = row[AnnouncementsTable.description],
@@ -146,6 +162,8 @@ fun Route.notificationsRouting() {
                             }
                             .orderBy(FeeRecordsTable.updatedAt, SortOrder.DESC)
                             .forEach { row ->
+                                val feeId = row[FeeRecordsTable.id].value.toString()
+                                if ("fee_record" to feeId in dismissedKeys) return@forEach
                                 val overdue = row[FeeRecordsTable.status].equals("OVERDUE", ignoreCase = true)
                                 val currency = row[FeeRecordsTable.currency]
                                 val amount = row[FeeRecordsTable.amount]
@@ -184,7 +202,7 @@ fun Route.notificationsRouting() {
                 }
                 val count = dbQuery {
                     var c = NotificationsTable.selectAll()
-                        .where { (NotificationsTable.userId eq uid) and (NotificationsTable.isRead eq false) }
+                        .where { (NotificationsTable.userId eq uid) and (NotificationsTable.isRead eq false) and (NotificationsTable.archivedAt.isNull()) }
                         .count().toInt()
 
                     // Bridge: include the parent synth unread items so the bell
@@ -193,6 +211,15 @@ fun Route.notificationsRouting() {
                         .where { AppUsersTable.id eq uid }
                         .singleOrNull()?.get(AppUsersTable.role) ?: "parent"
                     if (role == "parent") {
+                        val dismissedKeys = NotificationsTable.selectAll()
+                            .where { (NotificationsTable.userId eq uid) and (NotificationsTable.archivedAt.isNotNull()) }
+                            .mapNotNull { row ->
+                                val rt = row[NotificationsTable.refType]
+                                val ri = row[NotificationsTable.refId]
+                                if (rt != null && ri != null) rt to ri else null
+                            }
+                            .toSet()
+
                         val schoolIds = ChildrenTable.selectAll()
                             .where { (ChildrenTable.parentId eq uid) and (ChildrenTable.isActive eq true) }
                             .mapNotNull { it[ChildrenTable.schoolId] }
@@ -201,14 +228,17 @@ fun Route.notificationsRouting() {
                             val schoolFilter = schoolIds
                                 .map { sid -> AnnouncementsTable.schoolId eq sid }
                                 .reduce { acc, op -> acc or op }
-                            c += AnnouncementsTable.selectAll().where { schoolFilter }.count().toInt()
+                            c += AnnouncementsTable.selectAll().where { schoolFilter }
+                                .map { row -> row[AnnouncementsTable.id].value.toString() }
+                                .count { id -> ("announcement" to id) !in dismissedKeys }
                         }
                         c += FeeRecordsTable.selectAll()
                             .where {
                                 (FeeRecordsTable.parentId eq uid) and
                                     ((FeeRecordsTable.status eq "DUE") or (FeeRecordsTable.status eq "OVERDUE"))
                             }
-                            .count().toInt()
+                            .map { row -> row[FeeRecordsTable.id].value.toString() }
+                            .count { id -> ("fee_record" to id) !in dismissedKeys }
                     }
                     c
                 }
@@ -282,7 +312,7 @@ fun Route.notificationsRouting() {
                 }
                 dbQuery {
                     NotificationsTable.deleteWhere {
-                        (NotificationsTable.userId eq uid) and (NotificationsTable.isRead eq true)
+                        (NotificationsTable.userId eq uid) and (NotificationsTable.isRead eq true) and (NotificationsTable.archivedAt.isNull())
                     }
                 }
                 call.okMessage("Cleared read notifications")
@@ -293,9 +323,63 @@ fun Route.notificationsRouting() {
                 val uid = call.principalUserUuid() ?: run {
                     call.respond(HttpStatusCode.Unauthorized); return@delete
                 }
+                val now = Instant.now()
                 dbQuery {
+                    // Delete ALL rows for this user (real notifications + old tombstones).
                     NotificationsTable.deleteWhere {
                         NotificationsTable.userId eq uid
+                    }
+
+                    // Insert tombstones for parent synth items so they don't reappear on next fetch.
+                    val role = AppUsersTable.selectAll()
+                        .where { AppUsersTable.id eq uid }
+                        .singleOrNull()?.get(AppUsersTable.role) ?: "parent"
+
+                    if (role == "parent") {
+                        val schoolIds = ChildrenTable.selectAll()
+                            .where { (ChildrenTable.parentId eq uid) and (ChildrenTable.isActive eq true) }
+                            .mapNotNull { it[ChildrenTable.schoolId] }
+                            .distinct()
+
+                        if (schoolIds.isNotEmpty()) {
+                            val schoolFilter = schoolIds
+                                .map { sid -> AnnouncementsTable.schoolId eq sid }
+                                .reduce { acc, op -> acc or op }
+                            AnnouncementsTable.selectAll()
+                                .where { schoolFilter }
+                                .forEach { row ->
+                                    NotificationsTable.insert {
+                                        it[NotificationsTable.userId] = uid
+                                        it[NotificationsTable.category] = "announcement"
+                                        it[NotificationsTable.title] = "[dismissed]"
+                                        it[NotificationsTable.body] = ""
+                                        it[NotificationsTable.refType] = "announcement"
+                                        it[NotificationsTable.refId] = row[AnnouncementsTable.id].value.toString()
+                                        it[NotificationsTable.isRead] = true
+                                        it[NotificationsTable.createdAt] = now
+                                        it[NotificationsTable.archivedAt] = now
+                                    }
+                                }
+                        }
+
+                        FeeRecordsTable.selectAll()
+                            .where {
+                                (FeeRecordsTable.parentId eq uid) and
+                                    ((FeeRecordsTable.status eq "DUE") or (FeeRecordsTable.status eq "OVERDUE"))
+                            }
+                            .forEach { row ->
+                                NotificationsTable.insert {
+                                    it[NotificationsTable.userId] = uid
+                                    it[NotificationsTable.category] = "fees"
+                                    it[NotificationsTable.title] = "[dismissed]"
+                                    it[NotificationsTable.body] = ""
+                                    it[NotificationsTable.refType] = "fee_record"
+                                    it[NotificationsTable.refId] = row[FeeRecordsTable.id].value.toString()
+                                    it[NotificationsTable.isRead] = true
+                                    it[NotificationsTable.createdAt] = now
+                                    it[NotificationsTable.archivedAt] = now
+                                }
+                            }
                     }
                 }
                 call.okMessage("Cleared all notifications")

@@ -43,6 +43,7 @@ import com.littlebridge.enrollplus.db.SyllabusQuizAnswersTable
 import com.littlebridge.enrollplus.db.TeacherPeriodsTable
 import com.littlebridge.enrollplus.db.TeacherSubjectAssignmentsTable
 import com.littlebridge.enrollplus.feature.ai.SyllabusAiService
+import com.littlebridge.enrollplus.feature.gamification.XpHooks
 import com.littlebridge.enrollplus.feature.teacher.MatchPairSer
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -285,6 +286,7 @@ data class QuizAnswerDto(
 data class QuizSubmitRequest(
     @SerialName("quiz_id") val quizId: String,
     val answers: List<QuizAnswerDto> = emptyList(),
+    @SerialName("child_id") val childId: String? = null,
 )
 
 @Serializable
@@ -1161,6 +1163,12 @@ fun Route.parentAcademicsRouting() {
                 val totalMarks = questions.size
                 val percentage = if (totalMarks > 0) (correctCount * 100) / totalMarks else 0
 
+                // Gamification XP hook — quiz completed
+                val childId = call.parameters["id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                if (childId != null && child.schoolId != null) {
+                    XpHooks.onQuizCompleted(childId, child.schoolId, correctCount, totalMarks)
+                }
+
                 call.ok(
                     QuizResultDto(
                         id = UUID.randomUUID().toString(),
@@ -1268,12 +1276,35 @@ fun Route.parentAcademicsRouting() {
                 val quizId = UUID.fromString(quizIdStr)
                 val studentId = child.studentCode ?: "unknown"
 
-                val answers = dbQuery {
+                var answers = dbQuery {
                     SyllabusQuizAnswersTable.selectAll().where {
                         (SyllabusQuizAnswersTable.quizId eq quizId) and
                             (SyllabusQuizAnswersTable.studentId eq studentId)
                     }.toList()
                 }
+
+                // Fallback for legacy submissions where the old parent-level submit
+                // endpoint resolved the first child instead of the selected child.
+                // If this quiz was submitted under a sibling's student_code, still
+                // return the result to the parent (they own both children).
+                if (answers.isEmpty()) {
+                    val parentId = call.principalUserId()?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                    val siblingCodes = if (parentId != null) dbQuery {
+                        ChildrenTable.selectAll().where {
+                            (ChildrenTable.parentId eq parentId) and
+                                (ChildrenTable.isActive eq true)
+                        }.mapNotNull { it[ChildrenTable.studentCode] }
+                    } else emptyList()
+                    if (siblingCodes.isNotEmpty()) {
+                        answers = dbQuery {
+                            SyllabusQuizAnswersTable.selectAll().where {
+                                (SyllabusQuizAnswersTable.quizId eq quizId) and
+                                    (SyllabusQuizAnswersTable.studentId inList siblingCodes)
+                            }.toList()
+                        }
+                    }
+                }
+
                 if (answers.isEmpty()) {
                     call.fail("No submission found for this quiz", HttpStatusCode.NotFound, "NO_SUBMISSION"); return@get
                 }
@@ -1436,13 +1467,21 @@ fun Route.parentAcademicsRouting() {
                 var correctCount = 0
                 val questionResults = mutableListOf<QuizQuestionResultDto>()
 
-                // Resolve student ID from parent's token
+                // Resolve student ID from parent's token + child_id in request body
                 val uid = call.principalUserId()?.let { runCatching { UUID.fromString(it) }.getOrNull() }
-                val childRow = uid?.let { u ->
-                    dbQuery {
-                        ChildrenTable.selectAll().where { ChildrenTable.parentId eq u }.firstOrNull()
-                    }
+                val childIdUuid = req.childId?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                if (childIdUuid == null) {
+                    call.fail("child_id is required", HttpStatusCode.BadRequest, "MISSING_CHILD_ID"); return@post
                 }
+                val childRow = if (uid != null) {
+                    dbQuery {
+                        ChildrenTable.selectAll().where {
+                            (ChildrenTable.id eq childIdUuid) and
+                                (ChildrenTable.parentId eq uid) and
+                                (ChildrenTable.isActive eq true)
+                        }.singleOrNull()
+                    }
+                } else null
                 val studentId = childRow?.get(ChildrenTable.studentCode) ?: "unknown"
 
                 // One attempt per student

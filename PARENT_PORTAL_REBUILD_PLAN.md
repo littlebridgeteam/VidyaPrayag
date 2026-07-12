@@ -860,4 +860,46 @@ Content ──(API error)────→ Content (stale) + Error banner
 
 ---
 
+## Parent Portal Gamification UI Specification
+
+The parent portal profile tab must include a complete gamification section showing the child's gamification data from `/api/v1/parent/gamification/{childId}/...`.
+
+### Sections (in order, all conditional on data availability):
+
+1. **Profile Hero Card** — Student avatar, name, class, level title, total XP, streak days. XP progress bar (current XP / 5000 max). Uses violet gradient hero matching parent portal style.
+
+2. **Stats Grid** — 2×2 grid: Total XP, Current Level, Streak Days, House Points. Each tile uses VColors surface card + violet/mint/gold/coral accents.
+
+3. **Badges Row** — Horizontal scroll of earned badges. Each badge chip: icon disc + badge name + rarity pill. Gold soft background for legendary, violet soft for rare.
+
+4. **Quests Row** — Horizontal scroll of active quests. Each quest card: name, progress bar (current/target), XP reward, completed status.
+
+5. **Leaderboard Card** — Class leaderboard with child's rank highlighted. Top 3 with gold/silver/bronze. Shows rank, name, total XP.
+
+6. **Active Boosts** — List of active XP boosts with multiplier, source, expiry.
+
+7. **Seasonal Events** — Horizontal scroll of active events with name, date range, active pill.
+
+8. **Rewards Shop** — Horizontal scroll of available rewards. Each card: icon, name, description, XP cost, Redeem button (if affordable + active). Out of stock label if stock is 0.
+
+9. **Redemption History** — List of past redemptions with reward name, XP spent, date, status pill (pending/approved/rejected).
+
+10. **XP History** — List of recent XP entries with reason, source, amount (+N XP in mint).
+
+11. **Class Goals** — List of class goals with goal type, progress bar (current/target), reward text.
+
+### ViewModel
+- `ParentGamificationViewModel` — loads all gamification data via `load(childId)`, `redeemReward(childId, rewardId)`.
+- State: `ParentGamificationState` with stats, badges, quests, house, leaderboard, xpHistory, activeBoosts, classGoals, rewards, redemptions, events.
+
+### Style Rules
+- Use parent portal tokens: VColors (violet/mint/cream base), VTypography, VShapes
+- All cards use `VColors.surfaceCard` background + `VColors.line` border
+- Section headers use `VTypography.h3` in `VColors.ink`
+- No fixed heights on growing content — use `verticalScroll` or `LazyColumn`
+- All buttons within screen bounds — no overflow, no hidden actions
+- Data flows from ViewModel → API → backend — zero hardcoded data
+
+---
+
 *End of PARENT_PORTAL_REBUILD_PLAN.md*

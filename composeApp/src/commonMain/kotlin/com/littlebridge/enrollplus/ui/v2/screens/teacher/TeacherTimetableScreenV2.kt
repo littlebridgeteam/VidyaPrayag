@@ -26,6 +26,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,6 +57,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VEmptyState
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
+import com.littlebridge.enrollplus.ui.v2.components.VStaleChip
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.viewmodel.koinViewModel
@@ -101,18 +104,36 @@ fun TeacherTimetableScreenV2(
     teacherName: String = "",
     unreadCount: Int = 0,
     onOpenNotifications: () -> Unit = {},
+    initialShowRequests: Boolean = false,
     viewModel: TeacherTimetableViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
 
-    var showSchedule by remember { mutableStateOf(true) }
+    var showSchedule by remember { mutableStateOf(!initialShowRequests) }
+
+    LaunchedEffect(initialShowRequests) {
+        if (initialShowRequests) showSchedule = false
+    }
     var selectedDay by remember { mutableStateOf(1) }
     var showRequestDialog by remember { mutableStateOf(false) }
     var requestKind by remember { mutableStateOf("NEW_PERIOD") }
     var requestPeriod by remember { mutableStateOf<ResolvedPeriodDto?>(null) }
 
+    var isRefreshing by remember { mutableStateOf(false) }
+    LaunchedEffect(state.refreshEpoch) {
+        if (state.refreshEpoch > 0) isRefreshing = false
+    }
+
+    VPullRefresh(
+        isRefreshing = isRefreshing,
+        onRefresh = {
+            isRefreshing = true
+            viewModel.refresh()
+        },
+        modifier = modifier.fillMaxSize(),
+    ) {
     Column(
-        modifier
+        modifier = Modifier
             .fillMaxSize()
             .background(VColors.cream)
             .statusBarsPadding()
@@ -120,6 +141,9 @@ fun TeacherTimetableScreenV2(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         // 1 — shared premium header.
+        if (state.isStale) {
+            VStaleChip(modifier = Modifier.padding(horizontal = 20.dp))
+        }
         TeacherPremiumHeader(
             teacherName = teacherName,
             lead = appString(StringKeys.TC_YOUR),
@@ -255,6 +279,7 @@ fun TeacherTimetableScreenV2(
             },
             onDismiss = { showRequestDialog = false },
         )
+    }
     }
 }
 

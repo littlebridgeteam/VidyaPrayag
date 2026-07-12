@@ -27,6 +27,8 @@ import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.feature.parent.domain.model.DashboardChildSummary
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentMessageViewModel
 import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
+import com.littlebridge.enrollplus.ui.v2.components.VStaleChip
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VMotion
 import org.koin.compose.viewmodel.koinViewModel
@@ -69,6 +71,11 @@ fun ParentConversationsScreenV2(
     val messageState by messageViewModel.state.collectAsStateV2()
     val unreadThreads = messageState.threads.count { it.unreadCount > 0 }
     val isChatOpen = messageState.openThreadId != null || messageState.composeOpen
+    var isRefreshing by remember { mutableStateOf(false) }
+
+    LaunchedEffect(messageState.refreshEpoch) {
+        if (messageState.refreshEpoch > 0) isRefreshing = false
+    }
 
     // §11 — system/predictive back peels the drilled-in layers (compose-new → open conversation)
     // before the portal lets back exit the tab. When a chat is open the shell also hides the dock.
@@ -79,6 +86,17 @@ fun ParentConversationsScreenV2(
         }
     }
 
+    VPullRefresh(
+        isRefreshing = isRefreshing,
+        onRefresh = {
+            isRefreshing = true
+            messageViewModel.refreshThreads()
+        },
+        modifier = modifier.fillMaxSize(),
+    ) {
+    if (messageState.isStale && !isChatOpen) {
+        VStaleChip(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+    }
     Column(
         modifier
             .fillMaxSize()
@@ -99,6 +117,8 @@ fun ParentConversationsScreenV2(
                 onSelectChild = onSelectChild,
                 onOpenNotifications = onOpenNotifications,
                 unreadNotificationsCount = unreadNotificationsCount,
+                greetingLead = "your",
+                greetingAccent = "conversations",
             )
 
             LazyRow(
@@ -139,6 +159,7 @@ fun ParentConversationsScreenV2(
                     ParentActivityScreenV2(modifier = Modifier.fillMaxSize())
             }
         }
+    }
     }
 }
 

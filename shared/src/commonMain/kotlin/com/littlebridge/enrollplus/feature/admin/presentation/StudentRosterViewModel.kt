@@ -39,7 +39,9 @@ data class StudentRosterState(
     val removingIds: Set<String> = emptySet(),
     // bulk import dialog (manual multi-add + CSV)
     val isImporting: Boolean = false,
-    val importError: String? = null
+    val importError: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false
 )
 
 class StudentRosterViewModel(
@@ -73,7 +75,9 @@ class StudentRosterViewModel(
                         isLoading = false,
                         error = null,
                         students = studentsResult.data.data?.students.orEmpty(),
-                        linkRequestCount = count
+                        linkRequestCount = count,
+                        isStale = studentsResult.isStale,
+                        isOffline = studentsResult.isOffline,
                     )
                 }
                 is NetworkResult.Error -> {

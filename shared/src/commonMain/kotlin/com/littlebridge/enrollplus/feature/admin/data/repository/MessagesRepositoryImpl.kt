@@ -8,34 +8,39 @@
  */
 package com.littlebridge.enrollplus.feature.admin.data.repository
 
+import com.littlebridge.enrollplus.core.cache.CacheManager
+import com.littlebridge.enrollplus.core.cache.cacheFirstNetworkResult
+import com.littlebridge.enrollplus.core.model.ApiResponse
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.feature.admin.data.remote.MessagesApi
 import com.littlebridge.enrollplus.feature.admin.domain.model.MessageThread
+import com.littlebridge.enrollplus.feature.admin.domain.model.MessageThreadsResponse
 import com.littlebridge.enrollplus.feature.admin.domain.model.SendMessageRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.SendMessageResponse
 import com.littlebridge.enrollplus.feature.admin.domain.model.SchoolRecipient
+import com.littlebridge.enrollplus.feature.admin.domain.model.SchoolRecipientsResponse
 import com.littlebridge.enrollplus.feature.admin.domain.model.ThreadMessagesResponse
 import com.littlebridge.enrollplus.feature.admin.domain.model.UnreadCountDto
 import com.littlebridge.enrollplus.feature.admin.domain.repository.MessagesRepository
 
 class MessagesRepositoryImpl(
-    private val api: MessagesApi
+    private val api: MessagesApi,
+    private val cache: CacheManager,
 ) : MessagesRepository {
 
     override suspend fun getThreads(token: String): NetworkResult<List<MessageThread>> {
-        return when (val result = api.getThreads(token)) {
+        val r = cacheFirstNetworkResult(cache, "admin_msg_threads", ApiResponse.serializer(MessageThreadsResponse.serializer())) { api.getThreads(token) }
+        return when (r) {
             is NetworkResult.Success -> {
-                val envelope = result.data
+                val envelope = r.data
                 val data = envelope.data
                 when {
-                    !envelope.success -> NetworkResult.Error(
-                        envelope.message.ifBlank { "Failed to fetch message threads" }
-                    )
+                    !envelope.success -> NetworkResult.Error(envelope.message.ifBlank { "Failed to fetch message threads" })
                     data == null -> NetworkResult.Error("No data in response")
-                    else -> NetworkResult.Success(data.threads)
+                    else -> NetworkResult.Success(data.threads, isStale = r.isStale, isOffline = r.isOffline)
                 }
             }
-            is NetworkResult.Error -> NetworkResult.Error(result.message, result.code)
+            is NetworkResult.Error -> NetworkResult.Error(r.message, r.code)
             is NetworkResult.ConnectionError -> NetworkResult.ConnectionError
         }
     }
@@ -44,19 +49,18 @@ class MessagesRepositoryImpl(
         token: String,
         threadId: String
     ): NetworkResult<ThreadMessagesResponse> {
-        return when (val result = api.getThreadMessages(token, threadId)) {
+        val r = cacheFirstNetworkResult(cache, "admin_msg_thread_$threadId", ApiResponse.serializer(ThreadMessagesResponse.serializer())) { api.getThreadMessages(token, threadId) }
+        return when (r) {
             is NetworkResult.Success -> {
-                val envelope = result.data
+                val envelope = r.data
                 val data = envelope.data
                 when {
-                    !envelope.success -> NetworkResult.Error(
-                        envelope.message.ifBlank { "Failed to fetch conversation" }
-                    )
+                    !envelope.success -> NetworkResult.Error(envelope.message.ifBlank { "Failed to fetch conversation" })
                     data == null -> NetworkResult.Error("No data in response")
-                    else -> NetworkResult.Success(data)
+                    else -> NetworkResult.Success(data, isStale = r.isStale, isOffline = r.isOffline)
                 }
             }
-            is NetworkResult.Error -> NetworkResult.Error(result.message, result.code)
+            is NetworkResult.Error -> NetworkResult.Error(r.message, r.code)
             is NetworkResult.ConnectionError -> NetworkResult.ConnectionError
         }
     }
@@ -118,19 +122,18 @@ class MessagesRepositoryImpl(
     }
 
     override suspend fun getRecipients(token: String): NetworkResult<List<SchoolRecipient>> {
-        return when (val result = api.getRecipients(token)) {
+        val r = cacheFirstNetworkResult(cache, "admin_msg_recipients", ApiResponse.serializer(SchoolRecipientsResponse.serializer())) { api.getRecipients(token) }
+        return when (r) {
             is NetworkResult.Success -> {
-                val envelope = result.data
+                val envelope = r.data
                 val data = envelope.data
                 when {
-                    !envelope.success -> NetworkResult.Error(
-                        envelope.message.ifBlank { "Failed to fetch recipients" }
-                    )
+                    !envelope.success -> NetworkResult.Error(envelope.message.ifBlank { "Failed to fetch recipients" })
                     data == null -> NetworkResult.Error("No data in response")
-                    else -> NetworkResult.Success(data.recipients)
+                    else -> NetworkResult.Success(data.recipients, isStale = r.isStale, isOffline = r.isOffline)
                 }
             }
-            is NetworkResult.Error -> NetworkResult.Error(result.message, result.code)
+            is NetworkResult.Error -> NetworkResult.Error(r.message, r.code)
             is NetworkResult.ConnectionError -> NetworkResult.ConnectionError
         }
     }

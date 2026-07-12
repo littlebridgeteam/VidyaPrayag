@@ -71,6 +71,7 @@ import com.littlebridge.enrollplus.feature.calendar.academicCalendarRouting
 import com.littlebridge.enrollplus.feature.calendar.academicYearRouting
 import com.littlebridge.enrollplus.feature.auth.otpAdminRouting
 import com.littlebridge.enrollplus.feature.config.appStatusRouting
+import com.littlebridge.enrollplus.feature.gamification.gamificationRouting
 import com.littlebridge.enrollplus.feature.config.versionRouting
 import com.littlebridge.enrollplus.feature.devtools.devToolsRouting
 import com.littlebridge.enrollplus.feature.logging.serverLogRouting
@@ -113,8 +114,10 @@ import com.littlebridge.enrollplus.feature.pews.pewsRouting
 import com.littlebridge.enrollplus.feature.scheduling.scheduledMessageRouting
 import com.littlebridge.enrollplus.feature.scheduling.MessageDispatchScheduler
 import com.littlebridge.enrollplus.feature.school.adminDashboardRouting
+import com.littlebridge.enrollplus.feature.ai.dailySummaryAdminRouting
 import com.littlebridge.enrollplus.feature.school.adminDashboardDigestRouting
 import com.littlebridge.enrollplus.feature.event.eventRegistrationRouting
+import com.littlebridge.enrollplus.feature.export.exportRouting
 import com.littlebridge.enrollplus.feature.school.adminDashboardOverviewRouting
 import com.littlebridge.enrollplus.feature.school.leaveRequestsRouting
 import com.littlebridge.enrollplus.feature.school.messagesRouting
@@ -145,12 +148,17 @@ import com.littlebridge.enrollplus.feature.teacher.teacherHomeworkRouting
 import com.littlebridge.enrollplus.feature.teacher.teacherLessonPlanRouting
 import com.littlebridge.enrollplus.feature.teacher.teacherLeaveRouting
 import com.littlebridge.enrollplus.feature.teacher.teacherMessagesRouting
+import com.littlebridge.enrollplus.feature.exam.examTimetableRouting
+import com.littlebridge.enrollplus.feature.exam.examSyllabusRouting
+import com.littlebridge.enrollplus.feature.exam.examRequestSyllabusRouting
+import com.littlebridge.enrollplus.feature.exam.ExamReminderJob
 import com.littlebridge.enrollplus.feature.teacher.teacherRouting
 import com.littlebridge.enrollplus.feature.teacher.teacherSelfLeaveRouting
 import com.littlebridge.enrollplus.feature.teacher.teacherStudentRouting
 import com.littlebridge.enrollplus.feature.teacher.teacherSyllabusRouting
 import com.littlebridge.enrollplus.feature.teacher.teacherQuizRouting
 import com.littlebridge.enrollplus.feature.school.syllabusPaceRouting
+import com.littlebridge.enrollplus.feature.skilltest.skillTestRouting
 import com.littlebridge.enrollplus.feature.user.parentRouting
 import com.littlebridge.enrollplus.feature.user.parentMessagesRouting
 import com.littlebridge.enrollplus.feature.user.userDetailsRouting
@@ -274,6 +282,16 @@ fun main() {
 
     // Start the Auto Daily Summary job (end-of-day AI summary for missing teacher logs).
     com.littlebridge.enrollplus.feature.ai.DailySummaryAutoJob.start(
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)
+    )
+
+    // Start the Skill Test job scheduler (weekly AI question generation + daily old question purge).
+    com.littlebridge.enrollplus.feature.skilltest.SkillTestJobScheduler.start(
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)
+    )
+
+    // Start the Exam Reminder job (evening-before exam reminders, 6 PM IST).
+    ExamReminderJob.start(
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)
     )
 
@@ -538,6 +556,7 @@ fun Application.module() {
         adminDashboardOverviewRouting() // /api/admin/dashboard/overview — consolidated command-center payload for SchoolHomeScreenV2
         adminDashboardDigestRouting() // /api/admin/dashboard/digest — daily focus hero for SchoolHomeScreenV2
         schoolIntelligenceRouting()  // /api/v1/school/dashboard/intelligence — Command Center: attendance timeline+anomalies+exam overlay, early-warning students, academic health grid, activity feed (all real-data)
+        dailySummaryAdminRouting()   // /api/admin/daily-summary/trigger — manually trigger AI daily summary job
 
         // AI gateway + PEWS (AI_FEATURES_PLAN.md feature #1)
         aiRouting()                  // /api/v1/school/ai/usage (school-admin) + /api/v1/admin/ai/{providers,health,rotate} (platform-admin)
@@ -557,6 +576,7 @@ fun Application.module() {
         schoolStudentsRouting()      // /api/v1/school/students[…] + teachers/{id} — RA-45 student roster + student/teacher profile (school-scoped)
         nonTeachingStaffRouting()    // /api/v1/school/staff[…] — RA-S17 non-teaching-staff vertical (school-scoped CRUD)
         schoolRecordsRouting()       // /api/v1/school/{attendance/summary,marks/summary,fees/ledger} — RA-52 admin Records rollups (school-scoped reads)
+        exportRouting()              // /api/v1/school/export/{types, POST} — branded PDF/CSV exports for admin + teacher
         schoolClassesRouting()       // /api/v1/school/classes[…] + /api/v1/school/subjects[…] — class + subject CRUD (admin)
         schoolTimetableRouting()     // /api/v1/school/timetable[…] — school-wide weekly schedule + admin period CRUD (POST/PUT/DELETE)
         periodExceptionRouting()     // /api/v1/school/timetable/exceptions[…] + /api/v1/teacher/timetable/exceptions[…] — one-off period overrides
@@ -582,6 +602,11 @@ fun Application.module() {
         teacherSelfLeaveRouting()    // T-602a /api/v1/teacher/leave[…] — the teacher's OWN leave: apply (requester_role=teacher, routed to school admins) + list-own-status (Doc 04 §5.14)
         teacherMessagesRouting()     // /api/v1/teacher/messages[…] — RA-51 teacher↔parent messaging + class broadcast
         teacherLessonPlanRouting()   // /api/v1/teacher/lesson-plans[…] — typed, assignment-scoped lesson plans: CRUD, complete/skip, calendar, templates (LESSON_PLANNING_SPEC P1-20)
+
+        // Exam Ecosystem (EXAM_ECOSYSTEM_PLAN.md)
+        examTimetableRouting()       // /api/v1/exam/timetable[…] — AI OCR import, text import, create, publish, list, detail
+        examSyllabusRouting()        // /api/v1/exam/syllabus/{id} + /api/v1/exam/parent/{childId}/syllabus/{id} — syllabus mapping + parent read
+        examRequestSyllabusRouting() // /api/v1/exam/request-syllabus — parent → teacher syllabus request
 
         // Cross-user notification spine (audit part-2 RA-41/42/46/50) — role-aware
         // inbox replacing the parent-only synth; persisted read state; bell summary.
@@ -688,16 +713,16 @@ fun Application.module() {
         //   /api/admin/{language-adoption, users-by-language, server-strings[…]}  — super admin
         i18nRouting()
 
-        // Feature & QA Management Platform (feature-qa-management-platform spec)
-        //   /api/admin/platform/dashboard/*   — health, charts, risk, activity (super_admin + qa)
-        //   /api/admin/platform/features[…]   — feature registry CRUD + tree + flows
-        //   /api/admin/platform/screens[…]    — screen registry CRUD
-        //   /api/admin/platform/features/{id}/apis[…] — API mapping CRUD
-        //   /api/admin/platform/test-cases[…] — test case CRUD + status + attachments
-        //   /api/admin/platform/bugs[…]       — bug CRUD + kanban + comments + activity + SLA
-        //   /api/admin/platform/audit[…]      — audit log viewer (super_admin)
-        //   /api/admin/platform/notifications  — platform notification bell (super_admin + qa)
-        //   /api/admin/platform/users          — platform user list (super_admin + qa)
-        platformRouting()
+        // Gamification System (GAMIFICATION_SYSTEM_SPEC.md)
+        //   /api/v1/parent/gamification/{childId}/{stats,badges,levels}  — parent
+        //   /api/v1/teacher/gamification/{encourage,badge/award,badges,student/{id}/stats}  — teacher
+        //   /api/v1/admin/gamification/{flags,badges,levels}  — admin kill switch + config
+        gamificationRouting()
+
+        // Skill Test System — AI-generated weekly MCQ tests for children
+        //   /api/v1/parent/skill-test/{childId}/{eligibility,start,best-score,history}
+        //   /api/v1/parent/skill-test/{attemptId}/{answer,review}
+        //   /api/v1/parent/skill-test/generate/{gradeLevel}  — admin trigger
+        skillTestRouting()
     }
 }

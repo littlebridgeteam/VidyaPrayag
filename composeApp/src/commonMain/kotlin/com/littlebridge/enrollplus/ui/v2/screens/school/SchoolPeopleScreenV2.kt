@@ -182,6 +182,12 @@ private fun SchoolPeopleContent(
     var showAddStaff by remember { mutableStateOf(false) }
     var showAddStudent by remember { mutableStateOf(false) }
     var showImportStudents by remember { mutableStateOf(false) }
+    var isRefreshing by remember { mutableStateOf(false) }
+
+    val anyLoading = teachersState.isLoading || studentsState.isLoading || staffState.isLoading || analyticsState.isLoading
+    LaunchedEffect(anyLoading) {
+        if (!anyLoading) isRefreshing = false
+    }
 
     // Stagger entrance
     val headerAlpha = remember { Animatable(0f) }

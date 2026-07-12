@@ -1,5 +1,10 @@
 package com.littlebridge.enrollplus.ui.v2.screens.parent
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -25,6 +30,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,6 +47,16 @@ import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
 import com.littlebridge.enrollplus.feature.parent.domain.model.DashboardChildSummary
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentMarkDto
+import com.littlebridge.enrollplus.feature.gamification.domain.model.Reward
+import com.littlebridge.enrollplus.feature.gamification.domain.model.RewardRedemption
+import com.littlebridge.enrollplus.feature.gamification.domain.model.StudentBadge as GameBadge
+import com.littlebridge.enrollplus.feature.gamification.domain.model.StudentQuest
+import com.littlebridge.enrollplus.feature.gamification.domain.model.SeasonalEvent
+import com.littlebridge.enrollplus.feature.gamification.domain.model.XpHistoryEntry
+import com.littlebridge.enrollplus.feature.gamification.domain.model.XpBoost
+import com.littlebridge.enrollplus.feature.gamification.domain.model.ClassGoal
+import com.littlebridge.enrollplus.feature.gamification.presentation.ParentGamificationState
+import com.littlebridge.enrollplus.feature.gamification.presentation.ParentGamificationViewModel
 import com.littlebridge.enrollplus.feature.parent.presentation.AchievementBadge
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentAcademicsViewModel
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentDashboardState
@@ -51,6 +69,7 @@ import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -71,11 +90,18 @@ fun ParentProfileCardScreenV2(
     profileViewModel: ParentProfileViewModel = koinViewModel(),
     academicsViewModel: ParentAcademicsViewModel = koinViewModel(),
     trackViewModel: TrackProgressViewModel = koinViewModel(),
+    gamificationViewModel: ParentGamificationViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
     val profile by profileViewModel.state.collectAsStateV2()
     val academics by academicsViewModel.state.collectAsStateV2()
     val track by trackViewModel.state.collectAsStateV2()
+    val gamification by gamificationViewModel.state.collectAsStateV2()
+    var isRefreshing by remember { mutableStateOf(false) }
+
+    LaunchedEffect(state.refreshEpoch, profile.refreshEpoch) {
+        if (state.refreshEpoch > 0 || profile.refreshEpoch > 0) isRefreshing = false
+    }
 
     LaunchedEffect(Unit) {
         if (state.children.isEmpty()) viewModel.load()
@@ -84,28 +110,40 @@ fun ParentProfileCardScreenV2(
     LaunchedEffect(state.selectedChild?.id) {
         state.selectedChild?.id?.let {
             academicsViewModel.selectChild(it)
+            gamificationViewModel.load(it)
         }
     }
 
-    ProfileContent(
-        state = state,
-        profile = profile,
-        academics = academics,
-        track = track,
-        parentName = parentName,
-        children = children,
-        selectedChild = selectedChild,
-        onSelectChild = onSelectChild,
-        onRetry = viewModel::load,
-        onRetryProfile = profileViewModel::load,
-        onLogout = onLogout,
-        onLinkChild = onLinkChild,
-        onDiscoverSchools = onDiscoverSchools,
-        onOpenAccountSettings = onOpenAccountSettings,
-        onOpenNotifications = onOpenNotifications,
-        unreadNotificationsCount = unreadNotificationsCount,
-        modifier = modifier,
-    )
+    VPullRefresh(
+        isRefreshing = isRefreshing,
+        onRefresh = {
+            isRefreshing = true
+            viewModel.refresh()
+            profileViewModel.refresh()
+        },
+        modifier = modifier.fillMaxSize(),
+    ) {
+        ProfileContent(
+            state = state,
+            profile = profile,
+            academics = academics,
+            track = track,
+            gamification = gamification,
+            parentName = parentName,
+            children = children,
+            selectedChild = selectedChild,
+            onSelectChild = onSelectChild,
+            onRetry = viewModel::load,
+            onRetryProfile = profileViewModel::load,
+            onRedeemReward = gamificationViewModel::redeemReward,
+            onLogout = onLogout,
+            onLinkChild = onLinkChild,
+            onDiscoverSchools = onDiscoverSchools,
+            onOpenAccountSettings = onOpenAccountSettings,
+            onOpenNotifications = onOpenNotifications,
+            unreadNotificationsCount = unreadNotificationsCount,
+        )
+    }
 }
 
 @Composable
@@ -114,12 +152,14 @@ private fun ProfileContent(
     profile: ParentProfileState,
     academics: com.littlebridge.enrollplus.feature.parent.presentation.ParentAcademicsState,
     track: TrackProgressState,
+    gamification: ParentGamificationState,
     parentName: String,
     children: List<DashboardChildSummary>,
     selectedChild: DashboardChildSummary?,
     onSelectChild: (String) -> Unit,
     onRetry: () -> Unit,
     onRetryProfile: () -> Unit,
+    onRedeemReward: (String, String) -> Unit,
     onLogout: () -> Unit,
     onLinkChild: () -> Unit,
     onDiscoverSchools: () -> Unit,
@@ -143,6 +183,8 @@ private fun ProfileContent(
             onSelectChild = onSelectChild,
             onOpenNotifications = onOpenNotifications,
             unreadNotificationsCount = unreadNotificationsCount,
+            greetingLead = "your",
+            greetingAccent = "profile",
         )
 
         when {
@@ -153,7 +195,9 @@ private fun ProfileContent(
                 profile = profile,
                 academics = academics,
                 track = track,
+                gamification = gamification,
                 onRetryProfile = onRetryProfile,
+                onRedeemReward = onRedeemReward,
                 onLogout = onLogout,
                 onLinkChild = onLinkChild,
                 onDiscoverSchools = onDiscoverSchools,
@@ -256,7 +300,9 @@ private fun ProfileLoaded(
     profile: ParentProfileState,
     academics: com.littlebridge.enrollplus.feature.parent.presentation.ParentAcademicsState,
     track: TrackProgressState,
+    gamification: ParentGamificationState,
     onRetryProfile: () -> Unit,
+    onRedeemReward: (String, String) -> Unit,
     onLogout: () -> Unit,
     onLinkChild: () -> Unit,
     onDiscoverSchools: () -> Unit,
@@ -269,6 +315,12 @@ private fun ProfileLoaded(
         if (m.maxMarks > 0) ((m.marks ?: 0.0) / m.maxMarks * 100).roundToInt() else null
     }
 
+    val gameStats = gamification.stats
+    val gameLevel = gameStats?.currentLevel ?: track.currentLevel
+    val gameXp = gameStats?.totalXp ?: (track.overallProgress * 5000).roundToInt()
+    val gameLevelTitle = gameStats?.levelTitle ?: "Scholar"
+    val gameStreak = gameStats?.streakDays ?: 0
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -277,20 +329,46 @@ private fun ProfileLoaded(
     ) {
         ProfileHeroCard(
             childName = childName,
-            level = child?.currentLevel ?: track.currentLevel,
-            overallProgress = track.overallProgress,
+            level = gameLevel,
+            levelTitle = gameLevelTitle,
+            totalXp = gameXp,
+            streakDays = gameStreak,
         )
 
         SectionHeader(title = "Stats")
         StatsGrid(
             attendanceRate = attendanceRate,
             markPct = markPct,
-            xpPoints = (track.overallProgress * 5000).roundToInt(),
+            xpPoints = gameXp,
             quizzesDone = academics.quizzes.size,
+            streakDays = gameStreak,
+            houseName = gamification.house?.name,
+            leaderboardRank = gamification.leaderboard?.myRank,
         )
 
-        SectionHeader(title = "Badges", action = "All", onAction = {})
-        BadgesRow(badges = track.badges)
+        GamificationCollapsibleSection(
+            level = gameLevel,
+            levelTitle = gameLevelTitle,
+            totalXp = gameXp,
+            streakDays = gameStreak,
+            houseName = gamification.house?.name,
+            leaderboardRank = gamification.leaderboard?.myRank,
+            badges = gamification.badges,
+            fallbackBadges = track.badges,
+            quests = gamification.quests,
+            activeBoosts = gamification.activeBoosts,
+            events = gamification.events,
+            rewards = gamification.rewards,
+            currentXp = gameStats?.currentXp ?: 0,
+            redemptions = gamification.redemptions,
+            xpHistory = gamification.xpHistory,
+            classGoals = gamification.classGoals,
+            onRedeemReward = { rewardId ->
+                state.selectedChild?.id?.let { childId ->
+                    onRedeemReward(childId, rewardId)
+                }
+            },
+        )
 
         SectionHeader(title = "Account")
         AccountCard(
@@ -312,10 +390,12 @@ private fun ProfileLoaded(
 private fun ProfileHeroCard(
     childName: String,
     level: Int,
-    overallProgress: Float,
+    levelTitle: String,
+    totalXp: Int,
+    streakDays: Int,
 ) {
-    val xp = (overallProgress * 5000).roundToInt()
     val xpMax = 5000
+    val xpProgress = (totalXp.toFloat() / xpMax.toFloat()).coerceIn(0f, 1f)
 
     Column(
         modifier = Modifier
@@ -362,7 +442,7 @@ private fun ProfileHeroCard(
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "Student",
+                    text = if (streakDays > 0) "\uD83D\uDD25 $streakDays day streak" else "Student",
                     style = VTypography.caption.copy(fontSize = 13.sp),
                     color = VColors.white.copy(alpha = 0.7f),
                     fontWeight = FontWeight.Medium,
@@ -375,7 +455,7 @@ private fun ProfileHeroCard(
                         .padding(horizontal = 12.dp, vertical = 5.dp),
                 ) {
                     Text(
-                        text = "🏆 Level $level Scholar",
+                        text = "🏆 Level $level $levelTitle",
                         style = VTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
                         color = VColors.white,
                     )
@@ -391,12 +471,12 @@ private fun ProfileHeroCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "Level $level — Scholar",
+                text = "Level $level — $levelTitle",
                 style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
                 color = VColors.white,
             )
             Text(
-                text = "$xp / $xpMax XP",
+                text = "$totalXp / $xpMax XP",
                 style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
                 color = VColors.white.copy(alpha = 0.8f),
             )
@@ -413,7 +493,7 @@ private fun ProfileHeroCard(
         ) {
             Box(
                 modifier = Modifier
-                    .fillMaxWidth((overallProgress).coerceIn(0f, 1f))
+                    .fillMaxWidth(xpProgress)
                     .height(8.dp)
                     .clip(VShapes.full)
                     .background(VColors.mint),
@@ -432,20 +512,23 @@ private fun StatsGrid(
     markPct: Int?,
     xpPoints: Int,
     quizzesDone: Int,
+    streakDays: Int = 0,
+    houseName: String? = null,
+    leaderboardRank: Int? = null,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             StatCard(
                 value = attendanceRate?.let { "$it%" } ?: "—",
                 label = "Attendance",
-                trend = "↑ 2% this month",
+                trend = null,
                 trendColor = VColors.mint,
                 modifier = Modifier.weight(1f),
             )
             StatCard(
                 value = markPct?.let { "$it%" } ?: "—",
                 label = "Avg Marks",
-                trend = "↑ 5% this term",
+                trend = null,
                 trendColor = VColors.mint,
                 modifier = Modifier.weight(1f),
             )
@@ -454,14 +537,30 @@ private fun StatsGrid(
             StatCard(
                 value = formatCompact(xpPoints),
                 label = "XP Points",
-                trend = "↑ ${formatCompact((xpPoints * 0.12f).roundToInt())} this week",
+                trend = null,
                 trendColor = VColors.mint,
                 modifier = Modifier.weight(1f),
             )
             StatCard(
-                value = quizzesDone.toString(),
-                label = "Quizzes Done",
-                trend = "↑ 3 this week",
+                value = if (streakDays > 0) "$streakDays" else "—",
+                label = "Day Streak",
+                trend = null,
+                trendColor = VColors.mint,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            StatCard(
+                value = houseName ?: "—",
+                label = "House",
+                trend = null,
+                trendColor = VColors.mint,
+                modifier = Modifier.weight(1f),
+            )
+            StatCard(
+                value = leaderboardRank?.let { "#$it" } ?: "—",
+                label = "Rank",
+                trend = null,
                 trendColor = VColors.mint,
                 modifier = Modifier.weight(1f),
             )
@@ -473,7 +572,7 @@ private fun StatsGrid(
 private fun StatCard(
     value: String,
     label: String,
-    trend: String,
+    trend: String? = null,
     trendColor: Color,
     modifier: Modifier = Modifier,
 ) {
@@ -498,11 +597,13 @@ private fun StatCard(
             fontWeight = FontWeight.SemiBold,
             letterSpacing = 0.4.sp,
         )
-        Text(
-            trend,
-            style = VTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
-            color = trendColor,
-        )
+        if (trend != null) {
+            Text(
+                trend,
+                style = VTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
+                color = trendColor,
+            )
+        }
     }
 }
 
@@ -595,6 +696,508 @@ private fun pickBadgeIcon(iconName: String): ImageVector = when (iconName.lowerc
     "check", "checkcircle" -> VIcons.Check
     "clipboard" -> VIcons.ClipboardList
     else -> VIcons.Star
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GAMIFICATION — badges from gamification API
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun GameBadgesRow(badges: List<GameBadge>) {
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        items(badges.size) { idx ->
+            val badge = badges[idx]
+            GameBadgeCard(badge = badge)
+        }
+    }
+}
+
+@Composable
+private fun GameBadgeCard(badge: GameBadge) {
+    Column(
+        modifier = Modifier
+            .width(152.dp)
+            .clip(VShapes.xl)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.xl)
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(64.dp)
+                .clip(CircleShape)
+                .background(VColors.violetSoft)
+                .border(
+                    width = 3.dp,
+                    brush = Brush.linearGradient(listOf(VColors.violet, VColors.mint, VColors.violet)),
+                    shape = CircleShape,
+                )
+                .padding(14.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = pickBadgeIcon(badge.badgeIcon),
+                contentDescription = null,
+                tint = VColors.violet,
+                modifier = Modifier.size(26.dp),
+            )
+        }
+        Text(
+            badge.badgeName,
+            style = VTypography.body.copy(fontWeight = FontWeight.ExtraBold, fontSize = 14.sp),
+            color = VColors.ink,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            text = badge.badgeRarity,
+            style = VTypography.caption.copy(fontWeight = FontWeight.ExtraBold, fontSize = 10.sp),
+            color = VColors.mint,
+            letterSpacing = 0.5.sp,
+        )
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GAMIFICATION — quests
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun QuestsRow(quests: List<StudentQuest>) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.xl)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.xl)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        quests.forEach { quest ->
+            QuestRow(quest = quest)
+        }
+    }
+}
+
+@Composable
+private fun QuestRow(quest: StudentQuest) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                quest.questName,
+                style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 14.sp),
+                color = VColors.ink,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = if (quest.completed) "Done" else "${quest.progress}/${quest.target}",
+                style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp),
+                color = if (quest.completed) VColors.mint else VColors.violet,
+            )
+        }
+        val progress = if (quest.target > 0) (quest.progress.toFloat() / quest.target).coerceIn(0f, 1f) else 0f
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(6.dp)
+                .clip(VShapes.full)
+                .background(VColors.lineSoft),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(progress)
+                    .height(6.dp)
+                    .clip(VShapes.full)
+                    .background(if (quest.completed) VColors.mint else VColors.violet),
+            )
+        }
+        Text(
+            text = "+${quest.xpReward} XP",
+            style = VTypography.caption.copy(fontSize = 11.sp),
+            color = VColors.ink3,
+        )
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GAMIFICATION — active boosts
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun BoostsRow(boosts: List<XpBoost>) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.xl)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.xl)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        boosts.forEach { boost ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(VShapes.md)
+                        .background(VColors.violetSoft),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = VIcons.Sparkles,
+                        contentDescription = null,
+                        tint = VColors.violet,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        boost.boostType.replaceFirstChar { it.uppercase() },
+                        style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 14.sp),
+                        color = VColors.ink,
+                    )
+                    Text(
+                        "${boost.multiplier}x XP multiplier",
+                        style = VTypography.caption.copy(fontSize = 12.sp),
+                        color = VColors.ink3,
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GAMIFICATION — seasonal events
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun EventsRow(events: List<SeasonalEvent>) {
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        items(events.size) { idx ->
+            val event = events[idx]
+            Column(
+                modifier = Modifier
+                    .width(200.dp)
+                    .clip(VShapes.xl)
+                    .background(
+                        Brush.linearGradient(
+                            listOf(VColors.violetSoft, VColors.mintSoft),
+                        ),
+                    )
+                    .border(1.dp, VColors.line, VShapes.xl)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    event.name,
+                    style = VTypography.body.copy(fontWeight = FontWeight.ExtraBold, fontSize = 15.sp),
+                    color = VColors.ink,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    "${event.startDate} - ${event.endDate}",
+                    style = VTypography.caption.copy(fontSize = 11.sp),
+                    color = VColors.ink3,
+                )
+                if (event.isActive) {
+                    Box(
+                        modifier = Modifier
+                            .clip(VShapes.full)
+                            .background(VColors.mint)
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                    ) {
+                        Text(
+                            "Active",
+                            style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 10.sp),
+                            color = VColors.white,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GAMIFICATION — rewards shop
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun RewardsRow(
+    rewards: List<Reward>,
+    currentXp: Int,
+    onRedeem: (String) -> Unit,
+) {
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        items(rewards.size) { idx ->
+            val reward = rewards[idx]
+            RewardCard(reward = reward, currentXp = currentXp, onRedeem = onRedeem)
+        }
+    }
+}
+
+@Composable
+private fun RewardCard(
+    reward: Reward,
+    currentXp: Int,
+    onRedeem: (String) -> Unit,
+) {
+    val canAfford = currentXp >= reward.xpCost && reward.isActive
+    Column(
+        modifier = Modifier
+            .width(160.dp)
+            .clip(VShapes.xl)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.xl)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(VShapes.md)
+                .background(VColors.violetSoft),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = VIcons.Star,
+                contentDescription = null,
+                tint = VColors.violet,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+        Text(
+            reward.name,
+            style = VTypography.body.copy(fontWeight = FontWeight.ExtraBold, fontSize = 14.sp),
+            color = VColors.ink,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            reward.description,
+            style = VTypography.caption.copy(fontSize = 11.sp),
+            color = VColors.ink3,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "${reward.xpCost} XP",
+                style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp),
+                color = if (canAfford) VColors.mint else VColors.ink3,
+            )
+            if (reward.stockRemaining != null && reward.stockRemaining!! <= 0) {
+                Text(
+                    "Out of stock",
+                    style = VTypography.caption.copy(fontSize = 10.sp),
+                    color = VColors.error,
+                )
+            } else if (canAfford) {
+                Box(
+                    modifier = Modifier
+                        .clip(VShapes.full)
+                        .background(VColors.violet)
+                        .clickable { onRedeem(reward.id) }
+                        .padding(horizontal = 12.dp, vertical = 5.dp),
+                ) {
+                    Text(
+                        "Redeem",
+                        style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                        color = VColors.white,
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GAMIFICATION — redemption history
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun RedemptionsRow(redemptions: List<RewardRedemption>) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.xl)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.xl)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        redemptions.forEach { redemption ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        redemption.rewardName,
+                        style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 14.sp),
+                        color = VColors.ink,
+                    )
+                    Text(
+                        "-${redemption.xpSpent} XP · ${redemption.createdAt.take(10)}",
+                        style = VTypography.caption.copy(fontSize = 11.sp),
+                        color = VColors.ink3,
+                    )
+                }
+                val statusColor = when (redemption.status.uppercase()) {
+                    "APPROVED", "FULFILLED" -> VColors.mint
+                    "REJECTED" -> VColors.error
+                    else -> VColors.gold
+                }
+                Box(
+                    modifier = Modifier
+                        .clip(VShapes.full)
+                        .background(statusColor.copy(alpha = 0.15f))
+                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                ) {
+                    Text(
+                        redemption.status,
+                        style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 10.sp),
+                        color = statusColor,
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GAMIFICATION — XP history
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun XpHistoryRow(history: List<XpHistoryEntry>) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.xl)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.xl)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        history.take(10).forEach { entry ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        entry.reason,
+                        style = VTypography.body.copy(fontWeight = FontWeight.Medium, fontSize = 13.sp),
+                        color = VColors.ink,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (entry.source.isNotBlank()) {
+                        Text(
+                            entry.source.replace("_", " ").replaceFirstChar { it.uppercase() },
+                            style = VTypography.caption.copy(fontSize = 10.sp),
+                            color = VColors.ink3,
+                        )
+                    }
+                }
+                Text(
+                    "+${entry.amount} XP",
+                    style = VTypography.body.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp),
+                    color = VColors.mint,
+                )
+            }
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GAMIFICATION — class goals
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun ClassGoalsRow(goals: List<ClassGoal>) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.xl)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.xl)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        goals.forEach { goal ->
+            val progress = if (goal.target > 0) (goal.currentProgress.toFloat() / goal.target).coerceIn(0f, 1f) else 0f
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "${goal.goalType}${if (goal.className.isNotBlank()) " · ${goal.className}" else ""}",
+                        style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 14.sp),
+                        color = VColors.ink,
+                    )
+                    Text(
+                        "${goal.currentProgress}/${goal.target}",
+                        style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp),
+                        color = VColors.violet,
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(6.dp)
+                        .clip(VShapes.full)
+                        .background(VColors.lineSoft),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(progress)
+                            .height(6.dp)
+                            .clip(VShapes.full)
+                            .background(VColors.violet),
+                    )
+                }
+                if (goal.reward.isNotBlank()) {
+                    Text(
+                        "Reward: ${goal.reward}",
+                        style = VTypography.caption.copy(fontSize = 11.sp),
+                        color = VColors.ink3,
+                    )
+                }
+            }
+        }
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -693,8 +1296,332 @@ private fun AccountRow(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// GAMIFICATION — COLLAPSIBLE SECTION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun GamificationCollapsibleSection(
+    level: Int,
+    levelTitle: String,
+    totalXp: Int,
+    streakDays: Int,
+    houseName: String?,
+    leaderboardRank: Int?,
+    badges: List<GameBadge>,
+    fallbackBadges: List<com.littlebridge.enrollplus.feature.parent.presentation.AchievementBadge>,
+    quests: List<StudentQuest>,
+    activeBoosts: List<XpBoost>,
+    events: List<SeasonalEvent>,
+    rewards: List<Reward>,
+    currentXp: Int,
+    redemptions: List<RewardRedemption>,
+    xpHistory: List<XpHistoryEntry>,
+    classGoals: List<ClassGoal>,
+    onRedeemReward: (String) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    val activeCount = badges.size + quests.size + activeBoosts.size + events.size +
+        rewards.size + redemptions.size + xpHistory.size + classGoals.size
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.xxl)
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(
+                        VColors.violetSoft,
+                        VColors.surfaceCard,
+                        VColors.surfaceCard,
+                    ),
+                    start = androidx.compose.ui.geometry.Offset(0f, 0f),
+                    end = androidx.compose.ui.geometry.Offset(0f, Float.POSITIVE_INFINITY),
+                )
+            )
+            .border(1.dp, VColors.line, VShapes.xxl),
+    ) {
+        // ── Header (always visible, click to toggle) ──
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = !expanded }
+                .padding(horizontal = 20.dp, vertical = 18.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(VShapes.lg)
+                        .background(VColors.violet.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = VIcons.Sparkles,
+                        contentDescription = null,
+                        tint = VColors.violet,
+                        modifier = Modifier.size(22.dp),
+                    )
+                }
+                Column {
+                    Text(
+                        "Gamification",
+                        style = VTypography.h3.copy(fontSize = 18.sp),
+                        color = VColors.ink,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        buildString {
+                            append("Level $level · $levelTitle")
+                            if (totalXp > 0) append(" · $totalXp XP")
+                            if (streakDays > 0) append(" · $streakDays day streak")
+                        },
+                        style = VTypography.caption.copy(fontSize = 12.sp),
+                        color = VColors.ink3,
+                        fontWeight = FontWeight.Medium,
+                    )
+                }
+            }
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (activeCount > 0) {
+                    Box(
+                        modifier = Modifier
+                            .clip(VShapes.full)
+                            .background(VColors.violet)
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                    ) {
+                        Text(
+                            "$activeCount",
+                            style = VTypography.caption.copy(
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                            ),
+                            color = VColors.white,
+                        )
+                    }
+                }
+                Icon(
+                    imageVector = if (expanded) VIcons.ChevronUp else VIcons.ChevronDown,
+                    contentDescription = if (expanded) "Collapse" else "Expand",
+                    tint = VColors.ink3,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
+        }
+
+        // ── Expandable content ──
+        AnimatedVisibility(
+            visible = expanded,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut(),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                // Quick stats row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    GamificationMiniStat(
+                        label = "Level",
+                        value = "$level",
+                        color = VColors.violet,
+                        modifier = Modifier.weight(1f),
+                    )
+                    GamificationMiniStat(
+                        label = "XP",
+                        value = if (totalXp > 0) formatCompact(totalXp) else "0",
+                        color = VColors.mint,
+                        modifier = Modifier.weight(1f),
+                    )
+                    GamificationMiniStat(
+                        label = "Streak",
+                        value = if (streakDays > 0) "${streakDays}d" else "—",
+                        color = VColors.gold,
+                        modifier = Modifier.weight(1f),
+                    )
+                    GamificationMiniStat(
+                        label = "Rank",
+                        value = leaderboardRank?.let { "#$it" } ?: "—",
+                        color = VColors.sky,
+                        modifier = Modifier.weight(1f),
+                    )
+                    GamificationMiniStat(
+                        label = "House",
+                        value = houseName ?: "—",
+                        color = VColors.coral,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+
+                // Badges
+                GamificationSubSection(title = "Badges") {
+                    if (badges.isNotEmpty()) {
+                        GameBadgesRow(badges = badges)
+                    } else {
+                        BadgesRow(badges = fallbackBadges)
+                    }
+                }
+
+                // Quests
+                GamificationSubSection(title = "Quests") {
+                    if (quests.isNotEmpty()) {
+                        QuestsRow(quests = quests)
+                    } else {
+                        GamificationEmptyState(text = "No active quests. Check back soon!")
+                    }
+                }
+
+                // Active Boosts
+                GamificationSubSection(title = "Active Boosts") {
+                    if (activeBoosts.isNotEmpty()) {
+                        BoostsRow(boosts = activeBoosts)
+                    } else {
+                        GamificationEmptyState(text = "No active XP boosts right now.")
+                    }
+                }
+
+                // Seasonal Events
+                GamificationSubSection(title = "Seasonal Events") {
+                    if (events.isNotEmpty()) {
+                        EventsRow(events = events)
+                    } else {
+                        GamificationEmptyState(text = "No seasonal events running right now.")
+                    }
+                }
+
+                // Rewards Shop
+                GamificationSubSection(title = "Rewards Shop") {
+                    if (rewards.isNotEmpty()) {
+                        RewardsRow(
+                            rewards = rewards,
+                            currentXp = currentXp,
+                            onRedeem = onRedeemReward,
+                        )
+                    } else {
+                        GamificationEmptyState(text = "No rewards available in the shop yet.")
+                    }
+                }
+
+                // Redemption History
+                GamificationSubSection(title = "Redemption History") {
+                    if (redemptions.isNotEmpty()) {
+                        RedemptionsRow(redemptions = redemptions)
+                    } else {
+                        GamificationEmptyState(text = "No reward redemptions yet.")
+                    }
+                }
+
+                // XP History
+                GamificationSubSection(title = "XP History") {
+                    if (xpHistory.isNotEmpty()) {
+                        XpHistoryRow(history = xpHistory)
+                    } else {
+                        GamificationEmptyState(text = "No XP earned yet. Encourage your child to complete activities!")
+                    }
+                }
+
+                // Class Goals
+                GamificationSubSection(title = "Class Goals") {
+                    if (classGoals.isNotEmpty()) {
+                        ClassGoalsRow(goals = classGoals)
+                    } else {
+                        GamificationEmptyState(text = "No class goals set yet.")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GamificationMiniStat(
+    label: String,
+    value: String,
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .clip(VShapes.md)
+            .background(VColors.surfaceTint)
+            .padding(vertical = 10.dp, horizontal = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Text(
+            value,
+            style = VTypography.body.copy(
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+            ),
+            color = color,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            label,
+            style = VTypography.caption.copy(fontSize = 10.sp),
+            color = VColors.ink3,
+            fontWeight = FontWeight.Medium,
+        )
+    }
+}
+
+@Composable
+private fun GamificationSubSection(
+    title: String,
+    content: @Composable () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            title,
+            style = VTypography.caption.copy(
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+            ),
+            color = VColors.ink2,
+        )
+        content()
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // SHARED
 // ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun GamificationEmptyState(text: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.xl)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.xl)
+            .padding(horizontal = 16.dp, vertical = 20.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = text,
+            style = VTypography.caption.copy(fontSize = 13.sp),
+            color = VColors.ink3,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
 
 @Composable
 private fun SectionHeader(

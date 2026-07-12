@@ -1611,6 +1611,34 @@ private fun QuizLeaderboardSheet(viewModel: TeacherSyllabusViewModel) {
                             Text(appString(StringKeys.TC_NO_ATTEMPTS_YET), style = SylType.body.colored(c.ink2))
                         }
                     } else {
+                        // ── Compare Attendance toggle ──
+                        Row(
+                            Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            val ixToggle = remember { MutableInteractionSource() }
+                            Box(
+                                Modifier.size(20.dp).clip(CircleShape)
+                                    .background(if (state.compareAttendance) c.tealDeep else c.cream)
+                                    .border(1.dp, if (state.compareAttendance) c.tealDeep else c.hairline, CircleShape)
+                                    .clickable(interactionSource = ixToggle, indication = null) { viewModel.toggleCompareAttendance() },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                if (state.compareAttendance) Icon(VIcons.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(12.dp))
+                            }
+                            Text(
+                                "Compare Attendance",
+                                style = SylType.body.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
+                            )
+                            if (state.attendanceAnalyticsLoading) {
+                                TeacherSpinner(12.dp)
+                            }
+                        }
+
+                        // Build at-risk lookup by name for matching
+                        val atRiskMap = state.attendanceAnalytics?.atRiskStudents?.associateBy { it.name } ?: emptyMap()
+
                         // Column headers
                         Row(
                             Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
@@ -1621,9 +1649,13 @@ private fun QuizLeaderboardSheet(viewModel: TeacherSyllabusViewModel) {
                             Text(appString(StringKeys.TC_STUDENT), style = SylType.caption.colored(c.ink3).copy(fontSize = 11.sp, fontWeight = FontWeight.Bold), modifier = Modifier.weight(1f))
                             Text(appString(StringKeys.TC_SCORE), style = SylType.caption.colored(c.ink3).copy(fontSize = 11.sp, fontWeight = FontWeight.Bold))
                             Text("%", style = SylType.caption.colored(c.ink3).copy(fontSize = 11.sp, fontWeight = FontWeight.Bold))
+                            if (state.compareAttendance) {
+                                Text("Att", style = SylType.caption.colored(c.ink3).copy(fontSize = 11.sp, fontWeight = FontWeight.Bold), modifier = Modifier.width(36.dp))
+                            }
                         }
 
                         lb.entries.forEach { entry ->
+                            val atRisk = atRiskMap[entry.studentName]
                             Row(
                                 Modifier.fillMaxWidth()
                                     .clip(RoundedCornerShape(8.dp))
@@ -1654,6 +1686,30 @@ private fun QuizLeaderboardSheet(viewModel: TeacherSyllabusViewModel) {
                                         if (entry.percentage >= 50) c.tealDeep else c.dangerInk
                                     ).copy(fontSize = 13.sp, fontWeight = FontWeight.Bold),
                                 )
+                                if (state.compareAttendance) {
+                                    if (atRisk != null) {
+                                        Box(
+                                            Modifier.width(36.dp).clip(RoundedCornerShape(4.dp)).background(c.danger.copy(alpha = 0.12f)),
+                                            contentAlignment = Alignment.Center,
+                                        ) {
+                                            Text("${atRisk.attendancePercentage}%", style = SylType.caption.colored(c.dangerInk).copy(fontSize = 11.sp, fontWeight = FontWeight.Bold))
+                                        }
+                                    } else {
+                                        Text("—", style = SylType.caption.colored(c.ink3).copy(fontSize = 11.sp), modifier = Modifier.width(36.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                    }
+                                }
+                            }
+                        }
+
+                        // Legend for attendance comparison
+                        if (state.compareAttendance && state.attendanceAnalytics != null) {
+                            Row(
+                                Modifier.fillMaxWidth().padding(top = 6.dp, start = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                Box(Modifier.size(8.dp).clip(RoundedCornerShape(2.dp)).background(c.danger.copy(alpha = 0.12f)))
+                                Text("Below 75% attendance", style = SylType.caption.colored(c.ink3).copy(fontSize = 10.sp))
                             }
                         }
                     }

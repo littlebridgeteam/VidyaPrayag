@@ -49,7 +49,15 @@ interface ParentRepository : NotificationFeedRepository {
     suspend fun getSyllabusV2(token: String, childId: String): NetworkResult<ParentSyllabusV2Response>
     suspend fun getQuizList(token: String, childId: String): NetworkResult<ParentQuizListResponse>
     suspend fun getQuizDetail(token: String, quizId: String): NetworkResult<ParentQuizDetailResponse>
-    suspend fun submitQuiz(token: String, request: QuizSubmitRequest): NetworkResult<QuizSubmitResponse>
+    suspend fun submitQuiz(token: String, childId: String, request: QuizSubmitRequest): NetworkResult<QuizSubmitResponse>
     suspend fun getQuizLeaderboard(token: String, childId: String, quizId: String): NetworkResult<QuizLeaderboardResponse>
     suspend fun getQuizResult(token: String, childId: String, quizId: String): NetworkResult<QuizSubmitResponse>
+
+    // ── Skill Test System (AI-generated weekly MCQ tests) ───────────────────
+    suspend fun getSkillTestEligibility(token: String, childId: String): NetworkResult<SkillTestEligibilityResponse>
+    suspend fun startSkillTest(token: String, childId: String): NetworkResult<SkillTestStartResponse>
+    suspend fun submitSkillTestAnswer(token: String, attemptId: String, request: SkillTestAnswerRequest): NetworkResult<SkillTestAnswerResponse>
+    suspend fun getSkillTestBestScore(token: String, childId: String): NetworkResult<SkillTestBestScoreResponse>
+    suspend fun getSkillTestHistory(token: String, childId: String): NetworkResult<SkillTestHistoryResponse>
+    suspend fun getSkillTestReview(token: String, attemptId: String): NetworkResult<SkillTestReviewResponse>
 }

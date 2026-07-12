@@ -28,7 +28,9 @@ data class TeacherProfileUiState(
     // RA-S17: delete-from-profile (replaces the direct People-row Remove button)
     val isRemoving: Boolean = false,
     val removed: Boolean = false,
-    val removeError: String? = null
+    val removeError: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class TeacherProfileViewModel(
@@ -53,7 +55,7 @@ class TeacherProfileViewModel(
             }
             when (val r = repository.getTeacherProfile(token, teacherId)) {
                 is NetworkResult.Success -> {
-                    _state.value = _state.value.copy(isLoading = false, error = null, profile = r.data.data)
+                    _state.value = _state.value.copy(isLoading = false, error = null, profile = r.data.data, isStale = r.isStale, isOffline = r.isOffline)
                 }
                 is NetworkResult.Error -> {
                     AppLogger.e("TeacherProfileVM", "getTeacherProfile error: ${r.message}")

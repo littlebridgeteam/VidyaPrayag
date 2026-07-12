@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
+import com.littlebridge.enrollplus.core.currentTimeMillis
 import com.littlebridge.enrollplus.feature.event.domain.model.*
 import com.littlebridge.enrollplus.feature.event.domain.repository.EventRegistrationRepository
 import com.littlebridge.enrollplus.util.AppLogger
@@ -103,7 +104,7 @@ class ParentEventRegistrationViewModel(
                 return@launch
             }
             val request = RegisterRequest(slotId = slotId, studentId = studentId, attendeeCount = attendeeCount)
-            val clientRequestId = "reg-${kotlin.random.Random.nextLong()}-${eventId}"
+            val clientRequestId = "reg-${currentTimeMillis()}-${eventId}"
             when (val result = repository.register(token, eventId, request, clientRequestId)) {
                 is NetworkResult.Success -> {
                     _state.value = _state.value.copy(

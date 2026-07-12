@@ -21,6 +21,8 @@ data class ParentPulseState(
     val selectedChildId: String? = null,
     val showHistory: Boolean = false,
     val error: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class ParentPulseViewModel(
@@ -70,7 +72,7 @@ class ParentPulseViewModel(
             when (val result = repository.getLatestPulse(token, childId)) {
                 is NetworkResult.Success -> {
                     _state.update {
-                        it.copy(isLoading = false, latestPulse = result.data.data)
+                        it.copy(isLoading = false, latestPulse = result.data.data, isStale = result.isStale, isOffline = result.isOffline)
                     }
                 }
                 is NetworkResult.Error -> {
@@ -94,7 +96,7 @@ class ParentPulseViewModel(
             when (val result = repository.getPulseHistory(token, childId, weeks)) {
                 is NetworkResult.Success -> {
                     _state.update {
-                        it.copy(isLoading = false, pulseHistory = result.data.data.pulses)
+                        it.copy(isLoading = false, pulseHistory = result.data.data.pulses, isStale = result.isStale, isOffline = result.isOffline)
                     }
                 }
                 is NetworkResult.Error -> {

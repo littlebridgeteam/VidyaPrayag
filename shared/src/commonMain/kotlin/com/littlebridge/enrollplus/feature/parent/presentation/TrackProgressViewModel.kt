@@ -52,7 +52,9 @@ data class TrackProgressState(
     val emotionalIntelligence: Map<String, Float> = emptyMap(),
     val playIndicators: List<PlayIndicator> = emptyList(),
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class TrackProgressViewModel(
@@ -111,7 +113,9 @@ class TrackProgressViewModel(
                                             imageUrl = p.image.orEmpty(),
                                             isMet = p.status.equals("MET", ignoreCase = true),
                                         )
-                                    }
+                                    },
+                                    isStale = result.isStale,
+                                    isOffline = result.isOffline,
                                 )
                             }
                         }

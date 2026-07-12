@@ -40,6 +40,8 @@ data class TeacherLeaveUiState(
     val pendingCount: Int = 0,
     val isLoading: Boolean = false,
     val error: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 /** Transient result of a one-shot action (apply leave / change password). */
@@ -97,6 +99,8 @@ class TeacherProfileActionsViewModel(
                             isLoading = false,
                             requests = data.requests,
                             pendingCount = data.pendingCount,
+                            isStale = result.isStale,
+                            isOffline = result.isOffline,
                         )
                     }
                 }

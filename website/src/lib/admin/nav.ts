@@ -29,7 +29,8 @@ import {
   IconPtm,
   IconPace,
   IconMessage,
-  IconPlatform,
+  IconTrophy,
+  IconExport,
 } from "@/components/admin/icons";
 
 export interface NavItem {
@@ -68,7 +69,8 @@ export const ADMIN_NAV: NavItem[] = [
   { href: "/admin/link-requests", label: "Link Requests", icon: IconLink },
   { href: "/admin/branding", label: "Branding Kit", icon: IconBranding },
   { href: "/admin/pace-alerts", label: "Pace Alerts", icon: IconPace },
-  { href: "/platform", label: "Platform QA", icon: IconPlatform, superAdminOnly: true, external: true },
+  { href: "/admin/gamification", label: "Gamification", icon: IconTrophy },
+  { href: "/admin/records", label: "Records & Exports", icon: IconExport },
   { href: "/admin/settings", label: "Settings", icon: IconSettings },
   { href: "/admin/language", label: "Language", icon: IconLanguage, superAdminOnly: true },
   { href: "/admin/academics", label: "Academics", icon: IconBook },

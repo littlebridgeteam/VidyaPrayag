@@ -1,5 +1,7 @@
 package com.littlebridge.enrollplus.feature.admin.data.repository
 
+import com.littlebridge.enrollplus.core.cache.CacheManager
+import com.littlebridge.enrollplus.core.cache.cacheFirstNetworkResult
 import com.littlebridge.enrollplus.core.model.ApiResponse
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.feature.admin.data.remote.StudentsApi
@@ -13,11 +15,12 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.TeacherProfileDto
 import com.littlebridge.enrollplus.feature.admin.domain.repository.StudentsRepository
 
 class StudentsRepositoryImpl(
-    private val api: StudentsApi
+    private val api: StudentsApi,
+    private val cache: CacheManager,
 ) : StudentsRepository {
 
     override suspend fun getStudents(token: String): NetworkResult<ApiResponse<StudentListResponse>> =
-        api.getStudents(token)
+        cacheFirstNetworkResult(cache, "admin_students", ApiResponse.serializer(StudentListResponse.serializer())) { api.getStudents(token) }
 
     override suspend fun createStudent(token: String, request: CreateStudentRequest): NetworkResult<ApiResponse<StudentDto>> =
         api.createStudent(token, request)
@@ -29,8 +32,8 @@ class StudentsRepositoryImpl(
         api.deleteStudent(token, studentId)
 
     override suspend fun getStudentProfile(token: String, studentId: String): NetworkResult<ApiResponse<StudentProfileDto>> =
-        api.getStudentProfile(token, studentId)
+        cacheFirstNetworkResult(cache, "admin_student_profile_$studentId", ApiResponse.serializer(StudentProfileDto.serializer())) { api.getStudentProfile(token, studentId) }
 
     override suspend fun getTeacherProfile(token: String, teacherId: String): NetworkResult<ApiResponse<TeacherProfileDto>> =
-        api.getTeacherProfile(token, teacherId)
+        cacheFirstNetworkResult(cache, "admin_teacher_profile_$teacherId", ApiResponse.serializer(TeacherProfileDto.serializer())) { api.getTeacherProfile(token, teacherId) }
 }

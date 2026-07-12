@@ -4,6 +4,8 @@
  */
 package com.littlebridge.enrollplus.feature.admin.data.repository
 
+import com.littlebridge.enrollplus.core.cache.CacheManager
+import com.littlebridge.enrollplus.core.cache.cacheFirstNetworkResult
 import com.littlebridge.enrollplus.core.model.ApiResponse
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.feature.admin.data.remote.AcademicCalendarPlatformApi
@@ -16,11 +18,12 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.UpdateCalendarEven
 import com.littlebridge.enrollplus.feature.admin.domain.repository.AcademicCalendarPlatformRepository
 
 class AcademicCalendarPlatformRepositoryImpl(
-    private val api: AcademicCalendarPlatformApi
+    private val api: AcademicCalendarPlatformApi,
+    private val cache: CacheManager,
 ) : AcademicCalendarPlatformRepository {
 
     override suspend fun getDashboard(token: String): NetworkResult<ApiResponse<CalendarDashboardDto>> =
-        api.getDashboard(token)
+        cacheFirstNetworkResult(cache, "admin_calendar_dashboard", ApiResponse.serializer(CalendarDashboardDto.serializer())) { api.getDashboard(token) }
 
     override suspend fun getEvents(
         token: String,
@@ -28,10 +31,10 @@ class AcademicCalendarPlatformRepositoryImpl(
         status: String?,
         type: String?
     ): NetworkResult<ApiResponse<CalendarEventsListResponse>> =
-        api.getEvents(token, month, status, type)
+        cacheFirstNetworkResult(cache, "admin_calendar_events_${month ?: "all"}_${status ?: "all"}_${type ?: "all"}", ApiResponse.serializer(CalendarEventsListResponse.serializer())) { api.getEvents(token, month, status, type) }
 
     override suspend fun getEvent(token: String, eventId: String): NetworkResult<ApiResponse<AcademicCalendarEventDto>> =
-        api.getEvent(token, eventId)
+        cacheFirstNetworkResult(cache, "admin_calendar_event_$eventId", ApiResponse.serializer(AcademicCalendarEventDto.serializer())) { api.getEvent(token, eventId) }
 
     override suspend fun createEvent(token: String, request: CreateCalendarEventRequest): NetworkResult<ApiResponse<AcademicCalendarEventDto>> =
         api.createEvent(token, request)
