@@ -29,7 +29,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
@@ -37,7 +36,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -62,12 +60,19 @@ import com.littlebridge.enrollplus.feature.library.domain.model.LibraryBookDto
 import com.littlebridge.enrollplus.ui.v2.components.QrCodeImage
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
+import com.littlebridge.enrollplus.ui.v2.components.VBottomSheet
+import com.littlebridge.enrollplus.ui.v2.components.VBottomSheetHeader
+import com.littlebridge.enrollplus.ui.v2.components.VButton
+import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.components.VEmptyState
 import com.littlebridge.enrollplus.platform.rememberShareHelper
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.util.nowMinutesOfDay
 
 // ── UIX-001: Book Shelf View ─────────────────────────────────────────────────
 
@@ -80,7 +85,7 @@ fun ViewModeToggle(viewMode: LibraryViewMode, onModeChange: (LibraryViewMode) ->
         LibraryViewMode.entries.forEach { mode ->
             val sel = viewMode == mode
             Box(Modifier.clip(RoundedCornerShape(6.dp)).background(if (sel) c.accent else Color.Transparent).clickable { onModeChange(mode) }.padding(horizontal = 10.dp, vertical = 6.dp)) {
-                Text(mode.name, style = VTheme.type.caption.colored(if (sel) c.background else c.ink2), fontWeight = if (sel) FontWeight.SemiBold else FontWeight.Normal)
+                Text(when (mode) { LibraryViewMode.GRID -> appString(StringKeys.LIB_UIX_GRID); LibraryViewMode.LIST -> appString(StringKeys.LIB_UIX_LIST); LibraryViewMode.SHELF -> appString(StringKeys.LIB_UIX_SHELF) }, style = VTheme.type.caption.colored(if (sel) c.background else c.ink2), fontWeight = if (sel) FontWeight.SemiBold else FontWeight.Normal)
             }
         }
     }
@@ -112,7 +117,7 @@ fun AvailabilityTimelineBadge(nextAvailableDate: String?, reservationCount: Int 
     if (nextAvailableDate == null) return
     val days = parseDaysRemaining(nextAvailableDate)
     val tone = if (days <= 7) VBadgeTone.Warning else VBadgeTone.Neutral
-    val text = buildString { if (days <= 0) append("Available soon") else append("Available in ~${days}d"); if (reservationCount > 0) append(" ($reservationCount ahead)") }
+    val text = buildString { if (days <= 0) append(appString(StringKeys.LIB_UIX_AVAILABLE_SOON)) else append(appString(StringKeys.LIB_UIX_AVAILABLE_IN, "days" to days)); if (reservationCount > 0) append(" " + appString(StringKeys.LIB_UIX_AHEAD, "count" to reservationCount)) }
     VBadge(text = text, tone = tone, modifier = modifier)
 }
 
@@ -124,7 +129,7 @@ fun ReadingStatsChart(monthlyCounts: List<Pair<String, Int>>, categoryDistributi
     var tab by remember { mutableStateOf(0) }
     Column(modifier) {
         Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            listOf("Monthly", "Categories").forEachIndexed { idx, label ->
+            listOf(appString(StringKeys.LIB_UIX_MONTHLY), appString(StringKeys.LIB_UIX_CATEGORIES)).forEachIndexed { idx, label ->
                 VBadge(text = label, tone = if (tab == idx) VBadgeTone.Accent else VBadgeTone.Neutral, modifier = Modifier.clickable { tab = idx })
             }
         }
@@ -135,7 +140,7 @@ fun ReadingStatsChart(monthlyCounts: List<Pair<String, Int>>, categoryDistributi
 @Composable
 private fun MonthlyBarChart(data: List<Pair<String, Int>>) {
     val c = VTheme.colors
-    if (data.isEmpty()) { Text("No data", style = VTheme.type.caption.colored(c.ink3)); return }
+    if (data.isEmpty()) { Text(appString(StringKeys.LIB_UIX_NO_DATA), style = VTheme.type.caption.colored(c.ink3)); return }
     val mv = data.maxOf { it.second }.coerceAtLeast(1)
     Row(Modifier.fillMaxWidth().height(160.dp).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
         data.forEach { (label, count) ->
@@ -155,7 +160,7 @@ private fun MonthlyBarChart(data: List<Pair<String, Int>>) {
 @Composable
 private fun CategoryPieChart(data: List<Pair<String, Int>>) {
     val c = VTheme.colors
-    if (data.isEmpty()) { Text("No data", style = VTheme.type.caption.colored(c.ink3)); return }
+    if (data.isEmpty()) { Text(appString(StringKeys.LIB_UIX_NO_DATA), style = VTheme.type.caption.colored(c.ink3)); return }
     val total = data.sumOf { it.second }.coerceAtLeast(1)
     val colors = listOf(c.accent, c.successInk, c.warningInk, c.navy, c.accentDeep, c.danger)
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -191,7 +196,7 @@ fun LibraryFab(actions: List<FabAction>, modifier: Modifier = Modifier) {
             }
         }
         FloatingActionButton({ exp = !exp }, containerColor = c.accent, contentColor = c.background) {
-            Icon(if (exp) VIcons.Close else VIcons.Plus, contentDescription = if (exp) "Close" else "Quick actions")
+            Icon(if (exp) VIcons.Close else VIcons.Plus, contentDescription = if (exp) appString(StringKeys.COMMON_BUTTON_CLOSE) else appString(StringKeys.LIB_UIX_QUICK_ACTIONS))
         }
     }
 }
@@ -205,7 +210,7 @@ fun SplitScreenMasterDetail(listContent: @Composable (Modifier, (String) -> Unit
     Row(modifier.fillMaxSize()) {
         listContent(Modifier.weight(0.4f)) { selId = it }
         Box(Modifier.weight(0.6f).fillMaxHeight().background(c.cream).padding(16.dp)) {
-            if (selId != null) detailContent(selId) else Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Select a book", style = VTheme.type.body.colored(c.ink3)) }
+            if (selId != null) detailContent(selId) else Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(appString(StringKeys.LIB_UIX_SELECT_BOOK), style = VTheme.type.body.colored(c.ink3)) }
         }
     }
 }
@@ -237,7 +242,7 @@ fun SwipeableIssueCard(canRenew: Boolean, onReturn: () -> Unit, onRenew: () -> U
     SwipeToDismissBox(st, modifier = modifier, backgroundContent = {
         val s = st.dismissDirection == SwipeToDismissBoxValue.StartToEnd
         Box(Modifier.fillMaxSize().background(if (s) if (canRenew) c.successInk else c.ink3 else c.dangerInk).padding(horizontal = 24.dp), contentAlignment = if (s) Alignment.CenterStart else Alignment.CenterEnd) {
-            Text(if (s) if (canRenew) "Renew" else "Max" else "Return", style = VTheme.type.body.colored(c.background), fontWeight = FontWeight.SemiBold)
+            Text(if (s) if (canRenew) appString(StringKeys.LIB_UIX_RENEW) else appString(StringKeys.LIB_UIX_MAX) else appString(StringKeys.LIB_UIX_RETURN), style = VTheme.type.body.colored(c.background), fontWeight = FontWeight.SemiBold)
         }
     }) { content() }
 }
@@ -250,8 +255,8 @@ fun RecentlyViewedStrip(books: List<LibraryBookDto>, onBookClick: (String) -> Un
     if (books.isEmpty()) return
     Column(modifier) {
         Row(Modifier.fillMaxWidth().padding(bottom = 4.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text("Recently Viewed", style = VTheme.type.bodyStrong.colored(c.ink))
-            Text("Clear", style = VTheme.type.caption.colored(c.ink3), modifier = Modifier.clickable { onClear() })
+            Text(appString(StringKeys.LIB_UIX_RECENTLY_VIEWED), style = VTheme.type.bodyStrong.colored(c.ink))
+            Text(appString(StringKeys.LIB_UIX_CLEAR), style = VTheme.type.caption.colored(c.ink3), modifier = Modifier.clickable { onClear() })
         }
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(books, key = { it.id }) { b ->
@@ -271,9 +276,9 @@ fun RecentlyViewedStrip(books: List<LibraryBookDto>, onBookClick: (String) -> Un
 @Composable
 fun GreetingHeader(userName: String, overdueCount: Int, dueTomorrowCount: Int, reservationReadyCount: Int, modifier: Modifier = Modifier) {
     val c = VTheme.colors
-    val h = remember { java.time.LocalTime.now().hour }
-    val g = when { h < 12 -> "Good morning"; h < 17 -> "Good afternoon"; else -> "Good evening" }
-    val s = when { overdueCount > 0 -> "You have $overdueCount overdue book(s)"; dueTomorrowCount > 0 -> "You have $dueTomorrowCount book(s) due tomorrow"; reservationReadyCount > 0 -> "$reservationReadyCount book(s) ready for pickup"; else -> "Ready to explore?" }
+    val h = remember { nowMinutesOfDay() / 60 }
+    val g = when { h < 12 -> appString(StringKeys.LIB_UIX_GOOD_MORNING); h < 17 -> appString(StringKeys.LIB_UIX_GOOD_AFTERNOON); else -> appString(StringKeys.LIB_UIX_GOOD_EVENING) }
+    val s = when { overdueCount > 0 -> appString(StringKeys.LIB_UIX_OVERDUE_BOOKS, "count" to overdueCount); dueTomorrowCount > 0 -> appString(StringKeys.LIB_UIX_DUE_TOMORROW, "count" to dueTomorrowCount); reservationReadyCount > 0 -> appString(StringKeys.LIB_UIX_READY_FOR_PICKUP, "count" to reservationReadyCount); else -> appString(StringKeys.LIB_UIX_READY_TO_EXPLORE) }
     Column(modifier.fillMaxWidth().semantics { contentDescription = "$g $userName. $s" }) {
         Text("$g, $userName!", style = VTheme.type.h2.colored(c.ink))
         Text(s, style = VTheme.type.caption.colored(if (overdueCount > 0) c.dangerInk else c.ink2))
@@ -288,7 +293,7 @@ fun ExpandableSynopsis(synopsis: String, modifier: Modifier = Modifier) {
     val c = VTheme.colors
     Column(modifier) {
         Text(synopsis, style = VTheme.type.body.colored(c.ink2), maxLines = if (exp) Int.MAX_VALUE else 3, overflow = TextOverflow.Ellipsis)
-        Text(if (exp) "Read less" else "Read more", style = VTheme.type.caption.colored(c.accent), modifier = Modifier.clickable { exp = !exp }.padding(top = 4.dp))
+        Text(if (exp) appString(StringKeys.LIB_UIX_READ_LESS) else appString(StringKeys.LIB_UIX_READ_MORE), style = VTheme.type.caption.colored(c.accent), modifier = Modifier.clickable { exp = !exp }.padding(top = 4.dp))
     }
 }
 
@@ -301,7 +306,7 @@ fun ReadingTimeEstimate(pageCount: Int?, modifier: Modifier = Modifier) {
     val h = kotlin.math.ceil(pageCount / 250.0).toInt()
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
         Text("\u23F1", style = VTheme.type.caption)
-        Text("\u2248 $h hours ($pageCount pages)", style = VTheme.type.caption.colored(c.ink2))
+        Text(appString(StringKeys.LIB_UIX_READING_TIME, "hours" to h, "pages" to pageCount), style = VTheme.type.caption.colored(c.ink2))
     }
 }
 
@@ -312,17 +317,31 @@ fun QrShareDialog(bookId: String, bookTitle: String, onDismiss: () -> Unit, modi
     val c = VTheme.colors
     val shareHelper = rememberShareHelper()
     val deepLink = "vidyaprayag://app/library/book/$bookId"
-    AlertDialog(onDismiss, modifier = modifier, title = { Text(bookTitle) }, text = {
+    VBottomSheet(
+        visible = true,
+        onDismiss = onDismiss,
+        modifier = modifier,
+    ) {
+        VBottomSheetHeader(title = bookTitle)
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Scan to view", style = VTheme.type.caption.colored(c.ink2))
+            Text(appString(StringKeys.LIB_UIX_SCAN_TO_VIEW), style = VTheme.type.caption.colored(c.ink2))
             QrCodeImage(deepLink, size = 200.dp)
         }
-    }, confirmButton = {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TextButton(onClick = { shareHelper.shareText(deepLink, subject = bookTitle) }) { Text("Share") }
-            TextButton(onDismiss) { Text("Close") }
+            VButton(
+                text = appString(StringKeys.COMMON_BUTTON_SHARE),
+                onClick = { shareHelper.shareText(deepLink, subject = bookTitle) },
+                modifier = Modifier.weight(1f),
+                variant = VButtonVariant.Secondary,
+            )
+            VButton(
+                text = appString(StringKeys.COMMON_BUTTON_CLOSE),
+                onClick = onDismiss,
+                modifier = Modifier.weight(1f),
+                variant = VButtonVariant.Ghost,
+            )
         }
-    })
+    }
 }
 
 // ── UIX-021: Coach Marks Overlay ─────────────────────────────────────────────
@@ -334,7 +353,7 @@ fun CoachMarkOverlay(targetText: String, message: String, onDismiss: () -> Unit,
         Column(Modifier.clip(RoundedCornerShape(12.dp)).background(c.card).padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(targetText, style = VTheme.type.bodyStrong.colored(c.accent))
             Text(message, style = VTheme.type.body.colored(c.ink2))
-            Text("Got it", style = VTheme.type.caption.colored(c.accent), fontWeight = FontWeight.SemiBold, modifier = Modifier.clickable { onDismiss() }.align(Alignment.End))
+            Text(appString(StringKeys.LIB_UIX_GOT_IT), style = VTheme.type.caption.colored(c.accent), fontWeight = FontWeight.SemiBold, modifier = Modifier.clickable { onDismiss() }.align(Alignment.End))
         }
     }
 }
@@ -357,16 +376,16 @@ fun ProgressiveFilters(
     var showAdvanced by remember { mutableStateOf(false) }
     Column(modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            VBadge(text = "All", tone = if (selectedCategory == null) VBadgeTone.Accent else VBadgeTone.Neutral, modifier = Modifier.clickable { onCategoryChange(null) })
+            VBadge(text = appString(StringKeys.LIB_UIX_ALL), tone = if (selectedCategory == null) VBadgeTone.Accent else VBadgeTone.Neutral, modifier = Modifier.clickable { onCategoryChange(null) })
             categories.forEach { (id, name) -> VBadge(text = name, tone = if (selectedCategory == id) VBadgeTone.Accent else VBadgeTone.Neutral, modifier = Modifier.clickable { onCategoryChange(id) }) }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            listOf("all" to "All", "available" to "Available").forEach { (k, l) -> VBadge(text = l, tone = if (availability == k) VBadgeTone.Accent else VBadgeTone.Neutral, modifier = Modifier.clickable { onAvailabilityChange(k) }) }
+            listOf("all" to appString(StringKeys.LIB_UIX_ALL), "available" to appString(StringKeys.LIB_UIX_AVAILABLE)).forEach { (k, l) -> VBadge(text = l, tone = if (availability == k) VBadgeTone.Accent else VBadgeTone.Neutral, modifier = Modifier.clickable { onAvailabilityChange(k) }) }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            listOf("newest" to "Newest", "title" to "A-Z", "author" to "Author", "popular" to "Popular").forEach { (k, l) -> VBadge(text = l, tone = if (sortBy == k) VBadgeTone.Accent else VBadgeTone.Neutral, modifier = Modifier.clickable { onSortByChange(k) }) }
+            listOf("newest" to appString(StringKeys.LIB_UIX_SORT_NEWEST), "title" to appString(StringKeys.LIB_UIX_AZ), "author" to appString(StringKeys.LIB_UIX_SORT_AUTHOR), "popular" to appString(StringKeys.LIB_UIX_SORT_POPULAR)).forEach { (k, l) -> VBadge(text = l, tone = if (sortBy == k) VBadgeTone.Accent else VBadgeTone.Neutral, modifier = Modifier.clickable { onSortByChange(k) }) }
         }
-        Text(if (showAdvanced) "Less filters" else "More filters", style = VTheme.type.caption.colored(c.accent), modifier = Modifier.clickable { showAdvanced = !showAdvanced })
+        Text(if (showAdvanced) appString(StringKeys.LIB_UIX_LESS_FILTERS) else appString(StringKeys.LIB_UIX_MORE_FILTERS), style = VTheme.type.caption.colored(c.accent), modifier = Modifier.clickable { showAdvanced = !showAdvanced })
         if (showAdvanced) advancedFilters()
     }
 }
@@ -388,13 +407,13 @@ fun ReadingStreakTracker(currentStreak: Int, longestStreak: Int, modifier: Modif
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text("Reading Streak", style = VTheme.type.bodyStrong.colored(c.ink))
-                    Text("Current: $currentStreak days", style = VTheme.type.caption.colored(flameColor))
-                    Text("Longest: $longestStreak days", style = VTheme.type.caption.colored(c.ink3))
+                    Text(appString(StringKeys.LIB_UIX_READING_STREAK), style = VTheme.type.bodyStrong.colored(c.ink))
+                    Text(appString(StringKeys.LIB_UIX_CURRENT_STREAK, "count" to currentStreak), style = VTheme.type.caption.colored(flameColor))
+                    Text(appString(StringKeys.LIB_UIX_LONGEST_STREAK, "count" to longestStreak), style = VTheme.type.caption.colored(c.ink3))
                 }
                 Text("\uD83D\uDD25", style = VTheme.type.h2.colored(flameColor))
             }
-            if (currentStreak > 0) Text("Don't break the chain!", style = VTheme.type.caption.colored(c.accent))
+            if (currentStreak > 0) Text(appString(StringKeys.LIB_UIX_DONT_BREAK_CHAIN), style = VTheme.type.caption.colored(c.accent))
         }
     }
 }

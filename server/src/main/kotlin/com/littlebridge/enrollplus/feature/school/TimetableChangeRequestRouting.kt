@@ -236,6 +236,7 @@ fun Route.timetableChangeRequestRouting() {
                     body = "${ctx.fullName} requested $kind for ${request.className}-${request.section} ${request.subject}",
                     schoolId = ctx.schoolId,
                     actorId = ctx.userId,
+                    deepLink = "/school/timetable-requests",
                     refType = "timetable_change_request",
                     refId = request.id,
                 )
@@ -390,6 +391,7 @@ fun Route.timetableChangeRequestRouting() {
                     title = "Timetable request approved",
                     body = "Your timetable change request has been approved",
                     schoolId = ctx.schoolId,
+                    deepLink = "/teacher/timetable-requests",
                     refType = "timetable_change_request",
                     refId = reqId.toString(),
                 )
@@ -440,6 +442,7 @@ fun Route.timetableChangeRequestRouting() {
                     title = "Timetable request rejected",
                     body = if (req.adminNote.isNotBlank()) req.adminNote else "Your timetable change request has been rejected",
                     schoolId = ctx.schoolId,
+                    deepLink = "/teacher/timetable-requests",
                     refType = "timetable_change_request",
                     refId = reqId.toString(),
                 )

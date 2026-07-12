@@ -1,6 +1,11 @@
 package com.littlebridge.enrollplus.ui.v2.screens.school
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,16 +15,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,9 +34,15 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
@@ -38,16 +50,29 @@ import com.littlebridge.enrollplus.feature.admin.presentation.InstitutionalProfi
 import com.littlebridge.enrollplus.feature.admin.presentation.InstitutionalProfileViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
-import com.littlebridge.enrollplus.ui.v2.components.VCard
+import com.littlebridge.enrollplus.ui.v2.components.VBottomSheet
+import com.littlebridge.enrollplus.ui.v2.components.VBottomSheetHeader
 import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.components.VProgressRing
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.components.VThemePicker
+import com.littlebridge.enrollplus.ui.v2.components.VLanguagePicker
+import com.littlebridge.enrollplus.feature.i18n.domain.model.SUPPORTED_LANGUAGES
+import com.littlebridge.enrollplus.ui.v2.theme.VThemeRegistry
+import com.littlebridge.enrollplus.core.locale.LocaleManager
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VMotion
+import com.littlebridge.enrollplus.ui.tokens.VShapes
+import com.littlebridge.enrollplus.ui.tokens.VTypography
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -83,6 +108,8 @@ fun SchoolSettingsScreenV2(
     onOpenLibrary: () -> Unit = {},
     // Classes & Subjects — consolidated management (classes, subjects, bell schedule, timetable).
     onOpenClassesSubjects: () -> Unit = {},
+    // Gamification Management — feature flags, badges, rewards, leaderboard, redemptions, boosts.
+    onOpenGamification: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: InstitutionalProfileViewModel = koinViewModel(),
     preferenceRepository: PreferenceRepository = koinInject(),
@@ -90,11 +117,15 @@ fun SchoolSettingsScreenV2(
     val state by viewModel.state.collectAsStateV2()
     val themeMode by preferenceRepository.getThemeMode().collectAsState(initial = "system")
     val customThemeId by preferenceRepository.getCustomThemeId().collectAsState(initial = null)
+    val localeManager = koinInject<LocaleManager>()
+    val currentLocale by localeManager.currentLocale.collectAsState()
     val scope = rememberCoroutineScope()
     SchoolSettingsContent(
         state = state,
         themeMode = themeMode,
         customThemeId = customThemeId,
+        currentLocale = currentLocale,
+        onLanguageSelect = { lang -> localeManager.setLocale(lang) },
         onThemeSelect = { mode, customId ->
             scope.launch {
                 preferenceRepository.setThemeMode(mode)
@@ -111,10 +142,10 @@ fun SchoolSettingsScreenV2(
         onOpenIdCards = onOpenIdCards,
         onOpenLibrary = onOpenLibrary,
         onOpenClassesSubjects = onOpenClassesSubjects,
+        onOpenGamification = onOpenGamification,
         onRetry = viewModel::load,
         modifier = modifier.statusBarsPadding()
-            .imePadding()
-            .navigationBarsPadding(),
+            .imePadding(),
     )
 }
 
@@ -123,6 +154,8 @@ private fun SchoolSettingsContent(
     state: InstitutionalProfileState,
     themeMode: String,
     customThemeId: String?,
+    currentLocale: String,
+    onLanguageSelect: (String) -> Unit,
     onThemeSelect: (String, String?) -> Unit,
     onLogout: () -> Unit,
     onOpenTeachers: () -> Unit,
@@ -134,19 +167,32 @@ private fun SchoolSettingsContent(
     onOpenIdCards: () -> Unit,
     onOpenLibrary: () -> Unit,
     onOpenClassesSubjects: () -> Unit,
+    onOpenGamification: () -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
     val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
-    // RA-21: logout is destructive — gate it behind a confirmation dialog.
     var showLogoutConfirm by remember { mutableStateOf(false) }
+    var showLanguageSheet by remember { mutableStateOf(false) }
+    var showAppearanceSheet by remember { mutableStateOf(false) }
+
+    // Stagger entrance
+    val headerAlpha = remember { Animatable(0f) }
+    val headerOffset = remember { Animatable(20f) }
+    LaunchedEffect(Unit) {
+        headerAlpha.snapTo(0f); headerOffset.snapTo(20f)
+        launch {
+            delay(100)
+            headerAlpha.animateTo(1f, tween(VMotion.durSlower, easing = VMotion.ease))
+            headerOffset.animateTo(0f, tween(VMotion.durSlower, easing = VMotion.ease))
+        }
+    }
 
     VConfirmDialog(
         visible = showLogoutConfirm,
-        title = "Log out?",
+        title = appString(StringKeys.AUTH_LOGOUT),
         message = "You'll be signed out of the admin console and need to sign in again.",
-        confirmLabel = "Log out",
+        confirmLabel = appString(StringKeys.AUTH_LOGOUT),
         onConfirm = {
             showLogoutConfirm = false
             onLogout()
@@ -155,147 +201,183 @@ private fun SchoolSettingsContent(
         icon = VIcons.AlertTriangle,
     )
 
-    Column(
-        modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp)
-            .statusBarsPadding()
-            .imePadding()
-            .navigationBarsPadding()
-            .padding(top = 24.dp, bottom = 140.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+    var isRefreshing by remember { mutableStateOf(false) }
+    LaunchedEffect(state.isLoading) {
+        if (!state.isLoading) isRefreshing = false
+    }
+
+    VPullRefresh(
+        isRefreshing = isRefreshing,
+        onRefresh = { isRefreshing = true; onRetry() },
+        modifier = modifier.fillMaxSize(),
     ) {
-        Text("Settings", style = VTheme.type.h1.colored(c.ink))
+        Column(
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp)
+                .statusBarsPadding()
+                .imePadding()
+                .navigationBarsPadding()
+                .padding(top = 16.dp, bottom = 140.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+        // Premium header
+        Column(
+            modifier = Modifier
+                .graphicsLayer(translationY = headerOffset.value)
+                .alpha(headerAlpha.value),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(7.dp),
+            ) {
+                Box(Modifier.size(5.dp).clip(CircleShape).background(VColors.violet))
+                Text(appString(StringKeys.SETTINGS_TITLE), style = VTypography.accentLabel, color = VColors.violet)
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = buildAnnotatedString {
+                    withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold, color = VColors.ink)) {
+                        append("Settings")
+                    }
+                    withStyle(SpanStyle(fontWeight = FontWeight.Normal, color = VColors.ink2)) {
+                        append(" & Setup")
+                    }
+                },
+                style = VTypography.h2,
+            )
+        }
 
         VStateHost(
             loading = state.isLoading,
             error = state.errorMessage,
-            // Settings always has rows to show; the profile card degrades
-            // gracefully when empty, so this screen is never "empty".
             isEmpty = false,
             onRetry = onRetry,
+            skeleton = { SkeletonList(rows = 6) },
         ) {
-            // ── Institutional profile health (real VM data) ───────────────────
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             InstitutionalProfileHealthCard(state = state, onClick = onOpenProfile)
 
-            // ── Static admin settings rows ─────────────────────────────────────
-            // These mirror Admin.tsx → SettingsScreen. Where there's no backend
-            // endpoint they're labelled "Coming Soon" instead of showing fake data.
             val rows = listOf(
-                // RA-47 — edit the live schools row (name, board, contact,
-                // principal, address) instead of leaving it read-only.
-                //SettingRow(VIcons.School, "Edit institutional profile", "Name, board, contact, principal & address",false, onClick = onOpenProfile),
                 SettingRow(VIcons.Calendar, "Academic year", "Manage term dates & holidays", false, onClick = onOpenAcademicYear),
                 SettingRow(VIcons.BookOpen, "Classes & subjects", "Classes, subjects, bell schedule & timetable", false, onClick = onOpenClassesSubjects),
-                SettingRow(VIcons.Users, "Teacher management", "Add, view & remove teachers",false, onClick = onOpenTeachers),
+                SettingRow(VIcons.UsersGroup, "Teacher management", "Add, view & remove teachers", false, onClick = onOpenTeachers),
                 SettingRow(VIcons.MapPin, "Transport Management", "Routes, vehicles & student assignments", false, onClick = onOpenTransport),
                 SettingRow(VIcons.Sparkles, "Scholarship Management", "Schemes, applications & renewals", false, onClick = onOpenScholarships),
-                SettingRow(VIcons.School, "Branding Kit", "Logo, colors & custom subdomain", false, onClick = onOpenBranding),
+                SettingRow(VIcons.School, "Branding & Photos", "Logo, cover, gallery & your profile picture", false, onClick = onOpenBranding),
                 SettingRow(VIcons.IdCard, "ID Cards", "Templates, generation & PDF export", false, onClick = onOpenIdCards),
                 SettingRow(VIcons.BookOpen, "Library Management", "Catalog, issues, returns & fines", false, onClick = onOpenLibrary),
-                SettingRow(VIcons.Wallet, "Fee structure", "Edit heads & amounts for next cycle ", true),
+                SettingRow(VIcons.Sparkles, "Gamification", "Feature flags, badges, rewards, boosts & analytics", false, onClick = onOpenGamification),
+                SettingRow(VIcons.Wallet, "Fee structure", "Edit heads & amounts for next cycle", true),
                 SettingRow(VIcons.Bell, "Notifications", "Channels & quiet hours", true),
                 SettingRow(VIcons.Download, "Data export", "CSV / PDF / UDISE", true),
                 SettingRow(
                     VIcons.Chat,
                     "Help & support",
-                    "Email ${com.littlebridge.enrollplus.ui.v2.screens.auth.SUPPORT_EMAIL}",
+                    "Email support@vidyaprayag.in",
                     false,
                     onClick = {
                         runCatching {
                             uriHandler.openUri(
-                                "mailto:${com.littlebridge.enrollplus.ui.v2.screens.auth.SUPPORT_EMAIL}" +
+                                "mailto:support@vidyaprayag.in" +
                                     "?subject=VidyaSetu%20Support",
                             )
                         }
                     },
                 ),
-                SettingRow(VIcons.Settings, "Logout", "Sign out of the admin console",false, onClick = { showLogoutConfirm = true }),
+                SettingRow(VIcons.Settings, appString(StringKeys.AUTH_LOGOUT), "Sign out of the admin console", false, onClick = { showLogoutConfirm = true }),
             )
-            Spacer(Modifier.height(0.dp))
-            rows.forEach { row ->
-                VCard(
-                    onClick = if (row.isComingSoon) null else row.onClick
+            rows.forEachIndexed { idx, row ->
+                SettingsCreamCard(
+                    onClick = if (row.isComingSoon) null else row.onClick,
+                    modifier = Modifier.staggeredItemEntrance(idx, true),
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-
-                        Box(
-                            Modifier
-                                .size(40.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(c.ink.copy(alpha = 0.06f)),
-                            contentAlignment = Alignment.Center
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
-                            Icon(
-                                row.icon,
-                                contentDescription = null,
-                                tint = c.ink,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-
-
-                        Column(
-                            Modifier.weight(1f)
-                        ) {
-                            Text(
-                                row.title,
-                                style = VTheme.type.bodyStrong.colored(c.ink)
-                            )
-
-                            Text(
-                                row.sub,
-                                style = VTheme.type.caption
-                                    .colored(c.ink2)
-                                    .copy(fontSize = 11.sp)
-                            )
-                        }
-
-
-                        if (row.isComingSoon) {
                             Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(50))
-                                    .background(c.teal.copy(alpha = 0.12f))
-                                    .padding(
-                                        horizontal = 10.dp,
-                                        vertical = 5.dp
-                                    )
+                                Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(VColors.violetSoft),
+                                contentAlignment = Alignment.Center,
                             ) {
+                                Icon(row.icon, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
+                            }
+                            Column(Modifier.weight(1f)) {
+                                Text(row.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                                Text(row.sub, style = VTypography.caption.copy(fontSize = 11.sp), color = VColors.ink3)
+                            }
+                            if (row.isComingSoon) {
                                 Text(
                                     text = "Coming soon",
-                                    style = VTheme.type.caption
-                                        .colored(c.tealDeep)
-                                        .copy(
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.SemiBold
-                                        )
+                                    style = VTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
+                                    color = VColors.ink3,
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(50))
+                                        .background(VColors.creamDeep)
+                                        .padding(horizontal = 10.dp, vertical = 5.dp),
                                 )
+                            } else {
+                                Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.ink3.copy(alpha = 0.4f), modifier = Modifier.size(16.dp))
                             }
-                        } else {
-                            Icon(
-                                VIcons.ChevronRight,
-                                contentDescription = null,
-                                tint = c.ink.copy(alpha = 0.5f),
-                                modifier = Modifier.size(16.dp)
-                            )
                         }
                     }
-                }
             }
 
-            // ── Appearance / theme picker ─────────────────────────────────────
-            VCard {
-                VThemePicker(
-                    currentMode = themeMode,
-                    currentCustomId = customThemeId,
-                    onSelect = onThemeSelect,
-                )
+            // Language card — opens bottom sheet
+            LanguageSettingCard(
+                currentLocale = currentLocale,
+                onClick = { showLanguageSheet = true },
+            )
+
+            // Appearance card — opens bottom sheet
+            AppearanceSettingCard(
+                currentMode = themeMode,
+                currentCustomId = customThemeId,
+                onClick = { showAppearanceSheet = true },
+            )
             }
+        }
+    }
+
+    if (showLanguageSheet) {
+        VBottomSheet(
+            visible = showLanguageSheet,
+            onDismiss = { showLanguageSheet = false },
+        ) {
+            VBottomSheetHeader(
+                title = appString(StringKeys.SETTINGS_LANGUAGE),
+                onClose = { showLanguageSheet = false },
+            )
+            Spacer(Modifier.height(16.dp))
+            VLanguagePicker(
+                currentLang = currentLocale,
+                onSelect = { lang ->
+                    onLanguageSelect(lang)
+                    showLanguageSheet = false
+                },
+            )
+        }
+    }
+
+    if (showAppearanceSheet) {
+        VBottomSheet(
+            visible = showAppearanceSheet,
+            onDismiss = { showAppearanceSheet = false },
+        ) {
+            VBottomSheetHeader(
+                title = appString(StringKeys.SETTINGS_THEME),
+                onClose = { showAppearanceSheet = false },
+            )
+            Spacer(Modifier.height(16.dp))
+            VThemePicker(
+                currentMode = themeMode,
+                currentCustomId = customThemeId,
+                onSelect = { mode, customId ->
+                    onThemeSelect(mode, customId)
+                    showAppearanceSheet = false
+                },
+            )
         }
     }
 }
@@ -305,7 +387,6 @@ private fun InstitutionalProfileHealthCard(
     state: InstitutionalProfileState,
     onClick: () -> Unit,
 ) {
-    val c = VTheme.colors
     val completionTone = if (state.profileCompletion < 60) VBadgeTone.Warning else VBadgeTone.Success
     val storagePercent = (state.storageUsage * 100f).coerceIn(0f, 100f)
     val visibilityTone = if (state.isPublic) VBadgeTone.Success else VBadgeTone.Neutral
@@ -317,15 +398,22 @@ private fun InstitutionalProfileHealthCard(
         else -> "Complete the essentials to improve trust and discovery."
     }
 
-    VCard(
-        padding = 0.dp,
-        background = c.card,
-        onClick = onClick,
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.lg)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.lg)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ) { onClick() },
     ) {
+        // Header section with violetSoft tint
         Column(
             Modifier
                 .fillMaxWidth()
-                .background(c.teal.copy(alpha = if (c.isNight) 0.12f else 0.08f))
+                .background(VColors.violetSoft.copy(alpha = 0.4f))
                 .padding(16.dp),
         ) {
             Row(
@@ -334,41 +422,18 @@ private fun InstitutionalProfileHealthCard(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Box(
-                    Modifier
-                        .size(44.dp)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(c.tealDeep.copy(alpha = if (c.isNight) 0.24f else 0.12f)),
+                    Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(VColors.violetSoft),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(
-                        VIcons.School,
-                        contentDescription = null,
-                        tint = c.tealDeep,
-                        modifier = Modifier.size(22.dp),
-                    )
+                    Icon(VIcons.School, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(22.dp))
                 }
-
                 Column(Modifier.weight(1f)) {
-                    Text(
-                        profileTitle,
-                        style = VTheme.type.bodyStrong.colored(c.ink),
-                    )
-                    Text(
-                        nextStep,
-                        style = VTheme.type.caption.colored(c.ink2),
-                    )
+                    Text(profileTitle, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                    Text(nextStep, style = VTypography.caption, color = VColors.ink3)
                 }
-
-                Icon(
-                    VIcons.ChevronRight,
-                    contentDescription = null,
-                    tint = c.ink3,
-                    modifier = Modifier.size(20.dp),
-                )
+                Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.ink3.copy(alpha = 0.4f), modifier = Modifier.size(20.dp))
             }
-
             Spacer(Modifier.height(12.dp))
-
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 VBadge(
                     text = visibilityLabel,
@@ -381,6 +446,7 @@ private fun InstitutionalProfileHealthCard(
             }
         }
 
+        // Body section
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(
                 Modifier.fillMaxWidth(),
@@ -394,31 +460,22 @@ private fun InstitutionalProfileHealthCard(
                     tone = completionTone,
                     label = "${state.profileCompletion}%",
                 )
-
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(
                         Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("Profile completion", style = VTheme.type.bodyStrong.colored(c.ink))
-                        Text("${state.profileCompletion}%", style = VTheme.type.dataSm.colored(c.ink2))
+                        Text("Profile completion", style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                        Text("${state.profileCompletion}%", style = VTypography.caption, color = VColors.ink2)
                     }
-                    VProgressBar(
-                        value = state.profileCompletion.toFloat(),
-                        tone = completionTone,
-                        height = 8.dp,
-                    )
-                    Text("School details, visibility, gallery and tour media.", style = VTheme.type.caption.colored(c.ink3))
+                    VProgressBar(value = state.profileCompletion.toFloat(), tone = completionTone, height = 8.dp)
+                    Text("School details, visibility, gallery and tour media.", style = VTypography.caption, color = VColors.ink3)
                 }
             }
 
             Box(
-                Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(c.cream.copy(alpha = if (c.isNight) 0.72f else 1f))
-                    .padding(12.dp),
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(VColors.creamDeep).padding(12.dp),
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(
@@ -426,17 +483,11 @@ private fun InstitutionalProfileHealthCard(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Icon(VIcons.Upload, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(18.dp))
-                            Text("Media storage", style = VTheme.type.bodyStrong.colored(c.ink))
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Icon(VIcons.Upload, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
+                            Text("Media storage", style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                         }
-                        Text(
-                            "${state.storageUsedHuman} / ${state.totalStorageHuman}",
-                            style = VTheme.type.dataSm.colored(c.ink2),
-                        )
+                        Text("${state.storageUsedHuman} / ${state.totalStorageHuman}", style = VTypography.caption, color = VColors.ink2)
                     }
                     VProgressBar(value = storagePercent, tone = VBadgeTone.Arctic, height = 7.dp)
                 }
@@ -460,6 +511,123 @@ private data class SettingRow(
     val icon: ImageVector,
     val title: String,
     val sub: String,
-    val isComingSoon :Boolean,
+    val isComingSoon: Boolean,
     val onClick: (() -> Unit)? = null,
 )
+
+// ── Premium shared primitives ─────────────────────────────────────────────────
+
+@Composable
+private fun LanguageSettingCard(
+    currentLocale: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val selected = SUPPORTED_LANGUAGES.find { it.code == currentLocale } ?: SUPPORTED_LANGUAGES.first()
+    SummarySettingCard(
+        icon = VIcons.Chat,
+        title = appString(StringKeys.SETTINGS_LANGUAGE),
+        value = selected.nativeName,
+        caption = selected.englishName,
+        onClick = onClick,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun AppearanceSettingCard(
+    currentMode: String,
+    currentCustomId: String?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val label = when (currentMode) {
+        "system" -> "System"
+        "light" -> "Light"
+        "dark" -> "Dark"
+        "custom" -> VThemeRegistry.allThemes.find { it.id == currentCustomId }?.displayName ?: "Custom"
+        else -> "System"
+    }
+    SummarySettingCard(
+        icon = VIcons.Settings,
+        title = appString(StringKeys.SETTINGS_THEME),
+        value = label,
+        caption = "Tap to change theme",
+        onClick = onClick,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun SummarySettingCard(
+    icon: ImageVector,
+    title: String,
+    value: String,
+    caption: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    SettingsCreamCard(
+        onClick = onClick,
+        modifier = modifier,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(VColors.violetSoft),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
+            }
+            Column(Modifier.weight(1f)) {
+                Text(title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                Text(value, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.violet)
+                Text(caption, style = VTypography.caption.copy(fontSize = 11.sp), color = VColors.ink3)
+            }
+            Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.ink3.copy(alpha = 0.4f), modifier = Modifier.size(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun SettingsCreamCard(
+    onClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(VShapes.lg)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.lg)
+            .then(
+                if (onClick != null) Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                ) { onClick() } else Modifier
+            )
+            .padding(16.dp),
+    ) { content() }
+}
+
+@Composable
+private fun SettingsStaggeredItem(index: Int, content: @Composable () -> Unit) {
+    val alpha = remember { Animatable(0f) }
+    val offsetY = remember { Animatable(24f) }
+    LaunchedEffect(Unit) {
+        delay(220 + index * 60L)
+        launch { alpha.animateTo(1f, tween(VMotion.durSlower, easing = VMotion.ease)) }
+        launch { offsetY.animateTo(0f, tween(VMotion.durSlower, easing = VMotion.ease)) }
+    }
+    Box(
+        modifier = Modifier
+            .graphicsLayer(translationY = offsetY.value)
+            .alpha(alpha.value),
+    ) { content() }
+}

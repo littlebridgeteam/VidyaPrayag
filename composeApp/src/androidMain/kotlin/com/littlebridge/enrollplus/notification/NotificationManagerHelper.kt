@@ -199,6 +199,8 @@ object NotificationManagerHelper {
         type: String? = null,
         entityId: String? = null,
         schoolId: String? = null,
+        refType: String? = null,
+        refId: String? = null,
         notificationId: Int = nextNotificationId()
     ): Int {
         // Honour the API 33+ runtime POST_NOTIFICATIONS gate and any user
@@ -220,7 +222,7 @@ object NotificationManagerHelper {
             }
         }
 
-        val pendingIntent = buildContentPendingIntent(context, deepLink, type, entityId, schoolId)
+        val pendingIntent = buildContentPendingIntent(context, deepLink, type, entityId, schoolId, refType, refId)
 
         val builder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(com.littlebridge.enrollplus.R.drawable.ic_app_mono)
@@ -279,7 +281,9 @@ object NotificationManagerHelper {
         deepLink: String?,
         type: String?,
         entityId: String?,
-        schoolId: String?
+        schoolId: String?,
+        refType: String? = null,
+        refId: String? = null,
     ): PendingIntent {
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -287,6 +291,8 @@ object NotificationManagerHelper {
             type?.let { putExtra(EXTRA_NOTIFICATION_TYPE, it) }
             entityId?.let { putExtra(EXTRA_ENTITY_ID, it) }
             schoolId?.let { putExtra(EXTRA_SCHOOL_ID, it) }
+            refType?.let { putExtra("refType", it) }
+            refId?.let { putExtra("refId", it) }
             deepLink?.takeIf { it.isNotBlank() }?.let { path ->
                 putExtra(EXTRA_DEEP_LINK, path)
                 normalizeDeepLinkUri(path)?.let { data = it }

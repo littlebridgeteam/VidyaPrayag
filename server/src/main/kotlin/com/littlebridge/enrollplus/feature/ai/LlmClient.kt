@@ -363,7 +363,7 @@ class LlmClient(
                 }
                 install(ContentNegotiation) { json(codec) }
                 install(Logging) { level = LogLevel.NONE }  // never echo prompts/keys
-            }
+            }.also { com.littlebridge.enrollplus.core.HttpClientRegistry.register(it) }
         }
     }
 }

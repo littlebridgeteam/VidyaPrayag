@@ -32,6 +32,7 @@
  *   - schoolDashboardRouting()            — /api/v1/school/dashboard
  *   - adminDashboardRouting()             — /api/admin/dashboard/{summary,analytics,activity}
  *   - adminDashboardOverviewRouting()     — /api/admin/dashboard/overview
+ *   - adminDashboardDigestRouting()       — /api/admin/dashboard/digest
  *   - schoolAnalyticsRouting()            — /api/v1/school/analytics/{overview,class-performance,teacher-performance,student/{id},syllabus-coverage}
  *   - leaveRequestsRouting()              — /api/v1/school/leave-requests[…]
  *   - ptmRouting()                        — /api/v1/school/ptm
@@ -51,8 +52,13 @@
  */
 package com.littlebridge.enrollplus
 
+import com.littlebridge.enrollplus.core.REQUEST_ID_HEADER
+import com.littlebridge.enrollplus.core.RequestIdPlugin
 import com.littlebridge.enrollplus.core.configureErrorHandling
 import com.littlebridge.enrollplus.core.configureJwt
+import com.littlebridge.enrollplus.core.CsrfProtection
+import com.littlebridge.enrollplus.core.HttpClientRegistry
+import com.littlebridge.enrollplus.core.requestIdSafe
 import com.littlebridge.enrollplus.db.DatabaseFactory
 import com.littlebridge.enrollplus.feature.admissions.admissionRouting
 import com.littlebridge.enrollplus.feature.announcements.announcementRouting
@@ -65,13 +71,16 @@ import com.littlebridge.enrollplus.feature.calendar.academicCalendarRouting
 import com.littlebridge.enrollplus.feature.calendar.academicYearRouting
 import com.littlebridge.enrollplus.feature.auth.otpAdminRouting
 import com.littlebridge.enrollplus.feature.config.appStatusRouting
+import com.littlebridge.enrollplus.feature.gamification.gamificationRouting
 import com.littlebridge.enrollplus.feature.config.versionRouting
 import com.littlebridge.enrollplus.feature.devtools.devToolsRouting
+import com.littlebridge.enrollplus.feature.logging.serverLogRouting
 import com.littlebridge.enrollplus.feature.content.landingRouting
 import com.littlebridge.enrollplus.feature.content.supportRouting
 import com.littlebridge.enrollplus.feature.gateway.api.gatewayRouting
 import com.littlebridge.enrollplus.feature.health.healthRouting
 import com.littlebridge.enrollplus.feature.healthcheck.healthCheckRouting
+import com.littlebridge.enrollplus.feature.i18n.i18nRouting
 import com.littlebridge.enrollplus.feature.idcard.idCardRouting
 import com.littlebridge.enrollplus.feature.idcard.IdCardExpiryCheckJob
 import com.littlebridge.enrollplus.feature.library.libraryRouting
@@ -82,6 +91,7 @@ import com.littlebridge.enrollplus.feature.notifications.NotificationScheduler
 import com.littlebridge.enrollplus.feature.notifications.notificationPreferencesRouting
 import com.littlebridge.enrollplus.feature.onboarding.onboardingRouting
 import com.littlebridge.enrollplus.feature.organization.organizationRouting
+import com.littlebridge.enrollplus.feature.platform.platformRouting
 import com.littlebridge.enrollplus.feature.parent.parentDashboardRouting
 import com.littlebridge.enrollplus.feature.parent.parentFeesRouting
 import com.littlebridge.enrollplus.feature.parent.parentLeaveRouting
@@ -104,7 +114,10 @@ import com.littlebridge.enrollplus.feature.pews.pewsRouting
 import com.littlebridge.enrollplus.feature.scheduling.scheduledMessageRouting
 import com.littlebridge.enrollplus.feature.scheduling.MessageDispatchScheduler
 import com.littlebridge.enrollplus.feature.school.adminDashboardRouting
+import com.littlebridge.enrollplus.feature.ai.dailySummaryAdminRouting
+import com.littlebridge.enrollplus.feature.school.adminDashboardDigestRouting
 import com.littlebridge.enrollplus.feature.event.eventRegistrationRouting
+import com.littlebridge.enrollplus.feature.export.exportRouting
 import com.littlebridge.enrollplus.feature.school.adminDashboardOverviewRouting
 import com.littlebridge.enrollplus.feature.school.leaveRequestsRouting
 import com.littlebridge.enrollplus.feature.school.messagesRouting
@@ -135,17 +148,30 @@ import com.littlebridge.enrollplus.feature.teacher.teacherHomeworkRouting
 import com.littlebridge.enrollplus.feature.teacher.teacherLessonPlanRouting
 import com.littlebridge.enrollplus.feature.teacher.teacherLeaveRouting
 import com.littlebridge.enrollplus.feature.teacher.teacherMessagesRouting
+import com.littlebridge.enrollplus.feature.exam.examTimetableRouting
+import com.littlebridge.enrollplus.feature.exam.examSyllabusRouting
+import com.littlebridge.enrollplus.feature.exam.examRequestSyllabusRouting
+import com.littlebridge.enrollplus.feature.exam.ExamReminderJob
 import com.littlebridge.enrollplus.feature.teacher.teacherRouting
 import com.littlebridge.enrollplus.feature.teacher.teacherSelfLeaveRouting
 import com.littlebridge.enrollplus.feature.teacher.teacherStudentRouting
 import com.littlebridge.enrollplus.feature.teacher.teacherSyllabusRouting
 import com.littlebridge.enrollplus.feature.teacher.teacherQuizRouting
 import com.littlebridge.enrollplus.feature.school.syllabusPaceRouting
+import com.littlebridge.enrollplus.feature.skilltest.skillTestRouting
 import com.littlebridge.enrollplus.feature.user.parentRouting
 import com.littlebridge.enrollplus.feature.user.parentMessagesRouting
 import com.littlebridge.enrollplus.feature.user.userDetailsRouting
 import com.littlebridge.enrollplus.feature.user.userProfileRouting
 import com.littlebridge.enrollplus.core.ApiError
+import com.littlebridge.enrollplus.core.applyApiVersionHeaders
+import com.littlebridge.enrollplus.core.EnvConfig
+import com.littlebridge.enrollplus.core.RuntimeEnvironment
+import com.littlebridge.enrollplus.core.openApiRouting
+import com.littlebridge.enrollplus.core.FeatureFlagService
+import com.littlebridge.enrollplus.core.featureFlagRouting
+import com.littlebridge.enrollplus.feature.logging.ServerLogWriter
+import kotlinx.coroutines.runBlocking
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
@@ -160,6 +186,9 @@ import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.server.metrics.micrometer.MicrometerMetrics
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
+import io.micrometer.prometheusmetrics.PrometheusConfig
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.util.Properties
@@ -172,6 +201,8 @@ import java.util.Properties
  */
 private const val MAX_JSON_BODY_BYTES = 1L * 1024 * 1024 // 1 MB
 
+private val appLog = org.slf4j.LoggerFactory.getLogger("Application")
+
 private fun loadRootLocalProperties(): Properties {
     val file = File("local.properties")
 
@@ -183,6 +214,10 @@ private fun loadRootLocalProperties(): Properties {
 }
 
 fun main() {
+    // Create Prometheus registry BEFORE DatabaseFactory.init() so it can be wired into
+    // HikariConfig before the pool is sealed (HikariCP config is immutable once started).
+    val prometheusRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
+    DatabaseFactory.meterRegistry = prometheusRegistry
     DatabaseFactory.init()
     val props = loadRootLocalProperties()
 
@@ -205,8 +240,14 @@ fun main() {
     // traffic, and a missing key simply leaves that provider unconfigured.
     kotlinx.coroutines.runBlocking {
         runCatching { KeyVault.bootstrapFromEnv() }
-            .onFailure { org.slf4j.LoggerFactory.getLogger("Application")
-                .warn("KeyVault bootstrap failed (AI will degrade gracefully): {}", it.message) }
+            .onFailure {
+                if (it is IllegalStateException) throw it
+                appLog.warn("KeyVault bootstrap failed (AI will degrade gracefully): {}", it.message)
+            }
+
+        // Multi-Language: load ServerStrings DB overrides into in-memory cache.
+        runCatching { com.littlebridge.enrollplus.feature.i18n.ServerStringOverrideRepository.loadAllIntoCache() }
+            .onFailure { appLog.warn("ServerString overrides load failed (using compiled defaults): {}", it.message) }
     }
 
     // Start the PEWS daily job (Sense → Reason → Act pipeline; hourly tick).
@@ -224,6 +265,10 @@ fun main() {
     kotlinx.coroutines.runBlocking { runCatching { KillSwitchConfig.reload() } }
     KillSwitchConfig.startPolling(kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default))
 
+    // GAP-019 — general-purpose feature flags (hot-reloadable).
+    kotlinx.coroutines.runBlocking { runCatching { FeatureFlagService.reload() } }
+    FeatureFlagService.startPolling(kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default))
+
     // Start the Transport job scheduler (GPS staleness check + daily attendance finalization).
     com.littlebridge.enrollplus.feature.transport.TransportJobScheduler.start(
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)
@@ -240,19 +285,50 @@ fun main() {
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)
     )
 
+    // Start the Skill Test job scheduler (weekly AI question generation + daily old question purge).
+    com.littlebridge.enrollplus.feature.skilltest.SkillTestJobScheduler.start(
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)
+    )
+
+    // Start the Exam Reminder job (evening-before exam reminders, 6 PM IST).
+    ExamReminderJob.start(
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)
+    )
+
     // Register event-driven cache invalidation for library (spec §17).
     com.littlebridge.enrollplus.feature.library.LibraryCacheInit.register()
 
-    embeddedServer(
+    // GAP-017: Graceful shutdown — on JVM SIGTERM/SIGINT, stop accepting new
+    // requests, close all registered HttpClients, and close the HikariCP pool
+    // so in-flight connections are returned cleanly instead of leaked.
+    val server = embeddedServer(
         Netty,
         port = port,
         host = host,
         module = Application::module
-    ).start(wait = true)
+    )
+
+    Runtime.getRuntime().addShutdownHook(Thread {
+        appLog.info("Shutdown hook triggered — gracefully stopping server...")
+        runBlocking {
+            runCatching { server.stop(gracePeriodMillis = 5_000, timeoutMillis = 10_000) }
+        }
+        runCatching { HttpClientRegistry.closeAll() }
+        runCatching { DatabaseFactory.readReplicaDataSource?.close() }
+        runCatching { DatabaseFactory.hikariDataSource?.close() }
+        appLog.info("Shutdown complete")
+    })
+
+    server.start(wait = true)
 }
 
 fun Application.module() {
     install(IgnoreTrailingSlash)
+
+    install(RequestIdPlugin)
+
+    // Load persisted logging toggle state from app_config so it survives restarts.
+    runBlocking { ServerLogWriter.initFromConfig() }
 
     // RA-36: reject oversized JSON bodies before they are buffered into memory.
     // Multipart uploads (media route) are exempt — they enforce their own 25 MB
@@ -274,30 +350,66 @@ fun Application.module() {
         }
     }
 
+    // HTTP request/response logging → ServerLogWriter (structured DB log for
+    // the super-admin Log Viewer). Non-blocking, fire-and-forget.
+    intercept(ApplicationCallPipeline.Monitoring) {
+        val startTime = System.currentTimeMillis()
+        val method = call.request.httpMethod.value
+        val uri = call.request.uri
+        val actorId = call.principal<io.ktor.server.auth.jwt.JWTPrincipal>()?.payload?.subject
+        val rid = call.requestIdSafe()
+
+        proceed()
+
+        val durationMs = System.currentTimeMillis() - startTime
+        val status = call.response.status()?.value ?: 0
+        val level = when {
+            status >= 500 -> "ERROR"
+            status >= 400 -> "WARN"
+            else -> "INFO"
+        }
+        runCatching {
+            ServerLogWriter.write(
+                level = level,
+                category = "http",
+                message = "$method $uri → $status (${durationMs}ms)",
+                actorId = actorId?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() },
+                endpoint = "$method $uri",
+                statusCode = status,
+                durationMs = durationMs,
+                details = mapOf(
+                    "method" to method,
+                    "uri" to uri,
+                    "status" to status,
+                    "duration_ms" to durationMs,
+                    "request_id" to rid,
+                ),
+            )
+        }
+    }
+
     install(CORS) {
-        // RA-37: open CORS (anyHost) is fine in dev but in production lets any
-        // origin script authenticated cross-origin calls with a captured bearer
-        // token. In prod (DATABASE_URL present) we lock to an explicit allow-list
-        // from CORS_ALLOWED_ORIGINS (comma-separated host[:port], optionally with
-        // scheme). Only dev/local falls back to anyHost().
-        val isProduction = System.getenv("DATABASE_URL")?.isNotBlank() == true
-        val configuredOrigins = System.getenv("CORS_ALLOWED_ORIGINS")
+        val isProduction = RuntimeEnvironment.isProduction
+        val configuredOrigins = EnvConfig.get("CORS_ALLOWED_ORIGINS")
             ?.split(",")
             ?.map { it.trim() }
             ?.filter { it.isNotBlank() }
             .orEmpty()
-        if (isProduction && configuredOrigins.isNotEmpty()) {
-            configuredOrigins.forEach { origin ->
-                // Accept "https://app.example.com", "app.example.com" or with a port.
-                val withoutScheme = origin.substringAfter("://", origin)
-                val scheme = if (origin.contains("://")) origin.substringBefore("://") else null
-                val host = withoutScheme.substringBefore(":")
-                val schemes = scheme?.let { listOf(it) } ?: listOf("https", "http")
-                allowHost(host, schemes = schemes)
+        if (isProduction) {
+            if (configuredOrigins.isNotEmpty()) {
+                configuredOrigins.forEach { origin ->
+                    val withoutScheme = origin.substringAfter("://", origin)
+                    val scheme = if (origin.contains("://")) origin.substringBefore("://") else null
+                    val host = withoutScheme.substringBefore(":")
+                    val schemes = scheme?.let { listOf(it) } ?: listOf("https", "http")
+                    allowHost(host, schemes = schemes)
+                }
+                appLog.info("CORS: Allowed origins: {}", configuredOrigins)
+            } else {
+                appLog.warn("CORS: No allowed origins configured. All cross-origin requests will be rejected.")
             }
         } else {
-            // Dev/local (no DATABASE_URL) or prod without an explicit allow-list:
-            // keep the permissive default so local web + device testing still work.
+            appLog.warn("WARNING: CORS is configured to allow any host in dev mode. This MUST NOT be used in production.")
             anyHost()
         }
         allowHeader(HttpHeaders.ContentType)
@@ -306,16 +418,35 @@ fun Application.module() {
         allowHeader("Platform")
         allowHeader("Device-Id")
         allowHeader("Accept-Language")
+        allowHeader(REQUEST_ID_HEADER)
         allowMethod(HttpMethod.Get)
         allowMethod(HttpMethod.Post)
         allowMethod(HttpMethod.Put)
+        allowMethod(HttpMethod.Patch)
         allowMethod(HttpMethod.Delete)
         allowMethod(HttpMethod.Options)
     }
 
-    install(CallLogging)
+    install(CallLogging) {
+        filter { call ->
+            val method = call.request.httpMethod
+            val uri = call.request.uri
+            // Skip CORS preflight (OPTIONS) and repetitive polling endpoints
+            // from console logging — they still go to the DB via ServerLogWriter.
+            method != HttpMethod.Options &&
+                !uri.startsWith("/api/v1/admin/dev/logs") &&
+                !uri.startsWith("/api/v1/notifications")
+        }
+    }
+
+    // SEC-020: CSRF protection — validate Origin header on state-changing
+    // requests in production. JWT bearer tokens are inherently CSRF-resistant
+    // (browsers don't auto-attach them cross-origin), but this adds defense-in-depth.
+    CsrfProtection.run { installCsrfProtection() }
 
     install(AutoHeadResponse)
+
+    install(io.ktor.server.sse.SSE)
 
     install(ContentNegotiation) {
         json(Json {
@@ -337,15 +468,49 @@ fun Application.module() {
 
     install(StatusPages) { configureErrorHandling() }
 
+    intercept(ApplicationCallPipeline.Plugins) {
+        call.applyApiVersionHeaders()
+    }
+
+    // GAP-010: Observability — Micrometer metrics with Prometheus registry.
+    // Exposes /metrics for Prometheus scraping and /api/v1/health for liveness.
+    // Registry was created in main() and wired into HikariConfig before pool creation.
+    val prometheusRegistry = DatabaseFactory.meterRegistry
+        ?: PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
+    install(MicrometerMetrics) {
+        registry = prometheusRegistry
+    }
+
+    // GAP-015: HikariCP pool metrics — registries were set on HikariConfig before pool
+    // creation in DatabaseFactory.createPostgresDataSource, so no post-start assignment here.
+    if (DatabaseFactory.hikariDataSource != null) {
+        appLog.info("HikariCP metrics and health checks registered with Prometheus (pre-pool)")
+    } else {
+        appLog.warn("HikariCP metrics NOT registered — hikariDataSource is null (DatabaseFactory.init may have failed)")
+    }
+
     routing {
+        // Global CORS preflight handler — must be before any authenticate{} block
+        // so OPTIONS requests don't get 403'd by the JWT auth plugin.
+        // {path...} is a Ktor tailcard that matches any number of path segments.
+        options("{path...}") {
+            call.respond(HttpStatusCode.NoContent)
+        }
+
         get("/") {
             call.respondText("Ktor: ${Greeting().greet()} — VidyaPrayag API v1 is live")
+        }
+
+        // Prometheus metrics endpoint — scrape target for Prometheus/Grafana
+        get("/metrics") {
+            call.respondText((prometheusRegistry as PrometheusMeterRegistry).scrape(), ContentType.Text.Plain)
         }
 
         // Public
         landingRouting()
         appStatusRouting()
         versionRouting()             // /api/v1/config/version — backend-target visibility
+        openApiRouting()             // /api/v1/docs + /api/v1/openapi.yaml — Swagger UI
         authRouting()
         supportRouting()
 
@@ -389,10 +554,13 @@ fun Application.module() {
         schoolDashboardRouting()     // /api/v1/school/dashboard
         adminDashboardRouting()      // /api/admin/dashboard/{summary,analytics,activity} — redesigned SchoolHomeScreenV2 data
         adminDashboardOverviewRouting() // /api/admin/dashboard/overview — consolidated command-center payload for SchoolHomeScreenV2
+        adminDashboardDigestRouting() // /api/admin/dashboard/digest — daily focus hero for SchoolHomeScreenV2
         schoolIntelligenceRouting()  // /api/v1/school/dashboard/intelligence — Command Center: attendance timeline+anomalies+exam overlay, early-warning students, academic health grid, activity feed (all real-data)
+        dailySummaryAdminRouting()   // /api/admin/daily-summary/trigger — manually trigger AI daily summary job
 
         // AI gateway + PEWS (AI_FEATURES_PLAN.md feature #1)
         aiRouting()                  // /api/v1/school/ai/usage (school-admin) + /api/v1/admin/ai/{providers,health,rotate} (platform-admin)
+        featureFlagRouting()         // /api/v1/admin/flags — GAP-019 general-purpose feature flag management
         pewsRouting()                // /api/v1/{school,teacher,parent}/pews/… — v1 PEWS endpoints (still in use)
         registerPewsModules()        // PEWS 2.0: register all modules with ModuleRegistry
         pewsModuleRouting()          // PEWS 2.0: mount module routes (act, learn, insights, …)
@@ -408,6 +576,7 @@ fun Application.module() {
         schoolStudentsRouting()      // /api/v1/school/students[…] + teachers/{id} — RA-45 student roster + student/teacher profile (school-scoped)
         nonTeachingStaffRouting()    // /api/v1/school/staff[…] — RA-S17 non-teaching-staff vertical (school-scoped CRUD)
         schoolRecordsRouting()       // /api/v1/school/{attendance/summary,marks/summary,fees/ledger} — RA-52 admin Records rollups (school-scoped reads)
+        exportRouting()              // /api/v1/school/export/{types, POST} — branded PDF/CSV exports for admin + teacher
         schoolClassesRouting()       // /api/v1/school/classes[…] + /api/v1/school/subjects[…] — class + subject CRUD (admin)
         schoolTimetableRouting()     // /api/v1/school/timetable[…] — school-wide weekly schedule + admin period CRUD (POST/PUT/DELETE)
         periodExceptionRouting()     // /api/v1/school/timetable/exceptions[…] + /api/v1/teacher/timetable/exceptions[…] — one-off period overrides
@@ -434,9 +603,14 @@ fun Application.module() {
         teacherMessagesRouting()     // /api/v1/teacher/messages[…] — RA-51 teacher↔parent messaging + class broadcast
         teacherLessonPlanRouting()   // /api/v1/teacher/lesson-plans[…] — typed, assignment-scoped lesson plans: CRUD, complete/skip, calendar, templates (LESSON_PLANNING_SPEC P1-20)
 
+        // Exam Ecosystem (EXAM_ECOSYSTEM_PLAN.md)
+        examTimetableRouting()       // /api/v1/exam/timetable[…] — AI OCR import, text import, create, publish, list, detail
+        examSyllabusRouting()        // /api/v1/exam/syllabus/{id} + /api/v1/exam/parent/{childId}/syllabus/{id} — syllabus mapping + parent read
+        examRequestSyllabusRouting() // /api/v1/exam/request-syllabus — parent → teacher syllabus request
+
         // Cross-user notification spine (audit part-2 RA-41/42/46/50) — role-aware
         // inbox replacing the parent-only synth; persisted read state; bell summary.
-        notificationsRouting()       // /api/v1/notifications[/summary,/{id}/read,/read-all]
+        notificationsRouting()       // /api/v1/notifications[/summary,/{id}/read,/read-all,/clear-all,/all]
         notificationPreferencesRouting() // /api/v1/notifications/preferences
 
         // Notification FOUNDATION (push infra — distinct from the inbox spine):
@@ -447,6 +621,12 @@ fun Application.module() {
         // Super-admin developer tools (OTP provider switch, pulse trigger, ad-hoc
         // notification send). Guarded by requireSuperAdmin() inside the route.
         devToolsRouting()
+
+        // Super-admin server log viewer (Notification Deep-Linking & Backend Log Viewer Plan §3.2)
+        //   GET  /api/v1/admin/dev/logs          — paginated log query
+        //   GET  /api/v1/admin/dev/logs/stream   — SSE real-time stream
+        //   GET  /api/v1/admin/dev/logs/stats    — aggregate stats
+        serverLogRouting()
 
         // Student Health Records (HEALTH_RECORDS_SPEC.md — P1-12)
         //   /api/v1/school/health/{profiles,immunizations,incidents}  — admin/nurse
@@ -526,5 +706,23 @@ fun Application.module() {
         // Agentic Syllabus Management — admin pace monitoring
         //   /api/v1/school/pace/{snapshots,alerts,alerts/{id}/resolve}
         syllabusPaceRouting()
+
+        // Multi-Language Support (MULTI_LANGUAGE_SPEC.md)
+        //   /api/v1/user/{language-pref, language-history}       — any role
+        //   /api/v1/school/{language-distribution, users-language-pref}  — school admin
+        //   /api/admin/{language-adoption, users-by-language, server-strings[…]}  — super admin
+        i18nRouting()
+
+        // Gamification System (GAMIFICATION_SYSTEM_SPEC.md)
+        //   /api/v1/parent/gamification/{childId}/{stats,badges,levels}  — parent
+        //   /api/v1/teacher/gamification/{encourage,badge/award,badges,student/{id}/stats}  — teacher
+        //   /api/v1/admin/gamification/{flags,badges,levels}  — admin kill switch + config
+        gamificationRouting()
+
+        // Skill Test System — AI-generated weekly MCQ tests for children
+        //   /api/v1/parent/skill-test/{childId}/{eligibility,start,best-score,history}
+        //   /api/v1/parent/skill-test/{attemptId}/{answer,review}
+        //   /api/v1/parent/skill-test/generate/{gradeLevel}  — admin trigger
+        skillTestRouting()
     }
 }

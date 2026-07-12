@@ -116,6 +116,7 @@ kotlin {
             implementation(libs.compose.material3)
             implementation(libs.compose.ui)
             implementation(libs.compose.ui.backhandler)
+            implementation(libs.navigationevent.compose)
             implementation(libs.compose.components.resources)
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
@@ -124,6 +125,7 @@ kotlin {
             implementation("io.insert-koin:koin-compose-viewmodel:4.0.0")
             implementation(libs.coil.compose)
             implementation(libs.coil.network.ktor)
+            implementation(libs.filekit.compose)
             implementation(libs.okio)
             implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
             implementation(libs.androidx.navigation.compose)
@@ -259,4 +261,11 @@ compose.desktop {
             packageVersion = "1.0.0"
         }
     }
+}
+
+// Pass devBaseUrl from local.properties as a system property to the desktop run
+// task so the JVM app hits the local server instead of Render.
+tasks.matching { it.name == "run" || it.name == "hotDevJvm" }.configureEach {
+    this as org.gradle.api.tasks.JavaExec
+    systemProperty("devBaseUrl", devBaseUrl)
 }

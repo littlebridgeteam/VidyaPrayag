@@ -53,7 +53,9 @@ data class TeacherPerformanceState(
     val accountabilityMatrix: List<FacultyAccountability> = emptyList(),
     val deptEfficiencies: List<DeptEfficiency> = emptyList(),
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class TeacherPerformanceViewModel(
@@ -75,7 +77,7 @@ class TeacherPerformanceViewModel(
             }
             when (val result = analyticsRepository.getTeacherPerformance(token)) {
                 is NetworkResult.Success -> {
-                    _state.value = parseTeacher(result.data.data).copy(isLoading = false)
+                    _state.value = parseTeacher(result.data.data).copy(isLoading = false, isStale = result.isStale, isOffline = result.isOffline)
                 }
                 is NetworkResult.Error -> {
                     AppLogger.e("TeacherPerformanceVM", "getTeacherPerformance error: ${result.message}")
@@ -126,7 +128,7 @@ class TeacherPerformanceViewModel(
                 score      = o["score"]?.jsonPrimitive?.doubleOrNull ?: 0.0,
                 imageUrl   = o["image_url"]?.jsonPrimitive?.contentOrNull ?: ""
             )
-        } catch (_: Exception) { null }
+        } catch (e: Exception) { AppLogger.e("TeacherPerformanceVM", "parseStar failed: ${e.message}", e); null }
     }
 
     private fun parseAccountability(el: JsonElement): FacultyAccountability? {
@@ -143,7 +145,7 @@ class TeacherPerformanceViewModel(
                 riskCorrelation = o["risk_correlation"]?.jsonPrimitive?.contentOrNull ?: "Stable",
                 initials        = o["initials"]?.jsonPrimitive?.contentOrNull ?: ""
             )
-        } catch (_: Exception) { null }
+        } catch (e: Exception) { AppLogger.e("TeacherPerformanceVM", "parseAccountability failed: ${e.message}", e); null }
     }
 
     private fun parseDept(el: JsonElement): DeptEfficiency? {
@@ -154,6 +156,6 @@ class TeacherPerformanceViewModel(
                 name       = name,
                 percentage = o["percentage"]?.jsonPrimitive?.intOrNull ?: 0
             )
-        } catch (_: Exception) { null }
+        } catch (e: Exception) { AppLogger.e("TeacherPerformanceVM", "parseDept failed: ${e.message}", e); null }
     }
 }

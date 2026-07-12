@@ -43,5 +43,6 @@ data class ApiResponse<T>(
 data class ApiError(
     val success: Boolean = false,
     val message: String,
-    val errorCode: String? = null
+    val errorCode: String? = null,
+    val requestId: String? = null
 )

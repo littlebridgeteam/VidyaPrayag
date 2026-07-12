@@ -62,14 +62,17 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonProfile
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -84,7 +87,7 @@ fun PewsStudentDetailScreenV2(
     LaunchedEffect(studentCode) { viewModel.load(studentCode) }
 
     Column(modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
-        VBackHeader(title = "Student Signal", onBack = onBack)
+        VBackHeader(title = appString(StringKeys.PEWS_STUDENT_SIGNAL), onBack = onBack)
         PewsStudentDetailContent(
             state = state,
             onRetry = { viewModel.load(studentCode) },
@@ -113,16 +116,16 @@ private fun PewsStudentDetailContent(
     onClearMessage: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    VStateHost(
+        VStateHost(
         loading = state.isLoading,
         error = state.error,
         isEmpty = state.isEmpty,
         emptyIcon = VIcons.ShieldCheck,
-        emptyTitle = "No signal on record",
-        emptyBody = "This student has no early-warning snapshot yet.",
+        emptyTitle = appString(StringKeys.PEWS_NO_SIGNAL),
+        emptyBody = appString(StringKeys.PEWS_NO_SIGNAL_DESC),
         onRetry = onRetry,
         modifier = modifier,
+        skeleton = { SkeletonProfile() },
     ) {
         val detail = state.detail ?: return@VStateHost
         val cur = detail.current ?: return@VStateHost
@@ -136,8 +139,8 @@ private fun PewsStudentDetailContent(
             AiExplanationCard(cur)
             if (state.interventions.isNotEmpty()) {
                 Text(
-                    "INTERVENTIONS",
-                    style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                    appString(StringKeys.PEWS_INTERVENTIONS),
+                    style = VTypography.label.copy(color = VColors.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
                 )
                 state.interventions.forEach { iv ->
                     InterventionCard(
@@ -162,55 +165,52 @@ private fun PewsStudentDetailContent(
 
 @Composable
 private fun HeaderCard(s: PewsStudentDto) {
-    val c = VTheme.colors
-    val (tone, levelLabel) = when (s.riskLevel) {
-        "high" -> VBadgeTone.Danger to "High risk"
-        "medium" -> VBadgeTone.Warning to "Medium risk"
-        else -> VBadgeTone.Success to "Watch"
+        val (tone, levelLabel) = when (s.riskLevel) {
+        "high" -> VBadgeTone.Danger to appString(StringKeys.PEWS_HIGH_RISK)
+        "medium" -> VBadgeTone.Warning to appString(StringKeys.PEWS_MEDIUM_RISK)
+        else -> VBadgeTone.Success to appString(StringKeys.PEWS_WATCH)
     }
     VCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text(s.name, style = VTheme.type.h3.colored(c.ink))
+                Text(s.name, style = VTypography.h3.copy(color = VColors.ink))
                 Spacer(Modifier.height(2.dp))
                 Text(
                     "Class ${s.className}${if (s.section.isNotBlank()) "-${s.section}" else ""}",
-                    style = VTheme.type.caption.colored(c.ink3),
+                    style = VTypography.caption.copy(color = VColors.ink3),
                 )
             }
             VBadge(text = levelLabel, tone = tone)
             if (s.hasOpenIntervention) {
                 Spacer(Modifier.width(4.dp))
-                VBadge(text = "Under intervention", tone = VBadgeTone.Neutral)
+                VBadge(text = appString(StringKeys.PEWS_UNDER_INTERVENTION), tone = VBadgeTone.Neutral)
             }
         }
         Spacer(Modifier.height(8.dp))
         Text(
-            "Risk score ${s.riskScore} · as of ${s.runDate}",
-            style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp),
+            appString(StringKeys.PEWS_RISK_SCORE, "score" to s.riskScore, "date" to s.runDate),
+            style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 12.sp),
         )
     }
 }
 
 @Composable
 private fun MetricsCard(s: PewsStudentDto) {
-    val c = VTheme.colors
-    VCard {
+        VCard {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Metric("Attendance", s.attendancePct?.let { "$it%" } ?: "—", s.attendanceSlope, Modifier.weight(1f))
-            Metric("Marks", s.marksPct?.let { "$it%" } ?: "—", s.marksSlope, Modifier.weight(1f))
-            Metric("Leaves", "${s.leaveCount}", null, Modifier.weight(1f))
+            Metric(appString(StringKeys.PEWS_ATTENDANCE), s.attendancePct?.let { "$it%" } ?: "—", s.attendanceSlope, Modifier.weight(1f))
+            Metric(appString(StringKeys.PEWS_MARKS), s.marksPct?.let { "$it%" } ?: "—", s.marksSlope, Modifier.weight(1f))
+            Metric(appString(StringKeys.PEWS_LEAVES), "${s.leaveCount}", null, Modifier.weight(1f))
         }
     }
 }
 
 @Composable
 private fun Metric(label: String, value: String, slope: Double?, modifier: Modifier = Modifier) {
-    val c = VTheme.colors
-    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, style = VTheme.type.data.colored(c.ink).copy(fontWeight = FontWeight.Bold))
+        Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(value, style = VTypography.bodySmall.copy(color = VColors.ink).copy(fontWeight = FontWeight.Bold))
         Spacer(Modifier.height(2.dp))
-        Text(label, style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp))
+        Text(label, style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 11.sp))
         if (slope != null && slope != 0.0) {
             Spacer(Modifier.height(4.dp))
             val falling = slope < 0
@@ -218,12 +218,12 @@ private fun Metric(label: String, value: String, slope: Double?, modifier: Modif
                 Icon(
                     if (falling) VIcons.TrendingDown else VIcons.TrendingUp,
                     contentDescription = null,
-                    tint = if (falling) c.dangerInk else c.successInk,
+                    tint = if (falling) VColors.error else VColors.success,
                     modifier = Modifier.size(13.dp),
                 )
                 Text(
-                    if (falling) "falling" else "rising",
-                    style = VTheme.type.caption.colored(if (falling) c.dangerInk else c.successInk).copy(fontSize = 10.sp),
+                    if (falling) appString(StringKeys.PEWS_FALLING) else appString(StringKeys.PEWS_RISING),
+                    style = VTypography.caption.copy(color = if (falling) VColors.error else VColors.success).copy(fontSize = 10.sp),
                 )
             }
         }
@@ -232,9 +232,8 @@ private fun Metric(label: String, value: String, slope: Double?, modifier: Modif
 
 @Composable
 private fun SignalsCard(s: PewsStudentDto) {
-    val c = VTheme.colors
-    VCard {
-        Text("WHY THIS STUDENT", style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp))
+        VCard {
+        Text(appString(StringKeys.PEWS_WHY_STUDENT), style = VTypography.label.copy(color = VColors.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp))
         Spacer(Modifier.height(10.dp))
         s.signals.forEach { sig ->
             Row(
@@ -243,12 +242,12 @@ private fun SignalsCard(s: PewsStudentDto) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val dot = when {
-                    sig.severity >= 3 -> c.dangerInk
-                    sig.severity == 2 -> c.warningInk
-                    else -> c.successInk
+                    sig.severity >= 3 -> VColors.error
+                    sig.severity == 2 -> VColors.gold
+                    else -> VColors.success
                 }
                 Box(Modifier.size(8.dp).clip(RoundedCornerShape(4.dp)).background(dot))
-                Text(sig.label, style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.sp), modifier = Modifier.weight(1f))
+                Text(sig.label, style = VTypography.body.copy(color = VColors.ink2).copy(fontSize = 13.sp), modifier = Modifier.weight(1f))
             }
         }
     }
@@ -256,36 +255,35 @@ private fun SignalsCard(s: PewsStudentDto) {
 
 @Composable
 private fun AiExplanationCard(s: PewsStudentDto) {
-    val c = VTheme.colors
-    val cause = s.aiCause
+        val cause = s.aiCause
     val rec = s.aiRecommendation
     val narrative = s.aiNarrative
     if (cause.isNullOrBlank() && rec.isNullOrBlank() && narrative.isNullOrBlank()) return
-    VCard(background = c.teal.copy(alpha = 0.08f)) {
+    VCard(background = VColors.sky.copy(alpha = 0.08f)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Icon(VIcons.Sparkles, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(14.dp))
+            Icon(VIcons.Sparkles, contentDescription = null, tint = VColors.sky, modifier = Modifier.size(14.dp))
             Text(
-                "AI EXPLANATION",
-                style = VTheme.type.label.colored(c.tealDeep).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                appString(StringKeys.PEWS_AI_EXPLANATION),
+                style = VTypography.label.copy(color = VColors.sky).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
             )
         }
         if (!narrative.isNullOrBlank()) {
             Spacer(Modifier.height(8.dp))
-            Text(narrative, style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp, lineHeight = 19.sp))
+            Text(narrative, style = VTypography.body.copy(color = VColors.ink).copy(fontSize = 13.sp, lineHeight = 19.sp))
         }
         if (!cause.isNullOrBlank()) {
             Spacer(Modifier.height(8.dp))
-            Text("Likely cause", style = VTheme.type.caption.colored(c.tealDeep).copy(fontWeight = FontWeight.SemiBold, fontSize = 11.sp))
-            Text(cause, style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.sp, lineHeight = 19.sp))
+            Text(appString(StringKeys.PEWS_LIKELY_CAUSE), style = VTypography.caption.copy(color = VColors.sky).copy(fontWeight = FontWeight.SemiBold, fontSize = 11.sp))
+            Text(cause, style = VTypography.body.copy(color = VColors.ink2).copy(fontSize = 13.sp, lineHeight = 19.sp))
         }
         if (!rec.isNullOrBlank()) {
             Spacer(Modifier.height(8.dp))
-            Text("Suggested action", style = VTheme.type.caption.colored(c.tealDeep).copy(fontWeight = FontWeight.SemiBold, fontSize = 11.sp))
-            Text(rec, style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.sp, lineHeight = 19.sp))
+            Text(appString(StringKeys.PEWS_SUGGESTED_ACTION), style = VTypography.caption.copy(color = VColors.sky).copy(fontWeight = FontWeight.SemiBold, fontSize = 11.sp))
+            Text(rec, style = VTypography.body.copy(color = VColors.ink2).copy(fontSize = 13.sp, lineHeight = 19.sp))
         }
         s.aiProviderUsed?.let {
             Spacer(Modifier.height(8.dp))
-            Text("Generated by $it · review before acting", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp))
+            Text(appString(StringKeys.PEWS_GENERATED_BY, "provider" to it), style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 10.sp))
         }
     }
 }
@@ -303,8 +301,7 @@ private fun InterventionCard(
     onSendParentMessage: (String) -> Unit,
     onClearDraft: (String) -> Unit,
 ) {
-    val c = VTheme.colors
-    val statusTone = when (iv.status) {
+        val statusTone = when (iv.status) {
         "done" -> VBadgeTone.Success
         "dismissed" -> VBadgeTone.Neutral
         "in_progress" -> VBadgeTone.Accent
@@ -312,7 +309,7 @@ private fun InterventionCard(
     }
     VCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(iv.actionType.replace('_', ' '), style = VTheme.type.bodyStrong.colored(c.ink), modifier = Modifier.weight(1f))
+            Text(iv.actionType.replace('_', ' '), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink), modifier = Modifier.weight(1f))
             VBadge(text = iv.status.replace('_', ' '), tone = statusTone)
         }
 
@@ -331,8 +328,8 @@ private fun InterventionCard(
             }
             if (iv.escalationLevel > 0) {
                 val escLabel = when (iv.escalationLevel) {
-                    2 -> "ESCALATED"
-                    else -> "REMINDED"
+                    2 -> appString(StringKeys.PEWS_ESCALATED)
+                    else -> appString(StringKeys.PEWS_REMINDED)
                 }
                 val escTone = if (iv.escalationLevel >= 2) VBadgeTone.Danger else VBadgeTone.Warning
                 VBadge(text = escLabel, tone = escTone)
@@ -346,20 +343,20 @@ private fun InterventionCard(
         iv.slaDays?.let { sla ->
             Spacer(Modifier.height(6.dp))
             val slaText = if (iv.followUpDate != null) {
-                "SLA: $sla days · follow-up ${iv.followUpDate}"
+                appString(StringKeys.PEWS_SLA_FOLLOWUP, "days" to sla, "date" to iv.followUpDate)
             } else {
-                "SLA: $sla days"
+                appString(StringKeys.PEWS_SLA_DAYS, "days" to sla)
             }
             Text(
                 slaText,
-                style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp),
+                style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 11.sp),
             )
         }
 
         val notes = iv.notes
         if (!notes.isNullOrBlank()) {
             Spacer(Modifier.height(6.dp))
-            Text(notes, style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp, lineHeight = 17.sp))
+            Text(notes, style = VTypography.caption.copy(color = VColors.ink2).copy(fontSize = 12.sp, lineHeight = 17.sp))
         }
 
         // Plan steps from plan_json
@@ -368,8 +365,8 @@ private fun InterventionCard(
             if (steps.isNotEmpty()) {
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "PLAN",
-                    style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 10.sp),
+                    appString(StringKeys.PEWS_PLAN),
+                    style = VTypography.label.copy(color = VColors.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 10.sp),
                 )
                 Spacer(Modifier.height(4.dp))
                 steps.forEachIndexed { i, step ->
@@ -380,11 +377,11 @@ private fun InterventionCard(
                     ) {
                         Text(
                             "${i + 1}.",
-                            style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp),
+                            style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 12.sp),
                         )
                         Text(
                             step,
-                            style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp, lineHeight = 17.sp),
+                            style = VTypography.caption.copy(color = VColors.ink2).copy(fontSize = 12.sp, lineHeight = 17.sp),
                             modifier = Modifier.weight(1f),
                         )
                     }
@@ -400,14 +397,14 @@ private fun InterventionCard(
 
         if (hasDraft && draftBody != null) {
             Spacer(Modifier.height(8.dp))
-            Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(c.teal.copy(alpha = 0.1f)).padding(8.dp)) {
+            Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(VColors.sky.copy(alpha = 0.1f)).padding(8.dp)) {
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(VIcons.Sparkles, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(12.dp))
+                        Icon(VIcons.Sparkles, contentDescription = null, tint = VColors.sky, modifier = Modifier.size(12.dp))
                         Spacer(Modifier.size(4.dp))
                         Text(
-                            "PARENT MESSAGE (${draftLang?.uppercase() ?: "EN"})",
-                            style = VTheme.type.label.colored(c.tealDeep).copy(fontWeight = FontWeight.Bold, fontSize = 10.sp),
+                            appString(StringKeys.PEWS_PARENT_MESSAGE, "lang" to (draftLang?.uppercase() ?: "EN")),
+                            style = VTypography.label.copy(color = VColors.sky).copy(fontWeight = FontWeight.Bold, fontSize = 10.sp),
                             modifier = Modifier.weight(1f),
                         )
                         if (parentDrafts[iv.id] != null) {
@@ -415,13 +412,13 @@ private fun InterventionCard(
                         }
                     }
                     Spacer(Modifier.height(4.dp))
-                    Text(draftBody, style = VTheme.type.body.colored(c.ink).copy(fontSize = 12.sp, lineHeight = 17.sp))
+                    Text(draftBody, style = VTypography.body.copy(color = VColors.ink).copy(fontSize = 12.sp, lineHeight = 17.sp))
                 }
             }
         }
 
         Spacer(Modifier.height(4.dp))
-        Text("Opened ${iv.openedAt}", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp))
+        Text(appString(StringKeys.PEWS_OPENED, "date" to iv.openedAt), style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 11.sp))
 
         val open = iv.status == "open" || iv.status == "in_progress"
         val outcome = iv.outcome
@@ -431,14 +428,14 @@ private fun InterventionCard(
             if (iv.status == "open") {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     VButton(
-                        text = "Start",
+                        text = appString(StringKeys.PEWS_START),
                         onClick = { onStart(iv.id) },
                         variant = VButtonVariant.Primary,
                         size = VButtonSize.Sm,
                         enabled = !isUpdating,
                     )
                     VButton(
-                        text = "Dismiss",
+                        text = appString(StringKeys.PEWS_DISMISS),
                         onClick = { onDismiss(iv.id) },
                         variant = VButtonVariant.Ghost,
                         size = VButtonSize.Sm,
@@ -449,15 +446,15 @@ private fun InterventionCard(
                 // In-progress: show who initiated it
                 val initiatorLabel = iv.initiatedByName?.let { name ->
                     val role = iv.initiatedByRole?.let { r ->
-                        if (r in listOf("school_admin", "admin")) "Admin" else "Teacher"
+                        if (r in listOf("school_admin", "admin")) appString(StringKeys.PEWS_ADMIN) else appString(StringKeys.PEWS_TEACHER)
                     } ?: ""
-                    "✓ Initiated by $name${if (role.isNotBlank()) " ($role)" else ""}"
+                    appString(StringKeys.PEWS_INITIATED_BY, "name" to name, "role" to role)
                 }
                 if (initiatorLabel != null) {
                     Spacer(Modifier.height(6.dp))
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Icon(VIcons.Check, contentDescription = null, tint = c.success, modifier = Modifier.size(13.dp))
-                        Text(initiatorLabel, style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 11.sp))
+                        Icon(VIcons.Check, contentDescription = null, tint = VColors.success, modifier = Modifier.size(13.dp))
+                        Text(initiatorLabel, style = VTypography.caption.copy(color = VColors.ink2).copy(fontSize = 11.sp))
                     }
                 }
                 // action-type-specific
@@ -465,7 +462,7 @@ private fun InterventionCard(
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         if (hasDraft) {
                             VButton(
-                                text = "Send to parent",
+                                text = appString(StringKeys.PEWS_SEND_TO_PARENT),
                                 onClick = { onSendParentMessage(iv.id) },
                                 variant = VButtonVariant.Primary,
                                 size = VButtonSize.Sm,
@@ -479,7 +476,7 @@ private fun InterventionCard(
                                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                             ) {
                                 VButton(
-                                    text = "Draft parent message",
+                                    text = appString(StringKeys.PEWS_DRAFT_PARENT_MSG),
                                     onClick = { onGenerateDraft(iv.id, draftLang) },
                                     variant = VButtonVariant.Secondary,
                                     size = VButtonSize.Sm,
@@ -495,11 +492,11 @@ private fun InterventionCard(
                                     DropdownMenu(
                                         expanded = langDropdownOpen,
                                         onDismissRequest = { langDropdownOpen = false },
-                                        containerColor = c.card,
+                                        containerColor = VColors.surfaceCard,
                                     ) {
                                         listOf("en" to "English", "hi" to "हिन्दी", "mr" to "मराठी", "ta" to "தமிழ்", "te" to "తెలుగు", "bn" to "বাংলা").forEach { (code, label) ->
                                             DropdownMenuItem(
-                                                text = { Text(label, style = VTheme.type.body.colored(c.ink)) },
+                                                text = { Text(label, style = VTypography.body.copy(color = VColors.ink)) },
                                                 onClick = {
                                                     draftLang = code
                                                     langDropdownOpen = false
@@ -511,7 +508,7 @@ private fun InterventionCard(
                             }
                         }
                         VButton(
-                            text = "Dismiss",
+                            text = appString(StringKeys.PEWS_DISMISS),
                             onClick = { onDismiss(iv.id) },
                             variant = VButtonVariant.Ghost,
                             size = VButtonSize.Sm,
@@ -521,21 +518,21 @@ private fun InterventionCard(
                 } else {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         VButton(
-                            text = "Mark improved",
+                            text = appString(StringKeys.PEWS_MARK_IMPROVED),
                             onClick = { onMarkDone(iv.id, "improved") },
                             variant = VButtonVariant.Primary,
                             size = VButtonSize.Sm,
                             enabled = !isUpdating,
                         )
                         VButton(
-                            text = "No change",
+                            text = appString(StringKeys.PEWS_NO_CHANGE),
                             onClick = { onMarkDone(iv.id, "unchanged") },
                             variant = VButtonVariant.Secondary,
                             size = VButtonSize.Sm,
                             enabled = !isUpdating,
                         )
                         VButton(
-                            text = "Dismiss",
+                            text = appString(StringKeys.PEWS_DISMISS),
                             onClick = { onDismiss(iv.id) },
                             variant = VButtonVariant.Ghost,
                             size = VButtonSize.Sm,
@@ -546,7 +543,7 @@ private fun InterventionCard(
             }
         } else if (!outcome.isNullOrBlank()) {
             Spacer(Modifier.height(6.dp))
-            Text("Outcome: $outcome", style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp))
+            Text(appString(StringKeys.PEWS_OUTCOME, "outcome" to outcome), style = VTypography.caption.copy(color = VColors.ink2).copy(fontSize = 12.sp))
         }
     }
 }
@@ -572,24 +569,23 @@ private fun parsePlanSteps(planJson: String): List<String> {
 
 @Composable
 private fun HistoryCard(history: List<PewsStudentDto>) {
-    val c = VTheme.colors
-    VCard {
-        Text("HISTORY", style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp))
+        VCard {
+        Text(appString(StringKeys.PEWS_HISTORY), style = VTypography.label.copy(color = VColors.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp))
         Spacer(Modifier.height(8.dp))
         history.take(8).forEach { h ->
             Row(
                 Modifier.fillMaxWidth().padding(vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(h.runDate, style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp), modifier = Modifier.weight(1f))
+                Text(h.runDate, style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 12.sp), modifier = Modifier.weight(1f))
                 val tone = when (h.riskLevel) {
-                    "high" -> c.dangerInk
-                    "medium" -> c.warningInk
-                    else -> c.successInk
+                    "high" -> VColors.error
+                    "medium" -> VColors.gold
+                    else -> VColors.success
                 }
                 Text(
                     "${h.riskLevel} · ${h.riskScore}",
-                    style = VTheme.type.caption.colored(tone).copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
+                    style = VTypography.caption.copy(color = tone).copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
                 )
             }
         }

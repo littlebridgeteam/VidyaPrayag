@@ -25,6 +25,8 @@ data class SchoolDayConfigState(
     val isSaving: Boolean = false,
     val errorMessage: String? = null,
     val infoMessage: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class SchoolDayConfigViewModel(
@@ -53,6 +55,8 @@ class SchoolDayConfigViewModel(
                     _state.value = _state.value.copy(
                         configs = result.data.data?.configs ?: emptyList(),
                         isLoading = false,
+                        isStale = result.isStale,
+                        isOffline = result.isOffline,
                     )
                 }
                 is NetworkResult.Error -> {

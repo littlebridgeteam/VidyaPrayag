@@ -97,14 +97,19 @@ export function Sidebar() {
               pathname === item.href || pathname.startsWith(item.href + "/");
             const Icon = item.icon;
 
+            const linkProps = item.external
+              ? { href: item.href, target: "_blank" as const, rel: "noopener noreferrer" as const }
+              : { href: item.href };
+            const Tag = item.external ? "a" : Link;
+
             // COLLAPSED — a generous squircle hit-area, centred, with a floating
             // label tooltip. Active item is a filled navy squircle.
             if (collapsed) {
               return (
-                <Link
+                <Tag
                   key={item.href}
-                  href={item.href}
-                  onClick={close}
+                  {...linkProps}
+                  onClick={item.external ? undefined : close}
                   aria-current={active ? "page" : undefined}
                   className="group/item relative flex h-12 w-12 items-center justify-center rounded-[18px] transition-all duration-200"
                 >
@@ -124,16 +129,16 @@ export function Sidebar() {
                   >
                     {item.label}
                   </span>
-                </Link>
+                </Tag>
               );
             }
 
             // EXPANDED — full labelled pill with an accent edge-marker.
             return (
-              <Link
+              <Tag
                 key={item.href}
-                href={item.href}
-                onClick={close}
+                {...linkProps}
+                onClick={item.external ? undefined : close}
                 aria-current={active ? "page" : undefined}
                 className={`group/item relative flex items-center gap-3 rounded-2xl px-3 py-2.5 text-[14px] font-semibold transition-all duration-200 ${
                   active
@@ -155,7 +160,12 @@ export function Sidebar() {
                   <Icon />
                 </span>
                 <span className="truncate">{item.label}</span>
-              </Link>
+                {item.external && (
+                  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0 text-ink-3" fill="currentColor" aria-hidden="true">
+                    <path d="M14 3v2h3.59l-9.3 9.3 1.41 1.41 9.3-9.3V17h2V3h-7z" />
+                  </svg>
+                )}
+              </Tag>
             );
           })}
         </nav>

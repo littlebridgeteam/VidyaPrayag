@@ -28,6 +28,7 @@ import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.feature.fee.FeeService
 import com.littlebridge.enrollplus.feature.notification.dto.SendNotificationRequest
 import com.littlebridge.enrollplus.feature.notification.service.NotificationService
+import com.littlebridge.enrollplus.feature.notifications.Notify
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -36,6 +37,7 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.update
+import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
@@ -208,6 +210,8 @@ class ScholarshipService(
     private val notificationService: NotificationService? = null,
 ) {
 
+    private val logger = LoggerFactory.getLogger(ScholarshipService::class.java)
+
     private val json = Json { ignoreUnknownKeys = true }
 
     // ── Admin: Scheme Management ─────────────────────────────────────────
@@ -363,20 +367,24 @@ class ScholarshipService(
                 feeService.applyScholarship(studentId, scholarshipId, schoolId)
             } catch (e: Exception) {
                 // Log error but don't fail the approval — fee integration is best-effort
-                println("SCHOLARSHIP: Fee integration failed for application $applicationId: ${e.message}")
+                logger.warn("SCHOLARSHIP: Fee integration failed for application {}: {}", applicationId, e.message, e)
             }
         }
 
-        // Send notification to parent
-        notificationService?.send(
-            SendNotificationRequest(
+        // Send notification to parent via Notify spine (in-app + FCM push)
+        runCatching {
+            Notify.toUser(
+                userId = parentId,
+                category = "scholarship",
                 title = "Scholarship Approved!",
                 body = "Scholarship '$scholarshipTitle' has been approved. ${req.remarks}",
-                userIds = listOf(parentId.toString()),
-                deepLink = "vidyaprayag://parent/scholarships",
-                data = mapOf("type" to "scholarship_approved", "applicationId" to applicationId.toString()),
+                schoolId = schoolId,
+                actorId = adminId,
+                deepLink = "/parent/scholarships",
+                refType = "scholarship_application",
+                refId = applicationId.toString(),
             )
-        )
+        }
 
         // Return updated application
         ScholarshipApplicationsTable.selectAll()
@@ -412,15 +420,19 @@ class ScholarshipService(
             it[updatedAt] = now
         }
 
-        notificationService?.send(
-            SendNotificationRequest(
+        runCatching {
+            Notify.toUser(
+                userId = parentId,
+                category = "scholarship",
                 title = "Scholarship Update",
                 body = "Scholarship '$scholarshipTitle' application was not approved. ${req.remarks}",
-                userIds = listOf(parentId.toString()),
-                deepLink = "vidyaprayag://parent/scholarships",
-                data = mapOf("type" to "scholarship_rejected", "applicationId" to applicationId.toString()),
+                schoolId = schoolId,
+                actorId = adminId,
+                deepLink = "/parent/scholarships",
+                refType = "scholarship_application",
+                refId = applicationId.toString(),
             )
-        )
+        }
 
         ScholarshipApplicationsTable.selectAll()
             .where { ScholarshipApplicationsTable.id eq applicationId }
@@ -455,15 +467,19 @@ class ScholarshipService(
             it[updatedAt] = now
         }
 
-        notificationService?.send(
-            SendNotificationRequest(
+        runCatching {
+            Notify.toUser(
+                userId = parentId,
+                category = "scholarship",
                 title = "Scholarship Disbursed!",
                 body = "Scholarship '$scholarshipTitle' disbursed. Amount: ${req.amount}. Reference: ${req.reference}",
-                userIds = listOf(parentId.toString()),
-                deepLink = "vidyaprayag://parent/scholarships",
-                data = mapOf("type" to "scholarship_disbursed", "applicationId" to applicationId.toString()),
+                schoolId = schoolId,
+                actorId = adminId,
+                deepLink = "/parent/scholarships",
+                refType = "scholarship_application",
+                refId = applicationId.toString(),
             )
-        )
+        }
 
         ScholarshipApplicationsTable.selectAll()
             .where { ScholarshipApplicationsTable.id eq applicationId }
@@ -521,7 +537,7 @@ class ScholarshipService(
         try {
             feeService.applyScholarship(studentId, scholarshipId, schoolId)
         } catch (e: Exception) {
-            println("SCHOLARSHIP: Fee integration failed for renewal $renewalId: ${e.message}")
+            logger.warn("SCHOLARSHIP: Fee integration failed for renewal {}: {}", renewalId, e.message, e)
         }
 
         // Find parent to notify
@@ -531,15 +547,19 @@ class ScholarshipService(
         val parentId = originalApp?.get(ScholarshipApplicationsTable.parentId)
 
         if (parentId != null) {
-            notificationService?.send(
-                SendNotificationRequest(
+            runCatching {
+                Notify.toUser(
+                    userId = parentId,
+                    category = "scholarship",
                     title = "Scholarship Renewal Approved!",
                     body = "Renewal for '$scholarshipTitle' has been approved for the new academic year.",
-                    userIds = listOf(parentId.toString()),
-                    deepLink = "vidyaprayag://parent/scholarships",
-                    data = mapOf("type" to "scholarship_renewal_approved", "renewalId" to renewalId.toString()),
+                    schoolId = schoolId,
+                    actorId = adminId,
+                    deepLink = "/parent/scholarships",
+                    refType = "scholarship_renewal",
+                    refId = renewalId.toString(),
                 )
-            )
+            }
         }
 
         ScholarshipRenewalsTable.selectAll()
@@ -579,15 +599,19 @@ class ScholarshipService(
         val parentId = originalApp?.get(ScholarshipApplicationsTable.parentId)
 
         if (parentId != null) {
-            notificationService?.send(
-                SendNotificationRequest(
+            runCatching {
+                Notify.toUser(
+                    userId = parentId,
+                    category = "scholarship",
                     title = "Scholarship Renewal Update",
                     body = "Renewal for '$scholarshipTitle' was not approved. ${req.remarks}",
-                    userIds = listOf(parentId.toString()),
-                    deepLink = "vidyaprayag://parent/scholarships",
-                    data = mapOf("type" to "scholarship_renewal_rejected", "renewalId" to renewalId.toString()),
+                    schoolId = schoolId,
+                    actorId = adminId,
+                    deepLink = "/parent/scholarships",
+                    refType = "scholarship_renewal",
+                    refId = renewalId.toString(),
                 )
-            )
+            }
         }
 
         ScholarshipRenewalsTable.selectAll()
@@ -802,9 +826,10 @@ class ScholarshipService(
             if (docUrlsText != null && docUrlsText.isNotBlank()) {
                 json.decodeFromString<List<String>>(docUrlsText)
             } else emptyList()
-            } catch (e: Exception) {
-                emptyList()
-            }
+        } catch (e: Exception) {
+            logger.warn("Failed to parse document_urls for scholarship application: {}", e.message)
+            emptyList()
+        }
 
         val scholarshipTitle = row.getOrNull(ScholarshipsTable.title)
         val studentName = row.getOrNull(ScholarshipApplicationsTable.studentId)?.let { sid ->
@@ -844,6 +869,7 @@ class ScholarshipService(
                 json.decodeFromString<List<String>>(docUrlsText)
             } else emptyList()
         } catch (e: Exception) {
+            logger.warn("Failed to parse document_urls for scholarship renewal: {}", e.message)
             emptyList()
         }
 

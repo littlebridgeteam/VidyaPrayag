@@ -414,6 +414,118 @@ NotificationsScreenV2(
 )
 ```
 
+### 4.6.1 Compose App: Pull-to-Refresh on Notifications Screen
+
+**`composeApp/.../NotificationsScreenV2.kt`** — wrap the notification list in a pull-to-refresh container so users can manually refresh by pulling down. This is critical because push notifications can arrive while the screen is open but the list won't auto-update without a manual refresh.
+
+**Implementation:**
+
+```kotlin
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NotificationsScreenV2(
+    // ... existing params ...
+    onDeepLink: (String) -> Unit,
+) {
+    val viewModel: NotificationsViewModel = koinViewModel()
+    val state by viewModel.state.collectAsState()
+    val refreshState = rememberPullToRefreshState()
+
+    PullToRefreshBox(
+        isRefreshing = state.isRefreshing,
+        onRefresh = { viewModel.refresh() },
+        state = refreshState,
+    ) {
+        // Existing LazyColumn with notification rows
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = TeacherDockClearance),
+        ) {
+            items(state.notifications, key = { it.id }) { item ->
+                NotificationRow(
+                    item = item,
+                    onClick = {
+                        viewModel.markRead(item.id)
+                        item.deepLink?.let { onDeepLink(it) }
+                    },
+                )
+            }
+        }
+    }
+}
+```
+
+**ViewModel changes** (`shared/.../NotificationsViewModel.kt`):
+
+```kotlin
+data class NotificationsState(
+    // ... existing fields ...
+    val isRefreshing: Boolean = false,  // NEW
+)
+
+fun refresh() {
+    viewModelScope.launch {
+        _state.update { it.copy(isRefreshing = true) }
+        try {
+            repository.fetchNotifications(forceRefresh = true)
+        } finally {
+            _state.update { it.copy(isRefreshing = false) }
+        }
+    }
+}
+```
+
+**Repository** (`shared/.../NotificationRepository.kt`) — add `forceRefresh` param to bypass cache:
+
+```kotlin
+suspend fun fetchNotifications(forceRefresh: Boolean = false): List<NotificationItem> {
+    if (!forceRefresh && cache.isValid()) return cache.get()
+    val dtos = api.getNotifications()
+    // ... mapping ...
+    cache.set(items)
+    return items
+}
+```
+
+**Pull-to-refresh must also work on ALL portal tab screens** — not just notifications. Each major tab (Home, Update, Classes, Timetable, Profile for Teacher; Home, Academics, Fees, Conversations, Profile for Parent; equivalent for School) wraps its scrollable content in `PullToRefreshBox`:
+
+| Screen | Refresh Action |
+|---|---|
+| NotificationsScreenV2 | Re-fetch notifications list |
+| TeacherHomeTab | Re-fetch dashboard (obligations, check-in, timetable) |
+| TeacherUpdateTab | Re-fetch class allocations + pending updates |
+| TeacherClassesTab | Re-fetch class list + student rosters |
+| TeacherTimetableTab | Re-fetch weekly timetable |
+| TeacherProfileTab | Re-fetch profile + leave requests |
+| ParentHomeTab | Re-fetch dashboard (children, announcements, events) |
+| ParentAcademicsTab | Re-fetch attendance, marks, homework |
+| ParentFeesTab | Re-fetch fee records |
+| ParentConversationsTab | Re-fetch messages + announcements |
+| ParentProfileTab | Re-fetch profile + linked children |
+| SchoolPortal tabs | Re-fetch admin dashboard data |
+
+**Pattern** — every tab Composable accepts an `onRefresh` lambda or calls its ViewModel's `refresh()` directly:
+
+```kotlin
+PullToRefreshBox(
+    isRefreshing = state.isRefreshing,
+    onRefresh = { viewModel.refresh() },
+) {
+    // Tab content
+}
+```
+
+**Rules:**
+- Pull-to-refresh is ALWAYS available on any screen showing server data.
+- The refresh indicator uses `VColors.violet` as the spinner color (brand accent).
+- `isRefreshing` state prevents duplicate concurrent refreshes.
+- On refresh error, show a brief snackbar with "Failed to refresh" + retry action.
+- Refresh bypasses cache — always hits the API.
+- After refresh, the list smoothly updates (no full screen flash — diff the list by item ID).
+
 ### 4.7 Compose App: Extend parseDeepLink
 
 **`composeApp/.../NavGraphV2.kt`** — add missing path patterns:
@@ -619,12 +731,19 @@ Every notification sent must carry a deep link. Every deep link must resolve to 
 - [ ] Mobile notification rows navigate on tap (not just mark read)
 - [ ] `parseDeepLink` handles all notification category paths
 - [ ] New detail screens render for announcement, fee, leave detail
+- [ ] Pull-to-refresh works on NotificationsScreenV2 (pull down → re-fetch)
+- [ ] Pull-to-refresh works on ALL portal tab screens (Teacher, Parent, School)
+- [ ] `isRefreshing` state prevents duplicate concurrent refreshes
+- [ ] Refresh error shows snackbar with retry action
+- [ ] Refresh indicator uses `VColors.violet` spinner color
 
 ### 8.2 Feels Native
 - [ ] Log viewer matches admin portal design language
 - [ ] Notification tap animation consistent with other tap interactions
 - [ ] New detail screens use VTheme colors, VCard layout, VSubHeader
 - [ ] No "loading..." flash on notification tap
+- [ ] Pull-to-refresh spinner uses brand violet, matches portal design language
+- [ ] Pull-to-refresh does not cause full screen flash — list diffs by item ID
 - [ ] Log viewer live mode auto-scrolls smoothly
 
 ### 8.3 Ecosystem Map Updated
@@ -673,6 +792,18 @@ Every notification sent must carry a deep link. Every deep link must resolve to 
 | 29 | `website/.../lib/admin/utils.ts` | Add `mapDeepLinkToAdminRoute` function |
 | 30 | `docs/ECOSYSTEM_MAP.md` | Append new entries |
 
+### Phase 4C: Pull-to-Refresh (Shared → Mobile)
+
+| Step | File(s) | Action |
+|---|---|---|
+| 31 | `shared/.../NotificationsViewModel.kt` | Add `isRefreshing` state + `refresh()` function |
+| 32 | `shared/.../NotificationRepository.kt` | Add `forceRefresh` param to `fetchNotifications()` |
+| 33 | `composeApp/.../NotificationsScreenV2.kt` | Wrap list in `PullToRefreshBox`; wire `onRefresh` |
+| 34 | All Teacher tab screens | Add `PullToRefreshBox` wrapper + VM `refresh()` |
+| 35 | All Parent tab screens | Add `PullToRefreshBox` wrapper + VM `refresh()` |
+| 36 | All School tab screens | Add `PullToRefreshBox` wrapper + VM `refresh()` |
+| 37 | All portal ViewModels | Add `isRefreshing` state + `refresh()` to each tab VM |
+
 ---
 
 ## 10. Edge Cases
@@ -691,6 +822,9 @@ Every notification sent must carry a deep link. Every deep link must resolve to 
 | Messages thread doesn't exist | Messages overlay opens to thread list; 404 → falls back to list. |
 | Concurrent log writes | PostgreSQL handles concurrent inserts safely; no locking needed. |
 | `details_json` exceeds 8000 chars | Truncated with `...[truncated]` suffix; full detail in SLF4J file log. |
+| Pull-to-refresh while already refreshing | `isRefreshing` guard prevents duplicate API calls; second pull is ignored. |
+| Pull-to-refresh with no network | Snackbar: "No connection — showing cached data". List stays as-is. |
+| Pull-to-refresh returns empty list | Show empty state with "No notifications yet" — don't clear existing list if API returns empty due to error. |
 
 ---
 

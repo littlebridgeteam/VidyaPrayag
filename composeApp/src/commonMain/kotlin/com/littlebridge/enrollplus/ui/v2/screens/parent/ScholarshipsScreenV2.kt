@@ -30,15 +30,17 @@ import com.littlebridge.enrollplus.feature.parent.presentation.Scholarship
 import com.littlebridge.enrollplus.feature.parent.presentation.ScholarshipApplication
 import com.littlebridge.enrollplus.feature.parent.presentation.ScholarshipsState
 import com.littlebridge.enrollplus.feature.parent.presentation.ScholarshipsViewModel
-import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
@@ -70,7 +72,7 @@ fun ScholarshipsScreenV2(
     Column(modifier.fillMaxSize().statusBarsPadding()
         .imePadding()
         .navigationBarsPadding()) {
-        VBackHeader(title = "Scholarships", onBack = onBack)
+        PremiumOverlayHeader(title = "Scholarships", onBack = onBack)
         ScholarshipsContent(
             state = state,
             modifier = Modifier.fillMaxSize(),
@@ -106,7 +108,7 @@ private fun ScholarshipsContent(
             VCard {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     Column(Modifier.weight(1f)) {
-                        Text("Profile strength", style = VTheme.type.label.colored(c.ink3))
+                        Text(appString(StringKeys.SL_PROFILE_STRENGTH), style = VTheme.type.label.colored(c.ink3))
                         Spacer(Modifier.height(4.dp))
                         Text(
                             "${state.profileStrength}%",
@@ -190,12 +192,12 @@ private fun ScholarshipCard(s: Scholarship) {
         Spacer(Modifier.height(10.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
             Column {
-                Text("Award", style = VTheme.type.label.colored(c.ink3))
+                Text(appString(StringKeys.SL_AWARD), style = VTheme.type.label.colored(c.ink3))
                 Spacer(Modifier.height(2.dp))
                 Text(s.amount, style = VTheme.type.dataLg.colored(c.ink))
             }
             Column(horizontalAlignment = Alignment.End) {
-                Text("Closes in", style = VTheme.type.label.colored(c.ink3))
+                Text(appString(StringKeys.SL_CLOSES_IN), style = VTheme.type.label.colored(c.ink3))
                 Spacer(Modifier.height(2.dp))
                 Text(s.timeLeft, style = VTheme.type.dataSm.colored(c.ink2))
             }

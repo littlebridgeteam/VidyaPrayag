@@ -18,7 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -44,9 +44,11 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -56,8 +58,7 @@ fun AdminEventRegistrationScreenV2(
     viewModel: AdminEventRegistrationViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
-    val c = VTheme.colors
-    var selectedEventId by remember { mutableStateOf<String?>(null) }
+        var selectedEventId by remember { mutableStateOf<String?>(null) }
     var showAllRegistrations by remember { mutableStateOf(false) }
     var statusFilter by remember { mutableStateOf("") }
     var slotStart by remember { mutableStateOf("") }
@@ -90,19 +91,20 @@ fun AdminEventRegistrationScreenV2(
                     else -> onBack()
                 }
             },
+            pinRouteId = "overlay_events",
         )
 
         if (state.infoMessage != null) {
             Text(
                 text = state.infoMessage!!,
-                style = VTheme.type.caption.colored(c.successInk),
+                style = VTypography.caption.copy(color = VColors.success),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             )
         }
         if (state.errorMessage != null) {
             Text(
                 text = state.errorMessage!!,
-                style = VTheme.type.caption.colored(c.dangerInk),
+                style = VTypography.caption.copy(color = VColors.error),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             )
         }
@@ -164,7 +166,7 @@ fun AdminEventRegistrationScreenV2(
                 item {
                     VCard(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text(text = "Filters", style = VTheme.type.h3.colored(c.ink))
+                            Text(text = "Filters", style = VTypography.h3.copy(color = VColors.ink))
                             Spacer(Modifier.height(8.dp))
                             VInput(
                                 value = statusFilter,
@@ -191,7 +193,7 @@ fun AdminEventRegistrationScreenV2(
                     item {
                         Text(
                             text = "Loading...",
-                            style = VTheme.type.body.colored(c.ink3),
+                            style = VTypography.body.copy(color = VColors.ink3),
                             modifier = Modifier.padding(16.dp),
                         )
                     }
@@ -199,13 +201,13 @@ fun AdminEventRegistrationScreenV2(
                     item {
                         Text(
                             text = "No registrations found. Tap Apply Filter to load.",
-                            style = VTheme.type.body.colored(c.ink3),
+                            style = VTypography.body.copy(color = VColors.ink3),
                             modifier = Modifier.padding(16.dp),
                         )
                     }
                 } else {
-                    items(state.registrations) { reg ->
-                        RegistrationCard(reg = reg)
+                    itemsIndexed(state.registrations, key = { _, it -> it.id }) { index, reg ->
+                        RegistrationCard(reg = reg, modifier = Modifier.staggeredItemEntrance(index, state.registrations.isNotEmpty()))
                     }
                 }
             }
@@ -236,18 +238,20 @@ fun AdminEventRegistrationScreenV2(
                 emptyTitle = "No events with registration",
                 onRetry = { viewModel.loadEvents() },
                 modifier = Modifier.fillMaxSize(),
+                skeleton = { SkeletonList(rows = 5) },
             ) {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    items(state.events) { event ->
+                    itemsIndexed(state.events, key = { _, it -> it.id }) { index, event ->
                         AdminEventCard(
                             event = event,
                             onClick = {
                                 selectedEventId = event.id
                                 viewModel.clearMessages()
                             },
+                            modifier = Modifier.staggeredItemEntrance(index, state.events.isNotEmpty()),
                         )
                     }
                 }
@@ -274,8 +278,7 @@ private fun EventManageContent(
     onViewRegistrations: () -> Unit,
     onToggleRegistration: (Boolean) -> Unit,
 ) {
-    val c = VTheme.colors
-    var showAutoGen by remember { mutableStateOf(false) }
+        var showAutoGen by remember { mutableStateOf(false) }
     var autoRangeStart by remember { mutableStateOf("09:00") }
     var autoRangeEnd by remember { mutableStateOf("12:00") }
     var autoDuration by remember { mutableStateOf("15") }
@@ -290,11 +293,11 @@ private fun EventManageContent(
         item {
             VCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text(text = event.title, style = VTheme.type.h3.colored(c.ink))
+                    Text(text = event.title, style = VTypography.h3.copy(color = VColors.ink))
                     Spacer(Modifier.height(4.dp))
-                    Text(text = "${event.type} • ${event.startDate}", style = VTheme.type.body.colored(c.ink2))
+                    Text(text = "${event.type} • ${event.startDate}", style = VTypography.body.copy(color = VColors.ink2))
                     if (event.venue != null) {
-                        Text(text = "Venue: ${event.venue}", style = VTheme.type.caption.colored(c.ink3))
+                        Text(text = "Venue: ${event.venue}", style = VTypography.caption.copy(color = VColors.ink3))
                     }
                     Spacer(Modifier.height(8.dp))
                     Row(
@@ -323,7 +326,7 @@ private fun EventManageContent(
         item {
             VCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text(text = "Slot Management", style = VTheme.type.h3.colored(c.ink))
+                    Text(text = "Slot Management", style = VTypography.h3.copy(color = VColors.ink))
                     Spacer(Modifier.height(8.dp))
                     VInput(
                         value = slotStart,
@@ -451,7 +454,7 @@ private fun EventManageContent(
                             ) {
                                 Text(
                                     text = "${slot.startTime}-${slot.endTime} (cap ${slot.capacity})",
-                                    style = VTheme.type.caption.colored(c.ink2),
+                                    style = VTypography.caption.copy(color = VColors.ink2),
                                 )
                                 VButton(
                                     text = "Delete",
@@ -469,7 +472,7 @@ private fun EventManageContent(
         item {
             VCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text(text = "Actions", style = VTheme.type.h3.colored(c.ink))
+                    Text(text = "Actions", style = VTypography.h3.copy(color = VColors.ink))
                     Spacer(Modifier.height(8.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         VButton(
@@ -496,7 +499,7 @@ private fun EventManageContent(
                         Spacer(Modifier.height(8.dp))
                         Text(
                             text = "CSV data ready (${state.csvData!!.length} chars)",
-                            style = VTheme.type.caption.colored(c.successInk),
+                            style = VTypography.caption.copy(color = VColors.success),
                         )
                     }
                 }
@@ -508,12 +511,12 @@ private fun EventManageContent(
             item {
                 Text(
                     text = "Registrations (${state.registrations.size})",
-                    style = VTheme.type.h3.colored(c.ink),
+                    style = VTypography.h3.copy(color = VColors.ink),
                     modifier = Modifier.padding(vertical = 8.dp),
                 )
             }
-            items(state.registrations) { reg ->
-                RegistrationCard(reg = reg)
+            itemsIndexed(state.registrations, key = { _, it -> it.id }) { index, reg ->
+                RegistrationCard(reg = reg, modifier = Modifier.staggeredItemEntrance(index, state.registrations.isNotEmpty()))
             }
         }
     }
@@ -523,17 +526,17 @@ private fun EventManageContent(
 private fun AdminEventCard(
     event: AdminEventDto,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    VCard(
-        modifier = Modifier
+        VCard(
+        modifier = modifier
             .fillMaxWidth()
             .clickable { onClick() },
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = event.title, style = VTheme.type.h3.colored(c.ink))
+            Text(text = event.title, style = VTypography.h3.copy(color = VColors.ink))
             Spacer(Modifier.height(4.dp))
-            Text(text = "${event.type} • ${event.startDate}", style = VTheme.type.body.colored(c.ink2))
+            Text(text = "${event.type} • ${event.startDate}", style = VTypography.body.copy(color = VColors.ink2))
             Spacer(Modifier.height(8.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -546,7 +549,7 @@ private fun AdminEventCard(
                 )
                 Text(
                     text = "${event.slotCount} slots • ${event.totalRegistrations} regs",
-                    style = VTheme.type.caption.colored(c.ink3),
+                    style = VTypography.caption.copy(color = VColors.ink3),
                 )
             }
         }
@@ -554,29 +557,28 @@ private fun AdminEventCard(
 }
 
 @Composable
-private fun RegistrationCard(reg: AdminRegistrationDto) {
-    val c = VTheme.colors
-    VCard(modifier = Modifier.fillMaxWidth()) {
+private fun RegistrationCard(reg: AdminRegistrationDto, modifier: Modifier = Modifier) {
+        VCard(modifier = modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = reg.eventTitle,
-                style = VTheme.type.h3.colored(c.ink),
+                style = VTypography.h3.copy(color = VColors.ink),
             )
             Spacer(Modifier.height(4.dp))
             Text(
                 text = "${reg.parentName} • ${reg.parentMobile}",
-                style = VTheme.type.body.colored(c.ink2),
+                style = VTypography.body.copy(color = VColors.ink2),
             )
             if (reg.studentName != null) {
                 Text(
                     text = "Student: ${reg.studentName}",
-                    style = VTheme.type.caption.colored(c.ink3),
+                    style = VTypography.caption.copy(color = VColors.ink3),
                 )
             }
             if (reg.slotTime != null) {
                 Text(
                     text = "Slot: ${reg.slotTime}",
-                    style = VTheme.type.caption.colored(c.ink3),
+                    style = VTypography.caption.copy(color = VColors.ink3),
                 )
             }
             Spacer(Modifier.height(8.dp))
@@ -594,7 +596,7 @@ private fun RegistrationCard(reg: AdminRegistrationDto) {
                 VBadge(text = reg.status, tone = tone)
                 Text(
                     text = "${reg.attendeeCount} attending • ${reg.eventDate}",
-                    style = VTheme.type.caption.colored(c.ink3),
+                    style = VTypography.caption.copy(color = VColors.ink3),
                 )
             }
         }

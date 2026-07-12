@@ -44,7 +44,9 @@ import kotlinx.coroutines.launch
  */
 data class MessagesState(
     val threads: List<MessageThread> = emptyList(),
-    val isSending: Boolean = false
+    val isSending: Boolean = false,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 /**
@@ -131,7 +133,7 @@ class MessagesViewModel(
 
             when (val result = messagesRepository.getThreads(token)) {
                 is NetworkResult.Success -> {
-                    _state.value = _state.value.copy(threads = result.data)
+                    _state.value = _state.value.copy(threads = result.data, isStale = result.isStale, isOffline = result.isOffline)
                 }
                 is NetworkResult.Error -> {
                     _errorMessage.value = result.message

@@ -29,6 +29,7 @@ package com.littlebridge.enrollplus.feature.library
 
 import java.time.Instant
 import java.time.LocalDate
+import org.slf4j.LoggerFactory
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
@@ -376,6 +377,7 @@ typealias LibraryEventSubscriber = (LibraryEvent) -> Unit
  */
 object LibraryEventBus {
 
+    private val logger = LoggerFactory.getLogger(LibraryEventBus::class.java)
     private val subscribers = CopyOnWriteArrayList<LibraryEventSubscriber>()
     private val typedSubscribers = ConcurrentHashMap<Class<out LibraryEvent>, CopyOnWriteArrayList<LibraryEventSubscriber>>()
 
@@ -410,7 +412,7 @@ object LibraryEventBus {
         // Global subscribers
         for (sub in subscribers) {
             runCatching { sub(event) }
-                .onFailure { System.err.println("[LibraryEventBus] Subscriber error: ${it.message}") }
+                .onFailure { logger.warn("[LibraryEventBus] Subscriber error: {}", it.message, it) }
         }
 
         // Typed subscribers
@@ -418,7 +420,7 @@ object LibraryEventBus {
         if (typed != null) {
             for (sub in typed) {
                 runCatching { sub(event) }
-                    .onFailure { System.err.println("[LibraryEventBus] Typed subscriber error: ${it.message}") }
+                    .onFailure { logger.warn("[LibraryEventBus] Typed subscriber error: {}", it.message, it) }
             }
         }
     }

@@ -10,7 +10,8 @@ import com.littlebridge.enrollplus.feature.event.domain.model.ParentEventListRes
 import com.littlebridge.enrollplus.feature.event.domain.model.RegisterRequest
 import com.littlebridge.enrollplus.feature.event.domain.model.RegistrationDto
 import com.littlebridge.enrollplus.feature.event.domain.model.RescheduleRequest
-import java.util.UUID
+import com.littlebridge.enrollplus.util.currentTimeMillis
+import com.littlebridge.enrollplus.util.randomUUID
 
 class OfflineAwareEventRepository(
     private val db: AppDatabase,
@@ -36,7 +37,7 @@ class OfflineAwareEventRepository(
                     myStatus = dto.myRegistrationStatus,
                     mySlotId = dto.mySlotId,
                     myAttendeeCount = dto.myAttendeeCount,
-                    cachedAt = System.currentTimeMillis(),
+                    cachedAt = currentTimeMillis(),
                 )
             }
             if (entities.isNotEmpty()) {
@@ -81,18 +82,18 @@ class OfflineAwareEventRepository(
             // Queue for offline sync
             db.eventOutboxDao().insert(
                 EventOutboxEntity(
-                    id = UUID.randomUUID().toString(),
+                    id = randomUUID(),
                     operation = "REGISTER",
                     eventId = eventId,
                     slotId = request.slotId,
                     studentId = request.studentId,
                     attendeeCount = request.attendeeCount,
-                    clientRequestId = UUID.randomUUID().toString(),
+                    clientRequestId = randomUUID(),
                     status = "PENDING",
                     attempts = 0,
                     lastError = null,
-                    createdAt = System.currentTimeMillis(),
-                    updatedAt = System.currentTimeMillis(),
+                    createdAt = currentTimeMillis(),
+                    updatedAt = currentTimeMillis(),
                 )
             )
             return NetworkResult.Error("Offline — registration queued for sync")
@@ -109,18 +110,18 @@ class OfflineAwareEventRepository(
         if (result is NetworkResult.ConnectionError) {
             db.eventOutboxDao().insert(
                 EventOutboxEntity(
-                    id = UUID.randomUUID().toString(),
+                    id = randomUUID(),
                     operation = "CANCEL",
                     eventId = eventId,
                     slotId = null,
                     studentId = request.studentId,
                     attendeeCount = 0,
-                    clientRequestId = UUID.randomUUID().toString(),
+                    clientRequestId = randomUUID(),
                     status = "PENDING",
                     attempts = 0,
                     lastError = null,
-                    createdAt = System.currentTimeMillis(),
-                    updatedAt = System.currentTimeMillis(),
+                    createdAt = currentTimeMillis(),
+                    updatedAt = currentTimeMillis(),
                 )
             )
             return NetworkResult.Error("Offline — cancellation queued for sync")
@@ -137,18 +138,18 @@ class OfflineAwareEventRepository(
         if (result is NetworkResult.ConnectionError) {
             db.eventOutboxDao().insert(
                 EventOutboxEntity(
-                    id = UUID.randomUUID().toString(),
+                    id = randomUUID(),
                     operation = "RESCHEDULE",
                     eventId = eventId,
                     slotId = request.newSlotId,
                     studentId = null,
                     attendeeCount = 0,
-                    clientRequestId = UUID.randomUUID().toString(),
+                    clientRequestId = randomUUID(),
                     status = "PENDING",
                     attempts = 0,
                     lastError = null,
-                    createdAt = System.currentTimeMillis(),
-                    updatedAt = System.currentTimeMillis(),
+                    createdAt = currentTimeMillis(),
+                    updatedAt = currentTimeMillis(),
                 )
             )
             return NetworkResult.Error("Offline — reschedule queued for sync")

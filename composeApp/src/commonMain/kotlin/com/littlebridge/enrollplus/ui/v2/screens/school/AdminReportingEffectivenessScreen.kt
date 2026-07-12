@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -34,6 +33,7 @@ import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
 import com.littlebridge.enrollplus.feature.reportcard.domain.model.ReportCardModels
 import com.littlebridge.enrollplus.feature.reportcard.presentation.AdminReportEffectivenessViewModel
+import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
@@ -41,8 +41,13 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
+import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 
 /**
  * AdminReportingEffectivenessScreen — shows the Learn/Flywheel data:
@@ -54,14 +59,13 @@ fun AdminReportingEffectivenessScreen(
     viewModel: AdminReportEffectivenessViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
-    val c = VTheme.colors
-    var currentTerm by remember { mutableStateOf("Term 2") }
+        var currentTerm by remember { mutableStateOf("Term 2") }
     var previousTerm by remember { mutableStateOf("Term 1") }
 
     LaunchedEffect(Unit) { viewModel.loadEffectiveness() }
 
     Column(
-        Modifier.fillMaxSize().background(c.background),
+        Modifier.fillMaxSize().background(VColors.surface),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         // Header
@@ -70,32 +74,32 @@ fun AdminReportingEffectivenessScreen(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            VButton(text = "Back", onClick = onBack, variant = VButtonVariant.Secondary, size = VButtonSize.Sm)
-            Text("Reporting Effectiveness", style = VTheme.type.h3.colored(c.ink))
+            VButton(text = appString(StringKeys.COMMON_BUTTON_BACK), onClick = onBack, variant = VButtonVariant.Secondary, size = VButtonSize.Sm)
+            Text(appString(StringKeys.SCH_REPORTING_EFFECTIVENESS), style = VTypography.h3.copy(color = VColors.ink))
         }
 
         // Flywheel trigger
         VCard(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Run Flywheel Measurement", style = VTheme.type.label.colored(c.ink).copy(fontWeight = FontWeight.Bold))
+                Text(appString(StringKeys.SCH_RUN_FLYWHEEL), style = VTypography.label.copy(color = VColors.ink).copy(fontWeight = FontWeight.Bold))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     OutlinedTextField(
                         value = currentTerm,
                         onValueChange = { currentTerm = it },
-                        label = { Text("Current") },
+                        label = { Text(appString(StringKeys.SCH_CURRENT)) },
                         modifier = Modifier.weight(1f),
                         singleLine = true,
                     )
                     OutlinedTextField(
                         value = previousTerm,
                         onValueChange = { previousTerm = it },
-                        label = { Text("Previous") },
+                        label = { Text(appString(StringKeys.SCH_PREVIOUS)) },
                         modifier = Modifier.weight(1f),
                         singleLine = true,
                     )
                 }
                 VButton(
-                    text = if (state.runningFlywheel) "Running…" else "Run Flywheel",
+                    text = if (state.runningFlywheel) appString(StringKeys.SCH_RUNNING) else appString(StringKeys.SCH_RUN_FLYWHEEL_BTN),
                     onClick = { viewModel.runFlywheel(currentTerm, previousTerm) },
                     enabled = !state.runningFlywheel,
                     size = VButtonSize.Sm,
@@ -107,8 +111,8 @@ fun AdminReportingEffectivenessScreen(
             Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                 VCard(Modifier.fillMaxWidth()) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Icon(VIcons.Check, contentDescription = null, tint = c.success, modifier = Modifier.size(16.dp))
-                        Text("Flywheel complete: ${results.size} focus areas measured", style = VTheme.type.body.colored(c.ink))
+                        Icon(VIcons.Check, contentDescription = null, tint = VColors.success, modifier = Modifier.size(16.dp))
+                        Text(appString(StringKeys.SCH_FLYWHEEL_COMPLETE, "count" to results.size.toString()), style = VTypography.body.copy(color = VColors.ink))
                     }
                 }
             }
@@ -116,22 +120,20 @@ fun AdminReportingEffectivenessScreen(
 
         when {
             state.isLoading -> {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = c.accent)
-                }
+                SkeletonList(rows = 5, withAvatar = false)
             }
             state.error != null -> {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(state.error!!, style = VTheme.type.body.colored(c.danger))
-                }
+                VStateHost(loading = false, error = state.error, isEmpty = false, onRetry = { viewModel.loadEffectiveness() }) {}
             }
             else -> {
-                LazyColumn(
-                    Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    items(state.effectiveness) { eff ->
-                        EffectivenessCard(eff)
+                VPullRefresh(isRefreshing = state.runningFlywheel, onRefresh = { viewModel.loadEffectiveness() }) {
+                    LazyColumn(
+                        Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        items(state.effectiveness) { eff ->
+                            EffectivenessCard(eff, modifier = Modifier.staggeredItemEntrance(state.effectiveness.indexOf(eff), state.effectiveness.isNotEmpty()))
+                        }
                     }
                 }
             }
@@ -140,26 +142,25 @@ fun AdminReportingEffectivenessScreen(
 }
 
 @Composable
-private fun EffectivenessCard(eff: ReportCardModels.EffectivenessReport) {
-    val c = VTheme.colors
-    val scoreColor = when {
-        eff.effectivenessScore >= 0.7 -> c.success
-        eff.effectivenessScore >= 0.4 -> c.warning
-        else -> c.danger
+private fun EffectivenessCard(eff: ReportCardModels.EffectivenessReport, modifier: Modifier = Modifier) {
+        val scoreColor = when {
+        eff.effectivenessScore >= 0.7 -> VColors.success
+        eff.effectivenessScore >= 0.4 -> VColors.gold
+        else -> VColors.error
     }
-    VCard(Modifier.fillMaxWidth()) {
+    VCard(modifier.fillMaxWidth()) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(eff.focusArea, style = VTheme.type.body.colored(c.ink).copy(fontWeight = FontWeight.Medium))
-                Text("${(eff.effectivenessScore * 100).toInt()}%", style = VTheme.type.h3.colored(scoreColor).copy(fontSize = 16.sp))
+                Text(eff.focusArea, style = VTypography.body.copy(color = VColors.ink).copy(fontWeight = FontWeight.Medium))
+                Text("${(eff.effectivenessScore * 100).toInt()}%", style = VTypography.h3.copy(color = scoreColor).copy(fontSize = 16.sp))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("${eff.studentsImproved}/${eff.studentsTargeted} improved",
-                    style = VTheme.type.caption.colored(c.ink2))
+                Text(appString(StringKeys.SCH_N_IMPROVED, "improved" to eff.studentsImproved.toString(), "targeted" to eff.studentsTargeted.toString()),
+                    style = VTypography.caption.copy(color = VColors.ink2))
                 VBadge(text = eff.confidence, tone = when (eff.confidence) {
                     "high" -> VBadgeTone.Success
                     "medium" -> VBadgeTone.Arctic

@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Enroll+ — Teacher Portal (All Tabs)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--cream:#FBF8F4;--cream-deep:#F5F0E8;--white:#FFFFFF;--surface-tint:#F8F4EF;--surface-warm:#FFF6EE;--ink:#1A1614;--ink-2:#5C544E;--ink-3:#8A8078;--line:#E8E0D6;--line-soft:#F0EAE0;--violet:#5B41D5;--violet-hover:#4A30C4;--violet-soft:#EEE8FB;--violet-ink:#16006E;--violet-muted:#B9A9F3;--coral:#F82B60;--coral-soft:#FFE4EC;--gold:#FCB400;--gold-soft:#FFF4D1;--sky:#18BFFF;--sky-soft:#E0F6FF;--mint:#2DCE89;--mint-soft:#DCF5E8;--success:#2D7A4A;--success-soft:#D4EDDB;--error:#BA1A1A;--error-soft:#FFDAD6;--r-sm:10px;--r-md:14px;--r-lg:18px;--r-xl:24px;--r-2xl:32px;--r-full:9999px;--s-xs:4px;--s-sm:8px;--s-md:16px;--s-lg:24px;--s-xl:32px;--font:'Inter',-apple-system,system-ui,sans-serif;--fw-r:400;--fw-m:500;--fw-s:600;--fw-b:700;--fw-eb:800;--dur:250ms;--ease:cubic-bezier(0.2,0,0,1);--shadow-card:0 0 0 1px rgba(232,224,214,0.6),0 1px 2px rgba(26,22,20,0.04),0 1px 3px rgba(26,22,20,0.06);--shadow-card-hover:0 0 0 1px rgba(232,224,214,0.8),0 2px 8px -2px rgba(26,22,20,0.08),0 1px 3px rgba(26,22,20,0.04);--shadow-primary:0 4px 14px -2px rgba(91,65,213,0.22)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:var(--font);background:#0A0910;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.phone{width:390px;height:844px;background:#000;border-radius:50px;padding:8px;box-shadow:0 0 0 1.5px rgba(255,255,255,0.04),0 0 0 6px rgba(0,0,0,0.3),0 40px 100px rgba(0,0,0,0.6),0 15px 40px rgba(0,0,0,0.3);flex-shrink:0;position:relative}
+.screen{width:100%;height:100%;border-radius:42px;overflow:hidden;position:relative;background:var(--cream);display:flex;flex-direction:column}
+.island{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:124px;height:34px;background:#000;border-radius:20px;z-index:100}
+.home-bar{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;z-index:100;background:rgba(26,22,20,0.25)}
+.statusbar{display:flex;justify-content:space-between;align-items:center;padding:12px 32px 4px;font-size:14px;font-weight:var(--fw-s);flex-shrink:0;z-index:10;color:var(--ink)}
+.statusbar .icons{font-size:13px;letter-spacing:-0.5px}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:120px}
+.scroll::-webkit-scrollbar{display:none}
+.tab{display:none;flex-direction:column;min-height:100%;opacity:0;transition:opacity 150ms var(--ease)}
+.tab.active{display:flex;opacity:1}
+.header{display:flex;align-items:center;justify-content:space-between;padding:var(--s-sm) var(--s-lg) 0}
+.logo{font-size:20px;font-weight:var(--fw-eb);color:var(--violet);letter-spacing:-0.6px}
+.logo span{font-weight:var(--fw-eb)}
+.icon-btn{width:40px;height:40px;border-radius:var(--r-full);background:transparent;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:all var(--dur) var(--ease)}
+.icon-btn:hover{opacity:0.7}
+.icon-btn svg{width:24px;height:24px;stroke:var(--ink);stroke-width:2;fill:none}
+.badge{position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;border-radius:var(--r-full);background:var(--coral);color:#fff;font-size:11px;font-weight:var(--fw-b);display:flex;align-items:center;justify-content:center;padding:0 5px;border:2px solid var(--cream)}
+.greeting{padding:0 var(--s-lg) var(--s-md)}
+.greeting-hi{font-size:14px;font-weight:var(--fw-m);color:var(--violet);letter-spacing:0.01em}
+.greeting-text{font-size:26px;font-weight:var(--fw-eb);color:var(--ink);letter-spacing:-0.8px;margin-top:0;line-height:1.2}
+.greeting-text .accent{color:var(--violet)}
+.hero{margin:0 var(--s-lg) var(--s-md);background:linear-gradient(135deg,var(--violet) 0%,var(--violet-hover) 100%);border-radius:var(--r-xl);box-shadow:var(--shadow-primary);overflow:hidden;position:relative;color:#fff}
+.hero-top{display:flex;align-items:center;justify-content:space-between;padding:var(--s-md) var(--s-md) var(--s-sm)}
+.hero-label{font-size:11px;font-weight:var(--fw-b);color:rgba(255,255,255,0.75);letter-spacing:0.08em;text-transform:uppercase}
+.hero-status{display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:var(--r-full);background:rgba(255,255,255,0.14);font-size:11px;font-weight:var(--fw-b);color:#fff;letter-spacing:0.02em}
+.hero-status::before{content:'';width:6px;height:6px;border-radius:50%;background:#fff;animation:pulse 1.8s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.35}}
+.hero-body{padding:0 var(--s-md) var(--s-md)}
+.hero-class{font-size:26px;font-weight:var(--fw-eb);color:#fff;letter-spacing:-0.7px;line-height:1.1}
+.hero-subject{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:var(--fw-m);color:rgba(255,255,255,0.85);margin-top:6px}
+.hero-subject svg{width:16px;height:16px;stroke:#fff;stroke-width:2;fill:none}
+.hero-meta{display:flex;gap:var(--s-md);padding:var(--s-md);border-top:1px solid rgba(255,255,255,0.12)}
+.hero-meta-item{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:var(--fw-m);color:rgba(255,255,255,0.85)}
+.hero-meta-item svg{width:15px;height:15px;stroke:rgba(255,255,255,0.7);stroke-width:2;fill:none}
+.hero-actions{display:flex;gap:var(--s-sm);padding:0 var(--s-md) var(--s-md)}
+.hero-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;border-radius:var(--r-full);border:none;font-family:var(--font);font-size:14px;font-weight:var(--fw-s);cursor:pointer;transition:all var(--dur) var(--ease)}
+.hero-btn-primary{background:#fff;color:var(--violet)}
+.hero-btn-primary:hover{background:rgba(255,255,255,0.92)}
+.hero-btn-ghost{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2)}
+.hero-btn-ghost:hover{background:rgba(255,255,255,0.2)}
+.hero-btn svg{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none}
+.section{display:flex;align-items:center;justify-content:space-between;padding:var(--s-md) var(--s-lg) var(--s-sm)}
+.section-title{font-size:15px;font-weight:var(--fw-b);color:var(--ink);letter-spacing:-0.2px}
+.section-link{font-size:13px;font-weight:var(--fw-s);color:var(--violet);cursor:pointer}
+.section-link:hover{opacity:0.7}
+.timeline-scroll{display:flex;gap:var(--s-sm);overflow-x:auto;padding:0 var(--s-lg) var(--s-md);scrollbar-width:none}
+.timeline-scroll::-webkit-scrollbar{display:none}
+.period-card{flex-shrink:0;width:148px;padding:var(--s-md);border-radius:var(--r-lg);background:var(--white);border:none;cursor:pointer;transition:all var(--dur) var(--ease);box-shadow:var(--shadow-card)}
+.period-card:hover{box-shadow:var(--shadow-card-hover)}
+.period-card.current{box-shadow:0 0 0 1.5px var(--violet),var(--shadow-card-hover)}
+.period-card.done{opacity:0.55}
+.period-time{font-size:12px;font-weight:var(--fw-m);color:var(--ink-3)}
+.period-class{font-size:18px;font-weight:var(--fw-eb);color:var(--ink);margin-top:4px;letter-spacing:-0.4px}
+.period-subject{font-size:13px;font-weight:var(--fw-m);color:var(--ink-2);margin-top:2px}
+.period-room{font-size:12px;font-weight:var(--fw-m);color:var(--ink-3);margin-top:8px}
+.period-badge{display:inline-block;margin-top:8px;padding:3px 8px;border-radius:var(--r-full);font-size:10px;font-weight:var(--fw-b);text-transform:uppercase;letter-spacing:0.4px}
+.period-badge.current{background:var(--violet);color:#fff}
+.period-badge.done{background:var(--mint-soft);color:var(--success)}
+.period-badge.next{background:var(--surface-tint);color:var(--ink-2)}
+.obligations{margin:0 var(--s-lg) var(--s-md);padding:var(--s-md);background:var(--white);border-radius:var(--r-lg);box-shadow:var(--shadow-card)}
+.obligations-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--s-sm)}
+.obligations-title{font-size:16px;font-weight:var(--fw-b);color:var(--ink)}
+.obligations-count{display:flex;align-items:center;gap:6px}
+.obligations-count-num{font-size:24px;font-weight:var(--fw-eb);color:var(--coral);letter-spacing:-0.8px}
+.obligations-count-label{font-size:13px;font-weight:var(--fw-m);color:var(--ink-3)}
+.obligation-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-top:1px solid var(--line-soft);cursor:pointer}
+.obligation-row:first-of-type{border-top:none}
+.obligation-row-left{display:flex;align-items:center;gap:10px}
+.obligation-dot{width:8px;height:8px;border-radius:50%}
+.obligation-dot.attendance{background:var(--coral)}
+.obligation-dot.homework{background:var(--gold)}
+.obligation-dot.syllabus{background:var(--sky)}
+.obligation-dot.leave{background:var(--violet)}
+.obligation-label{font-size:15px;font-weight:var(--fw-m);color:var(--ink)}
+.obligation-count{font-size:14px;font-weight:var(--fw-b);color:var(--ink-2)}
+.quick-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--s-sm);padding:0 var(--s-lg) var(--s-md)}
+.qa-item{display:flex;align-items:center;gap:12px;padding:14px;border-radius:var(--r-md);background:var(--white);border:none;cursor:pointer;transition:all var(--dur) var(--ease);box-shadow:var(--shadow-card)}
+.qa-item:hover{box-shadow:var(--shadow-card-hover)}
+.qa-icon{width:40px;height:40px;border-radius:var(--r-full);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.qa-icon.violet{background:var(--violet-soft)}.qa-icon.coral{background:var(--coral-soft)}.qa-icon.gold{background:var(--gold-soft)}.qa-icon.mint{background:var(--mint-soft)}
+.qa-icon svg{width:20px;height:20px;stroke-width:2;fill:none}
+.qa-icon.violet svg{stroke:var(--violet)}.qa-icon.coral svg{stroke:var(--coral)}.qa-icon.gold svg{stroke:var(--gold)}.qa-icon.mint svg{stroke:var(--success)}
+.qa-text{flex:1}.qa-label{font-size:14px;font-weight:var(--fw-b);color:var(--ink);letter-spacing:-0.2px}.qa-sub{font-size:12px;font-weight:var(--fw-m);color:var(--ink-3);margin-top:1px}
+.class-card{margin:0 var(--s-lg) 8px;padding:14px 16px;background:var(--white);border-radius:var(--r-md);border:none;cursor:pointer;transition:all var(--dur) var(--ease);box-shadow:var(--shadow-card)}
+.class-card:hover{box-shadow:var(--shadow-card-hover)}
+.class-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--s-sm)}
+.class-card-name{font-size:17px;font-weight:var(--fw-eb);color:var(--ink);letter-spacing:-0.4px}
+.class-card-subject{font-size:14px;font-weight:var(--fw-m);color:var(--ink-2);margin-top:2px}
+.class-card-meta{display:flex;align-items:center;gap:var(--s-md);margin-top:var(--s-sm)}
+.class-meta-item{display:flex;align-items:center;gap:4px;font-size:13px;font-weight:var(--fw-m);color:var(--ink-3)}
+.class-meta-item svg{width:14px;height:14px;stroke:var(--ink-3);stroke-width:2;fill:none}
+.class-chip{padding:4px 10px;border-radius:var(--r-full);font-size:11px;font-weight:var(--fw-b)}
+.class-chip.next{background:var(--violet-soft);color:var(--violet)}.class-chip.now{background:var(--mint-soft);color:var(--success)}
+.events{padding:0 var(--s-lg) var(--s-md)}
+.event-card{display:flex;align-items:center;gap:var(--s-sm);padding:var(--s-sm);border-radius:var(--r-md);background:var(--white);border:none;cursor:pointer;transition:all var(--dur) var(--ease);box-shadow:var(--shadow-card);margin-bottom:8px}
+.event-card:hover{box-shadow:var(--shadow-card-hover)}
+.event-date{width:44px;height:44px;border-radius:var(--r-sm);background:var(--surface-tint);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
+.event-day{font-size:17px;font-weight:var(--fw-eb);color:var(--ink-2)}.event-month{font-size:11px;font-weight:var(--fw-b);color:var(--ink-3);text-transform:uppercase}
+.event-info{flex:1}.event-title{font-size:14px;font-weight:var(--fw-s);color:var(--ink)}.event-time{font-size:12px;font-weight:var(--fw-m);color:var(--ink-3);margin-top:2px}
+/* Update */
+.update-header,.classes-header,.timetable-header{padding:var(--s-md) var(--s-lg) var(--s-sm)}
+.update-title,.classes-title,.timetable-title{font-size:22px;font-weight:var(--fw-eb);color:var(--ink);letter-spacing:-0.6px}
+.update-sub,.classes-sub,.timetable-sub{font-size:14px;font-weight:var(--fw-m);color:var(--ink-3);margin-top:2px}
+.scope-title{font-size:13px;font-weight:var(--fw-m);color:var(--ink-3);padding:0 var(--s-lg) var(--s-sm)}
+.scope-list{display:flex;flex-direction:column;gap:var(--s-sm);padding:0 var(--s-lg) var(--s-md)}
+.scope-item{display:flex;align-items:center;justify-content:space-between;padding:var(--s-md);border-radius:var(--r-md);background:var(--white);border:none;cursor:pointer;transition:all var(--dur) var(--ease);box-shadow:var(--shadow-card)}
+.scope-item:hover{box-shadow:var(--shadow-card-hover)}
+.scope-item-left{display:flex;align-items:center;gap:var(--s-sm)}
+.scope-item-icon{width:44px;height:44px;border-radius:var(--r-full);background:var(--surface-tint);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:var(--fw-eb);color:var(--ink-2)}
+.scope-item-info{display:flex;flex-direction:column}
+.scope-item-name{font-size:16px;font-weight:var(--fw-b);color:var(--ink)}
+.scope-item-sub{font-size:13px;font-weight:var(--fw-m);color:var(--ink-3)}
+.scope-item-chevron{color:var(--ink-3);font-size:22px}
+.tool-segments{display:flex;gap:0;padding:0 var(--s-lg) var(--s-md);border-bottom:1px solid var(--line-soft)}
+.tool-seg{flex:1;padding:10px var(--s-xs);border:none;background:none;font-family:var(--font);font-size:12px;font-weight:var(--fw-s);color:var(--ink-3);cursor:pointer;position:relative;transition:color var(--dur) var(--ease);display:flex;flex-direction:column;align-items:center;gap:4px;letter-spacing:0.01em}
+.tool-seg svg{width:18px;height:18px;stroke-width:2;fill:none;stroke:currentColor}
+.tool-seg.active{color:var(--violet)}
+.tool-seg.active::after{content:'';position:absolute;bottom:-1px;left:50%;transform:translateX(-50%);width:24px;height:3px;border-radius:2px;background:var(--violet)}
+.tool-panel{display:none;padding:0 var(--s-lg) var(--s-md)}
+.tool-panel.active{display:block}
+.attendance-header{display:flex;align-items:center;justify-content:space-between;padding:var(--s-md) 0 var(--s-sm)}
+.attendance-class-name{font-size:18px;font-weight:var(--fw-eb);color:var(--ink)}
+.attendance-date{font-size:13px;font-weight:var(--fw-m);color:var(--ink-3)}
+.attendance-quick{display:flex;gap:var(--s-sm);padding:0 0 var(--s-sm)}
+.attendance-quick-btn{padding:7px var(--s-md);border-radius:var(--r-full);font-size:13px;font-weight:var(--fw-s);cursor:pointer;border:1.5px solid var(--line);background:transparent;color:var(--ink-2);transition:all var(--dur) var(--ease)}
+.attendance-quick-btn:hover{border-color:var(--violet);color:var(--violet);background:var(--violet-soft)}
+.attendance-summary{display:flex;gap:var(--s-sm);padding:var(--s-sm) 0}
+.summary-chip{flex:1;text-align:center;padding:8px;border-radius:var(--r-sm);font-size:13px;font-weight:var(--fw-s)}
+.summary-chip.present{background:var(--success-soft);color:var(--success)}
+.summary-chip.absent{background:var(--error-soft);color:var(--error)}
+.summary-chip.late{background:var(--gold-soft);color:var(--gold)}
+.student-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line-soft);transition:background var(--dur) var(--ease)}
+.student-row:last-child{border-bottom:none}
+.student-row-left{display:flex;align-items:center;gap:var(--s-sm)}
+.student-avatar{width:36px;height:36px;border-radius:var(--r-full);background:var(--surface-tint);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:var(--fw-eb);color:var(--ink-2)}
+.student-info{display:flex;flex-direction:column}
+.student-name{font-size:15px;font-weight:var(--fw-s);color:var(--ink)}
+.student-roll{font-size:12px;font-weight:var(--fw-m);color:var(--ink-3)}
+.attendance-toggle{display:flex;gap:4px}
+.att-toggle-btn{width:32px;height:32px;border-radius:var(--r-sm);border:1.5px solid var(--line);background:transparent;font-size:12px;font-weight:var(--fw-b);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all var(--dur) var(--ease);color:var(--ink-3)}
+.att-toggle-btn.present.active{background:var(--success-soft);border-color:var(--success);color:var(--success)}
+.att-toggle-btn.absent.active{background:var(--coral-soft);border-color:var(--coral);color:var(--coral)}
+.att-toggle-btn.late.active{background:var(--gold-soft);border-color:var(--gold);color:var(--gold)}
+/* Classes */
+.class-stats{display:flex;gap:var(--s-sm);padding:0 var(--s-lg) var(--s-md)}
+.class-stat{flex:1;padding:var(--s-md);border-radius:var(--r-md);background:var(--white);box-shadow:var(--shadow-card)}
+.class-stat-num{font-size:22px;font-weight:var(--fw-eb);color:var(--ink);letter-spacing:-0.6px}
+.class-stat-label{font-size:12px;font-weight:var(--fw-m);color:var(--ink-3);margin-top:2px}
+.class-roster{display:none;padding:0 var(--s-lg) var(--s-md)}
+.class-roster.active{display:block}
+.roster-header{display:flex;align-items:center;gap:var(--s-sm);padding:var(--s-sm) 0 var(--s-md)}
+.roster-back{width:32px;height:32px;border-radius:var(--r-full);background:var(--surface-tint);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.roster-back svg{width:18px;height:18px;stroke:var(--ink-2);stroke-width:2;fill:none}
+.roster-title{font-size:18px;font-weight:var(--fw-eb);color:var(--ink)}
+.roster-sub{font-size:13px;font-weight:var(--fw-m);color:var(--ink-3)}
+/* Timetable */
+.day-selector{display:flex;gap:0;padding:0 var(--s-lg) var(--s-sm);overflow-x:auto;scrollbar-width:none}
+.day-selector::-webkit-scrollbar{display:none}
+.day-btn{flex-shrink:0;padding:7px 14px;border-radius:var(--r-full);border:1.5px solid var(--line);background:transparent;font-size:13px;font-weight:var(--fw-s);color:var(--ink-2);cursor:pointer;transition:all var(--dur) var(--ease);margin-right:6px}
+.day-btn.active{background:var(--violet);color:#fff;border-color:var(--violet)}
+.day-btn.today{border-color:var(--violet);color:var(--violet)}
+.timetable-period{margin:0 var(--s-lg) 8px;padding:14px 16px;background:var(--white);border-radius:var(--r-md);border:none;cursor:pointer;transition:all var(--dur) var(--ease);display:flex;align-items:center;gap:14px;box-shadow:var(--shadow-card)}
+.timetable-period:hover{box-shadow:var(--shadow-card-hover)}
+.timetable-period-num{width:36px;height:36px;border-radius:var(--r-full);background:var(--surface-tint);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:var(--fw-eb);color:var(--ink-2);flex-shrink:0}
+.timetable-period-info{flex:1}
+.timetable-period-class{font-size:16px;font-weight:var(--fw-b);color:var(--ink)}
+.timetable-period-meta{font-size:13px;font-weight:var(--fw-m);color:var(--ink-3);margin-top:2px}
+.timetable-period-time{font-size:13px;font-weight:var(--fw-m);color:var(--ink-2);flex-shrink:0}
+.timetable-change{margin:0 var(--s-lg) var(--s-md)}
+.change-btn{width:100%;padding:14px;border-radius:var(--r-full);border:1.5px solid var(--line);background:var(--white);color:var(--ink-2);font-family:var(--font);font-size:14px;font-weight:var(--fw-s);cursor:pointer;transition:all var(--dur) var(--ease);box-shadow:var(--shadow-card)}
+.change-btn:hover{border-color:var(--violet);color:var(--violet);background:var(--violet-soft)}
+/* Profile */
+.profile-header{padding:var(--s-md) var(--s-lg) var(--s-sm);display:flex;align-items:center;gap:var(--s-md)}
+.profile-avatar{width:64px;height:64px;border-radius:var(--r-full);background:var(--surface-tint);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:var(--fw-eb);color:var(--violet)}
+.profile-info{flex:1}
+.profile-name{font-size:20px;font-weight:var(--fw-eb);color:var(--ink);letter-spacing:-0.4px}
+.profile-role{font-size:14px;font-weight:var(--fw-m);color:var(--ink-3);margin-top:2px}
+.profile-school{font-size:13px;font-weight:var(--fw-m);color:var(--ink-3);margin-top:2px}
+.settings-list{padding:0 var(--s-lg) var(--s-md)}
+.settings-group{margin-bottom:var(--s-md)}
+.settings-title{font-size:13px;font-weight:var(--fw-m);color:var(--ink-3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:var(--s-sm);padding-left:var(--s-sm)}
+.settings-card{background:var(--white);border-radius:var(--r-lg);box-shadow:var(--shadow-card);overflow:hidden}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:14px var(--s-md);border-bottom:1px solid var(--line-soft);cursor:pointer;transition:background var(--dur) var(--ease)}
+.settings-row:last-child{border-bottom:none}
+.settings-row:hover{background:var(--surface-tint)}
+.settings-row-left{display:flex;align-items:center;gap:12px}
+.settings-icon{width:36px;height:36px;border-radius:var(--r-full);display:flex;align-items:center;justify-content:center}
+.settings-icon.violet{background:var(--violet-soft)}.settings-icon.coral{background:var(--coral-soft)}.settings-icon.gold{background:var(--gold-soft)}.settings-icon.mint{background:var(--mint-soft)}.settings-icon.sky{background:var(--sky-soft)}
+.settings-icon svg{width:18px;height:18px;stroke-width:2;fill:none}
+.settings-icon.violet svg{stroke:var(--violet)}.settings-icon.coral svg{stroke:var(--coral)}.settings-icon.gold svg{stroke:var(--gold)}.settings-icon.mint svg{stroke:var(--success)}.settings-icon.sky svg{stroke:var(--sky)}
+.settings-label{font-size:15px;font-weight:var(--fw-m);color:var(--ink)}
+.settings-chevron{color:var(--ink-3);font-size:20px}
+/* Bottom nav */
+.bottom-nav{display:flex;align-items:center;justify-content:space-around;padding:8px var(--s-xs) var(--s-md);background:var(--white);flex-shrink:0;box-shadow:0 -1px 0 var(--line-soft)}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;padding:var(--s-xs) var(--s-sm);border:none;background:none;cursor:pointer;font-family:var(--font);position:relative;transition:all var(--dur) var(--ease)}
+.nav-icon{width:32px;height:32px;display:flex;align-items:center;justify-content:center;transition:all var(--dur) var(--ease);border-radius:var(--r-md);color:var(--ink-3)}
+.nav-icon svg{width:22px;height:22px;stroke-width:2;fill:none;stroke:currentColor}
+.nav-label{font-size:11px;font-weight:var(--fw-m);color:var(--ink-3);transition:all var(--dur) var(--ease)}
+.nav-item.active .nav-icon{background:var(--violet-soft);color:var(--violet)}
+.nav-item.active .nav-label{color:var(--violet);font-weight:var(--fw-b)}
+.nav-badge{position:absolute;top:0;right:8px;min-width:16px;height:16px;border-radius:var(--r-full);background:var(--coral);color:#fff;font-size:10px;font-weight:var(--fw-b);display:flex;align-items:center;justify-content:center;padding:0 4px}
+.settings-icon.ink{background:var(--surface-tint)}
+.settings-icon.ink svg{stroke:var(--ink-2)}
+.hero-progress-label{display:flex;justify-content:space-between;font-size:13px;font-weight:var(--fw-m);margin-bottom:8px}
+.hero-progress-bar{height:8px;border-radius:var(--r-full);overflow:hidden}
+.hero-progress-fill{height:100%;background:var(--violet);border-radius:var(--r-full)}
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="screen">
+    <div class="island"></div>
+    <div class="statusbar"><span>12:50</span><span class="icons">Signal Wi-Fi Battery</span></div>
+
+    <!-- HOME TAB -->
+    <div class="tab active" id="tab-home">
+      <div class="scroll">
+        <div class="header">
+          <div class="logo">Enroll<span>+</span></div>
+          <button class="icon-btn"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
+        </div>
+        <div class="greeting">
+          <div class="greeting-hi">Hi Mrs. Sharma</div>
+          <div class="greeting-text">here's <span class="accent">Your Teaching</span> day</div>
+        </div>
+        <div class="hero">
+          <div class="hero-top"><div class="hero-label">Now teaching</div><div class="hero-status">In progress</div></div>
+          <div class="hero-body">
+            <div class="hero-class">Class 7-B</div>
+            <div class="hero-subject"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Mathematics · Quadratic Equations</div>
+          </div>
+          <div class="hero-meta">
+            <div class="hero-meta-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>09:30 – 10:15</div>
+            <div class="hero-meta-item"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>32 students</div>
+            <div class="hero-meta-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Room 203</div>
+          </div>
+          <div class="hero-actions">
+            <button class="hero-btn hero-btn-primary"><svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>Mark attendance</button>
+            <button class="hero-btn hero-btn-ghost"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>Lesson plan</button>
+          </div>
+        </div>
+        <div class="section"><div class="section-title">Today's schedule</div><div class="section-link">Full timetable</div></div>
+        <div class="timeline-scroll">
+          <div class="period-card current"><div class="period-time">09:30 – 10:15</div><div class="period-class">7-B</div><div class="period-subject">Mathematics</div><div class="period-room">Room 203</div><span class="period-badge current">Now</span></div>
+          <div class="period-card"><div class="period-time">10:30 – 11:15</div><div class="period-class">8-A</div><div class="period-subject">Mathematics</div><div class="period-room">Room 205</div><span class="period-badge next">Next</span></div>
+          <div class="period-card"><div class="period-time">11:30 – 12:15</div><div class="period-class">6-C</div><div class="period-subject">Mathematics</div><div class="period-room">Room 201</div><span class="period-badge next">Later</span></div>
+          <div class="period-card done"><div class="period-time">08:30 – 09:15</div><div class="period-class">9-A</div><div class="period-subject">Mathematics</div><div class="period-room">Room 207</div><span class="period-badge done">Done</span></div>
+        </div>
+        <div class="obligations">
+          <div class="obligations-top"><div class="obligations-title">Pending actions</div><div class="obligations-count"><span class="obligations-count-num">4</span><span class="obligations-count-label">need attention</span></div></div>
+          <div class="obligation-row"><div class="obligation-row-left"><div class="obligation-dot attendance"></div><div class="obligation-label">Mark attendance</div></div><div class="obligation-count">2 classes</div></div>
+          <div class="obligation-row"><div class="obligation-row-left"><div class="obligation-dot homework"></div><div class="obligation-label">Review homework</div></div><div class="obligation-count">14 submissions</div></div>
+          <div class="obligation-row"><div class="obligation-row-left"><div class="obligation-dot syllabus"></div><div class="obligation-label">Syllabus behind pace</div></div><div class="obligation-count">8-A</div></div>
+          <div class="obligation-row"><div class="obligation-row-left"><div class="obligation-dot leave"></div><div class="obligation-label">Leave requests</div></div><div class="obligation-count">3 pending</div></div>
+        </div>
+        <div class="section"><div class="section-title">Quick actions</div></div>
+        <div class="quick-actions">
+          <button class="qa-item" onclick="switchTab('tab-update')"><div class="qa-icon violet"><svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg></div><div class="qa-text"><div class="qa-label">Attendance</div><div class="qa-sub">2 classes pending</div></div></button>
+          <button class="qa-item" onclick="switchTab('tab-update')"><div class="qa-icon mint"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div><div class="qa-text"><div class="qa-label">Marks</div><div class="qa-sub">Enter quiz marks</div></div></button>
+          <button class="qa-item" onclick="switchTab('tab-update')"><div class="qa-icon gold"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div><div class="qa-text"><div class="qa-label">Homework</div><div class="qa-sub">Assign & review</div></div></button>
+          <button class="qa-item" onclick="switchTab('tab-update')"><div class="qa-icon coral"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="qa-text"><div class="qa-label">Message</div><div class="qa-sub">Broadcast to class</div></div></button>
+        </div>
+        <div class="section"><div class="section-title">My classes</div><div class="section-link">See all</div></div>
+        <div class="class-card" onclick="switchTab('tab-classes')"><div class="class-card-top"><div><div class="class-card-name">Class 7-B</div><div class="class-card-subject">Mathematics</div></div><span class="class-chip now">Now</span></div><div class="class-card-meta"><div class="class-meta-item"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>32 students</div><div class="class-meta-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>09:30 – 10:15</div><div class="class-meta-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Room 203</div></div></div>
+        <div class="class-card" onclick="switchTab('tab-classes')"><div class="class-card-top"><div><div class="class-card-name">Class 8-A</div><div class="class-card-subject">Mathematics</div></div><span class="class-chip next">Next</span></div><div class="class-card-meta"><div class="class-meta-item"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>28 students</div><div class="class-meta-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>10:30 – 11:15</div><div class="class-meta-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Room 205</div></div></div>
+        <div class="section"><div class="section-title">Upcoming events</div><div class="section-link">All events</div></div>
+        <div class="events">
+          <div class="event-card"><div class="event-date"><div class="event-day">12</div><div class="event-month">Jul</div></div><div class="event-info"><div class="event-title">Science Exhibition</div><div class="event-time">Assembly Hall · 10:00 AM</div></div></div>
+          <div class="event-card"><div class="event-date"><div class="event-day">15</div><div class="event-month">Jul</div></div><div class="event-info"><div class="event-title">PTM — Class 7-B</div><div class="event-time">Room 203 · 4:00 PM</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- UPDATE TAB -->
+    <div class="tab" id="tab-update">
+      <div class="scroll">
+        <div class="header"><div class="logo">Enroll<span>+</span></div><button class="icon-btn"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button></div>
+        <div class="update-header"><div class="update-title">Update</div><div class="update-sub">Mark attendance, enter marks, manage homework</div></div>
+        <div class="scope-title">Select a class</div>
+        <div class="scope-list">
+          <div class="scope-item" onclick="showTool()"><div class="scope-item-left"><div class="scope-item-icon">7-B</div><div class="scope-item-info"><div class="scope-item-name">Class 7-B</div><div class="scope-item-sub">Mathematics · 32 students · 2 pending</div></div></div><div class="scope-item-chevron">›</div></div>
+          <div class="scope-item" onclick="showTool()"><div class="scope-item-left"><div class="scope-item-icon">8-A</div><div class="scope-item-info"><div class="scope-item-name">Class 8-A</div><div class="scope-item-sub">Mathematics · 28 students · 1 pending</div></div></div><div class="scope-item-chevron">›</div></div>
+          <div class="scope-item" onclick="showTool()"><div class="scope-item-left"><div class="scope-item-icon">6-C</div><div class="scope-item-info"><div class="scope-item-name">Class 6-C</div><div class="scope-item-sub">Mathematics · 35 students · All clear</div></div></div><div class="scope-item-chevron">›</div></div>
+          <div class="scope-item" onclick="showTool()"><div class="scope-item-left"><div class="scope-item-icon">9-A</div><div class="scope-item-info"><div class="scope-item-name">Class 9-A</div><div class="scope-item-sub">Mathematics · 30 students · 5 ungraded</div></div></div><div class="scope-item-chevron">›</div></div>
+        </div>
+        <div class="tool-segments">
+          <button class="tool-seg active" data-tool="attendance" onclick="switchTool('attendance')"><svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>Attendance</button>
+          <button class="tool-seg" data-tool="marks" onclick="switchTool('marks')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>Marks</button>
+          <button class="tool-seg" data-tool="homework" onclick="switchTool('homework')"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Homework</button>
+          <button class="tool-seg" data-tool="syllabus" onclick="switchTool('syllabus')"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Syllabus</button>
+          <button class="tool-seg" data-tool="lesson" onclick="switchTool('lesson')"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Lesson</button>
+        </div>
+        <div class="tool-panel active" id="tool-attendance">
+          <div class="attendance-header"><div><div class="attendance-class-name">Class 7-B · Mathematics</div><div class="attendance-date">Monday, 8 July 2026</div></div></div>
+          <div class="attendance-quick"><button class="attendance-quick-btn">All present</button><button class="attendance-quick-btn">All absent</button></div>
+          <div class="attendance-summary"><div class="summary-chip present">28 P</div><div class="summary-chip absent">2 A</div><div class="summary-chip late">0 L</div></div>
+          <div class="student-row"><div class="student-row-left"><div class="student-avatar">AK</div><div class="student-info"><div class="student-name">Aarav Kumar</div><div class="student-roll">Roll 01</div></div></div><div class="attendance-toggle"><button class="att-toggle-btn present active">P</button><button class="att-toggle-btn absent">A</button><button class="att-toggle-btn late">L</button></div></div>
+          <div class="student-row"><div class="student-row-left"><div class="student-avatar">PS</div><div class="student-info"><div class="student-name">Priya Sharma</div><div class="student-roll">Roll 02</div></div></div><div class="attendance-toggle"><button class="att-toggle-btn present active">P</button><button class="att-toggle-btn absent">A</button><button class="att-toggle-btn late">L</button></div></div>
+          <div class="student-row"><div class="student-row-left"><div class="student-avatar">RP</div><div class="student-info"><div class="student-name">Rohan Patel</div><div class="student-roll">Roll 03</div></div></div><div class="attendance-toggle"><button class="att-toggle-btn present">P</button><button class="att-toggle-btn absent active">A</button><button class="att-toggle-btn late">L</button></div></div>
+          <div class="student-row"><div class="student-row-left"><div class="student-avatar">AN</div><div class="student-info"><div class="student-name">Ananya Nair</div><div class="student-roll">Roll 04</div></div></div><div class="attendance-toggle"><button class="att-toggle-btn present">P</button><button class="att-toggle-btn absent active">A</button><button class="att-toggle-btn late">L</button></div></div>
+          <div class="student-row"><div class="student-row-left"><div class="student-avatar">VK</div><div class="student-info"><div class="student-name">Vivaan Khanna</div><div class="student-roll">Roll 05</div></div></div><div class="attendance-toggle"><button class="att-toggle-btn present active">P</button><button class="att-toggle-btn absent">A</button><button class="att-toggle-btn late">L</button></div></div>
+        </div>
+        <div class="tool-panel" id="tool-marks">
+          <div class="attendance-header"><div><div class="attendance-class-name">Class 7-B · Mathematics</div><div class="attendance-date">Quiz: Quadratic Equations</div></div></div>
+          <div class="student-row"><div class="student-row-left"><div class="student-avatar">AK</div><div class="student-info"><div class="student-name">Aarav Kumar</div><div class="student-roll">Roll 01</div></div></div><div class="attendance-toggle"><span style="font-size:14px;font-weight:700;color:var(--ink)">18/20</span></div></div>
+          <div class="student-row"><div class="student-row-left"><div class="student-avatar">PS</div><div class="student-info"><div class="student-name">Priya Sharma</div><div class="student-roll">Roll 02</div></div></div><div class="attendance-toggle"><span style="font-size:14px;font-weight:700;color:var(--gold)">—</span></div></div>
+          <div class="student-row"><div class="student-row-left"><div class="student-avatar">RP</div><div class="student-info"><div class="student-name">Rohan Patel</div><div class="student-roll">Roll 03</div></div></div><div class="attendance-toggle"><span style="font-size:14px;font-weight:700;color:var(--ink)">15/20</span></div></div>
+        </div>
+        <div class="tool-panel" id="tool-homework">
+          <div class="attendance-header"><div><div class="attendance-class-name">Class 7-B · Mathematics</div><div class="attendance-date">3 assignments due</div></div></div>
+          <div class="class-card" style="margin:0 0 8px"><div class="class-card-name">Worksheet: Fractions</div><div class="class-card-subject">Due 10 Jul · 14/32 submitted</div></div>
+          <div class="class-card" style="margin:0 0 8px"><div class="class-card-name">Exercise 4.2</div><div class="class-card-subject">Due 12 Jul · 8/32 submitted</div></div>
+          <div class="class-card" style="margin:0 0 8px"><div class="class-card-name">Project: Real-life Algebra</div><div class="class-card-subject">Due 20 Jul · 0/32 submitted</div></div>
+        </div>
+        <div class="tool-panel" id="tool-syllabus">
+          <div class="attendance-header"><div><div class="attendance-class-name">Class 7-B · Mathematics</div><div class="attendance-date">8 of 12 topics covered</div></div></div>
+          <div class="hero-progress" style="margin:12px 0"><div class="hero-progress-label" style="color:var(--ink-3)"><span>Overall progress</span><span>67%</span></div><div class="hero-progress-bar" style="background:var(--surface-tint)"><div class="hero-progress-fill" style="width:67%"></div></div></div>
+          <div class="class-card" style="margin:0 0 8px"><div class="class-card-name">1. Quadratic Equations</div><div class="class-card-subject">Completed · 3 periods</div></div>
+          <div class="class-card" style="margin:0 0 8px"><div class="class-card-name">2. Linear Equations</div><div class="class-card-subject">In progress · 2 periods left</div></div>
+          <div class="class-card" style="margin:0 0 8px"><div class="class-card-name">3. Polynomials</div><div class="class-card-subject">Not started</div></div>
+        </div>
+        <div class="tool-panel" id="tool-lesson">
+          <div class="attendance-header"><div><div class="attendance-class-name">Class 7-B · Mathematics</div><div class="attendance-date">Today's lesson plan</div></div></div>
+          <div class="class-card" style="margin:0 0 8px"><div class="class-card-name">Topic: Quadratic Formula</div><div class="class-card-subject">Objectives, activities, assessment</div></div>
+          <div class="class-card" style="margin:0 0 8px"><div class="class-card-name">Resources</div><div class="class-card-subject">Worksheet, board examples, quiz</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CLASSES TAB -->
+    <div class="tab" id="tab-classes">
+      <div class="scroll">
+        <div class="header"><div class="logo">Enroll<span>+</span></div><button class="icon-btn"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button></div>
+        <div class="classes-header"><div class="classes-title">My Classes</div><div class="classes-sub">4 classes · 125 students total</div></div>
+        <div class="class-stats"><div class="class-stat"><div class="class-stat-num">4</div><div class="class-stat-label">Classes</div></div><div class="class-stat"><div class="class-stat-num">125</div><div class="class-stat-label">Students</div></div><div class="class-stat"><div class="class-stat-num">8</div><div class="class-stat-label">Pending</div></div></div>
+        <div id="class-list">
+          <div class="section"><div class="section-title">Class list</div></div>
+          <div class="class-card" onclick="showRoster()"><div class="class-card-top"><div><div class="class-card-name">Class 7-B</div><div class="class-card-subject">Mathematics</div></div><span class="class-chip now">Now</span></div><div class="class-card-meta"><div class="class-meta-item"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>32 students</div><div class="class-meta-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>09:30 – 10:15</div><div class="class-meta-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Room 203</div></div></div>
+          <div class="class-card" onclick="showRoster()"><div class="class-card-top"><div><div class="class-card-name">Class 8-A</div><div class="class-card-subject">Mathematics</div></div><span class="class-chip next">Next</span></div><div class="class-card-meta"><div class="class-meta-item"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>28 students</div><div class="class-meta-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>10:30 – 11:15</div><div class="class-meta-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Room 205</div></div></div>
+          <div class="class-card" onclick="showRoster()"><div class="class-card-top"><div><div class="class-card-name">Class 6-C</div><div class="class-card-subject">Mathematics</div></div></div><div class="class-card-meta"><div class="class-meta-item"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>35 students</div><div class="class-meta-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>11:30 – 12:15</div><div class="class-meta-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Room 201</div></div></div>
+          <div class="class-card" onclick="showRoster()"><div class="class-card-top"><div><div class="class-card-name">Class 9-A</div><div class="class-card-subject">Mathematics</div></div></div><div class="class-card-meta"><div class="class-meta-item"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>30 students</div><div class="class-meta-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>08:30 – 09:15</div><div class="class-meta-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Room 207</div></div></div>
+        </div>
+        <div class="class-roster" id="class-roster">
+          <div class="roster-header"><button class="roster-back" onclick="hideRoster()"><svg viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg></button><div><div class="roster-title">Class 7-B</div><div class="roster-sub">32 students · Mathematics</div></div></div>
+          <div class="student-row"><div class="student-row-left"><div class="student-avatar">AK</div><div class="student-info"><div class="student-name">Aarav Kumar</div><div class="student-roll">Roll 01 · 96% attendance</div></div></div></div>
+          <div class="student-row"><div class="student-row-left"><div class="student-avatar">PS</div><div class="student-info"><div class="student-name">Priya Sharma</div><div class="student-roll">Roll 02 · 98% attendance</div></div></div></div>
+          <div class="student-row"><div class="student-row-left"><div class="student-avatar">RP</div><div class="student-info"><div class="student-name">Rohan Patel</div><div class="student-roll">Roll 03 · 88% attendance</div></div></div></div>
+          <div class="student-row"><div class="student-row-left"><div class="student-avatar">AN</div><div class="student-info"><div class="student-name">Ananya Nair</div><div class="student-roll">Roll 04 · 92% attendance</div></div></div></div>
+          <div class="student-row"><div class="student-row-left"><div class="student-avatar">VK</div><div class="student-info"><div class="student-name">Vivaan Khanna</div><div class="student-roll">Roll 05 · 85% attendance</div></div></div></div>
+          <div class="student-row"><div class="student-row-left"><div class="student-avatar">DM</div><div class="student-info"><div class="student-name">Diya Mehta</div><div class="student-roll">Roll 06 · 95% attendance</div></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TIMETABLE TAB -->
+    <div class="tab" id="tab-timetable">
+      <div class="scroll">
+        <div class="header"><div class="logo">Enroll<span>+</span></div><button class="icon-btn"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button></div>
+        <div class="timetable-header"><div class="timetable-title">Timetable</div><div class="timetable-sub">Week 2 · Mon, 8 July</div></div>
+        <div class="day-selector">
+          <button class="day-btn active">Mon</button>
+          <button class="day-btn">Tue</button>
+          <button class="day-btn">Wed</button>
+          <button class="day-btn">Thu</button>
+          <button class="day-btn">Fri</button>
+          <button class="day-btn">Sat</button>
+        </div>
+        <div class="timetable-period"><div class="timetable-period-num">1</div><div class="timetable-period-info"><div class="timetable-period-class">9-A · Mathematics</div><div class="timetable-period-meta">Room 207</div></div><div class="timetable-period-time">08:30 – 09:15</div></div>
+        <div class="timetable-period"><div class="timetable-period-num">2</div><div class="timetable-period-info"><div class="timetable-period-class">7-B · Mathematics</div><div class="timetable-period-meta">Room 203</div></div><div class="timetable-period-time">09:30 – 10:15</div></div>
+        <div class="timetable-period" style="box-shadow:0 0 0 1.5px var(--violet),var(--shadow-card)"><div class="timetable-period-num">3</div><div class="timetable-period-info"><div class="timetable-period-class">8-A · Mathematics</div><div class="timetable-period-meta">Room 205</div></div><div class="timetable-period-time">10:30 – 11:15</div></div>
+        <div class="timetable-period"><div class="timetable-period-num">4</div><div class="timetable-period-info"><div class="timetable-period-class">6-C · Mathematics</div><div class="timetable-period-meta">Room 201</div></div><div class="timetable-period-time">11:30 – 12:15</div></div>
+        <div class="timetable-period"><div class="timetable-period-num">5</div><div class="timetable-period-info"><div class="timetable-period-class">Lunch Break</div><div class="timetable-period-meta">Staff room</div></div><div class="timetable-period-time">12:15 – 13:00</div></div>
+        <div class="timetable-period"><div class="timetable-period-num">6</div><div class="timetable-period-info"><div class="timetable-period-class">7-B · Mathematics</div><div class="timetable-period-meta">Room 203</div></div><div class="timetable-period-time">13:00 – 13:45</div></div>
+        <div class="timetable-change"><button class="change-btn">Request timetable change</button></div>
+      </div>
+    </div>
+
+    <!-- PROFILE TAB -->
+    <div class="tab" id="tab-profile">
+      <div class="scroll">
+        <div class="header"><div class="logo">Enroll<span>+</span></div><button class="icon-btn"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button></div>
+        <div class="profile-header"><div class="profile-avatar">MS</div><div class="profile-info"><div class="profile-name">Mrs. Meera Sharma</div><div class="profile-role">Mathematics Teacher</div><div class="profile-school">Delhi Public School · Secondary</div></div></div>
+        <div class="settings-list">
+          <div class="settings-group">
+            <div class="settings-title">Account</div>
+            <div class="settings-card">
+              <div class="settings-row"><div class="settings-row-left"><div class="settings-icon violet"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="settings-label">Personal details</div></div><div class="settings-chevron">›</div></div>
+              <div class="settings-row"><div class="settings-row-left"><div class="settings-icon sky"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="settings-label">Leave & attendance</div></div><div class="settings-chevron">›</div></div>
+              <div class="settings-row"><div class="settings-row-left"><div class="settings-icon gold"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><div class="settings-label">Change password</div></div><div class="settings-chevron">›</div></div>
+            </div>
+          </div>
+          <div class="settings-group">
+            <div class="settings-title">Work</div>
+            <div class="settings-card">
+              <div class="settings-row"><div class="settings-row-left"><div class="settings-icon mint"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="settings-label">Reports & documents</div></div><div class="settings-chevron">›</div></div>
+              <div class="settings-row"><div class="settings-row-left"><div class="settings-icon coral"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div><div class="settings-label">Notifications</div></div><div class="settings-chevron">›</div></div>
+            </div>
+          </div>
+          <div class="settings-group">
+            <div class="settings-title">Support</div>
+            <div class="settings-card">
+              <div class="settings-row"><div class="settings-row-left"><div class="settings-icon violet"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><div class="settings-label">Help & support</div></div><div class="settings-chevron">›</div></div>
+              <div class="settings-row"><div class="settings-row-left"><div class="settings-icon ink"><svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg></div><div class="settings-label">About Enroll+</div></div><div class="settings-chevron">›</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-nav">
+      <button class="nav-item active" onclick="switchTab('tab-home')" data-nav="home">
+        <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+        <div class="nav-label">Home</div>
+      </button>
+      <button class="nav-item" onclick="switchTab('tab-update')" data-nav="update">
+        <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+        <div class="nav-label">Update</div>
+        <span class="nav-badge">4</span>
+      </button>
+      <button class="nav-item" onclick="switchTab('tab-classes')" data-nav="classes">
+        <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <div class="nav-label">Classes</div>
+      </button>
+      <button class="nav-item" onclick="switchTab('tab-timetable')" data-nav="timetable">
+        <div class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+        <div class="nav-label">Timetable</div>
+      </button>
+      <button class="nav-item" onclick="switchTab('tab-profile')" data-nav="profile">
+        <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+        <div class="nav-label">Profile</div>
+      </button>
+    </div>
+
+    <div class="home-bar"></div>
+  </div>
+</div>
+
+<script>
+function switchTab(tabId){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelector('.nav-item[data-nav="'+tabId.replace('tab-','')+'"]').classList.add('active');
+  // hide roster when leaving classes
+  if(tabId!=='tab-classes'){hideRoster();}
+}
+function switchTool(toolId){
+  document.querySelectorAll('.tool-seg').forEach(s=>s.classList.remove('active'));
+  document.querySelector('.tool-seg[data-tool="'+toolId+'"]').classList.add('active');
+  document.querySelectorAll('.tool-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tool-'+toolId).classList.add('active');
+}
+function showTool(){
+  // already shows tool area; keep attendance default selected
+  switchTool('attendance');
+}
+function showRoster(){
+  document.getElementById('class-list').style.display='none';
+  document.getElementById('class-roster').classList.add('active');
+}
+function hideRoster(){
+  document.getElementById('class-list').style.display='block';
+  document.getElementById('class-roster').classList.remove('active');
+}
+// Day selector visual toggle
+const dayButtons=document.querySelectorAll('.day-btn');
+dayButtons.forEach(btn=>btn.addEventListener('click',()=>{dayButtons.forEach(b=>b.classList.remove('active'));btn.classList.add('active');}));
+</script>
+
+</body>
+</html>

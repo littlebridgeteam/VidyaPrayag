@@ -37,6 +37,7 @@ package com.littlebridge.enrollplus.feature.school
 import com.littlebridge.enrollplus.core.fail
 import com.littlebridge.enrollplus.core.ok
 import com.littlebridge.enrollplus.core.principalUserId
+import com.littlebridge.enrollplus.core.requireSchoolContext
 import com.littlebridge.enrollplus.db.AppConfigTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.feature.onboarding.computeOnboardingStatus
@@ -124,9 +125,8 @@ fun Route.schoolDashboardRouting() {
     authenticate("jwt") {
         route("/api/v1/school") {
             get("/dashboard") {
-                val uid = call.principalUserId()?.let { runCatching { UUID.fromString(it) }.getOrNull() } ?: run {
-                    call.fail("Invalid token", HttpStatusCode.Unauthorized); return@get
-                }
+                val ctx = call.requireSchoolContext() ?: return@get
+                val uid = ctx.userId
 
                 // Single source of truth: derive completion from persisted school
                 // data (schools row + school_classes + onboarded_at), NOT from the

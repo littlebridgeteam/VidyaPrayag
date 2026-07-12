@@ -306,13 +306,14 @@ class PewsSnapshotService {
 
         // ── NEW signal: PTM engagement (class-level turnout) ────────────────
         val ptmTurnoutByClass = HashMap<String, Double>()
-        PtmEventsTable.selectAll().where {
+        val ptmEvents = PtmEventsTable.selectAll().where {
             (PtmEventsTable.schoolId eq schoolId) and
                 (PtmEventsTable.expectedParents greater 0)
-        }.orderBy(PtmEventsTable.createdAt, SortOrder.DESC).limit(3).forEach { evRow ->
-            val evId = evRow[PtmEventsTable.id].value
+        }.orderBy(PtmEventsTable.createdAt, SortOrder.DESC).limit(3).toList()
+        val ptmEventIds = ptmEvents.map { it[PtmEventsTable.id].value }
+        if (ptmEventIds.isNotEmpty()) {
             PtmClassProgressTable.selectAll().where {
-                PtmClassProgressTable.ptmEventId eq evId
+                PtmClassProgressTable.ptmEventId inList ptmEventIds
             }.forEach { cpRow ->
                 val cls = cpRow[PtmClassProgressTable.className]
                 val total = cpRow[PtmClassProgressTable.totalCount]

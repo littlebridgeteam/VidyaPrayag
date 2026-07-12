@@ -12,7 +12,18 @@ data class UserDetailsResponse(
 @Serializable
 data class UserDetailsData(
     @SerialName("personal_details") val personalDetails: PersonalDetails,
-    @SerialName("onboarding_details") val onboardingDetails: OnboardingDetails
+    @SerialName("onboarding_details") val onboardingDetails: OnboardingDetails,
+    @SerialName("pinned_screens") val pinnedScreens: List<String> = emptyList()
+)
+
+@Serializable
+data class PinnedScreensResponse(
+    @SerialName("pinned_screens") val pinnedScreens: List<String> = emptyList()
+)
+
+@Serializable
+data class UpdatePinnedScreensRequest(
+    @SerialName("pinned_screens") val pinnedScreens: List<String>
 )
 
 @Serializable

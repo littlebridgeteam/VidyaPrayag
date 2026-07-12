@@ -51,12 +51,15 @@ import com.google.auth.oauth2.GoogleCredentials
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.littlebridge.enrollplus.core.EnvConfig
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.FileInputStream
 import java.util.Properties
 
 
 object FirebaseAdminInitializer {
+
+    private val logger = LoggerFactory.getLogger(FirebaseAdminInitializer::class.java)
 
     private const val APP_NAME = "vidyaprayag-server"
     private const val OTP_SENDER_APP_NAME = "vidyaprayag-otpsender"
@@ -80,6 +83,9 @@ object FirebaseAdminInitializer {
     @Volatile
     private var otpSenderCredentialSource: String? = null
 
+    private val appLock = Any()
+    private val otpSenderLock = Any()
+
     /**
      * Returns the initialized FirebaseApp or null when credentials
      * cannot be resolved.
@@ -87,7 +93,7 @@ object FirebaseAdminInitializer {
     fun app(): FirebaseApp? {
         if (attempted) return cachedApp
 
-        synchronized(this) {
+        synchronized(appLock) {
             if (attempted) return cachedApp
 
             cachedApp = initialise(
@@ -99,14 +105,15 @@ object FirebaseAdminInitializer {
             attempted = true
 
             if (cachedApp == null) {
-                println(
+                logger.warn(
                     "FIREBASE_INIT: No credentials resolved — push dispatch DISABLED. " +
                     "Set FIREBASE_CREDENTIALS_JSON or FIREBASE_CREDENTIALS_FILE env var. " +
                     "PEWS ACT (intervention notifications, escalation alerts) will be non-functional."
                 )
             } else {
-                println(
-                    "FIREBASE_INIT: FirebaseApp '${cachedApp!!.name}' initialized using '$credentialSource'."
+                logger.info(
+                    "FIREBASE_INIT: FirebaseApp '{}' initialized using '{}'.",
+                    cachedApp!!.name, credentialSource
                 )
             }
 
@@ -125,7 +132,7 @@ object FirebaseAdminInitializer {
     fun otpSenderApp(): FirebaseApp? {
         if (otpSenderAttempted) return cachedOtpSenderApp
 
-        synchronized(this) {
+        synchronized(otpSenderLock) {
             if (otpSenderAttempted) return cachedOtpSenderApp
 
             cachedOtpSenderApp = initialise(
@@ -137,12 +144,13 @@ object FirebaseAdminInitializer {
             otpSenderAttempted = true
 
             if (cachedOtpSenderApp == null) {
-                println(
+                logger.warn(
                     "FIREBASE_INIT: No OTPSender credentials resolved — SMS-gateway push DISABLED."
                 )
             } else {
-                println(
-                    "FIREBASE_INIT: OTPSender FirebaseApp '${cachedOtpSenderApp!!.name}' initialized using '$otpSenderCredentialSource'."
+                logger.info(
+                    "FIREBASE_INIT: OTPSender FirebaseApp '{}' initialized using '{}'.",
+                    cachedOtpSenderApp!!.name, otpSenderCredentialSource
                 )
             }
 
@@ -171,7 +179,7 @@ object FirebaseAdminInitializer {
         FirebaseApp.getApps()
             .firstOrNull { it.name == appName }
             ?.let {
-                println("FIREBASE_INIT: Existing FirebaseApp '$appName' found.")
+                logger.info("FIREBASE_INIT: Existing FirebaseApp '{}' found.", appName)
                 return it
             }
 
@@ -185,10 +193,11 @@ object FirebaseAdminInitializer {
         return runCatching {
             FirebaseApp.initializeApp(options, appName)
         }.onSuccess {
-            println("FIREBASE_INIT: Firebase Admin SDK initialized for '$appName'.")
+            logger.info("FIREBASE_INIT: Firebase Admin SDK initialized for '{}'.", appName)
         }.onFailure {
-            println(
-                "FIREBASE_INIT: FirebaseApp.initializeApp failed for '$appName': ${it.message}"
+            logger.error(
+                "FIREBASE_INIT: FirebaseApp.initializeApp failed for '{}': {}",
+                appName, it.message, it
             )
         }.getOrNull()
     }
@@ -237,9 +246,7 @@ object FirebaseAdminInitializer {
             ?.takeIf { it.isNotBlank() }
             ?.let { json ->
 
-                println(
-                    "FIREBASE_INIT: Attempting ${envKeys.json}"
-                )
+                logger.debug("FIREBASE_INIT: Attempting {}", envKeys.json)
 
                 return runCatching {
                     GoogleCredentials.fromStream(
@@ -248,13 +255,9 @@ object FirebaseAdminInitializer {
                 }.onSuccess {
                     onResolved(envKeys.json)
 
-                    println(
-                        "FIREBASE_INIT: Loaded credentials from ${envKeys.json}"
-                    )
+                    logger.info("FIREBASE_INIT: Loaded credentials from {}", envKeys.json)
                 }.onFailure {
-                    println(
-                        "FIREBASE_INIT: Invalid ${envKeys.json}: ${it.message}"
-                    )
+                    logger.error("FIREBASE_INIT: Invalid {}: {}", envKeys.json, it.message, it)
                 }.getOrNull()
             }
 
@@ -266,9 +269,7 @@ object FirebaseAdminInitializer {
             ?.takeIf { it.isNotBlank() }
             ?.let { path ->
 
-                println(
-                    "FIREBASE_INIT: Attempting ${envKeys.file}"
-                )
+                logger.debug("FIREBASE_INIT: Attempting {}", envKeys.file)
 
                 return runCatching {
                     FileInputStream(path).use {
@@ -277,13 +278,9 @@ object FirebaseAdminInitializer {
                 }.onSuccess {
                     onResolved(envKeys.file)
 
-                    println(
-                        "FIREBASE_INIT: Loaded credentials from ${envKeys.file} ($path)"
-                    )
+                    logger.info("FIREBASE_INIT: Loaded credentials from {} ({})", envKeys.file, path)
                 }.onFailure {
-                    println(
-                        "FIREBASE_INIT: Cannot read ${envKeys.file} ($path): ${it.message}"
-                    )
+                    logger.error("FIREBASE_INIT: Cannot read {} ({}): {}", envKeys.file, path, it.message, it)
                 }.getOrNull()
             }
 
@@ -296,9 +293,7 @@ object FirebaseAdminInitializer {
             ?.takeIf { it.isNotBlank() }
             ?.let { path ->
 
-                println(
-                    "FIREBASE_INIT: Attempting ${envKeys.googleAppCreds}"
-                )
+                logger.debug("FIREBASE_INIT: Attempting {}", envKeys.googleAppCreds)
 
                 return runCatching {
                     FileInputStream(path).use {
@@ -307,13 +302,9 @@ object FirebaseAdminInitializer {
                 }.onSuccess {
                     onResolved(envKeys.googleAppCreds!!)
 
-                    println(
-                        "FIREBASE_INIT: Loaded credentials from ${envKeys.googleAppCreds} ($path)"
-                    )
+                    logger.info("FIREBASE_INIT: Loaded credentials from {} ({})", envKeys.googleAppCreds, path)
                 }.onFailure {
-                    println(
-                        "FIREBASE_INIT: Cannot read ${envKeys.googleAppCreds} ($path): ${it.message}"
-                    )
+                    logger.error("FIREBASE_INIT: Cannot read {} ({}): {}", envKeys.googleAppCreds, path, it.message, it)
                 }.getOrNull()
             }
 
@@ -328,9 +319,7 @@ object FirebaseAdminInitializer {
             ?.takeIf { it.isNotBlank() }
             ?.let { path ->
 
-                println(
-                    "FIREBASE_INIT: Attempting credential from .env/local.properties ($localPropertyKey)"
-                )
+                logger.debug("FIREBASE_INIT: Attempting credential from .env/local.properties ({})", localPropertyKey)
 
                 return runCatching {
                     FileInputStream(path).use {
@@ -339,13 +328,9 @@ object FirebaseAdminInitializer {
                 }.onSuccess {
                     onResolved("env-config:$localPropertyKey")
 
-                    println(
-                        "FIREBASE_INIT: Loaded credentials from .env/local.properties ($path)"
-                    )
+                    logger.info("FIREBASE_INIT: Loaded credentials from .env/local.properties ({})", path)
                 }.onFailure {
-                    println(
-                        "FIREBASE_INIT: Cannot read local.properties credential file ($path): ${it.message}"
-                    )
+                    logger.error("FIREBASE_INIT: Cannot read local.properties credential file ({}): {}", path, it.message, it)
                 }.getOrNull()
             }
 
@@ -354,41 +339,30 @@ object FirebaseAdminInitializer {
         //    Skipped for the OTPSender project — see OTP_SENDER_ENV_KEYS note.
         // --------------------------------------------------------------
         if (envKeys.googleAppCreds == null) {
-            println(
-                "FIREBASE_INIT: No '$localPropertyKey'/${envKeys.json}/${envKeys.file} resolved; " +
-                    "skipping ADC fallback (project-scoped credential required)."
+            logger.warn(
+                "FIREBASE_INIT: No '{}/{}/{}' resolved; skipping ADC fallback (project-scoped credential required).",
+                localPropertyKey, envKeys.json, envKeys.file
             )
             return null
         }
 
-        println(
-            "FIREBASE_INIT: Attempting Application Default Credentials"
-        )
+        logger.debug("FIREBASE_INIT: Attempting Application Default Credentials")
 
         return runCatching {
             GoogleCredentials.getApplicationDefault()
         }.onSuccess {
             onResolved("Application Default Credentials")
 
-            println(
-                "FIREBASE_INIT: Loaded Application Default Credentials"
-            )
+            logger.info("FIREBASE_INIT: Loaded Application Default Credentials")
         }.onFailure {
-            println(
-                "FIREBASE_INIT: Application Default Credentials unavailable (${it.message?.take(200)})"
+            logger.warn(
+                "FIREBASE_INIT: Application Default Credentials unavailable ({})",
+                it.message?.take(200)
             )
 
-            println(
-                """
-                FIREBASE_INIT: No credentials resolved.
-
-                Supported sources:
-                - ${envKeys.json}
-                - ${envKeys.file}
-                - ${envKeys.googleAppCreds ?: "(ADC disabled for this project)"}
-                - local.properties ($localPropertyKey)
-                - Application Default Credentials
-                """.trimIndent()
+            logger.warn(
+                "FIREBASE_INIT: No credentials resolved. Supported sources: {}, {}, {}, local.properties ({}), Application Default Credentials",
+                envKeys.json, envKeys.file, envKeys.googleAppCreds ?: "(ADC disabled for this project)", localPropertyKey
             )
         }.getOrNull()
     }
@@ -401,19 +375,14 @@ object FirebaseAdminInitializer {
         val localProperties = findLocalProperties()
 
         if (localProperties == null) {
-            println(
-                """
-            FIREBASE_INIT: local.properties not found.
-            Searched from:
-            ${System.getProperty("user.dir")}
-            """.trimIndent()
+            logger.warn(
+                "FIREBASE_INIT: local.properties not found. Searched from: {}",
+                System.getProperty("user.dir")
             )
             return null
         }
 
-        println(
-            "FIREBASE_INIT: Found local.properties at ${localProperties.absolutePath}"
-        )
+        logger.debug("FIREBASE_INIT: Found local.properties at {}", localProperties.absolutePath)
 
         return runCatching {
             val props = Properties()
@@ -424,9 +393,7 @@ object FirebaseAdminInitializer {
 
             props.getProperty(key)
         }.onFailure {
-            println(
-                "FIREBASE_INIT: Failed reading local.properties: ${it.message}"
-            )
+            logger.error("FIREBASE_INIT: Failed reading local.properties: {}", it.message, it)
         }.getOrNull()
     }
 

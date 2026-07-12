@@ -32,9 +32,11 @@ data class SchoolTeachersState(
     // password reset so the admin can hand it over. Cleared via
     // [dismissIssuedCredential] when the admin closes the dialog.
     val issuedCredential: TeacherCredentialDto? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
-private const val TEACHERS_PAGE_SIZE = 20
+private const val TEACHERS_PAGE_SIZE = 10
 
 /**
  * RA-22: backs the teacher roster on the People tab — list active teachers in
@@ -72,7 +74,9 @@ class SchoolTeachersViewModel(
                         isLoading = false,
                         page = body?.pagination?.page ?: 1,
                         hasNext = body?.pagination?.hasNext ?: false,
-                        totalRecords = body?.pagination?.totalRecords ?: 0
+                        totalRecords = body?.pagination?.totalRecords ?: 0,
+                        isStale = result.isStale,
+                        isOffline = result.isOffline,
                     )
                 }
                 is NetworkResult.Error -> {
@@ -110,7 +114,9 @@ class SchoolTeachersViewModel(
                         isLoadingMore = false,
                         page = body?.pagination?.page ?: nextPage,
                         hasNext = body?.pagination?.hasNext ?: false,
-                        totalRecords = body?.pagination?.totalRecords ?: current.totalRecords
+                        totalRecords = body?.pagination?.totalRecords ?: current.totalRecords,
+                        isStale = result.isStale,
+                        isOffline = result.isOffline,
                     )
                 }
                 is NetworkResult.Error -> {

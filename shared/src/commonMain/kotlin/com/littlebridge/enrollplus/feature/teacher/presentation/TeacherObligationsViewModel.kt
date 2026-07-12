@@ -43,6 +43,9 @@ data class TeacherObligationsState(
     // Honest "we couldn't read it": the strip hides rather than pretending
     // everything is done (Doc 04 §5.5 — never fabricate "all caught up").
     val unavailable: Boolean = false,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
+    val refreshEpoch: Int = 0,
 ) {
     /** True only when the load succeeded AND there is genuinely nothing outstanding. */
     val isAllCaughtUp: Boolean
@@ -90,6 +93,8 @@ class TeacherObligationsViewModel(
                             pendingLeaveDecisions = d.pendingLeaveDecisions,
                             items = d.items,
                             unavailable = false,
+                            isStale = result.isStale,
+                            isOffline = result.isOffline,
                         )
                     }
                 }
@@ -97,6 +102,35 @@ class TeacherObligationsViewModel(
                 // surface the unavailable flag so the strip simply hides.
                 is NetworkResult.Error, is NetworkResult.ConnectionError ->
                     _state.update { it.copy(isLoading = false, unavailable = true) }
+            }
+        }
+    }
+
+    /** Pull-to-refresh: re-fetch obligations without setting loading flag. */
+    fun refresh() {
+        viewModelScope.launch {
+            val token = preferenceRepository.getUserToken().first() ?: return@launch
+            when (val result = repository.getObligations(token)) {
+                is NetworkResult.Success -> {
+                    val d = result.data.data
+                    _state.update {
+                        it.copy(
+                            loaded = true,
+                            unmarkedClasses = d.unmarkedClasses,
+                            classesTodayTotal = d.classesTodayTotal,
+                            unpublishedResults = d.unpublishedResults,
+                            submissionsToReview = d.submissionsToReview,
+                            pendingLeaveDecisions = d.pendingLeaveDecisions,
+                            items = d.items,
+                            unavailable = false,
+                            isStale = result.isStale,
+                            isOffline = result.isOffline,
+                            refreshEpoch = it.refreshEpoch + 1,
+                        )
+                    }
+                }
+                is NetworkResult.Error, is NetworkResult.ConnectionError ->
+                    _state.update { it.copy(unavailable = true, isStale = true, isOffline = true, refreshEpoch = it.refreshEpoch + 1) }
             }
         }
     }

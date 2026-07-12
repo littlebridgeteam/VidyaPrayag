@@ -699,7 +699,7 @@ fun Route.eventRegistrationRouting() {
                         else
                             "You're registered for '$eventTitle' on $eventDateStr.",
                         schoolId = schoolId,
-                        deepLink = "/parent/home",
+                        deepLink = "/parent/events",
                         refType = "event_registration",
                         refId = regId.toString(),
                     )
@@ -797,7 +797,7 @@ fun Route.eventRegistrationRouting() {
                             title = "Slot available: $promotedEventTitle",
                             body = "You've been promoted from the waitlist! You're now registered for '$promotedEventTitle'.",
                             schoolId = reg[EventRegistrationsTable.schoolId],
-                            deepLink = "/parent/home",
+                            deepLink = "/parent/events",
                             refType = "event_registration",
                             refId = promotedReg[EventRegistrationsTable.id].value.toString(),
                         )
@@ -813,7 +813,7 @@ fun Route.eventRegistrationRouting() {
                         title = "Registration cancelled",
                         body = "Your registration has been cancelled.",
                         schoolId = reg[EventRegistrationsTable.schoolId],
-                        deepLink = "/parent/home",
+                        deepLink = "/parent/events",
                         refType = "event_registration",
                         refId = reg[EventRegistrationsTable.id].value.toString(),
                     )
@@ -913,7 +913,7 @@ fun Route.eventRegistrationRouting() {
                         title = "Slot changed: ${event[CalendarEventsTable.title]}",
                         body = "Your slot has been changed to ${newSlot[EventSlotsTable.startTime]} - ${newSlot[EventSlotsTable.endTime]}.",
                         schoolId = event[CalendarEventsTable.schoolId],
-                        deepLink = "/parent/home",
+                        deepLink = "/parent/events",
                         refType = "event_registration",
                         refId = reg[EventRegistrationsTable.id].value.toString(),
                     )
@@ -1181,7 +1181,7 @@ fun Route.eventRegistrationRouting() {
                         title = "Checked in",
                         body = "You have been checked in for the event",
                         schoolId = ctx.schoolId,
-                        deepLink = "/parent/home",
+                        deepLink = "/parent/events",
                         refType = "event_registration",
                         refId = registrationId.toString(),
                     )
@@ -1702,7 +1702,7 @@ fun Route.eventRegistrationRouting() {
                             title = "Event cancelled",
                             body = "'${event[CalendarEventsTable.title]}' has been cancelled",
                             schoolId = ctx.schoolId,
-                            deepLink = "/parent/home",
+                            deepLink = "/parent/events",
                             refType = "calendar_event",
                             refId = eventId.toString(),
                         )

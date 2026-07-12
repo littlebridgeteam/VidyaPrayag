@@ -62,7 +62,9 @@ data class ClassPerformanceState(
     val topPerformerDetails: String = "",
     val recentProgress: List<ProgressMonitoringItem> = emptyList(),
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class ClassPerformanceViewModel(
@@ -86,7 +88,7 @@ class ClassPerformanceViewModel(
             when (val result = analyticsRepository.getClassPerformance(token, className)) {
                 is NetworkResult.Success -> {
                     val data = result.data.data
-                    _state.value = parseClassPerformance(data).copy(isLoading = false)
+                    _state.value = parseClassPerformance(data).copy(isLoading = false, isStale = result.isStale, isOffline = result.isOffline)
                 }
                 is NetworkResult.Error -> {
                     AppLogger.e("ClassPerformanceVM", "getClassPerformance error: ${result.message}")
@@ -146,7 +148,7 @@ class ClassPerformanceViewModel(
                 percentage = o["percentage"]?.jsonPrimitive?.intOrNull ?: 0,
                 value      = o["value"]?.jsonPrimitive?.floatOrNull ?: 0f
             )
-        } catch (_: Exception) { null }
+        } catch (e: Exception) { AppLogger.e("ClassPerformanceVM", "parseGrade failed: ${e.message}", e); null }
     }
 
     private fun parseSubject(el: JsonElement): SubjectMatrixItem? {
@@ -158,7 +160,7 @@ class ClassPerformanceViewModel(
                 percentage = o["percentage"]?.jsonPrimitive?.intOrNull ?: 0,
                 trend      = o["trend"]?.jsonPrimitive?.contentOrNull ?: "flat"
             )
-        } catch (_: Exception) { null }
+        } catch (e: Exception) { AppLogger.e("ClassPerformanceVM", "parseSubject failed: ${e.message}", e); null }
     }
 
     private fun parseProgress(el: JsonElement): ProgressMonitoringItem? {
@@ -174,6 +176,6 @@ class ClassPerformanceViewModel(
                 attendance = o["attendance"]?.jsonPrimitive?.contentOrNull ?: "",
                 status     = o["status"]?.jsonPrimitive?.contentOrNull ?: ""
             )
-        } catch (_: Exception) { null }
+        } catch (e: Exception) { AppLogger.e("ClassPerformanceVM", "parseProgress failed: ${e.message}", e); null }
     }
 }

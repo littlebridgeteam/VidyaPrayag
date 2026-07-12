@@ -261,7 +261,7 @@ object CaseworkerTools {
         override suspend fun execute(schoolId: UUID, arguments: String): String {
             val args = parseArgs(arguments)
             val dateStr = (args["date"] as? JsonPrimitive)?.content
-            val date = try { dateStr?.let { LocalDate.parse(it) } ?: LocalDate.now() } catch (e: Exception) { LocalDate.now() }
+            val date = try { dateStr?.let { LocalDate.parse(it) } ?: LocalDate.now() } catch (e: Exception) { log.warn("Invalid date '{}' in GetCalendarEvents, defaulting to today", dateStr); LocalDate.now() }
 
             val events = dbQuery {
                 CalendarEventsTable.selectAll().where {
@@ -605,7 +605,7 @@ object CaseworkerTools {
             val obj = json.parseToJsonElement(raw) as JsonObject
             obj.toMap()
         } catch (e: Exception) {
-            log.warn("Failed to parse tool arguments: {}", e.message)
+            log.warn("Failed to parse tool arguments: {} | raw: {}", e.message, raw.take(200))
             emptyMap()
         }
     }

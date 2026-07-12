@@ -29,7 +29,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 
@@ -207,45 +206,40 @@ fun VConfirmDialog(
 ) {
     if (!visible) return
     val c = VTheme.colors
-    Dialog(onDismissRequest = onDismiss) {
-        VCard(modifier = Modifier.widthIn(max = 360.dp).fillMaxWidth()) {
-            Column(
-                Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+    VBottomSheet(
+        visible = true,
+        onDismiss = onDismiss,
+        dragHandle = { /* Simple confirm sheet: hidden drag handle, still swipeable. */ },
+    ) {
+        VBottomSheetHeader(title = title)
+        if (icon != null) {
+            Box(
+                Modifier
+                    .size(56.dp)
+                    .clip(CircleShape)
+                    .background(c.danger.copy(alpha = if (c.isNight) 0.18f else 0.28f)),
+                contentAlignment = Alignment.Center,
             ) {
-                if (icon != null) {
-                    Box(
-                        Modifier
-                            .size(56.dp)
-                            .clip(CircleShape)
-                            .background(c.danger.copy(alpha = if (c.isNight) 0.18f else 0.28f)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(icon, contentDescription = null, tint = c.dangerInk, modifier = Modifier.size(26.dp))
-                    }
-                }
-                Text(title, style = VTheme.type.h3.colored(c.ink), textAlign = TextAlign.Center)
-                Text(
-                    message,
-                    style = VTheme.type.caption.colored(c.ink2),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.widthIn(max = 320.dp),
-                )
-                Spacer(Modifier.height(8.dp))
-                VButton(
-                    text = confirmLabel,
-                    onClick = onConfirm,
-                    full = true,
-                    variant = VButtonVariant.Destructive,
-                )
-                VButton(
-                    text = cancelLabel,
-                    onClick = onDismiss,
-                    full = true,
-                    variant = VButtonVariant.Ghost,
-                )
+                Icon(icon, contentDescription = null, tint = c.dangerInk, modifier = Modifier.size(26.dp))
             }
         }
+        Text(
+            message,
+            style = VTheme.type.body.colored(c.ink2),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+        )
+        VButton(
+            text = confirmLabel,
+            onClick = onConfirm,
+            full = true,
+            variant = VButtonVariant.Destructive,
+        )
+        VButton(
+            text = cancelLabel,
+            onClick = onDismiss,
+            full = true,
+            variant = VButtonVariant.Ghost,
+        )
     }
 }

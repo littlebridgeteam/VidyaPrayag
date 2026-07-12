@@ -17,23 +17,40 @@
  * the JWT before the hook ever sees an error.
  */
 
-import useSWR, { type SWRConfiguration } from "swr";
+import useSWR, { type SWRConfiguration, mutate as globalMutate } from "swr";
 import { adminApi } from "./client";
+
+export { globalMutate };
 
 const LIVE: SWRConfiguration = {
   refreshInterval: 15_000,
   revalidateOnFocus: true,
   keepPreviousData: true,
+  onErrorRetry: (err, key, config, revalidate, { retryCount }) => {
+    if (err?.status === 401) return;
+    if (retryCount >= 3) return;
+    setTimeout(() => revalidate({ retryCount }), 1000 * (retryCount + 1));
+  },
 };
 const NEAR_LIVE: SWRConfiguration = {
   refreshInterval: 60_000,
   revalidateOnFocus: true,
   keepPreviousData: true,
+  onErrorRetry: (err, key, config, revalidate, { retryCount }) => {
+    if (err?.status === 401) return;
+    if (retryCount >= 3) return;
+    setTimeout(() => revalidate({ retryCount }), 1000 * (retryCount + 1));
+  },
 };
 const SLOW: SWRConfiguration = {
   refreshInterval: 300_000,
   revalidateOnFocus: true,
   keepPreviousData: true,
+  onErrorRetry: (err, key, config, revalidate, { retryCount }) => {
+    if (err?.status === 401) return;
+    if (retryCount >= 3) return;
+    setTimeout(() => revalidate({ retryCount }), 1000 * (retryCount + 1));
+  },
 };
 
 export const useOnboardingStatus = () =>
@@ -171,6 +188,11 @@ const AI_LIVE: SWRConfiguration = {
   refreshInterval: 10_000,
   revalidateOnFocus: true,
   keepPreviousData: true,
+  onErrorRetry: (err, key, config, revalidate, { retryCount }) => {
+    if (err?.status === 401) return;
+    if (retryCount >= 3) return;
+    setTimeout(() => revalidate({ retryCount }), 1000 * (retryCount + 1));
+  },
 };
 
 export const useAiRateLimits = () =>

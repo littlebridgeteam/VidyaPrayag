@@ -1,5 +1,7 @@
 package com.littlebridge.enrollplus.feature.admin.data.repository
 
+import com.littlebridge.enrollplus.core.cache.CacheManager
+import com.littlebridge.enrollplus.core.cache.cacheFirstNetworkResult
 import com.littlebridge.enrollplus.core.model.ApiResponse
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.feature.admin.data.remote.AnnouncementsApi
@@ -10,11 +12,12 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.SyncWhatsAppRespon
 import com.littlebridge.enrollplus.feature.admin.domain.repository.AnnouncementsRepository
 
 class AnnouncementsRepositoryImpl(
-    private val api: AnnouncementsApi
+    private val api: AnnouncementsApi,
+    private val cache: CacheManager,
 ) : AnnouncementsRepository {
 
     override suspend fun getAnnouncements(token: String): NetworkResult<ApiResponse<AnnouncementListResponse>> =
-        api.getAnnouncements(token)
+        cacheFirstNetworkResult(cache, "admin_announcements", ApiResponse.serializer(AnnouncementListResponse.serializer())) { api.getAnnouncements(token) }
 
     override suspend fun searchAnnouncements(token: String, query: String): NetworkResult<ApiResponse<AnnouncementListResponse>> =
         api.searchAnnouncements(token, query)

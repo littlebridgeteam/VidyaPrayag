@@ -48,7 +48,9 @@ data class FeeLedgerUi(
 data class SchoolRecordsState(
     val attendance: AttendanceSummaryUi = AttendanceSummaryUi(),
     val marks: MarksSummaryUi = MarksSummaryUi(),
-    val fees: FeeLedgerUi = FeeLedgerUi()
+    val fees: FeeLedgerUi = FeeLedgerUi(),
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class SchoolRecordsViewModel(
@@ -76,7 +78,7 @@ class SchoolRecordsViewModel(
                 return@launch
             }
             when (val r = repository.getAttendanceSummary(t)) {
-                is NetworkResult.Success -> _state.value = _state.value.copy(attendance = AttendanceSummaryUi(isLoading = false, error = null, loaded = true, data = r.data.data))
+                is NetworkResult.Success -> _state.value = _state.value.copy(attendance = AttendanceSummaryUi(isLoading = false, error = null, loaded = true, data = r.data.data), isStale = r.isStale, isOffline = r.isOffline)
                 is NetworkResult.Error -> {
                     AppLogger.e("SchoolRecordsVM", "attendance error: ${r.message}")
                     _state.value = _state.value.copy(attendance = _state.value.attendance.copy(isLoading = false, error = r.message))
@@ -101,7 +103,7 @@ class SchoolRecordsViewModel(
                 return@launch
             }
             when (val r = repository.getMarksSummary(t)) {
-                is NetworkResult.Success -> _state.value = _state.value.copy(marks = MarksSummaryUi(isLoading = false, error = null, loaded = true, data = r.data.data))
+                is NetworkResult.Success -> _state.value = _state.value.copy(marks = MarksSummaryUi(isLoading = false, error = null, loaded = true, data = r.data.data), isStale = r.isStale, isOffline = r.isOffline)
                 is NetworkResult.Error -> {
                     AppLogger.e("SchoolRecordsVM", "marks error: ${r.message}")
                     _state.value = _state.value.copy(marks = _state.value.marks.copy(isLoading = false, error = r.message))
@@ -126,7 +128,7 @@ class SchoolRecordsViewModel(
                 return@launch
             }
             when (val r = repository.getFeeLedger(t)) {
-                is NetworkResult.Success -> _state.value = _state.value.copy(fees = FeeLedgerUi(isLoading = false, error = null, loaded = true, data = r.data.data))
+                is NetworkResult.Success -> _state.value = _state.value.copy(fees = FeeLedgerUi(isLoading = false, error = null, loaded = true, data = r.data.data), isStale = r.isStale, isOffline = r.isOffline)
                 is NetworkResult.Error -> {
                     AppLogger.e("SchoolRecordsVM", "fees error: ${r.message}")
                     _state.value = _state.value.copy(fees = _state.value.fees.copy(isLoading = false, error = r.message))

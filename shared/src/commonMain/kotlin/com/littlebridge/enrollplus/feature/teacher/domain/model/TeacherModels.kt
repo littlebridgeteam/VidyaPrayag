@@ -518,6 +518,44 @@ data class PublishResultDto(
     @SerialName("parents_notified") val parentsNotified: Int = 0,
 )
 
+// ── Marks import (AI OCR / text) — Doc 07 §5.4 ───────────────────────────────
+
+@Serializable
+data class MarksImportOcrRequest(
+    val image: String,
+    @SerialName("mime_type") val mimeType: String = "image/jpeg",
+)
+
+@Serializable
+data class MarksImportTextRequest(
+    val text: String,
+)
+
+@Serializable
+data class ParsedMarkDto(
+    @SerialName("student_id") val studentId: String? = null,
+    val name: String,
+    @SerialName("roll_no") val rollNo: String = "",
+    val marks: Float? = null,
+    @SerialName("is_absent") val isAbsent: Boolean = false,
+    val matched: Boolean = false,
+)
+
+@Serializable
+data class MarksImportResponse(
+    val success: Boolean = true,
+    val message: String? = null,
+    val data: MarksImportData = MarksImportData(),
+)
+
+@Serializable
+data class MarksImportData(
+    val entries: List<ParsedMarkDto> = emptyList(),
+    @SerialName("matched_count") val matchedCount: Int = 0,
+    @SerialName("unmatched_count") val unmatchedCount: Int = 0,
+    @SerialName("raw_ai_output") val rawAiOutput: String? = null,
+)
+
 // ── History & comparison — Doc 07 §6 (server-aggregated, no client N+1) ──────
 
 @Serializable
@@ -974,6 +1012,7 @@ data class QuizListData(
 data class QuizSubmitRequest(
     @SerialName("quiz_id") val quizId: String,
     val answers: List<QuizAnswerDto> = emptyList(),
+    @SerialName("child_id") val childId: String? = null,
 )
 
 @Serializable
@@ -1822,4 +1861,87 @@ data class TeacherUnreadCountDto(
 @Serializable
 data class TeacherUnreadCountData(
     @SerialName("unread_count") val unreadCount: Int = 0,
+)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Attendance Analytics (class-level + student-level)
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Serializable
+data class AttendanceAnalyticsDto(
+    @SerialName("assignment_id") val assignmentId: String = "",
+    val scope: String = "",
+    @SerialName("class_name") val className: String = "",
+    val section: String = "",
+    val subject: String = "",
+    @SerialName("overall_percentage") val overallPercentage: Int = 0,
+    @SerialName("total_marked_days") val totalMarkedDays: Int = 0,
+    @SerialName("total_students") val totalStudents: Int = 0,
+    @SerialName("present_count") val presentCount: Int = 0,
+    @SerialName("absent_count") val absentCount: Int = 0,
+    @SerialName("late_count") val lateCount: Int = 0,
+    @SerialName("leave_count") val leaveCount: Int = 0,
+    @SerialName("at_risk_students") val atRiskStudents: List<AtRiskStudentDto> = emptyList(),
+    @SerialName("weekly_trend") val weeklyTrend: List<WeeklyTrendDto> = emptyList(),
+    @SerialName("daily_breakdown") val dailyBreakdown: List<DailyAttendanceDto> = emptyList(),
+    @SerialName("trend_direction") val trendDirection: String = "stable",
+)
+
+@Serializable
+data class AtRiskStudentDto(
+    @SerialName("student_id") val studentId: String = "",
+    val name: String = "",
+    @SerialName("roll_no") val rollNo: String = "",
+    @SerialName("attendance_percentage") val attendancePercentage: Int = 0,
+    @SerialName("total_days") val totalDays: Int = 0,
+    @SerialName("present_days") val presentDays: Int = 0,
+    @SerialName("absent_days") val absentDays: Int = 0,
+    @SerialName("late_days") val lateDays: Int = 0,
+    @SerialName("leave_days") val leaveDays: Int = 0,
+)
+
+@Serializable
+data class WeeklyTrendDto(
+    val week: String = "",
+    @SerialName("attendance_percentage") val attendancePercentage: Int = 0,
+    @SerialName("marked_days") val markedDays: Int = 0,
+    @SerialName("present_count") val presentCount: Int = 0,
+    @SerialName("total_count") val totalCount: Int = 0,
+)
+
+@Serializable
+data class DailyAttendanceDto(
+    val date: String = "",
+    @SerialName("present_count") val presentCount: Int = 0,
+    @SerialName("absent_count") val absentCount: Int = 0,
+    @SerialName("late_count") val lateCount: Int = 0,
+    @SerialName("leave_count") val leaveCount: Int = 0,
+    @SerialName("total_count") val totalCount: Int = 0,
+    @SerialName("attendance_percentage") val attendancePercentage: Int = 0,
+)
+
+@Serializable
+data class AttendanceAnalyticsResponse(
+    val success: Boolean = true,
+    val data: AttendanceAnalyticsDto = AttendanceAnalyticsDto(),
+)
+
+@Serializable
+data class StudentAnalyticsDto(
+    @SerialName("student_id") val studentId: String = "",
+    val name: String = "",
+    @SerialName("roll_no") val rollNo: String = "",
+    @SerialName("attendance_percentage") val attendancePercentage: Int = 0,
+    @SerialName("total_days") val totalDays: Int = 0,
+    @SerialName("present_days") val presentDays: Int = 0,
+    @SerialName("absent_days") val absentDays: Int = 0,
+    @SerialName("late_days") val lateDays: Int = 0,
+    @SerialName("leave_days") val leaveDays: Int = 0,
+    val history: List<DailyAttendanceDto> = emptyList(),
+)
+
+@Serializable
+data class StudentAnalyticsResponse(
+    val success: Boolean = true,
+    val data: StudentAnalyticsDto = StudentAnalyticsDto(),
 )

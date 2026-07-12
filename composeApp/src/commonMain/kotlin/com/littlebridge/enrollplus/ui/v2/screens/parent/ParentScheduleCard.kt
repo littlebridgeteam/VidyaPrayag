@@ -50,6 +50,8 @@ import com.littlebridge.enrollplus.feature.parent.domain.model.ParentTimetableDa
 import com.littlebridge.enrollplus.feature.parent.presentation.LivePeriod
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import com.littlebridge.enrollplus.util.formatClock12h
@@ -348,7 +350,7 @@ private fun TodayTimelineFace(
                 ) {
                     Icon(VIcons.ChevronLeft, contentDescription = "Back", tint = c.accentDeep, modifier = Modifier.size(15.dp))
                 }
-                Text("Today's schedule", style = VTheme.type.bodyStrong.colored(c.navyDeep))
+                Text(appString(StringKeys.PS_TODAY_SCHEDULE), style = VTheme.type.bodyStrong.colored(c.navyDeep))
             }
             Box(
                 Modifier.clip(RoundedCornerShape(999.dp)).background(c.accent.copy(alpha = 0.12f))
@@ -565,7 +567,7 @@ private fun WeeklyTimetableFace(timetable: ParentTimetableData?, onCollapse: () 
             ) {
                 Icon(VIcons.ChevronLeft, contentDescription = "Back", tint = c.accentDeep, modifier = Modifier.size(15.dp))
             }
-            Text("Weekly timetable", style = VTheme.type.bodyStrong.colored(c.navyDeep))
+            Text(appString(StringKeys.PS_WEEKLY_TIMETABLE), style = VTheme.type.bodyStrong.colored(c.navyDeep))
             Spacer(Modifier.width(30.dp))
         }
 
@@ -585,13 +587,13 @@ private fun WeeklyTimetableFace(timetable: ParentTimetableData?, onCollapse: () 
                                 Modifier.clip(RoundedCornerShape(999.dp)).background(c.accent.copy(alpha = 0.16f))
                                     .padding(horizontal = 6.dp, vertical = 1.dp),
                             ) {
-                                Text("Today", style = VTheme.type.label.colored(c.accentDeep).copy(fontWeight = FontWeight.Bold, fontSize = 8.5.sp))
+                                Text(appString(StringKeys.PS_TODAY_BADGE), style = VTheme.type.label.colored(c.accentDeep).copy(fontWeight = FontWeight.Bold, fontSize = 8.5.sp))
                             }
                         }
                     }
                     Spacer(Modifier.height(6.dp))
                     if (day.periods.isEmpty()) {
-                        Text("No classes", style = VTheme.type.caption.colored(c.placeholder).copy(fontSize = 11.sp))
+                        Text(appString(StringKeys.PS_NO_CLASSES), style = VTheme.type.caption.colored(c.placeholder).copy(fontSize = 11.sp))
                     } else {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             day.periods.sortedBy { parseHourMinute(it.startTime) ?: 0 }.forEach { p ->

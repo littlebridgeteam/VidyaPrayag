@@ -47,6 +47,7 @@ import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.util.Properties
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicReference
 
 object PewsDailyJob {
     private const val TAG = "PewsDailyJob"
@@ -60,8 +61,7 @@ object PewsDailyJob {
     private val reasoningService = PewsReasoningService()
     private val interventionService = PewsInterventionService()
 
-    @Volatile
-    private var lastRunDate: LocalDate? = null
+    private val lastRunDate = AtomicReference<LocalDate?>(null)
 
     // ── env tuning ──────────────────────────────────────────────────────────
     private val localProps: Properties by lazy {
@@ -102,8 +102,8 @@ object PewsDailyJob {
         val now = ZonedDateTime.now(ZoneOffset.UTC)
         val today = now.toLocalDate()
         if (now.hour != targetHourUtc) return
-        if (lastRunDate == today) return
-        lastRunDate = today
+        if (lastRunDate.get() == today) return
+        if (!lastRunDate.compareAndSet(null, today)) return
         runAll(today)
     }
 

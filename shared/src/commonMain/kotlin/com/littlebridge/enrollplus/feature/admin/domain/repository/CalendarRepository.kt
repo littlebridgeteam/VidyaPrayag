@@ -5,5 +5,5 @@ import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.feature.admin.domain.model.CalendarResponse
 
 interface CalendarRepository {
-    suspend fun getCalendar(token: String, date: String? = null, viewType: String = "month"): NetworkResult<ApiResponse<CalendarResponse>>
+    suspend fun getCalendar(token: String, date: String? = null, viewType: String = "month", endpoint: String = "api/v1/school/calendar"): NetworkResult<ApiResponse<CalendarResponse>>
 }

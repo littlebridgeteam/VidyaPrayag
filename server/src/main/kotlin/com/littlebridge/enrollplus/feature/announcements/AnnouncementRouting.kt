@@ -38,6 +38,8 @@ import com.littlebridge.enrollplus.core.fail
 import com.littlebridge.enrollplus.core.ok
 import com.littlebridge.enrollplus.core.requireSchoolAdmin
 import com.littlebridge.enrollplus.core.requireSchoolContext
+import com.littlebridge.enrollplus.core.requireSchoolOrTeacherContext
+import com.littlebridge.enrollplus.db.AnnouncementDeliveryLogsTable
 import com.littlebridge.enrollplus.db.AnnouncementsTable
 import com.littlebridge.enrollplus.db.AppUsersTable
 import com.littlebridge.enrollplus.db.ChildrenTable
@@ -45,6 +47,7 @@ import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.TeacherSubjectAssignmentsTable
 import com.littlebridge.enrollplus.db.WhatsappLogsTable
 import com.littlebridge.enrollplus.feature.calendar.syncAnnouncementToCalendar
+import com.littlebridge.enrollplus.feature.school.resolveMessagingUser
 import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
@@ -57,8 +60,10 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.contentOrNull
+import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.less
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.like
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
@@ -125,6 +130,24 @@ data class SyncWhatsAppResponse(
     @SerialName("estimated_time_minutes") val estimatedTimeMinutes: Int
 )
 
+@Serializable
+data class DeliveryLogItemDto(
+    @SerialName("id") val id: String,
+    @SerialName("announcement_id") val announcementId: String,
+    @SerialName("announcement_title") val announcementTitle: String,
+    @SerialName("channel") val channel: String,
+    @SerialName("recipient_identifier") val recipientIdentifier: String,
+    @SerialName("status") val status: String,
+    @SerialName("created_at") val createdAt: String,
+)
+
+@Serializable
+data class DeliveryLogResponse(
+    @SerialName("items") val items: List<DeliveryLogItemDto>,
+    @SerialName("next_cursor") val nextCursor: String? = null,
+    @SerialName("has_more") val hasMore: Boolean = false,
+)
+
 // ------- helpers -------
 
 /**
@@ -143,9 +166,9 @@ fun Route.announcementRouting() {
     authenticate("jwt") {
         route("/api/v1/school/announcements") {
 
-            // ---- list ----
+            // ---- list (teachers can read; only admins can create) ----
             get {
-                val ctx = call.requireSchoolContext() ?: return@get
+                val ctx = call.requireSchoolOrTeacherContext() ?: return@get
                 val schoolId = effectiveSchoolId(
                     ctx.schoolId, ctx.role, call.request.queryParameters["school_id"]
                 )
@@ -162,7 +185,7 @@ fun Route.announcementRouting() {
             get("/search") {
                 val q = call.request.queryParameters["query"]?.lowercase().orEmpty()
                 if (q.isBlank()) { call.fail("query is required"); return@get }
-                val ctx = call.requireSchoolContext() ?: return@get
+                val ctx = call.requireSchoolOrTeacherContext() ?: return@get
                 val schoolId = effectiveSchoolId(
                     ctx.schoolId, ctx.role, call.request.queryParameters["school_id"]
                 )
@@ -178,6 +201,27 @@ fun Route.announcementRouting() {
                         .map { it.toDto() }
                 }
                 call.ok(AnnouncementsListResponse(list), message = "Search results fetched")
+            }
+
+            // ---- delivery log (per-recipient, cross-channel) ----
+            get("/delivery") {
+                val ctx = call.requireSchoolContext() ?: return@get
+                val schoolId = effectiveSchoolId(
+                    ctx.schoolId, ctx.role, call.request.queryParameters["school_id"]
+                )
+                val limit = call.request.queryParameters["limit"]?.toIntOrNull()?.coerceIn(1, 100) ?: 20
+                val cursor = call.request.queryParameters["cursor"]
+                val channel = call.request.queryParameters["channel"]
+                val announcementId = call.request.queryParameters["announcement_id"]
+
+                val response = fetchDeliveryLog(
+                    schoolId = schoolId,
+                    limit = limit,
+                    cursor = cursor,
+                    channel = channel,
+                    announcementId = announcementId,
+                )
+                call.ok(response, message = "Delivery log fetched successfully")
             }
 
             // ---- create (privileged: RA-39 — staff cannot broadcast) ----
@@ -213,9 +257,9 @@ fun Route.announcementRouting() {
                         it[AnnouncementsTable.schoolId] = schoolId
                         it[AnnouncementsTable.eventId] = eventId
                         it[type] = req.type
-                        it[title] = req.title
-                        it[subTitle] = req.subTitle
-                        it[description] = req.description
+                        it[title] = com.littlebridge.enrollplus.core.HtmlSanitizer.sanitize(req.title)
+                        it[subTitle] = req.subTitle?.let { com.littlebridge.enrollplus.core.HtmlSanitizer.sanitize(it) }
+                        it[description] = com.littlebridge.enrollplus.core.HtmlSanitizer.sanitize(req.description)
                         it[eventImage] = req.eventImage
                         it[date] = req.date
                         it[AnnouncementsTable.audienceType] = audienceType
@@ -255,17 +299,38 @@ fun Route.announcementRouting() {
                     audienceParents.distinct()
                 }
                 if (recipients.isNotEmpty()) {
-                    Notify.toUsers(
-                        userIds = recipients,
-                        category = "announcement",
-                        title = req.title,
-                        body = req.subTitle ?: req.description.take(140),
-                        schoolId = schoolId,
-                        actorId = uid,
-                        deepLink = "announcements/$eventId",
-                        refType = "announcement",
-                        refId = eventId,
-                    )
+                    // Send role-appropriate deep links: parents get /parent/announcements/<id>,
+                    // teachers get /teacher/announcements?id=<id>.
+                    val parentRecipients = recipients.filter { rid ->
+                        runCatching { dbQuery { resolveMessagingUser(rid)?.role } }.getOrNull()?.lowercase() == "parent"
+                    }
+                    val teacherRecipients = recipients.filter { it !in parentRecipients }
+                    if (parentRecipients.isNotEmpty()) {
+                        Notify.toUsers(
+                            userIds = parentRecipients,
+                            category = "announcement",
+                            title = req.title,
+                            body = req.subTitle ?: req.description.take(140),
+                            schoolId = schoolId,
+                            actorId = uid,
+                            deepLink = "/parent/announcements/$eventId",
+                            refType = "announcement",
+                            refId = eventId,
+                        )
+                    }
+                    if (teacherRecipients.isNotEmpty()) {
+                        Notify.toUsers(
+                            userIds = teacherRecipients,
+                            category = "announcement",
+                            title = req.title,
+                            body = req.subTitle ?: req.description.take(140),
+                            schoolId = schoolId,
+                            actorId = uid,
+                            deepLink = "/teacher/announcements?id=$eventId",
+                            refType = "announcement",
+                            refId = eventId,
+                        )
+                    }
                 }
                 }
                 // VP-CAL: mirror Holiday/PTM/Event announcements into the Academic
@@ -385,6 +450,15 @@ fun Route.announcementRouting() {
                                 it[status] = "QUEUED"
                                 it[createdAt] = now
                             }
+                            AnnouncementDeliveryLogsTable.insert {
+                                it[AnnouncementDeliveryLogsTable.schoolId] = schoolId
+                                it[AnnouncementDeliveryLogsTable.announcementId] = aid
+                                it[AnnouncementDeliveryLogsTable.channel] = "whatsapp"
+                                it[AnnouncementDeliveryLogsTable.recipientIdentifier] = phone
+                                it[AnnouncementDeliveryLogsTable.status] = "queued"
+                                it[AnnouncementDeliveryLogsTable.createdAt] = now
+                                it[AnnouncementDeliveryLogsTable.updatedAt] = now
+                            }
                             inserted++
                         }
                         // Scope the flip by BOTH school and event id (defensive).
@@ -430,6 +504,84 @@ private fun audienceStrList(filter: JsonElement?, key: String): List<String> {
 private fun audienceStr(filter: JsonElement?, key: String): List<String> {
     val obj = (filter as? JsonObject) ?: return emptyList()
     return obj[key]?.jsonPrimitive?.contentOrNull?.let { listOf(it) } ?: emptyList()
+}
+
+private data class DeliveryLogCursor(
+    val createdAt: Instant,
+    val id: UUID,
+)
+
+private fun String.toDeliveryLogCursor(): DeliveryLogCursor? {
+    return runCatching {
+        val decoded = String(java.util.Base64.getDecoder().decode(this))
+        val parts = decoded.split(":", limit = 2)
+        DeliveryLogCursor(
+            createdAt = Instant.parse(parts[0]),
+            id = UUID.fromString(parts[1]),
+        )
+    }.getOrNull()
+}
+
+private fun DeliveryLogCursor.toCursorString(): String =
+    java.util.Base64.getEncoder().encodeToString("$createdAt:$id".toByteArray())
+
+private suspend fun fetchDeliveryLog(
+    schoolId: UUID,
+    limit: Int,
+    cursor: String?,
+    channel: String?,
+    announcementId: String?,
+): DeliveryLogResponse = dbQuery {
+    val parsed = cursor?.toDeliveryLogCursor()
+
+    val conditions = buildList {
+        add(AnnouncementDeliveryLogsTable.schoolId eq schoolId)
+        if (parsed != null) {
+            add(
+                (AnnouncementDeliveryLogsTable.createdAt less parsed.createdAt) or
+                    ((AnnouncementDeliveryLogsTable.createdAt eq parsed.createdAt) and (AnnouncementDeliveryLogsTable.id less parsed.id))
+            )
+        }
+        if (!channel.isNullOrBlank()) {
+            add(AnnouncementDeliveryLogsTable.channel eq channel.lowercase())
+        }
+        if (!announcementId.isNullOrBlank()) {
+            add(AnnouncementDeliveryLogsTable.announcementId eq announcementId)
+        }
+    }.reduce { acc, op -> acc and op }
+
+    val rows = AnnouncementDeliveryLogsTable
+        .join(AnnouncementsTable, JoinType.LEFT, AnnouncementDeliveryLogsTable.announcementId, AnnouncementsTable.eventId)
+        .selectAll()
+        .where { conditions }
+        .orderBy(AnnouncementDeliveryLogsTable.createdAt to SortOrder.DESC, AnnouncementDeliveryLogsTable.id to SortOrder.DESC)
+        .limit(limit + 1)
+        .map { row ->
+            DeliveryLogItemDto(
+                id = row[AnnouncementDeliveryLogsTable.id].toString(),
+                announcementId = row[AnnouncementDeliveryLogsTable.announcementId],
+                announcementTitle = row.getOrNull(AnnouncementsTable.title) ?: "",
+                channel = row[AnnouncementDeliveryLogsTable.channel],
+                recipientIdentifier = row[AnnouncementDeliveryLogsTable.recipientIdentifier],
+                status = row[AnnouncementDeliveryLogsTable.status],
+                createdAt = row[AnnouncementDeliveryLogsTable.createdAt].toString(),
+            )
+        }
+
+    val hasMore = rows.size > limit
+    val items = if (hasMore) rows.dropLast(1) else rows
+    val nextCursor = items.lastOrNull()?.let {
+        DeliveryLogCursor(
+            createdAt = Instant.parse(it.createdAt),
+            id = UUID.fromString(it.id),
+        ).toCursorString()
+    }
+
+    DeliveryLogResponse(
+        items = items,
+        nextCursor = nextCursor,
+        hasMore = hasMore,
+    )
 }
 
 private fun org.jetbrains.exposed.sql.ResultRow.toDto(): AnnouncementDto {

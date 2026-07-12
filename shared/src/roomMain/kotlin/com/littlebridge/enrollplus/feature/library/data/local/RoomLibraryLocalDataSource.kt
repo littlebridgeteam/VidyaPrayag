@@ -1,6 +1,7 @@
 package com.littlebridge.enrollplus.feature.library.data.local
 
 import com.littlebridge.enrollplus.feature.library.domain.model.*
+import com.littlebridge.enrollplus.util.currentTimeMillis
 import kotlinx.serialization.json.Json
 
 class RoomLibraryLocalDataSource(
@@ -22,7 +23,7 @@ class RoomLibraryLocalDataSource(
     override suspend fun clearBooks() = bookDao.clearBooks()
 
     override suspend fun saveDashboard(dashboard: LibraryDashboardDto) {
-        cacheDao.put(LibraryCacheEntity("dashboard", json.encodeToString(dashboard), System.currentTimeMillis()))
+        cacheDao.put(LibraryCacheEntity("dashboard", json.encodeToString(dashboard), currentTimeMillis()))
     }
 
     override suspend fun getDashboard(): LibraryDashboardDto? {
@@ -30,7 +31,7 @@ class RoomLibraryLocalDataSource(
     }
 
     override suspend fun saveIssues(issues: List<LibraryIssueDto>) {
-        cacheDao.put(LibraryCacheEntity("issues", json.encodeToString(issues), System.currentTimeMillis()))
+        cacheDao.put(LibraryCacheEntity("issues", json.encodeToString(issues), currentTimeMillis()))
     }
 
     override suspend fun getIssues(): List<LibraryIssueDto> {
@@ -38,7 +39,7 @@ class RoomLibraryLocalDataSource(
     }
 
     override suspend fun saveCategories(categories: List<LibraryCategoryDto>) {
-        cacheDao.put(LibraryCacheEntity("categories", json.encodeToString(categories), System.currentTimeMillis()))
+        cacheDao.put(LibraryCacheEntity("categories", json.encodeToString(categories), currentTimeMillis()))
     }
 
     override suspend fun getCategories(): List<LibraryCategoryDto> {
@@ -46,7 +47,7 @@ class RoomLibraryLocalDataSource(
     }
 
     override suspend fun saveAnnouncements(announcements: List<LibraryAnnouncementDto>) {
-        cacheDao.put(LibraryCacheEntity("announcements", json.encodeToString(announcements), System.currentTimeMillis()))
+        cacheDao.put(LibraryCacheEntity("announcements", json.encodeToString(announcements), currentTimeMillis()))
     }
 
     override suspend fun getAnnouncements(): List<LibraryAnnouncementDto> {
@@ -54,7 +55,7 @@ class RoomLibraryLocalDataSource(
     }
 
     override suspend fun saveTrending(trending: List<TrendingBookDto>) {
-        cacheDao.put(LibraryCacheEntity("trending", json.encodeToString(trending), System.currentTimeMillis()))
+        cacheDao.put(LibraryCacheEntity("trending", json.encodeToString(trending), currentTimeMillis()))
     }
 
     override suspend fun getTrending(): List<TrendingBookDto> {

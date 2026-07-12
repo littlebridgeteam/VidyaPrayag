@@ -44,11 +44,18 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VDatePicker
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -76,14 +83,16 @@ fun SchedulePtmScreenV2(
     Column(modifier.fillMaxSize().statusBarsPadding()
         .imePadding()
         .navigationBarsPadding()) {
-        VBackHeader(title = "Schedule PTM", onBack = onBack)
-        SchedulePtmContent(
-            state = state,
-            onCreate = { title, date, slot, onDone -> viewModel.createPtm(title, date, slot, onDone) },
-            onRetry = viewModel::loadPtm,
-            onClearMessages = viewModel::clearMessages,
-            modifier = Modifier.fillMaxSize(),
-        )
+        VBackHeader(title = appString(StringKeys.SCH_SCHEDULE_PTM), onBack = onBack, pinRouteId = "overlay_schedule_ptm")
+        VPullRefresh(isRefreshing = state.isLoading && state.activeEventTitle.isNotBlank(), onRefresh = { viewModel.loadPtm() }) {
+            SchedulePtmContent(
+                state = state,
+                onCreate = { title, date, slot, onDone -> viewModel.createPtm(title, date, slot, onDone) },
+                onRetry = viewModel::loadPtm,
+                onClearMessages = viewModel::clearMessages,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 }
 
@@ -95,8 +104,7 @@ private fun SchedulePtmContent(
     onClearMessages: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    var composerOpen by remember { mutableStateOf(false) }
+        var composerOpen by remember { mutableStateOf(false) }
     var title by remember { mutableStateOf("") }
     var date by remember { mutableStateOf("") }
     var slot by remember { mutableStateOf("") }
@@ -115,31 +123,32 @@ private fun SchedulePtmContent(
                 state.history.isEmpty() &&
                 state.classProgress.isEmpty() &&
                 !composerOpen,
-            emptyTitle = "No PTMs yet",
-            emptyBody = "Schedule your first parent-teacher meeting to get started.",
+            emptyTitle = appString(StringKeys.SCH_NO_PTMS_YET),
+            emptyBody = appString(StringKeys.SCH_NO_PTMS_DESC),
             emptyIcon = VIcons.Calendar,
             onRetry = onRetry,
+            skeleton = { SkeletonDashboard() },
         ) {
             // Schedule new PTM CTA / composer
             if (composerOpen) {
                 VCard {
-                    Text("New PTM", style = VTheme.type.h3.colored(c.ink))
+                    Text(appString(StringKeys.SCH_NEW_PTM), style = VTypography.h3.copy(color = VColors.ink))
                     Spacer(Modifier.height(12.dp))
-                    VInput(value = title, onValueChange = { title = it }, label = "Title", placeholder = "e.g. Term 1 PTM")
+                    VInput(value = title, onValueChange = { title = it }, label = appString(StringKeys.SCH_TITLE), placeholder = appString(StringKeys.SCH_TITLE_PH))
                     Spacer(Modifier.height(8.dp))
-                    VDatePicker(value = date, onValueChange = { date = it }, label = "Date", placeholder = "Select PTM date")
+                    VDatePicker(value = date, onValueChange = { date = it }, label = appString(StringKeys.SCH_DATE), placeholder = appString(StringKeys.SCH_PTM_DATE_PH))
                     Spacer(Modifier.height(8.dp))
-                    VInput(value = slot, onValueChange = { slot = it }, label = "Slot", placeholder = "10:00 AM - 1:00 PM")
+                    VInput(value = slot, onValueChange = { slot = it }, label = appString(StringKeys.SCH_SLOT), placeholder = appString(StringKeys.SCH_SLOT_PH))
                     val info = state.infoMessage
                     if (info != null) {
                         Spacer(Modifier.height(8.dp))
-                        Text(info, style = VTheme.type.caption.colored(c.successInk))
+                        Text(info, style = VTypography.caption.copy(color = VColors.success))
                     }
                     Spacer(Modifier.height(12.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Box(Modifier.weight(1f)) {
                             VButton(
-                                text = "Cancel",
+                                text = appString(StringKeys.SCH_CLOSE),
                                 onClick = {
                                     composerOpen = false
                                     title = ""; date = ""; slot = ""
@@ -152,7 +161,7 @@ private fun SchedulePtmContent(
                         }
                         Box(Modifier.weight(1f)) {
                             VButton(
-                                text = "Create",
+                                text = appString(StringKeys.SCH_CREATE),
                                 onClick = {
                                     onCreate(title, date, slot) {
                                         composerOpen = false
@@ -170,7 +179,7 @@ private fun SchedulePtmContent(
                 }
             } else {
                 VButton(
-                    text = "Schedule new PTM",
+                    text = appString(StringKeys.SCH_SCHEDULE_NEW_PTM),
                     onClick = { composerOpen = true },
                     full = true,
                     variant = VButtonVariant.Primary,
@@ -182,30 +191,30 @@ private fun SchedulePtmContent(
             if (state.activeEventTitle.isNotBlank()) {
                 VCard {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        VBadge(text = "ACTIVE", tone = VBadgeTone.Success)
-                        Text(state.activeEventTitle, style = VTheme.type.h3.colored(c.ink))
+                        VBadge(text = appString(StringKeys.SCH_ACTIVE), tone = VBadgeTone.Success)
+                        Text(state.activeEventTitle, style = VTypography.h3.copy(color = VColors.ink))
                     }
                     Spacer(Modifier.height(4.dp))
                     Text(
                         "${state.activeEventDate} · ${state.activeEventSlot}",
-                        style = VTheme.type.caption.colored(c.ink2),
+                        style = VTypography.caption.copy(color = VColors.ink2),
                     )
                     Spacer(Modifier.height(12.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Box(Modifier.weight(1f)) {
-                            KpiTile(label = "Expected", value = state.expectedParents.toString())
+                            KpiTile(label = appString(StringKeys.SCH_EXPECTED), value = state.expectedParents.toString())
                         }
                         Box(Modifier.weight(1f)) {
-                            KpiTile(label = "Checked-in", value = state.checkedInParents.toString())
+                            KpiTile(label = appString(StringKeys.SCH_CHECKED_IN), value = state.checkedInParents.toString())
                         }
                     }
                     Spacer(Modifier.height(8.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Box(Modifier.weight(1f)) {
-                            KpiTile(label = "Invites sent", value = state.invitesDelivered.toString())
+                            KpiTile(label = appString(StringKeys.SCH_INVITES_SENT), value = state.invitesDelivered.toString())
                         }
                         Box(Modifier.weight(1f)) {
-                            KpiTile(label = "Read", value = state.readReceipts.toString())
+                            KpiTile(label = appString(StringKeys.SCH_READ), value = state.readReceipts.toString())
                         }
                     }
                 }
@@ -213,19 +222,19 @@ private fun SchedulePtmContent(
 
             // History
             if (state.history.isNotEmpty()) {
-                VSectionHeader(title = "HISTORY")
+                VSectionHeader(title = appString(StringKeys.SCH_HISTORY))
                 VCard {
                     state.history.forEachIndexed { i, h ->
-                        if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(c.border1))
-                        HistoryRow(h)
+                        if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
+                        HistoryRow(h, modifier = Modifier.staggeredItemEntrance(i, state.history.isNotEmpty()))
                     }
                 }
             }
 
             // Per-class progress
             if (state.classProgress.isNotEmpty()) {
-                VSectionHeader(title = "CLASS PROGRESS")
-                state.classProgress.forEach { cp -> ClassProgressCard(cp) }
+                VSectionHeader(title = appString(StringKeys.SCH_CLASS_PROGRESS))
+                state.classProgress.forEachIndexed { i, cp -> ClassProgressCard(cp, modifier = Modifier.staggeredItemEntrance(i, state.classProgress.isNotEmpty())) }
             }
         }
     }
@@ -233,52 +242,49 @@ private fun SchedulePtmContent(
 
 @Composable
 private fun KpiTile(label: String, value: String) {
-    val c = VTheme.colors
-    Column(
+        Column(
         Modifier
             .clip(RoundedCornerShape(12.dp))
-            .background(c.cream)
+            .background(VColors.cream)
             .padding(12.dp),
     ) {
-        Text(label, style = VTheme.type.label.colored(c.ink3))
+        Text(label, style = VTypography.label.copy(color = VColors.ink3))
         Spacer(Modifier.height(4.dp))
-        Text(value, style = VTheme.type.dataLg.colored(c.ink))
+        Text(value, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink))
     }
 }
 
 @Composable
-private fun HistoryRow(h: PTMHistoryItem) {
-    val c = VTheme.colors
+private fun HistoryRow(h: PTMHistoryItem, modifier: Modifier = Modifier) {
     Row(
-        Modifier.fillMaxWidth().padding(vertical = 10.dp),
+        modifier.fillMaxWidth().padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Column(Modifier.weight(1f)) {
-            Text(h.title, style = VTheme.type.bodyStrong.colored(c.ink))
+            Text(h.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
             Spacer(Modifier.height(2.dp))
-            Text(h.date, style = VTheme.type.caption.colored(c.ink3))
+            Text(h.date, style = VTypography.caption.copy(color = VColors.ink3))
         }
         Text(
             "${h.turnout}/${h.totalMet}",
-            style = VTheme.type.dataSm.colored(c.ink2),
+            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2),
         )
     }
 }
 
 @Composable
-private fun ClassProgressCard(cp: ClassPTMProgress) {
-    val c = VTheme.colors
-    VCard {
+private fun ClassProgressCard(cp: ClassPTMProgress, modifier: Modifier = Modifier) {
+    VCard(modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
             Column(Modifier.weight(1f)) {
-                Text(cp.className, style = VTheme.type.bodyStrong.colored(c.ink))
+                Text(cp.className, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
                 Spacer(Modifier.height(2.dp))
-                Text(cp.teacherName, style = VTheme.type.caption.colored(c.ink3))
+                Text(cp.teacherName, style = VTypography.caption.copy(color = VColors.ink3))
             }
             Text(
                 "${cp.metCount}/${cp.totalCount}",
-                style = VTheme.type.dataSm.colored(c.ink2),
+                style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2),
             )
         }
         Spacer(Modifier.height(10.dp))

@@ -27,8 +27,11 @@ import com.littlebridge.enrollplus.core.fail
 import com.littlebridge.enrollplus.core.ok
 import com.littlebridge.enrollplus.core.principalUserId
 import com.littlebridge.enrollplus.db.AppConfigTable
+import com.littlebridge.enrollplus.db.ChildHolisticMetricsTable
 import com.littlebridge.enrollplus.db.ChildrenTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
+import com.littlebridge.enrollplus.db.GameBadgeDefinitionsTable
+import com.littlebridge.enrollplus.db.GameStudentBadgesTable
 import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.routing.*
@@ -101,9 +104,9 @@ data class TrackProgressResponse(
 
 private val lenientJson = Json { ignoreUnknownKeys = true; isLenient = true; encodeDefaults = true }
 
-private val DEFAULT_BADGES = listOf(
-    Badge("Social Star", "workspace_premium", false, listOf("#B6C7EB", "#006C49"))
-)
+// Badges now come from the gamification system (game_student_badges).
+// If no badges are earned yet, return an empty list — the UI shows a
+// motivating empty state ("Take the skill test to earn your first badge!").
 private val DEFAULT_COMPETENCIES = listOf(
     Competency("Literacy", 0.85, "translate"),
     Competency("Numeracy", 0.78, "calculate"),
@@ -152,23 +155,54 @@ fun Route.trackProgressRouting() {
                         journeyDescription = journey
                     )
 
-                    val badgesRaw = AppConfigTable.selectAll()
-                        .where { AppConfigTable.key eq "parent_track_badges" }
-                        .singleOrNull()?.get(AppConfigTable.value)
-                    val badges: List<Badge> = badgesRaw?.let {
-                        runCatching {
-                            lenientJson.decodeFromString(ListSerializer(Badge.serializer()), it)
-                        }.getOrNull()
-                    } ?: DEFAULT_BADGES
+                    // Badges: read from the gamification system (game_student_badges +
+                    // game_badge_definitions) — real, earned badges per child.
+                    val childId = child?.get(ChildrenTable.id)?.value
+                    val badges: List<Badge> = if (childId != null) {
+                        GameStudentBadgesTable
+                            .join(GameBadgeDefinitionsTable,
+                                org.jetbrains.exposed.sql.JoinType.INNER,
+                                GameStudentBadgesTable.badgeId, GameBadgeDefinitionsTable.id)
+                            .selectAll()
+                            .where { GameStudentBadgesTable.studentId eq childId }
+                            .map { row ->
+                                Badge(
+                                    title = row[GameBadgeDefinitionsTable.name],
+                                    icon = row[GameBadgeDefinitionsTable.iconName],
+                                    isLocked = false, // earned = not locked
+                                    colors = listOf("#B6C7EB", "#006C49"), // default gradient
+                                )
+                            }
+                    } else {
+                        emptyList()
+                    }
+
+                    // Per-child metrics derived from the Skill Test. If the child has
+                    // completed a test, these override the CMS template progress values.
+                    val metricsRow = childId?.let {
+                        ChildHolisticMetricsTable.selectAll()
+                            .firstOrNull { it[ChildHolisticMetricsTable.childId] == childId }
+                    }
 
                     val competenciesRaw = AppConfigTable.selectAll()
                         .where { AppConfigTable.key eq "parent_track_academic_competencies" }
                         .singleOrNull()?.get(AppConfigTable.value)
-                    val competencies: List<Competency> = competenciesRaw?.let {
+                    val competenciesTemplate: List<Competency> = competenciesRaw?.let {
                         runCatching {
                             lenientJson.decodeFromString(ListSerializer(Competency.serializer()), it)
                         }.getOrNull()
                     } ?: DEFAULT_COMPETENCIES
+
+                    val competencies = competenciesTemplate.map { comp ->
+                        val dbProgress = when (comp.title.lowercase()) {
+                            "literacy" -> metricsRow?.get(ChildHolisticMetricsTable.literacy)?.toDouble()
+                            "numeracy" -> metricsRow?.get(ChildHolisticMetricsTable.numeracy)?.toDouble()
+                            "creativity" -> metricsRow?.get(ChildHolisticMetricsTable.creativity)?.toDouble()
+                            else -> null
+                        }
+                        comp.copy(progress = dbProgress ?: comp.progress)
+                    }
+
                     val academicLabel = AppConfigTable.selectAll()
                         .where { AppConfigTable.key eq "parent_track_academic_label" }
                         .singleOrNull()?.get(AppConfigTable.value)?.trim('"') ?: "NEP ALIGNED"
@@ -180,13 +214,23 @@ fun Route.trackProgressRouting() {
                     val eiMetricsRaw = AppConfigTable.selectAll()
                         .where { AppConfigTable.key eq "parent_track_ei_metrics" }
                         .singleOrNull()?.get(AppConfigTable.value)
-                    val eiMetrics: Map<String, Double> = eiMetricsRaw?.let {
+                    val eiTemplate: Map<String, Double> = eiMetricsRaw?.let {
                         runCatching {
                             lenientJson.decodeFromString(
                                 MapSerializer(String.serializer(), Double.serializer()), it
                             )
                         }.getOrNull()
                     } ?: DEFAULT_EI_METRICS
+
+                    val eiMetrics = eiTemplate.mapValues { (key, default) ->
+                        when (key.lowercase()) {
+                            "empathy" -> metricsRow?.get(ChildHolisticMetricsTable.empathy)?.toDouble()
+                            "resilience" -> metricsRow?.get(ChildHolisticMetricsTable.resilience)?.toDouble()
+                            "social" -> metricsRow?.get(ChildHolisticMetricsTable.social)?.toDouble()
+                            "confidence" -> metricsRow?.get(ChildHolisticMetricsTable.confidence)?.toDouble()
+                            else -> null
+                        } ?: default
+                    }
 
                     val playRaw = AppConfigTable.selectAll()
                         .where { AppConfigTable.key eq "parent_track_play_discovery" }

@@ -29,10 +29,12 @@ class CalendarApi(
     suspend fun getCalendar(
         token: String,
         date: String? = null,
-        viewType: String = "month"
+        viewType: String = "month",
+        endpoint: String = "api/v1/school/calendar"
     ): NetworkResult<ApiResponse<CalendarResponse>> = safeApiCall {
         // RA-64: URL-encode via parameter(...).
-        client.get(getUrl("api/v1/school/calendar")) {
+        // Parents use api/v1/parent/calendar (school endpoint returns 403 for them).
+        client.get(getUrl(endpoint)) {
             date?.let { parameter("date", it) }
             parameter("view_type", viewType)
         }

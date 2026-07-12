@@ -30,6 +30,8 @@ import com.littlebridge.enrollplus.db.MessageStatusTable
 import com.littlebridge.enrollplus.db.MessageThreadsTable
 import com.littlebridge.enrollplus.db.MessagesTable
 import com.littlebridge.enrollplus.feature.notifications.Notify
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
 import org.jetbrains.exposed.sql.ResultRow
@@ -285,7 +287,7 @@ private fun insertMessage(
         it[MessagesTable.threadId] = threadId
         it[MessagesTable.conversationId] = conversationId
         it[MessagesTable.senderId] = senderId
-        it[MessagesTable.body] = body
+        it[MessagesTable.body] = com.littlebridge.enrollplus.core.HtmlSanitizer.sanitize(body)
         it[MessagesTable.createdAt] = now
         it[MessagesTable.seq] = seq
         if (clientMsgId != null) it[MessagesTable.clientMsgId] = clientMsgId
@@ -312,8 +314,13 @@ private fun nextSeqForConversation(conversationId: UUID): Int {
             .where { ConversationSeqTable.conversationId eq conversationId }
             .forUpdate()
             .firstOrNull()
-    } catch (_: Throwable) {
-        // forUpdate() not supported on some DBs — fall back to plain select.
+    } catch (_: UnsupportedOperationException) {
+        // forUpdate() not supported on some DBs (e.g. SQLite) — fall back to plain select.
+        ConversationSeqTable.selectAll()
+            .where { ConversationSeqTable.conversationId eq conversationId }
+            .firstOrNull()
+    } catch (_: Exception) {
+        // forUpdate() not supported on this DB driver — fall back to plain select.
         ConversationSeqTable.selectAll()
             .where { ConversationSeqTable.conversationId eq conversationId }
             .firstOrNull()
@@ -325,7 +332,7 @@ private fun nextSeqForConversation(conversationId: UUID): Int {
             it[ConversationSeqTable.nextVal] = newVal
             it[ConversationSeqTable.updatedAt] = Instant.now()
         }
-        return newVal
+        return newVal.toInt()
     }
 
     // First message in this conversation — insert counter at 1.
@@ -548,7 +555,7 @@ internal fun conversationMessagesFor(
  * (recipientId == null) or a message to oneself. The deep link targets the recipient's Messages
  * surface; the body is the (truncated) message text so the push/notification is actually useful.
  */
-internal suspend fun notifyMessageRecipient(
+internal fun notifyMessageRecipient(
     recipientId: UUID?,
     schoolId: UUID,
     actorId: UUID,
@@ -557,11 +564,29 @@ internal suspend fun notifyMessageRecipient(
     body: String,
 ) {
     if (recipientId == null || recipientId == actorId) return
+    GlobalScope.launch {
     val recipient = dbQuery { resolveMessagingUser(recipientId) }
+    // Resolve the RECIPIENT's thread ID from the shared conversationId.
+    // The sender's threadId is a different row in MessageThreadsTable — the
+    // recipient's thread list shows their own rows, so the deep link must
+    // use the recipient's thread ID for the client to find and open it.
+    val recipientThreadId = dbQuery {
+        val senderRow = MessageThreadsTable.selectAll()
+            .where { MessageThreadsTable.id eq threadId }
+            .singleOrNull() ?: return@dbQuery null
+        val convId = senderRow.conversationKey()
+        MessageThreadsTable.selectAll()
+            .where {
+                (MessageThreadsTable.conversationId eq convId) and
+                    (MessageThreadsTable.ownerUserId eq recipientId)
+            }
+            .firstOrNull()?.get(MessageThreadsTable.id)?.value
+    } ?: threadId // fallback to sender's threadId if lookup fails
+
     val deepLink = when (recipient?.role) {
-        "parent" -> "parent/messages"
-        "teacher" -> "teacher/messages"
-        "admin", "school_admin", "super_admin" -> "school/messages"
+        "parent" -> "/parent/messages/$recipientThreadId"
+        "teacher" -> "/teacher/messages/$recipientThreadId"
+        "admin", "school_admin", "super_admin" -> "/school/messages/$recipientThreadId"
         else -> "messages"
     }
     runCatching {
@@ -574,9 +599,10 @@ internal suspend fun notifyMessageRecipient(
             actorId = actorId,
             deepLink = deepLink,
             refType = "message",
-            refId = threadId.toString(),
+            refId = recipientThreadId.toString(),
         )
     }
+    } // end GlobalScope.launch
 }
 
 // ===========================================================================
@@ -623,12 +649,13 @@ internal fun editMessage(
 
     val convId = row[MessagesTable.conversationId] ?: return null
 
+    val sanitizedBody = com.littlebridge.enrollplus.core.HtmlSanitizer.sanitize(newBody)
     MessagesTable.update({ MessagesTable.id eq messageId }) {
-        it[MessagesTable.body] = newBody
+        it[MessagesTable.body] = sanitizedBody
         it[MessagesTable.editedAt] = now
     }
 
-    return EditMessageResult(messageId, convId, newBody, now)
+    return EditMessageResult(messageId, convId, sanitizedBody, now)
 }
 
 /** Result of [deleteMessage]. */

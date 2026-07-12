@@ -29,6 +29,8 @@ data class ParentLeaveState(
     val requests: List<ParentLeaveDto> = emptyList(),
     val loading: Boolean = false,
     val error: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 
     // apply-form transient state
     val submitting: Boolean = false,
@@ -94,7 +96,7 @@ class ParentLeaveViewModel(
             // The parent's own leave requests.
             when (val r = repository.getLeaveRequests(token)) {
                 is NetworkResult.Success ->
-                    _state.update { it.copy(loading = false, requests = r.data.data.requests) }
+                    _state.update { it.copy(loading = false, requests = r.data.data.requests, isStale = r.isStale, isOffline = r.isOffline) }
                 is NetworkResult.Error ->
                     _state.update { it.copy(loading = false, error = r.message) }
                 is NetworkResult.ConnectionError ->

@@ -5,6 +5,7 @@ import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.io.File
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
@@ -31,10 +32,13 @@ class LibraryIntegrationTest {
     private val studentId = UUID.randomUUID()
     private lateinit var repo: LibraryRepository
     private lateinit var service: LibraryService
+    private val dbFile = File("build/test-library-integration.db")
 
     @BeforeTest
     fun setup() {
-        Database.connect("jdbc:sqlite::memory:", "org.sqlite.JDBC")
+        dbFile.parentFile?.mkdirs()
+        if (dbFile.exists()) dbFile.delete()
+        Database.connect("jdbc:sqlite:${dbFile.absolutePath}", "org.sqlite.JDBC")
         transaction {
             SchemaUtils.createMissingTablesAndColumns(
                 LibraryBooksTable,
@@ -75,6 +79,7 @@ class LibraryIntegrationTest {
                 LibraryBooksTable,
             )
         }
+        dbFile.delete()
     }
 
     // ── Full lifecycle: create → copies auto-generated → issue → return ──────
@@ -259,6 +264,7 @@ class LibraryIntegrationTest {
         assertFailsWith<LibraryConflictException> {
             service.renewBook(schoolId, UUID.fromString(issue.id), adminId, "Admin")
         }
+        Unit
     }
 
     // ── Reservation flow: issue → return → reservation notified ──────────────
@@ -366,8 +372,8 @@ class LibraryIntegrationTest {
         val copy = copies.firstOrNull { it.status == "repair" }
         assertNotNull(copy, "Copy should be in repair status")
 
-        // Mark as available
-        repo.updateCopyStatus(schoolId, copy.id, "available")
+        // Mark as available via repair service (updates copy status + book availability)
+        service.repairCopy(schoolId, copy.id, adminId, "Admin")
 
         // Should be able to issue again
         val reIssue = service.issueBook(

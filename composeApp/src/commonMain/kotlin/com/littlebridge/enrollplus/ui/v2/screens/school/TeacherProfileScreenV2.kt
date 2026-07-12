@@ -34,7 +34,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.admin.domain.model.TeacherAchievementDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.TeacherActivityDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.TeacherAssignmentDto
@@ -50,12 +52,15 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonProfile
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -94,7 +99,7 @@ fun TeacherProfileScreenV2(
             .imePadding()
             .navigationBarsPadding(),
     ) {
-        VBackHeader(title = "Teacher", onBack = onBack)
+        VBackHeader(title = appString(StringKeys.SCH_TEACHER), onBack = onBack)
         TeacherProfileContent(
             state = state,
             onRetry = viewModel::retry,
@@ -126,10 +131,11 @@ private fun TeacherProfileContent(
             loading = state.isLoading,
             error = state.error,
             isEmpty = state.profile == null && !state.isLoading && state.error == null,
-            emptyTitle = "No profile",
-            emptyBody = "This teacher's record could not be found.",
+            emptyTitle = appString(StringKeys.SCH_NO_PROFILE),
+            emptyBody = appString(StringKeys.SCH_NO_PROFILE_DESC),
             emptyIcon = VIcons.User,
             onRetry = onRetry,
+            skeleton = { SkeletonProfile() },
         ) {
             val p = state.profile ?: return@VStateHost
             TeacherProfileBody(p, onOpenAssignments = onOpenAssignments)
@@ -146,10 +152,9 @@ private fun TeacherProfileContent(
 
     VConfirmDialog(
         visible = confirmRemove,
-        title = "Remove teacher",
-        message = "Remove ${state.profile?.name ?: "this teacher"} from your school? " +
-            "They will lose access immediately. This can be reversed by re-adding them.",
-        confirmLabel = "Remove",
+        title = appString(StringKeys.SCH_REMOVE_TEACHER),
+        message = appString(StringKeys.SCH_REMOVE_TEACHER_MSG, "name" to (state.profile?.name ?: appString(StringKeys.SCH_THIS_TEACHER))),
+        confirmLabel = appString(StringKeys.SCH_REMOVE),
         icon = VIcons.AlertTriangle,
         onConfirm = { confirmRemove = false; onRemove() },
         onDismiss = { confirmRemove = false },
@@ -175,7 +180,6 @@ private fun TeacherProfileBody(p: TeacherProfileDto, onOpenAssignments: () -> Un
 
 @Composable
 private fun HeroBanner(p: TeacherProfileDto) {
-    val c = VTheme.colors
     val active = p.status.equals("active", ignoreCase = true)
     VCard(padding = 20.dp) {
         Row(
@@ -185,16 +189,16 @@ private fun HeroBanner(p: TeacherProfileDto) {
         ) {
             VAvatar(name = p.name, size = 76.dp, ring = true)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(p.name, style = VTheme.type.h2.colored(c.ink))
+                Text(p.name, style = VTypography.h2, color = VColors.ink)
                 val sub = listOfNotNull(
                     p.designation?.takeIf { it.isNotBlank() },
                     p.role.replaceFirstChar { it.uppercase() }.takeIf { it.isNotBlank() },
                 ).joinToString(" · ")
                 if (sub.isNotBlank()) {
-                    Text(sub, style = VTheme.type.caption.colored(c.ink2))
+                    Text(sub, style = VTypography.caption, color = VColors.ink2)
                 }
                 VBadge(
-                    text = if (active) "Active" else "Inactive",
+                    text = if (active) appString(StringKeys.SCH_ACTIVE) else appString(StringKeys.SCH_INACTIVE),
                     tone = if (active) VBadgeTone.Success else VBadgeTone.Neutral,
                     leadingIcon = VIcons.Check,
                 )
@@ -204,12 +208,12 @@ private fun HeroBanner(p: TeacherProfileDto) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
             HeroFact(
                 icon = VIcons.TrendingUp,
-                label = "Experience",
+                label = appString(StringKeys.SCH_EXPERIENCE),
                 value = p.experienceYears?.let { "$it yr${if (it == 1) "" else "s"}" } ?: "—",
             )
             HeroFact(
                 icon = VIcons.Calendar,
-                label = "Joined",
+                label = appString(StringKeys.SCH_JOINED),
                 value = p.joinedOn?.takeIf { it.isNotBlank() } ?: "—",
             )
         }
@@ -218,17 +222,16 @@ private fun HeroBanner(p: TeacherProfileDto) {
 
 @Composable
 private fun HeroFact(icon: ImageVector, label: String, value: String) {
-    val c = VTheme.colors
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Box(
-            Modifier.size(32.dp).clip(RoundedCornerShape(10.dp)).background(c.tealDeep.copy(alpha = 0.12f)),
+            Modifier.size(32.dp).clip(RoundedCornerShape(10.dp)).background(VColors.violet.copy(alpha = 0.12f)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(16.dp))
+            Icon(icon, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(16.dp))
         }
         Column {
-            Text(value, style = VTheme.type.bodyStrong.colored(c.ink))
-            Text(label, style = VTheme.type.label.colored(c.ink3))
+            Text(value, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+            Text(label, style = VTypography.label, color = VColors.ink3)
         }
     }
 }
@@ -242,9 +245,8 @@ private fun HeroFact(icon: ImageVector, label: String, value: String) {
  */
 @Composable
 private fun QuickActions(onOpenAssignments: () -> Unit) {
-    val c = VTheme.colors
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "QUICK ACTIONS")
+        VSectionHeader(title = appString(StringKeys.SCH_QUICK_ACTIONS))
         VCard(padding = 16.dp, onClick = onOpenAssignments) {
             Row(
                 Modifier.fillMaxWidth(),
@@ -253,19 +255,19 @@ private fun QuickActions(onOpenAssignments: () -> Unit) {
             ) {
                 Box(
                     Modifier.size(42.dp).clip(RoundedCornerShape(12.dp))
-                        .background(c.tealDeep.copy(alpha = 0.12f)),
+                        .background(VColors.violet.copy(alpha = 0.12f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(VIcons.GraduationCap, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(20.dp))
+                    Icon(VIcons.GraduationCap, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(20.dp))
                 }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text("Assignments", style = VTheme.type.h4.colored(c.ink))
+                    Text(appString(StringKeys.SCH_ASSIGNMENTS), style = VTypography.h3, color = VColors.ink)
                     Text(
-                        "Manage classes, subjects & sections",
-                        style = VTheme.type.caption.colored(c.ink2),
+                        appString(StringKeys.SCH_MANAGE_CLASSES_SUBJECTS),
+                        style = VTypography.caption, color = VColors.ink2,
                     )
                 }
-                Icon(VIcons.ChevronRight, contentDescription = null, tint = c.ink3, modifier = Modifier.size(20.dp))
+                Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(20.dp))
             }
         }
     }
@@ -276,14 +278,14 @@ private fun QuickActions(onOpenAssignments: () -> Unit) {
 @Composable
 private fun KpiCarousel(p: TeacherProfileDto) {
     val kpis = listOf(
-        KpiCardData("Total Students", p.studentCount.toString(), "across classes", VIcons.Users, VBadgeTone.Arctic),
-        KpiCardData("Classes", p.classCount.toString(), "sections taught", VIcons.School, VBadgeTone.Success),
-        KpiCardData("Subjects", p.subjectCount.toString(), "covered", VIcons.BookOpen, VBadgeTone.Warning),
-        KpiCardData("Attendance", "${p.attendancePercent.toInt()}%", "personal", VIcons.Check, VBadgeTone.Success),
-        KpiCardData("Assignments", "${p.assignmentCompletionPercent.toInt()}%", "completion", VIcons.Target, VBadgeTone.Arctic),
+        KpiCardData(appString(StringKeys.SCH_TOTAL_STUDENTS), p.studentCount.toString(), appString(StringKeys.SCH_ACROSS_CLASSES), VIcons.Users, VBadgeTone.Arctic),
+        KpiCardData(appString(StringKeys.SCH_CLASSES), p.classCount.toString(), appString(StringKeys.SCH_SECTIONS_TAUGHT), VIcons.School, VBadgeTone.Success),
+        KpiCardData(appString(StringKeys.SCH_SUBJECTS), p.subjectCount.toString(), appString(StringKeys.SCH_COVERED), VIcons.BookOpen, VBadgeTone.Warning),
+        KpiCardData(appString(StringKeys.SCH_ATTENDANCE), "${p.attendancePercent.toInt()}%", appString(StringKeys.SCH_PERSONAL), VIcons.Check, VBadgeTone.Success),
+        KpiCardData(appString(StringKeys.SCH_ASSIGNMENTS), "${p.assignmentCompletionPercent.toInt()}%", appString(StringKeys.SCH_COMPLETION), VIcons.Target, VBadgeTone.Arctic),
     )
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "OVERVIEW")
+        VSectionHeader(title = appString(StringKeys.SCH_OVERVIEW))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             items(kpis) { kpi -> KpiCard(kpi) }
         }
@@ -300,14 +302,13 @@ private fun KpiCarousel(p: TeacherProfileDto) {
 
 @Composable
 private fun KpiCard(data: KpiCardData) {
-    val c = VTheme.colors
     val tint = when (data.tone) {
-        VBadgeTone.Accent -> c.tealDeep
-        VBadgeTone.Arctic -> c.tealDeep
-        VBadgeTone.Success -> c.successInk
-        VBadgeTone.Warning -> c.warningInk
-        VBadgeTone.Danger -> c.dangerInk
-        VBadgeTone.Neutral -> c.ink3
+        VBadgeTone.Accent -> VColors.violet
+        VBadgeTone.Arctic -> VColors.violet
+        VBadgeTone.Success -> VColors.success
+        VBadgeTone.Warning -> VColors.gold
+        VBadgeTone.Danger -> VColors.error
+        VBadgeTone.Neutral -> VColors.ink3
     }
     VCard(modifier = Modifier.width(150.dp), padding = 16.dp) {
         Box(
@@ -317,9 +318,9 @@ private fun KpiCard(data: KpiCardData) {
             Icon(data.icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
         }
         Spacer(Modifier.height(12.dp))
-        Text(data.value, style = VTheme.type.dataLg.colored(c.ink))
-        Text(data.label, style = VTheme.type.bodyStrong.colored(c.ink2))
-        Text(data.support, style = VTheme.type.label.colored(c.ink3))
+        Text(data.value, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp), color = VColors.ink)
+        Text(data.label, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink2)
+        Text(data.support, style = VTypography.label, color = VColors.ink3)
     }
 }
 
@@ -328,12 +329,12 @@ private fun KpiCard(data: KpiCardData) {
 @Composable
 private fun PerformanceOverview(p: TeacherProfileDto) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "PERFORMANCE")
+        VSectionHeader(title = appString(StringKeys.SCH_PERFORMANCE))
         VCard(padding = 18.dp) {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                MetricBar("Attendance", p.attendancePercent, VBadgeTone.Success)
-                MetricBar("Assignment Completion", p.assignmentCompletionPercent, VBadgeTone.Arctic)
-                MetricBar("Parent Satisfaction", p.parentSatisfactionPercent, VBadgeTone.Warning)
+                MetricBar(appString(StringKeys.SCH_ATTENDANCE), p.attendancePercent, VBadgeTone.Success)
+                MetricBar(appString(StringKeys.SCH_ASSIGNMENT_COMPLETION), p.assignmentCompletionPercent, VBadgeTone.Arctic)
+                MetricBar(appString(StringKeys.SCH_PARENT_SATISFACTION), p.parentSatisfactionPercent, VBadgeTone.Warning)
             }
         }
     }
@@ -341,11 +342,10 @@ private fun PerformanceOverview(p: TeacherProfileDto) {
 
 @Composable
 private fun MetricBar(label: String, value: Float, tone: VBadgeTone) {
-    val c = VTheme.colors
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(label, style = VTheme.type.bodyStrong.colored(c.ink2))
-            Text("${value.toInt()}%", style = VTheme.type.bodyStrong.colored(c.ink))
+            Text(label, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink2)
+            Text("${value.toInt()}%", style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
         }
         VProgressBar(value = value, tone = tone, height = 8.dp)
     }
@@ -356,9 +356,9 @@ private fun MetricBar(label: String, value: Float, tone: VBadgeTone) {
 @Composable
 private fun TeachingPortfolio(assignments: List<TeacherAssignmentDto>) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "TEACHING PORTFOLIO")
+        VSectionHeader(title = appString(StringKeys.SCH_TEACHING_PORTFOLIO))
         if (assignments.isEmpty()) {
-            EmptyCard(VIcons.BookOpen, "No class or subject assignments yet.")
+            EmptyCard(VIcons.BookOpen, appString(StringKeys.SCH_NO_ASSIGNMENTS_YET))
         } else {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(assignments) { a -> PortfolioCard(a) }
@@ -369,24 +369,23 @@ private fun TeachingPortfolio(assignments: List<TeacherAssignmentDto>) {
 
 @Composable
 private fun PortfolioCard(a: TeacherAssignmentDto) {
-    val c = VTheme.colors
     VCard(modifier = Modifier.width(180.dp), padding = 16.dp) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Box(
-                Modifier.size(36.dp).clip(RoundedCornerShape(12.dp)).background(c.tealDeep.copy(alpha = 0.12f)),
+                Modifier.size(36.dp).clip(RoundedCornerShape(12.dp)).background(VColors.violet.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(VIcons.BookOpen, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(18.dp))
+                Icon(VIcons.BookOpen, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
             }
-            VBadge(text = "Sec ${a.section}", tone = VBadgeTone.Neutral)
+            VBadge(text = appString(StringKeys.SCH_SEC, "section" to a.section), tone = VBadgeTone.Neutral)
         }
         Spacer(Modifier.height(12.dp))
-        Text(a.subject, style = VTheme.type.h4.colored(c.ink))
-        Text(a.className, style = VTheme.type.caption.colored(c.ink2))
+        Text(a.subject, style = VTypography.h3, color = VColors.ink)
+        Text(a.className, style = VTypography.caption, color = VColors.ink2)
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Icon(VIcons.Users, contentDescription = null, tint = c.ink3, modifier = Modifier.size(14.dp))
-            Text("${a.studentCount} students", style = VTheme.type.caption.colored(c.ink3))
+            Icon(VIcons.Users, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(14.dp))
+            Text(appString(StringKeys.SCH_N_STUDENTS, "count" to a.studentCount.toString()), style = VTypography.caption, color = VColors.ink3)
         }
     }
 }
@@ -395,23 +394,22 @@ private fun PortfolioCard(a: TeacherAssignmentDto) {
 
 @Composable
 private fun InsightsSection(insights: List<String>) {
-    val c = VTheme.colors
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "INSIGHTS")
+        VSectionHeader(title = appString(StringKeys.SCH_INSIGHTS))
         if (insights.isEmpty()) {
-            EmptyCard(VIcons.Sparkles, "No insights available yet.")
+            EmptyCard(VIcons.Sparkles, appString(StringKeys.SCH_NO_INSIGHTS_YET))
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 insights.forEach { insight ->
                     VCard(padding = 14.dp) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             Box(
-                                Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(c.teal.copy(alpha = 0.16f)),
+                                Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(VColors.violetSoft),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                Icon(VIcons.Sparkles, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(17.dp))
+                                Icon(VIcons.Sparkles, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(17.dp))
                             }
-                            Text(insight, style = VTheme.type.body.colored(c.ink), modifier = Modifier.weight(1f))
+                            Text(insight, style = VTypography.body, color = VColors.ink, modifier = Modifier.weight(1f))
                         }
                     }
                 }
@@ -425,9 +423,9 @@ private fun InsightsSection(insights: List<String>) {
 @Composable
 private fun ActivityTimeline(activities: List<TeacherActivityDto>) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "RECENT ACTIVITY")
+        VSectionHeader(title = appString(StringKeys.SCH_RECENT_ACTIVITY))
         if (activities.isEmpty()) {
-            EmptyCard(VIcons.Clock, "No recent activity yet.")
+            EmptyCard(VIcons.Clock, appString(StringKeys.SCH_NO_RECENT_ACTIVITY))
         } else {
             VCard(padding = 18.dp) {
                 Column {
@@ -442,30 +440,29 @@ private fun ActivityTimeline(activities: List<TeacherActivityDto>) {
 
 @Composable
 private fun TimelineRow(activity: TeacherActivityDto, isLast: Boolean) {
-    val c = VTheme.colors
     val tone = activityTone(activity.type)
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         // marker + connector line
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Box(Modifier.size(12.dp).clip(CircleShape).background(tone))
             if (!isLast) {
-                Box(Modifier.width(2.dp).height(34.dp).background(c.hairline))
+                Box(Modifier.width(2.dp).height(34.dp).background(VColors.line))
             }
         }
         Column(Modifier.padding(bottom = if (isLast) 0.dp else 12.dp)) {
-            Text(activity.title, style = VTheme.type.bodyStrong.colored(c.ink))
-            Text(formatActivityMeta(activity), style = VTheme.type.label.colored(c.ink3))
+            Text(activity.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+            Text(formatActivityMeta(activity), style = VTypography.label, color = VColors.ink3)
         }
     }
 }
 
 @Composable
 private fun activityTone(type: String) = when (type.lowercase()) {
-    "homework" -> VTheme.colors.tealDeep
-    "exam_result" -> VTheme.colors.successInk
-    "assessment" -> VTheme.colors.warningInk
-    "announcement" -> VTheme.colors.dangerInk
-    else -> VTheme.colors.ink3
+    "homework" -> VColors.violet
+    "exam_result" -> VColors.success
+    "assessment" -> VColors.gold
+    "announcement" -> VColors.error
+    else -> VColors.ink3
 }
 
 private fun formatActivityMeta(activity: TeacherActivityDto): String {
@@ -479,9 +476,9 @@ private fun formatActivityMeta(activity: TeacherActivityDto): String {
 @Composable
 private fun AchievementsCarousel(achievements: List<TeacherAchievementDto>) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "ACHIEVEMENTS")
+        VSectionHeader(title = appString(StringKeys.SCH_ACHIEVEMENTS))
         if (achievements.isEmpty()) {
-            EmptyCard(VIcons.Star, "No achievements yet.")
+            EmptyCard(VIcons.Star, appString(StringKeys.SCH_NO_ACHIEVEMENTS))
         } else {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 itemsIndexed(achievements) { index, item -> AchievementCard(item, index) }
@@ -492,8 +489,7 @@ private fun AchievementsCarousel(achievements: List<TeacherAchievementDto>) {
 
 @Composable
 private fun AchievementCard(item: TeacherAchievementDto, index: Int) {
-    val c = VTheme.colors
-    val tones = listOf(c.warningInk, c.successInk, c.tealDeep, c.dangerInk)
+    val tones = listOf(VColors.gold, VColors.success, VColors.violet, VColors.error)
     val tint = tones[index % tones.size]
     VCard(modifier = Modifier.width(200.dp), padding = 16.dp) {
         Box(
@@ -503,9 +499,9 @@ private fun AchievementCard(item: TeacherAchievementDto, index: Int) {
             Icon(VIcons.Star, contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
         }
         Spacer(Modifier.height(12.dp))
-        Text(item.title, style = VTheme.type.h4.colored(c.ink))
+        Text(item.title, style = VTypography.h3, color = VColors.ink)
         Spacer(Modifier.height(4.dp))
-        Text(item.description, style = VTheme.type.caption.colored(c.ink2), maxLines = 3)
+        Text(item.description, style = VTypography.caption, color = VColors.ink2, maxLines = 3)
     }
 }
 
@@ -514,16 +510,16 @@ private fun AchievementCard(item: TeacherAchievementDto, index: Int) {
 @Composable
 private fun ProfessionalDetails(p: TeacherProfileDto) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "PROFESSIONAL DETAILS")
+        VSectionHeader(title = appString(StringKeys.SCH_PROFESSIONAL_DETAILS))
         VCard(padding = 18.dp) {
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                DetailRow(VIcons.Mail, "Email", p.email?.takeIf { it.isNotBlank() } ?: "—")
-                DetailRow(VIcons.Phone, "Phone", p.phone?.takeIf { it.isNotBlank() } ?: "—")
-                DetailRow(VIcons.Calendar, "Joined Date", p.joinedOn?.takeIf { it.isNotBlank() } ?: "—")
+                DetailRow(VIcons.Mail, appString(StringKeys.SCH_EMAIL), p.email?.takeIf { it.isNotBlank() } ?: "—")
+                DetailRow(VIcons.Phone, appString(StringKeys.SCH_PHONE), p.phone?.takeIf { it.isNotBlank() } ?: "—")
+                DetailRow(VIcons.Calendar, appString(StringKeys.SCH_JOINED_DATE), p.joinedOn?.takeIf { it.isNotBlank() } ?: "—")
                 DetailRow(
                     VIcons.TrendingUp,
-                    "Experience",
-                    p.experienceYears?.let { "$it year${if (it == 1) "" else "s"}" } ?: "—",
+                    appString(StringKeys.SCH_EXPERIENCE),
+                    p.experienceYears?.let { appString(StringKeys.SCH_N_YEARS, "count" to it.toString()) } ?: "—",
                 )
             }
         }
@@ -532,17 +528,16 @@ private fun ProfessionalDetails(p: TeacherProfileDto) {
 
 @Composable
 private fun DetailRow(icon: ImageVector, label: String, value: String) {
-    val c = VTheme.colors
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Box(
-            Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(c.cream),
+            Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(VColors.cream),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = c.ink2, modifier = Modifier.size(16.dp))
+            Icon(icon, contentDescription = null, tint = VColors.ink2, modifier = Modifier.size(16.dp))
         }
         Column(Modifier.weight(1f)) {
-            Text(label, style = VTheme.type.label.colored(c.ink3))
-            Text(value, style = VTheme.type.bodyStrong.colored(c.ink))
+            Text(label, style = VTypography.label, color = VColors.ink3)
+            Text(value, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
         }
     }
 }
@@ -555,23 +550,22 @@ private fun DangerZone(
     removeError: String?,
     onRequestRemove: () -> Unit,
 ) {
-    val c = VTheme.colors
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = "DANGER ZONE")
+        VSectionHeader(title = appString(StringKeys.SCH_DANGER_ZONE))
         VCard(padding = 18.dp, border = true) {
-            Text("Remove teacher", style = VTheme.type.bodyStrong.colored(c.dangerInk))
+            Text(appString(StringKeys.SCH_REMOVE_TEACHER), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.error)
             Spacer(Modifier.height(4.dp))
             Text(
-                "Removing this teacher revokes their access immediately. This can be reversed by re-adding them.",
-                style = VTheme.type.caption.colored(c.ink2),
+                appString(StringKeys.SCH_REMOVE_TEACHER_DANGER),
+                style = VTypography.caption, color = VColors.ink2,
             )
             Spacer(Modifier.height(14.dp))
             removeError?.let { err ->
-                Text(err, style = VTheme.type.caption.colored(c.dangerInk))
+                Text(err, style = VTypography.caption, color = VColors.error)
                 Spacer(Modifier.height(8.dp))
             }
             VButton(
-                text = "Remove from school",
+                text = appString(StringKeys.SCH_REMOVE_FROM_SCHOOL),
                 onClick = onRequestRemove,
                 variant = VButtonVariant.Destructive,
                 full = true,
@@ -587,16 +581,15 @@ private fun DangerZone(
 
 @Composable
 private fun EmptyCard(icon: ImageVector, message: String) {
-    val c = VTheme.colors
     VCard(padding = 18.dp) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Box(
-                Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(c.cream),
+                Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(VColors.cream),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = null, tint = c.ink3, modifier = Modifier.size(17.dp))
+                Icon(icon, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(17.dp))
             }
-            Text(message, style = VTheme.type.body.colored(c.ink2))
+            Text(message, style = VTypography.body, color = VColors.ink2)
         }
     }
 }

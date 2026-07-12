@@ -149,6 +149,40 @@ export function Skeleton({ className = "" }: { className?: string }) {
   );
 }
 
+/** A stack of skeleton rows for list/table loading states. */
+export function SkeletonRows({ count = 4, className = "h-16" }: { count?: number; className?: string }) {
+  return (
+    <div className="space-y-2 p-4">
+      {Array.from({ length: count }).map((_, i) => (
+        <Skeleton key={i} className={className} />
+      ))}
+    </div>
+  );
+}
+
+/** A skeleton card with header + body for card loading states. */
+export function SkeletonCard({ className = "h-40" }: { className?: string }) {
+  return <Skeleton className={className} />;
+}
+
+/** A skeleton table with header row + N body rows. */
+export function SkeletonTable({ rows = 5, cols = 4 }: { rows?: number; cols?: number }) {
+  return (
+    <div className="p-4">
+      <Skeleton className="mb-3 h-10" />
+      <div className="space-y-2">
+        {Array.from({ length: rows }).map((_, i) => (
+          <div key={i} className="flex gap-4">
+            {Array.from({ length: cols }).map((_, j) => (
+              <Skeleton key={j} className="h-12 flex-1" />
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function EmptyState({
   title,
   hint,
@@ -195,7 +229,8 @@ export function FadeIn({
 
 export function Avatar({ name, size = 36 }: { name: string; size?: number }) {
   // deterministic, no external image, soft pastel-tinted initials chip
-  const initials = name
+  const safeName = name ?? "";
+  const initials = safeName
     .trim()
     .split(/\s+/)
     .map((p) => p[0]?.toUpperCase() ?? "")

@@ -40,6 +40,7 @@ import org.jetbrains.exposed.sql.update
 import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
 
 object ReportCardJob {
     private val log = LoggerFactory.getLogger("ReportCardJob")
@@ -49,11 +50,8 @@ object ReportCardJob {
     private const val MAX_CONCURRENT_JOBS = 2
     private const val SCHEDULE_INTERVAL_MS = 3600_000L // 1 hour
 
-    @Volatile
-    private var workerRunning = false
-
-    @Volatile
-    private var schedulerRunning = false
+    private val workerRunning = AtomicBoolean(false)
+    private val schedulerRunning = AtomicBoolean(false)
 
     private val assemblyService = ReportAssemblyService()
 
@@ -123,11 +121,10 @@ object ReportCardJob {
      * and processes them. Should be called once at application startup.
      */
     fun startWorker(scope: CoroutineScope) {
-        if (workerRunning) {
+        if (!workerRunning.compareAndSet(false, true)) {
             log.info("[$TAG] Worker already running — skipping")
             return
         }
-        workerRunning = true
 
         scope.launch {
             log.info("[$TAG] Worker started — polling every {}ms, max {} concurrent",
@@ -223,11 +220,10 @@ object ReportCardJob {
      * Should be called once at application startup.
      */
     fun startScheduler(scope: CoroutineScope) {
-        if (schedulerRunning) {
+        if (!schedulerRunning.compareAndSet(false, true)) {
             log.info("[$TAG] Scheduler already running — skipping")
             return
         }
-        schedulerRunning = true
 
         scope.launch {
             log.info("[$TAG] Scheduler started — checking every {}ms", SCHEDULE_INTERVAL_MS)

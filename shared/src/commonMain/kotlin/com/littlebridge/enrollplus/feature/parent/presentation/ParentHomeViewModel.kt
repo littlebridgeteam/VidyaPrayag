@@ -28,6 +28,9 @@ data class ParentHomeState(
     val curationLogic: String = "",
     val isLoading: Boolean = false,
     val error: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
+    val refreshEpoch: Int = 0,
 ) {
     /** The child currently selected (falls back to the first child). */
     val childSummary: DashboardChildSummary?
@@ -100,6 +103,8 @@ class ParentHomeViewModel(
                             alerts = data.alerts,
                             featuredSchools = data.featuredSchools,
                             curationLogic = data.curationLogic,
+                            isStale = result.isStale,
+                            isOffline = result.isOffline,
                         )
                     }
                 }
@@ -107,6 +112,41 @@ class ParentHomeViewModel(
                     _state.update { it.copy(isLoading = false, error = result.message) }
                 is NetworkResult.ConnectionError ->
                     _state.update { it.copy(isLoading = false, error = "Connection error") }
+            }
+        }
+    }
+
+    /** Pull-to-refresh: re-fetch dashboard without clearing existing data. */
+    fun refresh() {
+        viewModelScope.launch {
+            val token = preferenceRepository.getUserToken().first() ?: return@launch
+            when (val result = repository.getDashboard(token)) {
+                is NetworkResult.Success -> {
+                    val data = result.data.data
+                    val children = data.children.ifEmpty { listOfNotNull(data.childSummary) }
+                    _state.update {
+                        val sharedSel = selectedChildHolder.selectedChildId.value
+                            ?.takeIf { id -> children.any { c -> c.id == id } }
+                        val keepSelected = sharedSel
+                            ?: it.selectedChildId?.takeIf { id -> children.any { c -> c.id == id } }
+                        val resolved = keepSelected ?: children.firstOrNull()?.id
+                        it.copy(
+                            greeting = data.greeting,
+                            children = children,
+                            selectedChildId = resolved,
+                            alerts = data.alerts,
+                            featuredSchools = data.featuredSchools,
+                            curationLogic = data.curationLogic,
+                            isStale = result.isStale,
+                            isOffline = result.isOffline,
+                            refreshEpoch = it.refreshEpoch + 1,
+                        )
+                    }
+                }
+                is NetworkResult.Error ->
+                    _state.update { it.copy(isStale = true, isOffline = true, refreshEpoch = it.refreshEpoch + 1) }
+                is NetworkResult.ConnectionError ->
+                    _state.update { it.copy(isStale = true, isOffline = true, refreshEpoch = it.refreshEpoch + 1) }
             }
         }
     }

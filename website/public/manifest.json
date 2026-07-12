@@ -1,0 +1,37 @@
+{
+  "name": "Enroll+ — School OS",
+  "short_name": "Enroll+",
+  "description": "The OS for your campus — attendance, results, fees, and messaging in real time.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#E6E6FA",
+  "theme_color": "#E6E6FA",
+  "orientation": "portrait-primary",
+  "categories": ["education", "productivity", "business"],
+  "icons": [
+    {
+      "src": "/brand/enrollplus-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/brand/enrollplus-mark-dark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Admin Dashboard",
+      "url": "/admin/dashboard",
+      "description": "School admin command center"
+    },
+    {
+      "name": "People",
+      "url": "/admin/people",
+      "description": "Manage students and teachers"
+    }
+  ]
+}

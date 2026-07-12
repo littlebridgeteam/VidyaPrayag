@@ -46,6 +46,8 @@ import type {
   TriggerPulseResponse,
   DevSendNotificationResponse,
   TriggerPewsResponse,
+  ServerLogsPageDto,
+  ServerLogStatsDto,
   AlumniDto,
   AlumniListResponse,
   AlumniCampaignDto,
@@ -60,6 +62,7 @@ import type {
   PewsEffectiveness,
   PewsConfig,
   PewsRunResult,
+  PewsRunResponse,
   PewsJobStatus,
   PewsEffectivenessTrend,
   PewsRiskLevel,
@@ -94,6 +97,19 @@ import type {
   BulkCreatePeriodsRequest,
   BulkCreatePeriodsResponse,
   CopySectionRequest,
+  LanguageDistributionDto,
+  UserLanguagePrefDto,
+  LanguageAdoptionDto,
+  UsersByLanguageDto,
+  ServerStringEntry,
+  ServerStringsResponse,
+  UpsertServerStringRequest,
+  BulkUpsertServerStringRequest,
+  BulkUpsertServerStringResponse,
+  StringOverrideHistoryResponse,
+  ExportTypesResponse,
+  ExportRequest,
+  ExportResponse,
 } from "./types";
 
 interface Opts {
@@ -142,23 +158,29 @@ async function rawRequest<T>(
     Authorization: `Bearer ${token}`,
   };
   if (opts.body !== undefined) headers["Content-Type"] = "application/json";
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    method: opts.method ?? "GET",
-    headers,
-    body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
-    cache: "no-store",
-    signal: opts.signal,
-  });
-  let env: ApiEnvelope<T> | null = null;
-  const text = await res.text();
-  if (text) {
-    try {
-      env = JSON.parse(text) as ApiEnvelope<T>;
-    } catch {
-      env = null;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15_000);
+  try {
+    const res = await fetch(`${API_BASE_URL}${path}`, {
+      method: opts.method ?? "GET",
+      headers,
+      body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+      cache: "no-store",
+      signal: opts.signal ?? controller.signal,
+    });
+    let env: ApiEnvelope<T> | null = null;
+    const text = await res.text();
+    if (text) {
+      try {
+        env = JSON.parse(text) as ApiEnvelope<T>;
+      } catch {
+        env = null;
+      }
     }
+    return { ok: res.ok, status: res.status, env };
+  } finally {
+    clearTimeout(timeoutId);
   }
-  return { ok: res.ok, status: res.status, env };
 }
 
 /** Authed request with transparent single-retry refresh. */
@@ -307,6 +329,24 @@ export const adminApi = {
   triggerPews: () =>
     authRequest<TriggerPewsResponse>("/api/v1/admin/dev/trigger-pews", { method: "POST" }),
 
+  // server logs
+  serverLogs: (params?: { level?: string; category?: string; search?: string; limit?: number; offset?: number }) => {
+    const qs = new URLSearchParams();
+    if (params?.level) qs.set("level", params.level);
+    if (params?.category) qs.set("category", params.category);
+    if (params?.search) qs.set("search", params.search);
+    if (params?.limit) qs.set("limit", String(params.limit));
+    if (params?.offset) qs.set("offset", String(params.offset));
+    const q = qs.toString();
+    return authRequest<ServerLogsPageDto>(`/api/v1/admin/dev/logs${q ? `?${q}` : ""}`);
+  },
+  serverLogStats: () =>
+    authRequest<ServerLogStatsDto>("/api/v1/admin/dev/logs/stats"),
+  serverLogToggleGet: () =>
+    authRequest<{ enabled: boolean }>("/api/v1/admin/dev/logs/logging-toggle"),
+  serverLogToggleSet: (enabled: boolean) =>
+    authRequest<{ enabled: boolean }>(`/api/v1/admin/dev/logs/logging-toggle?enabled=${enabled}`, { method: "POST" }),
+
   // alumni management
   alumniList: (params?: { year?: number; profession?: string; city?: string; q?: string; page?: number; limit?: number }) => {
     const qs = new URLSearchParams();
@@ -390,7 +430,7 @@ export const adminApi = {
   pewsConfig: () => authRequest<PewsConfig>("/api/v1/school/pews/config"),
   pewsUpdateConfig: (body: PewsConfig) =>
     authRequest<PewsConfig>("/api/v1/school/pews/config", { method: "PUT", body }),
-  pewsRun: () => authRequest<PewsRunResult>("/api/v1/school/pews/run", { method: "POST" }),
+  pewsRun: () => authRequest<PewsRunResponse>("/api/v1/school/pews/run", { method: "POST" }),
   pewsJobStatus: (jobId: string) =>
     authRequest<PewsJobStatus>(`/api/v1/school/pews/run/${encodeURIComponent(jobId)}`),
   pewsTrend: (days?: number) => {
@@ -472,4 +512,36 @@ export const adminApi = {
     authRequest<unknown>(`/api/v1/school/timetable/periods/${id}`, { method: "DELETE" }),
   copySection: (body: CopySectionRequest) =>
     authRequest<BulkCreatePeriodsResponse>("/api/v1/school/timetable/periods/copy-section", { method: "POST", body }),
+
+  // ── Multi-Language i18n (I18nRouting.kt) ───────────────────────────────────
+  languageDistribution: () =>
+    authRequest<{ distribution: LanguageDistributionDto[] }>("/api/v1/school/language-distribution"),
+  usersLanguagePref: () =>
+    authRequest<{ users: UserLanguagePrefDto[] }>("/api/v1/school/users-language-pref"),
+  languageAdoption: () =>
+    authRequest<LanguageAdoptionDto>("/api/admin/language-adoption"),
+  usersByLanguage: () =>
+    authRequest<UsersByLanguageDto[]>("/api/admin/users-by-language"),
+  serverStrings: () =>
+    authRequest<ServerStringsResponse>("/api/admin/server-strings"),
+  upsertServerString: (key: string, body: UpsertServerStringRequest) =>
+    authRequest<ServerStringEntry>(`/api/admin/server-strings/${encodeURIComponent(key)}`, { method: "PATCH", body }),
+  deleteServerString: (key: string, lang: string) =>
+    authRequest<unknown>(`/api/admin/server-strings/${encodeURIComponent(key)}?lang=${encodeURIComponent(lang)}`, { method: "DELETE" }),
+  bulkUpsertServerStrings: (body: BulkUpsertServerStringRequest) =>
+    authRequest<BulkUpsertServerStringResponse>(`/api/admin/server-strings/bulk`, { method: "PATCH", body }),
+  stringOverrideHistory: (params?: { key?: string; lang?: string; limit?: number }) => {
+    const qs = new URLSearchParams();
+    if (params?.key) qs.set("key", params.key);
+    if (params?.lang) qs.set("lang", params.lang);
+    if (params?.limit) qs.set("limit", String(params.limit));
+    const q = qs.toString();
+    return authRequest<StringOverrideHistoryResponse>(`/api/admin/server-strings/history${q ? `?${q}` : ""}`);
+  },
+
+  // ── Branded Export System (ExportRouting.kt) ───────────────────────────────
+  exportTypes: () =>
+    authRequest<ExportTypesResponse>("/api/v1/school/export/types"),
+  generateExport: (body: ExportRequest) =>
+    authRequest<ExportResponse>("/api/v1/school/export", { method: "POST", body }),
 };

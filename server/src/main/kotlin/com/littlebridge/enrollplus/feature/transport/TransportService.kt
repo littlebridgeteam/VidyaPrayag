@@ -9,6 +9,7 @@ import org.jetbrains.exposed.sql.update
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.andWhere
 import kotlinx.serialization.Serializable
+import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
@@ -190,6 +191,8 @@ data class CreateTransportFeeRequest(
 // ── Service ──────────────────────────────────────────────────────────────────
 
 class TransportService {
+
+    private val logger = LoggerFactory.getLogger(TransportService::class.java)
 
     // ── Routes ───────────────────────────────────────────────────────────────
 
@@ -384,24 +387,29 @@ class TransportService {
         if (studentId != null) {
             query.andWhere { TransportAssignmentsTable.studentId eq studentId }
         }
-        query.orderBy(TransportAssignmentsTable.createdAt, SortOrder.DESC).map { row ->
-            val studentName = StudentsTable.selectAll()
-                .where { StudentsTable.id eq row[TransportAssignmentsTable.studentId] }
-                .singleOrNull()?.get(StudentsTable.fullName)
-            val routeName = TransportRoutesTable.selectAll()
-                .where { TransportRoutesTable.id eq row[TransportAssignmentsTable.routeId] }
-                .singleOrNull()?.get(TransportRoutesTable.name)
-            val stopName = TransportStopsTable.selectAll()
-                .where { TransportStopsTable.id eq row[TransportAssignmentsTable.stopId] }
-                .singleOrNull()?.get(TransportStopsTable.name)
-            val busNumber = TransportVehiclesTable.selectAll()
-                .where { TransportVehiclesTable.id eq row[TransportAssignmentsTable.vehicleId] }
-                .singleOrNull()?.get(TransportVehiclesTable.busNumber)
+        val rows = query.orderBy(TransportAssignmentsTable.createdAt, SortOrder.DESC).toList()
+        if (rows.isEmpty()) return@dbQuery emptyList()
+
+        val studentIds = rows.map { it[TransportAssignmentsTable.studentId] }.distinct()
+        val routeIds = rows.map { it[TransportAssignmentsTable.routeId] }.distinct()
+        val stopIds = rows.map { it[TransportAssignmentsTable.stopId] }.distinct()
+        val vehicleIds = rows.map { it[TransportAssignmentsTable.vehicleId] }.distinct()
+
+        val studentNames = StudentsTable.selectAll().where { StudentsTable.id inList studentIds.map { org.jetbrains.exposed.dao.id.EntityID(it, StudentsTable) } }
+            .associate { it[StudentsTable.id].value to it[StudentsTable.fullName] }
+        val routeNames = TransportRoutesTable.selectAll().where { TransportRoutesTable.id inList routeIds.map { org.jetbrains.exposed.dao.id.EntityID(it, TransportRoutesTable) } }
+            .associate { it[TransportRoutesTable.id].value to it[TransportRoutesTable.name] }
+        val stopNames = TransportStopsTable.selectAll().where { TransportStopsTable.id inList stopIds.map { org.jetbrains.exposed.dao.id.EntityID(it, TransportStopsTable) } }
+            .associate { it[TransportStopsTable.id].value to it[TransportStopsTable.name] }
+        val busNumbers = TransportVehiclesTable.selectAll().where { TransportVehiclesTable.id inList vehicleIds.map { org.jetbrains.exposed.dao.id.EntityID(it, TransportVehiclesTable) } }
+            .associate { it[TransportVehiclesTable.id].value to it[TransportVehiclesTable.busNumber] }
+
+        rows.map { row ->
             rowToAssignment(row).copy(
-                studentName = studentName,
-                routeName = routeName,
-                stopName = stopName,
-                busNumber = busNumber
+                studentName = studentNames[row[TransportAssignmentsTable.studentId]],
+                routeName = routeNames[row[TransportAssignmentsTable.routeId]],
+                stopName = stopNames[row[TransportAssignmentsTable.stopId]],
+                busNumber = busNumbers[row[TransportAssignmentsTable.vehicleId]]
             )
         }
     }
@@ -575,7 +583,7 @@ class TransportService {
             )
         } catch (e: Exception) {
             // Geofence dispatch is best-effort — never crash the location update.
-            println("TRANSPORT: geofence notification failed: ${e.message}")
+            logger.warn("TRANSPORT: geofence notification failed: {}", e.message, e)
         }
     }
 
@@ -696,19 +704,23 @@ class TransportService {
     }
 
     suspend fun getDailyAttendance(schoolId: UUID, routeId: UUID, date: LocalDate): List<TransportAttendanceDto> = dbQuery {
-        TransportAttendanceTable.selectAll()
+        val rows = TransportAttendanceTable.selectAll()
             .where {
                 (TransportAttendanceTable.schoolId eq schoolId) and
                 (TransportAttendanceTable.routeId eq routeId) and
                 (TransportAttendanceTable.date eq date)
             }
             .orderBy(TransportAttendanceTable.studentId, SortOrder.ASC)
-            .map { row ->
-                val studentName = StudentsTable.selectAll()
-                    .where { StudentsTable.id eq row[TransportAttendanceTable.studentId] }
-                    .singleOrNull()?.get(StudentsTable.fullName)
-                rowToAttendance(row).copy(studentName = studentName)
-            }
+            .toList()
+        if (rows.isEmpty()) return@dbQuery emptyList()
+
+        val studentIds = rows.map { it[TransportAttendanceTable.studentId] }.distinct()
+        val studentNames = StudentsTable.selectAll().where { StudentsTable.id inList studentIds.map { org.jetbrains.exposed.dao.id.EntityID(it, StudentsTable) } }
+            .associate { it[StudentsTable.id].value to it[StudentsTable.fullName] }
+
+        rows.map { row ->
+            rowToAttendance(row).copy(studentName = studentNames[row[TransportAttendanceTable.studentId]])
+        }
     }
 
     // ── Transport Fee ────────────────────────────────────────────────────────

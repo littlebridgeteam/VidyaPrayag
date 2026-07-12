@@ -32,8 +32,11 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.VErrorState
 import com.littlebridge.enrollplus.ui.v2.screens.VLoadingState
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.VtC
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.VtT
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.coloredV
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -52,7 +55,7 @@ fun TeacherHeatmapScreen(
     viewModel: TeacherHeatmapViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
-    val c = VTheme.colors
+    val c = VtC
 
     Box(
         modifier
@@ -63,7 +66,7 @@ fun TeacherHeatmapScreen(
             Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
-            VBackHeader(title = "Class Heatmap", onBack = onBack)
+            VBackHeader(title = appString(StringKeys.TH_TITLE), onBack = onBack)
 
             when {
                 state.isLoading && state.heatmap == null -> VLoadingState()
@@ -72,8 +75,8 @@ fun TeacherHeatmapScreen(
                     onRetry = { viewModel.loadScope() },
                 )
                 state.scope.isEmpty() -> VEmptyState(
-                    title = "No assignments",
-                    body = "You have no class-subject assignments yet.",
+                    title = appString(StringKeys.TH_NO_ASSIGNMENTS),
+                    body = appString(StringKeys.TH_NO_ASSIGNMENTS_DESC),
                     icon = VIcons.BookOpen,
                 )
                 else -> {
@@ -89,8 +92,8 @@ fun TeacherHeatmapScreen(
                         HeatmapContent(state.heatmap!!)
                     } else if (!state.isLoading) {
                         VEmptyState(
-                            title = "No data",
-                            body = "No misconceptions recorded for this class yet.",
+                            title = appString(StringKeys.TH_NO_DATA),
+                            body = appString(StringKeys.TH_NO_DATA_DESC),
                             icon = VIcons.BookOpen,
                         )
                     }
@@ -107,7 +110,7 @@ private fun ScopeSelector(
     selectedSubjectId: String?,
     onSelect: (String, String) -> Unit,
 ) {
-    val c = VTheme.colors
+    val c = VtC
     LazyColumn(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -128,12 +131,12 @@ private fun ScopeSelector(
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(
                             item.className,
-                            style = VTheme.type.body.colored(c.ink),
+                            style = VtT.body.coloredV(c.ink),
                             fontWeight = FontWeight.Medium,
                         )
                         Text(
                             item.subjectName,
-                            style = VTheme.type.caption.colored(c.ink3),
+                            style = VtT.caption.coloredV(c.ink3),
                         )
                     }
                     if (isSelected) {
@@ -144,8 +147,8 @@ private fun ScopeSelector(
                                 .padding(horizontal = 8.dp, vertical = 2.dp),
                         ) {
                             Text(
-                                "SELECTED",
-                                style = VTheme.type.caption.colored(c.accent),
+                                appString(StringKeys.TH_SELECTED),
+                                style = VtT.caption.coloredV(c.accent),
                                 fontWeight = FontWeight.Bold,
                             )
                         }
@@ -158,7 +161,7 @@ private fun ScopeSelector(
 
 @Composable
 private fun HeatmapContent(heatmap: HeatmapDto) {
-    val c = VTheme.colors
+    val c = VtC
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
@@ -170,9 +173,9 @@ private fun HeatmapContent(heatmap: HeatmapDto) {
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceAround,
                 ) {
-                    StatBlock("Children", heatmap.totalChildren.toString())
-                    StatBlock("Misconceptions", heatmap.totalMisconceptions.toString())
-                    StatBlock("Topics", heatmap.cells.size.toString())
+                    StatBlock(appString(StringKeys.TH_CHILDREN), heatmap.totalChildren.toString())
+                    StatBlock(appString(StringKeys.TH_MISCONCEPTIONS), heatmap.totalMisconceptions.toString())
+                    StatBlock(appString(StringKeys.TH_TOPICS), heatmap.cells.size.toString())
                 }
             }
         }
@@ -185,23 +188,23 @@ private fun HeatmapContent(heatmap: HeatmapDto) {
 
 @Composable
 private fun StatBlock(label: String, value: String) {
-    val c = VTheme.colors
+    val c = VtC
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             value,
-            style = VTheme.type.h2.colored(c.ink),
+            style = VtT.h2.coloredV(c.ink),
             fontWeight = FontWeight.Bold,
         )
         Text(
             label,
-            style = VTheme.type.caption.colored(c.ink3),
+            style = VtT.caption.coloredV(c.ink3),
         )
     }
 }
 
 @Composable
 private fun HeatmapCellCard(cell: HeatmapCellDto) {
-    val c = VTheme.colors
+    val c = VtC
     val severityColor = when (cell.severity) {
         "high" -> c.warmOrange
         "medium" -> c.accent
@@ -216,7 +219,7 @@ private fun HeatmapCellCard(cell: HeatmapCellDto) {
             ) {
                 Text(
                     cell.misconceptionType,
-                    style = VTheme.type.body.colored(c.ink),
+                    style = VtT.body.coloredV(c.ink),
                     fontWeight = FontWeight.SemiBold,
                 )
                 Box(
@@ -227,26 +230,26 @@ private fun HeatmapCellCard(cell: HeatmapCellDto) {
                 ) {
                     Text(
                         cell.severity.uppercase(),
-                        style = VTheme.type.caption.colored(severityColor),
+                        style = VtT.caption.coloredV(severityColor),
                         fontWeight = FontWeight.Bold,
                     )
                 }
             }
             Text(
-                "${cell.affectedChildren} children affected",
-                style = VTheme.type.caption.colored(c.ink3),
+                appString(StringKeys.TH_CHILDREN_AFFECTED).replace("{count}", cell.affectedChildren.toString()),
+                style = VtT.caption.coloredV(c.ink3),
             )
             if (cell.evidence.isNotEmpty()) {
                 Text(
-                    "Evidence:",
-                    style = VTheme.type.caption.colored(c.ink3),
+                    appString(StringKeys.TH_EVIDENCE),
+                    style = VtT.caption.coloredV(c.ink3),
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.padding(top = 4.dp),
                 )
                 cell.evidence.take(2).forEach { ev ->
                     Text(
                         "• $ev",
-                        style = VTheme.type.caption.colored(c.ink2),
+                        style = VtT.caption.coloredV(c.ink2),
                         modifier = Modifier.padding(start = 8.dp),
                     )
                 }

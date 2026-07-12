@@ -12,23 +12,25 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
+import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
 object NotificationScheduler {
     private const val TAG = "NotificationScheduler"
+    private val logger = LoggerFactory.getLogger(NotificationScheduler::class.java)
 
     fun start(scope: CoroutineScope) {
         scope.launch {
             while (true) {
                 delay(60 * 60 * 1000) // 1 hour
                 runCatching { checkFeeReminders() }
-                    .onFailure { println("[$TAG] checkFeeReminders failed: ${it.message}") }
+                    .onFailure { logger.error("[$TAG] checkFeeReminders failed", it) }
                 runCatching { checkCalendarReminders() }
-                    .onFailure { println("[$TAG] checkCalendarReminders failed: ${it.message}") }
+                    .onFailure { logger.error("[$TAG] checkCalendarReminders failed", it) }
                 runCatching { checkEventRegistrationReminders() }
-                    .onFailure { println("[$TAG] checkEventRegistrationReminders failed: ${it.message}") }
+                    .onFailure { logger.error("[$TAG] checkEventRegistrationReminders failed", it) }
             }
         }
     }
@@ -67,7 +69,7 @@ object NotificationScheduler {
                 title = notifTitle,
                 body = notifBody,
                 schoolId = row[FeeRecordsTable.schoolId],
-                deepLink = "/parent/fees",
+                deepLink = "/parent/fees/$feeId",
                 refType = "fee_record",
                 refId = feeId.toString(),
             )
@@ -79,7 +81,7 @@ object NotificationScheduler {
             }
         }
 
-        println("[$TAG] checkFeeReminders: sent ${dueFees.size} reminders")
+        logger.info("[$TAG] checkFeeReminders: sent {} reminders", dueFees.size)
     }
 
     suspend fun checkCalendarReminders() {
@@ -123,7 +125,7 @@ object NotificationScheduler {
             }
         }
 
-        println("[$TAG] checkCalendarReminders: sent ${upcomingEvents.size} reminders")
+        logger.info("[$TAG] checkCalendarReminders: sent {} reminders", upcomingEvents.size)
     }
 
     suspend fun checkEventRegistrationReminders() {
@@ -162,7 +164,7 @@ object NotificationScheduler {
                     title = "Event tomorrow: $eventTitle",
                     body = "Don't forget! $eventTitle is tomorrow on $eventDate",
                     schoolId = schoolId,
-                    deepLink = "/parent/home",
+                    deepLink = "/parent/events",
                     refType = "calendar_event",
                     refId = eventId.toString(),
                 )
@@ -175,6 +177,6 @@ object NotificationScheduler {
             }
         }
 
-        println("[$TAG] checkEventRegistrationReminders: sent reminders for ${upcomingEvents.size} events")
+        logger.info("[$TAG] checkEventRegistrationReminders: sent reminders for {} events", upcomingEvents.size)
     }
 }

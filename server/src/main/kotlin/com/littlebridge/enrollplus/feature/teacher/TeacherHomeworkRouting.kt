@@ -64,6 +64,7 @@ import com.littlebridge.enrollplus.db.HomeworkAttachmentsTable
 import com.littlebridge.enrollplus.db.HomeworkExtensionsTable
 import com.littlebridge.enrollplus.db.HomeworkSubmissionsTable
 import com.littlebridge.enrollplus.db.HomeworkTable
+import com.littlebridge.enrollplus.feature.gamification.XpHooks
 import com.littlebridge.enrollplus.feature.notifications.Notify
 import com.littlebridge.enrollplus.feature.notifications.NotifyRecipients
 import io.ktor.http.HttpStatusCode
@@ -423,13 +424,17 @@ private fun Route.homeworkListAndAssign() {
         }
 
         val rosterCount = enrollmentsFor(asg).size
+        val hwIds = rows.map { it[HomeworkTable.id].value }
+        val allSubmissions = if (hwIds.isEmpty()) emptyList() else dbQuery {
+            HomeworkSubmissionsTable.selectAll().where {
+                HomeworkSubmissionsTable.homeworkId inList hwIds
+            }.toList()
+        }
+        val submissionsByHw = allSubmissions.groupBy { it[HomeworkSubmissionsTable.homeworkId] }
+
         val items = rows.map { hw ->
             val hwId = hw[HomeworkTable.id].value
-            val counts = dbQuery {
-                HomeworkSubmissionsTable.selectAll().where {
-                    HomeworkSubmissionsTable.homeworkId eq hwId
-                }.toList()
-            }
+            val counts = submissionsByHw[hwId] ?: emptyList()
             var submitted = 0; var late = 0; var graded = 0
             counts.forEach {
                 when (it[HomeworkSubmissionsTable.status]) {
@@ -540,7 +545,7 @@ private fun Route.homeworkListAndAssign() {
                 body = "${asg.subject}: $title — due $dueDate.",
                 schoolId = ctx.schoolId,
                 actorId = ctx.userId,
-                deepLink = "parent/academics",
+                deepLink = "/parent/academics/homework",
                 refType = "homework",
                 refId = newId.toString(),
             )
@@ -724,6 +729,10 @@ private fun Route.homeworkReview() {
                 }
             }
         }
+
+        // Gamification XP hook — homework reviewed/graded
+        XpHooks.onHomeworkReviewed(targetStudentId, ctx.schoolId, req.grade)
+
         call.ok(HwMutationData(success = true, message = "Submission updated"), message = "Submission updated")
     }
 }

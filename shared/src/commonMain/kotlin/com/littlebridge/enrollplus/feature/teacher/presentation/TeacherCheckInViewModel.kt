@@ -41,6 +41,8 @@ data class TeacherCheckInState(
     // captioned state rather than pretending (Doc 04 §5.1 graceful unavailable).
     val statusUnavailable: Boolean = false,
     val error: String? = null,             // inline check-in error
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class TeacherCheckInViewModel(
@@ -74,6 +76,8 @@ class TeacherCheckInViewModel(
                             method = d.method,
                             date = d.date,
                             statusUnavailable = false,
+                            isStale = result.isStale,
+                            isOffline = result.isOffline,
                         )
                     }
                 }

@@ -21,7 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,7 +38,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.scholarship.domain.model.ScholarshipScheme
 import com.littlebridge.enrollplus.feature.scholarship.domain.model.UpdateSchemeRequest
 import com.littlebridge.enrollplus.feature.scholarship.presentation.ScholarshipScreenState
@@ -55,9 +57,13 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -93,7 +99,7 @@ fun ScholarshipManagementScreenV2(
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
-        VBackHeader(title = "Scholarship Management", onBack = onBack)
+        VBackHeader(title = appString(StringKeys.SCH_MGMT_TITLE), onBack = onBack, pinRouteId = "overlay_scholarships")
 
         // Tab selector
         ScholarshipTabRow(selectedTab = selectedTab, onTabSelected = { selectedTab = it })
@@ -101,7 +107,7 @@ fun ScholarshipManagementScreenV2(
         // Create button is always visible on Schemes tab (even when empty)
         if (selectedTab == 0 && !state.isLoading && state.error == null) {
             VButton(
-                text = "+ Create New Scheme",
+                text = appString(StringKeys.SCH_CREATE_NEW),
                 onClick = { showSchemeForm = true },
                 variant = VButtonVariant.Primary,
                 size = VButtonSize.Md,
@@ -120,17 +126,18 @@ fun ScholarshipManagementScreenV2(
                 else -> state.renewals.isEmpty()
             },
             emptyTitle = when (selectedTab) {
-                0 -> "No scholarship schemes yet"
-                1 -> "No applications to review"
-                else -> "No renewal requests"
+                0 -> appString(StringKeys.SCH_NO_SCHEMES)
+                1 -> appString(StringKeys.SCH_NO_APPLICATIONS)
+                else -> appString(StringKeys.SCH_NO_RENEWALS)
             },
             emptyBody = when (selectedTab) {
-                0 -> "Tap \"Create New Scheme\" above to add one."
-                1 -> "Applications will appear here when parents apply."
-                else -> "Renewal requests will appear here."
+                0 -> appString(StringKeys.SCH_NO_SCHEMES_BODY)
+                1 -> appString(StringKeys.SCH_NO_APPLICATIONS_BODY)
+                else -> appString(StringKeys.SCH_NO_RENEWALS_BODY)
             },
             onRetry = { viewModel.loadSchemes() },
             modifier = Modifier.fillMaxSize(),
+            skeleton = { SkeletonList(rows = 5) },
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -139,19 +146,20 @@ fun ScholarshipManagementScreenV2(
             ) {
                 when (selectedTab) {
                     0 -> {
-                        items(state.schemes) { scheme ->
+                        itemsIndexed(state.schemes, key = { _, it -> it.id }) { index, scheme ->
                             ScholarshipSchemeCard(
                                 scheme = scheme,
                                 onEdit = { editingScheme = scheme },
                                 onDelete = { deleteScheme = scheme },
+                                modifier = Modifier.staggeredItemEntrance(index, state.schemes.isNotEmpty()),
                             )
                         }
                     }
                     1 -> {
                         item {
-                            VSectionHeader(title = "APPLICATIONS (${state.applications.size})")
+                            VSectionHeader(title = appString(StringKeys.SCH_APPLICATIONS).replace("{count}", state.applications.size.toString()))
                         }
-                        items(state.applications) { app ->
+                        itemsIndexed(state.applications, key = { _, it -> it.id }) { index, app ->
                             ScholarshipApplicationReviewCard(
                                 application = app,
                                 onApprove = { remarks, amount ->
@@ -175,14 +183,15 @@ fun ScholarshipManagementScreenV2(
                                         com.littlebridge.enrollplus.feature.scholarship.domain.model.DisburseRequest(amount, reference)
                                     )
                                 },
+                                modifier = Modifier.staggeredItemEntrance(index, state.applications.isNotEmpty()),
                             )
                         }
                     }
                     2 -> {
                         item {
-                            VSectionHeader(title = "RENEWALS (${state.renewals.size})")
+                            VSectionHeader(title = appString(StringKeys.SCH_RENEWALS).replace("{count}", state.renewals.size.toString()))
                         }
-                        items(state.renewals) { renewal ->
+                        itemsIndexed(state.renewals, key = { _, it -> it.id }) { index, renewal ->
                             ScholarshipRenewalCard(
                                 renewal = renewal,
                                 onApprove = { remarks ->
@@ -197,6 +206,7 @@ fun ScholarshipManagementScreenV2(
                                         com.littlebridge.enrollplus.feature.scholarship.domain.model.RejectApplicationRequest(remarks)
                                     )
                                 },
+                                modifier = Modifier.staggeredItemEntrance(index, state.renewals.isNotEmpty()),
                             )
                         }
                     }
@@ -239,8 +249,8 @@ fun ScholarshipManagementScreenV2(
     // Delete confirmation dialog
     if (deleteScheme != null) {
         DeleteConfirmationDialog(
-            title = "Delete Scholarship",
-            message = "Are you sure you want to deactivate \"${deleteScheme?.title}\"? This will remove it from the parent view but existing applications will be preserved.",
+            title = appString(StringKeys.SCH_DELETE_TITLE),
+            message = appString(StringKeys.SCH_DELETE_MSG).replace("{title}", deleteScheme?.title ?: ""),
             onConfirm = {
                 deleteScheme?.let { viewModel.deleteScheme(it.id) }
                 deleteScheme = null
@@ -252,28 +262,27 @@ fun ScholarshipManagementScreenV2(
 
 @Composable
 private fun ScholarshipTabRow(selectedTab: Int, onTabSelected: (Int) -> Unit) {
-    val c = VTheme.colors
     Row(
         Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        listOf("Schemes", "Applications", "Renewals").forEachIndexed { index, label ->
+        listOf(appString(StringKeys.SCH_SCHEMES), appString(StringKeys.SCH_TAB_APPLICATIONS), appString(StringKeys.SCH_TAB_RENEWALS)).forEachIndexed { index, label ->
             val isSelected = selectedTab == index
             Box(
                 Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(if (isSelected) c.accent else c.cream)
+                    .background(if (isSelected) VColors.violet else VColors.cream)
                     .clickable { onTabSelected(index) }
                     .padding(vertical = 10.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     label,
-                    style = VTheme.type.label,
-                    color = if (isSelected) Color.White else c.ink3,
+                    style = VTypography.label,
+                    color = if (isSelected) Color.White else VColors.ink3,
                 )
             }
         }
@@ -285,14 +294,14 @@ private fun ScholarshipSchemeCard(
     scheme: ScholarshipScheme,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
     val typeTone = when (scheme.scholarshipType) {
         "full_waiver" -> VBadgeTone.Success
         "partial_waiver" -> VBadgeTone.Warning
         else -> VBadgeTone.Accent
     }
-    VCard {
+    VCard(modifier) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -300,28 +309,28 @@ private fun ScholarshipSchemeCard(
         ) {
             VBadge(text = scheme.scholarshipType.replace("_", " "), tone = typeTone)
             if (scheme.isRenewable) {
-                VBadge(text = "Renewable", tone = VBadgeTone.Neutral)
+                VBadge(text = appString(StringKeys.SCH_RENEWABLE), tone = VBadgeTone.Neutral)
             }
             if (!scheme.isActive) {
-                VBadge(text = "Inactive", tone = VBadgeTone.Danger)
+                VBadge(text = appString(StringKeys.SCH_INACTIVE), tone = VBadgeTone.Danger)
             }
         }
         Spacer(Modifier.height(8.dp))
-        Text(scheme.title, style = VTheme.type.h3.colored(c.ink))
+        Text(scheme.title, style = VTypography.h3, color = VColors.ink)
         if (scheme.description.isNotBlank()) {
             Spacer(Modifier.height(4.dp))
-            Text(scheme.description, style = VTheme.type.body.colored(c.ink2))
+            Text(scheme.description, style = VTypography.body, color = VColors.ink2)
         }
         Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Column {
-                Text("Award", style = VTheme.type.label.colored(c.ink3))
-                Text(scheme.amount, style = VTheme.type.dataLg.colored(c.ink))
+                Text(appString(StringKeys.SCH_AWARD), style = VTypography.label, color = VColors.ink3)
+                Text(scheme.amount, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp), color = VColors.ink)
             }
             if (scheme.eligibilityCriteria.isNotBlank()) {
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("Eligibility", style = VTheme.type.label.colored(c.ink3))
-                    Text(scheme.eligibilityCriteria, style = VTheme.type.caption.colored(c.ink2))
+                    Text(appString(StringKeys.SCH_ELIGIBILITY), style = VTypography.label, color = VColors.ink3)
+                    Text(scheme.eligibilityCriteria, style = VTypography.caption, color = VColors.ink2)
                 }
             }
         }
@@ -329,7 +338,7 @@ private fun ScholarshipSchemeCard(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Box(Modifier.weight(1f)) {
                 VButton(
-                    text = "Edit",
+                    text = appString(StringKeys.SCH_EDIT),
                     onClick = onEdit,
                     variant = VButtonVariant.Secondary,
                     size = VButtonSize.Sm,
@@ -338,7 +347,7 @@ private fun ScholarshipSchemeCard(
             }
             Box(Modifier.weight(1f)) {
                 VButton(
-                    text = "Deactivate",
+                    text = appString(StringKeys.SCH_DEACTIVATE),
                     onClick = onDelete,
                     variant = VButtonVariant.Destructive,
                     size = VButtonSize.Sm,
@@ -355,8 +364,8 @@ private fun ScholarshipApplicationReviewCard(
     onApprove: (String, Double?) -> Unit,
     onReject: (String) -> Unit,
     onDisburse: (Double, String) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
     var showActions by remember { mutableStateOf(false) }
     var remarks by remember { mutableStateOf("") }
     var disbursementAmount by remember { mutableStateOf("") }
@@ -370,7 +379,7 @@ private fun ScholarshipApplicationReviewCard(
         else -> VBadgeTone.Neutral
     }
 
-    VCard {
+    VCard(modifier) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -379,12 +388,12 @@ private fun ScholarshipApplicationReviewCard(
             Column(Modifier.weight(1f)) {
                 Text(
                     application.scholarshipTitle ?: application.institution,
-                    style = VTheme.type.bodyStrong.colored(c.ink),
+                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink,
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    application.studentName ?: "Student",
-                    style = VTheme.type.caption.colored(c.ink3),
+                    application.studentName ?: appString(StringKeys.SCH_STUDENT),
+                    style = VTypography.caption, color = VColors.ink3,
                 )
             }
             VBadge(text = application.status, tone = statusTone)
@@ -393,19 +402,19 @@ private fun ScholarshipApplicationReviewCard(
         val appText = application.parentApplicationText
         if (appText?.isNotBlank() == true) {
             Spacer(Modifier.height(8.dp))
-            Text(appText, style = VTheme.type.caption.colored(c.ink2))
+            Text(appText, style = VTypography.caption, color = VColors.ink2)
         }
 
         if (application.documentUrls.isNotEmpty()) {
             Spacer(Modifier.height(8.dp))
-            Text("${application.documentUrls.size} document(s) attached", style = VTheme.type.label.colored(c.ink3))
+            Text(appString(StringKeys.SCH_DOCUMENTS).replace("{count}", application.documentUrls.size.toString()), style = VTypography.label, color = VColors.ink3)
         }
 
         if (application.status == "PENDING") {
             Spacer(Modifier.height(12.dp))
             if (!showActions) {
                 VButton(
-                    text = "Review",
+                    text = appString(StringKeys.SCH_REVIEW),
                     onClick = { showActions = true },
                     variant = VButtonVariant.Secondary,
                     size = VButtonSize.Sm,
@@ -415,21 +424,21 @@ private fun ScholarshipApplicationReviewCard(
                 VInput(
                     value = remarks,
                     onValueChange = { remarks = it },
-                    label = "Remarks",
+                    label = appString(StringKeys.SCH_REMARKS),
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(8.dp))
                 VInput(
                     value = disbursementAmount,
                     onValueChange = { disbursementAmount = it.filter { it.isDigit() || it == '.' } },
-                    label = "Disbursement Amount (optional)",
+                    label = appString(StringKeys.SCH_DISBURSEMENT_AMT),
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(8.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Box(Modifier.weight(1f)) {
                         VButton(
-                            text = "Approve",
+                            text = appString(StringKeys.SCH_APPROVE),
                             onClick = {
                                 val amount = disbursementAmount.toDoubleOrNull()
                                 onApprove(remarks, amount)
@@ -442,7 +451,7 @@ private fun ScholarshipApplicationReviewCard(
                     }
                     Box(Modifier.weight(1f)) {
                         VButton(
-                            text = "Reject",
+                            text = appString(StringKeys.SCH_REJECT),
                             onClick = {
                                 onReject(remarks)
                                 showActions = false
@@ -461,12 +470,12 @@ private fun ScholarshipApplicationReviewCard(
             VInput(
                 value = disbursementReference,
                 onValueChange = { disbursementReference = it },
-                label = "Disbursement Reference",
+                label = appString(StringKeys.SCH_DISBURSEMENT_REF),
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(8.dp))
             VButton(
-                text = "Record Disbursement",
+                text = appString(StringKeys.SCH_RECORD_DISBURSEMENT),
                 onClick = {
                     val amount = disbursementAmount.toDoubleOrNull() ?: application.disbursementAmount ?: 0.0
                     if (disbursementReference.isNotBlank()) {
@@ -482,8 +491,8 @@ private fun ScholarshipApplicationReviewCard(
         if (application.status == "DISBURSED" && application.disbursementAmount != null) {
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Disbursed: ${application.disbursementAmount}", style = VTheme.type.caption.colored(c.ink3))
-                Text("Ref: ${application.disbursementReference ?: "—"}", style = VTheme.type.caption.colored(c.ink3))
+                Text(appString(StringKeys.SCH_DISBURSED).replace("{amount}", application.disbursementAmount.toString()), style = VTypography.caption, color = VColors.ink3)
+                Text(appString(StringKeys.SCH_REF).replace("{ref}", application.disbursementReference ?: "—"), style = VTypography.caption, color = VColors.ink3)
             }
         }
     }
@@ -494,8 +503,8 @@ private fun ScholarshipRenewalCard(
     renewal: com.littlebridge.enrollplus.feature.scholarship.domain.model.ScholarshipRenewal,
     onApprove: (String) -> Unit,
     onReject: (String) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
     var remarks by remember { mutableStateOf("") }
     val statusTone = when (renewal.status) {
         "pending" -> VBadgeTone.Warning
@@ -504,7 +513,7 @@ private fun ScholarshipRenewalCard(
         else -> VBadgeTone.Neutral
     }
 
-    VCard {
+    VCard(modifier) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -512,11 +521,11 @@ private fun ScholarshipRenewalCard(
         ) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    renewal.scholarshipTitle ?: "Scholarship Renewal",
-                    style = VTheme.type.bodyStrong.colored(c.ink),
+                    renewal.scholarshipTitle ?: appString(StringKeys.SCH_RENEWAL_FOR),
+                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink,
                 )
                 Spacer(Modifier.height(2.dp))
-                Text("Renewal for academic year", style = VTheme.type.caption.colored(c.ink3))
+                Text(appString(StringKeys.SCH_RENEWAL_FOR), style = VTypography.caption, color = VColors.ink3)
             }
             VBadge(text = renewal.status, tone = statusTone)
         }
@@ -526,14 +535,14 @@ private fun ScholarshipRenewalCard(
             VInput(
                 value = remarks,
                 onValueChange = { remarks = it },
-                label = "Remarks",
+                label = appString(StringKeys.SCH_REMARKS),
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box(Modifier.weight(1f)) {
                     VButton(
-                        text = "Approve",
+                        text = appString(StringKeys.SCH_APPROVE),
                         onClick = { onApprove(remarks) },
                         variant = VButtonVariant.Primary,
                         size = VButtonSize.Sm,
@@ -542,7 +551,7 @@ private fun ScholarshipRenewalCard(
                 }
                 Box(Modifier.weight(1f)) {
                     VButton(
-                        text = "Reject",
+                        text = appString(StringKeys.SCH_REJECT),
                         onClick = { onReject(remarks) },
                         variant = VButtonVariant.Secondary,
                         size = VButtonSize.Sm,
@@ -575,10 +584,9 @@ private fun ScholarshipSchemeForm(
     var isRenewable by remember { mutableStateOf(existingScheme?.isRenewable ?: false) }
     var renewalPeriodMonths by remember { mutableStateOf(existingScheme?.renewalPeriodMonths?.toString() ?: "12") }
     var typeDropdownOpen by remember { mutableStateOf(false) }
-    val c = VTheme.colors
     val scrollState = rememberScrollState()
 
-    val typeOptions = listOf("fixed" to "Fixed Amount", "full_waiver" to "Full Waiver", "partial_waiver" to "Partial Waiver")
+    val typeOptions = listOf("fixed" to appString(StringKeys.SCH_FIXED), "full_waiver" to appString(StringKeys.SCH_FULL_WAIVER), "partial_waiver" to appString(StringKeys.SCH_PARTIAL_WAIVER))
     val categoryOptions = listOf("Merit Based", "Need Based", "Sports", "Cultural", "Special")
 
     Box(
@@ -596,30 +604,30 @@ private fun ScholarshipSchemeForm(
             padding = 16.dp,
         ) {
             Text(
-                if (isEdit) "Edit Scholarship Scheme" else "Create Scholarship Scheme",
-                style = VTheme.type.h3.colored(c.ink),
+                if (isEdit) appString(StringKeys.SCH_EDIT_SCHEME) else appString(StringKeys.SCH_CREATE_SCHEME),
+                style = VTypography.h3, color = VColors.ink,
             )
             Spacer(Modifier.height(16.dp))
 
             Column(Modifier.verticalScroll(scrollState)) {
-                VInput(value = title, onValueChange = { title = it }, label = "Title *", modifier = Modifier.fillMaxWidth())
+                VInput(value = title, onValueChange = { title = it }, label = appString(StringKeys.SCH_TITLE_LABEL), modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(8.dp))
-                VInput(value = description, onValueChange = { description = it }, label = "Description", modifier = Modifier.fillMaxWidth())
+                VInput(value = description, onValueChange = { description = it }, label = appString(StringKeys.SCH_DESCRIPTION), modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(8.dp))
-                VInput(value = amount, onValueChange = { amount = it }, label = "Display Amount (e.g. ₹5,000)", modifier = Modifier.fillMaxWidth())
+                VInput(value = amount, onValueChange = { amount = it }, label = appString(StringKeys.SCH_DISPLAY_AMOUNT), modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(8.dp))
-                VInput(value = numericAmount, onValueChange = { numericAmount = it.filter { it.isDigit() || it == '.' } }, label = "Numeric Amount (for fixed type)", modifier = Modifier.fillMaxWidth())
+                VInput(value = numericAmount, onValueChange = { numericAmount = it.filter { it.isDigit() || it == '.' } }, label = appString(StringKeys.SCH_NUMERIC_AMOUNT), modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(12.dp))
 
                 // Scholarship type dropdown
-                Text("Type", style = VTheme.type.label.colored(c.ink3))
+                Text(appString(StringKeys.SCH_TYPE), style = VTypography.label, color = VColors.ink3)
                 Spacer(Modifier.height(4.dp))
                 Box {
                     Box(
                         Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(8.dp))
-                            .background(c.cream)
+                            .background(VColors.cream)
                             .clickable { typeDropdownOpen = !typeDropdownOpen }
                             .padding(horizontal = 12.dp, vertical = 12.dp),
                     ) {
@@ -630,12 +638,12 @@ private fun ScholarshipSchemeForm(
                         ) {
                             Text(
                                 typeOptions.firstOrNull { it.first == scholarshipType }?.second ?: scholarshipType,
-                                style = VTheme.type.body.colored(c.ink),
+                                style = VTypography.body, color = VColors.ink,
                             )
                             Icon(
                                 imageVector = if (typeDropdownOpen) VIcons.ChevronUp else VIcons.ChevronDown,
-                                contentDescription = "Toggle",
-                                tint = c.ink3,
+                                contentDescription = null,
+                                tint = VColors.ink3,
                             )
                         }
                     }
@@ -661,9 +669,9 @@ private fun ScholarshipSchemeForm(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Text(label, style = VTheme.type.body.colored(if (isSelected) c.accent else c.ink))
+                                    Text(label, style = VTypography.body, color = if (isSelected) VColors.violet else VColors.ink)
                                     if (isSelected) {
-                                        Icon(imageVector = VIcons.Check, contentDescription = null, tint = c.accent)
+                                        Icon(imageVector = VIcons.Check, contentDescription = null, tint = VColors.violet)
                                     }
                                 }
                             }
@@ -673,15 +681,15 @@ private fun ScholarshipSchemeForm(
 
                 if (scholarshipType == "partial_waiver") {
                     Spacer(Modifier.height(8.dp))
-                    VInput(value = waiverPercentage, onValueChange = { waiverPercentage = it.filter { it.isDigit() || it == '.' } }, label = "Waiver Percentage (0-100)", modifier = Modifier.fillMaxWidth())
+                    VInput(value = waiverPercentage, onValueChange = { waiverPercentage = it.filter { it.isDigit() || it == '.' } }, label = appString(StringKeys.SCH_WAIVER_PCT), modifier = Modifier.fillMaxWidth())
                 }
 
                 Spacer(Modifier.height(8.dp))
-                VInput(value = eligibilityCriteria, onValueChange = { eligibilityCriteria = it }, label = "Eligibility Criteria", modifier = Modifier.fillMaxWidth())
+                VInput(value = eligibilityCriteria, onValueChange = { eligibilityCriteria = it }, label = appString(StringKeys.SCH_ELIGIBILITY_CRIT), modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(8.dp))
 
                 // Category dropdown
-                Text("Category", style = VTheme.type.label.colored(c.ink3))
+                Text(appString(StringKeys.SCH_CATEGORY), style = VTypography.label, color = VColors.ink3)
                 Spacer(Modifier.height(4.dp))
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     categoryOptions.forEach { cat ->
@@ -689,11 +697,11 @@ private fun ScholarshipSchemeForm(
                         Box(
                             Modifier
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSelected) c.accent else c.cream)
+                                .background(if (isSelected) VColors.violet else VColors.cream)
                                 .clickable { category = cat }
                                 .padding(horizontal = 12.dp, vertical = 8.dp),
                         ) {
-                            Text(cat, style = VTheme.type.label, color = if (isSelected) Color.White else c.ink3)
+                            Text(cat, style = VTypography.label, color = if (isSelected) Color.White else VColors.ink3)
                         }
                     }
                 }
@@ -702,14 +710,14 @@ private fun ScholarshipSchemeForm(
                 VDatePicker(
                     value = startDate,
                     onValueChange = { startDate = it },
-                    label = "Start Date",
+                    label = appString(StringKeys.SCH_MGMT_START_DATE),
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(8.dp))
                 VDatePicker(
                     value = endDate,
                     onValueChange = { endDate = it },
-                    label = "End Date (Application Deadline)",
+                    label = appString(StringKeys.SCH_MGMT_END_DATE),
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(8.dp))
@@ -724,26 +732,26 @@ private fun ScholarshipSchemeForm(
                         Modifier
                             .size(20.dp)
                             .clip(CircleShape)
-                            .background(if (isRenewable) c.accent else c.cream),
+                            .background(if (isRenewable) VColors.violet else VColors.cream),
                         contentAlignment = Alignment.Center,
                     ) {
                         if (isRenewable) {
-                            Text("✓", style = VTheme.type.label, color = Color.White)
+                            Text("✓", style = VTypography.label, color = Color.White)
                         }
                     }
-                    Text("Renewable", style = VTheme.type.body.colored(c.ink))
+                    Text(appString(StringKeys.SCH_RENEWABLE_LABEL), style = VTypography.body, color = VColors.ink)
                 }
 
                 if (isRenewable) {
                     Spacer(Modifier.height(8.dp))
-                    VInput(value = renewalPeriodMonths, onValueChange = { renewalPeriodMonths = it.filter { ch -> ch.isDigit() } }, label = "Renewal Period (months)", modifier = Modifier.fillMaxWidth())
+                    VInput(value = renewalPeriodMonths, onValueChange = { renewalPeriodMonths = it.filter { ch -> ch.isDigit() } }, label = appString(StringKeys.SCH_RENEWAL_PERIOD), modifier = Modifier.fillMaxWidth())
                 }
 
                 Spacer(Modifier.height(16.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Box(Modifier.weight(1f)) {
                         VButton(
-                            text = "Cancel",
+                            text = appString(StringKeys.COMMON_BUTTON_CANCEL),
                             onClick = onDismiss,
                             variant = VButtonVariant.Secondary,
                             size = VButtonSize.Md,
@@ -752,7 +760,7 @@ private fun ScholarshipSchemeForm(
                     }
                     Box(Modifier.weight(1f)) {
                         VButton(
-                            text = if (isEdit) "Update" else "Create",
+                            text = if (isEdit) appString(StringKeys.SCH_UPDATE) else appString(StringKeys.SCH_CREATE),
                             onClick = {
                                 if (title.isNotBlank()) {
                                     if (isEdit) {
@@ -810,7 +818,6 @@ private fun DeleteConfirmationDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val c = VTheme.colors
     Box(
         Modifier
             .fillMaxSize()
@@ -825,14 +832,14 @@ private fun DeleteConfirmationDialog(
                 .clickable(enabled = false) {},
             padding = 20.dp,
         ) {
-            Text(title, style = VTheme.type.h3.colored(c.ink))
+            Text(title, style = VTypography.h3, color = VColors.ink)
             Spacer(Modifier.height(8.dp))
-            Text(message, style = VTheme.type.body.colored(c.ink2))
+            Text(message, style = VTypography.body, color = VColors.ink2)
             Spacer(Modifier.height(16.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box(Modifier.weight(1f)) {
                     VButton(
-                        text = "Cancel",
+                        text = appString(StringKeys.COMMON_BUTTON_CANCEL),
                         onClick = onDismiss,
                         variant = VButtonVariant.Secondary,
                         size = VButtonSize.Md,
@@ -841,7 +848,7 @@ private fun DeleteConfirmationDialog(
                 }
                 Box(Modifier.weight(1f)) {
                     VButton(
-                        text = "Deactivate",
+                        text = appString(StringKeys.SCH_DEACTIVATE),
                         onClick = onConfirm,
                         variant = VButtonVariant.Destructive,
                         size = VButtonSize.Md,

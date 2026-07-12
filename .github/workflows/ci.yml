@@ -1,0 +1,114 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  server-build-test:
+    name: Server Build + Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-server-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', 'gradle/libs.versions.toml') }}
+          restore-keys: gradle-server-${{ runner.os }}-
+
+      - name: Compile server
+        run: ./gradlew :server:compileKotlin -Pserver-only=true --no-daemon
+
+      - name: Run Detekt (Kotlin static analysis)
+        run: ./gradlew :server:detekt -Pserver-only=true --no-daemon
+
+      - name: Run server tests
+        run: ./gradlew :server:test -Pserver-only=true --no-daemon
+
+  shared-build-test:
+    name: Shared Module Build + Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-shared-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', 'gradle/libs.versions.toml') }}
+          restore-keys: gradle-shared-${{ runner.os }}-
+
+      - name: Compile shared (JVM)
+        run: ./gradlew :shared:compileKotlinJvm --no-daemon
+
+      - name: Run shared JVM tests
+        run: ./gradlew :shared:jvmTest --no-daemon
+
+  android-compile:
+    name: Android Compile Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-android-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', 'gradle/libs.versions.toml') }}
+          restore-keys: gradle-android-${{ runner.os }}-
+
+      - name: Compile shared (Android)
+        run: ./gradlew :shared:compileDevDebugKotlinAndroid --no-daemon
+
+      - name: Compile composeApp (Android)
+        run: ./gradlew :composeApp:compileDevDebugKotlinAndroid --no-daemon
+
+  website-lint:
+    name: Website ESLint Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: website
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npx eslint src/ --max-warnings 0

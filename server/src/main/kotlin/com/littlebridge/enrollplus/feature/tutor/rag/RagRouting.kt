@@ -35,7 +35,7 @@ fun Route.ragRouting() {
             ?: return@get call.fail("query required", HttpStatusCode.BadRequest, "BAD_QUERY")
         val topicIdStr = call.request.queryParameters["topicId"]
         val topicId = topicIdStr?.let { runCatching { UUID.fromString(it) }.getOrNull() }
-        val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 5
+        val limit = (call.request.queryParameters["limit"]?.toIntOrNull() ?: 5).coerceIn(1, 20)
 
         // Resolve schoolId from user (parent or school role)
         val schoolId = com.littlebridge.enrollplus.core.resolveSchoolIdForUser(uid)

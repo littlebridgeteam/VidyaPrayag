@@ -25,7 +25,7 @@ import com.littlebridge.enrollplus.feature.idcard.presentation.IdCardViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
+import com.littlebridge.enrollplus.ui.tokens.VColors
 import org.koin.compose.viewmodel.koinViewModel
 
 private enum class IdCardTab(val label: String) {
@@ -58,41 +58,39 @@ fun IdCardScreen(
         viewModel.loadCards()
     }
 
-    VTheme {
-        Column(
-            modifier = modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-                .navigationBarsPadding()
-                .background(VTheme.colors.background),
-        ) {
-            com.littlebridge.enrollplus.ui.v2.components.VBackHeader(title = "ID Cards", onBack = onBack)
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .background(VColors.surface),
+    ) {
+        com.littlebridge.enrollplus.ui.v2.components.VBackHeader(title = "ID Cards", onBack = onBack, pinRouteId = "overlay_id_cards")
 
-            IdCardStatsBanner(
-                totalCards = state.cards.size,
-                studentCards = state.cards.count { it.personType == "student" },
-                teacherCards = state.cards.count { it.personType == "teacher" },
-                staffCards = state.cards.count { it.personType == "staff" },
-                onBadgeClick = { scrollToBuilder = true },
-            )
+        IdCardStatsBanner(
+            totalCards = state.cards.size,
+            studentCards = state.cards.count { it.personType == "student" },
+            teacherCards = state.cards.count { it.personType == "teacher" },
+            staffCards = state.cards.count { it.personType == "staff" },
+            onBadgeClick = { scrollToBuilder = true },
+        )
 
-            VTopTabs(
-                tabs = IdCardTab.entries.map { it.label },
-                selected = activeTab.label,
-                onSelect = { label -> activeTab = IdCardTab.entries.first { it.label == label } },
-            )
+        VTopTabs(
+            tabs = IdCardTab.entries.map { it.label },
+            selected = activeTab.label,
+            onSelect = { label -> activeTab = IdCardTab.entries.first { it.label == label } },
+        )
 
-            AnimatedContent(
-                targetState = activeTab,
-                transitionSpec = { fadeIn() togetherWith fadeOut() },
-                label = "idcard-tab",
-                modifier = Modifier.weight(1f).fillMaxWidth(),
-            ) { tab ->
-                when (tab) {
-                    IdCardTab.Templates -> TemplatesTab(state, viewModel, templatesScrollState)
-                    IdCardTab.Generate -> GenerateTab(state, viewModel)
-                    IdCardTab.Cards -> CardsTab(state, viewModel)
-                }
+        AnimatedContent(
+            targetState = activeTab,
+            transitionSpec = { fadeIn() togetherWith fadeOut() },
+            label = "idcard-tab",
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+        ) { tab ->
+            when (tab) {
+                IdCardTab.Templates -> TemplatesTab(state, viewModel, templatesScrollState)
+                IdCardTab.Generate -> GenerateTab(state, viewModel)
+                IdCardTab.Cards -> CardsTab(state, viewModel)
             }
         }
     }

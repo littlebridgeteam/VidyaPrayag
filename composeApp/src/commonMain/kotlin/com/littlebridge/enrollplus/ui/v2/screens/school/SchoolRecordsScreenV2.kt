@@ -1,6 +1,13 @@
 package com.littlebridge.enrollplus.ui.v2.screens.school
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,6 +20,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -24,7 +33,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.admin.domain.model.AttendanceSummaryDto
@@ -39,20 +55,42 @@ import com.littlebridge.enrollplus.feature.admin.presentation.PaceAlertsState
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
+import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
-import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VComingSoon
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
-import com.littlebridge.enrollplus.ui.v2.components.VLabel
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VMotion
+import com.littlebridge.enrollplus.ui.tokens.VShapes
+import com.littlebridge.enrollplus.ui.tokens.VTypography
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.math.roundToInt
+
+private enum class RecordsTab {
+    Coverage, Pace, Attendance, Marks, Fee, Documents;
+
+    @Composable
+    fun label(): String = when (this) {
+        Coverage   -> appString(StringKeys.REC_TAB_COVERAGE)
+        Pace       -> appString(StringKeys.REC_TAB_PACE)
+        Attendance -> appString(StringKeys.REC_TAB_ATTENDANCE)
+        Marks      -> appString(StringKeys.REC_TAB_MARKS)
+        Fee        -> appString(StringKeys.REC_TAB_FEE)
+        Documents  -> appString(StringKeys.REC_TAB_DOCUMENTS)
+    }
+}
 
 /**
  * SchoolRecordsScreenV2 — `Admin.tsx → Records`, wired to the real
@@ -88,9 +126,9 @@ fun SchoolRecordsScreenV2(
         onRecalculatePace = paceViewModel::recalculate,
         onTabSelected = { tab ->
             when (tab) {
-                "Attendance" -> recordsViewModel.ensureAttendance()
-                "Marks" -> recordsViewModel.ensureMarks()
-                "Fee" -> recordsViewModel.ensureFees()
+                RecordsTab.Attendance.name -> recordsViewModel.ensureAttendance()
+                RecordsTab.Marks.name -> recordsViewModel.ensureMarks()
+                RecordsTab.Fee.name -> recordsViewModel.ensureFees()
             }
         },
         onRetryAttendance = recordsViewModel::loadAttendance,
@@ -115,69 +153,128 @@ private fun SchoolRecordsContent(
     onRetryFees: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    var tab by remember { mutableStateOf("Coverage") }
+    var tab by remember { mutableStateOf(RecordsTab.Coverage) }
 
-    // Lazy-load the rollup behind whichever data tab is currently selected.
-    LaunchedEffect(tab) { onTabSelected(tab) }
+    LaunchedEffect(tab) { onTabSelected(tab.name) }
 
-    Column(
-        modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp)
-            .statusBarsPadding()
-            .imePadding()
-            .navigationBarsPadding()
-            .padding(top = 24.dp, bottom = 140.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+    // Stagger entrance
+    val headerAlpha = remember { Animatable(0f) }
+    val headerOffset = remember { Animatable(20f) }
+    LaunchedEffect(Unit) {
+        headerAlpha.snapTo(0f); headerOffset.snapTo(20f)
+        launch {
+            delay(100)
+            headerAlpha.animateTo(1f, tween(VMotion.durSlower, easing = VMotion.ease))
+            headerOffset.animateTo(0f, tween(VMotion.durSlower, easing = VMotion.ease))
+        }
+    }
+
+    var isRefreshing by remember { mutableStateOf(false) }
+    val anyLoading = state.isLoading || pace.isLoading ||
+        records.attendance.isLoading || records.marks.isLoading || records.fees.isLoading
+    LaunchedEffect(anyLoading) {
+        if (!anyLoading) isRefreshing = false
+    }
+
+    VPullRefresh(
+        isRefreshing = isRefreshing,
+        onRefresh = {
+            isRefreshing = true
+            when (tab) {
+                RecordsTab.Coverage -> onRetry()
+                RecordsTab.Pace -> onRetryPace()
+                RecordsTab.Attendance -> onRetryAttendance()
+                RecordsTab.Marks -> onRetryMarks()
+                RecordsTab.Fee -> onRetryFees()
+                RecordsTab.Documents -> {}
+            }
+        },
+        modifier = modifier.fillMaxSize(),
     ) {
-        Text("Records", style = VTheme.type.h1.colored(c.ink))
+        Column(
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp)
+                .statusBarsPadding()
+                .imePadding()
+                .navigationBarsPadding()
+                .padding(top = 16.dp, bottom = 140.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+        // Premium header
+        Column(
+            modifier = Modifier
+                .graphicsLayer(translationY = headerOffset.value)
+                .alpha(headerAlpha.value),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(7.dp),
+            ) {
+                Box(Modifier.size(5.dp).clip(CircleShape).background(VColors.violet))
+                Text(appString(StringKeys.REC_TITLE), style = VTypography.accentLabel, color = VColors.violet)
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = buildAnnotatedString {
+                    withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold, color = VColors.ink)) {
+                        append("Records")
+                    }
+                    withStyle(SpanStyle(fontWeight = FontWeight.Normal, color = VColors.ink2)) {
+                        append(" & Analytics")
+                    }
+                },
+                style = VTypography.h2,
+            )
+        }
+
+        val tabLabels = RecordsTab.entries.map { it.label() }
         VTopTabs(
-            tabs = listOf("Coverage", "Pace", "Attendance", "Marks", "Fee", "Documents"),
-            selected = tab,
-            onSelect = { tab = it },
+            tabs = tabLabels,
+            selected = tabLabels[tab.ordinal],
+            onSelect = { label -> tab = RecordsTab.entries[tabLabels.indexOf(label)] },
         )
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             when (tab) {
-                "Coverage" -> CoverageTab(state = state, onRetry = onRetry)
-                "Pace" -> PaceTab(state = pace, onRetry = onRetryPace, onResolve = onResolveAlert, onRecalculate = onRecalculatePace)
-                "Attendance" -> AttendanceTab(ui = records.attendance, onRetry = onRetryAttendance)
-                "Marks" -> MarksTab(ui = records.marks, onRetry = onRetryMarks)
-                "Fee" -> FeeTab(ui = records.fees, onRetry = onRetryFees)
-                "Documents" -> VComingSoon(
-                    title = "Document library",
-                    description = "Circulars, timetables and holiday lists will be uploadable once media storage is configured.",
+                RecordsTab.Coverage -> CoverageTab(state = state, onRetry = onRetry)
+                RecordsTab.Pace -> PaceTab(state = pace, onRetry = onRetryPace, onResolve = onResolveAlert, onRecalculate = onRecalculatePace)
+                RecordsTab.Attendance -> AttendanceTab(ui = records.attendance, onRetry = onRetryAttendance)
+                RecordsTab.Marks -> MarksTab(ui = records.marks, onRetry = onRetryMarks)
+                RecordsTab.Fee -> FeeTab(ui = records.fees, onRetry = onRetryFees)
+                RecordsTab.Documents -> VComingSoon(
+                    title = appString(StringKeys.REC_DOC_LIBRARY_TITLE),
+                    description = appString(StringKeys.REC_DOC_LIBRARY_DESC),
                 )
             }
         }
+    }
     }
 }
 
 @Composable
 private fun CoverageTab(state: SyllabusCoverageState, onRetry: () -> Unit) {
-    val c = VTheme.colors
     VStateHost(
         loading = state.isLoading,
         error = state.errorMessage,
         isEmpty = state.departmentProgress.isEmpty() && state.alerts.isEmpty() && state.milestones.isEmpty(),
-        emptyTitle = "No coverage data yet",
-        emptyBody = "Syllabus coverage will appear here once teachers start marking units complete.",
+        emptyTitle = appString(StringKeys.REC_NO_COVERAGE),
+        emptyBody = appString(StringKeys.REC_NO_COVERAGE_BODY),
         emptyIcon = VIcons.BookOpen,
         onRetry = onRetry,
         skeleton = { com.littlebridge.enrollplus.ui.v2.screens.SkeletonList(rows = 5, withAvatar = false) },
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             // ── Overall ───────────────────────────────────────────────────────
-            VCard {
+            RecordsCreamCard {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                    VLabel("Overall syllabus coverage")
+                    Text(appString(StringKeys.REC_OVERALL_COVERAGE), style = VTypography.label, color = VColors.ink3)
                     if (state.overallTrend.isNotBlank()) {
                         VBadge(text = state.overallTrend, tone = VBadgeTone.Arctic)
                     }
                 }
                 Spacer(Modifier.height(8.dp))
-                Text("${state.overallPercentage}%", style = VTheme.type.dataLg.colored(c.ink))
+                Text("${state.overallPercentage}%", style = VTypography.h2.copy(fontWeight = FontWeight.ExtraBold), color = VColors.ink)
                 Spacer(Modifier.height(8.dp))
                 VProgressBar(
                     value = state.overallPercentage.toFloat(),
@@ -187,15 +284,15 @@ private fun CoverageTab(state: SyllabusCoverageState, onRetry: () -> Unit) {
 
             // ── By department ─────────────────────────────────────────────────
             if (state.departmentProgress.isNotEmpty()) {
-                VCard {
-                    Text("By department", style = VTheme.type.h3.colored(c.ink))
+                RecordsCreamCard {
+                    Text(appString(StringKeys.REC_BY_DEPARTMENT), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                     Spacer(Modifier.height(12.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        state.departmentProgress.forEach { d ->
-                            Column {
+                        state.departmentProgress.forEachIndexed { index, d ->
+                            Column(modifier = Modifier.staggeredItemEntrance(index, state.departmentProgress.isNotEmpty())) {
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text(d.name, style = VTheme.type.body.colored(c.ink))
-                                    Text("${(d.progress * 100).roundToInt()}%", style = VTheme.type.dataSm.colored(c.ink2))
+                                    Text(d.name, style = VTypography.bodySmall, color = VColors.ink)
+                                    Text("${(d.progress * 100).roundToInt()}%", style = VTypography.caption, color = VColors.ink2)
                                 }
                                 Spacer(Modifier.height(4.dp))
                                 VProgressBar(
@@ -203,7 +300,7 @@ private fun CoverageTab(state: SyllabusCoverageState, onRetry: () -> Unit) {
                                     tone = if (d.isDelayed) VBadgeTone.Danger else VBadgeTone.Arctic,
                                 )
                                 if (d.trend.isNotBlank()) {
-                                    Text(d.trend, style = VTheme.type.label.colored(if (d.isDelayed) c.dangerInk else c.ink3))
+                                    Text(d.trend, style = VTypography.caption, color = if (d.isDelayed) VColors.coral else VColors.ink3)
                                 }
                             }
                         }
@@ -214,20 +311,20 @@ private fun CoverageTab(state: SyllabusCoverageState, onRetry: () -> Unit) {
             // ── Lagging alerts ────────────────────────────────────────────────
             if (state.alerts.isNotEmpty()) {
                 Column {
-                    Text("Lagging classes", style = VTheme.type.h3.colored(c.ink), modifier = Modifier.padding(bottom = 8.dp))
+                    Text(appString(StringKeys.REC_LAGGING_CLASSES), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.padding(bottom = 8.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        state.alerts.forEach { a ->
-                            VCard {
+                        state.alerts.forEachIndexed { index, a ->
+                            RecordsCreamCard(modifier = Modifier.staggeredItemEntrance(index, state.alerts.isNotEmpty())) {
                                 Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    Icon(VIcons.AlertCircle, contentDescription = null, tint = if (a.isCritical) c.dangerInk else c.warningInk, modifier = Modifier.size(18.dp).padding(top = 2.dp))
+                                    Icon(VIcons.AlertCircle, contentDescription = null, tint = if (a.isCritical) VColors.coral else VColors.gold, modifier = Modifier.size(18.dp).padding(top = 2.dp))
                                     Column(Modifier.weight(1f)) {
-                                        Text("${a.subject} • ${a.className}", style = VTheme.type.bodyStrong.colored(c.ink))
+                                        Text("${a.subject} • ${a.className}", style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                                         if (a.instructor.isNotBlank()) {
-                                            Text(a.instructor, style = VTheme.type.caption.colored(c.ink2))
+                                            Text(a.instructor, style = VTypography.caption, color = VColors.ink3)
                                         }
                                     }
                                     VBadge(
-                                        text = "${a.delayPercentage}% behind",
+                                        text = appString(StringKeys.REC_BEHIND, "pct" to a.delayPercentage),
                                         tone = if (a.isCritical) VBadgeTone.Danger else VBadgeTone.Warning,
                                     )
                                 }
@@ -240,23 +337,23 @@ private fun CoverageTab(state: SyllabusCoverageState, onRetry: () -> Unit) {
             // ── Academic milestones ───────────────────────────────────────────
             if (state.milestones.isNotEmpty()) {
                 Column {
-                    Text("Academic milestones", style = VTheme.type.h3.colored(c.ink), modifier = Modifier.padding(bottom = 8.dp))
+                    Text(appString(StringKeys.REC_MILESTONES), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.padding(bottom = 8.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        state.milestones.forEach { m ->
-                            VCard {
+                        state.milestones.forEachIndexed { index, m ->
+                            RecordsCreamCard(modifier = Modifier.staggeredItemEntrance(index, state.milestones.isNotEmpty())) {
                                 Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text(m.month, style = VTheme.type.label.colored(c.ink3))
-                                        Text(m.day, style = VTheme.type.dataLg.colored(c.ink))
+                                        Text(m.month, style = VTypography.caption, color = VColors.ink3)
+                                        Text(m.day, style = VTypography.h2.copy(fontWeight = FontWeight.ExtraBold), color = VColors.ink)
                                     }
                                     Column(Modifier.weight(1f)) {
-                                        Text(m.title, style = VTheme.type.bodyStrong.colored(c.ink))
+                                        Text(m.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                                         if (m.description.isNotBlank()) {
-                                            Text(m.description, style = VTheme.type.caption.colored(c.ink2))
+                                            Text(m.description, style = VTypography.caption, color = VColors.ink3)
                                         }
                                     }
                                     if (m.isVerified) {
-                                        Icon(VIcons.Check, contentDescription = "Verified", tint = c.successInk, modifier = Modifier.size(18.dp))
+                                        Icon(VIcons.Check, contentDescription = appString(StringKeys.REC_VERIFIED), tint = VColors.success, modifier = Modifier.size(18.dp))
                                     }
                                 }
                             }
@@ -275,24 +372,23 @@ private fun AttendanceTab(
     ui: com.littlebridge.enrollplus.feature.admin.presentation.AttendanceSummaryUi,
     onRetry: () -> Unit,
 ) {
-    val c = VTheme.colors
     val data: AttendanceSummaryDto? = ui.data
     VStateHost(
         loading = ui.isLoading,
         error = ui.error,
         isEmpty = ui.loaded && (data == null || data.total == 0),
-        emptyTitle = "No attendance marked yet",
-        emptyBody = "School-wide attendance will roll up here once teachers start marking the daily register.",
+        emptyTitle = appString(StringKeys.REC_NO_ATTENDANCE),
+        emptyBody = appString(StringKeys.REC_NO_ATTENDANCE_BODY),
         emptyIcon = VIcons.Calendar,
         onRetry = onRetry,
         skeleton = { com.littlebridge.enrollplus.ui.v2.screens.SkeletonList(rows = 4, withAvatar = false) },
     ) {
         if (data == null) return@VStateHost
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            VCard {
+            RecordsCreamCard {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                    VLabel("Latest register" + (data.latestDate?.let { " • $it" } ?: ""))
-                    VBadge(text = "${data.rate}% present", tone = if (data.rate < 75) VBadgeTone.Warning else VBadgeTone.Success)
+                    Text(appString(StringKeys.REC_LATEST_REGISTER) + (data.latestDate?.let { " • $it" } ?: ""), style = VTypography.label, color = VColors.ink3)
+                    VBadge(text = appString(StringKeys.REC_PRESENT_PCT, "pct" to data.rate), tone = if (data.rate < 75) VBadgeTone.Warning else VBadgeTone.Success)
                 }
                 Spacer(Modifier.height(8.dp))
                 VProgressBar(
@@ -301,23 +397,23 @@ private fun AttendanceTab(
                 )
                 Spacer(Modifier.height(12.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    StatCell(label = "Present", value = data.present.toString(), tint = c.successInk)
-                    StatCell(label = "Absent", value = data.absent.toString(), tint = c.dangerInk)
-                    StatCell(label = "Late", value = data.late.toString(), tint = c.warningInk)
-                    StatCell(label = "Total", value = data.total.toString(), tint = c.ink)
+                    StatCell(label = appString(StringKeys.REC_PRESENT), value = data.present.toString(), tint = VColors.success)
+                    StatCell(label = appString(StringKeys.REC_ABSENT), value = data.absent.toString(), tint = VColors.coral)
+                    StatCell(label = appString(StringKeys.REC_LATE), value = data.late.toString(), tint = VColors.gold)
+                    StatCell(label = appString(StringKeys.REC_TOTAL), value = data.total.toString(), tint = VColors.ink)
                 }
             }
 
             if (data.byClass.isNotEmpty()) {
-                VCard {
-                    Text("By class", style = VTheme.type.h3.colored(c.ink))
+                RecordsCreamCard {
+                    Text(appString(StringKeys.REC_BY_CLASS), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                     Spacer(Modifier.height(12.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        data.byClass.forEach { row ->
-                            Column {
+                        data.byClass.forEachIndexed { index, row ->
+                            Column(modifier = Modifier.staggeredItemEntrance(index, data.byClass.isNotEmpty())) {
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text(row.grade, style = VTheme.type.body.colored(c.ink))
-                                    Text("${row.present + row.late}/${row.total} • ${row.rate}%", style = VTheme.type.dataSm.colored(c.ink2))
+                                    Text(row.grade, style = VTypography.bodySmall, color = VColors.ink)
+                                    Text("${row.present + row.late}/${row.total} • ${row.rate}%", style = VTypography.caption, color = VColors.ink2)
                                 }
                                 Spacer(Modifier.height(4.dp))
                                 VProgressBar(
@@ -340,27 +436,26 @@ private fun MarksTab(
     ui: com.littlebridge.enrollplus.feature.admin.presentation.MarksSummaryUi,
     onRetry: () -> Unit,
 ) {
-    val c = VTheme.colors
     val data: MarksSummaryDto? = ui.data
     VStateHost(
         loading = ui.isLoading,
         error = ui.error,
         isEmpty = ui.loaded && (data == null || data.assessments.isEmpty()),
-        emptyTitle = "No assessments yet",
-        emptyBody = "Exam averages roll up here once teachers create assessments and enter marks.",
+        emptyTitle = appString(StringKeys.REC_NO_ASSESSMENTS),
+        emptyBody = appString(StringKeys.REC_NO_ASSESSMENTS_BODY),
         emptyIcon = VIcons.BookOpen,
         onRetry = onRetry,
         skeleton = { com.littlebridge.enrollplus.ui.v2.screens.SkeletonList(rows = 4, withAvatar = false) },
     ) {
         if (data == null) return@VStateHost
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            VCard {
+            RecordsCreamCard {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                    VLabel("Overall average")
-                    VBadge(text = "${data.assessmentCount} assessment${if (data.assessmentCount == 1) "" else "s"}", tone = VBadgeTone.Arctic)
+                    Text(appString(StringKeys.REC_OVERALL_AVG), style = VTypography.label, color = VColors.ink3)
+                    VBadge(text = appString(StringKeys.REC_ASSESSMENT_COUNT, "count" to data.assessmentCount, "s" to if (data.assessmentCount == 1) "" else "s"), tone = VBadgeTone.Arctic)
                 }
                 Spacer(Modifier.height(8.dp))
-                Text("${data.overallAveragePct}%", style = VTheme.type.dataLg.colored(c.ink))
+                Text("${data.overallAveragePct}%", style = VTypography.h2.copy(fontWeight = FontWeight.ExtraBold), color = VColors.ink)
                 Spacer(Modifier.height(8.dp))
                 VProgressBar(
                     value = data.overallAveragePct.toFloat(),
@@ -369,23 +464,23 @@ private fun MarksTab(
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                data.assessments.forEach { a ->
+                data.assessments.forEachIndexed { index, a ->
                     val pct = if (a.maxMarks > 0) ((a.average / a.maxMarks) * 100).roundToInt() else 0
-                    VCard {
+                    RecordsCreamCard(modifier = Modifier.staggeredItemEntrance(index, data.assessments.isNotEmpty())) {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.SpaceBetween) {
                             Column(Modifier.weight(1f)) {
-                                Text("${a.subject} • ${a.assessmentName}", style = VTheme.type.bodyStrong.colored(c.ink))
-                                Text("${a.className}${a.examDate?.let { " • $it" } ?: ""}", style = VTheme.type.caption.colored(c.ink2))
+                                Text("${a.subject} • ${a.assessmentName}", style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                                Text("${a.className}${a.examDate?.let { " • $it" } ?: ""}", style = VTypography.caption, color = VColors.ink3)
                             }
                             VBadge(
-                                text = if (a.isPublished) "Published" else "Draft",
+                                text = if (a.isPublished) appString(StringKeys.REC_PUBLISHED) else appString(StringKeys.REC_DRAFT),
                                 tone = if (a.isPublished) VBadgeTone.Success else VBadgeTone.Neutral,
                             )
                         }
                         Spacer(Modifier.height(8.dp))
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Avg ${a.average} / ${a.maxMarks}", style = VTheme.type.dataSm.colored(c.ink2))
-                            Text(if (a.gradedCount > 0) "$pct% • ${a.gradedCount} graded" else "Not graded yet", style = VTheme.type.caption.colored(c.ink3))
+                            Text(appString(StringKeys.REC_AVG, "avg" to a.average, "max" to a.maxMarks), style = VTypography.caption, color = VColors.ink2)
+                            Text(if (a.gradedCount > 0) appString(StringKeys.REC_GRADED, "pct" to pct, "count" to a.gradedCount) else appString(StringKeys.REC_NOT_GRADED), style = VTypography.caption, color = VColors.ink3)
                         }
                         Spacer(Modifier.height(4.dp))
                         VProgressBar(
@@ -406,44 +501,43 @@ private fun FeeTab(
     ui: com.littlebridge.enrollplus.feature.admin.presentation.FeeLedgerUi,
     onRetry: () -> Unit,
 ) {
-    val c = VTheme.colors
     val data: FeeLedgerDto? = ui.data
     val hasAny = data != null && (data.paidCount + data.dueCount + data.overdueCount) > 0
     VStateHost(
         loading = ui.isLoading,
         error = ui.error,
         isEmpty = ui.loaded && !hasAny,
-        emptyTitle = "No fee records yet",
-        emptyBody = "Collections, dues and overdue reminders surface here once fee records are raised for this school.",
+        emptyTitle = appString(StringKeys.REC_NO_FEES),
+        emptyBody = appString(StringKeys.REC_NO_FEES_BODY),
         emptyIcon = VIcons.Wallet,
         onRetry = onRetry,
         skeleton = { com.littlebridge.enrollplus.ui.v2.screens.SkeletonList(rows = 4, withAvatar = false) },
     ) {
         if (data == null) return@VStateHost
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            VCard {
-                VLabel("Ledger (${data.currency})")
+            RecordsCreamCard {
+                Text(appString(StringKeys.REC_LEDGER, "currency" to data.currency), style = VTypography.label, color = VColors.ink3)
                 Spacer(Modifier.height(12.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    StatCell(label = "Paid", value = formatMoney(data.paidTotal), sub = "${data.paidCount}", tint = c.successInk)
-                    StatCell(label = "Due", value = formatMoney(data.dueTotal), sub = "${data.dueCount}", tint = c.warningInk)
-                    StatCell(label = "Overdue", value = formatMoney(data.overdueTotal), sub = "${data.overdueCount}", tint = c.dangerInk)
+                    StatCell(label = appString(StringKeys.REC_PAID), value = formatMoney(data.paidTotal), sub = "${data.paidCount}", tint = VColors.success)
+                    StatCell(label = appString(StringKeys.REC_DUE), value = formatMoney(data.dueTotal), sub = "${data.dueCount}", tint = VColors.gold)
+                    StatCell(label = appString(StringKeys.REC_OVERDUE), value = formatMoney(data.overdueTotal), sub = "${data.overdueCount}", tint = VColors.coral)
                 }
             }
 
             if (data.recent.isNotEmpty()) {
                 Column {
-                    Text("Recent", style = VTheme.type.h3.colored(c.ink), modifier = Modifier.padding(bottom = 8.dp))
+                    Text(appString(StringKeys.REC_RECENT), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.padding(bottom = 8.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        data.recent.forEach { f ->
-                            VCard {
+                        data.recent.forEachIndexed { index, f ->
+                            RecordsCreamCard(modifier = Modifier.staggeredItemEntrance(index, data.recent.isNotEmpty())) {
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.SpaceBetween) {
                                     Column(Modifier.weight(1f)) {
-                                        Text(f.title, style = VTheme.type.bodyStrong.colored(c.ink))
-                                        Text("${f.category}${f.dueDate?.let { " • due $it" } ?: ""}", style = VTheme.type.caption.colored(c.ink2))
+                                        Text(f.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                                        Text(f.dueDate?.let { appString(StringKeys.REC_DUE_DATE, "category" to f.category, "date" to it) } ?: f.category, style = VTypography.caption, color = VColors.ink3)
                                     }
                                     Column(horizontalAlignment = Alignment.End) {
-                                        Text("${f.currency} ${formatMoney(f.amount)}", style = VTheme.type.bodyStrong.colored(c.ink))
+                                        Text("${f.currency} ${formatMoney(f.amount)}", style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                                         Spacer(Modifier.height(4.dp))
                                         VBadge(
                                             text = f.status,
@@ -466,13 +560,12 @@ private fun FeeTab(
 
 /** A compact label-over-value stat cell used by the Attendance & Fee rollups. */
 @Composable
-private fun StatCell(label: String, value: String, tint: androidx.compose.ui.graphics.Color, sub: String? = null) {
-    val c = VTheme.colors
+private fun StatCell(label: String, value: String, tint: Color, sub: String? = null) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, style = VTheme.type.dataLg.colored(tint))
-        Text(label, style = VTheme.type.label.colored(c.ink3))
+        Text(value, style = VTypography.h3.copy(fontWeight = FontWeight.ExtraBold), color = tint)
+        Text(label, style = VTypography.caption, color = VColors.ink3)
         if (sub != null) {
-            Text(sub, style = VTheme.type.caption.colored(c.ink2))
+            Text(sub, style = VTypography.caption, color = VColors.ink2)
         }
     }
 }
@@ -490,6 +583,23 @@ private fun formatMoney(value: Double): String {
     return sb.toString()
 }
 
+// ── Premium shared primitive ──────────────────────────────────────────────────
+
+@Composable
+private fun RecordsCreamCard(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(VShapes.lg)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.lg)
+            .padding(16.dp),
+    ) { content() }
+}
+
 // ── Pace tab (admin pace monitoring) ─────────────────────────────────────────
 
 @Composable
@@ -499,20 +609,20 @@ private fun PaceTab(
     onResolve: (String) -> Unit,
     onRecalculate: () -> Unit,
 ) {
-    val c = VTheme.colors
     VStateHost(
         loading = state.isLoading,
         error = state.errorMessage,
         isEmpty = state.snapshots.isEmpty() && state.alerts.isEmpty(),
-        emptyTitle = "No pace data yet",
-        emptyBody = "Pace snapshots will appear here once syllabus tracking begins.",
+        emptyTitle = appString(StringKeys.REC_NO_PACE),
+        emptyBody = appString(StringKeys.REC_NO_PACE_BODY),
         emptyIcon = VIcons.BookOpen,
         onRetry = onRetry,
+        skeleton = { SkeletonList(rows = 5) },
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             // ── Recalculate button ──
             VButton(
-                "Recalculate Pace",
+                appString(StringKeys.REC_RECALCULATE),
                 onClick = onRecalculate,
                 variant = VButtonVariant.Secondary,
                 tone = VButtonTone.Lavender,
@@ -523,77 +633,77 @@ private fun PaceTab(
             // ── Active alerts ──
             if (state.alerts.isNotEmpty()) {
                 Column {
-                    Text("Active alerts", style = VTheme.type.h3.colored(c.ink), modifier = Modifier.padding(bottom = 8.dp))
+                    Text(appString(StringKeys.REC_ACTIVE_ALERTS), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.padding(bottom = 8.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        state.alerts.forEach { alert ->
-                            VCard {
+                        state.alerts.forEachIndexed { index, alert ->
+                            RecordsCreamCard(modifier = Modifier.staggeredItemEntrance(index, state.alerts.isNotEmpty())) {
                                 Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                     Icon(
-                                    VIcons.AlertCircle,
-                                    contentDescription = null,
-                                    tint = when (alert.level) {
-                                        "CRITICAL" -> c.dangerInk
-                                        "BEHIND" -> c.warningInk
-                                        else -> c.accentDeep
-                                    },
-                                    modifier = Modifier.size(18.dp).padding(top = 2.dp),
-                                )
-                                Column(Modifier.weight(1f)) {
-                                    Text("${alert.subject} • ${alert.className}-${alert.section}", style = VTheme.type.bodyStrong.colored(c.ink))
-                                    if (alert.teacherName.isNotBlank()) {
-                                        Text(alert.teacherName, style = VTheme.type.caption.colored(c.ink2))
-                                    }
-                                    if (alert.message.isNotBlank()) {
-                                        Text(alert.message, style = VTheme.type.caption.colored(c.ink2))
-                                    }
-                                    if (alert.aiReconfirmed) {
-                                        Text("AI reconfirmed", style = VTheme.type.label.colored(c.accentDeep).copy(fontSize = 10.sp))
-                                    }
-                                }
-                                Column(horizontalAlignment = Alignment.End) {
-                                    VBadge(
-                                        text = alert.level,
-                                        tone = when (alert.level) {
-                                            "CRITICAL" -> VBadgeTone.Danger
-                                            "BEHIND" -> VBadgeTone.Warning
-                                            else -> VBadgeTone.Accent
+                                        VIcons.AlertCircle,
+                                        contentDescription = null,
+                                        tint = when (alert.level) {
+                                            "CRITICAL" -> VColors.coral
+                                            "BEHIND" -> VColors.gold
+                                            else -> VColors.violet
                                         },
+                                        modifier = Modifier.size(18.dp).padding(top = 2.dp),
                                     )
-                                    Spacer(Modifier.height(8.dp))
-                                    VButton(
-                                        "Resolve",
-                                        onClick = { onResolve(alert.id) },
-                                        size = com.littlebridge.enrollplus.ui.v2.components.VButtonSize.Sm,
-                                        variant = VButtonVariant.Secondary,
-                                        tone = VButtonTone.Lavender,
-                                        loading = state.resolvingAlertId == alert.id,
-                                    )
+                                    Column(Modifier.weight(1f)) {
+                                        Text("${alert.subject} • ${alert.className}-${alert.section}", style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                                        if (alert.teacherName.isNotBlank()) {
+                                            Text(alert.teacherName, style = VTypography.caption, color = VColors.ink3)
+                                        }
+                                        if (alert.message.isNotBlank()) {
+                                            Text(alert.message, style = VTypography.caption, color = VColors.ink3)
+                                        }
+                                        if (alert.aiReconfirmed) {
+                                            Text(appString(StringKeys.REC_AI_RECONFIRMED), style = VTypography.caption.copy(fontSize = 10.sp), color = VColors.violet)
+                                        }
+                                    }
+                                    Column(horizontalAlignment = Alignment.End) {
+                                        VBadge(
+                                            text = alert.level,
+                                            tone = when (alert.level) {
+                                                "CRITICAL" -> VBadgeTone.Danger
+                                                "BEHIND" -> VBadgeTone.Warning
+                                                else -> VBadgeTone.Accent
+                                            },
+                                        )
+                                        Spacer(Modifier.height(8.dp))
+                                        VButton(
+                                            appString(StringKeys.REC_RESOLVE),
+                                            onClick = { onResolve(alert.id) },
+                                            size = VButtonSize.Sm,
+                                            variant = VButtonVariant.Secondary,
+                                            tone = VButtonTone.Lavender,
+                                            loading = state.resolvingAlertId == alert.id,
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-        }
 
             // ── Pace snapshots ──
             if (state.snapshots.isNotEmpty()) {
                 Column {
-                    Text("Pace snapshots", style = VTheme.type.h3.colored(c.ink), modifier = Modifier.padding(bottom = 8.dp))
+                    Text(appString(StringKeys.REC_PACE_SNAPSHOTS), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.padding(bottom = 8.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        state.snapshots.forEach { snap ->
-                            VCard {
+                        state.snapshots.forEachIndexed { index, snap ->
+                            RecordsCreamCard(modifier = Modifier.staggeredItemEntrance(index, state.snapshots.isNotEmpty())) {
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                     Column(Modifier.weight(1f)) {
-                                        Text("${snap.subject} • ${snap.className}-${snap.section}", style = VTheme.type.bodyStrong.colored(c.ink))
+                                        Text("${snap.subject} • ${snap.className}-${snap.section}", style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                                         if (snap.teacherName.isNotBlank()) {
-                                            Text(snap.teacherName, style = VTheme.type.caption.colored(c.ink2))
+                                            Text(snap.teacherName, style = VTypography.caption, color = VColors.ink3)
                                         }
-                                        Text("${snap.coveredTopics}/${snap.totalTopics} topics covered", style = VTheme.type.caption.colored(c.ink3))
+                                        Text(appString(StringKeys.REC_TOPICS_COVERED, "covered" to snap.coveredTopics, "total" to snap.totalTopics), style = VTypography.caption, color = VColors.ink3)
                                     }
                                     Column(horizontalAlignment = Alignment.End) {
-                                        Text("${snap.actualPct}%", style = VTheme.type.data.colored(c.ink).copy(fontWeight = FontWeight.Bold))
-                                        Text("Expected: ${snap.expectedPct}%", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp))
+                                        Text("${snap.actualPct}%", style = VTypography.bodySmall.copy(fontWeight = FontWeight.ExtraBold), color = VColors.ink)
+                                        Text(appString(StringKeys.REC_EXPECTED, "pct" to snap.expectedPct), style = VTypography.caption.copy(fontSize = 10.sp), color = VColors.ink3)
                                     }
                                 }
                                 Spacer(Modifier.height(8.dp))
