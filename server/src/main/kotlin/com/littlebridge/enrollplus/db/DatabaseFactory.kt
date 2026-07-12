@@ -158,6 +158,13 @@ object DatabaseFactory {
         // before deploy; AUTO_CREATE_TABLES is OFF in prod). Closes D-SYL-1..4.
         CurriculumUnitsTable,
         SyllabusProgressTable,
+        // Exam Ecosystem (EXAM_ECOSYSTEM_PLAN.md) — exam timetable, entries,
+        // syllabus mapping, and reminder log. Applied by
+        // database/migrations/setup_exam_ecosystem_schema.sql.
+        ExamTimetablesTable,
+        ExamTimetableEntriesTable,
+        ExamSyllabusMappingTable,
+        ExamReminderLogTable,
         HomeworkTable,
         HomeworkSubmissionsTable,
         // T-404 (Doc 08 §5.3): typed homework attachments + teacher cutoff

@@ -167,3 +167,6 @@ export const IconPace = (p: P) => (
 export const IconKey = (p: P) => (
   <svg {...base(p)}><circle cx="8" cy="15" r="4" /><path d="M10.8 12.2 21 2" /><path d="m16 7 3 3" /><path d="m18 5 3 3" /></svg>
 );
+export const IconExport = (p: P) => (
+  <svg {...base(p)}><path d="M12 3v12m0 0 4-4m-4 4-4-4" /><path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2" /></svg>
+);

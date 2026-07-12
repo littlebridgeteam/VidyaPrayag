@@ -1126,3 +1126,36 @@ export interface StringOverrideHistoryResponse {
   history: StringOverrideHistoryEntry[];
   total: number;
 }
+
+// ── Branded Export System (ExportService.kt) ─────────────────────────────────
+export interface ExportTypeDto {
+  type: string;
+  label: string;
+  category: string;
+  formats: string[];
+  filters: string[];
+  icon: string;
+  admin_only: boolean;
+}
+export interface ExportTypesResponse {
+  exports: ExportTypeDto[];
+}
+export interface ExportRequest {
+  type: string;
+  format: string;
+  class_id?: string;
+  assessment_id?: string;
+  event_id?: string;
+  route_id?: string;
+  homework_id?: string;
+  status?: string;
+  date_from?: string;
+  date_to?: string;
+}
+export interface ExportResponse {
+  download_url: string | null;
+  file_name: string | null;
+  file_size: number;
+  format: string;
+  message: string | null;
+}

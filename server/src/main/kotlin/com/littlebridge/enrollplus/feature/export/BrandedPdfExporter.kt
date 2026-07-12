@@ -1,0 +1,174 @@
+package com.littlebridge.enrollplus.feature.export
+
+import com.lowagie.text.Document
+import com.lowagie.text.Element
+import com.lowagie.text.Font
+import com.lowagie.text.Image
+import com.lowagie.text.PageSize
+import com.lowagie.text.Paragraph
+import com.lowagie.text.Phrase
+import com.lowagie.text.Rectangle
+import com.lowagie.text.pdf.PdfPCell
+import com.lowagie.text.pdf.PdfPTable
+import com.lowagie.text.pdf.PdfWriter
+import java.awt.Color
+import java.io.ByteArrayOutputStream
+import java.net.URL
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+
+object BrandedPdfExporter {
+
+    private val titleFont = Font(Font.HELVETICA, 16f, Font.BOLD)
+    private val subtitleFont = Font(Font.HELVETICA, 11f, Font.NORMAL)
+    private val headerFont = Font(Font.HELVETICA, 10f, Font.BOLD, Color.WHITE)
+    private val bodyFont = Font(Font.HELVETICA, 9f, Font.NORMAL)
+    private val footerFont = Font(Font.HELVETICA, 8f, Font.ITALIC, Color.GRAY)
+    private val schoolNameFont = Font(Font.HELVETICA, 14f, Font.BOLD)
+    private val addressFont = Font(Font.HELVETICA, 9f, Font.NORMAL, Color.GRAY)
+
+    fun generate(
+        branding: ExportBranding,
+        title: String,
+        subtitle: String,
+        columns: List<String>,
+        rows: List<List<String>>,
+        summaryRows: List<String>? = null,
+    ): ByteArray {
+        val baos = ByteArrayOutputStream()
+        val document = Document(PageSize.A4, 36f, 36f, 36f, 36f)
+        PdfWriter.getInstance(document, baos)
+        document.open()
+
+        val brandColor = parseColor(branding.primaryColor)
+
+        // ── Header: logo + school name + address ──
+        try {
+            if (!branding.logoUrl.isNullOrBlank()) {
+                val img = Image.getInstance(URL(branding.logoUrl))
+                img.scaleAbsolute(50f, 50f)
+                img.alignment = Image.ALIGN_LEFT
+                document.add(img)
+            }
+        } catch (_: Exception) {
+            // Logo load failed — skip silently
+        }
+
+        val schoolPara = Paragraph(branding.schoolName, schoolNameFont).apply {
+            font.color = brandColor
+        }
+        document.add(schoolPara)
+
+        val addrParts = listOfNotNull(
+            branding.address,
+            listOfNotNull(branding.city, branding.state, branding.pincode).joinToString(", "),
+            branding.contactPhone?.let { "Phone: $it" },
+        )
+        for (line in addrParts) {
+            document.add(Paragraph(line, addressFont))
+        }
+
+        addHorizontalRule(document, brandColor)
+
+        // ── Report title ──
+        val titlePara = Paragraph(title, titleFont).apply { alignment = Element.ALIGN_CENTER }
+        document.add(titlePara)
+        if (subtitle.isNotBlank()) {
+            val subPara = Paragraph(subtitle, subtitleFont).apply { alignment = Element.ALIGN_CENTER }
+            document.add(subPara)
+        }
+        val datePara = Paragraph(
+            "Generated: ${LocalDate.now().format(DateTimeFormatter.ofPattern("dd MMMM yyyy"))}",
+            subtitleFont,
+        ).apply { alignment = Element.ALIGN_CENTER }
+        document.add(datePara)
+
+        addHorizontalRule(document, brandColor)
+
+        // ── Data table ──
+        if (rows.isEmpty()) {
+            document.add(Paragraph("No data found for the selected filters.", bodyFont))
+        } else {
+            val table = PdfPTable(columns.size)
+            table.widthPercentage = 100f
+
+            // Header row
+            for (col in columns) {
+                val cell = PdfPCell(Phrase(col, headerFont)).apply {
+                    backgroundColor = brandColor
+                    borderColor = brandColor
+                    paddingTop = 6f
+                    paddingBottom = 6f
+                    paddingLeft = 4f
+                    paddingRight = 4f
+                }
+                table.addCell(cell)
+            }
+
+            // Data rows (alternating background)
+            val altColor = Color(245, 245, 245)
+            for ((index, row) in rows.withIndex()) {
+                for (cellValue in row) {
+                    val cell = PdfPCell(Phrase(cellValue, bodyFont)).apply {
+                        if (index % 2 == 1) backgroundColor = altColor
+                        paddingTop = 4f
+                        paddingBottom = 4f
+                        paddingLeft = 4f
+                        paddingRight = 4f
+                    }
+                    table.addCell(cell)
+                }
+            }
+
+            document.add(table)
+
+            // ── Summary footer ──
+            if (summaryRows != null) {
+                addHorizontalRule(document, brandColor)
+                for (line in summaryRows) {
+                    val p = Paragraph(line, bodyFont).apply { alignment = Element.ALIGN_CENTER }
+                    document.add(p)
+                }
+            }
+        }
+
+        addHorizontalRule(document, brandColor)
+        document.add(Paragraph("Generated by Enroll+ • Vidya Prayag", footerFont).apply {
+            alignment = Element.ALIGN_CENTER
+        })
+
+        document.close()
+        return baos.toByteArray()
+    }
+
+    private fun addHorizontalRule(document: Document, color: Color) {
+        val rule = PdfPTable(1).apply {
+            widthPercentage = 100f
+            setTotalWidth(floatArrayOf(document.pageSize.width - 72f))
+        }
+        val cell = PdfPCell(Phrase("")).apply {
+            borderColor = color
+            borderWidthTop = 1f
+            borderWidthBottom = 0f
+            borderWidthLeft = 0f
+            borderWidthRight = 0f
+            paddingTop = 0f
+            paddingBottom = 0f
+            fixedHeight = 1f
+        }
+        rule.addCell(cell)
+        document.add(rule)
+    }
+
+    private fun parseColor(hex: String): Color {
+        return try {
+            val hexStr = hex.removePrefix("#")
+            val r = hexStr.substring(0, 2).toInt(16)
+            val g = hexStr.substring(2, 4).toInt(16)
+            val b = hexStr.substring(4, 6).toInt(16)
+            Color(r, g, b)
+        } catch (_: Exception) {
+            Color(37, 99, 235) // default blue
+        }
+    }
+}

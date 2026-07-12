@@ -107,6 +107,9 @@ import type {
   BulkUpsertServerStringRequest,
   BulkUpsertServerStringResponse,
   StringOverrideHistoryResponse,
+  ExportTypesResponse,
+  ExportRequest,
+  ExportResponse,
 } from "./types";
 
 interface Opts {
@@ -535,4 +538,10 @@ export const adminApi = {
     const q = qs.toString();
     return authRequest<StringOverrideHistoryResponse>(`/api/admin/server-strings/history${q ? `?${q}` : ""}`);
   },
+
+  // ── Branded Export System (ExportRouting.kt) ───────────────────────────────
+  exportTypes: () =>
+    authRequest<ExportTypesResponse>("/api/v1/school/export/types"),
+  generateExport: (body: ExportRequest) =>
+    authRequest<ExportResponse>("/api/v1/school/export", { method: "POST", body }),
 };

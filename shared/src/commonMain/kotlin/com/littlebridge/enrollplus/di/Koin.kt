@@ -552,6 +552,15 @@ val commonModule = module {
 
     }
 
+    // Exam Ecosystem (EXAM_ECOSYSTEM_PLAN.md)
+    single {
+        com.littlebridge.enrollplus.feature.exam.data.remote.ExamApi(
+            client = get(),
+            baseUrl = AppConfig.schoolBaseUrl
+        )
+    }
+    single { com.littlebridge.enrollplus.feature.exam.data.repository.ExamRepository(get()) }
+
     // Notification FOUNDATION (push infra) — device-token registration client.
 
     // The admin broadcast endpoint is server-only, so the client surface is a
@@ -1008,6 +1017,26 @@ val commonModule = module {
 
     }
 
+    // Branded Export System
+
+    single {
+
+        com.littlebridge.enrollplus.feature.export.data.remote.ExportApi(
+
+            client = get(),
+
+            baseUrl = AppConfig.schoolBaseUrl
+
+        )
+
+    }
+
+    single<com.littlebridge.enrollplus.feature.export.domain.repository.ExportRepository> {
+
+        com.littlebridge.enrollplus.feature.export.data.repository.ExportRepositoryImpl(get())
+
+    }
+
 
 
     single {
@@ -1310,6 +1339,11 @@ val viewModelModule = module {
 
     factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherProfileViewModel(get(), get()) }
 
+    // Exam Ecosystem ViewModels
+    factory { com.littlebridge.enrollplus.feature.exam.presentation.ExamTimetablesViewModel(get(), get()) }
+    factory { com.littlebridge.enrollplus.feature.exam.presentation.ExamSyllabusViewModel(get(), get()) }
+    factory { com.littlebridge.enrollplus.feature.exam.presentation.ParentExamViewModel(get(), get()) }
+
     // T-602b: the actionable Profile VM (own-leave list/apply, password change via
 
     // AuthRepository, theme pref) — (TeacherRepository, PreferenceRepository, AuthRepository).
@@ -1443,6 +1477,10 @@ val viewModelModule = module {
     factory { com.littlebridge.enrollplus.feature.event.presentation.TeacherEventRegistrationViewModel(get(), get()) }
 
     factory { com.littlebridge.enrollplus.feature.event.presentation.AdminEventRegistrationViewModel(get(), get()) }
+
+    // Branded Export System
+
+    factory { com.littlebridge.enrollplus.feature.export.presentation.ExportViewModel(get(), get()) }
 
     // School Day Configuration (TIMETABLE_CLASS_TEACHER_PLAN.md Phase 0)
 

@@ -1137,6 +1137,79 @@ object SyllabusProgressTable : UUIDTable("syllabus_progress", "id") {
     }
 }
 
+// =====================================================================
+// Exam Ecosystem — Exam Timetable + Syllabus Mapping (EXAM_ECOSYSTEM_PLAN)
+// =====================================================================
+
+/**
+ * A named collection of exams for a class+section (e.g. "Mid Term 2026").
+ * Grouped so a teacher can upload an exam timetable image, have AI extract
+ * the slots, review/edit, then publish — creating calendar events and
+ * draft assessments in one action.
+ */
+object ExamTimetablesTable : UUIDTable("exam_timetables", "id") {
+    val schoolId       = uuid("school_id")
+    val teacherId      = uuid("teacher_id")
+    val className      = text("class_name")
+    val section        = varchar("section", 8).default("A")
+    val academicYearId = uuid("academic_year_id").nullable()
+    val name           = text("name")
+    val term           = varchar("term", 32).nullable()
+    val status         = varchar("status", 16).default("draft") // draft | published
+    val sourceImageUrl = text("source_image_url").nullable()
+    val aiUsed         = bool("ai_used").default(false)
+    val createdAt      = timestamp("created_at")
+    val updatedAt      = timestamp("updated_at")
+}
+
+/**
+ * Individual exam slots within a timetable. Each entry may link to an
+ * [AssessmentsTable] row (created on publish) and a [CalendarEventsTable]
+ * row (EXAM event, created on publish). Supports multiple exams per day.
+ */
+object ExamTimetableEntriesTable : UUIDTable("exam_timetable_entries", "id") {
+    val timetableId    = uuid("timetable_id")
+    val assessmentId   = uuid("assessment_id").nullable()
+    val calendarEventId = uuid("calendar_event_id").nullable()
+    val schoolId       = uuid("school_id")
+    val examDate       = date("exam_date")
+    val startTime      = time("start_time").nullable()
+    val endTime        = time("end_time").nullable()
+    val subject        = text("subject")
+    val examName       = text("exam_name")
+    val maxMarks       = integer("max_marks").default(100)
+    val room           = varchar("room", 64).nullable()
+    val sortOrder      = integer("sort_order").default(0)
+    val createdAt      = timestamp("created_at")
+}
+
+/**
+ * Many-to-many: which curriculum units to study for a given assessment.
+ * Populated by the teacher from the SyllabusMappingScreen.
+ */
+object ExamSyllabusMappingTable : UUIDTable("exam_syllabus_mapping", "id") {
+    val assessmentId      = uuid("assessment_id")
+    val curriculumUnitId  = uuid("curriculum_unit_id")
+    val schoolId          = uuid("school_id")
+    val createdAt         = timestamp("created_at")
+    init {
+        uniqueIndex("ux_exam_syllabus_mapping", assessmentId, curriculumUnitId)
+    }
+}
+
+/**
+ * Prevents duplicate evening-before exam reminders. One row per assessment
+ * after the ExamReminderJob has sent notifications.
+ */
+object ExamReminderLogTable : UUIDTable("exam_reminder_log", "id") {
+    val assessmentId   = uuid("assessment_id")
+    val schoolId       = uuid("school_id")
+    val remindedAt     = timestamp("reminded_at")
+    init {
+        uniqueIndex("ux_exam_reminder_log", assessmentId)
+    }
+}
+
 /**
  * A homework/assignment authored by a teacher for one class+section+subject.
  * `submittedCount` is derived live from [HomeworkSubmissionsTable] at read

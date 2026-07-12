@@ -114,6 +114,7 @@ import com.littlebridge.enrollplus.feature.scheduling.MessageDispatchScheduler
 import com.littlebridge.enrollplus.feature.school.adminDashboardRouting
 import com.littlebridge.enrollplus.feature.ai.dailySummaryAdminRouting
 import com.littlebridge.enrollplus.feature.event.eventRegistrationRouting
+import com.littlebridge.enrollplus.feature.export.exportRouting
 import com.littlebridge.enrollplus.feature.school.adminDashboardOverviewRouting
 import com.littlebridge.enrollplus.feature.school.leaveRequestsRouting
 import com.littlebridge.enrollplus.feature.school.messagesRouting
@@ -144,6 +145,10 @@ import com.littlebridge.enrollplus.feature.teacher.teacherHomeworkRouting
 import com.littlebridge.enrollplus.feature.teacher.teacherLessonPlanRouting
 import com.littlebridge.enrollplus.feature.teacher.teacherLeaveRouting
 import com.littlebridge.enrollplus.feature.teacher.teacherMessagesRouting
+import com.littlebridge.enrollplus.feature.exam.examTimetableRouting
+import com.littlebridge.enrollplus.feature.exam.examSyllabusRouting
+import com.littlebridge.enrollplus.feature.exam.examRequestSyllabusRouting
+import com.littlebridge.enrollplus.feature.exam.ExamReminderJob
 import com.littlebridge.enrollplus.feature.teacher.teacherRouting
 import com.littlebridge.enrollplus.feature.teacher.teacherSelfLeaveRouting
 import com.littlebridge.enrollplus.feature.teacher.teacherStudentRouting
@@ -279,6 +284,11 @@ fun main() {
 
     // Start the Skill Test job scheduler (weekly AI question generation + daily old question purge).
     com.littlebridge.enrollplus.feature.skilltest.SkillTestJobScheduler.start(
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)
+    )
+
+    // Start the Exam Reminder job (evening-before exam reminders, 6 PM IST).
+    ExamReminderJob.start(
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)
     )
 
@@ -562,6 +572,7 @@ fun Application.module() {
         schoolStudentsRouting()      // /api/v1/school/students[…] + teachers/{id} — RA-45 student roster + student/teacher profile (school-scoped)
         nonTeachingStaffRouting()    // /api/v1/school/staff[…] — RA-S17 non-teaching-staff vertical (school-scoped CRUD)
         schoolRecordsRouting()       // /api/v1/school/{attendance/summary,marks/summary,fees/ledger} — RA-52 admin Records rollups (school-scoped reads)
+        exportRouting()              // /api/v1/school/export/{types, POST} — branded PDF/CSV exports for admin + teacher
         schoolClassesRouting()       // /api/v1/school/classes[…] + /api/v1/school/subjects[…] — class + subject CRUD (admin)
         schoolTimetableRouting()     // /api/v1/school/timetable[…] — school-wide weekly schedule + admin period CRUD (POST/PUT/DELETE)
         periodExceptionRouting()     // /api/v1/school/timetable/exceptions[…] + /api/v1/teacher/timetable/exceptions[…] — one-off period overrides
@@ -587,6 +598,11 @@ fun Application.module() {
         teacherSelfLeaveRouting()    // T-602a /api/v1/teacher/leave[…] — the teacher's OWN leave: apply (requester_role=teacher, routed to school admins) + list-own-status (Doc 04 §5.14)
         teacherMessagesRouting()     // /api/v1/teacher/messages[…] — RA-51 teacher↔parent messaging + class broadcast
         teacherLessonPlanRouting()   // /api/v1/teacher/lesson-plans[…] — typed, assignment-scoped lesson plans: CRUD, complete/skip, calendar, templates (LESSON_PLANNING_SPEC P1-20)
+
+        // Exam Ecosystem (EXAM_ECOSYSTEM_PLAN.md)
+        examTimetableRouting()       // /api/v1/exam/timetable[…] — AI OCR import, text import, create, publish, list, detail
+        examSyllabusRouting()        // /api/v1/exam/syllabus/{id} + /api/v1/exam/parent/{childId}/syllabus/{id} — syllabus mapping + parent read
+        examRequestSyllabusRouting() // /api/v1/exam/request-syllabus — parent → teacher syllabus request
 
         // Cross-user notification spine (audit part-2 RA-41/42/46/50) — role-aware
         // inbox replacing the parent-only synth; persisted read state; bell summary.

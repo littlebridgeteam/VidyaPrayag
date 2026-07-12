@@ -46,7 +46,7 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 /** Full-screen overlays the teacher portal can push above its tab content. */
-private enum class TeacherOverlay { None, Notifications, HealthAlerts, TransportAttendance, Pews, ReportReview, ReportDraftEditor, Heatmap, DigitalIdCard, ScheduledMessages, EventRegistration, Messages, Calendar, AnnouncementDetail, LeaveRequests }
+private enum class TeacherOverlay { None, Notifications, HealthAlerts, TransportAttendance, Pews, ReportReview, ReportDraftEditor, Heatmap, DigitalIdCard, ScheduledMessages, EventRegistration, Messages, Calendar, AnnouncementDetail, LeaveRequests, ExamTimetableList, ExamTimetableUpload, ExamTimetableDetail, ExamSyllabusMapping }
 
 /**
  * TeacherPortalV2 — the teacher shell, rebuilt FROM SCRATCH on the Parents-Portal
@@ -102,6 +102,10 @@ fun TeacherPortalV2(
     var showRequestsSegment by remember { mutableStateOf(false) }
     var announcementId by remember { mutableStateOf<String?>(null) }
 
+    // Exam ecosystem deep-link params.
+    var examTimetableId by remember { mutableStateOf<String?>(null) }
+    var examAssessmentId by remember { mutableStateOf<String?>(null) }
+
     // Apply deep-link routing: set tab from the typed target.
     LaunchedEffect(deepLinkTarget, localDeepLink) {
         val target = localDeepLink ?: deepLinkTarget ?: return@LaunchedEffect
@@ -127,6 +131,11 @@ fun TeacherPortalV2(
                     "timetable-requests" -> { tab = "timetable"; showRequestsSegment = true; overlay = TeacherOverlay.None }
                     "timetable" -> { tab = "timetable"; showRequestsSegment = false; overlay = TeacherOverlay.None }
                     "calendar" -> overlay = TeacherOverlay.Calendar
+                    "exam-timetable" -> overlay = TeacherOverlay.ExamTimetableList
+                    "exam-syllabus" -> {
+                        examAssessmentId = target.params["assessmentId"]
+                        overlay = TeacherOverlay.ExamSyllabusMapping
+                    }
                     // Valid bottom-nav tabs
                     "home", "update", "classes", "timetable", "profile" -> tab = target.screen
                     else -> tab = "home"
@@ -150,6 +159,12 @@ fun TeacherPortalV2(
                     pathOnly.startsWith("tutor") -> overlay = TeacherOverlay.Heatmap
                     pathOnly.startsWith("events") -> overlay = TeacherOverlay.EventRegistration
                     pathOnly.startsWith("calendar") -> overlay = TeacherOverlay.Calendar
+                    pathOnly.startsWith("exam-timetable") -> overlay = TeacherOverlay.ExamTimetableList
+                    pathOnly.startsWith("exam-syllabus") -> {
+                        val queryStr = target.path.substringAfter("?", "")
+                        examAssessmentId = queryStr.substringAfter("assessmentId=", "").substringBefore("&").takeIf { it.isNotBlank() }
+                        overlay = TeacherOverlay.ExamSyllabusMapping
+                    }
                     pathOnly.startsWith("timetable-requests") -> { tab = "timetable"; showRequestsSegment = true; overlay = TeacherOverlay.None }
                     pathOnly.startsWith("timetable") -> { tab = "timetable"; showRequestsSegment = false; overlay = TeacherOverlay.None }
                     else -> tab = "home"
@@ -287,6 +302,45 @@ fun TeacherPortalV2(
             TeacherLeaveRequestsScreenV2(
                 onBack = { overlay = TeacherOverlay.None },
                 modifier = modifier,
+            )
+            return
+        }
+        TeacherOverlay.ExamTimetableList -> {
+            com.littlebridge.enrollplus.ui.v2.screens.teacher.exam.ExamTimetableListScreen(
+                onBack = { overlay = TeacherOverlay.None },
+                onNew = { overlay = TeacherOverlay.ExamTimetableUpload },
+                onOpenTimetable = { id ->
+                    examTimetableId = id
+                    overlay = TeacherOverlay.ExamTimetableDetail
+                },
+            )
+            return
+        }
+        TeacherOverlay.ExamTimetableUpload -> {
+            com.littlebridge.enrollplus.ui.v2.screens.teacher.exam.ExamTimetableUploadScreen(
+                onBack = { overlay = TeacherOverlay.ExamTimetableList },
+                onCreated = { id ->
+                    examTimetableId = id
+                    overlay = TeacherOverlay.ExamTimetableDetail
+                },
+            )
+            return
+        }
+        TeacherOverlay.ExamTimetableDetail -> {
+            com.littlebridge.enrollplus.ui.v2.screens.teacher.exam.ExamTimetableDetailScreen(
+                timetableId = examTimetableId ?: "",
+                onBack = { overlay = TeacherOverlay.ExamTimetableList },
+                onMapSyllabus = { assessmentId ->
+                    examAssessmentId = assessmentId
+                    overlay = TeacherOverlay.ExamSyllabusMapping
+                },
+            )
+            return
+        }
+        TeacherOverlay.ExamSyllabusMapping -> {
+            com.littlebridge.enrollplus.ui.v2.screens.teacher.exam.ExamSyllabusMappingScreen(
+                assessmentId = examAssessmentId ?: "",
+                onBack = { overlay = TeacherOverlay.ExamTimetableDetail },
             )
             return
         }

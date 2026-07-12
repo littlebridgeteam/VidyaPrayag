@@ -73,7 +73,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import com.littlebridge.enrollplus.ui.v2.screens.parent.ParentHomeScreenV2
 
 /** Full-screen overlays a portal can push above its tab content (back returns to the tabs). */
-private enum class ParentOverlay { None, Notifications, Calendar, Scholarships, Profile, Leave, Messages, LinkChild, Discovery, Health, Pulse, Transport, TutorChat, TutorProgress, DigitalIdCard, Library, EventRegistration, FeePayment, FeeHistory, Pews, Report, AnnouncementDetail, FeeDetail, LeaveDetail }
+private enum class ParentOverlay { None, Notifications, Calendar, Scholarships, Profile, Leave, Messages, LinkChild, Discovery, Health, Pulse, Transport, TutorChat, TutorProgress, DigitalIdCard, Library, EventRegistration, FeePayment, FeeHistory, Pews, Report, AnnouncementDetail, FeeDetail, LeaveDetail, ExamDetail }
 
 /**
  * ParentPortalV2 — the 5-tab parent shell, a faithful copy of `Parent.tsx → ParentApp`.
@@ -114,6 +114,10 @@ fun ParentPortalV2(
     var detailTitle by remember { mutableStateOf("") }
     var detailBody by remember { mutableStateOf("") }
     var detailTime by remember { mutableStateOf("") }
+
+    // Exam ecosystem deep-link params.
+    var examAssessmentId by remember { mutableStateOf<String?>(null) }
+    var examTitle by remember { mutableStateOf("") }
 
     val dashboard by dashboardViewModel.state.collectAsStateV2()
     val progress by headerViewModel.state.collectAsStateV2()
@@ -169,6 +173,11 @@ fun ParentPortalV2(
                     "link-child" -> overlay = ParentOverlay.LinkChild
                     "pews" -> overlay = ParentOverlay.Pews
                     "report" -> overlay = ParentOverlay.Report
+                    "exam" -> {
+                        examAssessmentId = target.params["assessmentId"]
+                        examTitle = target.params["title"] ?: "Exam Details"
+                        overlay = ParentOverlay.ExamDetail
+                    }
                     else -> overlay = ParentOverlay.None
                 }
                 // If params carry a feeId, show FeeDetail overlay instead of Fees tab.
@@ -231,6 +240,12 @@ fun ParentPortalV2(
                     pathOnly.startsWith("homework") -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Homework" }
                     pathOnly.startsWith("syllabus") -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Syllabus" }
                     pathOnly.startsWith("link-child") -> { tab = "profile"; overlay = ParentOverlay.LinkChild }
+                    pathOnly.startsWith("exam") -> {
+                        val queryStr = target.path.substringAfter("?", "")
+                        examAssessmentId = queryStr.substringAfter("assessmentId=", "").substringBefore("&").takeIf { it.isNotBlank() }
+                        examTitle = queryStr.substringAfter("title=", "").substringBefore("&").takeIf { it.isNotBlank() } ?: "Exam Details"
+                        overlay = ParentOverlay.ExamDetail
+                    }
                 }
             }
             else -> Unit
@@ -507,6 +522,18 @@ fun ParentPortalV2(
                 onOpenLeave = {
                     overlay = ParentOverlay.Leave
                 },
+                modifier = modifier,
+            )
+            return
+        }
+        ParentOverlay.ExamDetail -> {
+            val child = dashboard.selectedChild
+            if (child == null || examAssessmentId == null) { overlay = ParentOverlay.None; return }
+            com.littlebridge.enrollplus.ui.v2.screens.parent.exam.ParentExamDetailScreen(
+                childId = child.id,
+                assessmentId = examAssessmentId!!,
+                examTitle = examTitle,
+                onBack = { overlay = ParentOverlay.None; examAssessmentId = null },
                 modifier = modifier,
             )
             return
