@@ -1438,6 +1438,7 @@ private fun HomeworkTab(
             VProgressBar(progress = entry.coveragePct / 100f, barHeight = 6)
         }
     }
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

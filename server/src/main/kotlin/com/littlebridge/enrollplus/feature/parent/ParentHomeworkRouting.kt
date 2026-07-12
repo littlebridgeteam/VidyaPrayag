@@ -35,6 +35,7 @@ import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
 import java.time.Instant
@@ -196,13 +197,13 @@ fun Route.parentHomeworkRouting() {
                             )
                         }
                         .toList()
-                        .associateBy { it[HomeworkSubmissionsTable.homeworkId].value }
+                        .associateBy { it[HomeworkSubmissionsTable.homeworkId] }
 
                     val submissionIds = submissions.values.map { it[HomeworkSubmissionsTable.id].value }
                     val attachments = HomeworkSubmissionAttachmentsTable.selectAll()
                         .where { HomeworkSubmissionAttachmentsTable.submissionId inList submissionIds }
                         .map { att ->
-                            att[HomeworkSubmissionAttachmentsTable.submissionId].value to ParentHomeworkAttachmentDto(
+                            att[HomeworkSubmissionAttachmentsTable.submissionId] to ParentHomeworkAttachmentDto(
                                 id = att[HomeworkSubmissionAttachmentsTable.id].value.toString(),
                                 url = att[HomeworkSubmissionAttachmentsTable.url],
                                 filename = att[HomeworkSubmissionAttachmentsTable.filename],

@@ -332,7 +332,7 @@ private suspend fun buildBoard(
             HomeworkSubmissionAttachmentsTable.selectAll()
                 .where { HomeworkSubmissionAttachmentsTable.submissionId inList subs.map { it[HomeworkSubmissionsTable.id].value } }
                 .map { att ->
-                    att[HomeworkSubmissionAttachmentsTable.submissionId].value to HwSubmissionAttachmentDto(
+                    att[HomeworkSubmissionAttachmentsTable.submissionId] to HwSubmissionAttachmentDto(
                         id = att[HomeworkSubmissionAttachmentsTable.id].value.toString(),
                         url = att[HomeworkSubmissionAttachmentsTable.url],
                         filename = att[HomeworkSubmissionAttachmentsTable.filename],

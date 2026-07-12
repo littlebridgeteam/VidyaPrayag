@@ -145,10 +145,10 @@ private fun HomeworkListContent(
 @Composable
 private fun HomeworkListCard(hw: ParentHomeworkItemDto, onClick: () -> Unit) {
     val (statusLabel, statusTone) = when (hw.status) {
-        "graded" -> "Graded" to VBadgeTone.Violet
-        "submitted" -> "Submitted" to VBadgeTone.Mint
-        "late" -> "Late" to VBadgeTone.Gold
-        else -> "Pending" to VBadgeTone.Coral
+        "graded" -> "Graded" to VBadgeTone.Accent
+        "submitted" -> "Submitted" to VBadgeTone.Success
+        "late" -> "Late" to VBadgeTone.Warning
+        else -> "Pending" to VBadgeTone.Danger
     }
 
     VCard(modifier = Modifier.fillMaxWidth(), onClick = onClick) {

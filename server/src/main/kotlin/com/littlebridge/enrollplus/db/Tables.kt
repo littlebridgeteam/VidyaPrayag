@@ -4367,4 +4367,263 @@ object GameTeacherEncouragementsTable : UUIDTable("game_teacher_encouragements",
     }
 }
 
+// =====================================================================
+// Platform Feature Registry — internal QA/feature-tracking tables
+//   Used by the /api/admin/platform/* routes for feature management,
+//   test cases, bugs, screen/API discovery, audit log, and notifications.
+// =====================================================================
+
+object PlatformFeaturesTable : UUIDTable("platform_features", "id") {
+    val featureId      = text("feature_id")
+    val name           = text("name")
+    val description    = text("description").nullable()
+    val businessGoal   = text("business_goal").nullable()
+    val productArea    = text("product_area").nullable()
+    val category       = text("category").nullable()
+    val module         = text("module").nullable()
+    val parentId       = uuid("parent_id").nullable()
+    val status         = text("status").default("planned")
+    val completionPct  = integer("completion_pct").default(0)
+    val priority       = text("priority").default("medium")
+    val severity       = text("severity").nullable()
+    val businessImpact = text("business_impact").nullable()
+    val techComplexity = text("tech_complexity").nullable()
+    val riskLevel      = text("risk_level").nullable()
+    val dependencies   = text("dependencies").default("[]")
+    val blockers       = text("blockers").nullable()
+    val estimatedEffort = text("estimated_effort").nullable()
+    val ownerId        = uuid("owner_id").nullable()
+    val team           = text("team").nullable()
+    val sprint         = text("sprint").nullable()
+    val versionIntro   = text("version_intro").nullable()
+    val targetRelease  = text("target_release").nullable()
+    val releaseStatus  = text("release_status").nullable()
+    val tags           = text("tags").default("[]")
+    val metadata       = text("metadata").default("{}")
+    val legacyImported = bool("legacy_imported").default(false)
+    val isArchived     = bool("is_archived").default(false)
+    val createdBy      = uuid("created_by").nullable()
+    val updatedBy      = uuid("updated_by").nullable()
+    val createdAt      = timestamp("created_at")
+    val updatedAt      = timestamp("updated_at")
+}
+
+object PlatformFeatureFlowsTable : UUIDTable("platform_feature_flows", "id") {
+    val featureId       = uuid("feature_id")
+    val flowName        = text("flow_name")
+    val flowDescription = text("flow_description").nullable()
+    val flowSteps       = text("flow_steps").default("[]")
+    val entryPoints     = text("entry_points").default("[]")
+    val exitPoints      = text("exit_points").default("[]")
+    val deepLinks       = text("deep_links").default("[]")
+    val edgeCases       = text("edge_cases").default("[]")
+    val sortOrder       = integer("sort_order").default(0)
+    val createdAt       = timestamp("created_at")
+    val updatedAt       = timestamp("updated_at")
+}
+
+object PlatformScreensTable : UUIDTable("platform_screens", "id") {
+    val screenId        = text("screen_id")
+    val name            = text("name")
+    val route           = text("route").nullable()
+    val module          = text("module").nullable()
+    val purpose         = text("purpose").nullable()
+    val screenshotUrl   = text("screenshot_url").nullable()
+    val permissions     = text("permissions").default("[]")
+    val userActions     = text("user_actions").default("[]")
+    val connectedScreens = text("connected_screens").default("[]")
+    val emptyState      = text("empty_state").nullable()
+    val loadingState    = text("loading_state").nullable()
+    val errorState      = text("error_state").nullable()
+    val featureId       = uuid("feature_id").nullable()
+    val sortOrder       = integer("sort_order").default(0)
+    val metadata        = text("metadata").default("{}")
+    val createdAt       = timestamp("created_at")
+    val updatedAt       = timestamp("updated_at")
+}
+
+object PlatformFeatureApisTable : UUIDTable("platform_feature_apis", "id") {
+    val featureId       = uuid("feature_id")
+    val endpoint        = text("endpoint")
+    val method          = text("method")
+    val description     = text("description").nullable()
+    val dbEntities      = text("db_entities").default("[]")
+    val caching         = text("caching").nullable()
+    val featureFlag     = text("feature_flag").nullable()
+    val analyticsEvents = text("analytics_events").default("[]")
+    val notifications   = text("notifications").default("[]")
+    val isDocumented    = bool("is_documented").default(false)
+    val sortOrder       = integer("sort_order").default(0)
+    val createdAt       = timestamp("created_at")
+    val updatedAt       = timestamp("updated_at")
+}
+
+object PlatformTestCasesTable : UUIDTable("platform_test_cases", "id") {
+    val caseId          = text("case_id")
+    val featureId       = uuid("feature_id")
+    val screenId        = uuid("screen_id").nullable()
+    val apiId           = uuid("api_id").nullable()
+    val title           = text("title")
+    val description     = text("description").nullable()
+    val preconditions   = text("preconditions").nullable()
+    val testSteps       = text("test_steps").default("[]")
+    val expectedResult  = text("expected_result").nullable()
+    val priority        = text("priority").default("medium")
+    val testType        = text("test_type").default("functional")
+    val status          = text("status").default("not_run")
+    val assignedTo      = uuid("assigned_to").nullable()
+    val buildVersion    = text("build_version").nullable()
+    val environment     = text("environment").nullable()
+    val devices         = text("devices").default("[]")
+    val osVersions      = text("os_versions").default("[]")
+    val platform        = text("platform").default("all")
+    val lastTestedAt    = timestamp("last_tested_at").nullable()
+    val lastTestedBy    = uuid("last_tested_by").nullable()
+    val failureReason   = text("failure_reason").nullable()
+    val metadata        = text("metadata").default("{}")
+    val createdBy       = uuid("created_by").nullable()
+    val createdAt       = timestamp("created_at")
+    val updatedAt       = timestamp("updated_at")
+}
+
+object PlatformTestAttachmentsTable : UUIDTable("platform_test_attachments", "id") {
+    val testCaseId      = uuid("test_case_id").nullable()
+    val bugId           = uuid("bug_id").nullable()
+    val fileName        = text("file_name")
+    val fileUrl         = text("file_url")
+    val fileType        = text("file_type").default("unknown")
+    val mimeType        = text("mime_type").nullable()
+    val fileSizeBytes   = long("file_size_bytes").nullable()
+    val uploadedBy      = uuid("uploaded_by").nullable()
+    val createdAt       = timestamp("created_at")
+}
+
+object PlatformBugsTable : UUIDTable("platform_bugs", "id") {
+    val bugId            = text("bug_id")
+    val title            = text("title")
+    val description      = text("description").nullable()
+    val featureId        = uuid("feature_id").nullable()
+    val screenId         = uuid("screen_id").nullable()
+    val apiId            = uuid("api_id").nullable()
+    val testCaseId       = uuid("test_case_id").nullable()
+    val status           = text("status").default("reported")
+    val priority         = text("priority").default("medium")
+    val severity         = text("severity").nullable()
+    val reproducibility  = text("reproducibility").nullable()
+    val environment      = text("environment").nullable()
+    val buildVersion     = text("build_version").nullable()
+    val platform         = text("platform").nullable()
+    val device           = text("device").nullable()
+    val osVersion        = text("os_version").nullable()
+    val stepsToReproduce = text("steps_to_reproduce").default("[]")
+    val expectedResult   = text("expected_result").nullable()
+    val actualResult     = text("actual_result").nullable()
+    val reportedBy       = uuid("reported_by").nullable()
+    val assignedTo       = uuid("assigned_to").nullable()
+    val triagedBy        = uuid("triaged_by").nullable()
+    val fixedBy          = uuid("fixed_by").nullable()
+    val verifiedBy       = uuid("verified_by").nullable()
+    val slaDueAt         = timestamp("sla_due_at").nullable()
+    val resolvedAt       = timestamp("resolved_at").nullable()
+    val closedAt         = timestamp("closed_at").nullable()
+    val tags             = text("tags").default("[]")
+    val metadata         = text("metadata").default("{}")
+    val createdAt        = timestamp("created_at")
+    val updatedAt        = timestamp("updated_at")
+}
+
+object PlatformBugCommentsTable : UUIDTable("platform_bug_comments", "id") {
+    val bugId      = uuid("bug_id")
+    val authorId   = uuid("author_id").nullable()
+    val body       = text("body")
+    val mentions   = text("mentions").default("[]")
+    val isInternal = bool("is_internal").default(false)
+    val createdAt  = timestamp("created_at")
+    val updatedAt  = timestamp("updated_at")
+}
+
+object PlatformBugActivityTable : UUIDTable("platform_bug_activity", "id") {
+    val bugId      = uuid("bug_id")
+    val actorId    = uuid("actor_id").nullable()
+    val action     = text("action")
+    val field      = text("field").nullable()
+    val oldValue   = text("old_value").nullable()
+    val newValue   = text("new_value").nullable()
+    val createdAt  = timestamp("created_at")
+}
+
+object PlatformDiscoveredApisTable : UUIDTable("platform_discovered_apis", "id") {
+    val method         = text("method")
+    val path           = text("path")
+    val filePath       = text("file_path")
+    val featurePackage = text("feature_package").nullable()
+    val description    = text("description").nullable()
+    val isMapped       = bool("is_mapped").default(false)
+    val mappedApiId    = uuid("mapped_api_id").nullable()
+    val isAlive        = bool("is_alive").nullable()
+    val lastCheckedAt  = timestamp("last_checked_at").nullable()
+    val responseMs     = integer("response_ms").nullable()
+    val statusCode     = integer("status_code").nullable()
+    val discoveredAt   = timestamp("discovered_at")
+    val lastSeenAt     = timestamp("last_seen_at")
+}
+
+object PlatformApiHealthChecksTable : UUIDTable("platform_api_health_checks", "id") {
+    val discoveredApiId = uuid("discovered_api_id")
+    val checkedAt       = timestamp("checked_at")
+    val statusCode      = integer("status_code").nullable()
+    val responseMs      = integer("response_ms").nullable()
+    val isAlive         = bool("is_alive").nullable()
+    val errorMessage    = text("error_message").nullable()
+}
+
+object PlatformAuditLogTable : UUIDTable("platform_audit_log", "id") {
+    val actorId      = uuid("actor_id").nullable()
+    val action       = text("action")
+    val entityType   = text("entity_type")
+    val entityId     = uuid("entity_id").nullable()
+    val oldSnapshot  = text("old_snapshot").nullable()
+    val newSnapshot  = text("new_snapshot").nullable()
+    val ipAddress    = text("ip_address").nullable()
+    val userAgent    = text("user_agent").nullable()
+    val createdAt    = timestamp("created_at")
+}
+
+object PlatformNotificationsTable : UUIDTable("platform_notifications", "id") {
+    val userId      = uuid("user_id")
+    val category    = text("category")
+    val title       = text("title")
+    val body        = text("body").default("")
+    val entityType  = text("entity_type").nullable()
+    val entityId    = uuid("entity_id").nullable()
+    val deepLink    = text("deep_link").nullable()
+    val isRead      = bool("is_read").default(false)
+    val createdAt   = timestamp("created_at")
+}
+
+object PlatformDiscoveredScreensTable : UUIDTable("platform_discovered_screens", "id") {
+    val screenId        = text("screen_id")
+    val name            = text("name")
+    val module          = text("module")
+    val filePath        = text("file_path")
+    val portal          = text("portal").nullable()
+    val overlayEnum     = text("overlay_enum").nullable()
+    val deepLinkPath    = text("deep_link_path").nullable()
+    val isMapped        = bool("is_mapped").default(false)
+    val mappedScreenId  = uuid("mapped_screen_id").nullable()
+    val discoveredAt    = timestamp("discovered_at")
+    val lastSeenAt      = timestamp("last_seen_at")
+    val fileModifiedAt  = timestamp("file_modified_at").nullable()
+}
+
+object PlatformFeatureFilesTable : UUIDTable("platform_feature_files", "id") {
+    val featureId         = uuid("feature_id")
+    val filePath          = text("file_path")
+    val fileType          = text("file_type")
+    val lastModifiedAt    = timestamp("last_modified_at").nullable()
+    val lastCommitSha     = text("last_commit_sha").nullable()
+    val lastCommitMsg     = text("last_commit_msg").nullable()
+    val lastCommitAuthor  = text("last_commit_author").nullable()
+}
+
 val SYSTEM_SCHOOL_ID: UUID = UUID(0, 0)

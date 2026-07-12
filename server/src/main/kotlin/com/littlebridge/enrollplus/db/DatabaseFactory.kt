@@ -358,6 +358,23 @@ object DatabaseFactory {
         // Server Logs (Notification Deep-Linking & Backend Log Viewer Plan §3.1)
         // Structured server-side log table for the super-admin Log Viewer.
         ServerLogsTable,
+        // Platform Feature Registry — internal QA/feature-tracking tables
+        // for the /api/admin/platform/* routes.
+        PlatformFeaturesTable,
+        PlatformFeatureFlowsTable,
+        PlatformScreensTable,
+        PlatformFeatureApisTable,
+        PlatformTestCasesTable,
+        PlatformTestAttachmentsTable,
+        PlatformBugsTable,
+        PlatformBugCommentsTable,
+        PlatformBugActivityTable,
+        PlatformDiscoveredApisTable,
+        PlatformApiHealthChecksTable,
+        PlatformAuditLogTable,
+        PlatformNotificationsTable,
+        PlatformDiscoveredScreensTable,
+        PlatformFeatureFilesTable,
         // Gamification System tables NOT included in schema validation —
         // they are provisioned separately via docs/db/migration_100_gamification.sql
         // and are still under development. Including them here would block server

@@ -862,29 +862,29 @@ object SkillTestService {
             ChildHolisticMetricsTable.insert {
                 it[ChildHolisticMetricsTable.id] = UUID.randomUUID()
                 it[ChildHolisticMetricsTable.childId] = childId
-                it[literacy] = literacy
-                it[numeracy] = numeracy
-                it[creativity] = creativity
-                it[empathy] = empathy
-                it[resilience] = resilience
-                it[social] = social
-                it[confidence] = confidence
-                it[lastAttemptId] = attemptId
-                it[updatedAt] = now
+                it[ChildHolisticMetricsTable.literacy] = literacy
+                it[ChildHolisticMetricsTable.numeracy] = numeracy
+                it[ChildHolisticMetricsTable.creativity] = creativity
+                it[ChildHolisticMetricsTable.empathy] = empathy
+                it[ChildHolisticMetricsTable.resilience] = resilience
+                it[ChildHolisticMetricsTable.social] = social
+                it[ChildHolisticMetricsTable.confidence] = confidence
+                it[ChildHolisticMetricsTable.lastAttemptId] = attemptId
+                it[ChildHolisticMetricsTable.updatedAt] = now
             }
         } else {
             ChildHolisticMetricsTable.update({
                 ChildHolisticMetricsTable.childId eq childId
             }) {
-                it[literacy] = literacy
-                it[numeracy] = numeracy
-                it[creativity] = creativity
-                it[empathy] = empathy
-                it[resilience] = resilience
-                it[social] = social
-                it[confidence] = confidence
-                it[lastAttemptId] = attemptId
-                it[updatedAt] = now
+                it[ChildHolisticMetricsTable.literacy] = literacy
+                it[ChildHolisticMetricsTable.numeracy] = numeracy
+                it[ChildHolisticMetricsTable.creativity] = creativity
+                it[ChildHolisticMetricsTable.empathy] = empathy
+                it[ChildHolisticMetricsTable.resilience] = resilience
+                it[ChildHolisticMetricsTable.social] = social
+                it[ChildHolisticMetricsTable.confidence] = confidence
+                it[ChildHolisticMetricsTable.lastAttemptId] = attemptId
+                it[ChildHolisticMetricsTable.updatedAt] = now
             }
         }
 
