@@ -72,7 +72,8 @@ object SkillTestService {
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
     // ── Config ────────────────────────────────────────────────────────────
-    private const val QUESTIONS_PER_BATCH = 100
+    private const val QUESTIONS_PER_BATCH = 100    // generated weekly per grade
+    private const val QUESTIONS_PER_ATTEMPT = 10   // randomly picked from the batch for each child
     private const val PASS_THRESHOLD = 60          // 60% to earn the badge
     private const val RETAKE_LOCK_DAYS = 7L
     private const val XP_SKILL_TEST_BASE = 20
@@ -332,6 +333,14 @@ object SkillTestService {
             Generate $count multiple-choice questions (MCQs) for a $gradeLevel student in $subject.
             These are for an Indian school student (CBSE/NCERT aligned).
 
+            These questions will be stored in a weekly pool. Each child will be asked a small,
+            random sample of them (5-10 questions). Therefore every question must be:
+            - Self-contained and unambiguous
+            - Diagnostic of the student's grasp of this subject
+            - Balanced across conceptual, procedural, and application-level thinking
+            so that the subject score accurately reflects the child's Literacy, Numeracy,
+            or Creativity competency on the parent dashboard.
+
             Requirements:
             - Each question must have exactly 4 options labeled A, B, C, D
             - Only one correct answer per question
@@ -535,7 +544,22 @@ object SkillTestService {
 
         if (questions.isEmpty()) return@dbQuery null
 
-        val batchId = questions.first()[SkillTestQuestionsTable.batchId]
+        // Randomly pick QUESTIONS_PER_ATTEMPT questions, evenly spread across
+        // subjects so every metric (Literacy/Numeracy/Creativity) gets sampled.
+        val questionsBySubject = questions.groupBy { it[SkillTestQuestionsTable.subject] }
+        val subjects = questionsBySubject.keys.shuffled()
+        val base = QUESTIONS_PER_ATTEMPT / subjects.size
+        val remainder = QUESTIONS_PER_ATTEMPT % subjects.size
+        val selected = mutableListOf<ResultRow>()
+        subjects.forEachIndexed { index, subject ->
+            val count = base + if (index < remainder) 1 else 0
+            selected += questionsBySubject[subject]?.shuffled()?.take(count) ?: emptyList()
+        }
+        val finalQuestions = selected.shuffled()
+
+        if (finalQuestions.isEmpty()) return@dbQuery null
+
+        val batchId = finalQuestions.first()[SkillTestQuestionsTable.batchId]
 
         // Create the attempt
         val attemptId = UUID.randomUUID()
@@ -546,7 +570,7 @@ object SkillTestService {
             it[SkillTestAttemptsTable.schoolId] = schoolId
             it[SkillTestAttemptsTable.batchId] = batchId
             it[SkillTestAttemptsTable.gradeLevel] = gradeLevel
-            it[SkillTestAttemptsTable.totalQuestions] = questions.size
+            it[SkillTestAttemptsTable.totalQuestions] = finalQuestions.size
             it[SkillTestAttemptsTable.correctCount] = 0
             it[SkillTestAttemptsTable.scorePercentage] = 0
             it[SkillTestAttemptsTable.status] = "in_progress"
@@ -556,7 +580,7 @@ object SkillTestService {
             it[SkillTestAttemptsTable.createdAt] = Instant.now()
         }
 
-        val questionDtos = questions.map { row ->
+        val questionDtos = finalQuestions.map { row ->
             QuestionDto(
                 id = row[SkillTestQuestionsTable.id].value.toString(),
                 subject = row[SkillTestQuestionsTable.subject],
