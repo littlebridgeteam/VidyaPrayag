@@ -52,6 +52,7 @@ import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherCheckInSt
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherCheckInViewModel
 import com.littlebridge.enrollplus.feature.teacher.presentation.InsightCard
 import com.littlebridge.enrollplus.feature.teacher.presentation.InsightSeverity
+import com.littlebridge.enrollplus.feature.teacher.presentation.InsightTarget
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherClassesState
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherClassesViewModel
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherInsightsViewModel
@@ -220,6 +221,7 @@ fun TeacherHomeScreenV2(
         if (insightsState.insights.isNotEmpty()) {
             NeedsAttentionSection(
                 insights = insightsState.insights,
+                onOpenPews = onOpenPews,
                 onOpenAttendanceForAssignment = onOpenAttendanceForAssignment,
             )
         }
@@ -961,6 +963,7 @@ private fun SkeletonEventRow() {
 @Composable
 private fun NeedsAttentionSection(
     insights: List<InsightCard>,
+    onOpenPews: () -> Unit,
     onOpenAttendanceForAssignment: (assignmentId: String, scope: String) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -973,11 +976,17 @@ private fun NeedsAttentionSection(
                             Modifier.fillMaxWidth().height(1.dp).background(VColors.lineSoft),
                         )
                     }
-                    InsightRow(insight = insight, onTap = {
-                        insight.assignmentId?.let { aid ->
-                            onOpenAttendanceForAssignment(aid, insight.scopeLabel)
-                        }
-                    })
+                    InsightRow(
+                        insight = insight,
+                        onTap = {
+                            when (insight.target) {
+                                InsightTarget.Pews -> onOpenPews()
+                                InsightTarget.Attendance -> insight.assignmentId?.let { aid ->
+                                    onOpenAttendanceForAssignment(aid, insight.scopeLabel)
+                                }
+                            }
+                        },
+                    )
                 }
             }
         }
