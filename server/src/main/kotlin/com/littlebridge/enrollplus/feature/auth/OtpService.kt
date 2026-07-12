@@ -50,6 +50,14 @@
  *   OTP_MAX_RESENDS_PER_HOUR   : default 5
  *   OTP_DEV_RETURN_CODE        : "true" in dev to echo the OTP back in the
  *                                API response (NEVER in production)
+ *   OTP_TEST_FIXED_CODE        : A fixed OTP code for testing (e.g. "123456").
+ *                                When set, the phone numbers listed in
+ *                                OTP_TEST_NUMBERS will always receive this
+ *                                code instead of a random one, and verify
+ *                                will accept it. Works in ALL environments.
+ *   OTP_TEST_NUMBERS           : Comma-separated phone numbers (E.164) that
+ *                                receive the fixed test code. e.g.
+ *                                "+919535248581,+919999999999"
  *   OTP_PROVIDER               : "mock" | "msg91" | "twilio" | "gupshup"
  *                                (only "mock" is implemented in this file;
  *                                wire the others in OtpDeliveryProvider.kt)
@@ -148,6 +156,19 @@ object OtpService {
         !isProduction && env("OTP_DEV_RETURN_CODE", "false").equals("true", true)
     }
 
+    private val testFixedCode: String? by lazy {
+        env("OTP_TEST_FIXED_CODE", "").takeIf { it.isNotBlank() }
+    }
+    private val testNumbers: Set<String> by lazy {
+        env("OTP_TEST_NUMBERS", "")
+            .split(",")
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .toSet()
+    }
+    private fun isTestNumber(identifier: String): Boolean =
+        testFixedCode != null && identifier in testNumbers
+
     private val rng = SecureRandom()
 
     /**
@@ -173,7 +194,13 @@ object OtpService {
         dbQuery { purgeExpired() }
 
         // Generate a fresh 6-digit code and a per-row salt.
-        val code = "%06d".format(rng.nextInt(1_000_000))
+        // Test bypass: if this number is in OTP_TEST_NUMBERS, use the fixed code.
+        val code = if (isTestNumber(identifier)) {
+            log.info("[OTP-TEST] Using fixed test code for {}", identifier)
+            testFixedCode!!
+        } else {
+            "%06d".format(rng.nextInt(1_000_000))
+        }
         val salt = UUID.randomUUID().toString().replace("-", "").take(16)
         val hash = sha256("$code:$salt:$pepper")
         val now = Instant.now()
@@ -439,6 +466,13 @@ object OtpService {
         // maxAttempts times before `is_locked` ever stuck, weakening the
         // brute-force lock. Holding the lock across the whole check-then-act
         // serialises concurrent verifiers on this (identifier, purpose) row.
+        // Test bypass: if this number is in OTP_TEST_NUMBERS and the code
+        // matches OTP_TEST_FIXED_CODE, short-circuit to Ok without DB lookup.
+        if (isTestNumber(identifier) && code == testFixedCode) {
+            log.info("[OTP-TEST] Auto-verifying fixed test code for {}", identifier)
+            return OtpVerifyResult.Ok
+        }
+
         return dbQuery {
             val row = AuthOtpsTable.selectAll()
                 .where { (AuthOtpsTable.identifier eq identifier) and (AuthOtpsTable.purpose eq purpose) }
