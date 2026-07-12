@@ -16,9 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -90,15 +88,15 @@ fun ExamSyllabusMappingScreen(
                 state.syllabus?.let { syllabus ->
                     Text(
                         text = "${syllabus.className} - ${syllabus.section} · ${selectedUnitIds.size} units selected",
-                        style = VTypography.bodyMedium,
-                        color = VColors.textSecondary,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        style = VTypography.body,
+                        color = VColors.ink2,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
                     )
                 }
 
                 // Unit list
                 LazyColumn(
-                    modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp),
+                    modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 20.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     items(state.syllabus?.units ?: emptyList()) { unit ->
@@ -114,7 +112,7 @@ fun ExamSyllabusMappingScreen(
 
                 // Save bar
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     VButton(
@@ -122,16 +120,16 @@ fun ExamSyllabusMappingScreen(
                         onClick = { viewModel.updateSyllabus(assessmentId, selectedUnitIds.toList()) },
                         variant = VButtonVariant.Primary,
                         size = VButtonSize.Lg,
-                        modifier = Modifier.weight(1f),
+                        full = true,
                     )
                 }
 
                 state.saveMessage?.let {
                     Text(
                         it,
-                        style = VTypography.bodyMedium,
+                        style = VTypography.body,
                         color = VColors.success,
-                        modifier = Modifier.padding(horizontal = 16.dp),
+                        modifier = Modifier.padding(horizontal = 20.dp),
                     )
                 }
             }
@@ -145,9 +143,8 @@ private fun UnitCheckboxRow(
     isChecked: Boolean,
     onToggle: (Boolean) -> Unit,
 ) {
-    VCard {
+    VCard(modifier = Modifier.fillMaxWidth()) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -158,12 +155,11 @@ private fun UnitCheckboxRow(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = unit.title,
-                    style = VTypography.bodyMedium,
-                    fontWeight = FontWeight.Medium,
-                    color = VColors.textPrimary,
+                    style = VTypography.body.copy(fontWeight = FontWeight.Medium),
+                    color = VColors.ink,
                 )
                 if (unit.depth > 0) {
-                    Text("Topic", style = VTypography.bodySmall, color = VColors.textTertiary)
+                    Text("Topic", style = VTypography.caption, color = VColors.ink3)
                 }
             }
         }

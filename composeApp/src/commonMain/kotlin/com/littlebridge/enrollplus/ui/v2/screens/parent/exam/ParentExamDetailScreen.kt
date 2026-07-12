@@ -18,7 +18,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.littlebridge.enrollplus.feature.exam.presentation.ExamSyllabusState
 import com.littlebridge.enrollplus.feature.exam.presentation.ParentExamViewModel
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
@@ -66,39 +65,38 @@ fun ParentExamDetailScreen(
             modifier = Modifier.fillMaxSize(),
         ) {
             Column(
-                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp).padding(top = 16.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 val syllabus = syllabusState.syllabus!!
 
                 // ── Exam info ─────────────────────────────────────────────────
-                VCard {
-                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(syllabus.examName, style = VTypography.titleLarge, fontWeight = FontWeight.Bold, color = VColors.textPrimary)
-                        Text(syllabus.subject, style = VTypography.titleMedium, color = VColors.textSecondary)
-                        Text("${syllabus.className} - ${syllabus.section}", style = VTypography.bodyMedium, color = VColors.textTertiary)
+                VCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(syllabus.examName, style = VTypography.h3.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                        Text(syllabus.subject, style = VTypography.h2, color = VColors.ink2)
+                        Text("${syllabus.className} - ${syllabus.section}", style = VTypography.body, color = VColors.ink3)
                     }
                 }
 
                 // ── Syllabus units ────────────────────────────────────────────
                 Text(
                     "Topics to Study (${syllabus.units.size})",
-                    style = VTypography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = VColors.textPrimary,
+                    style = VTypography.h2.copy(fontWeight = FontWeight.Bold),
+                    color = VColors.ink,
                     modifier = Modifier.padding(top = 8.dp),
                 )
 
                 syllabus.units.forEach { unit ->
-                    VCard {
+                    VCard(modifier = Modifier.fillMaxWidth()) {
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(unit.title, style = VTypography.bodyMedium, fontWeight = FontWeight.Medium, color = VColors.textPrimary)
+                                Text(unit.title, style = VTypography.body.copy(fontWeight = FontWeight.Medium), color = VColors.ink)
                                 if (unit.depth > 0) {
-                                    Text("Topic", style = VTypography.bodySmall, color = VColors.textTertiary)
+                                    Text("Topic", style = VTypography.caption, color = VColors.ink3)
                                 }
                             }
                         }
@@ -109,18 +107,18 @@ fun ParentExamDetailScreen(
 
         // Request syllabus button (shown when no units or always as fallback)
         if (syllabusState.syllabus?.units.isNullOrEmpty() && !syllabusState.isLoading) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
                 VButton(
                     text = if (isRequesting) "Sending..." else "Request Syllabus from Teacher",
                     onClick = { viewModel.requestSyllabus(assessmentId) },
                     variant = VButtonVariant.Primary,
                     size = VButtonSize.Lg,
-                    modifier = Modifier.fillMaxWidth(),
+                    full = true,
                 )
                 requestState?.let {
                     Text(
                         it.message,
-                        style = VTypography.bodyMedium,
+                        style = VTypography.body,
                         color = if (it.success) VColors.success else VColors.error,
                         modifier = Modifier.padding(top = 8.dp),
                     )

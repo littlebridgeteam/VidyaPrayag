@@ -46,7 +46,7 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 /** Full-screen overlays the teacher portal can push above its tab content. */
-private enum class TeacherOverlay { None, Notifications, HealthAlerts, TransportAttendance, Pews, ReportReview, ReportDraftEditor, Heatmap, DigitalIdCard, ScheduledMessages, EventRegistration, Messages, Calendar, AnnouncementDetail, LeaveRequests, ExamTimetableList, ExamTimetableUpload, ExamTimetableDetail, ExamSyllabusMapping }
+private enum class TeacherOverlay { None, Notifications, HealthAlerts, TransportAttendance, Pews, ReportReview, ReportDraftEditor, Heatmap, DigitalIdCard, ScheduledMessages, EventRegistration, Messages, Calendar, AnnouncementDetail, LeaveRequests, ExamTimetableList, ExamTimetableUpload, ExamTimetableDetail, ExamSyllabusMapping, ExamMarksImport }
 
 /**
  * TeacherPortalV2 — the teacher shell, rebuilt FROM SCRATCH on the Parents-Portal
@@ -344,6 +344,12 @@ fun TeacherPortalV2(
             )
             return
         }
+        TeacherOverlay.ExamMarksImport -> {
+            com.littlebridge.enrollplus.ui.v2.screens.teacher.exam.ExamMarksImportScreen(
+                onBack = { overlay = TeacherOverlay.None },
+            )
+            return
+        }
         TeacherOverlay.None -> Unit
     }
 
@@ -451,6 +457,7 @@ fun TeacherPortalV2(
                         unreadCount = notifications.unreadCount,
                         onOpenNotifications = { overlay = TeacherOverlay.Notifications },
                         onOpenMessages = { overlay = TeacherOverlay.Messages },
+                        onImportMarks = { overlay = TeacherOverlay.ExamMarksImport },
                     )
                 }
 

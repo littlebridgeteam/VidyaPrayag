@@ -106,6 +106,7 @@ fun TeacherUpdateScreenV2(
     unreadCount: Int = 0,
     onOpenNotifications: () -> Unit = {},
     onOpenMessages: () -> Unit = {},
+    onImportMarks: () -> Unit = {},
     classesViewModel: TeacherClassesViewModel = koinViewModel(),
 ) {
     val classesState by classesViewModel.state.collectAsStateV2()
@@ -258,7 +259,7 @@ fun TeacherUpdateScreenV2(
                     ) { active ->
                         when (active) {
                             UpdateTool.Attendance -> TeacherAttendanceScreenV2(asg, pickedLabel, onOpenMessages = onOpenMessages)
-                            UpdateTool.Marks -> TeacherMarksScreenV2(asg, pickedLabel)
+                            UpdateTool.Marks -> TeacherMarksScreenV2(asg, pickedLabel, onImportMarks = onImportMarks)
                             UpdateTool.Syllabus -> TeacherSyllabusScreenV2(asg, pickedLabel)
                             UpdateTool.Homework -> TeacherHomeworkScreenV2(asg, pickedLabel)
                             UpdateTool.LessonPlan -> TeacherLessonPlanScreenV2(asg, pickedLabel)

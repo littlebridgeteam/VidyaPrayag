@@ -518,6 +518,44 @@ data class PublishResultDto(
     @SerialName("parents_notified") val parentsNotified: Int = 0,
 )
 
+// ── Marks import (AI OCR / text) — Doc 07 §5.4 ───────────────────────────────
+
+@Serializable
+data class MarksImportOcrRequest(
+    val image: String,
+    @SerialName("mime_type") val mimeType: String = "image/jpeg",
+)
+
+@Serializable
+data class MarksImportTextRequest(
+    val text: String,
+)
+
+@Serializable
+data class ParsedMarkDto(
+    @SerialName("student_id") val studentId: String? = null,
+    val name: String,
+    @SerialName("roll_no") val rollNo: String = "",
+    val marks: Float? = null,
+    @SerialName("is_absent") val isAbsent: Boolean = false,
+    val matched: Boolean = false,
+)
+
+@Serializable
+data class MarksImportResponse(
+    val success: Boolean = true,
+    val message: String? = null,
+    val data: MarksImportData = MarksImportData(),
+)
+
+@Serializable
+data class MarksImportData(
+    val entries: List<ParsedMarkDto> = emptyList(),
+    @SerialName("matched_count") val matchedCount: Int = 0,
+    @SerialName("unmatched_count") val unmatchedCount: Int = 0,
+    @SerialName("raw_ai_output") val rawAiOutput: String? = null,
+)
+
 // ── History & comparison — Doc 07 §6 (server-aggregated, no client N+1) ──────
 
 @Serializable

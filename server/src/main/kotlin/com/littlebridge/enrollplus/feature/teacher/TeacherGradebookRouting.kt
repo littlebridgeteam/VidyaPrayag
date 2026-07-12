@@ -49,6 +49,9 @@ import com.littlebridge.enrollplus.core.requireTeacherContext
 import com.littlebridge.enrollplus.db.AssessmentMarksTable
 import com.littlebridge.enrollplus.db.AssessmentsTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
+import com.littlebridge.enrollplus.feature.ai.AiLane
+import com.littlebridge.enrollplus.feature.ai.AiService
+import com.littlebridge.enrollplus.feature.ai.LlmMessage
 import com.littlebridge.enrollplus.feature.gamification.XpHooks
 import com.littlebridge.enrollplus.feature.notifications.Notify
 import com.littlebridge.enrollplus.feature.notifications.NotifyRecipients
@@ -173,6 +176,84 @@ data class GbPublishResultDto(
     @SerialName("parents_notified") val parentsNotified: Int = 0,
 )
 
+// ── Marks import (AI OCR / text) DTOs ──────────────────────────────────────────
+
+@Serializable
+data class GbMarksImportOcrRequest(
+    val image: String,
+    @SerialName("mime_type") val mimeType: String = "image/jpeg",
+)
+
+@Serializable
+data class GbMarksImportTextRequest(
+    val text: String,
+)
+
+@Serializable
+data class GbParsedMarkDto(
+    @SerialName("student_id") val studentId: String? = null,
+    val name: String,
+    @SerialName("roll_no") val rollNo: String = "",
+    val marks: Float? = null,
+    @SerialName("is_absent") val isAbsent: Boolean = false,
+    val matched: Boolean = false,
+)
+
+@Serializable
+data class GbMarksImportResponse(
+    val entries: List<GbParsedMarkDto>,
+    @SerialName("matched_count") val matchedCount: Int = 0,
+    @SerialName("unmatched_count") val unmatchedCount: Int = 0,
+    @SerialName("raw_ai_output") val rawAiOutput: String? = null,
+)
+
+private const val MARKS_IMPORT_SYSTEM_PROMPT = """
+You are a marks sheet parser. Extract student marks from the provided image or text.
+
+Return ONLY a JSON array (no markdown fences, no commentary). Each element must have:
+  "name":      student full name (as written on the sheet)
+  "roll_no":   roll number as a string, or null if not visible
+  "marks":     numeric marks (float), or null if absent
+  "is_absent": true if the student is marked AB/absent, false otherwise
+
+If the sheet has columns, map them sensibly. If a student name has multiple parts,
+join them with a space. If marks contain decimals (e.g. 85.5), preserve them.
+If a row is clearly a header or total, skip it.
+"""
+
+private fun parseMarksFromAi(raw: String): List<GbParsedMarkDto> {
+    val jsonStr = raw.substringAfter("[").substringBeforeLast("]")
+    if (jsonStr.isBlank()) return emptyList()
+    val items = jsonStr.split("}").filter { it.contains("{") }
+    return items.map { item ->
+        val body = item.substringAfter("{")
+        fun field(name: String): String? =
+            Regex("\"$name\"\\s*:\\s*\"?([^",}]*)\"?").find(body)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotBlank() && it != "null" }
+        GbParsedMarkDto(
+            name = field("name") ?: "",
+            rollNo = field("roll_no") ?: "",
+            marks = field("marks")?.toFloatOrNull(),
+            isAbsent = field("is_absent")?.lowercase() == "true",
+        )
+    }.filter { it.name.isNotBlank() }
+}
+
+private fun matchParsedMarksToRoster(
+    parsed: List<GbParsedMarkDto>,
+    roster: List<EnrolledStudent>,
+): List<GbParsedMarkDto> {
+    val byRoll = roster.mapNotNull { s -> s.rollNumber?.let { it.toString() to s } }.toMap()
+    val byName = roster.associateBy { it.fullName.lowercase().trim() }
+    return parsed.map { p ->
+        val match = byRoll[p.rollNo]
+            ?: byName[p.name.lowercase().trim()]
+            ?: roster.firstOrNull { it.fullName.contains(p.name, ignoreCase = true) }
+        if (match != null) {
+            p.copy(studentId = match.studentId.toString(), rollNo = match.rollNumber?.toString() ?: p.rollNo, name = match.fullName, matched = true)
+        } else p
+    }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared helpers.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -296,6 +377,7 @@ fun Route.teacherGradebookRouting() {
             assessmentHistory()        // literal /assessments/history before {id}
             assessmentListAndCreate()
             assessmentMarksLoadAndSave()
+            assessmentMarksImport()     // AI OCR/text marks import — /assessments/{id}/marks/import-ocr, /import-text
             assessmentPublishUnpublish()
         }
     }
@@ -556,6 +638,100 @@ private fun Route.assessmentListAndCreate() {
                 "Assessment created"
             }
             call.created(dto, message = msg)
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/v1/teacher/assessments/{id}/marks/import-ocr  (AI vision marks extraction)
+// POST /api/v1/teacher/assessments/{id}/marks/import-text (AI text marks parsing)
+// Returns parsed entries matched against the enrollment roster so the UI can
+// review and confirm before applying to the grid (no save, no publish).
+// ─────────────────────────────────────────────────────────────────────────────
+private fun Route.assessmentMarksImport() {
+    route("/assessments/{id}/marks") {
+
+        post("/import-ocr") {
+            val ctx = call.requireTeacherContext() ?: return@post
+            val (row, asg) = call.requireOwnedAssessment(ctx, call.parameters["id"]) ?: return@post
+            val req = runCatching { call.receive<GbMarksImportOcrRequest>() }.getOrNull()
+            if (req == null) {
+                call.fail("Invalid request body", HttpStatusCode.BadRequest, "BAD_REQUEST")
+                return@post
+            }
+            if (req.image.length > 5_000_000) {
+                call.fail("Image too large (max 5MB base64)", HttpStatusCode.BadRequest)
+                return@post
+            }
+
+            val roster = asg?.let { enrollmentsFor(it) } ?: emptyList()
+            val maxMarks = row[AssessmentsTable.maxMarks]
+
+            val aiResult = AiService.completeWithVision(
+                feature = "marks_import_ocr",
+                systemPrompt = MARKS_IMPORT_SYSTEM_PROMPT,
+                userText = "Extract student marks from this marks sheet. Maximum marks is $maxMarks.",
+                imageBase64 = req.image,
+                imageMimeType = req.mimeType,
+                schoolId = ctx.schoolId,
+                temperature = 0.2,
+                maxTokens = 4096,
+            )
+
+            val rawText = aiResult.content ?: ""
+            val parsed = parseMarksFromAi(rawText)
+            val matched = matchParsedMarksToRoster(parsed, roster)
+            call.ok(
+                GbMarksImportResponse(
+                    entries = matched,
+                    matchedCount = matched.count { it.matched },
+                    unmatchedCount = matched.count { !it.matched },
+                    rawAiOutput = rawText,
+                ),
+                message = "OCR extraction complete (${matched.count { it.matched }}/${matched.size} matched)",
+            )
+        }
+
+        post("/import-text") {
+            val ctx = call.requireTeacherContext() ?: return@post
+            val (row, asg) = call.requireOwnedAssessment(ctx, call.parameters["id"]) ?: return@post
+            val req = runCatching { call.receive<GbMarksImportTextRequest>() }.getOrNull()
+            if (req == null) {
+                call.fail("Invalid request body", HttpStatusCode.BadRequest, "BAD_REQUEST")
+                return@post
+            }
+            if (req.text.length > 20_000) {
+                call.fail("Text too long (max 20K chars)", HttpStatusCode.BadRequest)
+                return@post
+            }
+
+            val roster = asg?.let { enrollmentsFor(it) } ?: emptyList()
+            val maxMarks = row[AssessmentsTable.maxMarks]
+
+            val aiResult = AiService.complete(
+                feature = "marks_import_text",
+                lane = AiLane.REASON,
+                messages = listOf(
+                    LlmMessage("system", MARKS_IMPORT_SYSTEM_PROMPT),
+                    LlmMessage("user", "Parse this marks sheet. Maximum marks is $maxMarks.\n\n${req.text}"),
+                ),
+                schoolId = ctx.schoolId,
+                temperature = 0.2,
+                maxTokens = 4096,
+            )
+
+            val rawText = aiResult.content ?: ""
+            val parsed = parseMarksFromAi(rawText)
+            val matched = matchParsedMarksToRoster(parsed, roster)
+            call.ok(
+                GbMarksImportResponse(
+                    entries = matched,
+                    matchedCount = matched.count { it.matched },
+                    unmatchedCount = matched.count { !it.matched },
+                    rawAiOutput = rawText,
+                ),
+                message = "Text parsing complete (${matched.count { it.matched }}/${matched.size} matched)",
+            )
         }
     }
 }

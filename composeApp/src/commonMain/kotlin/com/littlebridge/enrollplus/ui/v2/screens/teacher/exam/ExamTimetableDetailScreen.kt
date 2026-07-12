@@ -14,15 +14,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.littlebridge.enrollplus.feature.exam.domain.model.ExamTimetable
-import com.littlebridge.enrollplus.feature.exam.presentation.ExamPublishState
 import com.littlebridge.enrollplus.feature.exam.presentation.ExamTimetablesViewModel
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
@@ -70,45 +65,46 @@ fun ExamTimetableDetailScreen(
         ) {
             val tt = detailState.timetable!!
             Column(
-                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp).padding(top = 16.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 // ── Header card ──────────────────────────────────────────────
-                VCard {
-                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                VCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text(tt.name, style = VTypography.titleLarge, fontWeight = FontWeight.Bold, color = VColors.textPrimary)
+                            Text(tt.name, style = VTypography.h3.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                             VBadge(
                                 text = tt.status,
                                 tone = if (tt.status == "published") VBadgeTone.Success else VBadgeTone.Warning,
                             )
                         }
-                        Text("${tt.className} - ${tt.section}", style = VTypography.bodyMedium, color = VColors.textSecondary)
-                        tt.term?.let { Text(it, style = VTypography.bodySmall, color = VColors.textTertiary) }
+                        Text("${tt.className} - ${tt.section}", style = VTypography.body, color = VColors.ink2)
+                        tt.term?.let { Text(it, style = VTypography.caption, color = VColors.ink3) }
                     }
                 }
 
                 // ── Entries ──────────────────────────────────────────────────
                 tt.entries.forEach { entry ->
-                    VCard {
-                        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    VCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                             ) {
-                                Text(entry.examDate, style = VTypography.bodyMedium, fontWeight = FontWeight.Medium, color = VColors.textPrimary)
-                                Text("${entry.maxMarks} marks", style = VTypography.bodySmall, color = VColors.textTertiary)
+                                Text(entry.examDate, style = VTypography.body.copy(fontWeight = FontWeight.Medium), color = VColors.ink)
+                                Text("${entry.maxMarks} marks", style = VTypography.caption, color = VColors.ink3)
                             }
-                            Text(entry.subject, style = VTypography.titleMedium, color = VColors.textPrimary)
-                            Text(entry.examName, style = VTypography.bodySmall, color = VColors.textSecondary)
+                            Text(entry.subject, style = VTypography.h2, color = VColors.ink)
+                            Text(entry.examName, style = VTypography.caption, color = VColors.ink2)
                             entry.startTime?.let {
-                                Text("$it${entry.endTime?.let { e -> " - $e" } ?: ""}", style = VTypography.bodySmall, color = VColors.textTertiary)
+                                Text("$it${entry.endTime?.let { e -> " - $e" } ?: ""}", style = VTypography.caption, color = VColors.ink3)
                             }
-                            entry.room?.let { Text("Room: $it", style = VTypography.bodySmall, color = VColors.textTertiary) }
+                            entry.room?.let { Text("Room: $it", style = VTypography.caption, color = VColors.ink3) }
 
                             // If published and has assessment, show syllabus mapping button
                             if (tt.status == "published" && entry.assessmentId != null) {
@@ -117,7 +113,7 @@ fun ExamTimetableDetailScreen(
                                     onClick = { onMapSyllabus(entry.assessmentId!!) },
                                     variant = VButtonVariant.Secondary,
                                     size = VButtonSize.Sm,
-                                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                                    full = true,
                                 )
                             }
                         }
@@ -131,15 +127,15 @@ fun ExamTimetableDetailScreen(
                         onClick = { viewModel.publishTimetable(tt.id) },
                         variant = VButtonVariant.Primary,
                         size = VButtonSize.Lg,
-                        modifier = Modifier.fillMaxWidth(),
+                        full = true,
                     )
                 }
 
                 publishState.message?.let {
-                    Text(it, style = VTypography.bodyMedium, color = VColors.success)
+                    Text(it, style = VTypography.body, color = VColors.success)
                 }
                 publishState.error?.let {
-                    Text(it, style = VTypography.bodyMedium, color = VColors.error)
+                    Text(it, style = VTypography.body, color = VColors.error)
                 }
             }
         }

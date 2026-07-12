@@ -98,6 +98,10 @@ interface TeacherRepository {
 
     suspend fun getAssessmentHistory(token: String, assignmentId: String): NetworkResult<AssessmentHistoryResponse>
 
+    suspend fun importMarksOcr(token: String, assessmentId: String, request: MarksImportOcrRequest): NetworkResult<MarksImportResponse>
+
+    suspend fun importMarksText(token: String, assessmentId: String, request: MarksImportTextRequest): NetworkResult<MarksImportResponse>
+
 
 
     // T-106c: teacher self check-in (Doc 06 §2).

@@ -464,6 +464,32 @@ class TeacherApi(
 
 
 
+    /** AI OCR marks extraction from an image. Returns parsed entries matched to roster. */
+    suspend fun importMarksOcr(
+        token: String,
+        assessmentId: String,
+        request: MarksImportOcrRequest,
+    ): NetworkResult<MarksImportResponse> = safeApiCall {
+        client.post(getUrl("api/v1/teacher/assessments/$assessmentId/marks/import-ocr")) {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+    }
+
+    /** AI text marks parsing from pasted text. Returns parsed entries matched to roster. */
+    suspend fun importMarksText(
+        token: String,
+        assessmentId: String,
+        request: MarksImportTextRequest,
+    ): NetworkResult<MarksImportResponse> = safeApiCall {
+        client.post(getUrl("api/v1/teacher/assessments/$assessmentId/marks/import-text")) {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+    }
+
+
+
     /** Server-aggregated trends (timeline + distribution) for an assignment. Doc 07 §6. */
 
     suspend fun getAssessmentHistory(

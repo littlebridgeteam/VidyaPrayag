@@ -1,11 +1,8 @@
 package com.littlebridge.enrollplus.ui.v2.screens.teacher.exam
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,6 +15,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -37,7 +35,6 @@ import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
-import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -69,7 +66,7 @@ fun ExamTimetableUploadScreen(
     val detailState by viewModel.detailState.collectAsStateV2()
 
     // Sync OCR results into local entries list
-    androidx.compose.runtime.LaunchedEffect(ocrState.entries) {
+    LaunchedEffect(ocrState.entries) {
         if (ocrState.entries.isNotEmpty()) {
             entries.clear()
             entries.addAll(ocrState.entries)
@@ -77,7 +74,7 @@ fun ExamTimetableUploadScreen(
     }
 
     // Navigate on create success
-    androidx.compose.runtime.LaunchedEffect(detailState.timetable) {
+    LaunchedEffect(detailState.timetable) {
         detailState.timetable?.let { onCreated(it.id) }
     }
 
@@ -85,13 +82,14 @@ fun ExamTimetableUploadScreen(
         VBackHeader(title = "New Exam Timetable", onBack = onBack)
 
         Column(
-            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp).padding(top = 16.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             // ── Basic info ───────────────────────────────────────────────────
-            VCard {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Details", style = VTypography.titleMedium, fontWeight = FontWeight.Bold, color = VColors.textPrimary)
+            VCard(modifier = Modifier.fillMaxWidth()) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Details", style = VTypography.h2.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                     OutlinedTextField(
                         value = timetableName,
                         onValueChange = { timetableName = it },
@@ -129,9 +127,9 @@ fun ExamTimetableUploadScreen(
             }
 
             // ── Import methods ───────────────────────────────────────────────
-            VCard {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Import", style = VTypography.titleMedium, fontWeight = FontWeight.Bold, color = VColors.textPrimary)
+            VCard(modifier = Modifier.fillMaxWidth()) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Import", style = VTypography.h2.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
 
                     if (showTextImport) {
                         OutlinedTextField(
@@ -149,7 +147,7 @@ fun ExamTimetableUploadScreen(
                             },
                             variant = VButtonVariant.Primary,
                             size = VButtonSize.Md,
-                            modifier = Modifier.fillMaxWidth(),
+                            full = true,
                         )
                     } else {
                         VButton(
@@ -161,42 +159,42 @@ fun ExamTimetableUploadScreen(
                             },
                             variant = VButtonVariant.Secondary,
                             size = VButtonSize.Md,
-                            modifier = Modifier.fillMaxWidth(),
+                            full = true,
                         )
                         VButton(
                             text = "Paste Text Instead",
                             onClick = { showTextImport = true },
                             variant = VButtonVariant.Ghost,
                             size = VButtonSize.Md,
-                            modifier = Modifier.fillMaxWidth(),
+                            full = true,
                         )
                     }
 
                     if (ocrState.isLoading) {
-                        Text("Extracting entries...", style = VTypography.bodyMedium, color = VColors.textSecondary)
+                        Text("Extracting entries...", style = VTypography.body, color = VColors.ink2)
                     }
                     if (ocrState.error != null) {
-                        Text(ocrState.error!!, style = VTypography.bodyMedium, color = VColors.error)
+                        Text(ocrState.error!!, style = VTypography.body, color = VColors.error)
                     }
                 }
             }
 
             // ── Entries review ───────────────────────────────────────────────
             if (entries.isNotEmpty()) {
-                VCard {
-                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Extracted Entries (${entries.size})", style = VTypography.titleMedium, fontWeight = FontWeight.Bold, color = VColors.textPrimary)
-                        entries.forEachIndexed { idx, entry ->
+                VCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Extracted Entries (${entries.size})", style = VTypography.h2.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                        entries.forEach { entry ->
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text("${entry.examDate} - ${entry.subject}", style = VTypography.bodyMedium, color = VColors.textPrimary)
-                                    Text(entry.examName, style = VTypography.bodySmall, color = VColors.textSecondary)
+                                    Text("${entry.examDate} - ${entry.subject}", style = VTypography.body, color = VColors.ink)
+                                    Text(entry.examName, style = VTypography.caption, color = VColors.ink2)
                                 }
-                                Text("${entry.maxMarks} marks", style = VTypography.bodySmall, color = VColors.textTertiary)
+                                Text("${entry.maxMarks} marks", style = VTypography.caption, color = VColors.ink3)
                             }
                         }
                     }
@@ -221,11 +219,11 @@ fun ExamTimetableUploadScreen(
                 },
                 variant = VButtonVariant.Primary,
                 size = VButtonSize.Lg,
-                modifier = Modifier.fillMaxWidth(),
+                full = true,
             )
 
             if (detailState.error != null) {
-                Text(detailState.error!!, style = VTypography.bodyMedium, color = VColors.error)
+                Text(detailState.error!!, style = VTypography.body, color = VColors.error)
             }
         }
     }

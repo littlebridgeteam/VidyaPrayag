@@ -148,6 +148,18 @@ class TeacherRepositoryImpl(
 
 
 
+    override suspend fun importMarksOcr(token: String, assessmentId: String, request: MarksImportOcrRequest): NetworkResult<MarksImportResponse> =
+
+        api.importMarksOcr(token, assessmentId, request)
+
+
+
+    override suspend fun importMarksText(token: String, assessmentId: String, request: MarksImportTextRequest): NetworkResult<MarksImportResponse> =
+
+        api.importMarksText(token, assessmentId, request)
+
+
+
     override suspend fun getAssessmentHistory(token: String, assignmentId: String): NetworkResult<AssessmentHistoryResponse> =
 
         cacheFirstNetworkResult(cache, "teacher_assessment_history_$assignmentId", AssessmentHistoryResponse.serializer()) { api.getAssessmentHistory(token, assignmentId) }
