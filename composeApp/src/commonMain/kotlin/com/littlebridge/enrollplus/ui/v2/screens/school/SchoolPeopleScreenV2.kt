@@ -184,7 +184,7 @@ private fun SchoolPeopleContent(
     var showImportStudents by remember { mutableStateOf(false) }
     var isRefreshing by remember { mutableStateOf(false) }
 
-    val anyLoading = teachersState.isLoading || studentsState.isLoading || staffState.isLoading || analyticsState.isLoading
+    val anyLoading = teachersState.isLoading || studentsState.isLoading || staffState.isLoading
     LaunchedEffect(anyLoading) {
         if (!anyLoading) isRefreshing = false
     }

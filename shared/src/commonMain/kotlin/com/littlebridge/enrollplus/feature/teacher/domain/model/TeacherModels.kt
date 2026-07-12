@@ -1254,9 +1254,20 @@ data class HomeworkSubmissionRowDto(
     // submitted | late | graded | not_submitted
     val status: String = HomeworkSubmissionStatus.NOT_SUBMITTED,
     @SerialName("submitted_at") val submittedAt: String? = null,
+    @SerialName("submission_text") val submissionText: String = "",
+    val attachments: List<HwSubmissionAttachmentDto> = emptyList(),
     val grade: String? = null,
     @SerialName("has_extension") val hasExtension: Boolean = false,
     @SerialName("extended_to") val extendedTo: String? = null,
+)
+
+@Serializable
+data class HwSubmissionAttachmentDto(
+    val id: String,
+    val url: String,
+    val filename: String = "",
+    val mime: String = "",
+    @SerialName("size_bytes") val sizeBytes: Long = 0,
 )
 
 @Serializable

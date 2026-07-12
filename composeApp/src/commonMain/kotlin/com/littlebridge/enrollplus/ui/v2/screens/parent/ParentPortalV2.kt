@@ -73,7 +73,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import com.littlebridge.enrollplus.ui.v2.screens.parent.ParentHomeScreenV2
 
 /** Full-screen overlays a portal can push above its tab content (back returns to the tabs). */
-private enum class ParentOverlay { None, Notifications, Calendar, Scholarships, Profile, Leave, Messages, LinkChild, Discovery, Health, Pulse, Transport, TutorChat, TutorProgress, DigitalIdCard, Library, EventRegistration, FeePayment, FeeHistory, Pews, Report, AnnouncementDetail, FeeDetail, LeaveDetail, ExamDetail }
+private enum class ParentOverlay { None, Notifications, Calendar, Scholarships, Profile, Leave, Messages, LinkChild, Discovery, Health, Pulse, Transport, TutorChat, TutorProgress, DigitalIdCard, Library, EventRegistration, FeePayment, FeeHistory, Pews, Report, AnnouncementDetail, FeeDetail, LeaveDetail, ExamDetail, Homework }
 
 /**
  * ParentPortalV2 — the 5-tab parent shell, a faithful copy of `Parent.tsx → ParentApp`.
@@ -163,7 +163,7 @@ fun ParentPortalV2(
                     "timetable" -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Timetable" }
                     "marks" -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Marks" }
                     "attendance" -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Attendance" }
-                    "homework" -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Homework" }
+                    "homework" -> { tab = "academics"; overlay = ParentOverlay.Homework }
                     "quizzes" -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Quizzes" }
                     "syllabus" -> { tab = "academics"; overlay = ParentOverlay.None; deepLinkAcademicsTab = "Syllabus" }
                     "scholarships" -> overlay = ParentOverlay.Scholarships
@@ -361,6 +361,10 @@ fun ParentPortalV2(
         ParentOverlay.Leave -> {
             // RA-44: the parent leg of the leave workflow.
             ParentLeaveScreenV2(onBack = { overlay = ParentOverlay.None }, modifier = modifier)
+            return
+        }
+        ParentOverlay.Homework -> {
+            ParentHomeworkScreenV2(onBack = { overlay = ParentOverlay.None }, modifier = modifier)
             return
         }
         ParentOverlay.Messages -> {
@@ -617,6 +621,7 @@ fun ParentPortalV2(
                     onSelectChild = { dashboardViewModel.selectChild(it) },
                     onOpenLeave = { overlay = ParentOverlay.Leave },
                     onOpenHealth = { overlay = ParentOverlay.Health },
+                    onOpenHomework = { overlay = ParentOverlay.Homework },
                     onOpenNotifications = { overlay = ParentOverlay.Notifications },
                     initialTab = deepLinkAcademicsTab,
                     onTabConsumed = { deepLinkAcademicsTab = null },
