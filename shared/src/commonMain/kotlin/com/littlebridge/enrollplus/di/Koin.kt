@@ -15,15 +15,19 @@ import com.littlebridge.enrollplus.feature.parent.presentation.ParentHomeViewMod
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentProfileViewModel
 import com.littlebridge.enrollplus.feature.parent.presentation.TrackProgressViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.SchoolDashboardViewModel
+import com.littlebridge.enrollplus.feature.admin.presentation.PinnedScreensViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.InstitutionalBasicOBViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.BrandingInfoOBViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.AcademicInfoOBViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.LaunchInfoOBViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.InstitutionalProfileViewModel
+import com.littlebridge.enrollplus.feature.admin.presentation.BrandingPhotosViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.AdmissionCRMViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.SchoolAnnouncementsViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.MessagesViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.SchedulePTMViewModel
+import com.littlebridge.enrollplus.feature.admin.presentation.CommsDeliveryLogViewModel
+import com.littlebridge.enrollplus.feature.admin.domain.usecase.GetDeliveryLogUseCase
 import com.littlebridge.enrollplus.feature.admin.presentation.AcademicCalendarViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.LeaveRequestsViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.DailyAttendanceViewModel
@@ -135,6 +139,12 @@ val commonModule = module {
     }
     single {
         com.littlebridge.enrollplus.feature.admin.data.remote.MessagesApi(
+            client = get(),
+            baseUrl = AppConfig.schoolBaseUrl
+        )
+    }
+    single {
+        com.littlebridge.enrollplus.feature.admin.data.remote.DeliveryLogApi(
             client = get(),
             baseUrl = AppConfig.schoolBaseUrl
         )
@@ -316,6 +326,9 @@ val commonModule = module {
     }
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.MessagesRepository> {
         com.littlebridge.enrollplus.feature.admin.data.repository.MessagesRepositoryImpl(get())
+    }
+    single<com.littlebridge.enrollplus.feature.admin.domain.repository.DeliveryLogRepository> {
+        com.littlebridge.enrollplus.feature.admin.data.repository.DeliveryLogRepositoryImpl(get())
     }
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.AnnouncementsRepository> {
         com.littlebridge.enrollplus.feature.admin.data.repository.AnnouncementsRepositoryImpl(get())
@@ -517,6 +530,7 @@ val commonModule = module {
 
     // UseCases
     factory { GetSchoolsUseCase(get()) }
+    factory { GetDeliveryLogUseCase(get()) }
 
     // ── Multi-Language i18n (MULTI_LANGUAGE_SPEC.md) ──────────────────
     single {
@@ -569,6 +583,7 @@ val viewModelModule = module {
     factory { com.littlebridge.enrollplus.feature.parent.presentation.ParentMessageViewModel(get(), get()) }
     factory { com.littlebridge.enrollplus.feature.parent.presentation.ParentPulseViewModel(get(), get(), get()) }
     factory { SchoolDashboardViewModel(get(), get(), get()) }
+    factory { PinnedScreensViewModel(get(), get()) }
     factory { InstitutionalBasicOBViewModel(get(), get()) }
     factory { BrandingInfoOBViewModel(get(), get(), get()) }
     factory { AcademicInfoOBViewModel(get(), get()) }
@@ -578,8 +593,9 @@ val viewModelModule = module {
     factory { LaunchInfoOBViewModel(get(), get()) }
     factory { com.littlebridge.enrollplus.feature.admin.presentation.OnboardingGateViewModel(get(), get()) }
     factory { InstitutionalProfileViewModel(get(), get(), get()) }
+    factory { BrandingPhotosViewModel(get(), get(), get(), get(), get()) }
     factory { com.littlebridge.enrollplus.feature.admin.presentation.SchoolProfileViewModel(get(), get()) } // RA-47
-    factory { com.littlebridge.enrollplus.feature.admin.presentation.StudentRosterViewModel(get(), get()) } // RA-45
+    factory { com.littlebridge.enrollplus.feature.admin.presentation.StudentRosterViewModel(get(), get(), get()) } // RA-45 + link count
     factory { com.littlebridge.enrollplus.feature.admin.presentation.StaffViewModel(get(), get()) } // RA-S17
     factory { com.littlebridge.enrollplus.feature.admin.presentation.StudentProfileViewModel(get(), get()) } // RA-45
     factory { com.littlebridge.enrollplus.feature.admin.presentation.TeacherProfileViewModel(get(), get(), get()) } // RA-45 (+RA-S17 delete-in-profile)
@@ -589,6 +605,7 @@ val viewModelModule = module {
     factory { SchoolAnnouncementsViewModel(get(), get(), get()) }
     factory { com.littlebridge.enrollplus.feature.admin.presentation.SchoolTeachersViewModel(get(), get()) }
     factory { MessagesViewModel(get(), get(), get()) }
+    factory { CommsDeliveryLogViewModel(get(), get()) }
     factory { SchedulePTMViewModel(get(), get()) }
     factory { AcademicCalendarViewModel(get(), get()) }
     // CYC-006: Named qualifiers for all portal calendar VMs.

@@ -11,11 +11,30 @@ data class StaffDto(
     val department: String? = null,
     val phone: String? = null,
     val email: String? = null,
-    @SerialName("photo_url") val photoUrl: String? = null
+    @SerialName("photo_url") val photoUrl: String? = null,
+    @SerialName("employee_id") val employeeId: String? = null,
+    val shift: String? = null,
+    val status: String = "active",
+    @SerialName("joined_year") val joinedYear: String? = null,
+    @SerialName("today_items") val todayItems: List<TodayItemDto> = emptyList()
 )
 
 @Serializable
 data class StaffListResponse(val staff: List<StaffDto>)
+
+@Serializable
+data class StaffPaginationDto(
+    val page: Int,
+    val pageSize: Int,
+    val totalRecords: Int,
+    val hasNext: Boolean
+)
+
+@Serializable
+data class StaffListPaginatedResponse(
+    val staff: List<StaffDto>,
+    val pagination: StaffPaginationDto
+)
 
 @Serializable
 data class CreateStaffRequest(

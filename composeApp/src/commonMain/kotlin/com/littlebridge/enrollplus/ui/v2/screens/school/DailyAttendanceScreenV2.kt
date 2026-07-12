@@ -82,7 +82,7 @@ fun DailyAttendanceScreenV2(
     Column(modifier.fillMaxSize().statusBarsPadding()
         .imePadding()
         .navigationBarsPadding()) {
-        VBackHeader(title = appString(StringKeys.SCH_DAILY_ATTENDANCE), onBack = onBack)
+        VBackHeader(title = appString(StringKeys.SCH_DAILY_ATTENDANCE), onBack = onBack, pinRouteId = "overlay_daily_attendance")
         VPullRefresh(isRefreshing = state.isLoading && state.attendees.isNotEmpty(), onRefresh = { viewModel.setAttendanceType(state.attendanceType) }) {
             DailyAttendanceContent(
                 state = state,

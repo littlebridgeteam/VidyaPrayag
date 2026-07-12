@@ -67,7 +67,7 @@ fun LinkRequestsScreenV2(
         .statusBarsPadding()
         .imePadding()
         .navigationBarsPadding()) {
-        VBackHeader(title = "Child Link Requests", onBack = onBack)
+        VBackHeader(title = "Child Link Requests", onBack = onBack, pinRouteId = "overlay_link_requests")
         VPullRefresh(isRefreshing = state.isLoading && state.requests.isNotEmpty(), onRefresh = { viewModel.load() }) {
             LinkRequestsContent(
                 state = state,

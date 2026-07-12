@@ -99,7 +99,7 @@ fun ScholarshipManagementScreenV2(
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
-        VBackHeader(title = appString(StringKeys.SCH_MGMT_TITLE), onBack = onBack)
+        VBackHeader(title = appString(StringKeys.SCH_MGMT_TITLE), onBack = onBack, pinRouteId = "overlay_scholarships")
 
         // Tab selector
         ScholarshipTabRow(selectedTab = selectedTab, onTabSelected = { selectedTab = it })

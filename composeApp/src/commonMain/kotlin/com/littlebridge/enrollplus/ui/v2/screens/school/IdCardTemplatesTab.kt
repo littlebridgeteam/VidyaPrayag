@@ -557,7 +557,7 @@ private fun QrGridPreview(
 
 private fun buildConfigJson(fields: Set<String>, accentArgb: Int): String {
     val fieldsArray = fields.joinToString(",") { "\"$it\"" }
-    val hex = String.format("#%06X", accentArgb and 0xFFFFFF)
+    val hex = "#" + (accentArgb and 0xFFFFFF).toString(16).padStart(6, '0').uppercase()
     val showQr = "qrOnFront" in fields
     return """{"fields":[$fieldsArray],"backgroundColor":"#FFFFFF","textColor":"#1A2422","accentColor":"$hex","showLogo":true,"showQrOnFront":$showQr}"""
 }

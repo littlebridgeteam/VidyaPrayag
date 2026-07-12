@@ -1,6 +1,7 @@
 package com.littlebridge.enrollplus.feature.auth.data.repository
 
 import com.littlebridge.enrollplus.core.locale.LocaleManager
+import com.littlebridge.enrollplus.core.model.ApiResponse
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.core.network.SessionManager
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
@@ -223,6 +224,18 @@ class AuthRepositoryImpl(
             }
         }
         return result
+    }
+
+    override suspend fun updateProfilePic(url: String): NetworkResult<ApiResponse<PersonalDetails>> {
+        return api.updateProfilePic(url)
+    }
+
+    override suspend fun getPinnedScreens(): NetworkResult<ApiResponse<PinnedScreensResponse>> {
+        return api.getPinnedScreens()
+    }
+
+    override suspend fun updatePinnedScreens(screens: List<String>): NetworkResult<ApiResponse<PinnedScreensResponse>> {
+        return api.updatePinnedScreens(screens)
     }
 
     override suspend fun syncThemePref(themePref: String): NetworkResult<Unit> {

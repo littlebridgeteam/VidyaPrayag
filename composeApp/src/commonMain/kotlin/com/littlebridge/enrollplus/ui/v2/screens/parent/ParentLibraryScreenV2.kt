@@ -15,10 +15,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,10 +33,12 @@ import com.littlebridge.enrollplus.feature.library.presentation.ParentLibraryVie
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentDashboardViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
+import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
+import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VEmptyState
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
@@ -62,6 +62,7 @@ import com.littlebridge.enrollplus.ui.v2.screens.library.ReadingTimeEstimate
 import com.littlebridge.enrollplus.ui.v2.screens.library.ViewModeToggle
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.util.formatDecimal
 import org.koin.compose.viewmodel.koinViewModel
 
 private enum class ParentLibraryTab {
@@ -112,7 +113,7 @@ fun ParentLibraryScreenV2(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(appString(StringKeys.PL_LIBRARY), style = VTheme.type.h2.colored(c.ink))
-                TextButton(onClick = onBack) { Text(appString(StringKeys.PL_BACK)) }
+                VButton(text = appString(StringKeys.PL_BACK), onClick = onBack, variant = VButtonVariant.Ghost, size = VButtonSize.Sm)
             }
 
             // Child selector hint
@@ -289,17 +290,16 @@ private fun ParentBrowseTab(
 
         // Reserve confirmation dialog
         reserveBookId?.let { bookId ->
-            AlertDialog(
-                onDismissRequest = { reserveBookId = null },
-                title = { Text(appString(StringKeys.PL_RESERVE_BOOK)) },
-                text = { Text(appString(StringKeys.PL_RESERVE_MSG)) },
-                confirmButton = {
-                    TextButton(onClick = {
-                        viewModel.reserveBook(bookId)
-                        reserveBookId = null
-                    }) { Text(appString(StringKeys.PL_RESERVE)) }
+            VConfirmDialog(
+                visible = true,
+                title = appString(StringKeys.PL_RESERVE_BOOK),
+                message = appString(StringKeys.PL_RESERVE_MSG),
+                confirmLabel = appString(StringKeys.PL_RESERVE),
+                onConfirm = {
+                    viewModel.reserveBook(bookId)
+                    reserveBookId = null
                 },
-                dismissButton = { TextButton(onClick = { reserveBookId = null }) { Text(appString(StringKeys.COMMON_BUTTON_CANCEL)) } },
+                onDismiss = { reserveBookId = null },
             )
         }
     }
@@ -332,7 +332,7 @@ private fun ParentMyBooksTab(state: ParentLibraryState) {
                         }
                         if (issue.fineAmount > 0) {
                             VBadge(
-                                text = appString(StringKeys.PL_FINE, "amount" to "%.2f".format(issue.fineAmount), "status" to issue.fineStatus),
+                                text = appString(StringKeys.PL_FINE, "amount" to formatDecimal(issue.fineAmount), "status" to issue.fineStatus),
                                 tone = VBadgeTone.Warning,
                             )
                         }
@@ -396,17 +396,17 @@ private fun ParentReservationsTab(state: ParentLibraryState, viewModel: ParentLi
         }
 
         cancelId?.let { id ->
-            AlertDialog(
-                onDismissRequest = { cancelId = null },
-                title = { Text(appString(StringKeys.PL_CANCEL_RESERVATION)) },
-                text = { Text(appString(StringKeys.PL_CANCEL_RESERVATION_MSG)) },
-                confirmButton = {
-                    TextButton(onClick = {
-                        viewModel.cancelReservation(id)
-                        cancelId = null
-                    }) { Text(appString(StringKeys.PL_CANCEL_RESERVATION_CONFIRM)) }
+            VConfirmDialog(
+                visible = true,
+                title = appString(StringKeys.PL_CANCEL_RESERVATION),
+                message = appString(StringKeys.PL_CANCEL_RESERVATION_MSG),
+                confirmLabel = appString(StringKeys.PL_CANCEL_RESERVATION_CONFIRM),
+                cancelLabel = appString(StringKeys.PL_KEEP),
+                onConfirm = {
+                    viewModel.cancelReservation(id)
+                    cancelId = null
                 },
-                dismissButton = { TextButton(onClick = { cancelId = null }) { Text(appString(StringKeys.PL_KEEP)) } },
+                onDismiss = { cancelId = null },
             )
         }
     }

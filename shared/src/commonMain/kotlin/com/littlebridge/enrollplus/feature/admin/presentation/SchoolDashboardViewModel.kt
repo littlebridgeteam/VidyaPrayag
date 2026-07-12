@@ -8,12 +8,15 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardActi
 import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardAnalytics
 import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardOverview
 import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardSummary
+import com.littlebridge.enrollplus.feature.admin.domain.model.DailyDigest
 import com.littlebridge.enrollplus.feature.admin.domain.model.OnboardingStep
 import com.littlebridge.enrollplus.feature.admin.domain.repository.AdminDashboardRepository
 import com.littlebridge.enrollplus.feature.auth.domain.model.OnboardingStepData
 import com.littlebridge.enrollplus.feature.auth.domain.model.UserDetailsData
 import com.littlebridge.enrollplus.feature.auth.domain.repository.AuthRepository
 import com.littlebridge.enrollplus.util.AppLogger
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -61,6 +64,9 @@ data class SchoolDashboardState(
     val analytics: AdminDashboardAnalytics? = null,
     val activity: AdminDashboardActivity? = null,
     val overview: AdminDashboardOverview? = null,
+    val digest: DailyDigest? = null,
+    val pinnedScreens: List<String> = emptyList(),
+    val isDigestLoading: Boolean = false,
 )
 
 /**
@@ -121,9 +127,12 @@ class SchoolDashboardViewModel(
                 }
             }
 
-            loadDashboard(token)
+            coroutineScope {
+                launch { loadDashboard(token) }
+                launch { loadDigest(token) }
+            }
 
-            _state.update { it.copy(isLoading = false) }
+            _state.update { it.copy(isLoading = false, isDigestLoading = false) }
         }
     }
 
@@ -178,6 +187,17 @@ class SchoolDashboardViewModel(
         }
     }
 
+    private suspend fun loadDigest(token: String) {
+        _state.update { it.copy(isDigestLoading = true) }
+        when (val r = dashboardRepository.getDigest(token)) {
+            is NetworkResult.Success -> r.data.data?.let { digest ->
+                _state.update { it.copy(digest = digest) }
+            }
+            is NetworkResult.Error -> AppLogger.e("SchoolDashboardVM", "getDigest failed: ${r.message}")
+            is NetworkResult.ConnectionError -> AppLogger.e("SchoolDashboardVM", "getDigest connection error")
+        }
+    }
+
     /**
      * The first step the user still needs to complete. Used by the
      * "Start/Continue Onboarding" button. Returns null when everything is
@@ -205,7 +225,8 @@ class SchoolDashboardViewModel(
                 adminName = name,
                 onboardingStatus = status,
                 steps = if (finalSteps.isNotEmpty()) finalSteps else DEFAULT_STEPS,
-                progress = computeProgress(if (finalSteps.isNotEmpty()) finalSteps else DEFAULT_STEPS)
+                progress = computeProgress(if (finalSteps.isNotEmpty()) finalSteps else DEFAULT_STEPS),
+                pinnedScreens = data.pinnedScreens
             )
         }
     }

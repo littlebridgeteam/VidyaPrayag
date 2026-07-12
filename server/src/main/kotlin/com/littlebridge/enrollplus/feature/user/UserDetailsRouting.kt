@@ -102,7 +102,18 @@ data class OnboardingDetails(
 @Serializable
 data class UserDetailsResponse(
     @SerialName("personal_details") val personalDetails: PersonalDetails,
-    @SerialName("onboarding_details") val onboardingDetails: OnboardingDetails
+    @SerialName("onboarding_details") val onboardingDetails: OnboardingDetails,
+    @SerialName("pinned_screens") val pinnedScreens: List<String> = emptyList()
+)
+
+@Serializable
+data class PinnedScreensResponse(
+    @SerialName("pinned_screens") val pinnedScreens: List<String>
+)
+
+@Serializable
+data class UpdatePinnedScreensRequest(
+    @SerialName("pinned_screens") val pinnedScreens: List<String>
 )
 
 private val DEFAULT_SUPPORT = SupportInfo(
@@ -126,6 +137,11 @@ data class ThemePrefRequest(
     @SerialName("theme_pref") val themePref: String
 )
 
+@Serializable
+data class UpdateProfilePicRequest(
+    @SerialName("profile_pic_url") val profilePicUrl: String
+)
+
 fun Route.userDetailsRouting() {
     authenticate("jwt") {
         route("/api/v1/user") {
@@ -146,6 +162,8 @@ fun Route.userDetailsRouting() {
                         .where { AppUsersTable.id eq userUuid }
                         .singleOrNull()
                         ?: return@dbQuery null
+
+                    val pinned = parsePinnedScreens(u[AppUsersTable.pinnedScreens])
 
                     val personal = PersonalDetails(
                         role = u[AppUsersTable.role].uppercase(),
@@ -215,7 +233,7 @@ fun Route.userDetailsRouting() {
                         privacyPolicyLink = "https://vidyaprayag.com/privacy"
                     )
 
-                    UserDetailsResponse(personalDetails = personal, onboardingDetails = ob)
+                    UserDetailsResponse(personalDetails = personal, onboardingDetails = ob, pinnedScreens = pinned)
                 }
 
                 if (payload == null) {
@@ -252,6 +270,98 @@ fun Route.userDetailsRouting() {
                 }
                 call.ok(mapOf("theme_pref" to pref), message = "Theme preference saved")
             }
+
+            // ── Update profile picture ─────────────────────────────────────────
+            put("/details/profile-pic") {
+                val uid = call.principalUserId() ?: run {
+                    call.fail("Invalid token", HttpStatusCode.Unauthorized); return@put
+                }
+                val userUuid = runCatching { UUID.fromString(uid) }.getOrNull() ?: run {
+                    call.fail("Malformed token subject", HttpStatusCode.Unauthorized); return@put
+                }
+
+                val body = runCatching { call.receive<UpdateProfilePicRequest>() }.getOrNull()
+                    ?: run { call.fail("Invalid request body", HttpStatusCode.BadRequest); return@put }
+
+                if (body.profilePicUrl.isBlank()) {
+                    call.fail("profile_pic_url is required", HttpStatusCode.BadRequest); return@put
+                }
+
+                val updated = dbQuery {
+                    AppUsersTable.update({ AppUsersTable.id eq userUuid }) {
+                        it[AppUsersTable.profilePicUrl] = body.profilePicUrl
+                    }
+                    AppUsersTable.selectAll()
+                        .where { AppUsersTable.id eq userUuid }
+                        .singleOrNull()
+                        ?.let {
+                            PersonalDetails(
+                                role = it[AppUsersTable.role].uppercase(),
+                                id = it[AppUsersTable.id].value.toString(),
+                                name = it[AppUsersTable.fullName],
+                                profilePic = it[AppUsersTable.profilePicUrl],
+                                email = it[AppUsersTable.email],
+                                mobile = it[AppUsersTable.phone],
+                                themePref = it[AppUsersTable.themePref]
+                            )
+                        }
+                }
+
+                if (updated == null) {
+                    call.fail("User not found", HttpStatusCode.NotFound)
+                } else {
+                    call.ok(updated, message = "Profile picture updated")
+                }
+            }
+
+            // ── Home-screen pinned shortcuts ────────────────────────────────────
+            get("/pinned-screens") {
+                val uid = call.principalUserId() ?: run {
+                    call.fail("Invalid token", HttpStatusCode.Unauthorized); return@get
+                }
+                val userUuid = runCatching { UUID.fromString(uid) }.getOrNull() ?: run {
+                    call.fail("Malformed token subject", HttpStatusCode.Unauthorized); return@get
+                }
+
+                val pinned = dbQuery {
+                    AppUsersTable.selectAll()
+                        .where { AppUsersTable.id eq userUuid }
+                        .singleOrNull()
+                        ?.let { parsePinnedScreens(it[AppUsersTable.pinnedScreens]) }
+                        ?: emptyList()
+                }
+                call.ok(PinnedScreensResponse(pinned), message = "Pinned screens fetched")
+            }
+
+            put("/pinned-screens") {
+                val uid = call.principalUserId() ?: run {
+                    call.fail("Invalid token", HttpStatusCode.Unauthorized); return@put
+                }
+                val userUuid = runCatching { UUID.fromString(uid) }.getOrNull() ?: run {
+                    call.fail("Malformed token subject", HttpStatusCode.Unauthorized); return@put
+                }
+
+                val body = runCatching { call.receive<UpdatePinnedScreensRequest>() }.getOrNull()
+                    ?: run { call.fail("Invalid request body", HttpStatusCode.BadRequest); return@put }
+
+                val stored = lenientJson.encodeToString(body.pinnedScreens)
+                val updated = dbQuery {
+                    AppUsersTable.update({ AppUsersTable.id eq userUuid }) {
+                        it[AppUsersTable.pinnedScreens] = stored
+                    }
+                    AppUsersTable.selectAll()
+                        .where { AppUsersTable.id eq userUuid }
+                        .singleOrNull()
+                        ?.let { parsePinnedScreens(it[AppUsersTable.pinnedScreens]) }
+                        ?: emptyList()
+                }
+                call.ok(PinnedScreensResponse(updated), message = "Pinned screens updated")
+            }
         }
     }
+}
+
+private fun parsePinnedScreens(raw: String?): List<String> {
+    if (raw.isNullOrBlank()) return emptyList()
+    return runCatching { lenientJson.decodeFromString<List<String>>(raw) }.getOrDefault(emptyList())
 }

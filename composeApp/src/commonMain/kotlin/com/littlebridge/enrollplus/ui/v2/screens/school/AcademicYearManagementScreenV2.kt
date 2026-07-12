@@ -72,6 +72,7 @@ fun AcademicYearManagementScreenV2(
         VBackHeader(
             title = appString(StringKeys.SCH_ACADEMIC_YEAR),
             onBack = onBack,
+            pinRouteId = "overlay_academic_year",
             action = {
                 VButton(
                     text = if (showCreate) appString(StringKeys.SCH_CLOSE) else appString(StringKeys.SCH_NEW),

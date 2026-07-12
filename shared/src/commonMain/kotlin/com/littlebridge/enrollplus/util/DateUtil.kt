@@ -90,6 +90,22 @@ fun dayOfWeek(year: Int, month: Int, day: Int): Int {
     return (y + y / 4 - y / 100 + y / 400 + t[month - 1] + day) % 7
 }
 
+/**
+ * Whole-day difference between two dates (from - to). Positive if `from` is after `to`.
+ * Uses Julian day number approximation for common compatibility.
+ */
+fun daysBetween(fromY: Int, fromM: Int, fromD: Int, toY: Int, toM: Int, toD: Int): Int {
+    return julianDay(toY, toM, toD) - julianDay(fromY, fromM, fromD)
+}
+
+/** Julian Day Number for a Gregorian date (integer day count). */
+private fun julianDay(y: Int, m: Int, d: Int): Int {
+    val a = (14 - m) / 12
+    val yy = y + 4800 - a
+    val mm = m + 12 * a - 3
+    return d + (153 * mm + 2) / 5 + 365 * yy + yy / 4 - yy / 100 + yy / 400 - 32045
+}
+
 val MONTH_LONG: List<String> = listOf(
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December",

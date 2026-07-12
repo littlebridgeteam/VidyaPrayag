@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -39,7 +38,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.feature.admin.domain.model.TimetableChangeRequestDto
 import com.littlebridge.enrollplus.feature.teacher.domain.model.ResolvedPeriodDto
@@ -49,6 +47,8 @@ import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
+import com.littlebridge.enrollplus.ui.v2.components.VBottomSheet
+import com.littlebridge.enrollplus.ui.v2.components.VBottomSheetHeader
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
@@ -235,7 +235,7 @@ fun TeacherTimetableScreenV2(
     }
 
     if (showRequestDialog) {
-        ChangeRequestDialog(
+        ChangeRequestSheet(
             state = state,
             kind = requestKind,
             period = requestPeriod,
@@ -563,12 +563,12 @@ private fun InfoLine(text: String, tint: Color) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Change-request dialog — new / update / delete a period.
+// Change-request sheet — new / update / delete a period.
 // ─────────────────────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun ChangeRequestDialog(
+private fun ChangeRequestSheet(
     state: com.littlebridge.enrollplus.feature.teacher.presentation.TeacherTimetableState,
     kind: String,
     period: ResolvedPeriodDto?,
@@ -584,25 +584,23 @@ private fun ChangeRequestDialog(
     var room by remember { mutableStateOf(period?.room ?: "") }
     var reason by remember { mutableStateOf("") }
 
-    Dialog(onDismissRequest = onDismiss) {
-        VCard(Modifier.fillMaxWidth().padding(16.dp)) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.verticalScroll(rememberScrollState()).imePadding(),
-            ) {
-                Text(
-                    when (kind) {
-                        "NEW_PERIOD" -> appString(StringKeys.TC_REQUEST_NEW_PERIOD)
-                        "UPDATE_PERIOD" -> appString(StringKeys.TC_REQUEST_PERIOD_UPDATE)
-                        "DELETE_PERIOD" -> appString(StringKeys.TC_REQUEST_PERIOD_DELETION)
-                        else -> appString(StringKeys.TC_CHANGE_REQUEST)
-                    },
-                    style = VTypography.h3.copy(fontWeight = FontWeight.Bold, color = VColors.ink),
-                )
-                Text(
-                    appString(StringKeys.TC_SENT_TO_ADMIN_FOR_APPROVAL),
-                    style = VTypography.caption.copy(color = VColors.ink2),
-                )
+    VBottomSheet(
+        visible = true,
+        onDismiss = onDismiss,
+    ) {
+        VBottomSheetHeader(
+            title = when (kind) {
+                "NEW_PERIOD" -> appString(StringKeys.TC_REQUEST_NEW_PERIOD)
+                "UPDATE_PERIOD" -> appString(StringKeys.TC_REQUEST_PERIOD_UPDATE)
+                "DELETE_PERIOD" -> appString(StringKeys.TC_REQUEST_PERIOD_DELETION)
+                else -> appString(StringKeys.TC_CHANGE_REQUEST)
+            },
+            subtitle = appString(StringKeys.TC_SENT_TO_ADMIN_FOR_APPROVAL),
+        )
+        Column(
+            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
 
                 if (kind == "NEW_PERIOD") {
                     Text(appString(StringKeys.TC_CLASS_SUBJECT), style = VTypography.caption.copy(color = VColors.ink2))
@@ -681,4 +679,3 @@ private fun ChangeRequestDialog(
             }
         }
     }
-}

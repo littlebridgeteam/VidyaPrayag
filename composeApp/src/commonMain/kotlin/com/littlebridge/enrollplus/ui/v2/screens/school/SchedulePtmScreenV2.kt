@@ -83,7 +83,7 @@ fun SchedulePtmScreenV2(
     Column(modifier.fillMaxSize().statusBarsPadding()
         .imePadding()
         .navigationBarsPadding()) {
-        VBackHeader(title = appString(StringKeys.SCH_SCHEDULE_PTM), onBack = onBack)
+        VBackHeader(title = appString(StringKeys.SCH_SCHEDULE_PTM), onBack = onBack, pinRouteId = "overlay_schedule_ptm")
         VPullRefresh(isRefreshing = state.isLoading && state.activeEventTitle.isNotBlank(), onRefresh = { viewModel.loadPtm() }) {
             SchedulePtmContent(
                 state = state,

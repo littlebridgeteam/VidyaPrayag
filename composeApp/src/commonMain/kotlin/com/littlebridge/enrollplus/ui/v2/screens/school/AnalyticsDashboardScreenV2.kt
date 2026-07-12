@@ -76,7 +76,7 @@ fun AnalyticsDashboardScreenV2(
     Column(modifier.fillMaxSize().statusBarsPadding()
         .imePadding()
         .navigationBarsPadding()) {
-        VBackHeader(title = appString(StringKeys.SCH_ANALYTICS), onBack = onBack)
+        VBackHeader(title = appString(StringKeys.SCH_ANALYTICS), onBack = onBack, pinRouteId = "overlay_analytics")
         VPullRefresh(isRefreshing = state.isLoading && state.cards.isNotEmpty(), onRefresh = { viewModel.loadOverview() }) {
             AnalyticsContent(
                 state = state,

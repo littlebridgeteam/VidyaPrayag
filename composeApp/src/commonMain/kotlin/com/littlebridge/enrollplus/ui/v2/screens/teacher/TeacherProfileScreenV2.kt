@@ -33,8 +33,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.feature.teacher.domain.model.TeacherSelfLeaveDto
 import com.littlebridge.enrollplus.feature.teacher.presentation.ActionResult
@@ -240,7 +242,7 @@ fun TeacherProfileScreenV2(
     }
 
     if (confirmLogout) {
-        TeacherConfirmDialog(
+        TeacherConfirmSheet(
             title = appString(StringKeys.TC_LOG_OUT_Q),
             body = appString(StringKeys.TC_LOG_OUT_DESC),
             confirmLabel = appString(StringKeys.TC_LOG_OUT),

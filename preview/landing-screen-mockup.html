@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enroll+ Landing Screen Mockup</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #f5f5f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .phone {
+            width: 360px;
+            height: 760px;
+            background: #F8F6F1;
+            border-radius: 40px;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.15), 0 0 0 12px #1a1a1a;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        .status-bar {
+            height: 44px;
+            background: #F8F6F1;
+            flex-shrink: 0;
+        }
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 24px 32px;
+            position: relative;
+        }
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .wordmark {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1a1a2e;
+            letter-spacing: -0.5px;
+        }
+        .wordmark span { color: #6B5B95; }
+        .counter {
+            font-size: 14px;
+            color: #8a8a8a;
+            font-weight: 500;
+        }
+        .counter strong { color: #1a1a2e; font-weight: 700; }
+        .slides {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        .slide {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+        }
+        .slide.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .illustration {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            animation: scaleIn 0.6s ease forwards;
+        }
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.92); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .blob {
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .blob.parent { background: rgba(255, 133, 102, 0.15); }
+        .blob.school { background: rgba(107, 91, 149, 0.12); }
+        .book-art {
+            width: 140px;
+            height: 90px;
+            position: relative;
+        }
+        .book-left, .book-right {
+            position: absolute;
+            width: 70px;
+            height: 90px;
+            background: white;
+            border-radius: 4px 12px 12px 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .book-left {
+            left: 0;
+            transform: skewY(-6deg);
+            border-right: 2px solid #e0e0e0;
+        }
+        .book-right {
+            right: 0;
+            transform: skewY(6deg);
+            border-left: 2px solid #e0e0e0;
+        }
+        .school-art {
+            width: 130px;
+            height: 130px;
+        }
+        .school-roof {
+            width: 0;
+            height: 0;
+            border-left: 65px solid transparent;
+            border-right: 65px solid transparent;
+            border-bottom: 50px solid #6B5B95;
+        }
+        .school-body {
+            width: 110px;
+            height: 60px;
+            background: white;
+            margin: 0 auto;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            position: relative;
+        }
+        .school-window {
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background: #E8E4F0;
+            border-radius: 4px;
+            top: 14px;
+        }
+        .school-window:nth-child(1) { left: 14px; }
+        .school-window:nth-child(2) { left: 44px; }
+        .school-window:nth-child(3) { left: 74px; }
+        .school-door {
+            position: absolute;
+            width: 26px;
+            height: 36px;
+            background: #6B5B95;
+            border-radius: 4px 4px 0 0;
+            bottom: 0;
+            left: 42px;
+        }
+        .text-content {
+            margin-bottom: 8px;
+        }
+        .accent-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .accent-label.parent { color: #FF8566; }
+        .accent-label.school { color: #6B5B95; }
+        .dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+        }
+        .dot.parent { background: #FF8566; }
+        .dot.school { background: #6B5B95; }
+        .headline {
+            font-size: 28px;
+            line-height: 1.25;
+            margin-bottom: 12px;
+            color: #1a1a2e;
+        }
+        .headline .bold { font-weight: 800; }
+        .headline .light { font-weight: 400; color: #5a5a6a; }
+        .subtitle {
+            font-size: 15px;
+            line-height: 1.5;
+            color: #6a6a7a;
+            max-width: 280px;
+        }
+        .bottom {
+            padding: 32px;
+            background: #F8F6F1;
+        }
+        .progress {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+        .progress-bar {
+            flex: 1;
+            height: 2px;
+            border-radius: 1px;
+            background: #ddd;
+            transition: background 0.3s ease;
+        }
+        .progress-bar.active { background: #6B5B95; }
+        .cta {
+            width: 100%;
+            padding: 16px 24px;
+            border: none;
+            border-radius: 14px;
+            background: #6B5B95;
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(107, 91, 149, 0.25);
+            transition: transform 0.15s ease;
+        }
+        .cta:active { transform: scale(0.98); }
+        .cta svg {
+            width: 18px;
+            height: 18px;
+        }
+        .terms {
+            text-align: center;
+            margin-top: 12px;
+            font-size: 12px;
+            color: #8a8a8a;
+        }
+        .terms a { color: #6B5B95; font-weight: 700; text-decoration: none; }
+
+        @media (max-width: 480px) {
+            body { padding: 0; }
+            .phone {
+                width: 100vw;
+                height: 100vh;
+                border-radius: 0;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="phone">
+        <div class="status-bar"></div>
+        <div class="content">
+            <div class="top-bar">
+                <div class="wordmark">Enroll<span>+</span></div>
+                <div class="counter"><strong id="current">01</strong> / 02</div>
+            </div>
+            <div class="slides">
+                <div class="slide active" data-index="0">
+                    <div class="illustration">
+                        <div class="blob parent">
+                            <div class="book-art">
+                                <div class="book-left"></div>
+                                <div class="book-right"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-content">
+                        <div class="accent-label parent">
+                            <span class="dot parent"></span>
+                            For Parents
+                        </div>
+                        <h1 class="headline">
+                            <span class="bold">Every step of your child's journey, </span>
+                            <span class="light">in your pocket.</span>
+                        </h1>
+                        <p class="subtitle">Attendance, fees, progress reports and direct messages, all in one place.</p>
+                    </div>
+                </div>
+                <div class="slide" data-index="1">
+                    <div class="illustration">
+                        <div class="blob school">
+                            <div class="school-art">
+                                <div class="school-roof"></div>
+                                <div class="school-body">
+                                    <div class="school-window"></div>
+                                    <div class="school-window"></div>
+                                    <div class="school-window"></div>
+                                    <div class="school-door"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-content">
+                        <div class="accent-label school">
+                            <span class="dot school"></span>
+                            For Schools
+                        </div>
+                        <h1 class="headline">
+                            <span class="bold">Run your entire school </span>
+                            <span class="light">from one screen.</span>
+                        </h1>
+                        <p class="subtitle">Students, staff, attendance, fees and communication, a single commanding dashboard.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="bottom">
+            <div class="progress">
+                <div class="progress-bar active" data-index="0"></div>
+                <div class="progress-bar" data-index="1"></div>
+            </div>
+            <button class="cta" id="cta">
+                <span id="cta-text">Continue as Parent</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+            </button>
+            <p class="terms">By continuing you agree to our <a href="#">Terms</a> &amp; <a href="#">Privacy Policy</a></p>
+        </div>
+    </div>
+
+    <script>
+        const slides = document.querySelectorAll('.slide');
+        const bars = document.querySelectorAll('.progress-bar');
+        const ctaText = document.getElementById('cta-text');
+        const current = document.getElementById('current');
+        let active = 0;
+
+        const data = [
+            { cta: 'Continue as Parent' },
+            { cta: 'Continue as School Staff' }
+        ];
+
+        function setSlide(index) {
+            slides[active].classList.remove('active');
+            bars[active].classList.remove('active');
+            active = index;
+            slides[active].classList.add('active');
+            bars[active].classList.add('active');
+            ctaText.textContent = data[active].cta;
+            current.textContent = String(active + 1).padStart(2, '0');
+        }
+
+        bars.forEach(bar => {
+            bar.addEventListener('click', () => setSlide(parseInt(bar.dataset.index)));
+        });
+
+        let autoSlide = setInterval(() => {
+            setSlide((active + 1) % slides.length);
+        }, 5000);
+
+        document.querySelector('.slides').addEventListener('click', () => {
+            clearInterval(autoSlide);
+            setSlide((active + 1) % slides.length);
+        });
+    </script>
+</body>
+</html>

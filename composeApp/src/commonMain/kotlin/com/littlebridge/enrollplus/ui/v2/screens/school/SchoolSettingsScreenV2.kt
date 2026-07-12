@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -51,12 +50,16 @@ import com.littlebridge.enrollplus.feature.admin.presentation.InstitutionalProfi
 import com.littlebridge.enrollplus.feature.admin.presentation.InstitutionalProfileViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
+import com.littlebridge.enrollplus.ui.v2.components.VBottomSheet
+import com.littlebridge.enrollplus.ui.v2.components.VBottomSheetHeader
 import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.components.VProgressRing
 import com.littlebridge.enrollplus.ui.v2.components.VThemePicker
 import com.littlebridge.enrollplus.ui.v2.components.VLanguagePicker
+import com.littlebridge.enrollplus.feature.i18n.domain.model.SUPPORTED_LANGUAGES
+import com.littlebridge.enrollplus.ui.v2.theme.VThemeRegistry
 import com.littlebridge.enrollplus.core.locale.LocaleManager
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
@@ -104,6 +107,10 @@ fun SchoolSettingsScreenV2(
     onOpenLibrary: () -> Unit = {},
     // Classes & Subjects — consolidated management (classes, subjects, bell schedule, timetable).
     onOpenClassesSubjects: () -> Unit = {},
+    // Alumni Management — directory, campaigns & graduation records.
+    onOpenAlumni: () -> Unit = {},
+    // Cohort Analytics — at-risk students, subject engagement & grade comparisons.
+    onOpenCohort: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: InstitutionalProfileViewModel = koinViewModel(),
     preferenceRepository: PreferenceRepository = koinInject(),
@@ -136,10 +143,11 @@ fun SchoolSettingsScreenV2(
         onOpenIdCards = onOpenIdCards,
         onOpenLibrary = onOpenLibrary,
         onOpenClassesSubjects = onOpenClassesSubjects,
+        onOpenAlumni = onOpenAlumni,
+        onOpenCohort = onOpenCohort,
         onRetry = viewModel::load,
         modifier = modifier.statusBarsPadding()
-            .imePadding()
-            .navigationBarsPadding(),
+            .imePadding(),
     )
 }
 
@@ -161,11 +169,15 @@ private fun SchoolSettingsContent(
     onOpenIdCards: () -> Unit,
     onOpenLibrary: () -> Unit,
     onOpenClassesSubjects: () -> Unit,
+    onOpenAlumni: () -> Unit,
+    onOpenCohort: () -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
     var showLogoutConfirm by remember { mutableStateOf(false) }
+    var showLanguageSheet by remember { mutableStateOf(false) }
+    var showAppearanceSheet by remember { mutableStateOf(false) }
 
     // Stagger entrance
     val headerAlpha = remember { Animatable(0f) }
@@ -197,10 +209,7 @@ private fun SchoolSettingsContent(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp)
-            .statusBarsPadding()
-            .imePadding()
-            .navigationBarsPadding()
-            .padding(top = 16.dp, bottom = 140.dp),
+            .padding(top = 16.dp, bottom = 120.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         // Premium header
@@ -237,6 +246,7 @@ private fun SchoolSettingsContent(
             onRetry = onRetry,
             skeleton = { SkeletonList(rows = 6) },
         ) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             InstitutionalProfileHealthCard(state = state, onClick = onOpenProfile)
 
             val rows = listOf(
@@ -245,9 +255,11 @@ private fun SchoolSettingsContent(
                 SettingRow(VIcons.UsersGroup, "Teacher management", "Add, view & remove teachers", false, onClick = onOpenTeachers),
                 SettingRow(VIcons.MapPin, "Transport Management", "Routes, vehicles & student assignments", false, onClick = onOpenTransport),
                 SettingRow(VIcons.Sparkles, "Scholarship Management", "Schemes, applications & renewals", false, onClick = onOpenScholarships),
-                SettingRow(VIcons.School, "Branding Kit", "Logo, colors & custom subdomain", false, onClick = onOpenBranding),
+                SettingRow(VIcons.School, "Branding & Photos", "Logo, cover, gallery & your profile picture", false, onClick = onOpenBranding),
                 SettingRow(VIcons.IdCard, "ID Cards", "Templates, generation & PDF export", false, onClick = onOpenIdCards),
                 SettingRow(VIcons.BookOpen, "Library Management", "Catalog, issues, returns & fines", false, onClick = onOpenLibrary),
+                SettingRow(VIcons.UsersGroup, "Alumni Management", "Graduates, campaigns & engagement", false, onClick = onOpenAlumni),
+                SettingRow(VIcons.TrendingUp, "Cohort Analytics", "At-risk students, engagement & grade comparisons", false, onClick = onOpenCohort),
                 SettingRow(VIcons.Wallet, "Fee structure", "Edit heads & amounts for next cycle", true),
                 SettingRow(VIcons.Bell, "Notifications", "Channels & quiet hours", true),
                 SettingRow(VIcons.Download, "Data export", "CSV / PDF / UDISE", true),
@@ -303,19 +315,60 @@ private fun SchoolSettingsContent(
                     }
             }
 
-            // Language picker
-            SettingsCreamCard {
-                Column {
-                    Text(appString(StringKeys.SETTINGS_LANGUAGE), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
-                    Spacer(Modifier.height(10.dp))
-                    VLanguagePicker(currentLang = currentLocale, onSelect = onLanguageSelect)
-                }
-            }
+            // Language card — opens bottom sheet
+            LanguageSettingCard(
+                currentLocale = currentLocale,
+                onClick = { showLanguageSheet = true },
+            )
 
-            // Theme picker
-            SettingsCreamCard {
-                VThemePicker(currentMode = themeMode, currentCustomId = customThemeId, onSelect = onThemeSelect)
+            // Appearance card — opens bottom sheet
+            AppearanceSettingCard(
+                currentMode = themeMode,
+                currentCustomId = customThemeId,
+                onClick = { showAppearanceSheet = true },
+            )
             }
+        }
+    }
+
+    if (showLanguageSheet) {
+        VBottomSheet(
+            visible = showLanguageSheet,
+            onDismiss = { showLanguageSheet = false },
+        ) {
+            VBottomSheetHeader(
+                title = appString(StringKeys.SETTINGS_LANGUAGE),
+                onClose = { showLanguageSheet = false },
+            )
+            Spacer(Modifier.height(16.dp))
+            VLanguagePicker(
+                currentLang = currentLocale,
+                onSelect = { lang ->
+                    onLanguageSelect(lang)
+                    showLanguageSheet = false
+                },
+            )
+        }
+    }
+
+    if (showAppearanceSheet) {
+        VBottomSheet(
+            visible = showAppearanceSheet,
+            onDismiss = { showAppearanceSheet = false },
+        ) {
+            VBottomSheetHeader(
+                title = appString(StringKeys.SETTINGS_THEME),
+                onClose = { showAppearanceSheet = false },
+            )
+            Spacer(Modifier.height(16.dp))
+            VThemePicker(
+                currentMode = themeMode,
+                currentCustomId = customThemeId,
+                onSelect = { mode, customId ->
+                    onThemeSelect(mode, customId)
+                    showAppearanceSheet = false
+                },
+            )
         }
     }
 }
@@ -454,6 +507,83 @@ private data class SettingRow(
 )
 
 // ── Premium shared primitives ─────────────────────────────────────────────────
+
+@Composable
+private fun LanguageSettingCard(
+    currentLocale: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val selected = SUPPORTED_LANGUAGES.find { it.code == currentLocale } ?: SUPPORTED_LANGUAGES.first()
+    SummarySettingCard(
+        icon = VIcons.Chat,
+        title = appString(StringKeys.SETTINGS_LANGUAGE),
+        value = selected.nativeName,
+        caption = selected.englishName,
+        onClick = onClick,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun AppearanceSettingCard(
+    currentMode: String,
+    currentCustomId: String?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val label = when (currentMode) {
+        "system" -> "System"
+        "light" -> "Light"
+        "dark" -> "Dark"
+        "custom" -> VThemeRegistry.allThemes.find { it.id == currentCustomId }?.displayName ?: "Custom"
+        else -> "System"
+    }
+    SummarySettingCard(
+        icon = VIcons.Settings,
+        title = appString(StringKeys.SETTINGS_THEME),
+        value = label,
+        caption = "Tap to change theme",
+        onClick = onClick,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun SummarySettingCard(
+    icon: ImageVector,
+    title: String,
+    value: String,
+    caption: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    SettingsCreamCard(
+        onClick = onClick,
+        modifier = modifier,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(VColors.violetSoft),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
+            }
+            Column(Modifier.weight(1f)) {
+                Text(title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                Text(value, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.violet)
+                Text(caption, style = VTypography.caption.copy(fontSize = 11.sp), color = VColors.ink3)
+            }
+            Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.ink3.copy(alpha = 0.4f), modifier = Modifier.size(16.dp))
+        }
+    }
+}
 
 @Composable
 private fun SettingsCreamCard(
