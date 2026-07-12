@@ -31,6 +31,7 @@ import io.ktor.server.request.receive
 import io.ktor.server.routing.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
@@ -173,9 +174,12 @@ fun Route.parentHomeworkRouting() {
                 val studentUuid = child[ChildrenTable.id].value
 
                 val items = dbQuery {
+                    val schoolId = child[ChildrenTable.schoolId]
+                    val currentGrade = child[ChildrenTable.currentGrade] ?: ""
                     val homeworks = HomeworkTable.selectAll()
                         .where {
-                            (HomeworkTable.className eq (child[ChildrenTable.currentGrade] ?: "")) and
+                            (HomeworkTable.className eq currentGrade) and
+                            (if (schoolId != null) HomeworkTable.schoolId eq schoolId else Op.TRUE) and
                             (HomeworkTable.isActive eq true)
                         }
                         .orderBy(HomeworkTable.dueDate, SortOrder.ASC)
