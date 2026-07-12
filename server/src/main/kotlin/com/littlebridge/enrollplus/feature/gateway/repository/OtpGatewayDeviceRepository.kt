@@ -136,6 +136,14 @@ class OtpGatewayDeviceRepository {
             .singleOrNull()
     }
 
+    /** Deactivate a gateway device by its FCM token (called when FCM returns UNREGISTERED). */
+    suspend fun deactivateByFcmToken(fcmToken: String): Int = dbQuery {
+        OtpGatewayDevicesTable.update({ OtpGatewayDevicesTable.fcmToken eq fcmToken }) {
+            it[isActive] = false
+            it[updatedAt] = Instant.now()
+        }
+    }
+
     /** Look up a single device by its natural key. */
     suspend fun findByDeviceId(deviceId: String): GatewayDeviceRow? = dbQuery {
         OtpGatewayDevicesTable.selectAll()
