@@ -53,7 +53,7 @@ data class DailyDigestDto(
 )
 
 fun Route.adminDashboardDigestRouting() {
-    authenticate("auth-jwt") {
+    authenticate("jwt") {
         route("/api/admin/dashboard") {
             get("/digest") {
                 val ctx = call.requireSchoolContext() ?: return@get
