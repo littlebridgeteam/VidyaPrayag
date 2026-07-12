@@ -216,6 +216,8 @@ class NotificationService(
          */
         private val INVALID_TOKEN_ERROR_CODES = setOf(
             "UNREGISTERED",
+            "NOT_FOUND",
+            "NotRegistered",
             "invalid-registration-token",
             "registration-token-not-registered",
         )

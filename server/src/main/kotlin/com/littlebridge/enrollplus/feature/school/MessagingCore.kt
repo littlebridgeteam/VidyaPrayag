@@ -30,6 +30,8 @@ import com.littlebridge.enrollplus.db.MessageStatusTable
 import com.littlebridge.enrollplus.db.MessageThreadsTable
 import com.littlebridge.enrollplus.db.MessagesTable
 import com.littlebridge.enrollplus.feature.notifications.Notify
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
 import org.jetbrains.exposed.sql.ResultRow
@@ -553,7 +555,7 @@ internal fun conversationMessagesFor(
  * (recipientId == null) or a message to oneself. The deep link targets the recipient's Messages
  * surface; the body is the (truncated) message text so the push/notification is actually useful.
  */
-internal suspend fun notifyMessageRecipient(
+internal fun notifyMessageRecipient(
     recipientId: UUID?,
     schoolId: UUID,
     actorId: UUID,
@@ -562,6 +564,7 @@ internal suspend fun notifyMessageRecipient(
     body: String,
 ) {
     if (recipientId == null || recipientId == actorId) return
+    GlobalScope.launch {
     val recipient = dbQuery { resolveMessagingUser(recipientId) }
     // Resolve the RECIPIENT's thread ID from the shared conversationId.
     // The sender's threadId is a different row in MessageThreadsTable — the
@@ -599,6 +602,7 @@ internal suspend fun notifyMessageRecipient(
             refId = recipientThreadId.toString(),
         )
     }
+    } // end GlobalScope.launch
 }
 
 // ===========================================================================
