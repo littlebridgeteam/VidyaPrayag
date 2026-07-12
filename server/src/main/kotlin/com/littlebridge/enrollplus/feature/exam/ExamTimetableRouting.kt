@@ -424,8 +424,8 @@ fun Route.examTimetableRouting() {
                     // Link entry to assessment + calendar event
                     dbQuery {
                         ExamTimetableEntriesTable.update({ ExamTimetableEntriesTable.id eq entryId }) {
-                            it[assessmentId] = assessmentId
-                            it[calendarEventId] = calEventId
+                            it[ExamTimetableEntriesTable.assessmentId] = assessmentId
+                            it[ExamTimetableEntriesTable.calendarEventId] = calEventId
                         }
                     }
                 }

@@ -692,7 +692,7 @@ class ExportService {
                     parent?.get(AppUsersTable.phone) ?: "",
                     row[EventRegistrationsTable.attendeeCount].toString(),
                     slotTime,
-                    row[EventRegistrationsTable.studentId] ?: "",
+                    row[EventRegistrationsTable.studentId]?.toString() ?: "",
                     row[EventRegistrationsTable.status],
                     row[EventRegistrationsTable.registeredAt].toString(),
                 )

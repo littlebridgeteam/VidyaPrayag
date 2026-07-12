@@ -38,6 +38,7 @@
  */
 package com.littlebridge.enrollplus.feature.teacher
 
+import com.littlebridge.enrollplus.core.EnrolledStudent
 import com.littlebridge.enrollplus.core.OwnedAssignment
 import com.littlebridge.enrollplus.core.TeacherContext
 import com.littlebridge.enrollplus.core.created
@@ -228,7 +229,7 @@ private fun parseMarksFromAi(raw: String): List<GbParsedMarkDto> {
     return items.map { item ->
         val body = item.substringAfter("{")
         fun field(name: String): String? =
-            Regex("\"$name\"\\s*:\\s*\"?([^",}]*)\"?").find(body)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotBlank() && it != "null" }
+            Regex("\"$name\"\\s*:\\s*\"?([^\",}]*)\"?").find(body)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotBlank() && it != "null" }
         GbParsedMarkDto(
             name = field("name") ?: "",
             rollNo = field("roll_no") ?: "",

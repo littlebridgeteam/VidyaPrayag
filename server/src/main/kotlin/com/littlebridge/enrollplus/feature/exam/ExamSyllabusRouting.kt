@@ -32,7 +32,6 @@ import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.inList
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import java.util.UUID
@@ -131,8 +130,7 @@ fun Route.examSyllabusRouting() {
                                     (CurriculumUnitsTable.subjectId eq subjectId) and
                                     (CurriculumUnitsTable.isActive eq true)
                             }
-                            .orderBy(CurriculumUnitsTable.depth to org.jetbrains.exposed.sql.SortOrder.ASC)
-                            .thenBy(CurriculumUnitsTable.position to org.jetbrains.exposed.sql.SortOrder.ASC)
+                            .orderBy(CurriculumUnitsTable.depth to org.jetbrains.exposed.sql.SortOrder.ASC, CurriculumUnitsTable.position to org.jetbrains.exposed.sql.SortOrder.ASC)
                             .map { row ->
                                 val unitId = row[CurriculumUnitsTable.id].value
                                 CurriculumUnitDto(
@@ -286,10 +284,9 @@ fun Route.examSyllabusRouting() {
                                     (CurriculumUnitsTable.classId eq classId) and
                                     (CurriculumUnitsTable.subjectId eq subjectId) and
                                     (CurriculumUnitsTable.isActive eq true) and
-                                    (CurriculumUnitsTable.id inList mappedUnitIds)
+                                    (CurriculumUnitsTable.id inList mappedUnitIds.map { org.jetbrains.exposed.dao.id.EntityID(it, CurriculumUnitsTable) })
                             }
-                            .orderBy(CurriculumUnitsTable.depth to org.jetbrains.exposed.sql.SortOrder.ASC)
-                            .thenBy(CurriculumUnitsTable.position to org.jetbrains.exposed.sql.SortOrder.ASC)
+                            .orderBy(CurriculumUnitsTable.depth to org.jetbrains.exposed.sql.SortOrder.ASC, CurriculumUnitsTable.position to org.jetbrains.exposed.sql.SortOrder.ASC)
                             .map { row ->
                                 CurriculumUnitDto(
                                     id = row[CurriculumUnitsTable.id].value.toString(),
