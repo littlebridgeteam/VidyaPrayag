@@ -123,9 +123,9 @@ private fun ExamTimetableCard(
                 style = VTypography.body,
                 color = VColors.ink2,
             )
-            if (timetable.term != null) {
+            timetable.term?.let { term ->
                 Text(
-                    text = timetable.term,
+                    text = term,
                     style = VTypography.caption,
                     color = VColors.ink3,
                 )
