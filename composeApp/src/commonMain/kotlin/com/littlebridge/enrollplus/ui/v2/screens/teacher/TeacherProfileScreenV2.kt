@@ -254,7 +254,7 @@ fun TeacherProfileScreenV2(
     }
 
     if (confirmLogout) {
-        TeacherConfirmDialog(
+        TeacherConfirmSheet(
             title = appString(StringKeys.TC_LOG_OUT_Q),
             body = appString(StringKeys.TC_LOG_OUT_DESC),
             confirmLabel = appString(StringKeys.TC_LOG_OUT),

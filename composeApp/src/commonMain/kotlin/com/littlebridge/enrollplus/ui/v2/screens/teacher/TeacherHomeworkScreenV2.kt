@@ -50,6 +50,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.platform.rememberShareHelper
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -245,7 +246,7 @@ private fun HomeworkBoardMode(viewModel: TeacherHomeworkViewModel) {
 
     if (state.isExtensionOpen) ExtensionSheet(viewModel)
     if (closeConfirm) {
-        TeacherConfirmDialog(
+        TeacherConfirmSheet(
             title = appString(StringKeys.TC_CLOSE_HOMEWORK_Q),
             body = appString(StringKeys.TC_CLOSE_HOMEWORK_DESC),
             confirmLabel = appString(StringKeys.TC_CLOSE_IT),
@@ -283,6 +284,35 @@ private fun BoardStudentRow(row: HomeworkBoardRow, updating: Boolean, onReview: 
         // Review actions only when there's something turned in.
         if (row.status == HomeworkSubmissionStatus.SUBMITTED || row.status == HomeworkSubmissionStatus.LATE) {
             Spacer(Modifier.height(8.dp))
+
+            // Parent-written answer / notes.
+            if (row.submissionText.isNotBlank()) {
+                Column(
+                    Modifier.fillMaxWidth().clip(VShapes.sm).background(VColors.creamDeep).padding(10.dp),
+                ) {
+                    Text("Answer / Notes", style = VTypography.caption.copy(fontWeight = FontWeight.Bold, color = VColors.ink))
+                    Spacer(Modifier.height(4.dp))
+                    Text(row.submissionText, style = VTypography.body.copy(fontSize = 13.sp, color = VColors.ink2))
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+
+            // Photo attachments.
+            if (row.attachments.isNotEmpty()) {
+                Text("Attachments", style = VTypography.caption.copy(fontWeight = FontWeight.Bold, color = VColors.ink))
+                Spacer(Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    val shareHelper = rememberShareHelper()
+                    row.attachments.forEach { att ->
+                        AttachmentChip(att.filename.ifBlank { "Attachment" }, onClick = { shareHelper.shareText(att.url, "Homework attachment") })
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 VButton(appString(StringKeys.TC_MARK_GRADED), onClick = { onReview(HomeworkSubmissionStatus.GRADED) }, modifier = Modifier.weight(1f), variant = VButtonVariant.Secondary, tone = VButtonTone.Mint, size = VButtonSize.Sm)
                 VButton(appString(StringKeys.TC_EXTEND), onClick = onExtend, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost, size = VButtonSize.Sm)
@@ -291,6 +321,18 @@ private fun BoardStudentRow(row: HomeworkBoardRow, updating: Boolean, onReview: 
             Spacer(Modifier.height(8.dp))
             VButton(appString(StringKeys.TC_GRANT_EXTENSION), onClick = onExtend, full = true, variant = VButtonVariant.Ghost, size = VButtonSize.Sm, leading = { Icon(VIcons.Clock, contentDescription = null, modifier = Modifier.size(14.dp)) })
         }
+    }
+}
+
+@Composable
+private fun AttachmentChip(label: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier.clip(VShapes.sm).background(VColors.surfaceCard).border(1.dp, VColors.line, VShapes.sm).clickable { onClick() }.padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(VIcons.Upload, contentDescription = null, tint = VColors.ink2, modifier = Modifier.size(14.dp))
+        Text(label, style = VTypography.caption.copy(color = VColors.ink, fontWeight = FontWeight.SemiBold), maxLines = 1)
     }
 }
 

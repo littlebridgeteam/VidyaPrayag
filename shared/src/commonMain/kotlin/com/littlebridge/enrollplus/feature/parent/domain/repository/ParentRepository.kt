@@ -60,4 +60,9 @@ interface ParentRepository : NotificationFeedRepository {
     suspend fun getSkillTestBestScore(token: String, childId: String): NetworkResult<SkillTestBestScoreResponse>
     suspend fun getSkillTestHistory(token: String, childId: String): NetworkResult<SkillTestHistoryResponse>
     suspend fun getSkillTestReview(token: String, attemptId: String): NetworkResult<SkillTestReviewResponse>
+
+    // ── Parent Homework Submission ──────────────────────────────────────────
+    suspend fun getParentHomeworkList(token: String, childId: String): NetworkResult<ParentHomeworkListResponse>
+    suspend fun getParentHomeworkDetail(token: String, childId: String, homeworkId: String): NetworkResult<ParentHomeworkDetailResponse>
+    suspend fun submitParentHomework(token: String, childId: String, homeworkId: String, request: ParentSubmitHomeworkRequest): NetworkResult<ParentHomeworkMutationResponse>
 }

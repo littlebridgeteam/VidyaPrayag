@@ -38,6 +38,7 @@ export interface NavItem {
   label: string;
   icon: (p: { className?: string }) => JSX.Element;
   superAdminOnly?: boolean;
+  external?: boolean;
 }
 
 /** Single source of truth for the admin sidebar + route map. */

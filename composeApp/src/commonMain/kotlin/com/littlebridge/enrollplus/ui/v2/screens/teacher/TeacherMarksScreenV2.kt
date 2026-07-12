@@ -342,7 +342,7 @@ private fun MarksGridMode(viewModel: TeacherGradebookViewModel, onImportMarks: (
     }
 
     if (publishConfirm && a != null) {
-        TeacherConfirmDialog(
+        TeacherConfirmSheet(
             title = appString(StringKeys.TC_PUBLISH_NAME_Q, "name" to a.name),
             body = appString(StringKeys.TC_PUBLISH_DESC),
             confirmLabel = appString(StringKeys.TC_PUBLISH),

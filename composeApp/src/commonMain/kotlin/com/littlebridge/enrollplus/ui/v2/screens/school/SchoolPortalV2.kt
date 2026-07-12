@@ -18,10 +18,13 @@ import com.littlebridge.enrollplus.feature.alumni.domain.model.GraduateStudentsR
 import com.littlebridge.enrollplus.feature.alumni.domain.repository.AlumniRepository
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.ui.v2.components.VBottomNav
+import com.littlebridge.enrollplus.ui.v2.components.VComingSoon
 import com.littlebridge.enrollplus.ui.v2.components.VCreamBottomNav
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VNavItem
 import com.littlebridge.enrollplus.ui.v2.components.VScreenScaffold
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.navigation.DeepLinkTarget
 import com.littlebridge.enrollplus.ui.v2.navigation.EntryRole
 import com.littlebridge.enrollplus.ui.v2.navigation.parseDeepLink
@@ -50,6 +53,7 @@ private enum class SchoolOverlay {
     AdmissionsCRM,
     Results,
     SchedulePTM,
+    DeliveryLog,
     DailyAttendance,
     ClassPerformance,
     TeacherPerformance,
@@ -299,7 +303,13 @@ fun SchoolPortalV2(
             }
             SchoolOverlay.LinkRequests -> {
                 // RA-48: the parent→child link approval queue.
-                LinkRequestsScreenV2(onBack = { overlay = SchoolOverlay.None }, modifier = modifier)
+                LinkRequestsScreenV2(
+                    onBack = {
+                        overlay = SchoolOverlay.None
+                        studentRefreshKey++
+                    },
+                    modifier = modifier,
+                )
                 return
             }
             SchoolOverlay.AdmissionsCRM -> {
@@ -312,6 +322,14 @@ fun SchoolPortalV2(
             }
             SchoolOverlay.SchedulePTM -> {
                 SchedulePtmScreenV2(onBack = { overlay = SchoolOverlay.None }, modifier = modifier)
+                return
+            }
+            SchoolOverlay.DeliveryLog -> {
+                VComingSoon(
+                    title = appString(StringKeys.SCH_DELIVERY_LOG),
+                    description = appString(StringKeys.SCH_DELIVERY_LOG_DESC),
+                    modifier = modifier,
+                )
                 return
             }
             SchoolOverlay.DailyAttendance -> {
@@ -497,7 +515,7 @@ fun SchoolPortalV2(
                 return
             }
             SchoolOverlay.BrandingKit -> {
-                BrandingSettingsScreen(
+                SchoolBrandingScreenV2(
                     onBack = { overlay = SchoolOverlay.None },
                     modifier = modifier,
                 )
@@ -585,6 +603,44 @@ fun SchoolPortalV2(
             VNavItem("settings", "Settings", VIcons.SettingsStroke),
         )
 
+        fun openByRouteId(routeId: String) {
+            when {
+                routeId.startsWith("tab_") -> tab = routeId.removePrefix("tab_")
+                routeId == "overlay_notifications" -> overlay = SchoolOverlay.Notifications
+                routeId == "overlay_calendar" -> overlay = SchoolOverlay.AcademicCalendarPlatform
+                routeId == "overlay_events" -> overlay = SchoolOverlay.EventRegistration
+                routeId == "overlay_messages" -> { tab = "comms"; overlay = SchoolOverlay.Messages }
+                routeId == "overlay_link_requests" -> overlay = SchoolOverlay.LinkRequests
+                routeId == "overlay_leave_requests" -> overlay = SchoolOverlay.LeaveRequests
+                routeId == "overlay_daily_attendance" -> overlay = SchoolOverlay.DailyAttendance
+                routeId == "overlay_fees" || routeId == "settings_fees" -> tab = "records"
+                routeId == "overlay_analytics" -> overlay = SchoolOverlay.AnalyticsDashboard
+                routeId == "overlay_branding" -> overlay = SchoolOverlay.BrandingKit
+                routeId == "overlay_profile" -> overlay = SchoolOverlay.EditProfile
+                routeId == "overlay_id_cards" -> overlay = SchoolOverlay.IdCards
+                routeId == "overlay_library" -> overlay = SchoolOverlay.Library
+                routeId == "overlay_classes_subjects" -> overlay = SchoolOverlay.ClassesSubjects
+                routeId == "overlay_scholarships" -> overlay = SchoolOverlay.ScholarshipManagement
+                routeId == "overlay_alumni" -> overlay = SchoolOverlay.Alumni
+                routeId == "overlay_transport" -> overlay = SchoolOverlay.TransportManagement
+                routeId == "overlay_health_records" -> overlay = SchoolOverlay.HealthRecords
+                routeId == "overlay_student_roster" -> overlay = SchoolOverlay.StudentRoster
+                routeId == "overlay_staff" -> overlay = SchoolOverlay.Staff
+                routeId == "overlay_report_publish" -> overlay = SchoolOverlay.ReportPublish
+                routeId == "overlay_schedule_ptm" -> overlay = SchoolOverlay.SchedulePTM
+                routeId == "overlay_results" -> overlay = SchoolOverlay.Results
+                routeId == "overlay_admissions" -> overlay = SchoolOverlay.AdmissionsCRM
+                routeId == "overlay_teacher_assignments" -> overlay = SchoolOverlay.TeacherAssignments
+                routeId == "overlay_delivery_log" -> overlay = SchoolOverlay.DeliveryLog
+                routeId == "overlay_scheduled_messages" -> overlay = SchoolOverlay.ScheduledMessages
+                routeId == "overlay_academic_year" -> overlay = SchoolOverlay.AcademicYear
+                routeId == "overlay_class_performance" -> overlay = SchoolOverlay.ClassPerformance
+                routeId == "overlay_teacher_performance" -> overlay = SchoolOverlay.TeacherPerformance
+                routeId == "overlay_pews_cohort" -> overlay = SchoolOverlay.PewsCohort
+                else -> tab = "home"
+            }
+        }
+
         VScreenScaffold(
             modifier = modifier,
             bottomBar = {
@@ -614,6 +670,7 @@ fun SchoolPortalV2(
                         // §7 finding K — tapping the avatar opens the Settings tab (where logout
                         // lives), instead of logging the admin out outright.
                         onExit = { tab = "settings" },
+                        onOpenPinnedScreen = { openByRouteId(it) },
                     )
                     "people" -> SchoolPeopleScreenV2(
                         teacherRefreshKey = peopleRefreshKey,
@@ -627,8 +684,6 @@ fun SchoolPortalV2(
                         // RA-TAM — Teacher Listing entry point into the reusable module.
                         onAssignClasses = { id -> selectedTeacherId = id; overlay = SchoolOverlay.TeacherAssignments },
                         onOpenStaff = { id -> selectedStaffId = id; overlay = SchoolOverlay.Staff },
-                        // Alumni Management — opens the alumni directory overlay.
-                        onOpenAlumni = { overlay = SchoolOverlay.Alumni },
                         // Mark students as alumni (graduation bulk action)
                         onGraduateStudents = { studentIds, year ->
                             graduateStudents(studentIds, year)
@@ -641,6 +696,7 @@ fun SchoolPortalV2(
                         onOpenMessages = { overlay = SchoolOverlay.Messages },
                         onOpenPtm = { overlay = SchoolOverlay.SchedulePTM },
                         onOpenScheduledMessages = { overlay = SchoolOverlay.ScheduledMessages },
+                        onOpenDeliveryLog = { overlay = SchoolOverlay.DeliveryLog },
                         // Unified create-event entry from Announcements tab.
                         onCreateEvent = {
                             createEventOrigin = SchoolOverlay.None

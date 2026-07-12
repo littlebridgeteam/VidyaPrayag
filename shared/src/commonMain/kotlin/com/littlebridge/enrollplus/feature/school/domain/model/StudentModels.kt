@@ -4,6 +4,12 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
+data class TodayItemDto(
+    val color: String,
+    val text: String
+)
+
+@Serializable
 data class StudentDto(
     val id: String,
     @SerialName("student_code") val studentCode: String,
@@ -17,11 +23,30 @@ data class StudentDto(
     @SerialName("teacher_count") val teacherCount: Int = 0,
     @SerialName("parent_count") val parentCount: Int = 0,
     @SerialName("is_new_admission") val isNewAdmission: Boolean = false,
-    val status: String = "active"
+    val status: String = "active",
+    @SerialName("parent_name") val parentName: String? = null,
+    @SerialName("homework_percent") val homeworkPercent: Float = 0f,
+    @SerialName("fees_pending") val feesPending: Boolean = false,
+    @SerialName("parent_meeting_scheduled") val parentMeetingScheduled: Boolean = false,
+    @SerialName("today_items") val todayItems: List<TodayItemDto> = emptyList()
 )
 
 @Serializable
 data class StudentListResponse(val students: List<StudentDto>)
+
+@Serializable
+data class StudentPaginationDto(
+    val page: Int,
+    val pageSize: Int,
+    val totalRecords: Int,
+    val hasNext: Boolean
+)
+
+@Serializable
+data class StudentListPaginatedResponse(
+    val students: List<StudentDto>,
+    val pagination: StudentPaginationDto
+)
 
 @Serializable
 data class StudentTeacherDto(

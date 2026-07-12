@@ -251,9 +251,9 @@ private fun LandingSlideContent(
             Text(
                 text = buildAnnotatedString {
                     withStyle(SpanStyle(color = VColors.ink, fontWeight = FontWeight.Bold)) {
-                        append(String.format("%02d", slideIndex + 1))
+                        append((slideIndex + 1).toString().padStart(2, '0'))
                     }
-                    append(" / ${String.format("%02d", totalSlides)}")
+                    append(" / ${totalSlides.toString().padStart(2, '0')}")
                 },
                 style = VTypography.slideCounter,
                 color = VColors.ink3,

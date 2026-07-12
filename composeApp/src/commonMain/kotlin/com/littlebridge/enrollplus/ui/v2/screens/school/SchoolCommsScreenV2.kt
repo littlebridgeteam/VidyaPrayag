@@ -3,7 +3,6 @@ package com.littlebridge.enrollplus.ui.v2.screens.school
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -35,7 +34,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -43,26 +41,31 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.feature.admin.domain.model.DeliveryLogItem
+import com.littlebridge.enrollplus.feature.admin.domain.model.MessageThread
 import com.littlebridge.enrollplus.feature.admin.presentation.Announcement
+import com.littlebridge.enrollplus.feature.admin.presentation.CommsDeliveryLogViewModel
+import com.littlebridge.enrollplus.feature.admin.presentation.MessagesViewModel
+import com.littlebridge.enrollplus.feature.admin.presentation.PTMHistoryItem
+import com.littlebridge.enrollplus.feature.admin.presentation.SchedulePTMViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.SchoolAnnouncementsState
 import com.littlebridge.enrollplus.feature.admin.presentation.SchoolAnnouncementsViewModel
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
-import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VComingSoon
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VMotion
-import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -73,10 +76,10 @@ import org.koin.compose.viewmodel.koinViewModel
  * [SchoolAnnouncementsViewModel] (`AnnouncementsApi` → `GET/POST /api/v1/announcements`).
  *
  * The **Announcements** tab renders real announcements from the server (title, category,
- * date) with category filtering, and a detail leaf. The **Messages**, **PTM** and
- * **Notifications** tabs are dedicated backends/screens that don't exist yet (Phase D/E),
- * so they're shown as `VComingSoon` rather than fabricating data (LAW 6). No MockV2 in
- * production; the three UI states come from [VStateHost].
+ * date) with category filtering, and a detail leaf. The **Messages** and **PTM** tabs are
+ * entry cards that open their dedicated backend-backed screens. The **Notifications** tab
+ * is shown as `VComingSoon` (Phase D/E) rather than fabricating data (LAW 6). No MockV2
+ * in production; the three UI states come from [VStateHost].
  */
 @Composable
 fun SchoolCommsScreenV2(
@@ -84,6 +87,7 @@ fun SchoolCommsScreenV2(
     onOpenMessages: () -> Unit = {},
     onOpenPtm: () -> Unit = {},
     onOpenScheduledMessages: () -> Unit = {},
+    onOpenDeliveryLog: () -> Unit = {},
     onCreateEvent: () -> Unit = {},
     viewModel: SchoolAnnouncementsViewModel = koinViewModel(),
 ) {
@@ -96,10 +100,23 @@ fun SchoolCommsScreenV2(
         onOpenMessages = onOpenMessages,
         onOpenPtm = onOpenPtm,
         onOpenScheduledMessages = onOpenScheduledMessages,
+        onOpenDeliveryLog = onOpenDeliveryLog,
         modifier = modifier.statusBarsPadding()
             .imePadding()
             .navigationBarsPadding(),
     )
+}
+
+private enum class CommsSubTab {
+    Announcements, Messages, Ptm, Notifications;
+
+    @Composable
+    fun label(): String = when (this) {
+        Announcements -> appString(StringKeys.SCH_ANNOUNCEMENTS)
+        Messages -> appString(StringKeys.SCH_MESSAGES)
+        Ptm -> appString(StringKeys.SCH_PTM)
+        Notifications -> appString(StringKeys.SCH_NOTIFICATIONS)
+    }
 }
 
 @Composable
@@ -111,9 +128,9 @@ private fun SchoolCommsContent(
     onOpenMessages: () -> Unit,
     onOpenPtm: () -> Unit,
     onOpenScheduledMessages: () -> Unit,
+    onOpenDeliveryLog: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var tab by remember { mutableStateOf("Announcements") }
     var openAnnouncement by remember { mutableStateOf<String?>(null) }
     var isRefreshing by remember { mutableStateOf(false) }
 
@@ -131,6 +148,10 @@ private fun SchoolCommsContent(
         return
     }
 
+    var subTab by remember { mutableStateOf(CommsSubTab.Announcements) }
+    val subTabLabels = CommsSubTab.entries.map { it.label() }
+    val pagerState = rememberPagerState(pageCount = { CommsSubTab.entries.size })
+
     // Stagger entrance
     val headerAlpha = remember { Animatable(0f) }
     val headerOffset = remember { Animatable(20f) }
@@ -141,6 +162,18 @@ private fun SchoolCommsContent(
             headerAlpha.animateTo(1f, tween(VMotion.durSlower, easing = VMotion.ease))
             headerOffset.animateTo(0f, tween(VMotion.durSlower, easing = VMotion.ease))
         }
+    }
+
+    // Sync tab taps with pager.
+    LaunchedEffect(subTab) {
+        val page = subTab.ordinal
+        if (pagerState.currentPage != page) {
+            pagerState.animateScrollToPage(page)
+        }
+    }
+    // Sync pager swipes with tabs.
+    LaunchedEffect(pagerState.currentPage) {
+        subTab = CommsSubTab.entries[pagerState.currentPage]
     }
 
     VPullRefresh(
@@ -154,9 +187,10 @@ private fun SchoolCommsContent(
         Column(
             Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp)
-                .padding(top = 16.dp, bottom = 140.dp),
+                .statusBarsPadding()
+                .imePadding()
+                .navigationBarsPadding()
+                .padding(start = 24.dp, top = 16.dp, end = 24.dp, bottom = 0.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             // Premium header
@@ -190,20 +224,20 @@ private fun SchoolCommsContent(
                 )
             }
 
-            val tabLabels = listOf(
-                appString(StringKeys.SCH_ANNOUNCEMENTS),
-                appString(StringKeys.SCH_MESSAGES),
-                appString(StringKeys.SCH_PTM),
-                appString(StringKeys.SCH_NOTIFICATIONS),
-            )
             VTopTabs(
-                tabs = tabLabels,
-                selected = tab,
-                onSelect = { tab = it },
+                tabs = subTabLabels,
+                selected = subTabLabels[subTab.ordinal],
+                onSelect = { label ->
+                    subTab = CommsSubTab.entries[subTabLabels.indexOf(label)]
+                },
             )
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                when (tab) {
-                    tabLabels[0] -> AnnouncementsTab(
+
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxWidth().weight(1f),
+            ) { page ->
+                when (CommsSubTab.entries[page]) {
+                    CommsSubTab.Announcements -> AnnouncementsTab(
                         state = state,
                         onRetry = onRetry,
                         onSelectCategory = onSelectCategory,
@@ -211,22 +245,9 @@ private fun SchoolCommsContent(
                         onCreateEvent = onCreateEvent,
                         onOpenScheduledMessages = onOpenScheduledMessages,
                     )
-                    tabLabels[1] -> CommsEntryCard(
-                        icon = VIcons.Chat,
-                        title = appString(StringKeys.SCH_PARENT_MESSAGES),
-                        description = appString(StringKeys.SCH_PARENT_MESSAGES_DESC),
-                        onClick = onOpenMessages,
-                    )
-                    tabLabels[2] -> CommsEntryCard(
-                        icon = VIcons.Calendar,
-                        title = appString(StringKeys.SCH_PARENT_TEACHER_MEETINGS),
-                        description = appString(StringKeys.SCH_PARENT_TEACHER_MEETINGS_DESC),
-                        onClick = onOpenPtm,
-                    )
-                    tabLabels[3] -> VComingSoon(
-                        title = appString(StringKeys.SCH_DELIVERY_LOG),
-                        description = appString(StringKeys.SCH_DELIVERY_LOG_DESC),
-                    )
+                    CommsSubTab.Messages -> MessagesTab(onOpenMessages = onOpenMessages)
+                    CommsSubTab.Ptm -> PtmTab(onOpenPtm = onOpenPtm)
+                    CommsSubTab.Notifications -> NotificationsTab(onOpenDeliveryLog = onOpenDeliveryLog)
                 }
             }
         }
@@ -242,86 +263,65 @@ private fun AnnouncementsTab(
     onCreateEvent: () -> Unit,
     onOpenScheduledMessages: () -> Unit,
 ) {
-    Row(
-        Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(appString(StringKeys.SCH_ANNOUNCEMENTS), style = VTypography.label, color = VColors.ink3)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            VButton(
-                text = appString(StringKeys.SCH_SCHEDULED),
-                onClick = onOpenScheduledMessages,
-                variant = VButtonVariant.Ghost,
-                size = VButtonSize.Sm,
-                leading = { Icon(VIcons.Clock, contentDescription = null, modifier = Modifier.size(14.dp)) },
-            )
-            VButton(
-                text = appString(StringKeys.SCH_NEW),
-                onClick = onCreateEvent,
-                variant = VButtonVariant.Primary,
-                size = VButtonSize.Sm,
-                leading = { Icon(VIcons.Plus, contentDescription = null, modifier = Modifier.size(14.dp)) },
-                enabled = !state.isCreating,
-            )
-        }
-    }
-    Spacer(Modifier.height(12.dp))
-
-    VStateHost(
-        loading = state.isLoading,
-        error = state.errorMessage,
-        isEmpty = state.announcements.isEmpty(),
-        emptyTitle = appString(StringKeys.SCH_NO_ANNOUNCEMENTS),
-        emptyBody = appString(StringKeys.SCH_NO_ANNOUNCEMENTS_DESC),
-        emptyIcon = VIcons.Megaphone,
-        onRetry = onRetry,
-        skeleton = { com.littlebridge.enrollplus.ui.v2.screens.SkeletonAnnouncements() },
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            val categories = remember(state.allAnnouncements) {
-                state.allAnnouncements.map { it.category }.filter { it.isNotBlank() }.distinct()
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(appString(StringKeys.SCH_ANNOUNCEMENTS), style = VTypography.label, color = VColors.ink3)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                VButton(
+                    text = appString(StringKeys.SCH_SCHEDULED),
+                    onClick = onOpenScheduledMessages,
+                    variant = VButtonVariant.Ghost,
+                    size = VButtonSize.Sm,
+                    leading = { Icon(VIcons.Clock, contentDescription = null, modifier = Modifier.size(14.dp)) },
+                )
+                VButton(
+                    text = appString(StringKeys.SCH_NEW),
+                    onClick = onCreateEvent,
+                    variant = VButtonVariant.Primary,
+                    size = VButtonSize.Sm,
+                    leading = { Icon(VIcons.Plus, contentDescription = null, modifier = Modifier.size(14.dp)) },
+                    enabled = !state.isCreating,
+                )
             }
-            if (categories.isNotEmpty()) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(appString(StringKeys.SCH_ALL), state.selectedCategory == null) { onSelectCategory(null) }
-                    categories.forEach { cat ->
-                        FilterChip(cat, state.selectedCategory.equals(cat, ignoreCase = true)) { onSelectCategory(cat) }
+        }
+
+        VStateHost(
+            modifier = Modifier.fillMaxWidth().weight(1f),
+            loading = state.isLoading,
+            error = state.errorMessage,
+            isEmpty = state.announcements.isEmpty(),
+            emptyTitle = appString(StringKeys.SCH_NO_ANNOUNCEMENTS),
+            emptyBody = appString(StringKeys.SCH_NO_ANNOUNCEMENTS_DESC),
+            emptyIcon = VIcons.Megaphone,
+            onRetry = onRetry,
+            skeleton = { com.littlebridge.enrollplus.ui.v2.screens.SkeletonAnnouncements() },
+        ) {
+            val scrollState = rememberScrollState()
+            Column(
+                modifier = Modifier.fillMaxWidth().verticalScroll(scrollState),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                val categories = remember(state.allAnnouncements) {
+                    state.allAnnouncements.map { it.category }.filter { it.isNotBlank() }.distinct()
+                }
+                if (categories.isNotEmpty()) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(appString(StringKeys.SCH_ALL), state.selectedCategory == null) { onSelectCategory(null) }
+                        categories.forEach { cat ->
+                            FilterChip(cat, state.selectedCategory.equals(cat, ignoreCase = true)) { onSelectCategory(cat) }
+                        }
                     }
                 }
-            }
-            state.announcements.forEachIndexed { index, a ->
-                VCard(
-                    modifier = Modifier.fillMaxWidth().staggeredItemEntrance(index, state.announcements.isNotEmpty()).clickable { onOpen(a.id) },
-                ) {
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.Top,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            Text(
-                                a.title,
-                                style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                                color = VColors.ink,
-                                modifier = Modifier.weight(1f),
-                            )
-                            if (a.isCalendarOnly) {
-                                MiniBadge(text = appString(StringKeys.SCH_CALENDAR_ONLY), color = VColors.gold, bg = VColors.goldSoft)
-                            } else if (a.category.isNotBlank()) {
-                                MiniBadge(text = a.category, color = VColors.violet, bg = VColors.violetSoft)
-                            }
-                        }
-                        if (a.date.isNotBlank()) {
-                            Text(a.date, style = VTypography.caption, color = VColors.ink3, modifier = Modifier.padding(top = 2.dp))
-                        }
-                        if (a.description.isNotBlank()) {
-                            Text(
-                                a.description,
-                                style = VTypography.caption,
-                                color = VColors.ink2,
-                                modifier = Modifier.padding(top = 6.dp),
-                            )
-                        }
+                state.announcements.forEachIndexed { index, a ->
+                    AnnouncementCard(
+                        announcement = a,
+                        onClick = { onOpen(a.id) },
+                        index = index,
+                    )
                 }
             }
         }
@@ -329,28 +329,133 @@ private fun AnnouncementsTab(
 }
 
 @Composable
-private fun CommsEntryCard(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    description: String,
-    onClick: () -> Unit,
+private fun MessagesTab(
+    onOpenMessages: () -> Unit,
+    viewModel: MessagesViewModel = koinViewModel(),
 ) {
-    VCard(modifier = Modifier.fillMaxWidth().clickable { onClick() }) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Box(
-                Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(VColors.violetSoft),
-                contentAlignment = Alignment.Center,
+    val messagesState by viewModel.state.collectAsStateV2()
+    val isLoading by viewModel.isLoading.collectAsStateV2()
+    val errorMessage by viewModel.errorMessage.collectAsStateV2()
+
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(appString(StringKeys.SCH_MESSAGES), style = VTypography.label, color = VColors.ink3)
+        VStateHost(
+            modifier = Modifier.fillMaxWidth().weight(1f),
+            loading = isLoading,
+            error = errorMessage,
+            isEmpty = messagesState.threads.isEmpty(),
+            emptyTitle = appString(StringKeys.SCH_NO_MESSAGES),
+            emptyBody = appString(StringKeys.SCH_NO_MESSAGES_DESC),
+            emptyIcon = VIcons.Chat,
+            skeleton = { com.littlebridge.enrollplus.ui.v2.screens.SkeletonList(rows = 5) },
+        ) {
+            val scrollState = rememberScrollState()
+            Column(
+                modifier = Modifier.fillMaxWidth().verticalScroll(scrollState),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Icon(icon, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
+                messagesState.threads.take(5).forEachIndexed { index, thread ->
+                    MessagePreviewCard(
+                        thread = thread,
+                        onClick = onOpenMessages,
+                        index = index,
+                    )
+                }
+                CommsEntryCard(
+                    icon = VIcons.Chat,
+                    title = appString(StringKeys.SCH_SEE_ALL_MESSAGES),
+                    description = appString(StringKeys.SCH_SEE_ALL_MESSAGES_DESC),
+                    onClick = onOpenMessages,
+                )
             }
-            Column(Modifier.weight(1f)) {
-                Text(title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
-                Text(description, style = VTypography.caption, color = VColors.ink3)
-            }
-            Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.ink3.copy(alpha = 0.4f), modifier = Modifier.size(18.dp))
         }
     }
 }
+
+@Composable
+private fun PtmTab(
+    onOpenPtm: () -> Unit,
+    viewModel: SchedulePTMViewModel = koinViewModel(),
+) {
+    val state by viewModel.state.collectAsStateV2()
+
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(appString(StringKeys.SCH_PTM), style = VTypography.label, color = VColors.ink3)
+        VStateHost(
+            modifier = Modifier.fillMaxWidth().weight(1f),
+            loading = state.isLoading,
+            error = state.errorMessage,
+            isEmpty = state.history.isEmpty(),
+            emptyTitle = appString(StringKeys.SCH_NO_PTMS_YET),
+            emptyBody = appString(StringKeys.SCH_NO_PTMS_DESC),
+            emptyIcon = VIcons.Calendar,
+            skeleton = { com.littlebridge.enrollplus.ui.v2.screens.SkeletonList(rows = 5) },
+        ) {
+            val scrollState = rememberScrollState()
+            Column(
+                modifier = Modifier.fillMaxWidth().verticalScroll(scrollState),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                state.history.take(5).forEachIndexed { index, item ->
+                    PtmPreviewCard(
+                        item = item,
+                        onClick = onOpenPtm,
+                        index = index,
+                    )
+                }
+                CommsEntryCard(
+                    icon = VIcons.Calendar,
+                    title = appString(StringKeys.SCH_SEE_ALL_PTM),
+                    description = appString(StringKeys.SCH_SEE_ALL_PTM_DESC),
+                    onClick = onOpenPtm,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun NotificationsTab(
+    onOpenDeliveryLog: () -> Unit,
+    viewModel: CommsDeliveryLogViewModel = koinViewModel(),
+) {
+    val state by viewModel.state.collectAsStateV2()
+
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(appString(StringKeys.SCH_DELIVERY_LOG), style = VTypography.label, color = VColors.ink3)
+        VStateHost(
+            modifier = Modifier.fillMaxWidth().weight(1f),
+            loading = state.isLoading,
+            error = state.errorMessage,
+            isEmpty = state.items.isEmpty(),
+            emptyTitle = appString(StringKeys.SCH_NO_DELIVERY_LOG),
+            emptyBody = appString(StringKeys.SCH_NO_DELIVERY_LOG_DESC),
+            emptyIcon = VIcons.Bell,
+            skeleton = { com.littlebridge.enrollplus.ui.v2.screens.SkeletonList(rows = 5) },
+        ) {
+            val scrollState = rememberScrollState()
+            Column(
+                modifier = Modifier.fillMaxWidth().verticalScroll(scrollState),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                state.items.take(5).forEachIndexed { index, item ->
+                    DeliveryLogRowCard(
+                        item = item,
+                        onClick = onOpenDeliveryLog,
+                        index = index,
+                    )
+                }
+                CommsEntryCard(
+                    icon = VIcons.Bell,
+                    title = appString(StringKeys.SCH_SEE_ALL_DELIVERY_LOG),
+                    description = appString(StringKeys.SCH_SEE_ALL_DELIVERY_LOG_DESC),
+                    onClick = onOpenDeliveryLog,
+                )
+            }
+        }
+    }
+}
+
 
 @Composable
 private fun FilterChip(label: String, active: Boolean, onClick: () -> Unit) {
@@ -422,18 +527,4 @@ private fun AnnouncementDetailV2(
     }
 }
 
-// ── Premium shared primitives ─────────────────────────────────────────────────
-
-@Composable
-private fun MiniBadge(text: String, color: Color, bg: Color) {
-    Text(
-        text = text,
-        style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
-        color = color,
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .background(bg)
-            .padding(horizontal = 8.dp, vertical = 3.dp),
-    )
-}
 

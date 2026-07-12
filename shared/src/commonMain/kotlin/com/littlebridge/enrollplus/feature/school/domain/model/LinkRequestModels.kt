@@ -29,3 +29,9 @@ data class LinkDecisionResult(
     @SerialName("child_id") val childId: String? = null,
     val status: String = "",
 )
+
+@Serializable
+data class LinkRequestCountDto(
+    val pending: Int = 0,
+    @SerialName("needs_review") val needsReview: Int = 0
+)

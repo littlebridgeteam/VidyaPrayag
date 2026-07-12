@@ -26,12 +26,14 @@ import com.littlebridge.enrollplus.feature.parent.presentation.LinkChildViewMode
 
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentHomeViewModel
 
+import com.littlebridge.enrollplus.feature.parent.presentation.ParentHomeworkViewModel
+
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentProfileViewModel
 
 import com.littlebridge.enrollplus.feature.parent.presentation.TrackProgressViewModel
 
 import com.littlebridge.enrollplus.feature.admin.presentation.SchoolDashboardViewModel
-
+import com.littlebridge.enrollplus.feature.admin.presentation.PinnedScreensViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.InstitutionalBasicOBViewModel
 
 import com.littlebridge.enrollplus.feature.admin.presentation.BrandingInfoOBViewModel
@@ -41,7 +43,7 @@ import com.littlebridge.enrollplus.feature.admin.presentation.AcademicInfoOBView
 import com.littlebridge.enrollplus.feature.admin.presentation.LaunchInfoOBViewModel
 
 import com.littlebridge.enrollplus.feature.admin.presentation.InstitutionalProfileViewModel
-
+import com.littlebridge.enrollplus.feature.admin.presentation.BrandingPhotosViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.AdmissionCRMViewModel
 
 import com.littlebridge.enrollplus.feature.admin.presentation.SchoolAnnouncementsViewModel
@@ -49,7 +51,8 @@ import com.littlebridge.enrollplus.feature.admin.presentation.SchoolAnnouncement
 import com.littlebridge.enrollplus.feature.admin.presentation.MessagesViewModel
 
 import com.littlebridge.enrollplus.feature.admin.presentation.SchedulePTMViewModel
-
+import com.littlebridge.enrollplus.feature.admin.presentation.CommsDeliveryLogViewModel
+import com.littlebridge.enrollplus.feature.admin.domain.usecase.GetDeliveryLogUseCase
 import com.littlebridge.enrollplus.feature.admin.presentation.AcademicCalendarViewModel
 
 import com.littlebridge.enrollplus.feature.admin.presentation.LeaveRequestsViewModel
@@ -295,7 +298,12 @@ val commonModule = module {
     }
 
     single {
-
+        com.littlebridge.enrollplus.feature.admin.data.remote.DeliveryLogApi(
+            client = get(),
+            baseUrl = AppConfig.schoolBaseUrl
+        )
+    }
+    single {
         com.littlebridge.enrollplus.feature.admin.data.remote.AnnouncementsApi(
 
             client = get(),
@@ -658,7 +666,9 @@ val commonModule = module {
         com.littlebridge.enrollplus.feature.admin.data.repository.MessagesRepositoryImpl(get(), get())
 
     }
-
+    single<com.littlebridge.enrollplus.feature.admin.domain.repository.DeliveryLogRepository> {
+        com.littlebridge.enrollplus.feature.admin.data.repository.DeliveryLogRepositoryImpl(get())
+    }
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.AnnouncementsRepository> {
 
         com.littlebridge.enrollplus.feature.admin.data.repository.AnnouncementsRepositoryImpl(get(), get())
@@ -1100,6 +1110,7 @@ val commonModule = module {
     // UseCases
 
     factory { GetSchoolsUseCase(get()) }
+    factory { GetDeliveryLogUseCase(get()) }
 
 
 
@@ -1193,6 +1204,8 @@ val viewModelModule = module {
 
     factory { TrackProgressViewModel(get(), get()) }
 
+    factory { ParentHomeworkViewModel(get(), get(), get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.parent.presentation.ParentAcademicsViewModel(get(), get(), get()) }
 
     factory { com.littlebridge.enrollplus.feature.parent.presentation.SkillTestViewModel(get(), get(), get()) }
@@ -1206,7 +1219,7 @@ val viewModelModule = module {
     factory { com.littlebridge.enrollplus.feature.parent.presentation.ParentPulseViewModel(get(), get(), get()) }
 
     factory { SchoolDashboardViewModel(get(), get(), get()) }
-
+    factory { PinnedScreensViewModel(get(), get()) }
     factory { InstitutionalBasicOBViewModel(get(), get()) }
 
     factory { BrandingInfoOBViewModel(get(), get(), get()) }
@@ -1224,11 +1237,9 @@ val viewModelModule = module {
     factory { com.littlebridge.enrollplus.feature.admin.presentation.OnboardingGateViewModel(get(), get()) }
 
     factory { InstitutionalProfileViewModel(get(), get(), get()) }
-
+    factory { BrandingPhotosViewModel(get(), get(), get(), get(), get()) }
     factory { com.littlebridge.enrollplus.feature.admin.presentation.SchoolProfileViewModel(get(), get()) } // RA-47
-
-    factory { com.littlebridge.enrollplus.feature.admin.presentation.StudentRosterViewModel(get(), get()) } // RA-45
-
+    factory { com.littlebridge.enrollplus.feature.admin.presentation.StudentRosterViewModel(get(), get(), get()) } // RA-45 + link count
     factory { com.littlebridge.enrollplus.feature.admin.presentation.StaffViewModel(get(), get()) } // RA-S17
 
     factory { com.littlebridge.enrollplus.feature.admin.presentation.StudentProfileViewModel(get(), get()) } // RA-45
@@ -1246,7 +1257,7 @@ val viewModelModule = module {
     factory { com.littlebridge.enrollplus.feature.admin.presentation.SchoolTeachersViewModel(get(), get()) }
 
     factory { MessagesViewModel(get(), get(), get()) }
-
+    factory { CommsDeliveryLogViewModel(get(), get()) }
     factory { SchedulePTMViewModel(get(), get()) }
 
     factory { AcademicCalendarViewModel(get(), get()) }

@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.littlebridge.enrollplus.feature.idcard.domain.model.IdCardDto
@@ -118,7 +119,7 @@ fun DigitalIdCardScreen(
 
                 Text(
                     text = appString(StringKeys.DID_VALID_TILL, "date" to (card.validTill ?: "N/A")),
-                    style = VTypography.body,
+                    style = VTypography.body.copy(fontWeight = FontWeight.Bold),
                 )
             } else if (state.isLoading) {
                 Text(
@@ -173,7 +174,7 @@ private fun DigitalCard(card: IdCardDto, showFront: Boolean) {
             } else {
                 Text(
                     text = appString(StringKeys.DID_QR_CODE),
-                    style = VTypography.body,
+                    style = VTypography.body.copy(fontWeight = FontWeight.Bold),
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 QrCodeImage(

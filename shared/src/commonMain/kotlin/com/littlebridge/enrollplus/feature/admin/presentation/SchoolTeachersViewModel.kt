@@ -36,7 +36,7 @@ data class SchoolTeachersState(
     val isOffline: Boolean = false,
 )
 
-private const val TEACHERS_PAGE_SIZE = 20
+private const val TEACHERS_PAGE_SIZE = 10
 
 /**
  * RA-22: backs the teacher roster on the People tab — list active teachers in

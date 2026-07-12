@@ -65,7 +65,7 @@ fun IdCardScreen(
             .navigationBarsPadding()
             .background(VColors.surface),
     ) {
-        com.littlebridge.enrollplus.ui.v2.components.VBackHeader(title = "ID Cards", onBack = onBack)
+        com.littlebridge.enrollplus.ui.v2.components.VBackHeader(title = "ID Cards", onBack = onBack, pinRouteId = "overlay_id_cards")
 
         IdCardStatsBanner(
             totalCards = state.cards.size,

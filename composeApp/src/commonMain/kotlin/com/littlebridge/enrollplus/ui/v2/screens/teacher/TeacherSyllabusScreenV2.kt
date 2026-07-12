@@ -56,6 +56,7 @@ import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import androidx.compose.ui.text.TextStyle
+import com.littlebridge.enrollplus.util.formatDecimal
 import org.koin.compose.viewmodel.koinViewModel
 
 // ── Cream/violet token bridge for the syllabus tracker ───────────────────────
@@ -982,7 +983,7 @@ private fun PaceWarningBanner(warning: com.littlebridge.enrollplus.feature.teach
                     Text(appString(StringKeys.TC_EST_COMPLETION_DATE, "date" to warning.estimatedCompletionDate), style = SylType.caption.colored(c.ink3).copy(fontSize = 10.sp))
                 }
                 if (warning.avgCoveragePerClass > 0) {
-                    Text(appString(StringKeys.TC_AVG_N_PCT_PER_CLASS, "pct" to "%.1f".format(warning.avgCoveragePerClass)), style = SylType.caption.colored(c.ink3).copy(fontSize = 10.sp))
+                    Text(appString(StringKeys.TC_AVG_N_PCT_PER_CLASS, "pct" to formatDecimal(warning.avgCoveragePerClass, 1)), style = SylType.caption.colored(c.ink3).copy(fontSize = 10.sp))
                 }
             }
         }

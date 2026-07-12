@@ -25,6 +25,7 @@
  */
 package com.littlebridge.enrollplus.feature.skilltest
 
+import com.littlebridge.enrollplus.db.ChildHolisticMetricsTable
 import com.littlebridge.enrollplus.db.ChildrenTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.GameBadgeDefinitionsTable
@@ -39,6 +40,10 @@ import com.littlebridge.enrollplus.feature.ai.AiService
 import com.littlebridge.enrollplus.feature.ai.LlmMessage
 import com.littlebridge.enrollplus.feature.gamification.GamificationService
 import com.littlebridge.enrollplus.feature.gamification.XpHooks
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.SerialName
@@ -67,7 +72,8 @@ object SkillTestService {
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
     // ── Config ────────────────────────────────────────────────────────────
-    private const val QUESTIONS_PER_BATCH = 100
+    private const val QUESTIONS_PER_BATCH = 100    // generated weekly per grade
+    private const val QUESTIONS_PER_ATTEMPT = 10   // randomly picked from the batch for each child
     private const val PASS_THRESHOLD = 60          // 60% to earn the badge
     private const val RETAKE_LOCK_DAYS = 7L
     private const val XP_SKILL_TEST_BASE = 20
@@ -84,6 +90,26 @@ object SkillTestService {
 
     /** Per-grade mutex so concurrent eligibility checks don't all fire AI generation. */
     private val generationLocks = ConcurrentHashMap<String, Mutex>()
+
+    /**
+     * Background scope for fire-and-forget immediate generation. Tied to the
+     * JVM lifecycle because this is an object singleton; use SupervisorJob so a
+     * single failed grade doesn't cancel the whole scope.
+     */
+    private val generationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    /**
+     * Fire-and-forget trigger for immediate question generation. Used by the
+     * eligibility endpoint so the HTTP response returns quickly while the AI
+     * generation runs in the background. The grade-level lock prevents duplicate
+     * concurrent runs.
+     */
+    fun triggerImmediateGeneration(gradeLevel: String) {
+        generationScope.launch {
+            runCatching { ensureQuestionsForGrade(gradeLevel) }
+                .onFailure { log.warn("Background immediate generation failed for grade {}: {}", gradeLevel, it.message) }
+        }
+    }
 
     /**
      * Ensure a grade has active questions. If none exist, immediately generate
@@ -307,6 +333,14 @@ object SkillTestService {
             Generate $count multiple-choice questions (MCQs) for a $gradeLevel student in $subject.
             These are for an Indian school student (CBSE/NCERT aligned).
 
+            These questions will be stored in a weekly pool. Each child will be asked a small,
+            random sample of them (5-10 questions). Therefore every question must be:
+            - Self-contained and unambiguous
+            - Diagnostic of the student's grasp of this subject
+            - Balanced across conceptual, procedural, and application-level thinking
+            so that the subject score accurately reflects the child's Literacy, Numeracy,
+            or Creativity competency on the parent dashboard.
+
             Requirements:
             - Each question must have exactly 4 options labeled A, B, C, D
             - Only one correct answer per question
@@ -347,25 +381,42 @@ object SkillTestService {
     }
 
     private fun parseMcqJson(content: String): List<GeneratedMcq>? {
-        return try {
-            val cleaned = content.trim()
-                .removePrefix("```json").removePrefix("```")
-                .removeSuffix("```").trim()
-            val arr = json.parseToJsonElement(cleaned).jsonArray
-            arr.map { el ->
-                val obj = el.jsonObject
-                GeneratedMcq(
-                    questionText = obj["question_text"]?.jsonPrimitive?.contentOrNull ?: "",
-                    options = obj["options"]?.jsonArray?.map { it.jsonPrimitive.contentOrNull ?: "" } ?: emptyList(),
-                    correctAnswer = obj["correct_answer"]?.jsonPrimitive?.contentOrNull ?: "A",
-                    explanation = obj["explanation"]?.jsonPrimitive?.contentOrNull ?: "",
-                    difficulty = obj["difficulty"]?.jsonPrimitive?.contentOrNull ?: "medium",
-                )
-            }.filter { it.questionText.isNotBlank() && it.options.size == 4 }
+        val cleaned = content.trim()
+            .removePrefix("```json").removePrefix("```")
+            .removeSuffix("```").trim()
+
+        val arr = try {
+            json.parseToJsonElement(cleaned).jsonArray
         } catch (e: Exception) {
-            log.warn("Failed to parse MCQ JSON: {}", e.message)
-            null
+            // Fallback: extract the first JSON array from the response.
+            // LLMs sometimes wrap the array in markdown or add trailing text.
+            val firstOpen = cleaned.indexOf('[')
+            val lastClose = cleaned.lastIndexOf(']')
+            if (firstOpen == -1 || lastClose == -1 || lastClose < firstOpen) {
+                log.warn("Failed to parse MCQ JSON and could not locate JSON array: {}", e.message)
+                log.debug("Raw MCQ response: {}", cleaned)
+                return null
+            }
+            val extracted = cleaned.substring(firstOpen, lastClose + 1)
+            try {
+                json.parseToJsonElement(extracted).jsonArray
+            } catch (e2: Exception) {
+                log.warn("Failed to parse extracted MCQ JSON array: {}", e2.message)
+                log.debug("Raw MCQ response: {}", cleaned)
+                return null
+            }
         }
+
+        return arr.mapNotNull { el ->
+            val obj = try { el.jsonObject } catch (e: Exception) { return@mapNotNull null }
+            GeneratedMcq(
+                questionText = obj["question_text"]?.jsonPrimitive?.contentOrNull ?: "",
+                options = obj["options"]?.jsonArray?.map { it.jsonPrimitive.contentOrNull ?: "" } ?: emptyList(),
+                correctAnswer = obj["correct_answer"]?.jsonPrimitive?.contentOrNull ?: "A",
+                explanation = obj["explanation"]?.jsonPrimitive?.contentOrNull ?: "",
+                difficulty = obj["difficulty"]?.jsonPrimitive?.contentOrNull ?: "medium",
+            )
+        }.filter { it.questionText.isNotBlank() && it.options.size == 4 }
     }
 
     private suspend fun persistQuestions(
@@ -493,7 +544,22 @@ object SkillTestService {
 
         if (questions.isEmpty()) return@dbQuery null
 
-        val batchId = questions.first()[SkillTestQuestionsTable.batchId]
+        // Randomly pick QUESTIONS_PER_ATTEMPT questions, evenly spread across
+        // subjects so every metric (Literacy/Numeracy/Creativity) gets sampled.
+        val questionsBySubject = questions.groupBy { it[SkillTestQuestionsTable.subject] }
+        val subjects = questionsBySubject.keys.shuffled()
+        val base = QUESTIONS_PER_ATTEMPT / subjects.size
+        val remainder = QUESTIONS_PER_ATTEMPT % subjects.size
+        val selected = mutableListOf<ResultRow>()
+        subjects.forEachIndexed { index, subject ->
+            val count = base + if (index < remainder) 1 else 0
+            selected += questionsBySubject[subject]?.shuffled()?.take(count) ?: emptyList()
+        }
+        val finalQuestions = selected.shuffled()
+
+        if (finalQuestions.isEmpty()) return@dbQuery null
+
+        val batchId = finalQuestions.first()[SkillTestQuestionsTable.batchId]
 
         // Create the attempt
         val attemptId = UUID.randomUUID()
@@ -504,7 +570,7 @@ object SkillTestService {
             it[SkillTestAttemptsTable.schoolId] = schoolId
             it[SkillTestAttemptsTable.batchId] = batchId
             it[SkillTestAttemptsTable.gradeLevel] = gradeLevel
-            it[SkillTestAttemptsTable.totalQuestions] = questions.size
+            it[SkillTestAttemptsTable.totalQuestions] = finalQuestions.size
             it[SkillTestAttemptsTable.correctCount] = 0
             it[SkillTestAttemptsTable.scorePercentage] = 0
             it[SkillTestAttemptsTable.status] = "in_progress"
@@ -514,7 +580,7 @@ object SkillTestService {
             it[SkillTestAttemptsTable.createdAt] = Instant.now()
         }
 
-        val questionDtos = questions.map { row ->
+        val questionDtos = finalQuestions.map { row ->
             QuestionDto(
                 id = row[SkillTestQuestionsTable.id].value.toString(),
                 subject = row[SkillTestQuestionsTable.subject],
@@ -620,6 +686,14 @@ object SkillTestService {
                     log.warn("XP award failed for skill test: {}", e.message)
                 }
             }
+
+            // Update per-child academic competencies + emotional intelligence
+            // shown on the parent Track Progress / Academics Overview tab.
+            try {
+                updateHolisticMetrics(attemptId, childId)
+            } catch (e: Exception) {
+                log.warn("Holistic metrics update failed for skill test: {}", e.message)
+            }
         }
 
         AnswerResultDto(
@@ -719,6 +793,105 @@ object SkillTestService {
                 it[GameStudentBadgesTable.awardedBy] = null
             }
         }
+    }
+
+    /**
+     * Update per-child academic competencies and emotional-intelligence metrics
+     * after a completed skill test attempt. Progress is derived from the
+     * subject-wise score breakdown of the attempt.
+     *
+     * Competencies:
+     *   - Literacy  = English score %
+     *   - Numeracy  = Mathematics score %
+     *   - Creativity = Science + General Knowledge (or Environmental Awareness) avg %
+     *
+     * Emotional intelligence:
+     *   - Empathy    = baseline 0.70
+     *   - Resilience = grows with repeated attempts (capped at 0.95)
+     *   - Social     = baseline 0.70
+     *   - Confidence = overall score %
+     */
+    private suspend fun updateHolisticMetrics(attemptId: UUID, childId: UUID) = dbQuery {
+        val answers = SkillTestAnswersTable
+            .join(SkillTestQuestionsTable, org.jetbrains.exposed.sql.JoinType.INNER, SkillTestAnswersTable.questionId, SkillTestQuestionsTable.id)
+            .selectAll()
+            .where { SkillTestAnswersTable.attemptId eq attemptId }
+            .toList()
+
+        if (answers.isEmpty()) return@dbQuery
+
+        val totalAnswered = answers.size
+        val correctOverall = answers.count { it[SkillTestAnswersTable.isCorrect] }
+        val confidence = if (totalAnswered > 0) correctOverall.toFloat() / totalAnswered.toFloat() else 0f
+
+        val subjectStats = answers
+            .groupBy { it[SkillTestQuestionsTable.subject] }
+            .mapValues { (_, rows) ->
+                val correct = rows.count { it[SkillTestAnswersTable.isCorrect] }
+                val total = rows.size
+                if (total > 0) correct.toFloat() / total.toFloat() else 0f
+            }
+
+        val literacy = subjectStats["English"] ?: 0f
+        val numeracy = subjectStats["Mathematics"] ?: 0f
+        val science = subjectStats["Science"] ?: 0f
+        val gk = subjectStats["General Knowledge"] ?: 0f
+        val envAwareness = subjectStats["Environmental Awareness"] ?: 0f
+
+        val creativity = when {
+            science > 0f && gk > 0f -> (science + gk) / 2f
+            science > 0f -> science
+            gk > 0f -> gk
+            envAwareness > 0f -> envAwareness
+            else -> 0f
+        }
+
+        val attemptsCount = SkillTestBestScoresTable.selectAll()
+            .firstOrNull { it[SkillTestBestScoresTable.childId] == childId }
+            ?.get(SkillTestBestScoresTable.attemptsCount) ?: 1
+
+        val empathy = 0.70f
+        val resilience = (0.50f + 0.10f * attemptsCount).coerceAtMost(0.95f)
+        val social = 0.70f
+
+        val now = Instant.now()
+        val existing = ChildHolisticMetricsTable.selectAll()
+            .firstOrNull { it[ChildHolisticMetricsTable.childId] == childId }
+
+        if (existing == null) {
+            ChildHolisticMetricsTable.insert {
+                it[ChildHolisticMetricsTable.id] = UUID.randomUUID()
+                it[ChildHolisticMetricsTable.childId] = childId
+                it[ChildHolisticMetricsTable.literacy] = literacy
+                it[ChildHolisticMetricsTable.numeracy] = numeracy
+                it[ChildHolisticMetricsTable.creativity] = creativity
+                it[ChildHolisticMetricsTable.empathy] = empathy
+                it[ChildHolisticMetricsTable.resilience] = resilience
+                it[ChildHolisticMetricsTable.social] = social
+                it[ChildHolisticMetricsTable.confidence] = confidence
+                it[ChildHolisticMetricsTable.lastAttemptId] = attemptId
+                it[ChildHolisticMetricsTable.updatedAt] = now
+            }
+        } else {
+            ChildHolisticMetricsTable.update({
+                ChildHolisticMetricsTable.childId eq childId
+            }) {
+                it[ChildHolisticMetricsTable.literacy] = literacy
+                it[ChildHolisticMetricsTable.numeracy] = numeracy
+                it[ChildHolisticMetricsTable.creativity] = creativity
+                it[ChildHolisticMetricsTable.empathy] = empathy
+                it[ChildHolisticMetricsTable.resilience] = resilience
+                it[ChildHolisticMetricsTable.social] = social
+                it[ChildHolisticMetricsTable.confidence] = confidence
+                it[ChildHolisticMetricsTable.lastAttemptId] = attemptId
+                it[ChildHolisticMetricsTable.updatedAt] = now
+            }
+        }
+
+        log.info(
+            "Updated holistic metrics for child {}: literacy={:.2f}, numeracy={:.2f}, creativity={:.2f}, confidence={:.2f}",
+            childId, literacy, numeracy, creativity, confidence
+        )
     }
 
     // ── 4. Read Queries ───────────────────────────────────────────────────

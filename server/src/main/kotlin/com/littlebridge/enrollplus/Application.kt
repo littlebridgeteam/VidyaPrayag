@@ -32,6 +32,7 @@
  *   - schoolDashboardRouting()            — /api/v1/school/dashboard
  *   - adminDashboardRouting()             — /api/admin/dashboard/{summary,analytics,activity}
  *   - adminDashboardOverviewRouting()     — /api/admin/dashboard/overview
+ *   - adminDashboardDigestRouting()       — /api/admin/dashboard/digest
  *   - schoolAnalyticsRouting()            — /api/v1/school/analytics/{overview,class-performance,teacher-performance,student/{id},syllabus-coverage}
  *   - leaveRequestsRouting()              — /api/v1/school/leave-requests[…]
  *   - ptmRouting()                        — /api/v1/school/ptm
@@ -90,11 +91,13 @@ import com.littlebridge.enrollplus.feature.notifications.NotificationScheduler
 import com.littlebridge.enrollplus.feature.notifications.notificationPreferencesRouting
 import com.littlebridge.enrollplus.feature.onboarding.onboardingRouting
 import com.littlebridge.enrollplus.feature.organization.organizationRouting
+import com.littlebridge.enrollplus.feature.platform.platformRouting
+import com.littlebridge.enrollplus.feature.parent.parentAcademicsRouting
 import com.littlebridge.enrollplus.feature.parent.parentDashboardRouting
 import com.littlebridge.enrollplus.feature.parent.parentFeesRouting
+import com.littlebridge.enrollplus.feature.parent.parentHomeworkRouting
 import com.littlebridge.enrollplus.feature.parent.parentLeaveRouting
 import com.littlebridge.enrollplus.feature.parent.parentLinkRouting
-import com.littlebridge.enrollplus.feature.parent.parentAcademicsRouting
 import com.littlebridge.enrollplus.feature.parent.trackProgressRouting
 import com.littlebridge.enrollplus.feature.pulse.pulseRouting
 import com.littlebridge.enrollplus.feature.pulse.PulseWeeklyJob
@@ -113,6 +116,7 @@ import com.littlebridge.enrollplus.feature.scheduling.scheduledMessageRouting
 import com.littlebridge.enrollplus.feature.scheduling.MessageDispatchScheduler
 import com.littlebridge.enrollplus.feature.school.adminDashboardRouting
 import com.littlebridge.enrollplus.feature.ai.dailySummaryAdminRouting
+import com.littlebridge.enrollplus.feature.school.adminDashboardDigestRouting
 import com.littlebridge.enrollplus.feature.event.eventRegistrationRouting
 import com.littlebridge.enrollplus.feature.export.exportRouting
 import com.littlebridge.enrollplus.feature.school.adminDashboardOverviewRouting
@@ -542,6 +546,7 @@ fun Application.module() {
         parentDashboardRouting()     // /api/v1/parent/dashboard
         trackProgressRouting()       // /api/v1/parent/track-progress
         parentAcademicsRouting()     // /api/v1/parent/child/{id}/{attendance,marks,syllabus} — RA-43/RA-56 child-scoped reads
+        parentHomeworkRouting()      // /api/v1/parent/child/{id}/homework[/{id}/submit] — parent submission (text + photo)
         parentFeesRouting()          // /api/v1/parent/fees
         parentLeaveRouting()         // /api/v1/parent/leave — RA-44 parent applies/lists child leave (routes to class teacher)
         parentLinkRouting()          // /api/v1/parent/{schools/search, link-child} + /api/v1/school/link-requests{,/{id}/approve|reject} — RA-48 link approval workflow
@@ -551,6 +556,7 @@ fun Application.module() {
         schoolDashboardRouting()     // /api/v1/school/dashboard
         adminDashboardRouting()      // /api/admin/dashboard/{summary,analytics,activity} — redesigned SchoolHomeScreenV2 data
         adminDashboardOverviewRouting() // /api/admin/dashboard/overview — consolidated command-center payload for SchoolHomeScreenV2
+        adminDashboardDigestRouting() // /api/admin/dashboard/digest — daily focus hero for SchoolHomeScreenV2
         schoolIntelligenceRouting()  // /api/v1/school/dashboard/intelligence — Command Center: attendance timeline+anomalies+exam overlay, early-warning students, academic health grid, activity feed (all real-data)
         dailySummaryAdminRouting()   // /api/admin/daily-summary/trigger — manually trigger AI daily summary job
 

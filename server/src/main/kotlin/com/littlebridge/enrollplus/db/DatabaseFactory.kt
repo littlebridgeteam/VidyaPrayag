@@ -127,6 +127,7 @@ object DatabaseFactory {
         TeacherSubjectAssignmentsTable,
         AnnouncementsTable,
         WhatsappLogsTable,
+        AnnouncementDeliveryLogsTable,
         AdmissionEnquiriesTable,
         SchoolPhilosophyTable,
         SchoolMediaTable,
@@ -167,6 +168,7 @@ object DatabaseFactory {
         ExamReminderLogTable,
         HomeworkTable,
         HomeworkSubmissionsTable,
+        HomeworkSubmissionAttachmentsTable,
         // T-404 (Doc 08 §5.3): typed homework attachments + teacher cutoff
         // extensions (migration_017_homework.sql applies these in Supabase
         // before deploy; AUTO_CREATE_TABLES is OFF in prod). Closes D-HW-1..5.
@@ -192,6 +194,10 @@ object DatabaseFactory {
         ParentChildLinksTable,
         // Non-teaching staff vertical (RA-S17 — Admin People sub-tabs)
         NonTeachingStaffTable,
+        // People Tab enrichment — staff shifts, check-ins, teacher ratings
+        StaffShiftsTable,
+        StaffCheckInsTable,
+        TeacherRatingsTable,
         // Parents Portal — Profile tab "Missions & Achievements" (optional, CMS-fallback safe)
         ParentAchievementsTable,
         // Skill Test System — AI-generated weekly MCQ tests for children
@@ -199,6 +205,7 @@ object DatabaseFactory {
         SkillTestAttemptsTable,
         SkillTestAnswersTable,
         SkillTestBestScoresTable,
+        ChildHolisticMetricsTable,
         // Academic Calendar platform (VP-CAL — centralized planning & scheduling)
         CalendarEventsTable,
         AcademicYearsTable,
@@ -351,6 +358,23 @@ object DatabaseFactory {
         // Server Logs (Notification Deep-Linking & Backend Log Viewer Plan §3.1)
         // Structured server-side log table for the super-admin Log Viewer.
         ServerLogsTable,
+        // Platform Feature Registry — internal QA/feature-tracking tables
+        // for the /api/admin/platform/* routes.
+        PlatformFeaturesTable,
+        PlatformFeatureFlowsTable,
+        PlatformScreensTable,
+        PlatformFeatureApisTable,
+        PlatformTestCasesTable,
+        PlatformTestAttachmentsTable,
+        PlatformBugsTable,
+        PlatformBugCommentsTable,
+        PlatformBugActivityTable,
+        PlatformDiscoveredApisTable,
+        PlatformApiHealthChecksTable,
+        PlatformAuditLogTable,
+        PlatformNotificationsTable,
+        PlatformDiscoveredScreensTable,
+        PlatformFeatureFilesTable,
         // Gamification System tables NOT included in schema validation —
         // they are provisioned separately via docs/db/migration_100_gamification.sql
         // and are still under development. Including them here would block server

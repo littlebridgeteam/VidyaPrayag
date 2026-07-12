@@ -24,10 +24,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,10 +44,18 @@ import com.littlebridge.enrollplus.feature.event.domain.model.EventSlotDto
 import com.littlebridge.enrollplus.feature.event.domain.model.ParentEventDto
 import com.littlebridge.enrollplus.feature.event.domain.model.RegistrationDto
 import com.littlebridge.enrollplus.feature.event.presentation.ParentEventRegistrationViewModel
+import androidx.compose.material3.Icon
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.ui.v2.components.VBadge
+import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
+import com.littlebridge.enrollplus.ui.v2.components.VButton
+import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
+import com.littlebridge.enrollplus.ui.v2.components.VCard
+import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
@@ -196,22 +201,18 @@ private fun EventDetailContent(
     var attendeeCount by remember { mutableStateOf("1") }
     var showCancelDialog by remember { mutableStateOf(false) }
 
-    if (showCancelDialog) {
-        AlertDialog(
-            onDismissRequest = { showCancelDialog = false },
-            title = { Text(appString(StringKeys.PE_CANCEL_REGISTRATION)) },
-            text = { Text(appString(StringKeys.PE_CANCEL_REGISTRATION_MSG, "title" to event.title)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    showCancelDialog = false
-                    onCancel()
-                }) { Text(appString(StringKeys.PE_YES_CANCEL)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showCancelDialog = false }) { Text(appString(StringKeys.PL_KEEP)) }
-            },
-        )
-    }
+    VConfirmDialog(
+        visible = showCancelDialog,
+        title = appString(StringKeys.PE_CANCEL_REGISTRATION),
+        message = appString(StringKeys.PE_CANCEL_REGISTRATION_MSG, "title" to event.title),
+        confirmLabel = appString(StringKeys.PE_YES_CANCEL),
+        cancelLabel = appString(StringKeys.PL_KEEP),
+        onConfirm = {
+            showCancelDialog = false
+            onCancel()
+        },
+        onDismiss = { showCancelDialog = false },
+    )
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),

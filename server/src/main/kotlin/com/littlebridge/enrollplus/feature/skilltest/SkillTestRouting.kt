@@ -80,15 +80,14 @@ fun Route.skillTestRouting() {
                     call.fail("Child not found", HttpStatusCode.NotFound); return@get
                 }
 
-                var eligibility = SkillTestService.checkEligibility(childId)
+                val eligibility = SkillTestService.checkEligibility(childId)
 
-                // If no questions exist for this grade, generate them immediately.
+                // If no questions exist for this grade, start immediate generation
+                // in the background. The HTTP call returns immediately so the parent
+                // app doesn't time out; the UI can poll/retry with "Check again".
                 // The weekly scheduled job still runs on top of this.
                 if (!eligibility.hasQuestions && eligibility.gradeLevel != null) {
-                    val generated = SkillTestService.ensureQuestionsForGrade(eligibility.gradeLevel)
-                    if (generated) {
-                        eligibility = SkillTestService.checkEligibility(childId)
-                    }
+                    SkillTestService.triggerImmediateGeneration(eligibility.gradeLevel)
                 }
 
                 call.ok(eligibility)

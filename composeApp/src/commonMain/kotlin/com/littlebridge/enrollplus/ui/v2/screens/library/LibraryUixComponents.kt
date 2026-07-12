@@ -48,6 +48,10 @@ import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.util.formatDecimal
+import com.littlebridge.enrollplus.util.parseIsoDate
+import com.littlebridge.enrollplus.util.todayIso
+import com.littlebridge.enrollplus.util.daysBetween
 
 /**
  * UIX-003: Color-coded badge showing days remaining until due date.
@@ -102,9 +106,9 @@ fun FineMeter(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Text(appString(StringKeys.LIB_UIX_FINE_AMOUNT, "amount" to "%.2f".format(currentFine)), style = VTheme.type.caption.colored(c.warningInk))
+            Text(appString(StringKeys.LIB_UIX_FINE_AMOUNT, "amount" to formatDecimal(currentFine)), style = VTheme.type.caption.colored(c.warningInk))
             if (replacementCost != null && replacementCost > 0) {
-                Text(appString(StringKeys.LIB_UIX_FINE_CAP, "amount" to "%.2f".format(replacementCost)), style = VTheme.type.caption.colored(c.ink3))
+                Text(appString(StringKeys.LIB_UIX_FINE_CAP, "amount" to formatDecimal(replacementCost)), style = VTheme.type.caption.colored(c.ink3))
             } else {
                 Text(appString(StringKeys.LIB_UIX_NO_CAP), style = VTheme.type.caption.colored(c.ink3))
             }
@@ -122,7 +126,7 @@ fun FineMeter(
                 Text(appString(StringKeys.LIB_UIX_FINE_CAPPED), style = VTheme.type.caption.colored(c.dangerInk))
             }
         } else {
-            Text(appString(StringKeys.LIB_UIX_FINE_NO_CAP, "amount" to "%.2f".format(currentFine)), style = VTheme.type.body.colored(c.warningInk).copy(fontWeight = FontWeight.SemiBold))
+            Text(appString(StringKeys.LIB_UIX_FINE_NO_CAP, "amount" to formatDecimal(currentFine)), style = VTheme.type.body.colored(c.warningInk).copy(fontWeight = FontWeight.SemiBold))
         }
     }
 }
@@ -145,9 +149,9 @@ fun BookCardSkeleton(modifier: Modifier = Modifier) {
 
 internal fun parseDaysRemaining(dueDate: String): Int {
     return runCatching {
-        val due = java.time.LocalDate.parse(dueDate.substringBefore("T"))
-        val today = java.time.LocalDate.now()
-        java.time.temporal.ChronoUnit.DAYS.between(today, due).toInt()
+        val (dy, dm, dd) = parseIsoDate(dueDate.substringBefore("T")) ?: return 0
+        val (ty, tm, td) = parseIsoDate(todayIso()) ?: return 0
+        daysBetween(ty, tm, td, dy, dm, dd)
     }.getOrDefault(0)
 }
 

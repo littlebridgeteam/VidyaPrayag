@@ -78,7 +78,7 @@ fun HealthRecordsScreenV2(
             .imePadding()
             .navigationBarsPadding(),
     ) {
-        VBackHeader(title = appString(StringKeys.HLTH_TITLE, "name" to studentName), onBack = onBack)
+        VBackHeader(title = appString(StringKeys.HLTH_TITLE, "name" to studentName), onBack = onBack, pinRouteId = "overlay_health_records")
 
         VStateHost(
             loading = state.isLoading,

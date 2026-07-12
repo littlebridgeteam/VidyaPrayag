@@ -34,6 +34,7 @@ data class SchoolProfileDto(
     val state: String,
     val pincode: String? = null,
     @SerialName("logo_url") val logoUrl: String? = null,
+    @SerialName("cover_image_url") val coverImageUrl: String? = null,
     @SerialName("brand_color") val brandColor: String
 )
 
@@ -54,5 +55,6 @@ data class UpdateSchoolProfileRequest(
     val state: String? = null,
     val pincode: String? = null,
     @SerialName("logo_url") val logoUrl: String? = null,
+    @SerialName("cover_image_url") val coverImageUrl: String? = null,
     @SerialName("brand_color") val brandColor: String? = null
 )
