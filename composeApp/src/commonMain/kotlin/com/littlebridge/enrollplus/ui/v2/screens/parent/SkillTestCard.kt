@@ -209,14 +209,23 @@ private fun SkillTestCardContent(
                 SkillTestReady(state = state, onStartTest = onStartTest)
             }
 
-            // No questions yet
+            // No questions yet — backend is generating (or failed); let the parent retry
             !state.hasQuestions -> {
                 Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    val message = state.gradeLevel?.let {
+                        "Questions for $it are being generated. Please check back soon."
+                    } ?: "Questions are being generated. Please check back soon."
                     Text(
-                        "Questions are being generated. Please check back soon!",
+                        message,
                         style = VTypography.body.copy(fontSize = 13.sp),
                         color = VColors.ink3,
                         textAlign = TextAlign.Center,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    VButton(
+                        text = "Check again",
+                        onClick = onRetryEligibility,
+                        variant = VButtonVariant.Secondary,
                     )
                 }
             }

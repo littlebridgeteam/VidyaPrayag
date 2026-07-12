@@ -80,7 +80,17 @@ fun Route.skillTestRouting() {
                     call.fail("Child not found", HttpStatusCode.NotFound); return@get
                 }
 
-                val eligibility = SkillTestService.checkEligibility(childId)
+                var eligibility = SkillTestService.checkEligibility(childId)
+
+                // If no questions exist for this grade, generate them immediately.
+                // The weekly scheduled job still runs on top of this.
+                if (!eligibility.hasQuestions && eligibility.gradeLevel != null) {
+                    val generated = SkillTestService.ensureQuestionsForGrade(eligibility.gradeLevel)
+                    if (generated) {
+                        eligibility = SkillTestService.checkEligibility(childId)
+                    }
+                }
+
                 call.ok(eligibility)
             }
 
