@@ -213,8 +213,8 @@ private fun SkillTestCardContent(
             !state.hasQuestions -> {
                 Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                     val message = state.gradeLevel?.let {
-                        "Questions for $it are being generated. Please check back soon."
-                    } ?: "Questions are being generated. Please check back soon."
+                        "Questions for $it are being generated in the background. Please check back in a minute."
+                    } ?: "Questions are being generated in the background. Please check back in a minute."
                     Text(
                         message,
                         style = VTypography.body.copy(fontSize = 13.sp),

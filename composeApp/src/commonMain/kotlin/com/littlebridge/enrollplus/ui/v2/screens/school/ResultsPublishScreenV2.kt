@@ -70,7 +70,7 @@ fun ResultsPublishScreenV2(
     Column(modifier.fillMaxSize().statusBarsPadding()
         .imePadding()
         .navigationBarsPadding()) {
-        VBackHeader(title = appString(StringKeys.SCH_RESULTS), onBack = onBack)
+        VBackHeader(title = appString(StringKeys.SCH_RESULTS), onBack = onBack, pinRouteId = "overlay_report_publish")
         VPullRefresh(isRefreshing = state.isLoading && state.students.isNotEmpty(), onRefresh = { viewModel.loadResults() }) {
             ResultsContent(
                 state = state,

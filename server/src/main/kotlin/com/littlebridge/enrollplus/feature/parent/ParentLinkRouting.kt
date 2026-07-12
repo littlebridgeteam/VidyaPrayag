@@ -23,6 +23,7 @@ import com.littlebridge.enrollplus.core.fail
 import com.littlebridge.enrollplus.core.ok
 import com.littlebridge.enrollplus.core.principalUserId
 import com.littlebridge.enrollplus.core.requireSchoolAdmin
+import com.littlebridge.enrollplus.core.requireSchoolContext
 import com.littlebridge.enrollplus.db.AppUsersTable
 import com.littlebridge.enrollplus.db.ChildrenTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
@@ -123,6 +124,12 @@ data class LinkRequestDto(
 @Serializable
 data class LinkRequestListResponse(
     val requests: List<LinkRequestDto>
+)
+
+@Serializable
+data class LinkRequestCountDto(
+    val pending: Int,
+    @SerialName("needs_review") val needsReview: Int
 )
 
 // ---------- routing ----------
@@ -706,6 +713,31 @@ fun Route.parentLinkRouting() {
                         }
                 }
                 call.ok(LinkRequestListResponse(requests = rows), message = "${rows.size} ${statusFilter} request(s)")
+            }
+
+            // ---- GET /link-requests/count ----
+            // People Tab: lightweight count endpoint for the link-requests badge.
+            get("/link-requests/count") {
+                val ctx = call.requireSchoolContext() ?: return@get
+                val counts = dbQuery {
+                    val pending = ParentChildLinksTable.selectAll()
+                        .where {
+                            (ParentChildLinksTable.schoolId eq ctx.schoolId) and
+                                (ParentChildLinksTable.status eq "pending")
+                        }
+                        .count()
+                    val needsReview = ParentChildLinksTable.selectAll()
+                        .where {
+                            (ParentChildLinksTable.schoolId eq ctx.schoolId) and
+                                (ParentChildLinksTable.status eq "needs_review")
+                        }
+                        .count()
+                    LinkRequestCountDto(
+                        pending = pending.toInt(),
+                        needsReview = needsReview.toInt()
+                    )
+                }
+                call.ok(counts, message = "Link request counts")
             }
 
             // ---- POST /link-requests/{id}/approve ----

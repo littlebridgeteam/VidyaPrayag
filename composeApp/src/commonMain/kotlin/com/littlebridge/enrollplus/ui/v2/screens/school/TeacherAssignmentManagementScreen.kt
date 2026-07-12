@@ -92,7 +92,7 @@ fun TeacherAssignmentManagementScreen(
             .imePadding()
             .navigationBarsPadding(),
     ) {
-        VBackHeader(title = appString(StringKeys.SCH_ASSIGN_CLASSES), onBack = onBack)
+        VBackHeader(title = appString(StringKeys.SCH_ASSIGN_CLASSES), onBack = onBack, pinRouteId = "overlay_teacher_assignments")
         AssignmentContent(
             state = state,
             onRetry = viewModel::retry,

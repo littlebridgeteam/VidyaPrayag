@@ -18,11 +18,9 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -42,6 +40,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
+import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
@@ -71,6 +70,8 @@ import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.util.formatDecimal
+import com.littlebridge.enrollplus.util.todayIso
 import org.koin.compose.viewmodel.koinViewModel
 
 private enum class StudentLibraryTab {
@@ -509,7 +510,7 @@ private fun ProfileTab(state: StudentLibraryState, viewModel: StudentLibraryView
                 ProfileStat(appString(StringKeys.STU_LIB_BOOKS_READ), p?.totalBooksRead?.toString() ?: "0")
                 ProfileStat(appString(StringKeys.STU_LIB_CURRENTLY_ISSUED), p?.currentlyIssued?.toString() ?: "0")
                 ProfileStat(appString(StringKeys.STU_LIB_OVERDUE), p?.overdueCount?.toString() ?: "0")
-                ProfileStat(appString(StringKeys.STU_LIB_OUTSTANDING_FINE), "₹${"%.2f".format(p?.outstandingFine ?: 0.0)}")
+                ProfileStat(appString(StringKeys.STU_LIB_OUTSTANDING_FINE), "₹${formatDecimal(p?.outstandingFine ?: 0.0)}")
                 ProfileStat(appString(StringKeys.STU_LIB_CURRENT_STREAK), appString(StringKeys.STU_LIB_STREAK_DAYS, "count" to (p?.currentStreak ?: 0)))
                 ProfileStat(appString(StringKeys.STU_LIB_LONGEST_STREAK), appString(StringKeys.STU_LIB_STREAK_DAYS, "count" to (p?.longestStreak ?: 0)))
             }
@@ -548,7 +549,7 @@ private fun ProfileTab(state: StudentLibraryState, viewModel: StudentLibraryView
         Text(appString(StringKeys.STU_LIB_SET_READING_GOAL), style = VTheme.type.h2.colored(c.ink))
         var goalCount by remember { mutableStateOf("5") }
         var period by remember { mutableStateOf("monthly") }
-        var targetYear by remember { mutableStateOf(java.time.LocalDate.now().year.toString()) }
+        var targetYear by remember { mutableStateOf(todayIso().substring(0, 4)) }
         VCard {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 VInput(value = goalCount, onValueChange = { goalCount = it }, label = appString(StringKeys.STU_LIB_GOAL_COUNT), modifier = Modifier.fillMaxWidth())
@@ -569,7 +570,7 @@ private fun ProfileTab(state: StudentLibraryState, viewModel: StudentLibraryView
                         viewModel.setReadingGoal(
                             goalCount.toIntOrNull() ?: 5,
                             period,
-                            targetYear.toIntOrNull() ?: java.time.LocalDate.now().year,
+                            targetYear.toIntOrNull() ?: todayIso().substring(0, 4).toInt(),
                         )
                     },
                     full = true,
@@ -685,7 +686,7 @@ private fun MyBooksTab(state: StudentLibraryState, viewModel: StudentLibraryView
                             )
                             if (issue.fineAmount > 0 && issue.fineStatus == "pending") {
                                 VBadge(
-                                    text = appString(StringKeys.STU_LIB_FINE_AMOUNT, "amount" to "%.2f".format(issue.fineAmount)),
+                                    text = appString(StringKeys.STU_LIB_FINE_AMOUNT, "amount" to formatDecimal(issue.fineAmount)),
                                     tone = VBadgeTone.Warning,
                                 )
                             }
@@ -758,7 +759,7 @@ private fun HistoryTab(state: StudentLibraryState, viewModel: StudentLibraryView
                             )
                             if (issue.fineAmount > 0) {
                                 VBadge(
-                                    text = "₹${"%.2f".format(issue.fineAmount)} ${issue.fineStatus}",
+                                    text = "₹${formatDecimal(issue.fineAmount)} ${issue.fineStatus}",
                                     tone = when (issue.fineStatus) {
                                         "pending" -> VBadgeTone.Warning
                                         "paid" -> VBadgeTone.Success
@@ -895,18 +896,18 @@ private fun ReservationsTab(state: StudentLibraryState, viewModel: StudentLibrar
         }
     }
 
-    if (showCancelConfirm != null) {
-        AlertDialog(
-            onDismissRequest = { showCancelConfirm = null },
-            title = { Text(appString(StringKeys.STU_LIB_CANCEL_RESERVATION_TITLE)) },
-            text = { Text(appString(StringKeys.STU_LIB_CANCEL_RESERVATION_MSG)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.cancelReservation(showCancelConfirm!!)
-                    showCancelConfirm = null
-                }) { Text(appString(StringKeys.STU_LIB_CANCEL_RESERVATION_BTN)) }
+    showCancelConfirm?.let { id ->
+        VConfirmDialog(
+            visible = true,
+            title = appString(StringKeys.STU_LIB_CANCEL_RESERVATION_TITLE),
+            message = appString(StringKeys.STU_LIB_CANCEL_RESERVATION_MSG),
+            confirmLabel = appString(StringKeys.STU_LIB_CANCEL_RESERVATION_BTN),
+            cancelLabel = appString(StringKeys.STU_LIB_KEEP),
+            onConfirm = {
+                viewModel.cancelReservation(id)
+                showCancelConfirm = null
             },
-            dismissButton = { TextButton(onClick = { showCancelConfirm = null }) { Text(appString(StringKeys.STU_LIB_KEEP)) } },
+            onDismiss = { showCancelConfirm = null },
         )
     }
 }

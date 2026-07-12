@@ -94,6 +94,7 @@ fun AcademicCalendarPlatformScreenV2(
         VBackHeader(
             title = appString(StringKeys.ACALP_TITLE),
             onBack = onBack,
+            pinRouteId = "overlay_calendar",
             action = {
                 VButton(
                     text = appString(StringKeys.ACALP_CREATE),

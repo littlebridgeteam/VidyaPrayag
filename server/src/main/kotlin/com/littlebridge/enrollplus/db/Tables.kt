@@ -76,6 +76,8 @@ object AppUsersTable : UUIDTable("app_users", "id") {
     // "system" | "light" | "dark" | "custom:<themeId>"). Synced from the client
     // via PUT /api/v1/user/theme-pref and read back in GET /api/v1/user/details.
     val themePref         = varchar("theme_pref", 64).nullable()
+    // Home-screen pinned shortcuts: ordered list of route IDs stored as JSON array.
+    val pinnedScreens     = text("pinned_screens").nullable()
     // Multi-Branch (MULTI_BRANCH_SPEC.md): org-level admin claims.
     // Nullable for backward compatibility — standalone school admins remain unlinked.
     val organizationId  = uuid("organization_id").nullable()
@@ -212,6 +214,7 @@ object SchoolsTable : UUIDTable("schools", "id") {
     val state          = text("state").default("Uttar Pradesh")
     val pincode        = text("pincode").nullable()
     val logoUrl        = text("logo_url").nullable()
+    val coverImageUrl  = text("cover_image_url").nullable()
     val brandColor     = text("brand_color").default("#2563EB")
     // Geo coordinates persisted during onboarding / profile update so the
     // parent side can discover onboarded schools by distance ("near me").
@@ -379,6 +382,24 @@ object WhatsappLogsTable : UUIDTable("whatsapp_logs", "id") {
     val providerMessageId = text("provider_message_id").nullable()
     val errorMessage      = text("error_message").nullable()
     val createdAt         = timestamp("created_at")
+}
+
+object AnnouncementDeliveryLogsTable : UUIDTable("announcement_delivery_logs", "id") {
+    val schoolId            = uuid("school_id")
+    val announcementId      = text("announcement_id")
+    val channel             = varchar("channel", 16) // whatsapp | push | sms | email
+    val recipientId         = uuid("recipient_id").nullable()
+    val recipientIdentifier = text("recipient_identifier")
+    val status              = varchar("status", 16) // queued | sent | delivered | read | failed | skipped
+    val providerMessageId   = text("provider_message_id").nullable()
+    val errorMessage        = text("error_message").nullable()
+    val createdAt           = timestamp("created_at")
+    val updatedAt           = timestamp("updated_at")
+
+    init {
+        index(isUnique = false, schoolId, announcementId)
+        index(isUnique = false, schoolId, createdAt)
+    }
 }
 
 // =====================================================================
@@ -1742,9 +1763,49 @@ object NonTeachingStaffTable : UUIDTable("non_teaching_staff", "id") {
     val phone       = varchar("phone", 32).nullable()
     val email       = text("email").nullable()
     val photoUrl    = text("photo_url").nullable()
+    val employeeId  = varchar("employee_id", 32).nullable()     // e.g. "EMP-001"
+    val shiftId     = uuid("shift_id").nullable()               // FK staff_shifts.id
     val isActive    = bool("is_active").default(true)           // soft-delete flag
     val createdAt   = timestamp("created_at")
     val updatedAt   = timestamp("updated_at")
+}
+
+// =====================================================================
+// staff_shifts  (People Tab enrichment — shift definitions per staff member)
+// =====================================================================
+object StaffShiftsTable : UUIDTable("staff_shifts", "id") {
+    val schoolId    = uuid("school_id")                         // FK schools.id — tenant scope
+    val staffId     = uuid("staff_id")                          // FK non_teaching_staff.id
+    val shiftName   = varchar("shift_name", 64)                 // e.g. "Morning", "Full Day"
+    val startTime   = varchar("start_time", 8)                  // e.g. "09:00"
+    val endTime     = varchar("end_time", 8)                    // e.g. "17:00"
+    val isActive    = bool("is_active").default(true)
+    val createdAt   = timestamp("created_at")
+    val updatedAt   = timestamp("updated_at")
+}
+
+// =====================================================================
+// staff_check_ins  (People Tab enrichment — daily check-in/check-out tracking)
+// =====================================================================
+object StaffCheckInsTable : UUIDTable("staff_check_ins", "id") {
+    val schoolId    = uuid("school_id")                         // FK schools.id — tenant scope
+    val staffId     = uuid("staff_id")                          // FK non_teaching_staff.id
+    val checkInAt   = timestamp("check_in_at")
+    val checkOutAt  = timestamp("check_out_at").nullable()
+    val date        = date("date")                              // for quick daily lookup
+    val createdAt   = timestamp("created_at")
+}
+
+// =====================================================================
+// teacher_ratings  (People Tab enrichment — teacher rating for card display)
+// =====================================================================
+object TeacherRatingsTable : UUIDTable("teacher_ratings", "id") {
+    val schoolId    = uuid("school_id")                         // FK schools.id — tenant scope
+    val teacherId   = uuid("teacher_id")                        // FK app_users.id (role=teacher)
+    val rating      = integer("rating")                         // 1-5
+    val ratedBy     = uuid("rated_by").nullable()               // FK app_users.id (optional)
+    val feedback    = text("feedback").nullable()
+    val createdAt   = timestamp("created_at")
 }
 
 // =====================================================================
@@ -1870,6 +1931,30 @@ object SkillTestBestScoresTable : UUIDTable("skill_test_best_scores", "id") {
     init {
         index("ix_stbs_child", false, childId)
         index("ix_stbs_badge", false, badgeEarned)
+    }
+}
+
+// =====================================================================
+// Child Holistic Metrics — updated by Skill Test attempts
+//   Competencies (Literacy/Numeracy/Creativity) + EI metrics
+//   Applied by database/migrations/setup_child_holistic_metrics.sql
+// =====================================================================
+
+object ChildHolisticMetricsTable : UUIDTable("child_holistic_metrics", "id") {
+    val childId        = uuid("child_id").uniqueIndex().references(ChildrenTable.id)
+    val literacy       = float("literacy").default(0f)
+    val numeracy       = float("numeracy").default(0f)
+    val creativity     = float("creativity").default(0f)
+    val empathy        = float("empathy").default(0f)
+    val resilience     = float("resilience").default(0f)
+    val social         = float("social").default(0f)
+    val confidence     = float("confidence").default(0f)
+    val lastAttemptId  = uuid("last_attempt_id").nullable()
+    val updatedAt      = timestamp("updated_at")
+
+    init {
+        index("ix_chm_child", false, childId)
+        index("ix_chm_updated", false, updatedAt)
     }
 }
 

@@ -127,6 +127,7 @@ object DatabaseFactory {
         TeacherSubjectAssignmentsTable,
         AnnouncementsTable,
         WhatsappLogsTable,
+        AnnouncementDeliveryLogsTable,
         AdmissionEnquiriesTable,
         SchoolPhilosophyTable,
         SchoolMediaTable,
@@ -192,6 +193,10 @@ object DatabaseFactory {
         ParentChildLinksTable,
         // Non-teaching staff vertical (RA-S17 — Admin People sub-tabs)
         NonTeachingStaffTable,
+        // People Tab enrichment — staff shifts, check-ins, teacher ratings
+        StaffShiftsTable,
+        StaffCheckInsTable,
+        TeacherRatingsTable,
         // Parents Portal — Profile tab "Missions & Achievements" (optional, CMS-fallback safe)
         ParentAchievementsTable,
         // Skill Test System — AI-generated weekly MCQ tests for children
@@ -199,6 +204,7 @@ object DatabaseFactory {
         SkillTestAttemptsTable,
         SkillTestAnswersTable,
         SkillTestBestScoresTable,
+        ChildHolisticMetricsTable,
         // Academic Calendar platform (VP-CAL — centralized planning & scheduling)
         CalendarEventsTable,
         AcademicYearsTable,

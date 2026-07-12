@@ -91,6 +91,7 @@ fun AdminEventRegistrationScreenV2(
                     else -> onBack()
                 }
             },
+            pinRouteId = "overlay_events",
         )
 
         if (state.infoMessage != null) {

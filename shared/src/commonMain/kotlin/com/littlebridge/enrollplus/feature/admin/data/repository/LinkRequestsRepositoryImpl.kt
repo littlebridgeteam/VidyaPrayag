@@ -6,6 +6,7 @@ import com.littlebridge.enrollplus.core.model.ApiResponse
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.feature.admin.data.remote.LinkRequestsApi
 import com.littlebridge.enrollplus.feature.admin.domain.model.LinkDecisionResult
+import com.littlebridge.enrollplus.feature.admin.domain.model.LinkRequestCountDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.LinkRequestsResponse
 import com.littlebridge.enrollplus.feature.admin.domain.repository.LinkRequestsRepository
 
@@ -19,6 +20,10 @@ class LinkRequestsRepositoryImpl(
         status: String
     ): NetworkResult<ApiResponse<LinkRequestsResponse>> =
         cacheFirstNetworkResult(cache, "admin_link_requests_$status", ApiResponse.serializer(LinkRequestsResponse.serializer())) { api.getLinkRequests(token, status) }
+
+    override suspend fun getLinkRequestCount(
+        token: String
+    ): NetworkResult<ApiResponse<LinkRequestCountDto>> = api.getLinkRequestCount(token)
 
     override suspend fun approve(
         token: String,

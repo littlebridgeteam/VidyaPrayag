@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
@@ -50,10 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.core.locale.StringKeys
@@ -65,17 +63,25 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.OverviewBirthday
 import com.littlebridge.enrollplus.feature.admin.domain.model.OverviewEvent
 import com.littlebridge.enrollplus.feature.admin.domain.model.OverviewFeeAnalytics
 import com.littlebridge.enrollplus.feature.admin.domain.model.OverviewInsight
+import com.littlebridge.enrollplus.feature.admin.domain.model.DailyDigest
+import com.littlebridge.enrollplus.feature.admin.domain.model.DigestTask
 import com.littlebridge.enrollplus.feature.admin.domain.model.OverviewKpi
 import com.littlebridge.enrollplus.feature.admin.domain.model.OverviewParentEngagement
 import com.littlebridge.enrollplus.feature.admin.domain.model.OverviewSchoolPulse
 import com.littlebridge.enrollplus.feature.admin.domain.model.OverviewTeacherSpotlight
 import com.littlebridge.enrollplus.feature.admin.presentation.AcademicCalendarPlatformViewModel
+import com.littlebridge.enrollplus.feature.admin.presentation.PinnedScreensViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.SchoolDashboardViewModel
 import com.littlebridge.enrollplus.feature.parent.presentation.NotificationsViewModel
 import com.littlebridge.enrollplus.platform.rememberNotificationPermissionLauncher
 import com.littlebridge.enrollplus.presentation.PermissionViewModel
+import com.littlebridge.enrollplus.ui.v2.components.PinButton
+import com.littlebridge.enrollplus.ui.v2.components.ShimmerBox
 import com.littlebridge.enrollplus.ui.v2.components.VBackOnlineBanner
+import com.littlebridge.enrollplus.ui.v2.components.VBadge
+import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
+import com.littlebridge.enrollplus.ui.v2.components.VGlassCard
 import com.littlebridge.enrollplus.ui.v2.components.VOfflineBanner
 import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
@@ -84,6 +90,7 @@ import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.util.MONTH_SHORT
 import com.littlebridge.enrollplus.util.dayOfWeek
@@ -91,6 +98,40 @@ import com.littlebridge.enrollplus.util.nowMinutesOfDay
 import com.littlebridge.enrollplus.util.parseIsoDate
 import com.littlebridge.enrollplus.util.todayIso
 import org.koin.compose.viewmodel.koinViewModel
+
+private val EmptyDigest = DailyDigest(
+    headline = "",
+    focus = "",
+    tasks = emptyList(),
+)
+
+private val ROUTE_ICON_MAP = mapOf(
+    "overlay_notifications" to VIcons.Bell,
+    "overlay_messages" to VIcons.Chat,
+    "overlay_link_requests" to VIcons.UsersGroup,
+    "overlay_leave_requests" to VIcons.Calendar,
+    "overlay_daily_attendance" to VIcons.Check,
+    "overlay_calendar" to VIcons.Calendar,
+    "settings_fees" to VIcons.Wallet,
+)
+
+private val SHORTCUT_LABELS = mapOf(
+    "tab_people" to "People",
+    "tab_records" to "Records",
+    "tab_comms" to "Communications",
+    "tab_settings" to "Settings",
+    "overlay_notifications" to "Notifications",
+    "overlay_messages" to "Messages",
+    "overlay_link_requests" to "Link Requests",
+    "overlay_leave_requests" to "Leave Requests",
+    "overlay_daily_attendance" to "Attendance",
+    "overlay_calendar" to "Calendar",
+    "overlay_events" to "Events",
+    "overlay_analytics" to "Analytics",
+    "overlay_fees" to "Fees",
+    "overlay_branding" to "Branding",
+    "overlay_profile" to "Profile",
+)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // School Home — Command Desk v3 (complete rewrite)
@@ -121,20 +162,30 @@ fun SchoolHomeScreenV2(
     onOpenReportEffectiveness: () -> Unit = {},
     onOpenEvents: () -> Unit = {},
     onCreateEvent: () -> Unit = {},
+    onOpenPinnedScreen: (String) -> Unit = {},
     onExit: () -> Unit = {},
     viewModel: SchoolDashboardViewModel = koinViewModel(),
     notificationsViewModel: NotificationsViewModel = koinViewModel(),
     calendarViewModel: AcademicCalendarPlatformViewModel = koinViewModel(),
     permissionVm: PermissionViewModel = koinViewModel(),
+    pinnedVm: PinnedScreensViewModel = koinViewModel(),
 ) {
     val dashboardState by viewModel.state.collectAsState()
     val notifications by notificationsViewModel.state.collectAsState()
+    val pinnedScreens by pinnedVm.screens.collectAsState()
+    var commandPaletteVisible by remember { mutableStateOf(false) }
 
     val adminName = dashboardState.adminName
     val loading = dashboardState.isLoading
     val error = dashboardState.errorMessage
     val overview = dashboardState.overview
     val activity = dashboardState.activity
+    val digest = dashboardState.digest ?: EmptyDigest
+    val isDigestLoading = dashboardState.isDigestLoading
+
+    LaunchedEffect(dashboardState.pinnedScreens) {
+        pinnedVm.setInitial(dashboardState.pinnedScreens)
+    }
 
     val showRationale by permissionVm.showNotificationRationale.collectAsState()
     val launchPermission by permissionVm.launchPermissionRequest.collectAsState()
@@ -164,7 +215,7 @@ fun SchoolHomeScreenV2(
     VPullRefresh(
         isRefreshing = dashboardState.isRefreshing,
         onRefresh = { viewModel.refresh(); calendarViewModel.refresh() },
-        modifier = modifier.fillMaxSize().background(VColors.cream),
+        modifier = modifier.fillMaxSize().background(brush = homeBackgroundGradient()),
     ) {
         Box(Modifier.fillMaxSize()) {
             // Track offline→online transition for the "Back online" confirmation.
@@ -198,6 +249,9 @@ fun SchoolHomeScreenV2(
                     overview = ov,
                     activity = activity,
                     adminName = adminName,
+                    digest = digest,
+                    isDigestLoading = isDigestLoading,
+                    pinnedScreens = pinnedScreens,
                     unreadCount = notifications.unreadCount,
                     onOpenNotifications = onOpenNotifications,
                     onOpenCalendar = onOpenCalendar,
@@ -207,6 +261,9 @@ fun SchoolHomeScreenV2(
                     onOpenReportPublish = onOpenReportPublish,
                     onOpenEvents = onOpenEvents,
                     onCreateEvent = onCreateEvent,
+                    onOpenPinnedScreen = onOpenPinnedScreen,
+                    onOpenCommandPalette = { commandPaletteVisible = true },
+                    onUnpin = pinnedVm::unpin,
                     onExit = onExit,
                 )
             }
@@ -261,6 +318,12 @@ fun SchoolHomeScreenV2(
         cancelLabel = appString(StringKeys.HOME_NOTIF_NOT_NOW),
         icon = VIcons.Bell,
     )
+
+    HomeCommandPalette(
+        visible = commandPaletteVisible,
+        onDismiss = { commandPaletteVisible = false },
+        onSelect = onOpenPinnedScreen,
+    )
 }
 
 private enum class Stage { Loading, Content, Empty, Error }
@@ -274,6 +337,9 @@ private fun CommandDesk(
     overview: AdminDashboardOverview,
     activity: AdminDashboardActivity?,
     adminName: String,
+    digest: DailyDigest,
+    isDigestLoading: Boolean,
+    pinnedScreens: List<String>,
     unreadCount: Int,
     onOpenNotifications: () -> Unit,
     onOpenCalendar: () -> Unit,
@@ -283,6 +349,9 @@ private fun CommandDesk(
     onOpenReportPublish: () -> Unit,
     onOpenEvents: () -> Unit,
     onCreateEvent: () -> Unit,
+    onOpenPinnedScreen: (String) -> Unit,
+    onOpenCommandPalette: () -> Unit,
+    onUnpin: (String) -> Unit,
     onExit: () -> Unit,
 ) {
     Column(
@@ -292,11 +361,23 @@ private fun CommandDesk(
             .statusBarsPadding()
             .padding(bottom = 120.dp),
     ) {
-        HomeHeader(
+        HomeHero(
             overview = overview,
             fallbackName = adminName,
+            digest = digest,
+            isDigestLoading = isDigestLoading,
             unreadCount = unreadCount,
             onNotifications = onOpenNotifications,
+            onOpenCommandPalette = onOpenCommandPalette,
+            onDigestTask = { routeId ->
+                routeId?.let(onOpenPinnedScreen)
+            },
+        )
+
+        PinnedShortcutsRow(
+            pinnedScreens = pinnedScreens,
+            onOpen = onOpenPinnedScreen,
+            onUnpin = onUnpin,
         )
 
         QuickShortcuts(
@@ -357,15 +438,19 @@ private fun CommandDesk(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 1. Home Header — clean text on cream, no card wrapper
+// 1. Home Hero — greeting, command search chip, and daily digest card
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun HomeHeader(
+private fun HomeHero(
     overview: AdminDashboardOverview,
     fallbackName: String,
+    digest: DailyDigest,
+    isDigestLoading: Boolean,
     unreadCount: Int,
     onNotifications: () -> Unit,
+    onOpenCommandPalette: () -> Unit,
+    onDigestTask: (String?) -> Unit,
 ) {
     val header = overview.header
     val name = header.adminName.takeIf { it.isNotBlank() } ?: fallbackName
@@ -390,141 +475,302 @@ private fun HomeHeader(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp)
-            .padding(top = 16.dp, bottom = 12.dp),
+            .padding(top = 16.dp, bottom = 8.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = buildAnnotatedString {
-                    append("Enroll")
-                    withStyle(SpanStyle(color = VColors.violet)) { append("+") }
-                },
-                style = VTypography.wordmark.copy(fontSize = 17.6.sp),
-                color = VColors.ink,
-                modifier = Modifier.weight(1f),
-            )
-
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "$greeting, $name",
+                    style = VTheme.type.h2,
+                    color = VTheme.colors.ink,
+                    fontSize = 22.sp,
+                )
+                Text(
+                    text = todayStr,
+                    style = VTheme.type.caption,
+                    color = VTheme.colors.ink3,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
             Box(
                 modifier = Modifier
-                    .size(36.dp)
+                    .size(44.dp)
                     .clip(CircleShape)
-                    .background(VColors.violetSoft)
+                    .background(VTheme.colors.card)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                    ) { onNotifications() },
+                        onClick = onNotifications,
+                    ),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    VIcons.BellStroke,
+                    imageVector = VIcons.Bell,
                     contentDescription = "Notifications",
-                    tint = VColors.violet,
-                    modifier = Modifier.size(18.dp),
+                    tint = VTheme.colors.ink,
+                    modifier = Modifier.size(22.dp),
                 )
-            }
-            if (unreadCount > 0) {
-                Box(
-                    modifier = Modifier
-                        .offset(x = (-4).dp, y = 2.dp)
-                        .size(18.dp)
-                        .clip(CircleShape)
-                        .background(VColors.coral)
-                        .border(1.5.dp, VColors.cream, CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = if (unreadCount > 9) "9+" else unreadCount.toString(),
-                        style = VTypography.caption.copy(
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Black,
-                        ),
-                        color = VColors.white,
+                if (unreadCount > 0) {
+                    VBadge(
+                        text = unreadCount.coerceAtMost(99).toString(),
+                        tone = VBadgeTone.Danger,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(4.dp),
                     )
                 }
             }
         }
 
-        Spacer(Modifier.height(16.dp))
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(5.dp)
-                    .clip(CircleShape)
-                    .background(VColors.violet),
-            )
-            Text(
-                text = schoolName.uppercase(),
-                style = VTypography.caption.copy(
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.8.sp,
-                ),
-                color = VColors.violet,
-            )
-        }
-
-        if (todayStr.isNotBlank()) {
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = todayStr,
-                style = VTypography.caption,
-                color = VColors.ink3,
-            )
-        }
-
-        Spacer(Modifier.height(8.dp))
         Text(
-            text = greeting,
-            style = VTypography.h2.copy(fontWeight = FontWeight.ExtraBold),
-            color = VColors.ink,
-        )
-        Spacer(Modifier.height(2.dp))
-        Text(
-            text = name,
-            style = VTypography.bodySmall.copy(fontWeight = FontWeight.Medium),
-            color = VColors.ink2,
+            text = schoolName,
+            style = VTheme.type.body,
+            color = VTheme.colors.ink3,
+            modifier = Modifier.padding(top = 4.dp),
         )
 
-        val hasYear = header.academicYear.isNotBlank()
-        val hasTerm = header.currentTerm.isNotBlank()
-        if (hasYear || hasTerm) {
-            Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                if (hasYear) {
+        SearchChip(
+            onClick = onOpenCommandPalette,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 14.dp, bottom = 6.dp),
+        )
+    }
+
+    DailyDigestCard(
+        digest = digest,
+        isLoading = isDigestLoading,
+        onTaskClick = onDigestTask,
+        modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
+    )
+}
+
+@Composable
+private fun SearchChip(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(VTheme.colors.card.copy(alpha = 0.7f))
+            .border(
+                width = 0.5.dp,
+                color = VTheme.colors.border1.copy(alpha = 0.5f),
+                shape = RoundedCornerShape(12.dp),
+            )
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            )
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = VIcons.Search,
+            contentDescription = null,
+            tint = VTheme.colors.ink3,
+            modifier = Modifier.size(20.dp),
+        )
+        Text(
+            text = "Jump to screen...",
+            style = VTheme.type.body,
+            color = VTheme.colors.ink3,
+            modifier = Modifier.padding(start = 10.dp).weight(1f),
+        )
+        Icon(
+            imageVector = VIcons.ArrowRight,
+            contentDescription = null,
+            tint = VTheme.colors.ink3,
+            modifier = Modifier.size(18.dp),
+        )
+    }
+}
+
+@Composable
+private fun DailyDigestCard(
+    digest: DailyDigest,
+    isLoading: Boolean,
+    onTaskClick: (String?) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    VGlassCard(
+        modifier = modifier,
+        backgroundBrush = heroGradient(),
+        padding = 18.dp,
+    ) {
+        if (isLoading && digest.tasks.isEmpty()) {
+            ShimmerBox(modifier = Modifier.fillMaxWidth().height(80.dp), shape = RoundedCornerShape(12.dp))
+        } else {
+            Column {
+                Text(
+                    text = digest.headline.ifBlank { "Good day, Admin" },
+                    style = VTheme.type.h3,
+                    color = VTheme.colors.ink,
+                )
+                if (digest.focus.isNotBlank()) {
                     Text(
-                        text = header.academicYear,
-                        style = VTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
-                        color = VColors.ink2,
-                        modifier = Modifier
-                            .clip(VShapes.sm)
-                            .background(VColors.creamDeep)
-                            .padding(horizontal = 8.dp, vertical = 3.dp),
+                        text = digest.focus,
+                        style = VTheme.type.body,
+                        color = VTheme.colors.ink3,
+                        modifier = Modifier.padding(top = 4.dp),
                     )
                 }
-                if (hasTerm) {
-                    Text(
-                        text = header.currentTerm,
-                        style = VTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
-                        color = VColors.violet,
-                        modifier = Modifier
-                            .clip(VShapes.sm)
-                            .background(VColors.violetSoft)
-                            .padding(horizontal = 8.dp, vertical = 3.dp),
-                    )
+                if (digest.tasks.isNotEmpty()) {
+                    Spacer(Modifier.height(12.dp))
+                    digest.tasks.forEach { task ->
+                        DigestTaskRow(task = task, onClick = { onTaskClick(task.routeId) })
+                        if (task != digest.tasks.last()) {
+                            Spacer(Modifier.height(8.dp))
+                        }
+                    }
                 }
             }
         }
     }
 }
 
+@Composable
+private fun DigestTaskRow(
+    task: DigestTask,
+    onClick: () -> Unit,
+) {
+    val badgeTone = when (task.priority.lowercase()) {
+        "urgent" -> VBadgeTone.Danger
+        "success" -> VBadgeTone.Success
+        else -> VBadgeTone.Arctic
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            )
+            .padding(vertical = 6.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(CircleShape)
+                .background(VTheme.colors.accentTint),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = ROUTE_ICON_MAP[task.routeId] ?: VIcons.Star,
+                contentDescription = null,
+                tint = VTheme.colors.accent,
+                modifier = Modifier.size(18.dp),
+            )
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = task.label,
+                style = VTheme.type.body,
+                color = VTheme.colors.ink,
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
+        VBadge(
+            text = task.actionLabel,
+            tone = badgeTone,
+        )
+    }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
-// 2. Quick Shortcuts — horizontal scrollable chips
+// 3. Pinned shortcuts — user-curated horizontal row
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun PinnedShortcutsRow(
+    pinnedScreens: List<String>,
+    onOpen: (String) -> Unit,
+    onUnpin: (String) -> Unit,
+) {
+    if (pinnedScreens.isEmpty()) return
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 8.dp),
+    ) {
+        Text(
+            text = "Pinned",
+            style = VTheme.type.label,
+            color = VTheme.colors.ink3,
+            modifier = Modifier.padding(bottom = 8.dp),
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            pinnedScreens.forEach { routeId ->
+                PinnedShortcutChip(
+                    routeId = routeId,
+                    onClick = { onOpen(routeId) },
+                    onUnpin = { onUnpin(routeId) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PinnedShortcutChip(
+    routeId: String,
+    onClick: () -> Unit,
+    onUnpin: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(24.dp))
+            .background(VTheme.colors.card.copy(alpha = 0.85f))
+            .border(
+                width = 0.5.dp,
+                color = VTheme.colors.border1.copy(alpha = 0.5f),
+                shape = RoundedCornerShape(24.dp),
+            )
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            )
+            .padding(start = 14.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(
+            imageVector = ROUTE_ICON_MAP[routeId] ?: VIcons.Star,
+            contentDescription = null,
+            tint = VTheme.colors.accent,
+            modifier = Modifier.size(16.dp),
+        )
+        Text(
+            text = SHORTCUT_LABELS[routeId] ?: routeId,
+            style = VTheme.type.body,
+            color = VTheme.colors.ink,
+        )
+        PinButton(
+            pinned = true,
+            onClick = onUnpin,
+            modifier = Modifier.size(24.dp),
+        )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. Quick Shortcuts — horizontal scrollable chips
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable

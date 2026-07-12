@@ -37,6 +37,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
@@ -65,6 +66,9 @@ import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.v2.components.PinButton
+import com.littlebridge.enrollplus.feature.admin.presentation.PinnedScreensViewModel
+import org.koin.compose.viewmodel.koinViewModel
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 
@@ -919,6 +923,7 @@ fun VBackHeader(
     modifier: Modifier = Modifier,
     onBack: (() -> Unit)? = null,
     action: (@Composable () -> Unit)? = null,
+    pinRouteId: String? = null,
 ) {
     val c = VTheme.colors
     Row(
@@ -940,9 +945,28 @@ fun VBackHeader(
         }
         Text(title, style = VTheme.type.h3.colored(c.ink))
         Box(Modifier.height(40.dp).wrapContentWidth(), contentAlignment = Alignment.Center) {
+            if (pinRouteId != null) {
+                RoutePinButton(routeId = pinRouteId)
+            }
             action?.invoke()
         }
     }
+}
+
+/**
+ * Pin toggle backed by [PinnedScreensViewModel]. A single shared VM is resolved through the
+ * current ViewModelStoreOwner, so the home screen and all headers stay in sync.
+ */
+@Composable
+private fun RoutePinButton(
+    routeId: String,
+    pinnedVm: PinnedScreensViewModel = koinViewModel(),
+) {
+    val pinnedScreens by pinnedVm.screens.collectAsState()
+    PinButton(
+        pinned = pinnedScreens.contains(routeId),
+        onClick = { pinnedVm.toggle(routeId) },
+    )
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

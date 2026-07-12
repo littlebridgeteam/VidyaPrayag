@@ -65,6 +65,7 @@ data class SchoolProfileDto(
     val state: String,
     val pincode: String? = null,
     @SerialName("logo_url") val logoUrl: String? = null,
+    @SerialName("cover_image_url") val coverImageUrl: String? = null,
     @SerialName("brand_color") val brandColor: String,
     // RA-47b: geo + richer institutional fields the onboarding wizard collects.
     // They live on `schools` but were previously read-only/unfillable post-
@@ -105,6 +106,7 @@ data class UpdateSchoolProfileRequest(
     val state: String? = null,
     val pincode: String? = null,
     @SerialName("logo_url") val logoUrl: String? = null,
+    @SerialName("cover_image_url") val coverImageUrl: String? = null,
     @SerialName("brand_color") val brandColor: String? = null,
     // Geo + richer institutional fields (all nullable → PATCH semantics). These
     // map to nullable columns, so a supplied blank string clears them and a null
@@ -139,6 +141,7 @@ private fun rowToDto(row: org.jetbrains.exposed.sql.ResultRow): SchoolProfileDto
         state = row[SchoolsTable.state],
         pincode = row[SchoolsTable.pincode],
         logoUrl = row[SchoolsTable.logoUrl],
+        coverImageUrl = row[SchoolsTable.coverImageUrl],
         brandColor = row[SchoolsTable.brandColor],
         latitude = row[SchoolsTable.latitude],
         longitude = row[SchoolsTable.longitude],
@@ -202,6 +205,7 @@ fun Route.schoolProfileRouting() {
                         req.fullAddress?.let { v -> it[fullAddress] = v.ifBlank { null } }
                         req.pincode?.let { v -> it[pincode] = v.ifBlank { null } }
                         req.logoUrl?.let { v -> it[logoUrl] = v.ifBlank { null } }
+                        req.coverImageUrl?.let { v -> it[coverImageUrl] = v.ifBlank { null } }
                         // Geo + richer institutional columns (all nullable).
                         // Numeric coords/values are written whenever supplied;
                         // text fields treat a blank string as "clear".

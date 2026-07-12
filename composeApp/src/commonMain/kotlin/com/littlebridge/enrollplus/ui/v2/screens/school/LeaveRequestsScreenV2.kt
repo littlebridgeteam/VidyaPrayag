@@ -73,7 +73,7 @@ fun LeaveRequestsScreenV2(
     Column(modifier.fillMaxSize().statusBarsPadding()
         .imePadding()
         .navigationBarsPadding()) {
-        VBackHeader(title = "Leave Requests", onBack = onBack)
+        VBackHeader(title = "Leave Requests", onBack = onBack, pinRouteId = "overlay_leave_requests")
         VPullRefresh(isRefreshing = state.isLoading && state.requests.isNotEmpty(), onRefresh = { viewModel.loadRequests() }) {
             LeaveRequestsContent(
                 state = state,

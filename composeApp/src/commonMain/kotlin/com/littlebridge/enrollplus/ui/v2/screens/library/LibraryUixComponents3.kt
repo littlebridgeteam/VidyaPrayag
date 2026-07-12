@@ -14,10 +14,8 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -37,6 +35,10 @@ import com.littlebridge.enrollplus.feature.library.domain.model.FeaturedBookDto
 import com.littlebridge.enrollplus.feature.library.domain.model.LibraryBookDto
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
+import com.littlebridge.enrollplus.ui.v2.components.VBottomSheet
+import com.littlebridge.enrollplus.ui.v2.components.VBottomSheetHeader
+import com.littlebridge.enrollplus.ui.v2.components.VButton
+import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
@@ -216,17 +218,16 @@ fun GuidedQuickIssueDialog(
     val haptics = rememberLibraryHaptics()
     var step by remember { mutableStateOf(1) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
+    VBottomSheet(
+        visible = true,
+        onDismiss = onDismiss,
         modifier = modifier,
-        title = {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(appString(StringKeys.LIB_UIX_QUICK_ISSUE), style = VTheme.type.bodyStrong.colored(c.ink))
-                VBadge(text = appString(StringKeys.LIB_UIX_STEP, "step" to step), tone = VBadgeTone.Accent)
-            }
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    ) {
+        VBottomSheetHeader(
+            title = appString(StringKeys.LIB_UIX_QUICK_ISSUE),
+            subtitle = appString(StringKeys.LIB_UIX_STEP, "step" to step),
+        )
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     repeat(3) { i ->
                         Box(
@@ -269,20 +270,30 @@ fun GuidedQuickIssueDialog(
                     }
                 }
             }
-        },
-        confirmButton = {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            VButton(
+                text = appString(StringKeys.COMMON_BUTTON_CANCEL),
+                onClick = { step = 1; onDismiss() },
+                modifier = Modifier.weight(1f),
+                variant = VButtonVariant.Ghost,
+            )
             if (step < 3) {
-                TextButton({
-                    if (step == 1 && book == null) return@TextButton
-                    if (step == 2 && borrowerName.isBlank()) return@TextButton
-                    haptics.confirm(); step++
-                }) { Text(appString(StringKeys.COMMON_BUTTON_NEXT)) }
+                VButton(
+                    text = appString(StringKeys.COMMON_BUTTON_NEXT),
+                    onClick = {
+                        if (step == 1 && book == null) return@VButton
+                        if (step == 2 && borrowerName.isBlank()) return@VButton
+                        haptics.confirm(); step++
+                    },
+                    modifier = Modifier.weight(1f),
+                )
             } else {
-                TextButton({ haptics.confirm(); onIssue(); step = 1 }) { Text(appString(StringKeys.LIB_UIX_ISSUE_BOOK)) }
+                VButton(
+                    text = appString(StringKeys.LIB_UIX_ISSUE_BOOK),
+                    onClick = { haptics.confirm(); onIssue(); step = 1 },
+                    modifier = Modifier.weight(1f),
+                )
             }
-        },
-        dismissButton = {
-            TextButton({ step = 1; onDismiss() }) { Text(appString(StringKeys.COMMON_BUTTON_CANCEL)) }
-        },
-    )
+        }
+    }
 }
