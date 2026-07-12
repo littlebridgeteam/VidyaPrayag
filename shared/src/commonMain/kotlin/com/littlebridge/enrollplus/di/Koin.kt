@@ -26,6 +26,8 @@ import com.littlebridge.enrollplus.feature.parent.presentation.LinkChildViewMode
 
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentHomeViewModel
 
+import com.littlebridge.enrollplus.feature.parent.presentation.ParentHomeworkViewModel
+
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentProfileViewModel
 
 import com.littlebridge.enrollplus.feature.parent.presentation.TrackProgressViewModel
@@ -1201,6 +1203,8 @@ val viewModelModule = module {
     factory { ParentProfileViewModel(get(), get()) }
 
     factory { TrackProgressViewModel(get(), get()) }
+
+    factory { ParentHomeworkViewModel(get(), get(), get(), get()) }
 
     factory { com.littlebridge.enrollplus.feature.parent.presentation.ParentAcademicsViewModel(get(), get(), get()) }
 
