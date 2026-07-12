@@ -113,6 +113,7 @@ fun ParentAcademicsScreenV2(
     onSelectChild: (String) -> Unit = {},
     onOpenLeave: () -> Unit = {},
     onOpenHealth: () -> Unit = {},
+    onOpenHomework: () -> Unit = {},
     onOpenNotifications: () -> Unit = {},
     initialTab: String? = null,
     onTabConsumed: () -> Unit = {},
@@ -178,6 +179,7 @@ fun ParentAcademicsScreenV2(
             onLoadLeaderboard = { academicsViewModel.loadLeaderboard(it) },
             onOpenLeave = onOpenLeave,
             onOpenHealth = onOpenHealth,
+            onOpenHomework = onOpenHomework,
             onOpenNotifications = onOpenNotifications,
             unreadNotificationsCount = unreadNotificationsCount,
             initialTab = initialTab,
@@ -216,6 +218,7 @@ private fun ParentAcademicsContent(
     onSelectChild: (String) -> Unit = {},
     onOpenLeave: () -> Unit = {},
     onOpenHealth: () -> Unit = {},
+    onOpenHomework: () -> Unit = {},
     onOpenNotifications: () -> Unit = {},
     unreadNotificationsCount: Int = 0,
     initialTab: String? = null,
@@ -345,7 +348,7 @@ private fun ParentAcademicsContent(
                         onBackToList = onClearQuizResult,
                         onLoadLeaderboard = onLoadLeaderboard,
                     )
-                    "Homework" -> HomeworkTab(academics, onLoadDailySummary)
+                    "Homework" -> HomeworkTab(academics, onLoadDailySummary, onOpenHomework)
                     "Timetable" -> TimetableTab(
                         timetable = timetable,
                         todayPeriods = todayPeriods,
@@ -1363,7 +1366,11 @@ private fun QuizResultCard(
 // ═══════════════════════════════════════════════════════════════════════════════
 
 @Composable
-private fun HomeworkTab(academics: ParentAcademicsState, onRetry: () -> Unit) {
+private fun HomeworkTab(
+    academics: ParentAcademicsState,
+    onRetry: () -> Unit,
+    onOpenHomework: () -> Unit,
+) {
     if (academics.dailySummaryLoading) {
         LoadingState()
         return
@@ -1373,13 +1380,24 @@ private fun HomeworkTab(academics: ParentAcademicsState, onRetry: () -> Unit) {
         return
     }
 
-    val data = academics.dailySummary
-    if (data == null || data.entries.isEmpty()) {
-        EmptyState("No Homework Logs", "Daily homework summaries will appear here once available.")
-        return
-    }
+    Column(
+        Modifier.fillMaxSize().padding(horizontal = 20.dp).padding(top = 16.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        com.littlebridge.enrollplus.ui.components.VButton(
+            text = "Submit Homework",
+            onClick = onOpenHomework,
+            modifier = Modifier.fillMaxWidth(),
+            variant = com.littlebridge.enrollplus.ui.components.VButtonVariant.Primary,
+        )
 
-    if (!data.aiSummary.isNullOrBlank()) {
+        val data = academics.dailySummary
+        if (data == null || data.entries.isEmpty()) {
+            EmptyState("No Homework Logs", "Daily homework summaries will appear here once available.")
+            return@Column
+        }
+
+        if (!data.aiSummary.isNullOrBlank()) {
         CreamCard {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Box(
