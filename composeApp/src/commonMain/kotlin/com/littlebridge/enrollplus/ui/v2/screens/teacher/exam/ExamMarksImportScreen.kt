@@ -81,7 +81,8 @@ fun ExamMarksImportScreen(
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                horizontal = 20.dp,
+                start = 20.dp,
+                end = 20.dp,
                 top = 16.dp,
                 bottom = 24.dp,
             ),
