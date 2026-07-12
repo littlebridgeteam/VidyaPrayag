@@ -62,6 +62,7 @@ import com.littlebridge.enrollplus.core.requireTeacherContext
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.HomeworkAttachmentsTable
 import com.littlebridge.enrollplus.db.HomeworkExtensionsTable
+import com.littlebridge.enrollplus.db.HomeworkSubmissionAttachmentsTable
 import com.littlebridge.enrollplus.db.HomeworkSubmissionsTable
 import com.littlebridge.enrollplus.db.HomeworkTable
 import com.littlebridge.enrollplus.feature.gamification.XpHooks
@@ -159,6 +160,15 @@ data class HwAssignRequest(
 //  letting the canonical envelope provide the single { success, message, data } layer.)
 
 @Serializable
+data class HwSubmissionAttachmentDto(
+    val id: String,
+    val url: String,
+    val filename: String = "",
+    val mime: String = "",
+    @SerialName("size_bytes") val sizeBytes: Long = 0,
+)
+
+@Serializable
 data class HwSubmissionRowDto(
     @SerialName("student_id") val studentId: String,
     @SerialName("student_code") val studentCode: String = "",
@@ -166,6 +176,8 @@ data class HwSubmissionRowDto(
     @SerialName("roll_no") val rollNo: Int? = null,
     val status: String = HwStatus.NOT_SUBMITTED,
     @SerialName("submitted_at") val submittedAt: String? = null,
+    @SerialName("submission_text") val submissionText: String = "",
+    val attachments: List<HwSubmissionAttachmentDto> = emptyList(),
     val grade: String? = null,
     @SerialName("has_extension") val hasExtension: Boolean = false,
     @SerialName("extended_to") val extendedTo: String? = null,
@@ -313,12 +325,31 @@ private suspend fun buildBoard(
         val classExt = exts.filter { it[HomeworkExtensionsTable.studentId] == null }
             .maxByOrNull { it[HomeworkExtensionsTable.newDueDate] }
             ?.get(HomeworkExtensionsTable.newDueDate)
-        BoardRaw(byUuid, byCode, perStudent, classExt)
+
+        val attachmentsBySubmission = if (subs.isEmpty()) {
+            emptyMap()
+        } else {
+            HomeworkSubmissionAttachmentsTable.selectAll()
+                .where { HomeworkSubmissionAttachmentsTable.submissionId inList subs.map { it[HomeworkSubmissionsTable.id].value } }
+                .map { att ->
+                    att[HomeworkSubmissionAttachmentsTable.submissionId].value to HwSubmissionAttachmentDto(
+                        id = att[HomeworkSubmissionAttachmentsTable.id].value.toString(),
+                        url = att[HomeworkSubmissionAttachmentsTable.url],
+                        filename = att[HomeworkSubmissionAttachmentsTable.filename],
+                        mime = att[HomeworkSubmissionAttachmentsTable.mime],
+                        sizeBytes = att[HomeworkSubmissionAttachmentsTable.sizeBytes],
+                    )
+                }
+                .groupBy({ it.first }, { it.second })
+        }
+
+        BoardRaw(byUuid, byCode, perStudent, classExt, attachmentsBySubmission)
     }
     val subsByUuid = raw.byUuid
     val subsByCode = raw.byCode
     val extByStudent = raw.perStudent
     val classExtension = raw.classExt
+    val attachmentsBySubmission = raw.attachmentsBySubmission
 
     var submitted = 0; var late = 0; var graded = 0; var notSubmitted = 0
     val rows = roster.map { st ->
@@ -333,6 +364,7 @@ private suspend fun buildBoard(
         }
         val perStudentExt = extByStudent[st.studentId]
         val extendedTo = perStudentExt ?: classExtension
+        val submissionId = sub?.get(HomeworkSubmissionsTable.id)?.value
         HwSubmissionRowDto(
             studentId = st.studentId.toString(),
             studentCode = st.studentCode,
@@ -340,6 +372,8 @@ private suspend fun buildBoard(
             rollNo = st.rollNumber,
             status = status,
             submittedAt = sub?.get(HomeworkSubmissionsTable.submittedAt)?.toString(),
+            submissionText = sub?.get(HomeworkSubmissionsTable.submissionText) ?: "",
+            attachments = submissionId?.let { attachmentsBySubmission[it] } ?: emptyList(),
             grade = sub?.get(HomeworkSubmissionsTable.grade),
             hasExtension = perStudentExt != null || classExtension != null,
             extendedTo = extendedTo?.toString(),
@@ -372,6 +406,7 @@ private data class BoardRaw(
     val byCode: Map<String, ResultRow>,
     val perStudent: Map<UUID, LocalDate>,
     val classExt: LocalDate?,
+    val attachmentsBySubmission: Map<UUID, List<HwSubmissionAttachmentDto>>,
 )
 
 // ─────────────────────────────────────────────────────────────────────────────

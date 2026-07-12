@@ -324,4 +324,32 @@ class ParentApi(
             client.get(getUrl("api/v1/parent/skill-test/$attemptId/review"))
         }
     }
+
+    // ── Parent Homework Submission ──────────────────────────────────────────
+
+    suspend fun getParentHomeworkList(token: String, childId: String): NetworkResult<ParentHomeworkListResponse> {
+        return safeApiCall {
+            client.get(getUrl("api/v1/parent/child/$childId/homework"))
+        }
+    }
+
+    suspend fun getParentHomeworkDetail(token: String, childId: String, homeworkId: String): NetworkResult<ParentHomeworkDetailResponse> {
+        return safeApiCall {
+            client.get(getUrl("api/v1/parent/child/$childId/homework/$homeworkId"))
+        }
+    }
+
+    suspend fun submitParentHomework(
+        token: String,
+        childId: String,
+        homeworkId: String,
+        request: ParentSubmitHomeworkRequest,
+    ): NetworkResult<ParentHomeworkMutationResponse> {
+        return safeApiCall {
+            client.post(getUrl("api/v1/parent/child/$childId/homework/$homeworkId/submit")) {
+                contentType(ContentType.Application.Json)
+                setBody(request)
+            }
+        }
+    }
 }

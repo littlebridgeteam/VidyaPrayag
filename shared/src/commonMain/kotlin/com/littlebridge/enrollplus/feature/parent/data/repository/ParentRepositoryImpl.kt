@@ -178,4 +178,20 @@ class ParentRepositoryImpl(
 
     override suspend fun getSkillTestReview(token: String, attemptId: String): NetworkResult<SkillTestReviewResponse> =
         api.getSkillTestReview(token, attemptId)
+
+    // ── Parent Homework Submission ──────────────────────────────────────────
+    override suspend fun getParentHomeworkList(token: String, childId: String): NetworkResult<ParentHomeworkListResponse> =
+        cacheFirstNetworkResult(cache, "parent_homework_list_$childId", ParentHomeworkListResponse.serializer()) { api.getParentHomeworkList(token, childId) }
+
+    override suspend fun getParentHomeworkDetail(token: String, childId: String, homeworkId: String): NetworkResult<ParentHomeworkDetailResponse> =
+        cacheFirstNetworkResult(cache, "parent_homework_detail_${childId}_$homeworkId", ParentHomeworkDetailResponse.serializer()) { api.getParentHomeworkDetail(token, childId, homeworkId) }
+
+    override suspend fun submitParentHomework(token: String, childId: String, homeworkId: String, request: ParentSubmitHomeworkRequest): NetworkResult<ParentHomeworkMutationResponse> {
+        val result = api.submitParentHomework(token, childId, homeworkId, request)
+        if (result is NetworkResult.Success) {
+            cache.delete("parent_homework_list_$childId")
+            cache.delete("parent_homework_detail_${childId}_$homeworkId")
+        }
+        return result
+    }
 }

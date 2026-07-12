@@ -1299,20 +1299,35 @@ object HomeworkAttachmentsTable : UUIDTable("homework_attachments", "id") {
  * not-submitted/late-pending row has no submission time).
  */
 object HomeworkSubmissionsTable : UUIDTable("homework_submissions", "id") {
-    val homeworkId  = uuid("homework_id")               // FK homework.id (CASCADE)
-    val studentId   = text("student_id")                // legacy: students.student_code
-    val studentUuid = uuid("student_uuid").nullable()   // T-404: typed FK students.id (B-HW-6)
+    val homeworkId      = uuid("homework_id")               // FK homework.id (CASCADE)
+    val studentId       = text("student_id")                // legacy: students.student_code
+    val studentUuid     = uuid("student_uuid").nullable()   // T-404: typed FK students.id (B-HW-6)
     // submitted | late | graded | not_submitted  (T-404 widened to text + check).
-    val status      = text("status").default("submitted")
-    val submittedAt = timestamp("submitted_at").nullable()
-    val grade       = text("grade").nullable()          // T-404: optional grade/feedback
-    val reviewedBy  = uuid("reviewed_by").nullable()    // T-404: FK app_users.id
-    val reviewedAt  = timestamp("reviewed_at").nullable()
-    val score       = integer("score").nullable()
-    val rank        = integer("rank").nullable()
+    val status          = text("status").default("submitted")
+    val submittedAt     = timestamp("submitted_at").nullable()
+    val submissionText  = text("submission_text").default("")  // parent-written answer / note
+    val grade           = text("grade").nullable()          // T-404: optional grade/feedback
+    val reviewedBy      = uuid("reviewed_by").nullable()    // T-404: FK app_users.id
+    val reviewedAt      = timestamp("reviewed_at").nullable()
+    val score           = integer("score").nullable()
+    val rank            = integer("rank").nullable()
     init {
         uniqueIndex("ux_homework_submissions_unique", homeworkId, studentId)
     }
+}
+
+/**
+ * Files/images attached to a student's homework submission (photos of written
+ * work, drawings, PDFs). Each row belongs to one HomeworkSubmissionsTable row.
+ */
+object HomeworkSubmissionAttachmentsTable : UUIDTable("homework_submission_attachments", "id") {
+    val submissionId = uuid("submission_id")              // FK homework_submissions.id (CASCADE)
+    val url          = text("url")
+    val filename     = text("filename").default("")
+    val mime         = text("mime").default("")
+    val sizeBytes    = long("size_bytes").default(0)
+    val uploadedBy   = uuid("uploaded_by").nullable()    // FK app_users.id (parent/child)
+    val createdAt    = timestamp("created_at")
 }
 
 /**

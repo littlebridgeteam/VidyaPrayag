@@ -168,6 +168,7 @@ object DatabaseFactory {
         ExamReminderLogTable,
         HomeworkTable,
         HomeworkSubmissionsTable,
+        HomeworkSubmissionAttachmentsTable,
         // T-404 (Doc 08 §5.3): typed homework attachments + teacher cutoff
         // extensions (migration_017_homework.sql applies these in Supabase
         // before deploy; AUTO_CREATE_TABLES is OFF in prod). Closes D-HW-1..5.
