@@ -31,8 +31,6 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.littlebridge.enrollplus.feature.idcard.domain.model.IdCardDto
 import com.littlebridge.enrollplus.feature.idcard.presentation.IdCardViewModel
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.QrCodeImage
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
@@ -42,6 +40,7 @@ import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 @Composable
 fun DigitalIdCardScreen(
@@ -66,7 +65,7 @@ fun DigitalIdCardScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(VColors.cream)
+            .background(VTheme.colors.cream)
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -76,7 +75,7 @@ fun DigitalIdCardScreen(
 
         state.error?.let { err ->
             VCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-                Text(text = err, color = VColors.error, style = VTypography.body)
+                Text(text = err, color = VTheme.colors.error, style = VTheme.type.body)
             }
             Spacer(modifier = Modifier.height(16.dp))
         }
@@ -111,7 +110,7 @@ fun DigitalIdCardScreen(
 
                 Text(
                     text = appString(StringKeys.DID_SCAN_QR_BACK),
-                    style = VTypography.caption,
+                    style = VTheme.type.caption,
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
 
@@ -119,17 +118,17 @@ fun DigitalIdCardScreen(
 
                 Text(
                     text = appString(StringKeys.DID_VALID_TILL, "date" to (card.validTill ?: "N/A")),
-                    style = VTypography.body.copy(fontWeight = FontWeight.Bold),
+                    style = VTheme.type.body.copy(fontWeight = FontWeight.Bold),
                 )
             } else if (state.isLoading) {
                 Text(
                     text = appString(StringKeys.DID_LOADING),
-                    style = VTypography.body,
+                    style = VTheme.type.body,
                 )
             } else if (state.error == null) {
                 Text(
                     text = appString(StringKeys.DID_NO_ID_CARD),
-                    style = VTypography.body,
+                    style = VTheme.type.body,
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
             }
@@ -140,7 +139,7 @@ fun DigitalIdCardScreen(
 
 @Composable
 private fun DigitalCard(card: IdCardDto, showFront: Boolean) {
-    val primaryColor = VColors.violet
+    val primaryColor = VTheme.colors.violet
 
     Box(
         modifier = Modifier
@@ -163,18 +162,18 @@ private fun DigitalCard(card: IdCardDto, showFront: Boolean) {
             if (showFront) {
                 Text(
                     text = card.personName,
-                    style = VTypography.h3,
+                    style = VTheme.type.h3,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = card.personType.replaceFirstChar { it.uppercase() },
-                    style = VTypography.body,
+                    style = VTheme.type.body,
                     color = primaryColor,
                 )
             } else {
                 Text(
                     text = appString(StringKeys.DID_QR_CODE),
-                    style = VTypography.body.copy(fontWeight = FontWeight.Bold),
+                    style = VTheme.type.body.copy(fontWeight = FontWeight.Bold),
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 QrCodeImage(
@@ -184,12 +183,12 @@ private fun DigitalCard(card: IdCardDto, showFront: Boolean) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
                     text = appString(StringKeys.DID_SCAN_VERIFY),
-                    style = VTypography.caption,
+                    style = VTheme.type.caption,
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = appString(StringKeys.DID_VALID_TILL, "date" to (card.validTill ?: "N/A")),
-                    style = VTypography.caption,
+                    style = VTheme.type.caption,
                 )
             }
         }

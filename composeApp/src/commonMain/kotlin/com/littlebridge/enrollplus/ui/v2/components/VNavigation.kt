@@ -65,12 +65,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
-import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.PinButton
 import com.littlebridge.enrollplus.feature.admin.presentation.PinnedScreensViewModel
 import org.koin.compose.viewmodel.koinViewModel
-import com.littlebridge.enrollplus.ui.tokens.VShapes
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 
 // ─────────────────────────────────────────────────────────────────────────────
 // VTopTabs — horizontally scrollable underline tab bar
@@ -919,7 +916,7 @@ private fun VBottomBarItem(
  */
 @Composable
 fun VBackHeader(
-    title: String,
+    title: String? = null,
     modifier: Modifier = Modifier,
     onBack: (() -> Unit)? = null,
     action: (@Composable () -> Unit)? = null,
@@ -944,7 +941,11 @@ fun VBackHeader(
             ) {
                 Icon(VIcons.ChevronLeft, contentDescription = "Back", tint = c.ink, modifier = Modifier.size(20.dp))
             }
-            Text(title, style = VTheme.type.h3.colored(c.ink))
+            if (title != null) {
+                Text(title, style = VTheme.type.h3.colored(c.ink))
+            } else {
+                Spacer(Modifier.weight(1f))
+            }
             Box(Modifier.height(40.dp).wrapContentWidth(), contentAlignment = Alignment.Center) {
                 if (pinRouteId != null) {
                     RoutePinButton(routeId = pinRouteId)
@@ -976,8 +977,8 @@ private fun RoutePinButton(
 // VCreamBottomNav — premium floating dock navigation (v2, +10% size)
 //
 // Design DNA:
-//   • VColors.surfaceCard bar (pure white) — floats above cream background
-//   • 1dp VColors.line border, 24dp rounded corners
+//   • VTheme.colors.surfaceCard bar (pure white) — floats above cream background
+//   • 1dp VTheme.colors.line border, 24dp rounded corners
 //   • Active: icon in a filled violet circle (36dp) + violet label
 //   • Inactive: plain icon in ink3 + ink3 label
 //   • Badge: coral dot on top-right of icon (no text, just a dot)
@@ -1006,8 +1007,8 @@ fun VCreamBottomNav(
                 .height(62.dp)
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(24.dp))
-                .background(VColors.surfaceCard)
-                .border(1.dp, VColors.line, RoundedCornerShape(24.dp))
+                .background(VTheme.colors.surfaceCard)
+                .border(1.dp, VTheme.colors.line, RoundedCornerShape(24.dp))
                 .padding(horizontal = 8.dp),
         ) {
             Row(
@@ -1017,8 +1018,8 @@ fun VCreamBottomNav(
             ) {
                 items.forEach { item ->
                     val active = item.id == selected
-                    val iconTint = if (active) VColors.violet else VColors.ink3
-                    val labelColor = if (active) VColors.violet else VColors.ink3
+                    val iconTint = if (active) VTheme.colors.violet else VTheme.colors.ink3
+                    val labelColor = if (active) VTheme.colors.violet else VTheme.colors.ink3
                     val interaction = remember { MutableInteractionSource() }
 
                     Column(
@@ -1041,7 +1042,7 @@ fun VCreamBottomNav(
                                     modifier = Modifier
                                         .size(36.dp)
                                         .clip(CircleShape)
-                                        .background(VColors.violetSoft),
+                                        .background(VTheme.colors.violetSoft),
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     Icon(
@@ -1065,8 +1066,8 @@ fun VCreamBottomNav(
                                         .offset(x = 7.dp, y = (-2).dp)
                                         .size(8.dp)
                                         .clip(CircleShape)
-                                        .background(VColors.coral)
-                                        .border(1.5.dp, VColors.surfaceCard, CircleShape),
+                                        .background(VTheme.colors.coral)
+                                        .border(1.5.dp, VTheme.colors.surfaceCard, CircleShape),
                                 )
                             }
                         }
@@ -1075,7 +1076,7 @@ fun VCreamBottomNav(
 
                         Text(
                             text = item.label,
-                            style = VTypography.caption.copy(
+                            style = VTheme.type.caption.copy(
                                 fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
                                 fontSize = 10.sp,
                             ),

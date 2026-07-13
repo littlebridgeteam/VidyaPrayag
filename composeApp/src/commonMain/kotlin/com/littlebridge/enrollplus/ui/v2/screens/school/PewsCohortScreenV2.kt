@@ -69,9 +69,8 @@ import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * PewsCohortScreenV2 — the admin's live at-risk roster.
@@ -206,26 +205,26 @@ private fun EffectivenessCard(eff: PewsEffectivenessDto) {
     VCard {
         Text(
             appString(StringKeys.SCH_EFFECTIVENESS_HEADER),
-            style = VTypography.label.copy(color = VColors.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+            style = VTheme.type.label.copy(color = VTheme.colors.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
         )
         Spacer(Modifier.height(4.dp))
         Text(
             appString(StringKeys.SCH_EFFECTIVENESS_LOOP_DESC),
-            style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 12.sp),
+            style = VTheme.type.caption.copy(color = VTheme.colors.ink3).copy(fontSize = 12.sp),
         )
         Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            EffStat(appString(StringKeys.SCH_OPEN), "${eff.open}", VColors.ink, Modifier.weight(1f))
-            EffStat(appString(StringKeys.SCH_RESOLVED), "$resolved", VColors.ink, Modifier.weight(1f))
-            EffStat(appString(StringKeys.SCH_IMPROVED), if (outcomeTotal > 0) "$improvedPct%" else "—", VColors.success, Modifier.weight(1f))
+            EffStat(appString(StringKeys.SCH_OPEN), "${eff.open}", VTheme.colors.ink, Modifier.weight(1f))
+            EffStat(appString(StringKeys.SCH_RESOLVED), "$resolved", VTheme.colors.ink, Modifier.weight(1f))
+            EffStat(appString(StringKeys.SCH_IMPROVED), if (outcomeTotal > 0) "$improvedPct%" else "—", VTheme.colors.success, Modifier.weight(1f))
         }
         if (outcomeTotal > 0) {
             Spacer(Modifier.height(12.dp))
-            OutcomeBar(appString(StringKeys.SCH_IMPROVED), eff.improved, eff.total, VColors.success)
+            OutcomeBar(appString(StringKeys.SCH_IMPROVED), eff.improved, eff.total, VTheme.colors.success)
             Spacer(Modifier.height(6.dp))
-            OutcomeBar(appString(StringKeys.SCH_NO_CHANGE), eff.unchanged, eff.total, VColors.ink3.copy(alpha = 0.5f))
+            OutcomeBar(appString(StringKeys.SCH_NO_CHANGE), eff.unchanged, eff.total, VTheme.colors.ink3.copy(alpha = 0.5f))
             Spacer(Modifier.height(6.dp))
-            OutcomeBar(appString(StringKeys.SCH_WORSENED), eff.worsened, eff.total, VColors.error)
+            OutcomeBar(appString(StringKeys.SCH_WORSENED), eff.worsened, eff.total, VTheme.colors.error)
         }
     }
 }
@@ -238,12 +237,12 @@ private fun EffStat(
     modifier: Modifier = Modifier,
 ) {
         Column(
-        modifier.clip(RoundedCornerShape(10.dp)).background(VColors.cream).padding(vertical = 12.dp),
+        modifier.clip(RoundedCornerShape(10.dp)).background(VTheme.colors.cream).padding(vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(value, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = fg).copy(fontWeight = FontWeight.Bold, fontSize = 18.sp))
+        Text(value, style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = fg).copy(fontWeight = FontWeight.Bold, fontSize = 18.sp))
         Spacer(Modifier.height(2.dp))
-        Text(label, style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 11.sp))
+        Text(label, style = VTheme.type.caption.copy(color = VTheme.colors.ink3).copy(fontSize = 11.sp))
     }
 }
 
@@ -257,12 +256,12 @@ private fun OutcomeBar(
         val frac = if (total > 0) value.toFloat() / total.toFloat() else 0f
     Column(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(label, style = VTypography.caption.copy(color = VColors.ink2).copy(fontSize = 12.sp))
-            Text("$value", style = VTypography.caption.copy(color = VColors.ink).copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold))
+            Text(label, style = VTheme.type.caption.copy(color = VTheme.colors.ink2).copy(fontSize = 12.sp))
+            Text("$value", style = VTheme.type.caption.copy(color = VTheme.colors.ink).copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold))
         }
         Spacer(Modifier.height(4.dp))
         Box(
-            Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(999.dp)).background(VColors.cream),
+            Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(999.dp)).background(VTheme.colors.cream),
         ) {
             Box(
                 Modifier.fillMaxWidth(frac).height(8.dp).clip(RoundedCornerShape(999.dp)).background(fill),
@@ -290,12 +289,12 @@ private fun ConfigCard(
             Column(Modifier.weight(1f)) {
                 Text(
                     appString(StringKeys.SCH_CONFIGURATION),
-                    style = VTypography.label.copy(color = VColors.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                    style = VTheme.type.label.copy(color = VTheme.colors.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
                     appString(StringKeys.SCH_CONFIGURATION_DESC),
-                    style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 12.sp),
+                    style = VTheme.type.caption.copy(color = VTheme.colors.ink3).copy(fontSize = 12.sp),
                 )
             }
             if (dirty) {
@@ -332,7 +331,7 @@ private fun ConfigCard(
         Spacer(Modifier.height(10.dp))
         Text(
             appString(StringKeys.SCH_RUN_FREQUENCY),
-            style = VTypography.body.copy(color = VColors.ink).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
+            style = VTheme.type.body.copy(color = VTheme.colors.ink).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
         )
         Spacer(Modifier.height(6.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -357,22 +356,22 @@ private fun ConfigToggle(
         Column(Modifier.weight(1f)) {
             Text(
                 label,
-                style = VTypography.body.copy(color = VColors.ink).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
+                style = VTheme.type.body.copy(color = VTheme.colors.ink).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
             )
             Spacer(Modifier.height(2.dp))
             Text(
                 hint,
-                style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 11.sp, lineHeight = 15.sp),
+                style = VTheme.type.caption.copy(color = VTheme.colors.ink3).copy(fontSize = 11.sp, lineHeight = 15.sp),
             )
         }
         Switch(
             checked = checked,
             onCheckedChange = onChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = VColors.surfaceCard,
-                checkedTrackColor = VColors.violet,
-                uncheckedThumbColor = VColors.surfaceCard,
-                uncheckedTrackColor = VColors.ink3.copy(alpha = 0.3f),
+                checkedThumbColor = VTheme.colors.surfaceCard,
+                checkedTrackColor = VTheme.colors.violet,
+                uncheckedThumbColor = VTheme.colors.surfaceCard,
+                uncheckedTrackColor = VTheme.colors.ink3.copy(alpha = 0.3f),
             ),
         )
     }
@@ -390,14 +389,14 @@ private fun FreqChip(
     Box(
         modifier
             .clip(RoundedCornerShape(999.dp))
-            .background(if (isSel) VColors.ink else VColors.cream)
+            .background(if (isSel) VTheme.colors.ink else VTheme.colors.cream)
             .clickable { onSelect(value) }
             .padding(vertical = 10.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             label,
-            style = VTypography.label.copy(color = if (isSel) VColors.surfaceCard else VColors.ink2)
+            style = VTheme.type.label.copy(color = if (isSel) VTheme.colors.surfaceCard else VTheme.colors.ink2)
                 .copy(fontWeight = FontWeight.SemiBold, fontSize = 12.sp),
         )
     }
@@ -409,19 +408,19 @@ private fun RiskBandSummary(cohort: PewsCohortDto) {
         VCard {
         Text(
             appString(StringKeys.SCH_RISK_BAND),
-            style = VTypography.label.copy(color = VColors.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+            style = VTheme.type.label.copy(color = VTheme.colors.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
         )
         Spacer(Modifier.height(10.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            BandCount(appString(StringKeys.SCH_HIGH), cohort.high, VColors.error, VColors.error, Modifier.weight(1f))
-            BandCount(appString(StringKeys.SCH_MEDIUM), cohort.medium, VColors.gold, VColors.gold, Modifier.weight(1f))
-            BandCount(appString(StringKeys.SCH_WATCH), cohort.watch, VColors.success, VColors.success, Modifier.weight(1f))
+            BandCount(appString(StringKeys.SCH_HIGH), cohort.high, VTheme.colors.error, VTheme.colors.error, Modifier.weight(1f))
+            BandCount(appString(StringKeys.SCH_MEDIUM), cohort.medium, VTheme.colors.gold, VTheme.colors.gold, Modifier.weight(1f))
+            BandCount(appString(StringKeys.SCH_WATCH), cohort.watch, VTheme.colors.success, VTheme.colors.success, Modifier.weight(1f))
         }
         cohort.runDate?.let {
             Spacer(Modifier.height(10.dp))
             Text(
                 appString(StringKeys.SCH_AS_OF, "date" to it),
-                style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 11.sp),
+                style = VTheme.type.caption.copy(color = VTheme.colors.ink3).copy(fontSize = 11.sp),
             )
         }
     }
@@ -439,9 +438,9 @@ private fun BandCount(
         modifier.clip(RoundedCornerShape(10.dp)).background(bg).padding(vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text("$count", style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = fg).copy(fontWeight = FontWeight.Bold))
+        Text("$count", style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = fg).copy(fontWeight = FontWeight.Bold))
         Spacer(Modifier.height(2.dp))
-        Text(label, style = VTypography.caption.copy(color = fg).copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold))
+        Text(label, style = VTheme.type.caption.copy(color = fg).copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold))
     }
 }
 
@@ -466,14 +465,14 @@ private fun FilterChip(
     Box(
         modifier
             .clip(RoundedCornerShape(999.dp))
-            .background(if (isSel) VColors.ink else VColors.cream)
+            .background(if (isSel) VTheme.colors.ink else VTheme.colors.cream)
             .clickable { onSelect(value) }
             .padding(vertical = 10.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             label,
-            style = VTypography.label.copy(color = if (isSel) VColors.surfaceCard else VColors.ink2)
+            style = VTheme.type.label.copy(color = if (isSel) VTheme.colors.surfaceCard else VTheme.colors.ink2)
                 .copy(fontWeight = FontWeight.SemiBold, fontSize = 12.sp),
         )
     }
@@ -483,14 +482,14 @@ private fun FilterChip(
 private fun AiDisabledNote() {
         Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
-            .background(VColors.cream).padding(12.dp),
+            .background(VTheme.colors.cream).padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Icon(VIcons.AlertCircle, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(16.dp))
+        Icon(VIcons.AlertCircle, contentDescription = "", tint = VTheme.colors.ink3, modifier = Modifier.size(16.dp))
         Text(
             appString(StringKeys.SCH_AI_DISABLED_NOTE),
-            style = VTypography.caption.copy(color = VColors.ink2).copy(fontSize = 12.sp, lineHeight = 17.sp),
+            style = VTheme.type.caption.copy(color = VTheme.colors.ink2).copy(fontSize = 12.sp, lineHeight = 17.sp),
         )
     }
 }
@@ -505,14 +504,14 @@ private fun AiDisabledNote() {
 private fun AllOnTrackNote() {
         Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
-            .background(VColors.cream).padding(14.dp),
+            .background(VTheme.colors.cream).padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Icon(VIcons.ShieldCheck, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
+        Icon(VIcons.ShieldCheck, contentDescription = "", tint = VTheme.colors.violet, modifier = Modifier.size(18.dp))
         Text(
             appString(StringKeys.SCH_ALL_ON_TRACK_NOTE),
-            style = VTypography.caption.copy(color = VColors.ink2).copy(fontSize = 12.sp, lineHeight = 17.sp),
+            style = VTheme.type.caption.copy(color = VTheme.colors.ink2).copy(fontSize = 12.sp, lineHeight = 17.sp),
         )
     }
 }
@@ -521,11 +520,11 @@ private fun AllOnTrackNote() {
 @Composable
 private fun JobStatusCard(status: String, jobId: String?, onPoll: (String) -> Unit) {
         val (label, tone) = when (status) {
-        "queued" -> appString(StringKeys.SCH_QUEUED) to VColors.ink3
-        "processing" -> appString(StringKeys.SCH_RUNNING) to VColors.gold
-        "completed" -> appString(StringKeys.SCH_COMPLETE) to VColors.success
-        "failed" -> appString(StringKeys.SCH_FAILED) to VColors.error
-        else -> status to VColors.ink3
+        "queued" -> appString(StringKeys.SCH_QUEUED) to VTheme.colors.ink3
+        "processing" -> appString(StringKeys.SCH_RUNNING) to VTheme.colors.gold
+        "completed" -> appString(StringKeys.SCH_COMPLETE) to VTheme.colors.success
+        "failed" -> appString(StringKeys.SCH_FAILED) to VTheme.colors.error
+        else -> status to VTheme.colors.ink3
     }
     VCard {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -534,7 +533,7 @@ private fun JobStatusCard(status: String, jobId: String?, onPoll: (String) -> Un
             )
             Text(
                 label,
-                style = VTypography.body.copy(color = VColors.ink).copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
+                style = VTheme.type.body.copy(color = VTheme.colors.ink).copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
                 modifier = Modifier.weight(1f),
             )
             if (jobId != null && (status == "queued" || status == "processing")) {
@@ -556,12 +555,12 @@ private fun TrendCard(points: List<PewsTrendPointDto>) {
     VCard {
         Text(
             appString(StringKeys.SCH_RISK_TREND),
-            style = VTypography.label.copy(color = VColors.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+            style = VTheme.type.label.copy(color = VTheme.colors.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
         )
         Spacer(Modifier.height(4.dp))
         Text(
             appString(StringKeys.SCH_RISK_TREND_DESC),
-            style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 12.sp),
+            style = VTheme.type.caption.copy(color = VTheme.colors.ink3).copy(fontSize = 12.sp),
         )
         Spacer(Modifier.height(12.dp))
         // Stacked bar chart — one bar per run date
@@ -573,28 +572,28 @@ private fun TrendCard(points: List<PewsTrendPointDto>) {
             ) {
                 Text(
                     p.runDate.takeLast(5),
-                    style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 10.sp),
+                    style = VTheme.type.caption.copy(color = VTheme.colors.ink3).copy(fontSize = 10.sp),
                     modifier = Modifier.weight(0.3f),
                 )
                 Box(
-                    Modifier.weight(0.7f).height(16.dp).clip(RoundedCornerShape(4.dp)).background(VColors.cream),
+                    Modifier.weight(0.7f).height(16.dp).clip(RoundedCornerShape(4.dp)).background(VTheme.colors.cream),
                 ) {
                     Row(Modifier.fillMaxSize()) {
                         val highFrac = if (maxTotal > 0) p.high.toFloat() / maxTotal else 0f
                         val medFrac = if (maxTotal > 0) p.medium.toFloat() / maxTotal else 0f
                         val watchFrac = if (maxTotal > 0) p.watch.toFloat() / maxTotal else 0f
-                        Box(Modifier.fillMaxWidth(highFrac).fillMaxSize().background(VColors.error))
-                        Box(Modifier.fillMaxWidth(medFrac).fillMaxSize().background(VColors.gold))
-                        Box(Modifier.fillMaxWidth(watchFrac).fillMaxSize().background(VColors.success))
+                        Box(Modifier.fillMaxWidth(highFrac).fillMaxSize().background(VTheme.colors.error))
+                        Box(Modifier.fillMaxWidth(medFrac).fillMaxSize().background(VTheme.colors.gold))
+                        Box(Modifier.fillMaxWidth(watchFrac).fillMaxSize().background(VTheme.colors.success))
                     }
                 }
             }
         }
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            TrendLegend(appString(StringKeys.SCH_HIGH), VColors.error)
-            TrendLegend(appString(StringKeys.SCH_MEDIUM), VColors.gold)
-            TrendLegend(appString(StringKeys.SCH_WATCH), VColors.success)
+            TrendLegend(appString(StringKeys.SCH_HIGH), VTheme.colors.error)
+            TrendLegend(appString(StringKeys.SCH_MEDIUM), VTheme.colors.gold)
+            TrendLegend(appString(StringKeys.SCH_WATCH), VTheme.colors.success)
         }
     }
 }
@@ -603,7 +602,7 @@ private fun TrendCard(points: List<PewsTrendPointDto>) {
 private fun TrendLegend(label: String, color: androidx.compose.ui.graphics.Color) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         Box(Modifier.size(8.dp).clip(RoundedCornerShape(2.dp)).background(color))
-        Text(label, style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 10.sp))
+        Text(label, style = VTheme.type.caption.copy(color = VTheme.colors.ink3).copy(fontSize = 10.sp))
     }
 }
 
@@ -618,20 +617,20 @@ private fun PewsStudentRow(s: PewsStudentDto, onClick: () -> Unit, modifier: Mod
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             // initial avatar
             Box(
-                Modifier.size(40.dp).clip(CircleShape).background(VColors.cream),
+                Modifier.size(40.dp).clip(CircleShape).background(VTheme.colors.cream),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     s.name.firstOrNull()?.uppercase() ?: "?",
-                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2),
+                    style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink2),
                 )
             }
             Column(Modifier.weight(1f)) {
-                Text(s.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink), maxLines = 1)
+                Text(s.name, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink), maxLines = 1)
                 Spacer(Modifier.height(2.dp))
                 Text(
                     appString(StringKeys.SCH_CLASS_SECTION_DASH, "className" to s.className, "section" to if (s.section.isNotBlank()) "-${s.section}" else ""),
-                    style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 12.sp),
+                    style = VTheme.type.caption.copy(color = VTheme.colors.ink3).copy(fontSize = 12.sp),
                 )
             }
             VBadge(text = levelLabel, tone = tone)
@@ -650,10 +649,10 @@ private fun PewsStudentRow(s: PewsStudentDto, onClick: () -> Unit, modifier: Mod
         if (!aiLine.isNullOrBlank()) {
             Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Icon(VIcons.Sparkles, contentDescription = null, tint = VColors.sky, modifier = Modifier.size(13.dp))
+                Icon(VIcons.Sparkles, contentDescription = "", tint = VTheme.colors.sky, modifier = Modifier.size(13.dp))
                 Text(
                     aiLine,
-                    style = VTypography.caption.copy(color = VColors.ink2).copy(fontSize = 12.sp, lineHeight = 17.sp),
+                    style = VTheme.type.caption.copy(color = VTheme.colors.ink2).copy(fontSize = 12.sp, lineHeight = 17.sp),
                     maxLines = 2,
                 )
             }
@@ -664,8 +663,8 @@ private fun PewsStudentRow(s: PewsStudentDto, onClick: () -> Unit, modifier: Mod
 @Composable
 private fun SignalChip(label: String) {
         Box(
-        Modifier.clip(RoundedCornerShape(8.dp)).background(VColors.cream).padding(horizontal = 8.dp, vertical = 4.dp),
+        Modifier.clip(RoundedCornerShape(8.dp)).background(VTheme.colors.cream).padding(horizontal = 8.dp, vertical = 4.dp),
     ) {
-        Text(label, style = VTypography.caption.copy(color = VColors.ink2).copy(fontSize = 11.sp))
+        Text(label, style = VTheme.type.caption.copy(color = VTheme.colors.ink2).copy(fontSize = 11.sp))
     }
 }

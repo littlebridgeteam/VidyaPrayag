@@ -65,7 +65,7 @@ fun PulseCard(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Icon(VIcons.Activity, contentDescription = null, tint = c.accent, modifier = Modifier.size(16.dp))
+                Icon(VIcons.Activity, contentDescription = "", tint = c.accent, modifier = Modifier.size(16.dp))
                 Text(
                     appString(StringKeys.PUL_WEEKLY_PULSE),
                     style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 10.sp),
@@ -207,7 +207,7 @@ fun PulseCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    Icon(VIcons.Calendar, contentDescription = null, tint = c.ink3, modifier = Modifier.size(12.dp))
+                    Icon(VIcons.Calendar, contentDescription = "", tint = c.ink3, modifier = Modifier.size(12.dp))
                     Text(
                         "${event.title} — ${event.date}",
                         style = VTheme.type.body.colored(c.ink2).copy(fontSize = 12.sp),
@@ -281,7 +281,7 @@ private fun TrendArrow(trend: String?) {
         "down" -> VIcons.TrendingDown to c.danger
         else -> VIcons.Minus to c.ink3
     }
-    Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(16.dp))
+    Icon(icon, contentDescription = "", tint = color, modifier = Modifier.size(16.dp))
 }
 
 @Composable

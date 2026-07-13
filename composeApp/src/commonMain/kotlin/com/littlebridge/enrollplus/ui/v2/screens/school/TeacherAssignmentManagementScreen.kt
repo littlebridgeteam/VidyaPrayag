@@ -61,9 +61,8 @@ import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * RA-TAM: TeacherAssignmentManagementScreen — the single reusable assignment
@@ -149,7 +148,7 @@ private fun AssignmentContent(
                 onRequestRemove = { pendingRemoveId = it },
             )
             state.removeError?.let { err ->
-                Text(err, style = VTypography.caption.copy(color = VColors.error))
+                Text(err, style = VTheme.type.caption.copy(color = VTheme.colors.error))
             }
             AddAssignment(                                // 4. Add assignment flow
                 state = state,
@@ -189,10 +188,10 @@ private fun TeacherHeader(overview: TeacherAssignmentOverviewDto) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             VAvatar(name = s.teacherName, size = 64.dp, ring = true)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(s.teacherName, style = VTypography.h2.copy(color = VColors.ink))
+                Text(s.teacherName, style = VTheme.type.h2.copy(color = VTheme.colors.ink))
                 Text(
                     subject?.let { appString(StringKeys.SCH_SUBJECT_TEACHER, "subject" to it) } ?: appString(StringKeys.SCH_TEACHER),
-                    style = VTypography.caption.copy(color = VColors.ink2),
+                    style = VTheme.type.caption.copy(color = VTheme.colors.ink2),
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     VBadge(text = appString(StringKeys.SCH_COUNT_CLASSES, "count" to s.classCount.toString()), tone = VBadgeTone.Arctic)
@@ -238,12 +237,12 @@ private fun KpiCard(data: KpiData) {
             Modifier.size(36.dp).clip(RoundedCornerShape(12.dp)).background(tint.copy(alpha = 0.12f)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(data.icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
+            Icon(data.icon, contentDescription = "", tint = tint, modifier = Modifier.size(18.dp))
         }
         Spacer(Modifier.height(12.dp))
-        Text(data.value, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink))
-        Text(data.label, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2))
-        Text(data.support, style = VTypography.label.copy(color = VColors.ink3))
+        Text(data.value, style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VTheme.colors.ink))
+        Text(data.label, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink2))
+        Text(data.support, style = VTheme.type.label.copy(color = VTheme.colors.ink3))
     }
 }
 
@@ -277,22 +276,22 @@ private fun AssignmentCard(
         VCard(modifier = modifier, padding = 16.dp) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
-                Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(VColors.sky.copy(alpha = 0.12f)),
+                Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(VTheme.colors.sky.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(VIcons.BookOpen, contentDescription = null, tint = VColors.sky, modifier = Modifier.size(20.dp))
+                Icon(VIcons.BookOpen, contentDescription = "", tint = VTheme.colors.sky, modifier = Modifier.size(20.dp))
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(a.subject, style = VTypography.h3.copy(color = VColors.ink))
+                Text(a.subject, style = VTheme.type.h3.copy(color = VTheme.colors.ink))
                 Text(
                     appString(StringKeys.SCH_CLASS_SECTION_LABEL, "className" to a.className, "section" to a.section),
-                    style = VTypography.caption.copy(color = VColors.ink2),
+                    style = VTheme.type.caption.copy(color = VTheme.colors.ink2),
                 )
                 Spacer(Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Icon(VIcons.Users, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(14.dp))
-                    Text(appString(StringKeys.SCH_COUNT_STUDENTS, "count" to a.studentCount.toString()), style = VTypography.caption.copy(color = VColors.ink3))
+                    Icon(VIcons.Users, contentDescription = "", tint = VTheme.colors.ink3, modifier = Modifier.size(14.dp))
+                    Text(appString(StringKeys.SCH_COUNT_STUDENTS, "count" to a.studentCount.toString()), style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
                 }
             }
             VButton(
@@ -327,13 +326,13 @@ private fun AddAssignment(
         VSectionHeader(title = appString(StringKeys.SCH_ADD_ASSIGNMENT))
         VCard(padding = 18.dp) {
             if (options == null) {
-                Text(appString(StringKeys.SCH_LOADING_OPTIONS), style = VTypography.body.copy(color = VColors.ink2))
+                Text(appString(StringKeys.SCH_LOADING_OPTIONS), style = VTheme.type.body.copy(color = VTheme.colors.ink2))
                 return@VCard
             }
             if (options.classes.isEmpty() && options.subjects.isEmpty()) {
                 Text(
                     appString(StringKeys.SCH_NO_CLASSES_SUBJECTS),
-                    style = VTypography.body.copy(color = VColors.ink2),
+                    style = VTheme.type.body.copy(color = VTheme.colors.ink2),
                 )
                 return@VCard
             }
@@ -377,7 +376,7 @@ private fun AddAssignment(
             if (availableSections.isEmpty()) {
                 Text(
                     appString(StringKeys.SCH_PICK_CLASSES_FIRST),
-                    style = VTypography.caption.copy(color = VColors.ink3),
+                    style = VTheme.type.caption.copy(color = VTheme.colors.ink3),
                 )
             } else {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -391,7 +390,7 @@ private fun AddAssignment(
                 }
                 Text(
                     appString(StringKeys.SCH_LEAVE_UNSELECTED),
-                    style = VTypography.label.copy(color = VColors.ink3),
+                    style = VTheme.type.label.copy(color = VTheme.colors.ink3),
                     modifier = Modifier.padding(top = 6.dp),
                 )
             }
@@ -407,9 +406,9 @@ private fun AddAssignment(
             }
             if (draft.subjectName != null && previewTargets.isNotEmpty()) {
                 StepLabel(appString(StringKeys.SCH_STEP_4_PREVIEW))
-                Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(VColors.cream).padding(12.dp)) {
+                Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(VTheme.colors.cream).padding(12.dp)) {
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(draft.subjectName?:"", style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                        Text(draft.subjectName?:"", style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             previewTargets.forEach { t -> VBadge(text = t, tone = VBadgeTone.Arctic) }
                         }
@@ -420,11 +419,11 @@ private fun AddAssignment(
 
             // Step 5 — Save / Reset
             state.saveError?.let { err ->
-                Text(err, style = VTypography.caption.copy(color = VColors.error))
+                Text(err, style = VTheme.type.caption.copy(color = VTheme.colors.error))
                 Spacer(Modifier.height(8.dp))
             }
             state.lastSaveMessage?.let { msg ->
-                Text(msg, style = VTypography.caption.copy(color = VColors.success))
+                Text(msg, style = VTheme.type.caption.copy(color = VTheme.colors.success))
                 Spacer(Modifier.height(8.dp))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -442,7 +441,7 @@ private fun AddAssignment(
                     full = true,
                     loading = state.isSaving,
                     enabled = !state.isSaving,
-                    leading = { Icon(VIcons.Check, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                    leading = { Icon(VIcons.Check, contentDescription = "", modifier = Modifier.size(16.dp)) },
                 )
             }
         }
@@ -453,7 +452,7 @@ private fun AddAssignment(
 private fun StepLabel(text: String) {
     Text(
         text,
-        style = VTypography.label.copy(color = VColors.ink3),
+        style = VTheme.type.label.copy(color = VTheme.colors.ink3),
         modifier = Modifier.padding(bottom = 8.dp),
     )
 }
@@ -472,12 +471,12 @@ private fun WorkloadInsights(overview: TeacherAssignmentOverviewDto) {
                     VCard(padding = 14.dp) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             Box(
-                                Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(VColors.sky.copy(alpha = 0.16f)),
+                                Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(VTheme.colors.sky.copy(alpha = 0.16f)),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                Icon(VIcons.Sparkles, contentDescription = null, tint = VColors.sky, modifier = Modifier.size(17.dp))
+                                Icon(VIcons.Sparkles, contentDescription = "", tint = VTheme.colors.sky, modifier = Modifier.size(17.dp))
                             }
-                            Text(insight, style = VTypography.body.copy(color = VColors.ink), modifier = Modifier.weight(1f))
+                            Text(insight, style = VTheme.type.body.copy(color = VTheme.colors.ink), modifier = Modifier.weight(1f))
                         }
                     }
                 }
@@ -500,10 +499,10 @@ private fun DistributionVisual(overview: TeacherAssignmentOverviewDto) {
                 dist.forEach { d ->
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(d.subject, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2))
+                            Text(d.subject, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink2))
                             Text(
                                 appString(StringKeys.SCH_CLS_STU, "classCount" to d.classCount.toString(), "studentCount" to d.studentCount.toString()),
-                                style = VTypography.label.copy(color = VColors.ink3),
+                                style = VTheme.type.label.copy(color = VTheme.colors.ink3),
                             )
                         }
                         VProgressBar(
@@ -525,21 +524,21 @@ private fun EmptyCard(icon: ImageVector, message: String) {
         VCard(padding = 18.dp) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Box(
-                Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(VColors.cream),
+                Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(VTheme.colors.cream),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(17.dp))
+                Icon(icon, contentDescription = "", tint = VTheme.colors.ink3, modifier = Modifier.size(17.dp))
             }
-            Text(message, style = VTypography.body.copy(color = VColors.ink2))
+            Text(message, style = VTheme.type.body.copy(color = VTheme.colors.ink2))
         }
     }
 }
 
 @Composable
 private fun toneTint(tone: VBadgeTone) = when (tone) {
-    VBadgeTone.Arctic,VBadgeTone.Accent -> VColors.sky
-    VBadgeTone.Success -> VColors.success
-    VBadgeTone.Warning -> VColors.gold
-    VBadgeTone.Danger -> VColors.error
-    VBadgeTone.Neutral -> VColors.ink3
+    VBadgeTone.Arctic,VBadgeTone.Accent -> VTheme.colors.sky
+    VBadgeTone.Success -> VTheme.colors.success
+    VBadgeTone.Warning -> VTheme.colors.gold
+    VBadgeTone.Danger -> VTheme.colors.error
+    VBadgeTone.Neutral -> VTheme.colors.ink3
 }

@@ -48,8 +48,6 @@ import vidyaprayag.composeapp.generated.resources.landing_school_1
 import com.littlebridge.enrollplus.feature.schools.presentation.DiscoveredSchool
 import com.littlebridge.enrollplus.feature.schools.presentation.SchoolDiscoveryState
 import com.littlebridge.enrollplus.feature.schools.presentation.SchoolDiscoveryViewModel
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
@@ -210,7 +208,7 @@ private fun DiscoveryList(
         list
     }
 
-    Column(modifier.fillMaxSize().background(VColors.cream)) {
+    Column(modifier.fillMaxSize().background(VTheme.colors.cream)) {
         // Shared portal header when embedded inside the unlinked-parent carousel flow; standalone
         // unauth flow keeps the full overlay header.
         if (embedded) {
@@ -383,7 +381,7 @@ private fun SchoolCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    Icon(VIcons.MapPin, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(11.dp))
+                    Icon(VIcons.MapPin, contentDescription = "", tint = c.tealDeep, modifier = Modifier.size(11.dp))
                     Text(dist, style = VTheme.type.label.colored(c.ink).copy(letterSpacing = androidx.compose.ui.unit.TextUnit.Unspecified))
                 }
             }
@@ -414,7 +412,7 @@ private fun SchoolCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    Icon(VIcons.Star, contentDescription = null, tint = SriInk, modifier = Modifier.size(12.dp))
+                    Icon(VIcons.Star, contentDescription = "", tint = SriInk, modifier = Modifier.size(12.dp))
                     Text(formatRating(s.rating), style = VTheme.type.dataSm.colored(SriInk))
                 }
                 Text(appString(StringKeys.DISC_SRI_SCORE), style = VTheme.type.label.colored(c.ink3), modifier = Modifier.padding(top = 4.dp))
@@ -431,7 +429,7 @@ private fun SchoolCard(
                 full = true,
                 modifier = Modifier.weight(1f),
                 leading = if (inCompare) {
-                    { Icon(VIcons.Check, contentDescription = null, tint = c.ink, modifier = Modifier.size(14.dp)) }
+                    { Icon(VIcons.Check, contentDescription = "", tint = c.ink, modifier = Modifier.size(14.dp)) }
                 } else null,
             )
             VButton(
@@ -473,7 +471,7 @@ private fun AlreadyLinkedCta(onLink: () -> Unit) {
                     ),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(VIcons.Users, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(22.dp))
+                Icon(VIcons.Users, contentDescription = "", tint = c.accentDeep, modifier = Modifier.size(22.dp))
             }
             Spacer(Modifier.height(12.dp))
             Text(
@@ -495,7 +493,7 @@ private fun AlreadyLinkedCta(onLink: () -> Unit) {
                 soft = false,
                 full = true,
                 leading = {
-                    Icon(VIcons.User, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                    Icon(VIcons.User, contentDescription = "", tint = Color.White, modifier = Modifier.size(16.dp))
                 },
             )
         }
@@ -512,12 +510,12 @@ private fun SchoolProfile(
     // React `SchoolProfile` — the "Enquire now" button opens a bottom-sheet enquiry form.
     var enquireOpen by remember { mutableStateOf(false) }
     Box(modifier.fillMaxSize()) {
-    Column(Modifier.fillMaxSize().background(VColors.cream)) {
+    Column(Modifier.fillMaxSize().background(VTheme.colors.cream)) {
         PremiumOverlayHeader(
             title = appString(StringKeys.DISC_SCHOOL_PROFILE),
             onBack = onBack,
             action = {
-                Icon(VIcons.Share, contentDescription = appString(StringKeys.DISC_SHARE), tint = VColors.ink2, modifier = Modifier.size(18.dp))
+                Icon(VIcons.Share, contentDescription = appString(StringKeys.DISC_SHARE), tint = VTheme.colors.ink2, modifier = Modifier.size(18.dp))
             },
         )
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
@@ -552,7 +550,7 @@ private fun SchoolProfile(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
-                            Icon(VIcons.Star, contentDescription = null, tint = SriInk, modifier = Modifier.size(11.dp))
+                            Icon(VIcons.Star, contentDescription = "", tint = SriInk, modifier = Modifier.size(11.dp))
                             Text("SRI ${formatRating(school.rating)}", style = VTheme.type.label.colored(SriInk).copy(letterSpacing = androidx.compose.ui.unit.TextUnit.Unspecified, fontWeight = FontWeight.SemiBold))
                         }
                     }
@@ -631,7 +629,7 @@ private fun SchoolProfile(
                     } else {
                         VCard {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Icon(VIcons.MapPin, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(16.dp))
+                                Icon(VIcons.MapPin, contentDescription = "", tint = c.tealDeep, modifier = Modifier.size(16.dp))
                                 Text(address, style = VTheme.type.caption.colored(c.ink))
                             }
                         }
@@ -743,7 +741,7 @@ private fun SchoolCompare(
     )
     val bestSri = items.maxOfOrNull { it.rating } ?: 0.0
 
-    Column(modifier.fillMaxSize().background(VColors.cream)) {
+    Column(modifier.fillMaxSize().background(VTheme.colors.cream)) {
         PremiumOverlayHeader(title = appString(StringKeys.DISC_COMPARE_SCHOOLS), onBack = onBack)
         Column(
             Modifier
@@ -770,7 +768,7 @@ private fun SchoolCompare(
                             Modifier.size(40.dp).clip(RoundedCornerShape(999.dp)).background(SriBg),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Icon(VIcons.GraduationCap, contentDescription = null, tint = c.ink, modifier = Modifier.size(18.dp))
+                            Icon(VIcons.GraduationCap, contentDescription = "", tint = c.ink, modifier = Modifier.size(18.dp))
                         }
                         Text(
                             s.name,

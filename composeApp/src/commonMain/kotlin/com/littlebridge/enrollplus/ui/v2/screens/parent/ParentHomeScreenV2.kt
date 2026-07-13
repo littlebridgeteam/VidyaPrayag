@@ -52,13 +52,12 @@ import com.littlebridge.enrollplus.feature.parent.presentation.ParentDashboardSt
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentDashboardViewModel
 import com.littlebridge.enrollplus.feature.parent.presentation.TrackProgressViewModel
 import com.littlebridge.enrollplus.feature.transport.presentation.TransportViewModel
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VShapes
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 @Composable
 fun ParentHomeScreenV2(
@@ -180,7 +179,7 @@ private fun ParentHomeContent(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(VColors.cream)
+                .background(VTheme.colors.cream)
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = 120.dp),
         ) {
@@ -235,15 +234,15 @@ private fun HomeSkeleton() {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(200.dp)
-                .clip(VShapes.xxl)
-                .background(VColors.lineSoft),
+                .clip(RoundedCornerShape(32.dp))
+                .background(VTheme.colors.lineSoft),
         )
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(64.dp)
-                .clip(VShapes.lg)
-                .background(VColors.lineSoft),
+                .clip(RoundedCornerShape(18.dp))
+                .background(VTheme.colors.lineSoft),
         )
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             repeat(3) {
@@ -251,8 +250,8 @@ private fun HomeSkeleton() {
                     modifier = Modifier
                         .weight(1f)
                         .height(90.dp)
-                        .clip(VShapes.lg)
-                        .background(VColors.lineSoft),
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(VTheme.colors.lineSoft),
                 )
             }
         }
@@ -260,8 +259,8 @@ private fun HomeSkeleton() {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(140.dp)
-                .clip(VShapes.lg)
-                .background(VColors.lineSoft),
+                .clip(RoundedCornerShape(18.dp))
+                .background(VTheme.colors.lineSoft),
         )
     }
 }
@@ -272,38 +271,38 @@ private fun HomeError(message: String, onRetry: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp)
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.lg)
+            .clip(RoundedCornerShape(18.dp))
+            .background(VTheme.colors.surfaceCard)
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(18.dp))
             .padding(28.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Box(
-            modifier = Modifier.size(48.dp).clip(CircleShape).background(VColors.errorSoft),
+            modifier = Modifier.size(48.dp).clip(CircleShape).background(VTheme.colors.errorSoft),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = VIcons.AlertTriangle,
-                contentDescription = null,
-                tint = VColors.error,
+                contentDescription = "",
+                tint = VTheme.colors.error,
                 modifier = Modifier.size(24.dp),
             )
         }
         Text(
             text = "Couldn't load home",
-            style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
-            color = VColors.ink,
+            style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold),
+            color = VTheme.colors.ink,
         )
         Text(
             text = message,
-            style = VTypography.caption,
-            color = VColors.ink2,
+            style = VTheme.type.caption,
+            color = VTheme.colors.ink2,
         )
         Text(
             text = "Retry",
-            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
-            color = VColors.violet,
+            style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold),
+            color = VTheme.colors.violet,
             modifier = Modifier.clickable { onRetry() },
         )
     }
@@ -315,39 +314,39 @@ private fun HomeEmpty(onDiscoverSchools: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp)
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.lg)
+            .clip(RoundedCornerShape(18.dp))
+            .background(VTheme.colors.surfaceCard)
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(18.dp))
             .padding(28.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Box(
-            modifier = Modifier.size(48.dp).clip(CircleShape).background(VColors.violetSoft),
+            modifier = Modifier.size(48.dp).clip(CircleShape).background(VTheme.colors.violetSoft),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 VIcons.HomePremium,
-                contentDescription = null,
-                tint = VColors.violet,
+                contentDescription = "",
+                tint = VTheme.colors.violet,
                 modifier = Modifier.size(24.dp),
             )
         }
         Text(
             text = "No child linked yet",
-            style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
-            color = VColors.ink,
+            style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold),
+            color = VTheme.colors.ink,
         )
         Text(
             text = "Link a child to see their day, attendance, and school updates.",
-            style = VTypography.caption,
-            color = VColors.ink2,
+            style = VTheme.type.caption,
+            color = VTheme.colors.ink2,
             textAlign = TextAlign.Center,
         )
         Text(
             text = "Discover schools",
-            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
-            color = VColors.violet,
+            style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold),
+            color = VTheme.colors.violet,
             modifier = Modifier.clickable { onDiscoverSchools() },
         )
     }
@@ -468,13 +467,13 @@ private fun HeroCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(VShapes.xxl)
+            .clip(RoundedCornerShape(32.dp))
             .background(
                 Brush.linearGradient(
                     colors = listOf(
-                        VColors.violet,
-                        Color(0xFF4A30C4),
-                        VColors.violetInk,
+                        VTheme.colors.violet,
+                        VTheme.colors.violetHover,
+                        VTheme.colors.violetInk,
                     ),
                     start = androidx.compose.ui.geometry.Offset(0f, 0f),
                     end = androidx.compose.ui.geometry.Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
@@ -489,25 +488,25 @@ private fun HeroCard(
         ) {
             Text(
                 text = schoolName,
-                style = VTypography.caption.copy(
+                style = VTheme.type.caption.copy(
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                 ),
-                color = VColors.white.copy(alpha = 0.8f),
+                color = VTheme.colors.white.copy(alpha = 0.8f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f).padding(end = 12.dp),
             )
             Box(
                 modifier = Modifier
-                    .clip(VShapes.full)
-                    .background(VColors.white.copy(alpha = 0.15f))
+                    .clip(RoundedCornerShape(50))
+                    .background(VTheme.colors.white.copy(alpha = 0.15f))
                     .padding(horizontal = 12.dp, vertical = 6.dp),
             ) {
                 Text(
                     text = if (level > 0) "Level $level" else "Student",
-                    style = VTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
-                    color = VColors.white,
+                    style = VTheme.type.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
+                    color = VTheme.colors.white,
                 )
             }
         }
@@ -521,23 +520,23 @@ private fun HeroCard(
             Box(
                 modifier = Modifier
                     .size(60.dp)
-                    .clip(VShapes.xl)
-                    .background(VColors.white.copy(alpha = 0.2f))
-                    .border(2.dp, VColors.white.copy(alpha = 0.25f), VShapes.xl),
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(VTheme.colors.white.copy(alpha = 0.2f))
+                    .border(2.dp, VTheme.colors.white.copy(alpha = 0.25f), RoundedCornerShape(24.dp)),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = childName.take(1).uppercase(),
-                    style = VTypography.h2.copy(fontSize = 24.sp),
-                    color = VColors.white,
+                    style = VTheme.type.h2.copy(fontSize = 24.sp),
+                    color = VTheme.colors.white,
                     fontWeight = FontWeight.ExtraBold,
                 )
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     childName,
-                    style = VTypography.h3.copy(fontSize = 20.sp),
-                    color = VColors.white,
+                    style = VTheme.type.h3.copy(fontSize = 20.sp),
+                    color = VTheme.colors.white,
                     fontWeight = FontWeight.ExtraBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -547,8 +546,8 @@ private fun HeroCard(
                     modifier = Modifier
                         .fillMaxWidth(overallProgress.coerceIn(0f, 1f))
                         .height(5.dp)
-                        .clip(VShapes.full)
-                        .background(VColors.white),
+                        .clip(RoundedCornerShape(50))
+                        .background(VTheme.colors.white),
                 )
             }
         }
@@ -558,8 +557,8 @@ private fun HeroCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(VShapes.lg)
-                .background(VColors.white.copy(alpha = 0.08f))
+                .clip(RoundedCornerShape(18.dp))
+                .background(VTheme.colors.white.copy(alpha = 0.08f))
                 .padding(2.dp),
             horizontalArrangement = Arrangement.spacedBy(2.dp),
         ) {
@@ -586,22 +585,22 @@ private fun HeroCard(
 private fun HeroStat(value: String, label: String, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
-            .clip(VShapes.md)
-            .background(VColors.white.copy(alpha = 0.06f))
+            .clip(RoundedCornerShape(14.dp))
+            .background(VTheme.colors.white.copy(alpha = 0.06f))
             .padding(vertical = 14.dp, horizontal = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
             value,
-            style = VTypography.h2.copy(fontSize = 22.sp),
-            color = VColors.white,
+            style = VTheme.type.h2.copy(fontSize = 22.sp),
+            color = VTheme.colors.white,
             fontWeight = FontWeight.ExtraBold,
         )
         Spacer(Modifier.height(2.dp))
         Text(
             label.uppercase(),
-            style = VTypography.caption.copy(fontSize = 9.sp),
-            color = VColors.white.copy(alpha = 0.55f),
+            style = VTheme.type.caption.copy(fontSize = 9.sp),
+            color = VTheme.colors.white.copy(alpha = 0.55f),
             fontWeight = FontWeight.SemiBold,
             letterSpacing = 0.6.sp,
         )
@@ -617,8 +616,8 @@ private fun TransportTrackingCard(onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(VShapes.lg)
-            .background(VColors.mintSoft)
+            .clip(RoundedCornerShape(18.dp))
+            .background(VTheme.colors.mintSoft)
             .clickable(onClick = onClick)
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -628,32 +627,32 @@ private fun TransportTrackingCard(onClick: () -> Unit) {
             modifier = Modifier
                 .size(44.dp)
                 .clip(CircleShape)
-                .background(VColors.mint),
+                .background(VTheme.colors.mint),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = VIcons.Clock,
-                contentDescription = null,
-                tint = VColors.white,
+                contentDescription = "",
+                tint = VTheme.colors.white,
                 modifier = Modifier.size(22.dp),
             )
         }
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = "Bus arriving soon",
-                style = VTypography.body.copy(fontWeight = FontWeight.Bold, fontSize = 14.sp),
-                color = VColors.ink,
+                style = VTheme.type.body.copy(fontWeight = FontWeight.Bold, fontSize = 14.sp),
+                color = VTheme.colors.ink,
             )
             Text(
                 text = "GPS tracking active",
-                style = VTypography.caption.copy(fontSize = 12.sp),
-                color = VColors.ink2,
+                style = VTheme.type.caption.copy(fontSize = 12.sp),
+                color = VTheme.colors.ink2,
             )
         }
         Icon(
             imageVector = VIcons.ChevronRight,
-            contentDescription = null,
-            tint = VColors.ink3,
+            contentDescription = "",
+            tint = VTheme.colors.ink3,
             modifier = Modifier.size(20.dp),
         )
     }
@@ -677,17 +676,17 @@ private fun FilterChips() {
             val active = label == selected
             Box(
                 modifier = Modifier
-                    .clip(VShapes.full)
-                    .background(if (active) VColors.ink else VColors.surfaceCard)
-                    .border(1.dp, if (active) VColors.ink else VColors.line, VShapes.full)
+                    .clip(RoundedCornerShape(50))
+                    .background(if (active) VTheme.colors.ink else VTheme.colors.surfaceCard)
+                    .border(1.dp, if (active) VTheme.colors.ink else VTheme.colors.line, RoundedCornerShape(50))
                     .clickable { selected = label }
                     .padding(horizontal = 18.dp, vertical = 10.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     label,
-                    style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
-                    color = if (active) VColors.white else VColors.ink2,
+                    style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
+                    color = if (active) VTheme.colors.white else VTheme.colors.ink2,
                 )
             }
         }
@@ -713,15 +712,15 @@ private fun SectionHeader(
     ) {
         Text(
             text = title,
-            style = VTypography.h3.copy(fontSize = 20.sp),
-            color = VColors.ink,
+            style = VTheme.type.h3.copy(fontSize = 20.sp),
+            color = VTheme.colors.ink,
             fontWeight = FontWeight.ExtraBold,
         )
         if (action != null) {
             Text(
                 text = action,
-                style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
-                color = VColors.violet,
+                style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
+                color = VTheme.colors.violet,
                 modifier = Modifier.clickable(onClick = onAction),
             )
         }
@@ -763,12 +762,12 @@ private fun rememberPriorityCards(
         list += PriorityItem(
             id = "fees",
             icon = VIcons.WalletPremium,
-            iconBg = VColors.violet,
+            iconBg = VTheme.colors.violet,
             title = "Fee Payment",
             subtitle = if (overdue > 0) "Overdue · $overdue dues" else "Q4 Tuition · Due soon",
             value = feesDue,
             badge = if (overdue > 0) "Pay Now" else "Due Soon",
-            badgeBg = VColors.violet,
+            badgeBg = VTheme.colors.violet,
             urgency = if (overdue > 0) 100 else if (feesNumeric > 0) 60 else 20,
             onClick = onOpenFees,
         )
@@ -776,12 +775,12 @@ private fun rememberPriorityCards(
         list += PriorityItem(
             id = "attendance",
             icon = VIcons.Check,
-            iconBg = VColors.mint,
+            iconBg = VTheme.colors.mint,
             title = "Attendance",
             subtitle = "This month",
             value = attendanceRate?.let { "$it%" } ?: "—",
             badge = if ((attendanceRate ?: 100) < 75) "Low" else "On Track",
-            badgeBg = if ((attendanceRate ?: 100) < 75) VColors.gold else VColors.mint,
+            badgeBg = if ((attendanceRate ?: 100) < 75) VTheme.colors.gold else VTheme.colors.mint,
             urgency = if ((attendanceRate ?: 100) < 75) 90 else 40,
             onClick = onOpenAcademics,
         )
@@ -789,12 +788,12 @@ private fun rememberPriorityCards(
         list += PriorityItem(
             id = "homework",
             icon = VIcons.ClipboardList,
-            iconBg = VColors.gold,
+            iconBg = VTheme.colors.gold,
             title = "Homework",
             subtitle = "Pending assignments",
             value = pendingCount.toString(),
             badge = if (pendingCount > 0) "Due Today" else "Done",
-            badgeBg = if (pendingCount > 0) VColors.gold else VColors.mint,
+            badgeBg = if (pendingCount > 0) VTheme.colors.gold else VTheme.colors.mint,
             urgency = if (pendingCount > 0) 80 else 30,
             onClick = onOpenAcademics,
         )
@@ -802,12 +801,12 @@ private fun rememberPriorityCards(
         list += PriorityItem(
             id = "messages",
             icon = VIcons.ChatPremium,
-            iconBg = VColors.sky,
+            iconBg = VTheme.colors.sky,
             title = "Messages",
             subtitle = "Unread from teachers",
             value = unreadMessages.toString(),
             badge = if (unreadMessages > 0) "Read" else "Inbox",
-            badgeBg = VColors.sky,
+            badgeBg = VTheme.colors.sky,
             urgency = if (unreadMessages > 0) 70 else 10,
             onClick = onOpenMessages,
         )
@@ -834,37 +833,37 @@ private fun PriorityCard(card: PriorityItem) {
     Column(
         modifier = Modifier
             .width(240.dp)
-            .clip(VShapes.xl)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.xl)
+            .clip(RoundedCornerShape(24.dp))
+            .background(VTheme.colors.surfaceCard)
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(24.dp))
             .clickable(onClick = card.onClick)
             .padding(18.dp),
     ) {
         Box(
             modifier = Modifier
                 .size(44.dp)
-                .clip(VShapes.md)
+                .clip(RoundedCornerShape(14.dp))
                 .background(card.iconBg)
                 .padding(10.dp),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 card.icon,
-                contentDescription = null,
-                tint = VColors.white,
+                contentDescription = "",
+                tint = VTheme.colors.white,
                 modifier = Modifier.size(24.dp),
             )
         }
         Spacer(Modifier.height(14.dp))
         Text(
             card.title,
-            style = VTypography.body.copy(fontWeight = FontWeight.ExtraBold, fontSize = 15.sp),
-            color = VColors.ink,
+            style = VTheme.type.body.copy(fontWeight = FontWeight.ExtraBold, fontSize = 15.sp),
+            color = VTheme.colors.ink,
         )
         Text(
             card.subtitle,
-            style = VTypography.caption.copy(fontSize = 12.sp),
-            color = VColors.ink2,
+            style = VTheme.type.caption.copy(fontSize = 12.sp),
+            color = VTheme.colors.ink2,
         )
         Spacer(Modifier.height(14.dp))
         Row(
@@ -874,20 +873,20 @@ private fun PriorityCard(card: PriorityItem) {
         ) {
             Text(
                 card.value,
-                style = VTypography.h2.copy(fontSize = 24.sp),
-                color = VColors.ink,
+                style = VTheme.type.h2.copy(fontSize = 24.sp),
+                color = VTheme.colors.ink,
                 fontWeight = FontWeight.ExtraBold,
             )
             Box(
                 modifier = Modifier
-                    .clip(VShapes.full)
+                    .clip(RoundedCornerShape(50))
                     .background(card.badgeBg)
                     .padding(horizontal = 12.dp, vertical = 7.dp),
             ) {
                 Text(
                     card.badge,
-                    style = VTypography.caption.copy(fontWeight = FontWeight.ExtraBold, fontSize = 11.sp),
-                    color = VColors.white,
+                    style = VTheme.type.caption.copy(fontWeight = FontWeight.ExtraBold, fontSize = 11.sp),
+                    color = VTheme.colors.white,
                 )
             }
         }
@@ -907,9 +906,9 @@ private fun TodayScheduleCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(VShapes.xl)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.xl)
+            .clip(RoundedCornerShape(24.dp))
+            .background(VTheme.colors.surfaceCard)
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(24.dp))
             .padding(20.dp),
     ) {
         val doneCount = periods.count { it.relation == -1 }
@@ -925,23 +924,23 @@ private fun TodayScheduleCard(
                 modifier = Modifier
                     .weight(1f)
                     .height(4.dp)
-                    .clip(VShapes.full)
-                    .background(VColors.lineSoft),
+                    .clip(RoundedCornerShape(50))
+                    .background(VTheme.colors.lineSoft),
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(progress)
                         .height(4.dp)
-                        .clip(VShapes.full)
+                        .clip(RoundedCornerShape(50))
                         .background(
-                            Brush.horizontalGradient(listOf(VColors.violet, VColors.mint))
+                            Brush.horizontalGradient(listOf(VTheme.colors.violet, VTheme.colors.mint))
                         ),
                 )
             }
             Text(
                 text = "$doneCount of $total done",
-                style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 12.sp),
-                color = VColors.ink2,
+                style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 12.sp),
+                color = VTheme.colors.ink2,
             )
         }
 
@@ -952,12 +951,12 @@ private fun TodayScheduleCard(
                 modifier = Modifier.fillMaxWidth().height(80.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(24.dp))
+                CircularProgressIndicator(color = VTheme.colors.violet, modifier = Modifier.size(24.dp))
             }
             periods.isEmpty() -> Text(
                 text = "No classes scheduled today.",
-                style = VTypography.caption,
-                color = VColors.ink3,
+                style = VTheme.type.caption,
+                color = VTheme.colors.ink3,
             )
             else -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 periods.forEach { period ->
@@ -981,8 +980,8 @@ private fun ScheduleRow(period: LivePeriod) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(VShapes.lg)
-            .background(if (isLive) VColors.violet else VColors.creamDeep)
+            .clip(RoundedCornerShape(18.dp))
+            .background(if (isLive) VTheme.colors.violet else VTheme.colors.creamDeep)
             .clickable { /* opens academics */ }
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -994,13 +993,13 @@ private fun ScheduleRow(period: LivePeriod) {
         ) {
             Text(
                 text = period.startTime,
-                style = VTypography.body.copy(fontWeight = FontWeight.ExtraBold, fontSize = 14.sp),
-                color = if (isLive) VColors.white else VColors.ink,
+                style = VTheme.type.body.copy(fontWeight = FontWeight.ExtraBold, fontSize = 14.sp),
+                color = if (isLive) VTheme.colors.white else VTheme.colors.ink,
             )
             Text(
                 text = period.endTime,
-                style = VTypography.caption.copy(fontSize = 10.sp),
-                color = if (isLive) VColors.white.copy(alpha = 0.7f) else VColors.ink3,
+                style = VTheme.type.caption.copy(fontSize = 10.sp),
+                color = if (isLive) VTheme.colors.white.copy(alpha = 0.7f) else VTheme.colors.ink3,
             )
         }
 
@@ -1008,20 +1007,20 @@ private fun ScheduleRow(period: LivePeriod) {
             modifier = Modifier
                 .width(1.dp)
                 .height(36.dp)
-                .background(if (isLive) VColors.white.copy(alpha = 0.2f) else VColors.line),
+                .background(if (isLive) VTheme.colors.white.copy(alpha = 0.2f) else VTheme.colors.line),
         )
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = period.subject,
-                style = VTypography.body.copy(fontWeight = FontWeight.ExtraBold, fontSize = 15.sp),
-                color = if (isLive) VColors.white else VColors.ink,
+                style = VTheme.type.body.copy(fontWeight = FontWeight.ExtraBold, fontSize = 15.sp),
+                color = if (isLive) VTheme.colors.white else VTheme.colors.ink,
             )
             if (period.teacherName.isNotBlank()) {
                 Text(
                     text = period.teacherName,
-                    style = VTypography.caption.copy(fontSize = 12.sp),
-                    color = if (isLive) VColors.white.copy(alpha = 0.8f) else VColors.ink2,
+                    style = VTheme.type.caption.copy(fontSize = 12.sp),
+                    color = if (isLive) VTheme.colors.white.copy(alpha = 0.8f) else VTheme.colors.ink2,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -1029,20 +1028,20 @@ private fun ScheduleRow(period: LivePeriod) {
             if (period.room.isNotBlank()) {
                 Text(
                     text = "Room ${period.room}",
-                    style = VTypography.caption.copy(fontSize = 10.sp),
-                    color = if (isLive) VColors.white.copy(alpha = 0.6f) else VColors.ink3,
+                    style = VTheme.type.caption.copy(fontSize = 10.sp),
+                    color = if (isLive) VTheme.colors.white.copy(alpha = 0.6f) else VTheme.colors.ink3,
                 )
             }
         }
 
         Box(
             modifier = Modifier
-                .clip(VShapes.full)
+                .clip(RoundedCornerShape(50))
                 .background(
                     when {
-                        isLive -> VColors.white.copy(alpha = 0.2f)
-                        isDone -> VColors.mintSoft
-                        else -> VColors.violetSoft
+                        isLive -> VTheme.colors.white.copy(alpha = 0.2f)
+                        isDone -> VTheme.colors.mintSoft
+                        else -> VTheme.colors.violetSoft
                     }
                 )
                 .padding(horizontal = 12.dp, vertical = 6.dp),
@@ -1056,16 +1055,16 @@ private fun ScheduleRow(period: LivePeriod) {
                         modifier = Modifier
                             .size(7.dp)
                             .clip(CircleShape)
-                            .background(VColors.mint),
+                            .background(VTheme.colors.mint),
                     )
                 }
                 Text(
                     status,
-                    style = VTypography.caption.copy(fontWeight = FontWeight.ExtraBold, fontSize = 10.sp),
+                    style = VTheme.type.caption.copy(fontWeight = FontWeight.ExtraBold, fontSize = 10.sp),
                     color = when {
-                        isLive -> VColors.white
-                        isDone -> VColors.success
-                        else -> VColors.violet
+                        isLive -> VTheme.colors.white
+                        isDone -> VTheme.colors.success
+                        else -> VTheme.colors.violet
                     },
                     letterSpacing = 0.5.sp,
                 )
@@ -1086,9 +1085,9 @@ private fun TodaySummaryCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(VShapes.xl)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.xl)
+            .clip(RoundedCornerShape(24.dp))
+            .background(VTheme.colors.surfaceCard)
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(24.dp))
             .padding(20.dp),
     ) {
         when {
@@ -1096,12 +1095,12 @@ private fun TodaySummaryCard(
                 modifier = Modifier.fillMaxWidth().height(80.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(24.dp))
+                CircularProgressIndicator(color = VTheme.colors.violet, modifier = Modifier.size(24.dp))
             }
             summary?.entries.isNullOrEmpty() -> Text(
                 text = "No daily summary available yet.",
-                style = VTypography.caption,
-                color = VColors.ink3,
+                style = VTheme.type.caption,
+                color = VTheme.colors.ink3,
             )
             else -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 summary?.entries?.forEach { entry ->
@@ -1111,8 +1110,8 @@ private fun TodaySummaryCard(
                     if (ai.isNotBlank()) {
                         Text(
                             text = "AI summary: $ai",
-                            style = VTypography.caption.copy(fontSize = 12.sp),
-                            color = VColors.ink3,
+                            style = VTheme.type.caption.copy(fontSize = 12.sp),
+                            color = VTheme.colors.ink3,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -1128,8 +1127,8 @@ private fun SummaryEntryRow(entry: ParentDailyLogEntryDto) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(VShapes.lg)
-            .background(VColors.creamDeep)
+            .clip(RoundedCornerShape(18.dp))
+            .background(VTheme.colors.creamDeep)
             .padding(16.dp),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalAlignment = Alignment.Top,
@@ -1137,14 +1136,14 @@ private fun SummaryEntryRow(entry: ParentDailyLogEntryDto) {
         Box(
             modifier = Modifier
                 .size(40.dp)
-                .clip(VShapes.md)
-                .background(if (entry.isAiEstimated) VColors.skySoft else VColors.violetSoft),
+                .clip(RoundedCornerShape(14.dp))
+                .background(if (entry.isAiEstimated) VTheme.colors.skySoft else VTheme.colors.violetSoft),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = VIcons.Bookmark,
-                contentDescription = null,
-                tint = if (entry.isAiEstimated) VColors.sky else VColors.violet,
+                contentDescription = "",
+                tint = if (entry.isAiEstimated) VTheme.colors.sky else VTheme.colors.violet,
                 modifier = Modifier.size(20.dp),
             )
         }
@@ -1156,30 +1155,30 @@ private fun SummaryEntryRow(entry: ParentDailyLogEntryDto) {
             ) {
                 Text(
                     text = entry.subject,
-                    style = VTypography.body.copy(fontWeight = FontWeight.ExtraBold, fontSize = 15.sp),
-                    color = VColors.ink,
+                    style = VTheme.type.body.copy(fontWeight = FontWeight.ExtraBold, fontSize = 15.sp),
+                    color = VTheme.colors.ink,
                 )
                 if (entry.isAiEstimated) {
                     Text(
                         text = "AI generated",
-                        style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
-                        color = VColors.sky,
+                        style = VTheme.type.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
+                        color = VTheme.colors.sky,
                     )
                 }
             }
             if (entry.summaryText.isNotBlank()) {
                 Text(
                     text = entry.summaryText,
-                    style = VTypography.caption.copy(fontSize = 12.sp),
-                    color = VColors.ink2,
+                    style = VTheme.type.caption.copy(fontSize = 12.sp),
+                    color = VTheme.colors.ink2,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
             Text(
                 text = "Coverage ${entry.coveragePct}%",
-                style = VTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
-                color = VColors.ink3,
+                style = VTheme.type.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
+                color = VTheme.colors.ink3,
             )
         }
     }
@@ -1198,9 +1197,9 @@ private fun UpdatesCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(VShapes.xl)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.xl)
+            .clip(RoundedCornerShape(24.dp))
+            .background(VTheme.colors.surfaceCard)
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(24.dp))
             .padding(20.dp),
     ) {
         when {
@@ -1208,12 +1207,12 @@ private fun UpdatesCard(
                 modifier = Modifier.fillMaxWidth().height(80.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(24.dp))
+                CircularProgressIndicator(color = VTheme.colors.violet, modifier = Modifier.size(24.dp))
             }
             announcements.isEmpty() -> Text(
                 text = "No announcements yet",
-                style = VTypography.caption,
-                color = VColors.ink3,
+                style = VTheme.type.caption,
+                color = VTheme.colors.ink3,
             )
             else -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 announcements.take(3).forEachIndexed { idx, announcement ->
@@ -1237,8 +1236,8 @@ private fun UpdateItem(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(VShapes.lg)
-            .background(VColors.creamDeep)
+            .clip(RoundedCornerShape(18.dp))
+            .background(VTheme.colors.creamDeep)
             .clickable { onEventClick() }
             .padding(16.dp),
     ) {
@@ -1249,34 +1248,34 @@ private fun UpdateItem(
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .clip(VShapes.md)
-                    .background(VColors.violetSoft),
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(VTheme.colors.violetSoft),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     VIcons.Megaphone,
-                    contentDescription = null,
-                    tint = VColors.violet,
+                    contentDescription = "",
+                    tint = VTheme.colors.violet,
                     modifier = Modifier.size(20.dp),
                 )
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "School Admin",
-                    style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
-                    color = VColors.ink3,
+                    style = VTheme.type.caption.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                    color = VTheme.colors.ink3,
                 )
                 Text(
                     text = announcement.title,
-                    style = VTypography.body.copy(fontWeight = FontWeight.Bold, fontSize = 15.sp),
-                    color = VColors.ink,
+                    style = VTheme.type.body.copy(fontWeight = FontWeight.Bold, fontSize = 15.sp),
+                    color = VTheme.colors.ink,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     text = announcement.description,
-                    style = VTypography.caption.copy(fontSize = 12.sp),
-                    color = VColors.ink2,
+                    style = VTheme.type.caption.copy(fontSize = 12.sp),
+                    color = VTheme.colors.ink2,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -1290,15 +1289,15 @@ private fun UpdateItem(
             ) {
                 Box(
                     modifier = Modifier
-                        .clip(VShapes.full)
-                        .background(VColors.violet)
+                        .clip(RoundedCornerShape(50))
+                        .background(VTheme.colors.violet)
                         .clickable { onEventClick() }
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                 ) {
                     Text(
                         "Register",
-                        style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 12.sp),
-                        color = VColors.white,
+                        style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 12.sp),
+                        color = VTheme.colors.white,
                     )
                 }
             }
@@ -1323,28 +1322,28 @@ private fun PremiumFeaturesGrid(
     ) {
         PremiumFeatureCard(
             icon = VIcons.Sparkles,
-            iconBg = VColors.violet,
+            iconBg = VTheme.colors.violet,
             label = "AI Tutor",
             modifier = Modifier.weight(1f),
             onClick = onOpenTutor,
         )
         PremiumFeatureCard(
             icon = VIcons.FileText,
-            iconBg = VColors.mint,
+            iconBg = VTheme.colors.mint,
             label = "AI Report",
             modifier = Modifier.weight(1f),
             onClick = onOpenScholarships,
         )
         PremiumFeatureCard(
             icon = VIcons.Activity,
-            iconBg = VColors.coral,
+            iconBg = VTheme.colors.coral,
             label = "PEWS",
             modifier = Modifier.weight(1f),
             onClick = onOpenIdCard,
         )
         PremiumFeatureCard(
             icon = VIcons.BookOpen,
-            iconBg = VColors.gold,
+            iconBg = VTheme.colors.gold,
             label = "Library",
             modifier = Modifier.weight(1f),
             onClick = onOpenLibrary,
@@ -1362,9 +1361,9 @@ private fun PremiumFeatureCard(
 ) {
     Column(
         modifier = modifier
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.lg)
+            .clip(RoundedCornerShape(18.dp))
+            .background(VTheme.colors.surfaceCard)
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(18.dp))
             .clickable(onClick = onClick)
             .padding(14.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -1373,21 +1372,21 @@ private fun PremiumFeatureCard(
         Box(
             modifier = Modifier
                 .size(44.dp)
-                .clip(VShapes.md)
+                .clip(RoundedCornerShape(14.dp))
                 .background(iconBg),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 icon,
-                contentDescription = null,
-                tint = VColors.white,
+                contentDescription = "",
+                tint = VTheme.colors.white,
                 modifier = Modifier.size(22.dp),
             )
         }
         Text(
             label,
-            style = VTypography.caption.copy(fontWeight = FontWeight.ExtraBold, fontSize = 12.sp),
-            color = VColors.ink,
+            style = VTheme.type.caption.copy(fontWeight = FontWeight.ExtraBold, fontSize = 12.sp),
+            color = VTheme.colors.ink,
             textAlign = TextAlign.Center,
         )
     }

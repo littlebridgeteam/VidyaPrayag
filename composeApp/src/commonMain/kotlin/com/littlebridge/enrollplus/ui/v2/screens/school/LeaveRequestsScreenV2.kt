@@ -41,11 +41,10 @@ import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * LeaveRequestsScreenV2 — admin Leave Requests overlay.
@@ -157,9 +156,9 @@ private fun LeaveRequestsContent(
 @Composable
 private fun KpiCard(label: String, value: String) {
         VCard {
-        Text(label, style = VTypography.label.copy(color = VColors.ink3))
+        Text(label, style = VTheme.type.label.copy(color = VTheme.colors.ink3))
         Spacer(Modifier.height(4.dp))
-        Text(value, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink))
+        Text(value, style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VTheme.colors.ink))
     }
 }
 
@@ -182,7 +181,7 @@ private fun LeaveRequestCard(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         req.requesterName,
-                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink),
+                        style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink),
                         modifier = Modifier.weight(1f, fill = false),
                     )
                     if (!isPending) {
@@ -195,10 +194,10 @@ private fun LeaveRequestCard(
                     }
                 }
                 Spacer(Modifier.height(2.dp))
-                Text(req.dateRange, style = VTypography.caption.copy(color = VColors.ink3))
+                Text(req.dateRange, style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
                 if (req.reason.isNotBlank()) {
                     Spacer(Modifier.height(6.dp))
-                    Text(req.reason, style = VTypography.body.copy(color = VColors.ink2))
+                    Text(req.reason, style = VTheme.type.body.copy(color = VTheme.colors.ink2))
                 }
             }
         }

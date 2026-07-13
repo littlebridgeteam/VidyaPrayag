@@ -31,10 +31,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.parent.domain.model.DashboardChildSummary
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VShapes
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 @Composable
 fun PortalTopHeader(
@@ -64,9 +63,9 @@ fun PortalTopHeader(
         ) {
             Text(
                 text = "Enroll+",
-                style = VTypography.wordmark.copy(
+                style = VTheme.type.wordmark.copy(
                     fontSize = 22.sp,
-                    color = VColors.violet,
+                    color = VTheme.colors.violet,
                 ),
                 fontWeight = FontWeight.ExtraBold,
             )
@@ -74,14 +73,14 @@ fun PortalTopHeader(
             Box(
                 modifier = Modifier
                     .size(44.dp)
-                    .clip(VShapes.full)
+                    .clip(RoundedCornerShape(50))
                     .clickable(onClick = onOpenNotifications),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = VIcons.BellStroke,
                     contentDescription = "Notifications",
-                    tint = VColors.ink,
+                    tint = VTheme.colors.ink,
                     modifier = Modifier.size(24.dp),
                 )
                 if (unreadNotificationsCount > 0) {
@@ -91,8 +90,8 @@ fun PortalTopHeader(
                             .padding(top = 8.dp, end = 8.dp)
                             .size(10.dp)
                             .clip(CircleShape)
-                            .background(VColors.error)
-                            .border(2.dp, VColors.cream, CircleShape),
+                            .background(VTheme.colors.error)
+                            .border(2.dp, VTheme.colors.cream, CircleShape),
                     )
                 }
             }
@@ -103,11 +102,11 @@ fun PortalTopHeader(
 
             Text(
                 text = "Hi ${parentName.takeWhile { it != ' ' }.ifBlank { parentName }}",
-                style = VTypography.caption.copy(
+                style = VTheme.type.caption.copy(
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
                 ),
-                color = VColors.violet,
+                color = VTheme.colors.violet,
             )
 
             Spacer(Modifier.height(4.dp))
@@ -123,27 +122,27 @@ fun PortalTopHeader(
             ) {
                 Text(
                     text = "here's",
-                    style = VTypography.h2.copy(fontSize = 28.sp),
-                    color = VColors.ink,
+                    style = VTheme.type.h2.copy(fontSize = 28.sp),
+                    color = VTheme.colors.ink,
                     fontWeight = FontWeight.ExtraBold,
                 )
                 Text(
                     text = "$childName's",
-                    style = VTypography.h2.copy(fontSize = 28.sp),
-                    color = VColors.violet,
+                    style = VTheme.type.h2.copy(fontSize = 28.sp),
+                    color = VTheme.colors.violet,
                     fontWeight = FontWeight.ExtraBold,
                 )
                 Text(
                     text = "day",
-                    style = VTypography.h2.copy(fontSize = 28.sp),
-                    color = VColors.ink,
+                    style = VTheme.type.h2.copy(fontSize = 28.sp),
+                    color = VTheme.colors.ink,
                     fontWeight = FontWeight.ExtraBold,
                 )
                 if (children.size > 1) {
                     Icon(
                         imageVector = VIcons.ChevronDown,
                         contentDescription = "Select child",
-                        tint = VColors.ink3,
+                        tint = VTheme.colors.ink3,
                         modifier = Modifier.size(24.dp),
                     )
                 }
@@ -153,16 +152,16 @@ fun PortalTopHeader(
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            containerColor = VColors.white,
-            shape = VShapes.lg,
+            containerColor = VTheme.colors.white,
+            shape = RoundedCornerShape(18.dp),
         ) {
             children.forEach { child ->
                 DropdownMenuItem(
                     text = {
                         Text(
                             child.name,
-                            style = VTypography.body,
-                            color = if (child.id == selectedChild?.id) VColors.violet else VColors.ink,
+                            style = VTheme.type.body,
+                            color = if (child.id == selectedChild?.id) VTheme.colors.violet else VTheme.colors.ink,
                             fontWeight = if (child.id == selectedChild?.id) FontWeight.SemiBold else FontWeight.Normal,
                         )
                     },
@@ -203,23 +202,23 @@ fun PortalTopHeaderMinimal(
                     Box(
                         modifier = Modifier
                             .size(44.dp)
-                            .clip(VShapes.full)
+                            .clip(RoundedCornerShape(50))
                             .clickable(onClick = onBackClick),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             imageVector = VIcons.ArrowLeft,
                             contentDescription = "Back",
-                            tint = VColors.ink,
+                            tint = VTheme.colors.ink,
                             modifier = Modifier.size(24.dp),
                         )
                     }
                 }
                 Text(
                     text = "Enroll+",
-                    style = VTypography.wordmark.copy(
+                    style = VTheme.type.wordmark.copy(
                         fontSize = 22.sp,
-                        color = VColors.violet,
+                        color = VTheme.colors.violet,
                     ),
                     fontWeight = FontWeight.ExtraBold,
                 )
@@ -228,14 +227,14 @@ fun PortalTopHeaderMinimal(
             Box(
                 modifier = Modifier
                     .size(44.dp)
-                    .clip(VShapes.full)
+                    .clip(RoundedCornerShape(50))
                     .clickable(onClick = onOpenNotifications),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = VIcons.BellStroke,
                     contentDescription = "Notifications",
-                    tint = VColors.ink,
+                    tint = VTheme.colors.ink,
                     modifier = Modifier.size(24.dp),
                 )
                 if (unreadNotificationsCount > 0) {
@@ -245,8 +244,8 @@ fun PortalTopHeaderMinimal(
                             .padding(top = 8.dp, end = 8.dp)
                             .size(10.dp)
                             .clip(CircleShape)
-                            .background(VColors.error)
-                            .border(2.dp, VColors.cream, CircleShape),
+                            .background(VTheme.colors.error)
+                            .border(2.dp, VTheme.colors.cream, CircleShape),
                     )
                 }
             }

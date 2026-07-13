@@ -56,14 +56,13 @@ import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherObligatio
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherObligationsViewModel
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherTodayState
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherTodayViewModel
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VShapes
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 /**
  * TeacherHomeScreenV2 — rebuilt to match the premium parent-portal home structure.
@@ -77,8 +76,8 @@ import org.koin.compose.viewmodel.koinViewModel
  *   6. My classes         — the teacher's allocated classes from TeacherClassesViewModel.
  *   7. Upcoming events    — teacher PTM events from TeacherEventRegistrationViewModel.
  *
- * Base backdrop is the same warm cream used on the parent home tab ([VColors.cream]).
- * Cards use [VColors.surfaceCard] with a soft outline; type uses [VTypography] tokens as-is.
+ * Base backdrop is the same warm cream used on the parent home tab ([VTheme.colors.cream]).
+ * Cards use [VTheme.colors.surfaceCard] with a soft outline; type uses [VTypography] tokens as-is.
  */
 @Composable
 fun TeacherHomeScreenV2(
@@ -137,7 +136,7 @@ fun TeacherHomeScreenV2(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(VColors.cream)
+            .background(VTheme.colors.cream)
             .verticalScroll(rememberScrollState())
             .statusBarsPadding()
             .padding(horizontal = 24.dp)
@@ -241,13 +240,13 @@ private fun NowTeachingCard(
     val period = current ?: next
 
     val gradient = Brush.linearGradient(
-        colors = listOf(VColors.violet, VColors.violetHover),
+        colors = listOf(VTheme.colors.violet, VTheme.colors.violetHover),
     )
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(VShapes.xl)
+            .clip(RoundedCornerShape(24.dp))
             .background(gradient)
             .padding(20.dp),
     ) {
@@ -260,17 +259,17 @@ private fun NowTeachingCard(
             ) {
                 Text(
                     text = appString(StringKeys.TC_NOW_TEACHING).uppercase(),
-                    style = VTypography.label.copy(
+                    style = VTheme.type.label.copy(
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.8.sp,
-                        color = VColors.white.copy(alpha = 0.85f),
+                        color = VTheme.colors.white.copy(alpha = 0.85f),
                     ),
                 )
                 StatusPill(
                     label = if (current != null) appString(StringKeys.TC_NOW) else appString(StringKeys.TC_NEXT),
-                    bg = VColors.white.copy(alpha = 0.20f),
-                    fg = VColors.white,
+                    bg = VTheme.colors.white.copy(alpha = 0.20f),
+                    fg = VTheme.colors.white,
                 )
             }
 
@@ -279,7 +278,7 @@ private fun NowTeachingCard(
             if (period != null) {
                 Text(
                     text = "Class ${period.classLabel}",
-                    style = VTypography.h2.copy(color = VColors.white),
+                    style = VTheme.type.h2.copy(color = VTheme.colors.white),
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
@@ -287,7 +286,7 @@ private fun NowTeachingCard(
                         append(period.subject)
                         if (period.room.isNotBlank()) append(" · ${period.room}")
                     },
-                    style = VTypography.body.copy(color = VColors.white.copy(alpha = 0.85f)),
+                    style = VTheme.type.body.copy(color = VTheme.colors.white.copy(alpha = 0.85f)),
                 )
 
                 Spacer(Modifier.height(16.dp))
@@ -304,14 +303,14 @@ private fun NowTeachingCard(
                     HeroCta(
                         text = appString(StringKeys.TC_MARK_ATTENDANCE),
                         icon = VIcons.ListChecks,
-                        tone = VColors.white,
+                        tone = VTheme.colors.white,
                         onClick = { period.assignmentId?.let { onMarkAttendance(it, scope) } },
                         modifier = Modifier.weight(1f),
                     )
                     HeroCta(
                         text = appString(StringKeys.TC_LESSON),
                         icon = VIcons.ClipboardList,
-                        tone = VColors.white.copy(alpha = 0.85f),
+                        tone = VTheme.colors.white.copy(alpha = 0.85f),
                         onClick = { period.assignmentId?.let { onLessonPlan(it, scope) } },
                         modifier = Modifier.weight(1f),
                     )
@@ -319,12 +318,12 @@ private fun NowTeachingCard(
             } else {
                 Text(
                     text = appString(StringKeys.TC_NO_PERIOD_RIGHT_NOW),
-                    style = VTypography.h3.copy(color = VColors.white),
+                    style = VTheme.type.h3.copy(color = VTheme.colors.white),
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = appString(StringKeys.TC_NO_CLASSES_SCHEDULED_TODAY),
-                    style = VTypography.body.copy(color = VColors.white.copy(alpha = 0.75f)),
+                    style = VTheme.type.body.copy(color = VTheme.colors.white.copy(alpha = 0.75f)),
                 )
             }
         }
@@ -342,18 +341,18 @@ private fun HeroCta(
     val ix = remember { MutableInteractionSource() }
     Row(
         modifier = modifier
-            .clip(VShapes.lg)
+            .clip(RoundedCornerShape(18.dp))
             .background(tone.copy(alpha = 0.14f))
-            .border(1.dp, tone.copy(alpha = 0.25f), VShapes.lg)
+            .border(1.dp, tone.copy(alpha = 0.25f), RoundedCornerShape(18.dp))
             .clickable(interactionSource = ix, indication = null) { onClick() }
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Icon(icon, contentDescription = null, tint = tone, modifier = Modifier.size(18.dp))
+        Icon(icon, contentDescription = "", tint = tone, modifier = Modifier.size(18.dp))
         Text(
             text = text,
-            style = VTypography.label.copy(
+            style = VTheme.type.label.copy(
                 fontSize = 12.sp,
                 color = tone,
                 fontWeight = FontWeight.Bold,
@@ -425,55 +424,55 @@ private fun ScheduleCard(
     isNow: Boolean,
     onClick: () -> Unit,
 ) {
-    val accent = if (isNow) VColors.violet else VColors.ink3
+    val accent = if (isNow) VTheme.colors.violet else VTheme.colors.ink3
     val ix = remember { MutableInteractionSource() }
     Column(
         modifier = Modifier
             .width(160.dp)
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
+            .clip(RoundedCornerShape(18.dp))
+            .background(VTheme.colors.surfaceCard)
             .border(
                 width = if (isNow) 2.dp else 1.dp,
-                color = if (isNow) VColors.violet.copy(alpha = 0.35f) else VColors.line,
-                shape = VShapes.lg,
+                color = if (isNow) VTheme.colors.violet.copy(alpha = 0.35f) else VTheme.colors.line,
+                shape = RoundedCornerShape(18.dp),
             )
             .clickable(interactionSource = ix, indication = null) { onClick() }
             .padding(16.dp),
     ) {
         StatusPill(
             label = label,
-            bg = if (isNow) VColors.violetSoft else VColors.lineSoft,
-            fg = if (isNow) VColors.violet else VColors.ink3,
+            bg = if (isNow) VTheme.colors.violetSoft else VTheme.colors.lineSoft,
+            fg = if (isNow) VTheme.colors.violet else VTheme.colors.ink3,
         )
         Spacer(Modifier.height(12.dp))
         Text(
             text = period.classLabel,
-            style = VTypography.h3.copy(fontSize = 18.sp, color = VColors.ink),
+            style = VTheme.type.h3.copy(fontSize = 18.sp, color = VTheme.colors.ink),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
         Spacer(Modifier.height(2.dp))
         Text(
             text = period.subject,
-            style = VTypography.caption.copy(color = VColors.ink2),
+            style = VTheme.type.caption.copy(color = VTheme.colors.ink2),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
         Spacer(Modifier.height(12.dp))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Icon(VIcons.Clock, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(14.dp))
+            Icon(VIcons.Clock, contentDescription = "", tint = VTheme.colors.ink3, modifier = Modifier.size(14.dp))
             Text(
                 text = "${period.startTime} – ${period.endTime}",
-                style = VTypography.caption.copy(color = VColors.ink3),
+                style = VTheme.type.caption.copy(color = VTheme.colors.ink3),
             )
         }
         Spacer(Modifier.height(6.dp))
         if (period.room.isNotBlank()) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Icon(VIcons.MapPin, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(14.dp))
+                Icon(VIcons.MapPin, contentDescription = "", tint = VTheme.colors.ink3, modifier = Modifier.size(14.dp))
                 Text(
                     text = "Room ${period.room}",
-                    style = VTypography.caption.copy(color = VColors.ink3),
+                    style = VTheme.type.caption.copy(color = VTheme.colors.ink3),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -487,16 +486,16 @@ private fun SkeletonScheduleCard() {
     Column(
         modifier = Modifier
             .width(160.dp)
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.lg)
+            .clip(RoundedCornerShape(18.dp))
+            .background(VTheme.colors.surfaceCard)
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(18.dp))
             .padding(16.dp),
     ) {
-        Box(Modifier.size(48.dp, 22.dp).clip(VShapes.full).background(VColors.lineSoft))
+        Box(Modifier.size(48.dp, 22.dp).clip(RoundedCornerShape(50)).background(VTheme.colors.lineSoft))
         Spacer(Modifier.height(12.dp))
-        Box(Modifier.size(90.dp, 20.dp).clip(VShapes.sm).background(VColors.lineSoft))
+        Box(Modifier.size(90.dp, 20.dp).clip(RoundedCornerShape(10.dp)).background(VTheme.colors.lineSoft))
         Spacer(Modifier.height(8.dp))
-        Box(Modifier.size(120.dp, 14.dp).clip(VShapes.sm).background(VColors.lineSoft))
+        Box(Modifier.size(120.dp, 14.dp).clip(RoundedCornerShape(10.dp)).background(VTheme.colors.lineSoft))
     }
 }
 
@@ -522,7 +521,7 @@ private fun PendingActionsList(
                 count = obligations.unmarkedClasses,
                 suffix = appString(StringKeys.TC_CLASSES),
                 icon = VIcons.ListChecks,
-                tint = VColors.gold,
+                tint = VTheme.colors.gold,
                 onClick = onOpenUpdate,
             ))
         }
@@ -532,7 +531,7 @@ private fun PendingActionsList(
                 count = obligations.submissionsToReview,
                 suffix = appString(StringKeys.TC_SUBMISSIONS),
                 icon = VIcons.FileText,
-                tint = VColors.sky,
+                tint = VTheme.colors.sky,
                 onClick = onOpenUpdate,
             ))
         }
@@ -542,7 +541,7 @@ private fun PendingActionsList(
                 count = obligations.unpublishedResults,
                 suffix = appString(StringKeys.TC_TO_PUBLISH),
                 icon = VIcons.GraduationCap,
-                tint = VColors.violet,
+                tint = VTheme.colors.violet,
                 onClick = onOpenUpdate,
             ))
         }
@@ -552,7 +551,7 @@ private fun PendingActionsList(
                 count = obligations.pendingLeaveDecisions,
                 suffix = appString(StringKeys.TC_PENDING_COUNT),
                 icon = VIcons.Calendar,
-                tint = VColors.coral,
+                tint = VTheme.colors.coral,
                 onClick = onOpenClasses,
             ))
         }
@@ -591,7 +590,7 @@ private fun PendingRow(item: PendingItem) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(VShapes.md)
+            .clip(RoundedCornerShape(14.dp))
             .clickable(interactionSource = ix, indication = null) { item.onClick() }
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -604,24 +603,24 @@ private fun PendingRow(item: PendingItem) {
                 .background(item.tint.copy(alpha = 0.12f)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(item.icon, contentDescription = null, tint = item.tint, modifier = Modifier.size(20.dp))
+            Icon(item.icon, contentDescription = "", tint = item.tint, modifier = Modifier.size(20.dp))
         }
         Column(Modifier.weight(1f)) {
             Text(
                 text = item.label,
-                style = VTypography.bodySmall.copy(
+                style = VTheme.type.bodySmall.copy(
                     fontWeight = FontWeight.SemiBold,
-                    color = VColors.ink,
+                    color = VTheme.colors.ink,
                 ),
             )
             Text(
                 text = "${item.count} ${item.suffix}",
-                style = VTypography.caption.copy(color = VColors.ink3),
+                style = VTheme.type.caption.copy(color = VTheme.colors.ink3),
             )
         }
         Text(
             text = item.count.toString(),
-            style = VTypography.h3.copy(fontSize = 20.sp, color = item.tint),
+            style = VTheme.type.h3.copy(fontSize = 20.sp, color = item.tint),
         )
     }
 }
@@ -638,10 +637,10 @@ private fun QuickActionsGrid(
     onMessages: () -> Unit,
 ) {
     val actions = listOf(
-        QuickAction(appString(StringKeys.TEACHER_ATTENDANCE), VColors.violetSoft, VColors.violet, VIcons.ListChecks, onAttendance),
-        QuickAction(appString(StringKeys.TC_MARKS), VColors.mintSoft, VColors.mint, VIcons.GraduationCap, onMarks),
-        QuickAction(appString(StringKeys.TEACHER_HOMEWORK), VColors.goldSoft, VColors.gold, VIcons.FileText, onHomework),
-        QuickAction(appString(StringKeys.TC_MESSAGES), VColors.coralSoft, VColors.coral, VIcons.Chat, onMessages),
+        QuickAction(appString(StringKeys.TEACHER_ATTENDANCE), VTheme.colors.violetSoft, VTheme.colors.violet, VIcons.ListChecks, onAttendance),
+        QuickAction(appString(StringKeys.TC_MARKS), VTheme.colors.mintSoft, VTheme.colors.mint, VIcons.GraduationCap, onMarks),
+        QuickAction(appString(StringKeys.TEACHER_HOMEWORK), VTheme.colors.goldSoft, VTheme.colors.gold, VIcons.FileText, onHomework),
+        QuickAction(appString(StringKeys.TC_MESSAGES), VTheme.colors.coralSoft, VTheme.colors.coral, VIcons.Chat, onMessages),
     )
 
     SurfaceCard {
@@ -673,9 +672,9 @@ private fun QuickActionTile(action: QuickAction, modifier: Modifier = Modifier) 
     val ix = remember { MutableInteractionSource() }
     Column(
         modifier = modifier
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.lg)
+            .clip(RoundedCornerShape(18.dp))
+            .background(VTheme.colors.surfaceCard)
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(18.dp))
             .clickable(interactionSource = ix, indication = null) { action.onClick() }
             .padding(16.dp),
         horizontalAlignment = Alignment.Start,
@@ -687,14 +686,14 @@ private fun QuickActionTile(action: QuickAction, modifier: Modifier = Modifier) 
                 .background(action.bg),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(action.icon, contentDescription = null, tint = action.iconTint, modifier = Modifier.size(22.dp))
+            Icon(action.icon, contentDescription = "", tint = action.iconTint, modifier = Modifier.size(22.dp))
         }
         Spacer(Modifier.height(12.dp))
         Text(
             text = action.label,
-            style = VTypography.bodySmall.copy(
+            style = VTheme.type.bodySmall.copy(
                 fontWeight = FontWeight.Bold,
-                color = VColors.ink,
+                color = VTheme.colors.ink,
             ),
         )
     }
@@ -739,7 +738,7 @@ private fun ClassRow(cls: TeacherClassSummaryDto, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(VShapes.md)
+            .clip(RoundedCornerShape(14.dp))
             .clickable(interactionSource = ix, indication = null) { onClick() }
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -754,36 +753,36 @@ private fun ClassRow(cls: TeacherClassSummaryDto, onClick: () -> Unit) {
         ) {
             Text(
                 text = cls.className.take(1).uppercase(),
-                style = VTypography.h3.copy(fontSize = 18.sp, color = accent),
+                style = VTheme.type.h3.copy(fontSize = 18.sp, color = accent),
             )
         }
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = "Class ${cls.className}-${cls.section}",
-                    style = VTypography.bodySmall.copy(
+                    style = VTheme.type.bodySmall.copy(
                         fontWeight = FontWeight.SemiBold,
-                        color = VColors.ink,
+                        color = VTheme.colors.ink,
                     ),
                 )
                 if (cls.isClassTeacher) {
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = "CT",
-                        style = VTypography.caption.copy(
+                        style = VTheme.type.caption.copy(
                             fontWeight = FontWeight.Bold,
-                            color = VColors.violet,
+                            color = VTheme.colors.violet,
                         ),
                         modifier = Modifier
-                            .clip(VShapes.full)
-                            .background(VColors.violetSoft)
+                            .clip(RoundedCornerShape(50))
+                            .background(VTheme.colors.violetSoft)
                             .padding(horizontal = 8.dp, vertical = 2.dp),
                     )
                 }
             }
             Text(
                 text = "${cls.studentCount} students · ${cls.subject}",
-                style = VTypography.caption.copy(color = VColors.ink2),
+                style = VTheme.type.caption.copy(color = VTheme.colors.ink2),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -791,11 +790,11 @@ private fun ClassRow(cls: TeacherClassSummaryDto, onClick: () -> Unit) {
         if (!cls.todayAttendanceMarked) {
             StatusPill(
                 label = appString(StringKeys.TC_PENDING),
-                bg = VColors.gold.copy(alpha = 0.16f),
-                fg = VColors.gold,
+                bg = VTheme.colors.gold.copy(alpha = 0.16f),
+                fg = VTheme.colors.gold,
             )
         } else {
-            Icon(VIcons.Check, contentDescription = null, tint = VColors.success, modifier = Modifier.size(20.dp))
+            Icon(VIcons.Check, contentDescription = "", tint = VTheme.colors.success, modifier = Modifier.size(20.dp))
         }
     }
 }
@@ -803,11 +802,11 @@ private fun ClassRow(cls: TeacherClassSummaryDto, onClick: () -> Unit) {
 @Composable
 private fun SkeletonClassRow() {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Box(Modifier.size(44.dp).clip(CircleShape).background(VColors.lineSoft))
+        Box(Modifier.size(44.dp).clip(CircleShape).background(VTheme.colors.lineSoft))
         Column(Modifier.weight(1f)) {
-            Box(Modifier.size(120.dp, 16.dp).clip(VShapes.sm).background(VColors.lineSoft))
+            Box(Modifier.size(120.dp, 16.dp).clip(RoundedCornerShape(10.dp)).background(VTheme.colors.lineSoft))
             Spacer(Modifier.height(6.dp))
-            Box(Modifier.size(160.dp, 12.dp).clip(VShapes.sm).background(VColors.lineSoft))
+            Box(Modifier.size(160.dp, 12.dp).clip(RoundedCornerShape(10.dp)).background(VTheme.colors.lineSoft))
         }
     }
 }
@@ -850,7 +849,7 @@ private fun EventRow(event: TeacherPtmEventDto, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(VShapes.md)
+            .clip(RoundedCornerShape(14.dp))
             .clickable(interactionSource = ix, indication = null) { onClick() }
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -859,42 +858,42 @@ private fun EventRow(event: TeacherPtmEventDto, onClick: () -> Unit) {
         Column(
             modifier = Modifier
                 .size(48.dp)
-                .clip(VShapes.md)
-                .background(VColors.violetSoft),
+                .clip(RoundedCornerShape(14.dp))
+                .background(VTheme.colors.violetSoft),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
             val (day, mon) = event.date.prettyDayMon()
-            Text(text = day, style = VTypography.bodySmall.copy(fontWeight = FontWeight.ExtraBold, color = VColors.violet))
-            Text(text = mon, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, color = VColors.violetInk))
+            Text(text = day, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.ExtraBold, color = VTheme.colors.violet))
+            Text(text = mon, style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold, color = VTheme.colors.violetInk))
         }
         Column(Modifier.weight(1f)) {
             Text(
                 text = event.title,
-                style = VTypography.bodySmall.copy(
+                style = VTheme.type.bodySmall.copy(
                     fontWeight = FontWeight.SemiBold,
-                    color = VColors.ink,
+                    color = VTheme.colors.ink,
                 ),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text = event.date.prettyDate() ?: "",
-                style = VTypography.caption.copy(color = VColors.ink2),
+                style = VTheme.type.caption.copy(color = VTheme.colors.ink2),
             )
         }
-        Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(18.dp))
+        Icon(VIcons.ChevronRight, contentDescription = "", tint = VTheme.colors.ink3, modifier = Modifier.size(18.dp))
     }
 }
 
 @Composable
 private fun SkeletonEventRow() {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-        Box(Modifier.size(48.dp).clip(VShapes.md).background(VColors.lineSoft))
+        Box(Modifier.size(48.dp).clip(RoundedCornerShape(14.dp)).background(VTheme.colors.lineSoft))
         Column(Modifier.weight(1f)) {
-            Box(Modifier.size(140.dp, 16.dp).clip(VShapes.sm).background(VColors.lineSoft))
+            Box(Modifier.size(140.dp, 16.dp).clip(RoundedCornerShape(10.dp)).background(VTheme.colors.lineSoft))
             Spacer(Modifier.height(6.dp))
-            Box(Modifier.size(100.dp, 12.dp).clip(VShapes.sm).background(VColors.lineSoft))
+            Box(Modifier.size(100.dp, 12.dp).clip(RoundedCornerShape(10.dp)).background(VTheme.colors.lineSoft))
         }
     }
 }
@@ -916,13 +915,13 @@ private fun SectionHeader(
     ) {
         Text(
             text = title,
-            style = VTypography.h3.copy(fontSize = 18.sp, color = VColors.ink),
+            style = VTheme.type.h3.copy(fontSize = 18.sp, color = VTheme.colors.ink),
         )
         if (actionLabel != null && onAction != null) {
             val ix = remember { MutableInteractionSource() }
             Text(
                 text = actionLabel,
-                style = VTypography.label.copy(color = VColors.violet),
+                style = VTheme.type.label.copy(color = VTheme.colors.violet),
                 modifier = Modifier.clickable(interactionSource = ix, indication = null) { onAction() },
             )
         }
@@ -937,9 +936,9 @@ private fun SurfaceCard(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(VShapes.xl)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.xl)
+            .clip(RoundedCornerShape(24.dp))
+            .background(VTheme.colors.surfaceCard)
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(24.dp))
             .padding(16.dp),
     ) {
         content()
@@ -955,12 +954,12 @@ private fun StatusPill(
 ) {
     Text(
         text = label,
-        style = VTypography.caption.copy(
+        style = VTheme.type.caption.copy(
             fontWeight = FontWeight.Bold,
             color = fg,
         ),
         modifier = modifier
-            .clip(VShapes.full)
+            .clip(RoundedCornerShape(50))
             .background(bg)
             .padding(horizontal = 10.dp, vertical = 4.dp),
     )
@@ -983,24 +982,24 @@ private fun EmptyCard(
                     modifier = Modifier
                         .size(44.dp)
                         .clip(CircleShape)
-                        .background(VColors.success.copy(alpha = 0.12f)),
+                        .background(VTheme.colors.success.copy(alpha = 0.12f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(icon, contentDescription = null, tint = VColors.success, modifier = Modifier.size(22.dp))
+                    Icon(icon, contentDescription = "", tint = VTheme.colors.success, modifier = Modifier.size(22.dp))
                 }
             }
             Text(
                 text = text,
-                style = VTypography.bodySmall.copy(
+                style = VTheme.type.bodySmall.copy(
                     fontWeight = FontWeight.SemiBold,
-                    color = VColors.ink,
+                    color = VTheme.colors.ink,
                 ),
                 textAlign = TextAlign.Center,
             )
             if (subtext != null) {
                 Text(
                     text = subtext,
-                    style = VTypography.caption.copy(color = VColors.ink3),
+                    style = VTheme.type.caption.copy(color = VTheme.colors.ink3),
                     textAlign = TextAlign.Center,
                 )
             }

@@ -32,12 +32,11 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.VErrorState
 import com.littlebridge.enrollplus.ui.v2.screens.VLoadingState
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.screens.teacher.VtC
-import com.littlebridge.enrollplus.ui.v2.screens.teacher.VtT
-import com.littlebridge.enrollplus.ui.v2.screens.teacher.coloredV
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * TeacherHeatmapScreen — class misconception heatmap.
@@ -131,12 +130,12 @@ private fun ScopeSelector(
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(
                             item.className,
-                            style = VtT.body.coloredV(c.ink),
+                            style = VTheme.type.body.colored(c.ink),
                             fontWeight = FontWeight.Medium,
                         )
                         Text(
                             item.subjectName,
-                            style = VtT.caption.coloredV(c.ink3),
+                            style = VTheme.type.caption.colored(c.ink3),
                         )
                     }
                     if (isSelected) {
@@ -148,7 +147,7 @@ private fun ScopeSelector(
                         ) {
                             Text(
                                 appString(StringKeys.TH_SELECTED),
-                                style = VtT.caption.coloredV(c.accent),
+                                style = VTheme.type.caption.colored(c.accent),
                                 fontWeight = FontWeight.Bold,
                             )
                         }
@@ -192,12 +191,12 @@ private fun StatBlock(label: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             value,
-            style = VtT.h2.coloredV(c.ink),
+            style = VTheme.type.h2.colored(c.ink),
             fontWeight = FontWeight.Bold,
         )
         Text(
             label,
-            style = VtT.caption.coloredV(c.ink3),
+            style = VTheme.type.caption.colored(c.ink3),
         )
     }
 }
@@ -219,7 +218,7 @@ private fun HeatmapCellCard(cell: HeatmapCellDto) {
             ) {
                 Text(
                     cell.misconceptionType,
-                    style = VtT.body.coloredV(c.ink),
+                    style = VTheme.type.body.colored(c.ink),
                     fontWeight = FontWeight.SemiBold,
                 )
                 Box(
@@ -230,26 +229,26 @@ private fun HeatmapCellCard(cell: HeatmapCellDto) {
                 ) {
                     Text(
                         cell.severity.uppercase(),
-                        style = VtT.caption.coloredV(severityColor),
+                        style = VTheme.type.caption.colored(severityColor),
                         fontWeight = FontWeight.Bold,
                     )
                 }
             }
             Text(
                 appString(StringKeys.TH_CHILDREN_AFFECTED).replace("{count}", cell.affectedChildren.toString()),
-                style = VtT.caption.coloredV(c.ink3),
+                style = VTheme.type.caption.colored(c.ink3),
             )
             if (cell.evidence.isNotEmpty()) {
                 Text(
                     appString(StringKeys.TH_EVIDENCE),
-                    style = VtT.caption.coloredV(c.ink3),
+                    style = VTheme.type.caption.colored(c.ink3),
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.padding(top = 4.dp),
                 )
                 cell.evidence.take(2).forEach { ev ->
                     Text(
                         "• $ev",
-                        style = VtT.caption.coloredV(c.ink2),
+                        style = VTheme.type.caption.colored(c.ink2),
                         modifier = Modifier.padding(start = 8.dp),
                     )
                 }

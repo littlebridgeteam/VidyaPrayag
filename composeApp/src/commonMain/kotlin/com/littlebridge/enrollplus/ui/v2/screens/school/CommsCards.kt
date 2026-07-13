@@ -28,14 +28,13 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.DeliveryLogItem
 import com.littlebridge.enrollplus.feature.admin.domain.model.MessageThread
 import com.littlebridge.enrollplus.feature.admin.presentation.Announcement
 import com.littlebridge.enrollplus.feature.admin.presentation.PTMHistoryItem
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VAvatar
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * CommsCards — reusable, premium cards for the School Comms hub.
@@ -52,9 +51,9 @@ internal fun AnnouncementCard(
     index: Int = 0,
 ) {
     val (badgeText, badgeMeta) = when {
-        announcement.isCalendarOnly -> "Calendar" to Triple(VColors.gold, VColors.goldSoft, VIcons.Calendar)
-        announcement.category.isNotBlank() -> announcement.category to Triple(VColors.violet, VColors.violetSoft, VIcons.Megaphone)
-        else -> "Announcement" to Triple(VColors.ink3, VColors.surfaceTint, VIcons.Megaphone)
+        announcement.isCalendarOnly -> "Calendar" to Triple(VTheme.colors.gold, VTheme.colors.goldSoft, VIcons.Calendar)
+        announcement.category.isNotBlank() -> announcement.category to Triple(VTheme.colors.violet, VTheme.colors.violetSoft, VIcons.Megaphone)
+        else -> "Announcement" to Triple(VTheme.colors.ink3, VTheme.colors.surfaceTint, VIcons.Megaphone)
     }
     val badgeColor = badgeMeta.first
     val badgeBg = badgeMeta.second
@@ -79,7 +78,7 @@ internal fun AnnouncementCard(
                     .background(badgeBg),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = null, tint = badgeColor, modifier = Modifier.size(20.dp))
+                Icon(icon, contentDescription = "", tint = badgeColor, modifier = Modifier.size(20.dp))
             }
 
             Column(Modifier.weight(1f)) {
@@ -89,8 +88,8 @@ internal fun AnnouncementCard(
                 ) {
                     Text(
                         announcement.title,
-                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                        color = VColors.ink,
+                        style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        color = VTheme.colors.ink,
                         modifier = Modifier.weight(1f),
                     )
                     Spacer(Modifier.width(8.dp))
@@ -99,16 +98,16 @@ internal fun AnnouncementCard(
                 if (announcement.date.isNotBlank()) {
                     Text(
                         announcement.date,
-                        style = VTypography.caption,
-                        color = VColors.ink3,
+                        style = VTheme.type.caption,
+                        color = VTheme.colors.ink3,
                         modifier = Modifier.padding(top = 2.dp),
                     )
                 }
                 if (announcement.description.isNotBlank()) {
                     Text(
                         announcement.description,
-                        style = VTypography.caption,
-                        color = VColors.ink2,
+                        style = VTheme.type.caption,
+                        color = VTheme.colors.ink2,
                         modifier = Modifier.padding(top = 6.dp),
                         maxLines = 2,
                     )
@@ -138,16 +137,16 @@ internal fun CommsEntryCard(
                 modifier = Modifier
                     .size(46.dp)
                     .clip(RoundedCornerShape(14.dp))
-                    .background(VColors.violetSoft),
+                    .background(VTheme.colors.violetSoft),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(22.dp))
+                Icon(icon, contentDescription = "", tint = VTheme.colors.violet, modifier = Modifier.size(22.dp))
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
-                Text(description, style = VTypography.caption, color = VColors.ink3, maxLines = 2)
+                Text(title, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.Bold), color = VTheme.colors.ink)
+                Text(description, style = VTheme.type.caption, color = VTheme.colors.ink3, maxLines = 2)
             }
-            Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.ink3.copy(alpha = 0.4f), modifier = Modifier.size(20.dp))
+            Icon(VIcons.ChevronRight, contentDescription = "", tint = VTheme.colors.ink3.copy(alpha = 0.4f), modifier = Modifier.size(20.dp))
         }
     }
 }
@@ -156,7 +155,7 @@ internal fun CommsEntryCard(
 internal fun CommsBadge(text: String, color: Color, bg: Color) {
     Text(
         text = text,
-        style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+        style = VTheme.type.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
         color = color,
         modifier = Modifier
             .clip(RoundedCornerShape(50))
@@ -189,20 +188,20 @@ internal fun MessagePreviewCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         thread.senderName,
-                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                        color = VColors.ink,
+                        style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        color = VTheme.colors.ink,
                         modifier = Modifier.weight(1f),
                     )
                     Text(
                         thread.time,
-                        style = VTypography.caption,
-                        color = VColors.ink3,
+                        style = VTheme.type.caption,
+                        color = VTheme.colors.ink3,
                     )
                 }
                 Text(
                     thread.lastMessage,
-                    style = VTypography.caption,
-                    color = if (thread.isRead) VColors.ink3 else VColors.ink2,
+                    style = VTheme.type.caption,
+                    color = if (thread.isRead) VTheme.colors.ink3 else VTheme.colors.ink2,
                     maxLines = 1,
                     modifier = Modifier.padding(top = 2.dp),
                 )
@@ -241,25 +240,25 @@ internal fun PtmPreviewCard(
                 modifier = Modifier
                     .size(44.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(VColors.skySoft),
+                    .background(VTheme.colors.skySoft),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(VIcons.Calendar, contentDescription = null, tint = VColors.sky, modifier = Modifier.size(20.dp))
+                Icon(VIcons.Calendar, contentDescription = "", tint = VTheme.colors.sky, modifier = Modifier.size(20.dp))
             }
             Column(Modifier.weight(1f)) {
                 Text(
                     item.title,
-                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                    color = VColors.ink,
+                    style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.Bold),
+                    color = VTheme.colors.ink,
                 )
                 Text(
                     "${item.date} · ${item.turnout}/${item.totalMet} met",
-                    style = VTypography.caption,
-                    color = VColors.ink3,
+                    style = VTheme.type.caption,
+                    color = VTheme.colors.ink3,
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }
-            Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.ink3.copy(alpha = 0.4f), modifier = Modifier.size(20.dp))
+            Icon(VIcons.ChevronRight, contentDescription = "", tint = VTheme.colors.ink3.copy(alpha = 0.4f), modifier = Modifier.size(20.dp))
         }
     }
 }
@@ -272,11 +271,11 @@ internal fun DeliveryLogRowCard(
     index: Int = 0,
 ) {
     val channelTint = when (item.channel) {
-        "whatsapp" -> VColors.mint to VColors.mintSoft
-        "push" -> VColors.sky to VColors.skySoft
-        "sms" -> VColors.gold to VColors.goldSoft
-        "email" -> VColors.violet to VColors.violetSoft
-        else -> VColors.ink3 to VColors.surfaceTint
+        "whatsapp" -> VTheme.colors.mint to VTheme.colors.mintSoft
+        "push" -> VTheme.colors.sky to VTheme.colors.skySoft
+        "sms" -> VTheme.colors.gold to VTheme.colors.goldSoft
+        "email" -> VTheme.colors.violet to VTheme.colors.violetSoft
+        else -> VTheme.colors.ink3 to VTheme.colors.surfaceTint
     }
     val icon = when (item.channel) {
         "whatsapp" -> VIcons.Phone
@@ -286,10 +285,10 @@ internal fun DeliveryLogRowCard(
         else -> VIcons.Megaphone
     }
     val statusColor = when (item.status) {
-        "delivered", "read", "sent" -> VColors.success
-        "queued" -> VColors.gold
-        "failed" -> VColors.error
-        else -> VColors.ink3
+        "delivered", "read", "sent" -> VTheme.colors.success
+        "queued" -> VTheme.colors.gold
+        "failed" -> VTheme.colors.error
+        else -> VTheme.colors.ink3
     }
 
     VCard(
@@ -311,28 +310,28 @@ internal fun DeliveryLogRowCard(
                     .background(channelTint.second),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = null, tint = channelTint.first, modifier = Modifier.size(20.dp))
+                Icon(icon, contentDescription = "", tint = channelTint.first, modifier = Modifier.size(20.dp))
             }
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         item.announcementTitle.ifBlank { "Announcement" },
-                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                        color = VColors.ink,
+                        style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        color = VTheme.colors.ink,
                         modifier = Modifier.weight(1f),
                         maxLines = 1,
                     )
                     Text(
                         item.status.replaceFirstChar { it.uppercase() },
-                        style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
+                        style = VTheme.type.caption.copy(fontWeight = FontWeight.Bold),
                         color = statusColor,
                         modifier = Modifier.padding(start = 8.dp),
                     )
                 }
                 Text(
                     "${item.channel.replaceFirstChar { it.uppercase() }} · ${maskIdentifier(item.recipientIdentifier)}",
-                    style = VTypography.caption,
-                    color = VColors.ink3,
+                    style = VTheme.type.caption,
+                    color = VTheme.colors.ink3,
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }

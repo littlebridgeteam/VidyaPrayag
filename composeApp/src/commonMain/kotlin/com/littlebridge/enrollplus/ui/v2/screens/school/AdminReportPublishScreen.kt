@@ -44,8 +44,7 @@ import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * AdminReportPublishScreen — admin oversight for report card generation
@@ -63,7 +62,7 @@ fun AdminReportPublishScreen(
     LaunchedEffect(Unit) { viewModel.loadTermConfig() }
 
     Column(
-        Modifier.fillMaxSize().background(VColors.surface),
+        Modifier.fillMaxSize().background(VTheme.colors.surface),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         // Header
@@ -73,7 +72,7 @@ fun AdminReportPublishScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             VButton(text = appString(StringKeys.COMMON_BUTTON_BACK), onClick = onBack, variant = VButtonVariant.Secondary, size = VButtonSize.Sm)
-            Text(appString(StringKeys.SCH_REPORT_CARD_PUBLISHING), style = VTypography.h3.copy(color = VColors.ink))
+            Text(appString(StringKeys.SCH_REPORT_CARD_PUBLISHING), style = VTheme.type.h3.copy(color = VTheme.colors.ink))
         }
 
         // Term input + load
@@ -112,8 +111,8 @@ fun AdminReportPublishScreen(
             Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                 VCard(Modifier.fillMaxWidth()) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Icon(VIcons.Check, contentDescription = null, tint = VColors.success, modifier = Modifier.size(16.dp))
-                        Text(appString(StringKeys.SCH_N_REPORTS_PUBLISHED, "count" to count.toString()), style = VTypography.body.copy(color = VColors.ink))
+                        Icon(VIcons.Check, contentDescription = "", tint = VTheme.colors.success, modifier = Modifier.size(16.dp))
+                        Text(appString(StringKeys.SCH_N_REPORTS_PUBLISHED, "count" to count.toString()), style = VTheme.type.body.copy(color = VTheme.colors.ink))
                     }
                 }
             }
@@ -153,8 +152,8 @@ fun AdminReportPublishScreen(
 @Composable
 private fun ConfigChip(label: String, value: String) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, style = VTypography.body.copy(color = VColors.ink).copy(fontWeight = FontWeight.Medium, fontSize = 13.sp))
-        Text(label, style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 10.sp))
+        Text(value, style = VTheme.type.body.copy(color = VTheme.colors.ink).copy(fontWeight = FontWeight.Medium, fontSize = 13.sp))
+        Text(label, style = VTheme.type.caption.copy(color = VTheme.colors.ink3).copy(fontSize = 10.sp))
     }
 }
 
@@ -172,15 +171,15 @@ private fun OversightClassCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("${row.className} ${row.section}", style = VTypography.h3.copy(color = VColors.ink).copy(fontSize = 15.sp))
-                Text("${row.totalDrafts} " + appString(StringKeys.SCH_DRAFTS), style = VTypography.caption.copy(color = VColors.ink2))
+                Text("${row.className} ${row.section}", style = VTheme.type.h3.copy(color = VTheme.colors.ink).copy(fontSize = 15.sp))
+                Text("${row.totalDrafts} " + appString(StringKeys.SCH_DRAFTS), style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                StatusChip(appString(StringKeys.SCH_DRAFT), row.draftCount, VColors.gold)
-                StatusChip(appString(StringKeys.SCH_FLAGGED), row.flaggedCount, VColors.error)
-                StatusChip(appString(StringKeys.SCH_APPROVED), row.approvedCount, VColors.success)
-                StatusChip(appString(StringKeys.SCH_PUBLISHED), row.publishedCount, VColors.violet)
+                StatusChip(appString(StringKeys.SCH_DRAFT), row.draftCount, VTheme.colors.gold)
+                StatusChip(appString(StringKeys.SCH_FLAGGED), row.flaggedCount, VTheme.colors.error)
+                StatusChip(appString(StringKeys.SCH_APPROVED), row.approvedCount, VTheme.colors.success)
+                StatusChip(appString(StringKeys.SCH_PUBLISHED), row.publishedCount, VTheme.colors.violet)
             }
 
             if (row.approvedCount > 0 && row.publishedCount == 0) {
@@ -202,7 +201,7 @@ private fun StatusChip(label: String, count: Int, color: androidx.compose.ui.gra
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Text("$count", style = VTypography.body.copy(color = color).copy(fontWeight = FontWeight.Bold, fontSize = 12.sp))
-        Text(label, style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 10.sp))
+        Text("$count", style = VTheme.type.body.copy(color = color).copy(fontWeight = FontWeight.Bold, fontSize = 12.sp))
+        Text(label, style = VTheme.type.caption.copy(color = VTheme.colors.ink3).copy(fontSize = 10.sp))
     }
 }

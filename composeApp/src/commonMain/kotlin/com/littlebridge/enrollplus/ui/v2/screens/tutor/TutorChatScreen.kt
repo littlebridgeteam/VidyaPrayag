@@ -38,8 +38,6 @@ import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.tutor.domain.model.SubjectItemDto
 import com.littlebridge.enrollplus.feature.tutor.presentation.ChatMessage
 import com.littlebridge.enrollplus.feature.tutor.presentation.TutorChatViewModel
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
@@ -91,7 +89,7 @@ fun TutorChatScreen(
     Box(
         modifier
             .fillMaxSize()
-            .background(VColors.cream)
+            .background(VTheme.colors.cream)
     ) {
         Column(
             Modifier.fillMaxSize(),
@@ -104,7 +102,7 @@ fun TutorChatScreen(
                     if (state.conversationHistory.isNotEmpty()) {
                         Text(
                             appString(StringKeys.TUT_CLEAR),
-                            style = VTypography.caption.copy(color = VColors.violet),
+                            style = VTheme.type.caption.copy(color = VTheme.colors.violet),
                             modifier = Modifier.clickable { viewModel.clearConversation() },
                         )
                     }
@@ -273,7 +271,7 @@ private fun SubjectPicker(
             )
             Icon(
                 VIcons.ChevronDown,
-                contentDescription = null,
+                contentDescription = "",
                 tint = c.ink3,
                 modifier = Modifier.size(18.dp),
             )

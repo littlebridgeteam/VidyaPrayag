@@ -122,7 +122,7 @@ private fun NudgeCard(nudge: PewsParentNudgeDto, onAction: (String) -> Unit) {
                 Modifier.size(36.dp).clip(CircleShape).background(c.lavenderLight),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(VIcons.Sparkles, contentDescription = null, tint = c.accent, modifier = Modifier.size(18.dp))
+                Icon(VIcons.Sparkles, contentDescription = "", tint = c.accent, modifier = Modifier.size(18.dp))
             }
             Column(Modifier.weight(1f)) {
                 Text(
@@ -173,7 +173,7 @@ private fun AllClearCard(childName: String) {
                 Modifier.size(36.dp).clip(CircleShape).background(c.success),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(VIcons.ShieldCheck, contentDescription = null, tint = c.successInk, modifier = Modifier.size(18.dp))
+                Icon(VIcons.ShieldCheck, contentDescription = "", tint = c.successInk, modifier = Modifier.size(18.dp))
             }
             Column {
                 Text(

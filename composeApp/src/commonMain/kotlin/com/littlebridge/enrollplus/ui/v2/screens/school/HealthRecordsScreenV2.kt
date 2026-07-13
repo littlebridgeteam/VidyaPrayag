@@ -54,11 +54,10 @@ import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonProfile
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 @Composable
 fun HealthRecordsScreenV2(
@@ -126,12 +125,12 @@ private fun HealthRecordsContent(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(if (isError) VColors.error.copy(alpha = 0.1f) else VColors.sky.copy(alpha = 0.1f))
+                    .background(if (isError) VTheme.colors.error.copy(alpha = 0.1f) else VTheme.colors.sky.copy(alpha = 0.1f))
                     .padding(12.dp),
             ) {
                 Text(
                     msg ?: "",
-                    style = VTypography.caption.copy(color = if (isError) VColors.error else VColors.sky),
+                    style = VTheme.type.caption.copy(color = if (isError) VTheme.colors.error else VTheme.colors.sky),
                 )
             }
             LaunchedEffect(msg) {
@@ -354,20 +353,20 @@ private fun ImmunizationsTab(
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         Column(Modifier.weight(1f)) {
-                            Text(imm.vaccineName, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
-                            Text(appString(StringKeys.HLTH_DOSE, "number" to imm.doseNumber.toString(), "date" to imm.dateAdministered), style = VTypography.caption.copy(color = VColors.ink2))
+                            Text(imm.vaccineName, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
+                            Text(appString(StringKeys.HLTH_DOSE, "number" to imm.doseNumber.toString(), "date" to imm.dateAdministered), style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
                             if (!imm.administeredBy.isNullOrBlank()) {
-                                Text(appString(StringKeys.HLTH_BY, "name" to imm.administeredBy), style = VTypography.caption.copy(color = VColors.ink3))
+                                Text(appString(StringKeys.HLTH_BY, "name" to imm.administeredBy), style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
                             }
                             if (!imm.nextDueDate.isNullOrBlank()) {
-                                Text(appString(StringKeys.HLTH_NEXT_DUE_LABEL, "date" to imm.nextDueDate), style = VTypography.caption.copy(color = VColors.sky))
+                                Text(appString(StringKeys.HLTH_NEXT_DUE_LABEL, "date" to imm.nextDueDate), style = VTheme.type.caption.copy(color = VTheme.colors.sky))
                             }
                         }
                         Box(
-                            Modifier.size(36.dp).clip(CircleShape).background(VColors.sky.copy(alpha = 0.1f)),
+                            Modifier.size(36.dp).clip(CircleShape).background(VTheme.colors.sky.copy(alpha = 0.1f)),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Icon(VIcons.Heart, contentDescription = null, tint = VColors.sky, modifier = Modifier.size(18.dp))
+                            Icon(VIcons.Heart, contentDescription = "", tint = VTheme.colors.sky, modifier = Modifier.size(18.dp))
                         }
                     }
                 }
@@ -469,7 +468,7 @@ private fun IncidentsTab(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
-                            Text(inc.date, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                            Text(inc.date, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
                             val pair = when (inc.severity) {
                                 "major" -> appString(StringKeys.HLTH_SEVERITY_MAJOR) to VBadgeTone.Danger
                                 "moderate" -> appString(StringKeys.HLTH_SEVERITY_MODERATE) to VBadgeTone.Warning
@@ -477,15 +476,15 @@ private fun IncidentsTab(
                             }
                             VBadge(text = pair.first, tone = pair.second)
                         }
-                        Text(inc.description, style = VTypography.body.copy(color = VColors.ink))
+                        Text(inc.description, style = VTheme.type.body.copy(color = VTheme.colors.ink))
                         if (!inc.treatment.isNullOrBlank()) {
-                            Text(appString(StringKeys.HLTH_TREATMENT_LABEL, "treatment" to inc.treatment), style = VTypography.caption.copy(color = VColors.ink2))
+                            Text(appString(StringKeys.HLTH_TREATMENT_LABEL, "treatment" to inc.treatment), style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
                         }
                         if (!inc.medicationGiven.isNullOrBlank()) {
-                            Text(appString(StringKeys.HLTH_MEDICATION_LABEL, "medication" to inc.medicationGiven), style = VTypography.caption.copy(color = VColors.ink2))
+                            Text(appString(StringKeys.HLTH_MEDICATION_LABEL, "medication" to inc.medicationGiven), style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
                         }
                         if (!inc.time.isNullOrBlank()) {
-                            Text(appString(StringKeys.HLTH_TIME_LABEL, "time" to inc.time), style = VTypography.caption.copy(color = VColors.ink3))
+                            Text(appString(StringKeys.HLTH_TIME_LABEL, "time" to inc.time), style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
                         }
                         Row(
                             Modifier.fillMaxWidth().padding(top = 4.dp),
@@ -494,8 +493,8 @@ private fun IncidentsTab(
                         ) {
                             if (inc.parentNotified) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Icon(VIcons.Check, contentDescription = null, tint = VColors.sky, modifier = Modifier.size(14.dp))
-                                    Text(appString(StringKeys.HLTH_PARENT_NOTIFIED), style = VTypography.caption.copy(color = VColors.sky))
+                                    Icon(VIcons.Check, contentDescription = "", tint = VTheme.colors.sky, modifier = Modifier.size(14.dp))
+                                    Text(appString(StringKeys.HLTH_PARENT_NOTIFIED), style = VTheme.type.caption.copy(color = VTheme.colors.sky))
                                 }
                             } else {
                                 VButton(
@@ -521,6 +520,6 @@ private fun VEmptyHealthState(message: String) {
         Modifier.fillMaxWidth().padding(vertical = 32.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(message, style = VTypography.caption.copy(color = VColors.ink3))
+        Text(message, style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
     }
 }

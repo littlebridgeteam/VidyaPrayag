@@ -49,6 +49,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import kotlinx.coroutines.launch
+import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * TeacherCheckInPopup — the first-login-of-day fingerprint check-in dialog (Doc 06 §2). It rides as
@@ -131,13 +133,13 @@ fun TeacherCheckInPopup(
                             if (working) {
                                 TeacherSpinner(30.dp)
                             } else {
-                                Icon(VIcons.ShieldCheck, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(38.dp))
+                                Icon(VIcons.ShieldCheck, contentDescription = "", tint = c.accentDeep, modifier = Modifier.size(38.dp))
                             }
                         }
                         Spacer(Modifier.height(14.dp))
                         Text(
                             "Check in for today",
-                            style = VtT.h2.coloredV(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold),
+                            style = VTheme.type.h2.colored(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold),
                             textAlign = TextAlign.Center,
                         )
                         Spacer(Modifier.height(6.dp))
@@ -148,13 +150,13 @@ fun TeacherCheckInPopup(
                         }
                         Text(
                             body,
-                            style = VtT.body.coloredV(c.ink2).copy(fontSize = 13.5.sp),
+                            style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.5.sp),
                             textAlign = TextAlign.Center,
                         )
                         val errorText = state.error
                         if (errorText != null) {
                             Spacer(Modifier.height(8.dp))
-                            Text(errorText, style = VtT.caption.coloredV(c.dangerInk).copy(fontSize = 12.sp), textAlign = TextAlign.Center)
+                            Text(errorText, style = VTheme.type.caption.colored(c.dangerInk).copy(fontSize = 12.sp), textAlign = TextAlign.Center)
                         }
                         Spacer(Modifier.height(18.dp))
 
@@ -185,7 +187,7 @@ fun TeacherCheckInPopup(
                             tone = VButtonTone.Lavender,
                             size = VButtonSize.Lg,
                             loading = state.isCheckingIn || working,
-                            leading = { Icon(VIcons.ShieldCheck, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                            leading = { Icon(VIcons.ShieldCheck, contentDescription = "", modifier = Modifier.size(16.dp)) },
                         )
                         Spacer(Modifier.height(8.dp))
                         VButton(

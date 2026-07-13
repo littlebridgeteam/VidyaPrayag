@@ -40,7 +40,6 @@ import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.feature.scholarship.domain.model.ApplyScholarshipRequest
 import com.littlebridge.enrollplus.feature.scholarship.domain.model.ScholarshipScheme
 import com.littlebridge.enrollplus.feature.scholarship.presentation.ScholarshipViewModel
-import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
@@ -85,7 +84,7 @@ fun ScholarshipWorkflowScreenV2(
     Column(
         modifier
             .fillMaxSize()
-            .background(VColors.cream)
+            .background(VTheme.colors.cream)
             .statusBarsPadding()
             .imePadding()
             .navigationBarsPadding()
@@ -285,7 +284,7 @@ private fun GamifiedScholarshipCard(
 
         if (scheme.eligibilityCriteria.isNotBlank()) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Icon(VIcons.Sparkles, contentDescription = null, tint = c.ink3, modifier = Modifier.size(14.dp))
+                Icon(VIcons.Sparkles, contentDescription = "", tint = c.ink3, modifier = Modifier.size(14.dp))
                 Text(appString(StringKeys.SW_ELIGIBILITY), style = VTheme.type.label.colored(c.ink3))
                 Text(scheme.eligibilityCriteria, style = VTheme.type.caption.colored(c.ink2))
             }

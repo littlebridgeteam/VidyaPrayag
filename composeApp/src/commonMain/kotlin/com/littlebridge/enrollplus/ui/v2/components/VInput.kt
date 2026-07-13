@@ -98,7 +98,7 @@ fun VInput(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (leadingIcon != null) {
-                    Icon(leadingIcon, contentDescription = null, tint = iconTint, modifier = Modifier.size(18.dp))
+                    Icon(leadingIcon, contentDescription = "", tint = iconTint, modifier = Modifier.size(18.dp))
                 }
                 Box(Modifier.weight(1f)) {
                     if (value.isEmpty() && placeholder != null) {

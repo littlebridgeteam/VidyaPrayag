@@ -228,7 +228,7 @@ private fun ApplicationRow(a: ScholarshipApplication) {
                 .background(c.cream),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(VIcons.GraduationCap, contentDescription = null, tint = c.ink2, modifier = Modifier.size(18.dp))
+            Icon(VIcons.GraduationCap, contentDescription = "", tint = c.ink2, modifier = Modifier.size(18.dp))
         }
         Column(Modifier.weight(1f)) {
             Text(a.institution, style = VTheme.type.bodyStrong.colored(c.ink))

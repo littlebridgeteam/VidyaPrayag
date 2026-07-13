@@ -25,8 +25,8 @@ import com.littlebridge.enrollplus.feature.idcard.presentation.IdCardViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.tokens.VColors
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 private enum class IdCardTab(val label: String) {
     Templates("Templates"),
@@ -63,7 +63,7 @@ fun IdCardScreen(
             .fillMaxSize()
             .statusBarsPadding()
             .navigationBarsPadding()
-            .background(VColors.surface),
+            .background(VTheme.colors.surface),
     ) {
         com.littlebridge.enrollplus.ui.v2.components.VBackHeader(title = "ID Cards", onBack = onBack, pinRouteId = "overlay_id_cards")
 

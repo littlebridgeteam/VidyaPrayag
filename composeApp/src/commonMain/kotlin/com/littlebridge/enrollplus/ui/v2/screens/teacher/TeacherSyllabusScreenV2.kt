@@ -53,38 +53,38 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import androidx.compose.ui.text.TextStyle
 import com.littlebridge.enrollplus.util.formatDecimal
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
+import com.littlebridge.enrollplus.ui.v2.theme.colored
 
 // ── Cream/violet token bridge for the syllabus tracker ───────────────────────
 // Maps the legacy VTheme accessor names used across this screen onto the new
 // cream/violet token system (VColors/VTypography). This keeps every layout and
 // state branch below unchanged while retiring the lavender VTheme dependency.
 private object SylColors {
-    val background get() = VColors.cream
-    val card get() = VColors.white
-    val cream get() = VColors.surfaceTint      // subtle chip / disc fill
-    val hairline get() = VColors.line
-    val ink get() = VColors.ink
-    val ink2 get() = VColors.ink2
-    val ink3 get() = VColors.ink3
-    val navyDeep get() = VColors.ink           // primary heading ink
-    val accent get() = VColors.violet
-    val accentDeep get() = VColors.violetInk
-    val teal get() = VColors.mint              // coverage / positive
-    val tealDeep get() = VColors.success
-    val danger get() = VColors.error
-    val dangerInk get() = VColors.error
+    val background get() = VTheme.colors.cream
+    val card get() = VTheme.colors.white
+    val cream get() = VTheme.colors.surfaceTint      // subtle chip / disc fill
+    val hairline get() = VTheme.colors.line
+    val ink get() = VTheme.colors.ink
+    val ink2 get() = VTheme.colors.ink2
+    val ink3 get() = VTheme.colors.ink3
+    val navyDeep get() = VTheme.colors.ink           // primary heading ink
+    val accent get() = VTheme.colors.violet
+    val accentDeep get() = VTheme.colors.violetInk
+    val teal get() = VTheme.colors.mint              // coverage / positive
+    val tealDeep get() = VTheme.colors.success
+    val danger get() = VTheme.colors.error
+    val dangerInk get() = VTheme.colors.error
 }
 
 private object SylType {
-    val h3: TextStyle get() = VTypography.h3
-    val body: TextStyle get() = VTypography.body
-    val bodyStrong: TextStyle get() = VTypography.body
-    val caption: TextStyle get() = VTypography.caption
+    val h3: TextStyle get() = VTheme.type.h3
+    val body: TextStyle get() = VTheme.type.body
+    val bodyStrong: TextStyle get() = VTheme.type.body
+    val caption: TextStyle get() = VTheme.type.caption
 }
 
 private fun TextStyle.colored(color: Color): TextStyle = copy(color = color)
@@ -204,7 +204,7 @@ private fun SyllabusBody(viewModel: TeacherSyllabusViewModel, scopeLabel: String
                     tone = VButtonTone.Lavender,
                     size = VButtonSize.Sm,
                     loading = state.isAutoFilling,
-                    leading = { Icon(VIcons.Sparkles, contentDescription = null, modifier = Modifier.size(14.dp)) },
+                    leading = { Icon(VIcons.Sparkles, contentDescription = "", modifier = Modifier.size(14.dp)) },
                 )
                 VButton(
                     appString(StringKeys.TC_DAILY_LOG),
@@ -213,7 +213,7 @@ private fun SyllabusBody(viewModel: TeacherSyllabusViewModel, scopeLabel: String
                     variant = VButtonVariant.Secondary,
                     tone = VButtonTone.Teal,
                     size = VButtonSize.Sm,
-                    leading = { Icon(VIcons.ClipboardList, contentDescription = null, modifier = Modifier.size(14.dp)) },
+                    leading = { Icon(VIcons.ClipboardList, contentDescription = "", modifier = Modifier.size(14.dp)) },
                 )
                 VButton(
                     appString(StringKeys.TC_QUIZ),
@@ -222,7 +222,7 @@ private fun SyllabusBody(viewModel: TeacherSyllabusViewModel, scopeLabel: String
                     variant = VButtonVariant.Secondary,
                     tone = VButtonTone.Lavender,
                     size = VButtonSize.Sm,
-                    leading = { Icon(VIcons.GraduationCap, contentDescription = null, modifier = Modifier.size(14.dp)) },
+                    leading = { Icon(VIcons.GraduationCap, contentDescription = "", modifier = Modifier.size(14.dp)) },
                 )
             }
         }
@@ -231,7 +231,7 @@ private fun SyllabusBody(viewModel: TeacherSyllabusViewModel, scopeLabel: String
         if (state.isEditing) {
             item {
                 if (state.addingUnderParentId == null) {
-                    VButton(appString(StringKeys.TC_ADD_A_CHAPTER), onClick = { viewModel.openAdd(null) }, full = true, variant = VButtonVariant.Secondary, tone = VButtonTone.Teal, size = VButtonSize.Md, leading = { Icon(VIcons.Plus, contentDescription = null, modifier = Modifier.size(15.dp)) })
+                    VButton(appString(StringKeys.TC_ADD_A_CHAPTER), onClick = { viewModel.openAdd(null) }, full = true, variant = VButtonVariant.Secondary, tone = VButtonTone.Teal, size = VButtonSize.Md, leading = { Icon(VIcons.Plus, contentDescription = "", modifier = Modifier.size(15.dp)) })
                 } else {
                     AddUnitComposer(viewModel)
                 }
@@ -330,7 +330,7 @@ private fun SyllabusRow(
             contentAlignment = Alignment.Center,
         ) {
             if (isUpdating) TeacherSpinner(14.dp)
-            else if (u.isCovered) Icon(VIcons.Check, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(14.dp))
+            else if (u.isCovered) Icon(VIcons.Check, contentDescription = "", tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(14.dp))
         }
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -398,7 +398,7 @@ private fun ParseSyllabusSheet(viewModel: TeacherSyllabusViewModel) {
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(VIcons.Sparkles, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(20.dp))
+                    Icon(VIcons.Sparkles, contentDescription = "", tint = c.accentDeep, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(appString(StringKeys.TC_PARSE_SYLLABUS), style = SylType.h3.colored(c.navyDeep).copy(fontSize = 17.sp))
                     Spacer(Modifier.weight(1f))
@@ -430,7 +430,7 @@ private fun ParseSyllabusSheet(viewModel: TeacherSyllabusViewModel) {
                         full = true,
                         tone = VButtonTone.Lavender,
                         loading = state.isParsing,
-                        leading = { Icon(VIcons.Sparkles, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                        leading = { Icon(VIcons.Sparkles, contentDescription = "", modifier = Modifier.size(16.dp)) },
                     )
                 } else {
                     Text(appString(StringKeys.TC_PREVIEW_N_UNITS_FOUND, "count" to state.parsedUnits.size.toString()), style = SylType.bodyStrong.colored(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold, fontSize = 14.sp))
@@ -492,7 +492,7 @@ private fun DailyLogPopup(viewModel: TeacherSyllabusViewModel) {
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(VIcons.ClipboardList, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(20.dp))
+                    Icon(VIcons.ClipboardList, contentDescription = "", tint = c.tealDeep, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
                     Column {
                         Text(appString(StringKeys.TC_DAILY_CLASS_LOG), style = SylType.h3.colored(c.navyDeep).copy(fontSize = 17.sp))
@@ -572,13 +572,13 @@ private fun DailyLogPopup(viewModel: TeacherSyllabusViewModel) {
                         Modifier.size(32.dp).clip(CircleShape).background(c.cream)
                             .clickable(interactionSource = ixMinus, indication = null) { viewModel.setDailyLogCoveragePct(state.dailyLogCoveragePct - 10) },
                         contentAlignment = Alignment.Center,
-                    ) { Icon(VIcons.Minus, contentDescription = null, tint = c.ink2, modifier = Modifier.size(16.dp)) }
+                    ) { Icon(VIcons.Minus, contentDescription = "", tint = c.ink2, modifier = Modifier.size(16.dp)) }
                     Text("${state.dailyLogCoveragePct}%", style = SylType.bodyStrong.colored(c.navyDeep).copy(fontSize = 16.sp, fontWeight = FontWeight.ExtraBold))
                     Box(
                         Modifier.size(32.dp).clip(CircleShape).background(c.cream)
                             .clickable(interactionSource = ixPlus, indication = null) { viewModel.setDailyLogCoveragePct(state.dailyLogCoveragePct + 10) },
                         contentAlignment = Alignment.Center,
-                    ) { Icon(VIcons.Plus, contentDescription = null, tint = c.ink2, modifier = Modifier.size(16.dp)) }
+                    ) { Icon(VIcons.Plus, contentDescription = "", tint = c.ink2, modifier = Modifier.size(16.dp)) }
                 }
 
                 // Summary text
@@ -615,7 +615,7 @@ private fun DailyLogChapterRow(title: String, expanded: Boolean, onToggle: () ->
     ) {
         Icon(
             if (expanded) VIcons.ChevronDown else VIcons.ChevronRight,
-            contentDescription = null,
+            contentDescription = "",
             tint = c.ink2,
             modifier = Modifier.size(16.dp),
         )
@@ -648,7 +648,7 @@ private fun DailyLogTopicRow(
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onToggleSelect() },
             contentAlignment = Alignment.Center,
         ) {
-            if (selected) Icon(VIcons.Check, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(11.dp))
+            if (selected) Icon(VIcons.Check, contentDescription = "", tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(11.dp))
         }
         Text(
             title,
@@ -666,7 +666,7 @@ private fun DailyLogTopicRow(
             ) {
                 Icon(
                     if (expanded) VIcons.ChevronDown else VIcons.ChevronRight,
-                    contentDescription = null,
+                    contentDescription = "",
                     tint = c.ink3,
                     modifier = Modifier.size(14.dp),
                 )
@@ -693,7 +693,7 @@ private fun DailyLogSubtopicRow(title: String, selected: Boolean, onToggle: () -
                 .border(1.dp, if (selected) c.tealDeep else c.hairline, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            if (selected) Icon(VIcons.Check, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(9.dp))
+            if (selected) Icon(VIcons.Check, contentDescription = "", tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(9.dp))
         }
         Text(title, style = SylType.body.colored(c.ink2).copy(fontSize = 11.sp))
     }
@@ -730,7 +730,7 @@ private fun QuizSheet(viewModel: TeacherSyllabusViewModel) {
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(VIcons.Sparkles, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(20.dp))
+                    Icon(VIcons.Sparkles, contentDescription = "", tint = c.accentDeep, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(appString(StringKeys.TC_GENERATE_QUIZ), style = SylType.h3.colored(c.navyDeep).copy(fontSize = 17.sp))
                     Spacer(Modifier.weight(1f))
@@ -769,7 +769,7 @@ private fun QuizSheet(viewModel: TeacherSyllabusViewModel) {
                                     .border(1.dp, if (isSelected) c.accentDeep else c.hairline, RoundedCornerShape(4.dp)),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                if (isSelected) Icon(VIcons.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(12.dp))
+                                if (isSelected) Icon(VIcons.Check, contentDescription = "", tint = Color.White, modifier = Modifier.size(12.dp))
                             }
                             Text(
                                 u.title,
@@ -813,13 +813,13 @@ private fun QuizSheet(viewModel: TeacherSyllabusViewModel) {
                         Modifier.size(32.dp).clip(CircleShape).background(c.cream)
                             .clickable(interactionSource = ixMinus, indication = null) { viewModel.setQuizNumQuestions(state.quizNumQuestions - 1) },
                         contentAlignment = Alignment.Center,
-                    ) { Icon(VIcons.Minus, contentDescription = null, tint = c.ink2, modifier = Modifier.size(16.dp)) }
+                    ) { Icon(VIcons.Minus, contentDescription = "", tint = c.ink2, modifier = Modifier.size(16.dp)) }
                     Text("${state.quizNumQuestions}", style = SylType.bodyStrong.colored(c.navyDeep).copy(fontSize = 16.sp, fontWeight = FontWeight.ExtraBold))
                     Box(
                         Modifier.size(32.dp).clip(CircleShape).background(c.cream)
                             .clickable(interactionSource = ixPlus, indication = null) { viewModel.setQuizNumQuestions(state.quizNumQuestions + 1) },
                         contentAlignment = Alignment.Center,
-                    ) { Icon(VIcons.Plus, contentDescription = null, tint = c.ink2, modifier = Modifier.size(16.dp)) }
+                    ) { Icon(VIcons.Plus, contentDescription = "", tint = c.ink2, modifier = Modifier.size(16.dp)) }
                 }
 
                 // ── Difficulty ─────────────────────────────────────────────
@@ -856,7 +856,7 @@ private fun QuizSheet(viewModel: TeacherSyllabusViewModel) {
                     full = true,
                     tone = VButtonTone.Lavender,
                     loading = state.isGeneratingQuiz,
-                    leading = { Icon(VIcons.Sparkles, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                    leading = { Icon(VIcons.Sparkles, contentDescription = "", modifier = Modifier.size(16.dp)) },
                 )
             }
         }
@@ -952,7 +952,7 @@ private fun PaceWarningBanner(warning: com.littlebridge.enrollplus.feature.teach
     VtCard(padding = 14.dp) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Box(Modifier.size(32.dp).clip(CircleShape).background(bg), contentAlignment = Alignment.Center) {
-                Icon(icon, contentDescription = null, tint = fg, modifier = Modifier.size(16.dp))
+                Icon(icon, contentDescription = "", tint = fg, modifier = Modifier.size(16.dp))
             }
             Column(Modifier.weight(1f)) {
                 Text(label, style = SylType.bodyStrong.colored(fg).copy(fontSize = 13.sp, fontWeight = FontWeight.ExtraBold))
@@ -1001,7 +1001,7 @@ private fun DraftApprovalBar(viewModel: TeacherSyllabusViewModel) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box(Modifier.size(28.dp).clip(CircleShape).background(c.accent.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
-                    Icon(VIcons.ShieldCheck, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(14.dp))
+                    Icon(VIcons.ShieldCheck, contentDescription = "", tint = c.accentDeep, modifier = Modifier.size(14.dp))
                 }
                 Text(appString(StringKeys.TC_N_DRAFT_UNITS_PENDING_APPROVAL, "count" to draftCount.toString()), style = SylType.bodyStrong.colored(c.accentDeep).copy(fontSize = 13.sp, fontWeight = FontWeight.ExtraBold))
             }
@@ -1049,7 +1049,7 @@ private fun AutoFillPreviewSheet(viewModel: TeacherSyllabusViewModel) {
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(VIcons.Sparkles, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(20.dp))
+                    Icon(VIcons.Sparkles, contentDescription = "", tint = c.accentDeep, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
                     Column {
                         Text(appString(StringKeys.TC_NCERT_AUTO_FILL), style = SylType.h3.colored(c.navyDeep).copy(fontSize = 17.sp))
@@ -1158,7 +1158,7 @@ private fun QuizPreviewSheet(viewModel: TeacherSyllabusViewModel) {
             ) {
                 // Header
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(VIcons.GraduationCap, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(20.dp))
+                    Icon(VIcons.GraduationCap, contentDescription = "", tint = c.accentDeep, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(appString(StringKeys.TC_QUIZ_PREVIEW), style = SylType.h3.colored(c.navyDeep).copy(fontSize = 17.sp))
                     Spacer(Modifier.weight(1f))
@@ -1213,7 +1213,7 @@ private fun QuizPreviewSheet(viewModel: TeacherSyllabusViewModel) {
                         tone = VButtonTone.Teal,
                         size = VButtonSize.Md,
                         full = true,
-                        leading = { Icon(VIcons.Plus, contentDescription = null, modifier = Modifier.size(14.dp)) },
+                        leading = { Icon(VIcons.Plus, contentDescription = "", modifier = Modifier.size(14.dp)) },
                     )
                 }
 
@@ -1231,7 +1231,7 @@ private fun QuizPreviewSheet(viewModel: TeacherSyllabusViewModel) {
                         tone = VButtonTone.Teal,
                         size = VButtonSize.Md,
                         loading = state.isRegenerating,
-                        leading = { Icon(VIcons.Sparkles, contentDescription = null, modifier = Modifier.size(14.dp)) },
+                        leading = { Icon(VIcons.Sparkles, contentDescription = "", modifier = Modifier.size(14.dp)) },
                     )
                     VButton(
                         appString(StringKeys.TC_PUBLISH_QUIZ),
@@ -1572,7 +1572,7 @@ private fun QuizLeaderboardSheet(viewModel: TeacherSyllabusViewModel) {
             ) {
                 // Header
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(VIcons.GraduationCap, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(20.dp))
+                    Icon(VIcons.GraduationCap, contentDescription = "", tint = c.accentDeep, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(appString(StringKeys.TC_QUIZ_LEADERBOARD), style = SylType.h3.colored(c.navyDeep).copy(fontSize = 17.sp))
                     Spacer(Modifier.weight(1f))

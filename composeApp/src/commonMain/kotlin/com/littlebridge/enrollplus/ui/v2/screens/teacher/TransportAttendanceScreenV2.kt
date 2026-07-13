@@ -35,9 +35,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 @Composable
 fun TransportAttendanceScreenV2(
@@ -104,13 +103,13 @@ fun TransportAttendanceScreenV2(
                                 Column {
                                     Text(
                                         route.name,
-                                        style = VTypography.h3,
-                                        color = VColors.ink,
+                                        style = VTheme.type.h3,
+                                        color = VTheme.colors.ink,
                                     )
                                     Text(
                                         "${route.stops.size} stops",
-                                        style = VTypography.caption,
-                                        color = VColors.ink2,
+                                        style = VTheme.type.caption,
+                                        color = VTheme.colors.ink2,
                                     )
                                 }
                                 VBadge(
@@ -185,8 +184,8 @@ private fun AttendanceCard(
         ) {
             Text(
                 record.studentName ?: record.studentId,
-                style = VTypography.h3,
-                color = VColors.ink,
+                style = VTheme.type.h3,
+                color = VTheme.colors.ink,
             )
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 record.pickupStatus?.let {

@@ -35,7 +35,6 @@ import com.littlebridge.enrollplus.feature.event.domain.model.EventSlotDto
 import com.littlebridge.enrollplus.feature.event.domain.model.ParentEventDto
 import com.littlebridge.enrollplus.feature.event.domain.model.RegistrationDto
 import com.littlebridge.enrollplus.feature.event.presentation.ParentEventRegistrationViewModel
-import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
@@ -66,7 +65,7 @@ fun ParentEventRegistrationScreenV2(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(VColors.cream)
+            .background(VTheme.colors.cream)
             .statusBarsPadding(),
     ) {
         PremiumOverlayHeader(

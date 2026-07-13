@@ -51,9 +51,8 @@ import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.ui.v2.util.rememberImagePicker
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 @Composable
 fun SchoolBrandingScreenV2(
@@ -164,14 +163,14 @@ private fun SchoolBrandingContent(
         state.infoMessage?.let {
             Text(
                 it,
-                style = VTypography.body.copy(color = VColors.success),
+                style = VTheme.type.body.copy(color = VTheme.colors.success),
                 modifier = Modifier.fillMaxWidth()
             )
         }
         state.errorMessage?.let {
             Text(
                 it,
-                style = VTypography.body.copy(color = VColors.error),
+                style = VTheme.type.body.copy(color = VTheme.colors.error),
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -181,8 +180,8 @@ private fun SchoolBrandingContent(
 @Composable
 private fun SectionHeader(title: String, subtitle: String) {
     Column {
-        Text(title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
-        Text(subtitle, style = VTypography.caption.copy(fontSize = 11.sp), color = VColors.ink3)
+        Text(title, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.Bold), color = VTheme.colors.ink)
+        Text(subtitle, style = VTheme.type.caption.copy(fontSize = 11.sp), color = VTheme.colors.ink3)
     }
 }
 
@@ -208,7 +207,7 @@ private fun AdminProfileCard(
                         Modifier
                             .size(72.dp)
                             .clip(CircleShape)
-                            .background(VColors.surface.copy(alpha = 0.6f)),
+                            .background(VTheme.colors.surface.copy(alpha = 0.6f)),
                         contentAlignment = Alignment.Center,
                     ) {
                         VProgressRing(value = 0f, size = 32.dp, strokeWidth = 3.dp)
@@ -216,8 +215,8 @@ private fun AdminProfileCard(
                 }
             }
             Column(Modifier.weight(1f)) {
-                Text(name, style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
-                Text("Profile picture", style = VTypography.caption, color = VColors.ink3)
+                Text(name, style = VTheme.type.body.copy(fontWeight = FontWeight.Bold), color = VTheme.colors.ink)
+                Text("Profile picture", style = VTheme.type.caption, color = VTheme.colors.ink3)
             }
             VButton(
                 text = if (photoUrl.isBlank()) "Add" else "Change",
@@ -248,7 +247,7 @@ private fun SchoolLogoCard(
                 modifier = Modifier
                     .size(64.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(VColors.cream),
+                    .background(VTheme.colors.cream),
                 contentAlignment = Alignment.Center,
             ) {
                 if (logoUrl.isNotBlank()) {
@@ -261,8 +260,8 @@ private fun SchoolLogoCard(
                 } else {
                     Icon(
                         VIcons.School,
-                        contentDescription = null,
-                        tint = VColors.ink3,
+                        contentDescription = "",
+                        tint = VTheme.colors.ink3,
                         modifier = Modifier.size(28.dp),
                     )
                 }
@@ -270,7 +269,7 @@ private fun SchoolLogoCard(
                     Box(
                         Modifier
                             .fillMaxSize()
-                            .background(VColors.surface.copy(alpha = 0.6f)),
+                            .background(VTheme.colors.surface.copy(alpha = 0.6f)),
                         contentAlignment = Alignment.Center,
                     ) {
                         VProgressRing(value = 0f, size = 28.dp, strokeWidth = 3.dp)
@@ -278,8 +277,8 @@ private fun SchoolLogoCard(
                 }
             }
             Column(Modifier.weight(1f)) {
-                Text("School logo", style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
-                Text("Recommended: 1:1 ratio", style = VTypography.caption, color = VColors.ink3)
+                Text("School logo", style = VTheme.type.body.copy(fontWeight = FontWeight.Bold), color = VTheme.colors.ink)
+                Text("Recommended: 1:1 ratio", style = VTheme.type.caption, color = VTheme.colors.ink3)
             }
             VButton(
                 text = if (logoUrl.isBlank()) "Add" else "Change",
@@ -308,7 +307,7 @@ private fun CoverPhotoCard(
                     .fillMaxWidth()
                     .aspectRatio(16f / 9f)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(VColors.cream),
+                    .background(VTheme.colors.cream),
                 contentAlignment = Alignment.Center,
             ) {
                 if (coverUrl.isNotBlank()) {
@@ -321,8 +320,8 @@ private fun CoverPhotoCard(
                 } else {
                     Icon(
                         VIcons.Upload,
-                        contentDescription = null,
-                        tint = VColors.ink3,
+                        contentDescription = "",
+                        tint = VTheme.colors.ink3,
                         modifier = Modifier.size(36.dp),
                     )
                 }
@@ -330,7 +329,7 @@ private fun CoverPhotoCard(
                     Box(
                         Modifier
                             .fillMaxSize()
-                            .background(VColors.surface.copy(alpha = 0.6f)),
+                            .background(VTheme.colors.surface.copy(alpha = 0.6f)),
                         contentAlignment = Alignment.Center,
                     ) {
                         VProgressRing(value = 0f, size = 36.dp, strokeWidth = 4.dp)
@@ -340,8 +339,8 @@ private fun CoverPhotoCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     "Campus cover",
-                    style = VTypography.body.copy(fontWeight = FontWeight.Bold),
-                    color = VColors.ink,
+                    style = VTheme.type.body.copy(fontWeight = FontWeight.Bold),
+                    color = VTheme.colors.ink,
                     modifier = Modifier.weight(1f),
                 )
                 VButton(
@@ -391,7 +390,7 @@ private fun GalleryCard(
                     .fillMaxWidth()
                     .aspectRatio(3f)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(VColors.cream)
+                    .background(VTheme.colors.cream)
                     .clickable(enabled = !uploading) { launcher() },
                 contentAlignment = Alignment.Center,
             ) {
@@ -399,9 +398,9 @@ private fun GalleryCard(
                     VProgressRing(value = 0f, size = 32.dp, strokeWidth = 3.dp)
                 } else {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(VIcons.Plus, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(24.dp))
+                        Icon(VIcons.Plus, contentDescription = "", tint = VTheme.colors.violet, modifier = Modifier.size(24.dp))
                         Spacer(Modifier.height(4.dp))
-                        Text("Add photo", style = VTypography.caption, color = VColors.violet)
+                        Text("Add photo", style = VTheme.type.caption, color = VTheme.colors.violet)
                     }
                 }
             }
@@ -419,7 +418,7 @@ private fun GalleryThumbnail(
         modifier = modifier
             .aspectRatio(1f)
             .clip(RoundedCornerShape(10.dp))
-            .background(VColors.cream),
+            .background(VTheme.colors.cream),
         contentAlignment = Alignment.Center,
     ) {
         AsyncImage(
@@ -434,11 +433,11 @@ private fun GalleryThumbnail(
                 .padding(6.dp)
                 .size(26.dp)
                 .clip(CircleShape)
-                .background(VColors.error.copy(alpha = 0.9f))
+                .background(VTheme.colors.error.copy(alpha = 0.9f))
                 .clickable { onDelete(photo) },
             contentAlignment = Alignment.Center,
         ) {
-            Icon(VIcons.Close, contentDescription = "Delete", tint = VColors.surface, modifier = Modifier.size(14.dp))
+            Icon(VIcons.Close, contentDescription = "Delete", tint = VTheme.colors.surface, modifier = Modifier.size(14.dp))
         }
     }
 }
@@ -457,7 +456,7 @@ private fun BrandingPhotosSkeleton() {
                     .fillMaxWidth()
                     .height(120.dp)
                     .clip(RoundedCornerShape(14.dp))
-                    .background(VColors.cream),
+                    .background(VTheme.colors.cream),
             )
         }
     }

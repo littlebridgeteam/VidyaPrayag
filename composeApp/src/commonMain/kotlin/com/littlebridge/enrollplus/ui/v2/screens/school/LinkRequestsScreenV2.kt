@@ -40,10 +40,9 @@ import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import androidx.compose.ui.text.font.FontWeight
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * RA-48: LinkRequestsScreenV2 — admin queue of pending parent→child link requests.
@@ -109,7 +108,7 @@ private fun LinkRequestsContent(
                 "Parents requesting access to a student's records. Approving grants the " +
                     "parent attendance, marks and syllabus for the matched student."
             },
-            style = VTypography.caption.copy(color = VColors.ink3),
+            style = VTheme.type.caption.copy(color = VTheme.colors.ink3),
         )
 
         // ISSUE 2d: two queues — clean full matches vs. phone-mismatch "needs review".
@@ -177,7 +176,7 @@ private fun LinkRequestCard(
         ) {
             VAvatar(name = childName, src = null, size = 40.dp)
             Column(Modifier.weight(1f)) {
-                Text(childName, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                Text(childName, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
                 Spacer(Modifier.height(2.dp))
                 val classRoll = buildString {
                     req.className?.takeIf { it.isNotBlank() }?.let { append("Class $it") }
@@ -192,7 +191,7 @@ private fun LinkRequestCard(
                     }
                 }
                 if (classRoll.isNotBlank()) {
-                    Text(classRoll, style = VTypography.caption.copy(color = VColors.ink3))
+                    Text(classRoll, style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
                 }
                 val parentLine = buildString {
                     append("Requested by ")
@@ -200,14 +199,14 @@ private fun LinkRequestCard(
                     req.parentPhone?.takeIf { it.isNotBlank() }?.let { append(" • $it") }
                 }
                 Spacer(Modifier.height(6.dp))
-                Text(parentLine, style = VTypography.body.copy(color = VColors.ink2))
+                Text(parentLine, style = VTheme.type.body.copy(color = VTheme.colors.ink2))
                 // ISSUE 2d: explain WHY a needs-review request was flagged (e.g. a
                 // phone mismatch) so the admin knows what to verify.
                 req.reviewReason?.takeIf { it.isNotBlank() }?.let { reason ->
                     Spacer(Modifier.height(6.dp))
                     Text(
                         "⚠ $reason",
-                        style = VTypography.caption.copy(color = VColors.gold),
+                        style = VTheme.type.caption.copy(color = VTheme.colors.gold),
                     )
                 }
             }

@@ -47,6 +47,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -58,7 +59,7 @@ import kotlinx.coroutines.delay
 // Public API enums (mirror primitives.tsx Variant / Tone / size unions)
 // ─────────────────────────────────────────────────────────────────────────────
 
-enum class VButtonVariant { Primary, Secondary, Ghost, Destructive }
+enum class VButtonVariant { Primary, Secondary, Ghost, Outline, Destructive }
 enum class VButtonTone { Navy, Teal, Sky, Peach, Lavender, Sand, Rose, Mint }
 enum class VButtonSize { Sm, Md, Lg }
 
@@ -191,6 +192,7 @@ fun VButton(
     success: Boolean = false,
     successLabel: String = "Done",
     successDurationMs: Long = 1400L,
+    icon: ImageVector? = null,
     leading: (@Composable () -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
 ) {
@@ -261,12 +263,13 @@ fun VButton(
             else Skin(pal.bg, pal.fg, null)
         VButtonVariant.Secondary -> Skin(c.card, c.ink, c.border2)
         VButtonVariant.Ghost -> Skin(Color.Transparent, if (soft) pal.softFg else c.ink2, null)
+        VButtonVariant.Outline -> Skin(Color.Transparent, c.ink2, c.border2)
         VButtonVariant.Destructive -> Skin(c.dangerInk, Color.White, null)
     }
 
     var mod = modifier
     if (full) mod = mod.fillMaxWidth()
-    if (variant != VButtonVariant.Ghost) {
+    if (variant != VButtonVariant.Ghost && variant != VButtonVariant.Outline) {
         mod = mod.shadow(if (soft) 8.dp else 6.dp, shape, ambientColor = pal.softShadow, spotColor = pal.shadow)
     }
     mod = mod.clip(shape).background(skin.bg)
@@ -329,6 +332,9 @@ fun VButton(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 when (p) {
                     VButtonPhase.Idle -> {
+                        if (icon != null) {
+                            Icon(icon, contentDescription = "", tint = skin.fg, modifier = Modifier.size(iconSize))
+                        }
                         leading?.invoke()
                         Text(text, style = VTheme.type.h4.colored(skin.fg).copy(fontWeight = FontWeight.SemiBold))
                         trailing?.invoke()
@@ -342,13 +348,13 @@ fun VButton(
                         )
                         Icon(
                             imageVector = VIcons.Spinner,
-                            contentDescription = null,
+                            contentDescription = "",
                             tint = skin.fg,
                             modifier = Modifier.size(iconSize).rotate(angle),
                         )
                     }
                     VButtonPhase.Success -> {
-                        Icon(Icons.Filled.Check, contentDescription = null, tint = skin.fg, modifier = Modifier.size(iconSize))
+                        Icon(Icons.Filled.Check, contentDescription = "", tint = skin.fg, modifier = Modifier.size(iconSize))
                         Text(successLabel, style = VTheme.type.h4.colored(skin.fg).copy(fontWeight = FontWeight.SemiBold))
                     }
                 }

@@ -846,6 +846,20 @@ object StringKeys {
     const val PU_EXPLORE_TITLE         = "pu.explore_title"
     const val PU_LINK_DESC             = "pu.link_desc"
     const val PU_EXPLORE_DESC          = "pu.explore_desc"
+    const val PU_SUBTITLE              = "pu.subtitle"
+    const val PU_SWIPE_EXPLORE         = "pu.swipe_explore"
+    const val PU_SLIDE_AI_TITLE        = "pu.slide_ai_title"
+    const val PU_SLIDE_AI_SUB          = "pu.slide_ai_sub"
+    const val PU_SLIDE_SAFETY_TITLE    = "pu.slide_safety_title"
+    const val PU_SLIDE_SAFETY_SUB      = "pu.slide_safety_sub"
+    const val PU_SLIDE_COMMS_TITLE     = "pu.slide_comms_title"
+    const val PU_SLIDE_COMMS_SUB       = "pu.slide_comms_sub"
+    const val PU_SLIDE_ACADEMIC_TITLE  = "pu.slide_academic_title"
+    const val PU_SLIDE_ACADEMIC_SUB    = "pu.slide_academic_sub"
+    const val PU_SLIDE_LINK_TITLE      = "pu.slide_link_title"
+    const val PU_SLIDE_LINK_SUB        = "pu.slide_link_sub"
+    const val PU_CTA_LINK              = "pu.cta_link"
+    const val PU_CTA_SKIP              = "pu.cta_skip"
 
     // ParentConversationsScreenV2
     const val PCV_MESSAGES             = "pcv.messages"
@@ -3871,6 +3885,20 @@ object AppStrings {
         StringKeys.PU_EXPLORE_TITLE        to "Find the right school",
         StringKeys.PU_LINK_DESC            to "Link your child to their school to see attendance, marks and more.",
         StringKeys.PU_EXPLORE_DESC         to "Browse schools on VidyaPrayag, compare them, and enquire.",
+        StringKeys.PU_SUBTITLE              to "The school experience, reimagined.",
+        StringKeys.PU_SWIPE_EXPLORE         to "Swipe to explore what your child's school can do.",
+        StringKeys.PU_SLIDE_AI_TITLE        to "AI-Powered Learning",
+        StringKeys.PU_SLIDE_AI_SUB          to "Personalised AI tutor, smart reports and daily lesson summaries for every subject.",
+        StringKeys.PU_SLIDE_SAFETY_TITLE    to "Live Attendance & Safety",
+        StringKeys.PU_SLIDE_SAFETY_SUB      to "Know when your child reaches school, track the bus in real-time and get instant alerts.",
+        StringKeys.PU_SLIDE_COMMS_TITLE     to "Direct Communication",
+        StringKeys.PU_SLIDE_COMMS_SUB       to "Chat with teachers and the school office in one threaded, WhatsApp-style inbox.",
+        StringKeys.PU_SLIDE_ACADEMIC_TITLE  to "Fees & Academics",
+        StringKeys.PU_SLIDE_ACADEMIC_SUB    to "Pay fees, view report cards, track syllabus progress and never miss a deadline.",
+        StringKeys.PU_SLIDE_LINK_TITLE      to "Link Your Child",
+        StringKeys.PU_SLIDE_LINK_SUB        to "Find your school in our premium marketplace and connect your child in minutes.",
+        StringKeys.PU_CTA_LINK              to "Link your child",
+        StringKeys.PU_CTA_SKIP              to "Skip to marketplace",
         // ParentConversationsScreenV2
         StringKeys.PCV_MESSAGES            to "Messages",
         StringKeys.PCV_ANNOUNCEMENTS       to "Announcements",
@@ -6842,6 +6870,20 @@ object AppStrings {
         StringKeys.PU_EXPLORE_TITLE        to "सही स्कूल खोजें",
         StringKeys.PU_LINK_DESC            to "उपस्थिति, अंक और अधिक देखने के लिए अपने बच्चे को उनके स्कूल से लिंक करें।",
         StringKeys.PU_EXPLORE_DESC         to "विद्या प्रयाग पर स्कूल ब्राउज़ करें, तुलना करें और पूछताछ करें।",
+        StringKeys.PU_SUBTITLE              to "स्कूल अनुभव, नया रूप।",
+        StringKeys.PU_SWIPE_EXPLORE         to "अपने बच्चे का स्कूल क्या कर सकता है, जानने के लिए स्वाइप करें।",
+        StringKeys.PU_SLIDE_AI_TITLE        to "एआई-संचालित शिक्षण",
+        StringKeys.PU_SLIDE_AI_SUB          to "व्यक्तिगत एआई ट्यूटर, स्मार्ट रिपोर्ट और हर विषय के लिए दैनिक पाठ सारांश।",
+        StringKeys.PU_SLIDE_SAFETY_TITLE    to "लाइव उपस्थिति और सुरक्षा",
+        StringKeys.PU_SLIDE_SAFETY_SUB      to "जानें कब आपका बच्चा स्कूल पहुँचता है, बस को रियल-टाइम में ट्रैक करें और तुरंत अलर्ट पाएं।",
+        StringKeys.PU_SLIDE_COMMS_TITLE     to "सीधा संवाद",
+        StringKeys.PU_SLIDE_COMMS_SUB       to "शिक्षकों और स्कूल कार्यालय के साथ एक ही थ्रेडेड, व्हाट्सएप-स्टाइल इनबॉक्स में चैट करें।",
+        StringKeys.PU_SLIDE_ACADEMIC_TITLE  to "फीस और शैक्षणिक",
+        StringKeys.PU_SLIDE_ACADEMIC_SUB    to "फीस भुगतान करें, रिपोर्ट कार्ड देखें, पाठ्यक्रम प्रगति ट्रैक करें और कोई समयसीमा न चूकें।",
+        StringKeys.PU_SLIDE_LINK_TITLE      to "अपने बच्चे को लिंक करें",
+        StringKeys.PU_SLIDE_LINK_SUB        to "हमारे प्रीमियम मार्केटप्लेस में अपना स्कूल खोजें और कुछ ही मिनटों में अपने बच्चे को जोड़ें।",
+        StringKeys.PU_CTA_LINK              to "अपने बच्चे को लिंक करें",
+        StringKeys.PU_CTA_SKIP              to "मार्केटप्लेस पर जाएं",
         // ParentConversationsScreenV2
         StringKeys.PCV_MESSAGES            to "संदेश",
         StringKeys.PCV_ANNOUNCEMENTS       to "घोषणाएं",

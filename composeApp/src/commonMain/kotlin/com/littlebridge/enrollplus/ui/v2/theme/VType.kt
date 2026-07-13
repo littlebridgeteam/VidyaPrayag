@@ -18,6 +18,7 @@ import vidyaprayag.composeapp.generated.resources.plusjakartasans_extrabold
 import vidyaprayag.composeapp.generated.resources.plusjakartasans_medium
 import vidyaprayag.composeapp.generated.resources.plusjakartasans_regular
 import vidyaprayag.composeapp.generated.resources.plusjakartasans_semibold
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * VidyaSetu type scale — from design `theme.css` base layer + UI_FIDELITY_AUDIT §0.1/§0.2/§0.4/§13.8.

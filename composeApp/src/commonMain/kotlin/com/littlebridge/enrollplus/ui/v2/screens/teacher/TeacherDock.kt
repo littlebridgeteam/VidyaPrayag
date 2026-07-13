@@ -43,10 +43,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.VNavItem
 import com.littlebridge.enrollplus.ui.v2.theme.VElevationLevel
 import com.littlebridge.enrollplus.ui.v2.theme.vElevation
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
+import com.littlebridge.enrollplus.ui.v2.theme.colored
 
 /**
  * TeacherDock — the Teacher Portal's signature **floating dock**, REBUILT for a more
@@ -102,9 +103,9 @@ fun TeacherDock(
             // dock. A soft top-fade blends the band into the scrolling content.
             .background(
                 Brush.verticalGradient(
-                    0f to VColors.cream.copy(alpha = 0f),
-                    0.45f to VColors.cream,
-                    1f to VColors.cream,
+                    0f to VTheme.colors.cream.copy(alpha = 0f),
+                    0.45f to VTheme.colors.cream,
+                    1f to VTheme.colors.cream,
                 ),
             )
             .navigationBarsPadding()
@@ -241,7 +242,7 @@ private fun DockItem(
                 ) {
                     Text(
                         if (item.badge > 9) "9+" else item.badge.toString(),
-                        style = VtT.dataSm.coloredV(badgeFg).copy(fontSize = 8.5.sp, fontWeight = FontWeight.Bold),
+                        style = VTheme.type.dataSm.colored(badgeFg).copy(fontSize = 8.5.sp, fontWeight = FontWeight.Bold),
                     )
                 }
             }
@@ -251,7 +252,7 @@ private fun DockItem(
             Text(
                 item.label,
                 maxLines = 1,
-                style = VtT.label.coloredV(Color.White).copy(
+                style = VTheme.type.label.colored(Color.White).copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp,
                 ),

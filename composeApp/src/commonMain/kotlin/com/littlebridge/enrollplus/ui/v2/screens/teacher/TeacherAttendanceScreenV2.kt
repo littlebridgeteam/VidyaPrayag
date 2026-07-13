@@ -39,12 +39,11 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VDatePicker
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VShapes
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 /**
  * TeacherAttendanceScreenV2 — the scoped attendance plane (Doc 06 §3). Reached PRE-SCOPED with a
@@ -66,7 +65,7 @@ fun TeacherAttendanceScreenV2(
         if (assignmentId.isNotBlank() && state.assignmentId != assignmentId) viewModel.load(assignmentId)
     }
 
-    Box(modifier.fillMaxSize().background(VColors.cream)) {
+    Box(modifier.fillMaxSize().background(VTheme.colors.cream)) {
         when {
             state.isLoading && state.students.isEmpty() -> VtCenterState { TeacherSpinner() }
             state.error != null && state.students.isEmpty() -> VtErrorState(
@@ -97,11 +96,11 @@ private fun AttendanceBody(
         item {
             VtCard(padding = 16.dp) {
                 Column {
-                    VtEyebrow(appString(StringKeys.TC_MARKING_ATTENDANCE), dot = VColors.violet)
+                    VtEyebrow(appString(StringKeys.TC_MARKING_ATTENDANCE), dot = VTheme.colors.violet)
                     Spacer(Modifier.height(6.dp))
                     Text(
                         scopeLabel.ifBlank { "${state.className}-${state.section} · ${state.subject}" },
-                        style = VTypography.h3.copy(fontSize = 18.sp, color = VColors.ink, fontWeight = FontWeight.ExtraBold),
+                        style = VTheme.type.h3.copy(fontSize = 18.sp, color = VTheme.colors.ink, fontWeight = FontWeight.ExtraBold),
                     )
                     Spacer(Modifier.height(12.dp))
                     VDatePicker(
@@ -113,21 +112,21 @@ private fun AttendanceBody(
                         Spacer(Modifier.height(8.dp))
                         Text(
                             if (state.isHoliday) appString(StringKeys.TC_HOLIDAY_NOTICE, "name" to (state.holidayName?.let { " — $it" } ?: "")) else appString(StringKeys.TC_CLASS_CANCELLED_DATE),
-                            style = VTypography.caption.copy(fontSize = 12.sp, color = VColors.gold),
+                            style = VTheme.type.caption.copy(fontSize = 12.sp, color = VTheme.colors.gold),
                         )
                     }
                     Spacer(Modifier.height(12.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        VtMetricTile(state.presentCount.toString(), appString(StringKeys.ATT_PRESENT), VColors.success, Modifier.weight(1f))
-                        VtMetricTile(state.absentCount.toString(), appString(StringKeys.ATT_ABSENT), VColors.coral, Modifier.weight(1f))
-                        VtMetricTile(state.lateCount.toString(), appString(StringKeys.ATT_LATE), VColors.gold, Modifier.weight(1f))
-                        VtMetricTile(state.leaveCount.toString(), appString(StringKeys.TEACHER_LEAVE), VColors.sky, Modifier.weight(1f))
+                        VtMetricTile(state.presentCount.toString(), appString(StringKeys.ATT_PRESENT), VTheme.colors.success, Modifier.weight(1f))
+                        VtMetricTile(state.absentCount.toString(), appString(StringKeys.ATT_ABSENT), VTheme.colors.coral, Modifier.weight(1f))
+                        VtMetricTile(state.lateCount.toString(), appString(StringKeys.ATT_LATE), VTheme.colors.gold, Modifier.weight(1f))
+                        VtMetricTile(state.leaveCount.toString(), appString(StringKeys.TEACHER_LEAVE), VTheme.colors.sky, Modifier.weight(1f))
                     }
                     if (state.alreadyMarked && state.lastMarkedBy != null) {
                         Spacer(Modifier.height(10.dp))
                         Text(
                             appString(StringKeys.TC_LAST_MARKED_BY, "name" to (state.lastMarkedBy ?: ""), "date" to (state.lastMarkedAt?.let { " · ${prettyDate(it.take(10))}" } ?: "")),
-                            style = VTypography.caption.copy(fontSize = 11.sp, color = VColors.ink3),
+                            style = VTheme.type.caption.copy(fontSize = 11.sp, color = VTheme.colors.ink3),
                         )
                     }
                     Spacer(Modifier.height(12.dp))
@@ -138,7 +137,7 @@ private fun AttendanceBody(
                         variant = VButtonVariant.Secondary,
                         tone = VButtonTone.Mint,
                         size = VButtonSize.Md,
-                        leading = { Icon(VIcons.Check, contentDescription = null, modifier = Modifier.size(15.dp)) },
+                        leading = { Icon(VIcons.Check, contentDescription = "", modifier = Modifier.size(15.dp)) },
                     )
                 }
             }
@@ -152,7 +151,7 @@ private fun AttendanceBody(
         item {
             Spacer(Modifier.height(4.dp))
             if (state.saveError != null) {
-                Text(state.saveError ?: "", style = VTypography.caption.copy(fontSize = 12.sp, color = VColors.coral))
+                Text(state.saveError ?: "", style = VTheme.type.caption.copy(fontSize = 12.sp, color = VTheme.colors.coral))
                 Spacer(Modifier.height(8.dp))
             }
             VButton(
@@ -177,9 +176,9 @@ private fun AttendanceStudentRow(s: StudentAttendance, onSetStatus: (String) -> 
     Column(
         Modifier
             .fillMaxWidth()
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.lg)
+            .clip(RoundedCornerShape(18.dp))
+            .background(VTheme.colors.surfaceCard)
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(18.dp))
             .padding(12.dp),
     ) {
         Row(
@@ -189,20 +188,20 @@ private fun AttendanceStudentRow(s: StudentAttendance, onSetStatus: (String) -> 
         ) {
             VAvatar(name = s.name, size = 38.dp)
             Column(Modifier.weight(1f)) {
-                Text(s.name, style = VTypography.bodySmall.copy(fontSize = 14.sp, fontWeight = FontWeight.Bold, color = VColors.ink), maxLines = 1)
+                Text(s.name, style = VTheme.type.bodySmall.copy(fontSize = 14.sp, fontWeight = FontWeight.Bold, color = VTheme.colors.ink), maxLines = 1)
                 Text(
                     if (locked) appString(StringKeys.TC_ROLL_ON_LEAVE, "no" to s.rollNo) else appString(StringKeys.TC_ROLL_NO, "no" to s.rollNo),
-                    style = VTypography.caption.copy(fontSize = 11.sp, color = if (locked) VColors.sky else VColors.ink3),
+                    style = VTheme.type.caption.copy(fontSize = 11.sp, color = if (locked) VTheme.colors.sky else VTheme.colors.ink3),
                 )
             }
         }
         // The 4-state segmented control sits on its own line under the identity for tap comfort.
         Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            StatusChip(appString(StringKeys.TC_P), AttendanceStatus.PRESENT, s.status, VColors.success, locked, onSetStatus, Modifier.weight(1f))
-            StatusChip(appString(StringKeys.TC_A), AttendanceStatus.ABSENT, s.status, VColors.coral, locked, onSetStatus, Modifier.weight(1f))
-            StatusChip(appString(StringKeys.ATT_LATE), AttendanceStatus.LATE, s.status, VColors.gold, locked, onSetStatus, Modifier.weight(1f))
-            StatusChip(appString(StringKeys.TEACHER_LEAVE), AttendanceStatus.LEAVE, s.status, VColors.sky, locked, onSetStatus, Modifier.weight(1f))
+            StatusChip(appString(StringKeys.TC_P), AttendanceStatus.PRESENT, s.status, VTheme.colors.success, locked, onSetStatus, Modifier.weight(1f))
+            StatusChip(appString(StringKeys.TC_A), AttendanceStatus.ABSENT, s.status, VTheme.colors.coral, locked, onSetStatus, Modifier.weight(1f))
+            StatusChip(appString(StringKeys.ATT_LATE), AttendanceStatus.LATE, s.status, VTheme.colors.gold, locked, onSetStatus, Modifier.weight(1f))
+            StatusChip(appString(StringKeys.TEACHER_LEAVE), AttendanceStatus.LEAVE, s.status, VTheme.colors.sky, locked, onSetStatus, Modifier.weight(1f))
         }
     }
 }
@@ -221,18 +220,18 @@ private fun StatusChip(
     val ix = remember { MutableInteractionSource() }
     Box(
         modifier
-            .clip(VShapes.md)
-            .background(if (active) tint.copy(alpha = 0.16f) else VColors.creamDeep)
-            .border(1.dp, if (active) tint.copy(alpha = 0.5f) else VColors.line, VShapes.md)
+            .clip(RoundedCornerShape(14.dp))
+            .background(if (active) tint.copy(alpha = 0.16f) else VTheme.colors.creamDeep)
+            .border(1.dp, if (active) tint.copy(alpha = 0.5f) else VTheme.colors.line, RoundedCornerShape(14.dp))
             .clickable(interactionSource = ix, indication = null, enabled = !locked) { onSet(status) }
             .padding(vertical = 9.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             label,
-            style = VTypography.bodySmall.copy(
+            style = VTheme.type.bodySmall.copy(
                 fontSize = 12.5.sp,
-                color = if (active) tint else VColors.ink2,
+                color = if (active) tint else VTheme.colors.ink2,
                 fontWeight = if (active) FontWeight.ExtraBold else FontWeight.Medium,
             ),
         )

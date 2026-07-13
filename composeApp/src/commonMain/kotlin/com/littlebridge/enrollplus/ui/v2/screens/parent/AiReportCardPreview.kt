@@ -61,7 +61,7 @@ fun AiReportCardPreview(modifier: Modifier = Modifier) {
         // Navy AI-narrative card — header + abstract text bars (no fabricated narrative).
         Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(c.navy).padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Icon(VIcons.Sparkles, contentDescription = null, tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.size(11.dp))
+                Icon(VIcons.Sparkles, contentDescription = "", tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.size(11.dp))
                 Text(appString(StringKeys.AIP_AI_NARRATIVE), style = VTheme.type.label.colored(Color.White.copy(alpha = 0.7f)).copy(fontSize = 10.sp, letterSpacing = 0.10.em, fontWeight = FontWeight.Bold))
             }
             Spacer(Modifier.height(8.dp))
@@ -81,7 +81,7 @@ fun AiReportCardPreview(modifier: Modifier = Modifier) {
         insights.forEach { b ->
             Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(b.tone).padding(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Icon(b.icon, contentDescription = null, tint = b.ink, modifier = Modifier.size(12.dp))
+                    Icon(b.icon, contentDescription = "", tint = b.ink, modifier = Modifier.size(12.dp))
                     Text(b.label, style = VTheme.type.label.colored(b.ink).copy(fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.06.em))
                 }
                 Spacer(Modifier.height(6.dp))

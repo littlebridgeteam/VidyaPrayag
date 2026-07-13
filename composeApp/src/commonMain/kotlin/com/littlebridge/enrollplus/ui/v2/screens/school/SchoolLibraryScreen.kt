@@ -62,10 +62,9 @@ import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.screens.VErrorState
 import com.littlebridge.enrollplus.ui.v2.screens.library.BookCardSkeleton
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.util.formatDecimal
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 private enum class LibraryTab(val label: String) {
     Dashboard("Dashboard"),
@@ -118,7 +117,7 @@ fun SchoolLibraryScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(VColors.surface),
+            .background(VTheme.colors.surface),
     ) {
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -127,14 +126,14 @@ fun SchoolLibraryScreen(
 
         if (state.isOffline) {
             Row(
-                modifier = Modifier.fillMaxWidth().background(VColors.gold.copy(alpha = 0.1f)).padding(horizontal = 16.dp, vertical = 6.dp),
+                modifier = Modifier.fillMaxWidth().background(VTheme.colors.gold.copy(alpha = 0.1f)).padding(horizontal = 16.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                Text("⚠️", style = VTypography.caption)
+                Text("⚠️", style = VTheme.type.caption)
                 Text(
                     if (state.isStaleData) "Offline — showing cached data" else "Offline — check your connection",
-                    style = VTypography.caption.copy(color = VColors.gold),
+                    style = VTheme.type.caption.copy(color = VTheme.colors.gold),
                 )
             }
         }
@@ -228,13 +227,13 @@ private fun DashboardTab(state: SchoolLibraryState, viewModel: SchoolLibraryView
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("Dashboard", style = VTypography.h2.copy(color = VColors.ink))
+        Text("Dashboard", style = VTheme.type.h2.copy(color = VTheme.colors.ink))
 
         if (needsOnboarding) {
             VCard {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Welcome to Library Management!", style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.violetInk))
-                    Text("Your library is empty. Run the onboarding wizard to set up categories and add your first books.", style = VTypography.body.copy(color = VColors.ink2))
+                    Text("Welcome to Library Management!", style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.violetInk))
+                    Text("Your library is empty. Run the onboarding wizard to set up categories and add your first books.", style = VTheme.type.body.copy(color = VTheme.colors.ink2))
                     VButton(
                         text = "Run Onboarding Wizard",
                         onClick = { viewModel.runOnboarding() },
@@ -261,31 +260,31 @@ private fun DashboardTab(state: SchoolLibraryState, viewModel: SchoolLibraryView
             MetricCard("Total Copies", d?.totalCopies?.toString() ?: "0", Modifier.weight(1f))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            MetricCard("Available", d?.availableCopies?.toString() ?: "0", Modifier.weight(1f), color = VColors.success)
-            MetricCard("Issued", d?.issuedCopies?.toString() ?: "0", Modifier.weight(1f), color = VColors.violet)
+            MetricCard("Available", d?.availableCopies?.toString() ?: "0", Modifier.weight(1f), color = VTheme.colors.success)
+            MetricCard("Issued", d?.issuedCopies?.toString() ?: "0", Modifier.weight(1f), color = VTheme.colors.violet)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            MetricCard("Overdue", d?.overdueBooks?.toString() ?: "0", Modifier.weight(1f), color = VColors.gold)
-            MetricCard("Lost", d?.lostBooks?.toString() ?: "0", Modifier.weight(1f), color = VColors.error)
+            MetricCard("Overdue", d?.overdueBooks?.toString() ?: "0", Modifier.weight(1f), color = VTheme.colors.gold)
+            MetricCard("Lost", d?.lostBooks?.toString() ?: "0", Modifier.weight(1f), color = VTheme.colors.error)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             MetricCard("Reservations", d?.activeReservations?.toString() ?: "0", Modifier.weight(1f))
-            MetricCard("Damaged", d?.damagedBooks?.toString() ?: "0", Modifier.weight(1f), color = VColors.gold)
+            MetricCard("Damaged", d?.damagedBooks?.toString() ?: "0", Modifier.weight(1f), color = VTheme.colors.gold)
         }
 
         VCard {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("Outstanding Fines", style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
-                Text("${d?.outstandingFinesCount ?: 0} pending", style = VTypography.caption.copy(color = VColors.ink2))
+                Text("Outstanding Fines", style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
+                Text("${d?.outstandingFinesCount ?: 0} pending", style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
                 Text(
                     "₹${formatDecimal(d?.outstandingFinesAmount ?: 0.0)}",
-                    style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.error).copy(fontSize = 24.sp, fontWeight = FontWeight.SemiBold),
+                    style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VTheme.colors.error).copy(fontSize = 24.sp, fontWeight = FontWeight.SemiBold),
                 )
                 Spacer(Modifier.height(4.dp))
-                Text("Collected this month", style = VTypography.caption.copy(color = VColors.ink2))
+                Text("Collected this month", style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
                 Text(
                     "₹${formatDecimal(d?.finesCollectedThisMonth ?: 0.0)}",
-                    style = VTypography.bodySmall.copy(color = VColors.success).copy(fontWeight = FontWeight.SemiBold),
+                    style = VTheme.type.bodySmall.copy(color = VTheme.colors.success).copy(fontWeight = FontWeight.SemiBold),
                 )
             }
         }
@@ -302,7 +301,7 @@ private fun BooksTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewMode
     LaunchedEffect(Unit) { viewModel.searchBooks(1) }
 
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Books", style = VTypography.h2.copy(color = VColors.ink))
+        Text("Books", style = VTheme.type.h2.copy(color = VTheme.colors.ink))
         Row(
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -419,13 +418,13 @@ private fun BooksTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewMode
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Text(book.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                                    Text(book.title, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
                                     if (book.isArchived) VBadge(text = "Archived", tone = VBadgeTone.Neutral)
                                 }
-                                book.author?.let { Text(it, style = VTypography.caption.copy(color = VColors.ink2)) }
-                                book.isbn?.let { Text("ISBN: $it", style = VTypography.caption.copy(color = VColors.ink3)) }
+                                book.author?.let { Text(it, style = VTheme.type.caption.copy(color = VTheme.colors.ink2)) }
+                                book.isbn?.let { Text("ISBN: $it", style = VTheme.type.caption.copy(color = VTheme.colors.ink3)) }
                                 if (book.seriesName != null) {
-                                    Text("${book.seriesName} #${book.seriesNumber ?: 1}", style = VTypography.caption.copy(color = VColors.ink3))
+                                    Text("${book.seriesName} #${book.seriesNumber ?: 1}", style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
                                 }
                             }
                         }
@@ -581,7 +580,7 @@ private fun AddBookSheet(
             VInput(value = replacementCost, onValueChange = { replacementCost = it }, label = "Replacement Cost (₹)", modifier = Modifier.fillMaxWidth())
             VInput(value = language, onValueChange = { language = it }, label = "Language", modifier = Modifier.fillMaxWidth())
             VInput(value = synopsis, onValueChange = { synopsis = it }, label = "Synopsis", modifier = Modifier.fillMaxWidth())
-            Text("Category", style = VTypography.caption.copy(color = VColors.ink2))
+            Text("Category", style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
                 VBadge(
                     text = "None",
@@ -650,7 +649,7 @@ private fun IssueBookSheet(
             VInput(value = borrowerId, onValueChange = { borrowerId = it }, label = "Borrower ID *", modifier = Modifier.fillMaxWidth())
             VInput(value = borrowerName, onValueChange = { borrowerName = it }, label = "Borrower Name *", modifier = Modifier.fillMaxWidth())
             VInput(value = copyId, onValueChange = { copyId = it }, label = "Copy ID (optional)", modifier = Modifier.fillMaxWidth())
-            Text("Borrower Type", style = VTypography.caption.copy(color = VColors.ink2))
+            Text("Borrower Type", style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 listOf("student" to "Student", "teacher" to "Teacher").forEach { (key, label) ->
                     VBadge(
@@ -695,7 +694,7 @@ private fun IssuesTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewMod
     LaunchedEffect(Unit) { viewModel.loadIssues(1) }
 
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Issues", style = VTypography.h2.copy(color = VColors.ink))
+        Text("Issues", style = VTheme.type.h2.copy(color = VTheme.colors.ink))
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf(null, "issued", "returned", "lost").forEach { status ->
@@ -759,12 +758,12 @@ private fun IssueCard(
 
     VCard(modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(issue.bookTitle, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
-            Text(issue.borrowerName, style = VTypography.caption.copy(color = VColors.ink2))
+            Text(issue.bookTitle, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
+            Text(issue.borrowerName, style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
             if (issue.status == "issued") {
                 com.littlebridge.enrollplus.ui.v2.screens.library.DueDateBadge(dueDate = issue.dueDate)
             } else {
-                Text("Due: ${issue.dueDate}", style = VTypography.caption.copy(color = VColors.ink3))
+                Text("Due: ${issue.dueDate}", style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
             }
             Row(
                 Modifier.fillMaxWidth().padding(top = 4.dp),
@@ -864,8 +863,8 @@ private fun IssueCard(
         ) {
             VBottomSheetHeader(title = "Return Book")
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(issue.bookTitle, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
-                Text("Select condition:", style = VTypography.caption.copy(color = VColors.ink2))
+                Text(issue.bookTitle, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
+                Text("Select condition:", style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     listOf("good" to "Good", "fair" to "Fair", "damaged" to "Damaged").forEach { (key, label) ->
                         VBadge(
@@ -922,7 +921,7 @@ private fun IssueCard(
         ) {
             VBottomSheetHeader(title = "Waive Fine?")
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Fine: \u20b9${formatDecimal(issue.fineAmount)} for \"${issue.bookTitle}\"", style = VTypography.body.copy(color = VColors.ink2))
+                Text("Fine: \u20b9${formatDecimal(issue.fineAmount)} for \"${issue.bookTitle}\"", style = VTheme.type.body.copy(color = VTheme.colors.ink2))
                 VInput(value = waiveReason, onValueChange = { waiveReason = it }, label = "Reason for waiver *", modifier = Modifier.fillMaxWidth())
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -965,10 +964,10 @@ private fun SettingsTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewM
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("Library Settings", style = VTypography.h2.copy(color = VColors.ink))
+        Text("Library Settings", style = VTheme.type.h2.copy(color = VTheme.colors.ink))
 
         if (s == null) {
-            Text("Loading settings...", style = VTypography.body.copy(color = VColors.ink2))
+            Text("Loading settings...", style = VTheme.type.body.copy(color = VTheme.colors.ink2))
             return@Column
         }
 
@@ -1068,7 +1067,7 @@ private fun MetricCard(label: String, value: String, modifier: Modifier = Modifi
             VLabel(label)
             Text(
                 value,
-                style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = color ?: VColors.ink).copy(fontSize = 24.sp, fontWeight = FontWeight.SemiBold),
+                style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = color ?: VTheme.colors.ink).copy(fontSize = 24.sp, fontWeight = FontWeight.SemiBold),
             )
         }
     }
@@ -1078,7 +1077,7 @@ private fun MetricCard(label: String, value: String, modifier: Modifier = Modifi
 private fun SettingRow(label: String, value: String) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         VLabel(label)
-        Text(value, style = VTypography.body.copy(color = VColors.ink).copy(fontWeight = FontWeight.SemiBold))
+        Text(value, style = VTheme.type.body.copy(color = VTheme.colors.ink).copy(fontWeight = FontWeight.SemiBold))
     }
 }
 
@@ -1087,7 +1086,7 @@ private fun ReservationsTab(state: SchoolLibraryState, viewModel: SchoolLibraryV
         var bookId by remember { mutableStateOf("") }
 
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Reservations", style = VTypography.h2.copy(color = VColors.ink))
+        Text("Reservations", style = VTheme.type.h2.copy(color = VTheme.colors.ink))
 
         VCard {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1111,8 +1110,8 @@ private fun ReservationsTab(state: SchoolLibraryState, viewModel: SchoolLibraryV
             items(state.reservations, key = { it.id }) { res ->
                 VCard {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(res.bookTitle, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
-                        Text(res.reservedByName, style = VTypography.caption.copy(color = VColors.ink2))
+                        Text(res.bookTitle, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
+                        Text(res.reservedByName, style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
                         Row(
                             Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -1133,8 +1132,8 @@ private fun ReservationsTab(state: SchoolLibraryState, viewModel: SchoolLibraryV
                                 },
                             )
                         }
-                        res.waitlistPosition?.let { Text("Waitlist #$it", style = VTypography.caption.copy(color = VColors.ink3)) }
-                        Text("Reserved: ${res.createdAt}", style = VTypography.caption.copy(color = VColors.ink3))
+                        res.waitlistPosition?.let { Text("Waitlist #$it", style = VTheme.type.caption.copy(color = VTheme.colors.ink3)) }
+                        Text("Reserved: ${res.createdAt}", style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
 
                         if (res.status == "pending" || res.status == "notified") {
                             VButton(
@@ -1166,8 +1165,8 @@ private fun QuickIssueTab(state: SchoolLibraryState, viewModel: SchoolLibraryVie
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("Quick Issue", style = VTypography.h2.copy(color = VColors.ink))
-        Text("Scan or enter a barcode to instantly issue a book.", style = VTypography.caption.copy(color = VColors.ink2))
+        Text("Quick Issue", style = VTheme.type.h2.copy(color = VTheme.colors.ink))
+        Text("Scan or enter a barcode to instantly issue a book.", style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
 
         VCard {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1210,8 +1209,8 @@ private fun BulkReturnTab(state: SchoolLibraryState, viewModel: SchoolLibraryVie
     var showConfirm by remember { mutableStateOf(false) }
 
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Bulk Return", style = VTypography.h2.copy(color = VColors.ink))
-        Text("Scan barcodes sequentially, then end the session.", style = VTypography.caption.copy(color = VColors.ink2))
+        Text("Bulk Return", style = VTheme.type.h2.copy(color = VTheme.colors.ink))
+        Text("Scan barcodes sequentially, then end the session.", style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
 
         VCard {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1232,7 +1231,7 @@ private fun BulkReturnTab(state: SchoolLibraryState, viewModel: SchoolLibraryVie
         }
 
         if (barcodes.isNotEmpty()) {
-            Text("${barcodes.size} barcode(s) scanned", style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+            Text("${barcodes.size} barcode(s) scanned", style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
             LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.weight(1f)) {
                 items(barcodes.indices.toList()) { idx ->
                     VCard {
@@ -1241,7 +1240,7 @@ private fun BulkReturnTab(state: SchoolLibraryState, viewModel: SchoolLibraryVie
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text("${idx + 1}. ${barcodes[idx]}", style = VTypography.body.copy(color = VColors.ink))
+                            Text("${idx + 1}. ${barcodes[idx]}", style = VTheme.type.body.copy(color = VTheme.colors.ink))
                             VBadge(text = "Remove", tone = VBadgeTone.Danger, modifier = Modifier.clickable { barcodes.removeAt(idx) })
                         }
                     }
@@ -1294,7 +1293,7 @@ private fun CategoriesTab(state: SchoolLibraryState, viewModel: SchoolLibraryVie
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Categories", style = VTypography.h2.copy(color = VColors.ink))
+            Text("Categories", style = VTheme.type.h2.copy(color = VTheme.colors.ink))
             VButton(text = "+ Add", onClick = { showCreate = true }, variant = VButtonVariant.Secondary, tone = VButtonTone.Lavender, size = VButtonSize.Sm)
         }
 
@@ -1317,8 +1316,8 @@ private fun CategoriesTab(state: SchoolLibraryState, viewModel: SchoolLibraryVie
                     ) {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                             Box(Modifier.size(12.dp).clip(RoundedCornerShape(3.dp)).background(parseHexColor(cat.color)))
-                            Text(cat.icon, style = VTypography.caption.copy(color = VColors.ink3))
-                            Text(cat.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                            Text(cat.icon, style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
+                            Text(cat.name, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                             VBadge(
@@ -1409,7 +1408,7 @@ private fun AuditTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewMode
     LaunchedEffect(Unit) { viewModel.loadAuditLog(1) }
 
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Audit Trail", style = VTypography.h2.copy(color = VColors.ink))
+        Text("Audit Trail", style = VTheme.type.h2.copy(color = VTheme.colors.ink))
 
         if (state.error != null && state.auditLog.isEmpty()) {
             VErrorState(message = state.error ?: "", onRetry = { viewModel.loadAuditLog(1) })
@@ -1431,11 +1430,11 @@ private fun AuditTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewMode
                 VCard {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(log.action, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                            Text(log.action, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
                             VBadge(text = log.entityType, tone = VBadgeTone.Neutral)
                         }
-                        Text("By: ${log.actorName}", style = VTypography.caption.copy(color = VColors.ink2))
-                        Text(log.createdAt, style = VTypography.caption.copy(color = VColors.ink3))
+                        Text("By: ${log.actorName}", style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
+                        Text(log.createdAt, style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
                     }
                 }
             }
@@ -1460,7 +1459,7 @@ private fun AnnouncementsTab(state: SchoolLibraryState, viewModel: SchoolLibrary
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Announcements", style = VTypography.h2.copy(color = VColors.ink))
+            Text("Announcements", style = VTheme.type.h2.copy(color = VTheme.colors.ink))
             VButton(text = "+ New", onClick = { showCreate = true }, variant = VButtonVariant.Secondary, tone = VButtonTone.Lavender, size = VButtonSize.Sm)
         }
 
@@ -1478,11 +1477,11 @@ private fun AnnouncementsTab(state: SchoolLibraryState, viewModel: SchoolLibrary
                 VCard {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(ann.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                            Text(ann.title, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
                             if (!ann.isActive) VBadge(text = "Inactive", tone = VBadgeTone.Neutral)
                         }
-                        Text(ann.message, style = VTypography.body.copy(color = VColors.ink2))
-                        Text("Expires: ${ann.expiresAt ?: "Never"}", style = VTypography.caption.copy(color = VColors.ink3))
+                        Text(ann.message, style = VTheme.type.body.copy(color = VTheme.colors.ink2))
+                        Text("Expires: ${ann.expiresAt ?: "Never"}", style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
                         Row(
                             Modifier.fillMaxWidth().padding(top = 4.dp).horizontalScroll(rememberScrollState()),
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -1564,7 +1563,7 @@ private fun AcquisitionTab(state: SchoolLibraryState, viewModel: SchoolLibraryVi
     LaunchedEffect(Unit) { viewModel.loadAcquisitionRequests(null) }
 
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Acquisition Requests", style = VTypography.h2.copy(color = VColors.ink))
+        Text("Acquisition Requests", style = VTheme.type.h2.copy(color = VTheme.colors.ink))
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf(null, "pending", "approved", "ordered", "received").forEach { status ->
@@ -1593,11 +1592,11 @@ private fun AcquisitionTab(state: SchoolLibraryState, viewModel: SchoolLibraryVi
             items(state.acquisitionRequests, key = { it.id }) { req ->
                 VCard {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(req.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
-                        req.author?.let { Text("Author: $it", style = VTypography.caption.copy(color = VColors.ink2)) }
-                        req.isbn?.let { Text("ISBN: $it", style = VTypography.caption.copy(color = VColors.ink2)) }
-                        req.publisher?.let { Text("Publisher: $it", style = VTypography.caption.copy(color = VColors.ink2)) }
-                        req.reason?.let { Text("Reason: $it", style = VTypography.caption.copy(color = VColors.ink2)) }
+                        Text(req.title, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
+                        req.author?.let { Text("Author: $it", style = VTheme.type.caption.copy(color = VTheme.colors.ink2)) }
+                        req.isbn?.let { Text("ISBN: $it", style = VTheme.type.caption.copy(color = VTheme.colors.ink2)) }
+                        req.publisher?.let { Text("Publisher: $it", style = VTheme.type.caption.copy(color = VTheme.colors.ink2)) }
+                        req.reason?.let { Text("Reason: $it", style = VTheme.type.caption.copy(color = VTheme.colors.ink2)) }
                         Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                             VBadge(
                                 text = req.status.replaceFirstChar { it.uppercase() },
@@ -1647,9 +1646,9 @@ private fun MoreTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewModel
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("More", style = VTypography.h2.copy(color = VColors.ink))
+        Text("More", style = VTheme.type.h2.copy(color = VTheme.colors.ink))
 
-        Text("Quick Actions", style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+        Text("Quick Actions", style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
         VCard {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 VButton(text = "Run Onboarding Wizard", onClick = { viewModel.runOnboarding() }, full = true, tone = VButtonTone.Lavender, size = VButtonSize.Sm, loading = state.isActionLoading)
@@ -1659,7 +1658,7 @@ private fun MoreTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewModel
         }
 
         if (state.trending.isNotEmpty()) {
-            Text("Trending Books", style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+            Text("Trending Books", style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(state.trending, key = { it.bookId }) { book ->
                     VCard {
@@ -1670,8 +1669,8 @@ private fun MoreTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewModel
                                 coverUrl = book.coverUrl,
                                 modifier = Modifier.size(48.dp, 72.dp),
                             )
-                            Text(book.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink), maxLines = 1)
-                            book.author?.let { Text(it, style = VTypography.caption.copy(color = VColors.ink2), maxLines = 1) }
+                            Text(book.title, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink), maxLines = 1)
+                            book.author?.let { Text(it, style = VTheme.type.caption.copy(color = VTheme.colors.ink2), maxLines = 1) }
                             VBadge(text = "${book.issueCount} issues", tone = VBadgeTone.Accent)
                         }
                     }
@@ -1679,7 +1678,7 @@ private fun MoreTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewModel
             }
         }
 
-        Text("Repair Queue", style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+        Text("Repair Queue", style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
         if (state.repairCopies.isEmpty()) {
             VEmptyState(title = "No books in repair", body = "Damaged copies will appear here.")
         } else {
@@ -1691,8 +1690,8 @@ private fun MoreTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewModel
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column {
-                            Text(copy.bookTitle, style = VTypography.body.copy(color = VColors.ink))
-                            Text("Copy #${copy.copyId}", style = VTypography.caption.copy(color = VColors.ink2))
+                            Text(copy.bookTitle, style = VTheme.type.body.copy(color = VTheme.colors.ink))
+                            Text("Copy #${copy.copyId}", style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
                         }
                         VButton(
                             text = "Mark Repaired",
@@ -1714,7 +1713,7 @@ private fun MoreTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewModel
             ) {
                 VBottomSheetHeader(title = "Import Books (JSON)")
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Paste JSON array of book objects:", style = VTypography.caption.copy(color = VColors.ink2))
+                    Text("Paste JSON array of book objects:", style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
                     VInput(value = importJson, onValueChange = { importJson = it }, label = "JSON", modifier = Modifier.fillMaxWidth())
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1760,8 +1759,8 @@ private fun CopiesTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewMod
     var newCopyCondition by remember { mutableStateOf("new") }
 
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Book Copies", style = VTypography.h2.copy(color = VColors.ink))
-        Text("View and manage individual copy records for a book.", style = VTypography.caption.copy(color = VColors.ink2))
+        Text("Book Copies", style = VTheme.type.h2.copy(color = VTheme.colors.ink))
+        Text("View and manage individual copy records for a book.", style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
 
         VCard {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1791,7 +1790,7 @@ private fun CopiesTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewMod
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("${state.copies.size} copies", style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+            Text("${state.copies.size} copies", style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
             VButton(
                 text = "+ Add Copy",
                 onClick = { showAddCopy = true },
@@ -1810,8 +1809,8 @@ private fun CopiesTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewMod
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text("Copy #${copy.copyNumber}", style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
-                            copy.barcode?.let { Text("Barcode: $it", style = VTypography.caption.copy(color = VColors.ink2)) }
+                            Text("Copy #${copy.copyNumber}", style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
+                            copy.barcode?.let { Text("Barcode: $it", style = VTheme.type.caption.copy(color = VTheme.colors.ink2)) }
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             VBadge(
@@ -1847,7 +1846,7 @@ private fun CopiesTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewMod
             ) {
                 VBottomSheetHeader(title = "Add Copy")
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Condition:", style = VTypography.caption.copy(color = VColors.ink2))
+                    Text("Condition:", style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         listOf("new" to "New", "good" to "Good", "fair" to "Fair", "poor" to "Poor").forEach { (key, label) ->
                             VBadge(
@@ -1886,8 +1885,8 @@ private fun HistoryTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewMo
         var bookIdInput by remember { mutableStateOf("") }
 
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Book History", style = VTypography.h2.copy(color = VColors.ink))
-        Text("View the full issue history for a specific book.", style = VTypography.caption.copy(color = VColors.ink2))
+        Text("Book History", style = VTheme.type.h2.copy(color = VTheme.colors.ink))
+        Text("View the full issue history for a specific book.", style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
 
         VCard {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1912,16 +1911,16 @@ private fun HistoryTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewMo
             return@Column
         }
 
-        Text("${state.bookHistory.size} records", style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+        Text("${state.bookHistory.size} records", style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
 
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.weight(1f)) {
             items(state.bookHistory, key = { it.id }) { issue ->
                 VCard {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(issue.borrowerName, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
-                        Text("Issued: ${issue.issueDate}", style = VTypography.caption.copy(color = VColors.ink2))
-                        Text("Due: ${issue.dueDate}", style = VTypography.caption.copy(color = VColors.ink2))
-                        issue.returnDate?.let { Text("Returned: $it", style = VTypography.caption.copy(color = VColors.ink2)) }
+                        Text(issue.borrowerName, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
+                        Text("Issued: ${issue.issueDate}", style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
+                        Text("Due: ${issue.dueDate}", style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
+                        issue.returnDate?.let { Text("Returned: $it", style = VTheme.type.caption.copy(color = VTheme.colors.ink2)) }
                         Row(
                             Modifier.fillMaxWidth().padding(top = 4.dp),
                             horizontalArrangement = Arrangement.spacedBy(6.dp),

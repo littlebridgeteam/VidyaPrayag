@@ -67,10 +67,7 @@ import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VMotion
-import com.littlebridge.enrollplus.ui.tokens.VShapes
-import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.ui.v2.theme.VMotion
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -222,20 +219,20 @@ private fun SchoolSettingsContent(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(7.dp),
             ) {
-                Box(Modifier.size(5.dp).clip(CircleShape).background(VColors.violet))
-                Text(appString(StringKeys.SETTINGS_TITLE), style = VTypography.accentLabel, color = VColors.violet)
+                Box(Modifier.size(5.dp).clip(CircleShape).background(VTheme.colors.violet))
+                Text(appString(StringKeys.SETTINGS_TITLE), style = VTheme.type.accentLabel, color = VTheme.colors.violet)
             }
             Spacer(Modifier.height(6.dp))
             Text(
                 text = buildAnnotatedString {
-                    withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold, color = VColors.ink)) {
+                    withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold, color = VTheme.colors.ink)) {
                         append("Settings")
                     }
-                    withStyle(SpanStyle(fontWeight = FontWeight.Normal, color = VColors.ink2)) {
+                    withStyle(SpanStyle(fontWeight = FontWeight.Normal, color = VTheme.colors.ink2)) {
                         append(" & Setup")
                     }
                 },
-                style = VTypography.h2,
+                style = VTheme.type.h2,
             )
         }
 
@@ -289,27 +286,27 @@ private fun SchoolSettingsContent(
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             Box(
-                                Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(VColors.violetSoft),
+                                Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(VTheme.colors.violetSoft),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                Icon(row.icon, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
+                                Icon(row.icon, contentDescription = "", tint = VTheme.colors.violet, modifier = Modifier.size(18.dp))
                             }
                             Column(Modifier.weight(1f)) {
-                                Text(row.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
-                                Text(row.sub, style = VTypography.caption.copy(fontSize = 11.sp), color = VColors.ink3)
+                                Text(row.title, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.Bold), color = VTheme.colors.ink)
+                                Text(row.sub, style = VTheme.type.caption.copy(fontSize = 11.sp), color = VTheme.colors.ink3)
                             }
                             if (row.isComingSoon) {
                                 Text(
                                     text = "Coming soon",
-                                    style = VTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
-                                    color = VColors.ink3,
+                                    style = VTheme.type.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
+                                    color = VTheme.colors.ink3,
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(50))
-                                        .background(VColors.creamDeep)
+                                        .background(VTheme.colors.creamDeep)
                                         .padding(horizontal = 10.dp, vertical = 5.dp),
                                 )
                             } else {
-                                Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.ink3.copy(alpha = 0.4f), modifier = Modifier.size(16.dp))
+                                Icon(VIcons.ChevronRight, contentDescription = "", tint = VTheme.colors.ink3.copy(alpha = 0.4f), modifier = Modifier.size(16.dp))
                             }
                         }
                     }
@@ -392,9 +389,9 @@ private fun InstitutionalProfileHealthCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.lg)
+            .clip(RoundedCornerShape(18.dp))
+            .background(VTheme.colors.surfaceCard)
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(18.dp))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -404,7 +401,7 @@ private fun InstitutionalProfileHealthCard(
         Column(
             Modifier
                 .fillMaxWidth()
-                .background(VColors.violetSoft.copy(alpha = 0.4f))
+                .background(VTheme.colors.violetSoft.copy(alpha = 0.4f))
                 .padding(16.dp),
         ) {
             Row(
@@ -413,16 +410,16 @@ private fun InstitutionalProfileHealthCard(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Box(
-                    Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(VColors.violetSoft),
+                    Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(VTheme.colors.violetSoft),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(VIcons.School, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(22.dp))
+                    Icon(VIcons.School, contentDescription = "", tint = VTheme.colors.violet, modifier = Modifier.size(22.dp))
                 }
                 Column(Modifier.weight(1f)) {
-                    Text(profileTitle, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
-                    Text(nextStep, style = VTypography.caption, color = VColors.ink3)
+                    Text(profileTitle, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.Bold), color = VTheme.colors.ink)
+                    Text(nextStep, style = VTheme.type.caption, color = VTheme.colors.ink3)
                 }
-                Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.ink3.copy(alpha = 0.4f), modifier = Modifier.size(20.dp))
+                Icon(VIcons.ChevronRight, contentDescription = "", tint = VTheme.colors.ink3.copy(alpha = 0.4f), modifier = Modifier.size(20.dp))
             }
             Spacer(Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -457,16 +454,16 @@ private fun InstitutionalProfileHealthCard(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("Profile completion", style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
-                        Text("${state.profileCompletion}%", style = VTypography.caption, color = VColors.ink2)
+                        Text("Profile completion", style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.Bold), color = VTheme.colors.ink)
+                        Text("${state.profileCompletion}%", style = VTheme.type.caption, color = VTheme.colors.ink2)
                     }
                     VProgressBar(value = state.profileCompletion.toFloat(), tone = completionTone, height = 8.dp)
-                    Text("School details, visibility, gallery and tour media.", style = VTypography.caption, color = VColors.ink3)
+                    Text("School details, visibility, gallery and tour media.", style = VTheme.type.caption, color = VTheme.colors.ink3)
                 }
             }
 
             Box(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(VColors.creamDeep).padding(12.dp),
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(VTheme.colors.creamDeep).padding(12.dp),
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(
@@ -475,10 +472,10 @@ private fun InstitutionalProfileHealthCard(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Icon(VIcons.Upload, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
-                            Text("Media storage", style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                            Icon(VIcons.Upload, contentDescription = "", tint = VTheme.colors.violet, modifier = Modifier.size(18.dp))
+                            Text("Media storage", style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.Bold), color = VTheme.colors.ink)
                         }
-                        Text("${state.storageUsedHuman} / ${state.totalStorageHuman}", style = VTypography.caption, color = VColors.ink2)
+                        Text("${state.storageUsedHuman} / ${state.totalStorageHuman}", style = VTheme.type.caption, color = VTheme.colors.ink2)
                     }
                     VProgressBar(value = storagePercent, tone = VBadgeTone.Arctic, height = 7.dp)
                 }
@@ -570,17 +567,17 @@ private fun SummarySettingCard(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(VColors.violetSoft),
+                    .background(VTheme.colors.violetSoft),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
+                Icon(icon, contentDescription = "", tint = VTheme.colors.violet, modifier = Modifier.size(18.dp))
             }
             Column(Modifier.weight(1f)) {
-                Text(title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
-                Text(value, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.violet)
-                Text(caption, style = VTypography.caption.copy(fontSize = 11.sp), color = VColors.ink3)
+                Text(title, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.Bold), color = VTheme.colors.ink)
+                Text(value, style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold), color = VTheme.colors.violet)
+                Text(caption, style = VTheme.type.caption.copy(fontSize = 11.sp), color = VTheme.colors.ink3)
             }
-            Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.ink3.copy(alpha = 0.4f), modifier = Modifier.size(16.dp))
+            Icon(VIcons.ChevronRight, contentDescription = "", tint = VTheme.colors.ink3.copy(alpha = 0.4f), modifier = Modifier.size(16.dp))
         }
     }
 }
@@ -594,9 +591,9 @@ private fun SettingsCreamCard(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.lg)
+            .clip(RoundedCornerShape(18.dp))
+            .background(VTheme.colors.surfaceCard)
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(18.dp))
             .then(
                 if (onClick != null) Modifier.clickable(
                     interactionSource = remember { MutableInteractionSource() },

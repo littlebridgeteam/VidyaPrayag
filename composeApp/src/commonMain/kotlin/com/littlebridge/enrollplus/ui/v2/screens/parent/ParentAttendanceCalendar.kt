@@ -208,7 +208,7 @@ private fun PagerArrow(
     ) {
         Icon(
             icon,
-            contentDescription = null,
+            contentDescription = "",
             tint = if (enabled) c.ink2 else c.placeholder,
             modifier = Modifier.size(16.dp),
         )

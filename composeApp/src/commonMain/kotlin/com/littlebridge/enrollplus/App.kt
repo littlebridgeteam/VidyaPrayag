@@ -121,10 +121,10 @@ fun App(
                 .diskCache {
                     DiskCache.Builder()
                         .directory(platform.cacheDir / "image_cache")
-                        .maxSizeBytes(512L * 1024 * 1024) // 512MB
+                        .maxSizeBytes(256L * 1024 * 1024) // 256MB
                         .build()
                 }
-                .logger(coil3.util.DebugLogger())
+                .logger(if (Config.isDev) coil3.util.DebugLogger() else null)
                 .memoryCachePolicy(coil3.request.CachePolicy.ENABLED)
                 .diskCachePolicy(coil3.request.CachePolicy.ENABLED)
                 .networkCachePolicy(coil3.request.CachePolicy.ENABLED)
@@ -195,13 +195,17 @@ fun App(
                 if (isSplash) {
                     SplashScreen(onTimeout = { })
                 } else if (isAuthenticated) {
-                    // The session key is the live JWT (unique per login) while
-                    // authenticated, or a constant sentinel while logged out. When it
-                    // changes — logout, or a logout→login role switch — SessionScope
-                    // tears down the previous session's ViewModelStore (onCleared on
-                    // every cached portal/screen VM) and hands the new graph a clean
-                    // store. MainViewModel above is untouched and keeps authState live.
-                    val sessionKey = authState.token?.takeIf { isAuthenticated } ?: "unauthenticated"
+                    // The session key is userId+role (stable across token refreshes)
+                    // while authenticated, or a constant sentinel while logged out.
+                    // Keying on userId+role instead of the raw JWT ensures that a
+                    // token refresh (same user, new JWT) does NOT tear down the
+                    // SessionScope — which would cause a screen flash and reload all
+                    // ViewModels. The key still changes on logout (userId → null) or
+                    // a logout→login role switch (different user/role), preserving the
+                    // session-bleed fix. MainViewModel above is untouched and keeps
+                    // authState live.
+                    val sessionKey = (authState.userId + ":" + authState.role)
+                        .takeIf { isAuthenticated } ?: "unauthenticated"
                     SessionScope(sessionKey = sessionKey) {
                         NavGraphV2(
                             role = authState.role,

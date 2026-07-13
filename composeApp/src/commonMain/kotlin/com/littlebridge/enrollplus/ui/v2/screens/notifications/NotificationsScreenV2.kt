@@ -56,13 +56,12 @@ import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.core.tween
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VMotion
-import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.ui.v2.theme.VMotion
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * NotificationsScreenV2 — faithful Compose translation of `Notifications.tsx → NotificationsScreen`.
@@ -136,7 +135,7 @@ private fun NotificationsContent(
     val unread = items.count { it.unread }
     val visible = if (filterUnread) items.filter { it.unread } else items
 
-    Column(modifier.fillMaxSize().background(VColors.cream).statusBarsPadding()
+    Column(modifier.fillMaxSize().background(VTheme.colors.cream).statusBarsPadding()
         .imePadding()
         .navigationBarsPadding()) {
         PremiumNotificationHeader(
@@ -167,7 +166,7 @@ private fun NotificationsContent(
                         .background(
                             // React: linear-gradient(135deg, --navy 0%, #3b3870 100%)
                             Brush.linearGradient(
-                                colors = listOf(VColors.violet, VColors.violetHover),
+                                colors = listOf(VTheme.colors.violet, VTheme.colors.violetHover),
                                 start = Offset(0f, 0f),
                                 end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
                             ),
@@ -196,14 +195,14 @@ private fun NotificationsContent(
                                 .background(Color.White.copy(alpha = 0.14f)),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Icon(VIcons.Bell, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                            Icon(VIcons.Bell, contentDescription = "", tint = Color.White, modifier = Modifier.size(20.dp))
                         }
                         Spacer(Modifier.width(16.dp))
                         Column(Modifier.weight(1f)) {
                             // React: 12sp / 0.05em / uppercase / opacity .7 — NOT the 11sp label token.
                             Text(
                                 appString(StringKeys.NOTIF_INBOX),
-                                style = VTypography.body.copy(
+                                style = VTheme.type.body.copy(
                                     color = Color.White.copy(alpha = 0.7f),
                                     fontSize = 12.sp,
                                     letterSpacing = 0.05.em,
@@ -214,7 +213,7 @@ private fun NotificationsContent(
                             Row(verticalAlignment = Alignment.Bottom) {
                                 Text(
                                     unread.toString(),
-                                    style = VTypography.body.copy(
+                                    style = VTheme.type.body.copy(
                                         color = Color.White,
                                         fontSize = 28.sp,
                                         lineHeight = 30.8.sp,
@@ -224,7 +223,7 @@ private fun NotificationsContent(
                                 Spacer(Modifier.width(6.dp))
                                 Text(
                                     appString(StringKeys.NOTIF_UNREAD_LABEL),
-                                    style = VTypography.body.copy(color = Color.White.copy(alpha = 0.7f)),
+                                    style = VTheme.type.body.copy(color = Color.White.copy(alpha = 0.7f)),
                                     modifier = Modifier.padding(bottom = 3.dp),
                                 )
                             }
@@ -296,18 +295,18 @@ private fun NotificationsContent(
                     Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(VColors.cream)
+                        .background(VTheme.colors.cream)
                         .clickable {}
                         .padding(vertical = 12.dp),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(VIcons.Close, contentDescription = null, tint = VColors.ink2, modifier = Modifier.size(14.dp))
+                    Icon(VIcons.Close, contentDescription = "", tint = VTheme.colors.ink2, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(
                         appString(StringKeys.NOTIF_PREFERENCES),
-                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
-                        color = VColors.ink2,
+                        style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
+                        color = VTheme.colors.ink2,
                     )
                 }
             }
@@ -340,22 +339,22 @@ private fun PremiumNotificationHeader(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(CircleShape)
-                        .background(VColors.surfaceCard)
-                        .border(1.dp, VColors.line, CircleShape)
+                        .background(VTheme.colors.surfaceCard)
+                        .border(1.dp, VTheme.colors.line, CircleShape)
                         .clickable(onClick = onBack),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
-                        tint = VColors.ink,
+                        tint = VTheme.colors.ink,
                         modifier = Modifier.size(20.dp),
                     )
                 }
                 Text(
                     title,
-                    style = VTypography.body.copy(fontWeight = FontWeight.Bold),
-                    color = VColors.ink,
+                    style = VTheme.type.body.copy(fontWeight = FontWeight.Bold),
+                    color = VTheme.colors.ink,
                 )
             }
 
@@ -371,11 +370,11 @@ private fun PremiumNotificationHeader(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    Icon(VIcons.Check, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(14.dp))
+                    Icon(VIcons.Check, contentDescription = "", tint = VTheme.colors.violet, modifier = Modifier.size(14.dp))
                     Text(
                         appString(StringKeys.NOTIF_MARK_ALL),
-                        style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
-                        color = VColors.violet,
+                        style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold),
+                        color = VTheme.colors.violet,
                         maxLines = 1,
                     )
                 }
@@ -388,18 +387,18 @@ private fun PremiumNotificationHeader(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
-                        Icon(VIcons.Close, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(14.dp))
+                        Icon(VIcons.Close, contentDescription = "", tint = VTheme.colors.ink3, modifier = Modifier.size(14.dp))
                         Text(
                             "Clear",
-                            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
-                            color = VColors.ink3,
+                            style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold),
+                            color = VTheme.colors.ink3,
                             maxLines = 1,
                         )
                     }
                 }
             }
         }
-        Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line).padding(horizontal = 24.dp))
+        Box(Modifier.fillMaxWidth().height(1.dp).background(VTheme.colors.line).padding(horizontal = 24.dp))
     }
 }
 
@@ -409,17 +408,17 @@ private fun FilterPill(label: String, active: Boolean, onClick: () -> Unit) {
     Box(
         Modifier
             .clip(RoundedCornerShape(999.dp))
-            .background(if (active) VColors.violet else VColors.cream)
+            .background(if (active) VTheme.colors.violet else VTheme.colors.cream)
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 6.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             label,
-            style = VTypography.caption.copy(
+            style = VTheme.type.caption.copy(
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
-                color = if (active) Color.White else VColors.ink2,
+                color = if (active) Color.White else VTheme.colors.ink2,
             ),
             maxLines = 1,
         )
@@ -434,8 +433,8 @@ private fun NotificationRow(n: VNotification, onClick: () -> Unit) {
         Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, RoundedCornerShape(14.dp))
+            .background(VTheme.colors.surfaceCard)
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(14.dp))
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
             .padding(14.dp),
     ) {
@@ -447,19 +446,19 @@ private fun NotificationRow(n: VNotification, onClick: () -> Unit) {
                     .background(tileBg),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(categoryIcon(n.category), contentDescription = null, tint = tileFg, modifier = Modifier.size(16.dp))
+                Icon(categoryIcon(n.category), contentDescription = "", tint = tileFg, modifier = Modifier.size(16.dp))
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     VBadge(text = n.category, tone = categoryBadgeTone(n.category))
                     Spacer(Modifier.width(8.dp))
-                    Text(n.time, style = VTypography.label.copy(fontSize = 11.sp, letterSpacing = 0.sp), color = VColors.ink3)
+                    Text(n.time, style = VTheme.type.label.copy(fontSize = 11.sp, letterSpacing = 0.sp), color = VTheme.colors.ink3)
                 }
                 Spacer(Modifier.height(6.dp))
-                Text(n.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+                Text(n.title, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VTheme.colors.ink)
                 Spacer(Modifier.height(2.dp))
-                Text(n.body, style = VTypography.caption, color = VColors.ink2)
+                Text(n.body, style = VTheme.type.caption, color = VTheme.colors.ink2)
             }
             if (n.unread) {
                 Box(
@@ -467,13 +466,13 @@ private fun NotificationRow(n: VNotification, onClick: () -> Unit) {
                         .padding(start = 8.dp, top = 0.dp)
                         .size(8.dp)
                         .clip(CircleShape)
-                        .background(VColors.violet),
+                        .background(VTheme.colors.violet),
                 )
             } else {
                 Icon(
                     VIcons.ChevronRight,
-                    contentDescription = null,
-                    tint = VColors.ink3,
+                    contentDescription = "",
+                    tint = VTheme.colors.ink3,
                     modifier = Modifier.padding(start = 4.dp, top = 4.dp).size(16.dp),
                 )
             }
@@ -517,9 +516,9 @@ private fun categoryBadgeTone(cat: String): VBadgeTone = when (cat.lowercase()) 
 /** Category-tinted icon-tile colors, matching the React `toneFor()` map (§9#4) verbatim. */
 private fun categoryTile(cat: String): Pair<Color, Color> {
     return when (cat.lowercase()) {
-        "attendance" -> VColors.goldSoft.copy(alpha = 0.55f) to TileFgAttendance
-        "fees" -> VColors.coralSoft.copy(alpha = 0.55f) to TileFgFees
-        "academic" -> VColors.violetSoft.copy(alpha = 0.18f) to VColors.violet
-        else -> VColors.mintSoft.copy(alpha = 0.42f) to TileFgDefault
+        "attendance" -> VTheme.colors.goldSoft.copy(alpha = 0.55f) to TileFgAttendance
+        "fees" -> VTheme.colors.coralSoft.copy(alpha = 0.55f) to TileFgFees
+        "academic" -> VTheme.colors.violetSoft.copy(alpha = 0.18f) to VTheme.colors.violet
+        else -> VTheme.colors.mintSoft.copy(alpha = 0.42f) to TileFgDefault
     }
 }

@@ -40,11 +40,10 @@ import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * ResultsPublishScreenV2 — exam results overlay (Admin → publish & review).
@@ -124,9 +123,9 @@ private fun ResultsContent(
             VCard {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     Column(Modifier.weight(1f)) {
-                        Text(appString(StringKeys.SCH_CLASS_AVERAGE), style = VTypography.label.copy(color = VColors.ink3))
+                        Text(appString(StringKeys.SCH_CLASS_AVERAGE), style = VTheme.type.label.copy(color = VTheme.colors.ink3))
                         Spacer(Modifier.height(4.dp))
-                        Text(state.classAverage, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink))
+                        Text(state.classAverage, style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VTheme.colors.ink))
                     }
                     VBadge(text = state.averageTrend, tone = VBadgeTone.Arctic)
                 }
@@ -152,7 +151,7 @@ private fun FilterRow(
     onSelect: (String) -> Unit,
 ) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(label, style = VTypography.label.copy(color = VColors.ink3))
+        Text(label, style = VTheme.type.label.copy(color = VTheme.colors.ink3))
         Row(
             Modifier.horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -167,7 +166,7 @@ private fun FilterRow(
 @Composable
 private fun MiniCount(label: String, value: String, tone: VBadgeTone) {
         Column {
-        Text(label, style = VTypography.label.copy(color = VColors.ink3))
+        Text(label, style = VTheme.type.label.copy(color = VTheme.colors.ink3))
         Spacer(Modifier.height(4.dp))
         VBadge(text = value, tone = tone)
     }
@@ -192,7 +191,7 @@ private fun StudentResultCard(s: StudentResult, modifier: Modifier = Modifier) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         s.name,
-                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink),
+                        style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink),
                         modifier = Modifier.weight(1f, fill = false),
                     )
                     VBadge(text = s.status, tone = statusTone)
@@ -200,11 +199,11 @@ private fun StudentResultCard(s: StudentResult, modifier: Modifier = Modifier) {
                 Spacer(Modifier.height(2.dp))
                 Text(
                     appString(StringKeys.SCH_SCORE_ATTENDANCE, "score" to s.score, "attendance" to s.attendance),
-                    style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2),
+                    style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink2),
                 )
                 if (s.trend.isNotBlank()) {
                     Spacer(Modifier.height(2.dp))
-                    Text(s.trend, style = VTypography.caption.copy(color = VColors.ink3))
+                    Text(s.trend, style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
                 }
             }
         }

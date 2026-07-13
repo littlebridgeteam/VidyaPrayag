@@ -49,9 +49,8 @@ import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 @Composable
 fun PewsEffectivenessScreenV2(
@@ -117,23 +116,23 @@ private fun EffectivenessSummaryCard(eff: PewsEffectivenessDto, modifier: Modifi
     VCard(modifier.fillMaxWidth()) {
         Text(
             appString(StringKeys.SCH_INTERVENTION_OUTCOMES),
-            style = VTypography.label.copy(color = VColors.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+            style = VTheme.type.label.copy(color = VTheme.colors.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
         )
         Spacer(Modifier.height(12.dp))
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            MiniStat(appString(StringKeys.SCH_OPEN), "${eff.open}", VColors.ink)
-            MiniStat(appString(StringKeys.SCH_RESOLVED), "$resolved", VColors.ink)
-            MiniStat(appString(StringKeys.SCH_IMPROVED), "$improvedRate%", VColors.success)
+            MiniStat(appString(StringKeys.SCH_OPEN), "${eff.open}", VTheme.colors.ink)
+            MiniStat(appString(StringKeys.SCH_RESOLVED), "$resolved", VTheme.colors.ink)
+            MiniStat(appString(StringKeys.SCH_IMPROVED), "$improvedRate%", VTheme.colors.success)
         }
 
         Spacer(Modifier.height(16.dp))
 
-        OutcomeBar(appString(StringKeys.SCH_IMPROVED), eff.improved, eff.total, VColors.success)
+        OutcomeBar(appString(StringKeys.SCH_IMPROVED), eff.improved, eff.total, VTheme.colors.success)
         Spacer(Modifier.height(6.dp))
-        OutcomeBar(appString(StringKeys.SCH_NO_CHANGE), eff.unchanged, eff.total, VColors.ink3)
+        OutcomeBar(appString(StringKeys.SCH_NO_CHANGE), eff.unchanged, eff.total, VTheme.colors.ink3)
         Spacer(Modifier.height(6.dp))
-        OutcomeBar(appString(StringKeys.SCH_WORSENED), eff.worsened, eff.total, VColors.error)
+        OutcomeBar(appString(StringKeys.SCH_WORSENED), eff.worsened, eff.total, VTheme.colors.error)
     }
 }
 
@@ -144,7 +143,7 @@ private fun TrendChartCard(points: List<PewsTrendPointDto>, modifier: Modifier =
     VCard(modifier.fillMaxWidth()) {
         Text(
             appString(StringKeys.SCH_RISK_TREND_30),
-            style = VTypography.label.copy(color = VColors.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+            style = VTheme.type.label.copy(color = VTheme.colors.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
         )
         Spacer(Modifier.height(12.dp))
 
@@ -156,19 +155,19 @@ private fun TrendChartCard(points: List<PewsTrendPointDto>, modifier: Modifier =
             ) {
                 Text(
                     p.runDate.takeLast(5),
-                    style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 10.sp),
+                    style = VTheme.type.caption.copy(color = VTheme.colors.ink3).copy(fontSize = 10.sp),
                     modifier = Modifier.weight(0.25f),
                 )
                 Box(
-                    Modifier.weight(0.75f).height(16.dp).clip(RoundedCornerShape(4.dp)).background(VColors.cream),
+                    Modifier.weight(0.75f).height(16.dp).clip(RoundedCornerShape(4.dp)).background(VTheme.colors.cream),
                 ) {
                     Row(Modifier.fillMaxSize()) {
                         val highFrac = if (maxTotal > 0) p.high.toFloat() / maxTotal else 0f
                         val medFrac = if (maxTotal > 0) p.medium.toFloat() / maxTotal else 0f
                         val watchFrac = if (maxTotal > 0) p.watch.toFloat() / maxTotal else 0f
-                        Box(Modifier.fillMaxWidth(highFrac).fillMaxSize().background(VColors.error))
-                        Box(Modifier.fillMaxWidth(medFrac).fillMaxSize().background(VColors.gold))
-                        Box(Modifier.fillMaxWidth(watchFrac).fillMaxSize().background(VColors.success))
+                        Box(Modifier.fillMaxWidth(highFrac).fillMaxSize().background(VTheme.colors.error))
+                        Box(Modifier.fillMaxWidth(medFrac).fillMaxSize().background(VTheme.colors.gold))
+                        Box(Modifier.fillMaxWidth(watchFrac).fillMaxSize().background(VTheme.colors.success))
                     }
                 }
             }
@@ -176,9 +175,9 @@ private fun TrendChartCard(points: List<PewsTrendPointDto>, modifier: Modifier =
 
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            TrendLegend(appString(StringKeys.SCH_HIGH), VColors.error)
-            TrendLegend(appString(StringKeys.SCH_MEDIUM), VColors.gold)
-            TrendLegend(appString(StringKeys.SCH_WATCH), VColors.success)
+            TrendLegend(appString(StringKeys.SCH_HIGH), VTheme.colors.error)
+            TrendLegend(appString(StringKeys.SCH_MEDIUM), VTheme.colors.gold)
+            TrendLegend(appString(StringKeys.SCH_WATCH), VTheme.colors.success)
         }
     }
 }
@@ -188,9 +187,9 @@ private fun MiniStat(label: String, value: String, color: androidx.compose.ui.gr
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             value,
-            style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = color).copy(fontSize = 18.sp, fontWeight = FontWeight.ExtraBold),
+            style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = color).copy(fontSize = 18.sp, fontWeight = FontWeight.ExtraBold),
         )
-        Text(label, style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 10.sp))
+        Text(label, style = VTheme.type.caption.copy(color = VTheme.colors.ink3).copy(fontSize = 10.sp))
     }
 }
 
@@ -199,12 +198,12 @@ private fun OutcomeBar(label: String, value: Int, total: Int, color: androidx.co
         val pct = if (total > 0) (value * 100 / total) else 0
     Column {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(label, style = VTypography.caption.copy(color = VColors.ink2).copy(fontSize = 12.sp))
-            Text("$value", style = VTypography.caption.copy(color = VColors.ink).copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold))
+            Text(label, style = VTheme.type.caption.copy(color = VTheme.colors.ink2).copy(fontSize = 12.sp))
+            Text("$value", style = VTheme.type.caption.copy(color = VTheme.colors.ink).copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold))
         }
         Spacer(Modifier.height(4.dp))
         Box(
-            Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(VColors.cream),
+            Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(VTheme.colors.cream),
         ) {
             Box(Modifier.fillMaxWidth(pct / 100f).fillMaxSize().clip(RoundedCornerShape(3.dp)).background(color))
         }
@@ -215,6 +214,6 @@ private fun OutcomeBar(label: String, value: Int, total: Int, color: androidx.co
 private fun TrendLegend(label: String, color: androidx.compose.ui.graphics.Color) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         Box(Modifier.size(8.dp).clip(RoundedCornerShape(2.dp)).background(color))
-        Text(label, style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 10.sp))
+        Text(label, style = VTheme.type.caption.copy(color = VTheme.colors.ink3).copy(fontSize = 10.sp))
     }
 }

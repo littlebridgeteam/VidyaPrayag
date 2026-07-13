@@ -64,7 +64,42 @@ data class VColors(
     // UIX-031: High-contrast mode flag — when true, components may boost
     // border widths, focus rings, and text emphasis beyond the default palette.
     val isHighContrast: Boolean = false,
-)
+) {
+    // ── v1 Compatibility Aliases ──────────────────────────────────────────────
+    // Maps the old ui.tokens.VColors object property names onto the new theme-aware
+    // tokens so screens can migrate without renaming every reference.
+    val white: Color get() = Color.White
+    val creamDeep: Color get() = cream
+    val surface: Color get() = background
+    val surfaceCard: Color get() = card
+    val surfaceElevated: Color get() = card
+    val surfaceTint: Color get() = cream
+    val surfaceWarm: Color get() = cream
+    val line: Color get() = hairline
+    val lineSoft: Color get() = border1
+    val violet: Color get() = accent
+    val violetHover: Color get() = accentDeep
+    val violetSoft: Color get() = accentTint
+    val violetInk: Color get() = accentDeep
+    val coral: Color get() = dangerInk
+    val coralSoft: Color get() = danger
+    val gold: Color get() = warningInk
+    val goldSoft: Color get() = warning
+    val sky: Color get() = accent
+    val skySoft: Color get() = accentTint
+    val mint: Color get() = successInk
+    val mintSoft: Color get() = success
+    val successSoft: Color get() = success
+    val error: Color get() = dangerInk
+    val errorSoft: Color get() = danger
+    val primary: Color get() = accent
+    val primaryHover: Color get() = accentDeep
+    val primarySoft: Color get() = accentTint
+    val onPrimary: Color get() = Color.White
+    val onSurface: Color get() = ink
+    val outline: Color get() = border1
+    val outlineSoft: Color get() = hairline
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Raw token values (single declaration site — mirrors theme.css :root / .theme-night)

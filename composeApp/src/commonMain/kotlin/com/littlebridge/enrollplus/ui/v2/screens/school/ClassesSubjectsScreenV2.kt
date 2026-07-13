@@ -78,11 +78,10 @@ import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 private enum class ClassesSubjectsTab {
     Classes, Subjects, Schedule, Exceptions;
@@ -284,7 +283,7 @@ private fun ClassCard(
             ) {
                 Column(Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(cls.name, style = VTypography.h3, fontWeight = FontWeight.Bold, color = VColors.ink)
+                        Text(cls.name, style = VTheme.type.h3, fontWeight = FontWeight.Bold, color = VTheme.colors.ink)
                         VBadge(text = cls.code, tone = VBadgeTone.Arctic)
                     }
                     Spacer(Modifier.height(4.dp))
@@ -293,18 +292,18 @@ private fun ClassCard(
                             VBadge(text = s, tone = VBadgeTone.Accent)
                         }
                         if (cls.sections.isEmpty()) {
-                            Text(appString(StringKeys.CS_NO_SECTIONS), style = VTypography.caption, color = VColors.ink3)
+                            Text(appString(StringKeys.CS_NO_SECTIONS), style = VTheme.type.caption, color = VTheme.colors.ink3)
                         }
                         Spacer(Modifier.width(4.dp))
-                        Text(appString(StringKeys.CS_SUBJECTS_COUNT, "count" to cls.subjectCount), style = VTypography.caption, color = VColors.ink3)
+                        Text(appString(StringKeys.CS_SUBJECTS_COUNT, "count" to cls.subjectCount), style = VTheme.type.caption, color = VTheme.colors.ink3)
                     }
                 }
                 Box(
                     Modifier.size(32.dp).clip(CircleShape)
-                        .background(VColors.violet.copy(alpha = 0.1f)),
+                        .background(VTheme.colors.violet.copy(alpha = 0.1f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("›", color = VColors.violet, fontWeight = FontWeight.Bold, style = VTypography.h3)
+                    Text("›", color = VTheme.colors.violet, fontWeight = FontWeight.Bold, style = VTheme.type.h3)
                 }
             }
             Spacer(Modifier.height(8.dp))
@@ -317,11 +316,11 @@ private fun ClassCard(
                 )
                 Box(
                     Modifier.size(32.dp).clip(CircleShape)
-                        .background(VColors.error.copy(alpha = 0.1f))
+                        .background(VTheme.colors.error.copy(alpha = 0.1f))
                         .clickable { onDelete() },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("×", color = VColors.error, fontWeight = FontWeight.Bold)
+                    Text("×", color = VTheme.colors.error, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -425,7 +424,7 @@ private fun SubjectsTab(
                 if (selectedClass != null) {
                     Spacer(Modifier.height(4.dp))
                     Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text(appString(StringKeys.CS_CLASS_SUBJECTS, "name" to selectedClass.name), style = VTypography.h3, fontWeight = FontWeight.Bold, color = VColors.ink)
+                        Text(appString(StringKeys.CS_CLASS_SUBJECTS, "name" to selectedClass.name), style = VTheme.type.h3, fontWeight = FontWeight.Bold, color = VTheme.colors.ink)
                         VButton(
                             text = appString(StringKeys.CS_ADD),
                             onClick = { showAddDialog = true },
@@ -499,17 +498,17 @@ private fun SubjectCard(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(subject.name, style = VTypography.body, fontWeight = FontWeight.Medium, color = VColors.ink)
+                    Text(subject.name, style = VTheme.type.body, fontWeight = FontWeight.Medium, color = VTheme.colors.ink)
                     VBadge(text = subject.code, tone = VBadgeTone.Accent)
                 }
             }
             Box(
                 Modifier.size(32.dp).clip(CircleShape)
-                    .background(VColors.error.copy(alpha = 0.1f))
+                    .background(VTheme.colors.error.copy(alpha = 0.1f))
                     .clickable { onDelete() },
                 contentAlignment = Alignment.Center,
             ) {
-                Text("×", color = VColors.error, fontWeight = FontWeight.Bold)
+                Text("×", color = VTheme.colors.error, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -689,7 +688,7 @@ private fun ScheduleStepStructure(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         VSectionHeader(appString(StringKeys.CS_DAY_STRUCTURE_TEMPLATE))
-        Text(appString(StringKeys.CS_DAY_STRUCTURE_DESC), style = VTypography.caption.copy(color = VColors.ink2))
+        Text(appString(StringKeys.CS_DAY_STRUCTURE_DESC), style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
 
         // Import button
         VButton(
@@ -789,10 +788,10 @@ private fun ScheduleStepStructure(
 
         // Messages
         state.infoMessage?.let {
-            Text(it, style = VTypography.caption.copy(color = VColors.success))
+            Text(it, style = VTheme.type.caption.copy(color = VTheme.colors.success))
         }
         state.errorMessage?.let {
-            Text(it, style = VTypography.caption.copy(color = VColors.error))
+            Text(it, style = VTheme.type.caption.copy(color = VTheme.colors.error))
         }
 
         // Existing configs
@@ -840,7 +839,7 @@ private fun ImportSheet(
         VBottomSheetHeader(title = appString(StringKeys.CS_IMPORT_SCHEDULE))
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (importMode == null) {
-                Text(appString(StringKeys.CS_CHOOSE_IMPORT), style = VTypography.caption.copy(color = VColors.ink2))
+                Text(appString(StringKeys.CS_CHOOSE_IMPORT), style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
 
                 // Photo (OCR)
                 VCard(Modifier.fillMaxWidth().clickable { importMode = "photo" }) {
@@ -851,14 +850,14 @@ private fun ImportSheet(
                     ) {
                         Box(
                             Modifier.size(40.dp).clip(CircleShape)
-                                .background(VColors.sky.copy(alpha = 0.12f)),
+                                .background(VTheme.colors.sky.copy(alpha = 0.12f)),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text("📷", style = VTypography.body)
+                            Text("📷", style = VTheme.type.body)
                         }
                         Column(Modifier.weight(1f)) {
-                            Text(appString(StringKeys.CS_PHOTO_OCR), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
-                            Text(appString(StringKeys.CS_PHOTO_OCR_DESC), style = VTypography.caption.copy(color = VColors.ink2))
+                            Text(appString(StringKeys.CS_PHOTO_OCR), style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
+                            Text(appString(StringKeys.CS_PHOTO_OCR_DESC), style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
                         }
                     }
                 }
@@ -872,14 +871,14 @@ private fun ImportSheet(
                     ) {
                         Box(
                             Modifier.size(40.dp).clip(CircleShape)
-                                .background(VColors.violet.copy(alpha = 0.12f)),
+                                .background(VTheme.colors.violet.copy(alpha = 0.12f)),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text("📄", style = VTypography.body)
+                            Text("📄", style = VTheme.type.body)
                         }
                         Column(Modifier.weight(1f)) {
-                            Text(appString(StringKeys.CS_PDF_DOCUMENT), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
-                            Text(appString(StringKeys.CS_PDF_DESC), style = VTypography.caption.copy(color = VColors.ink2))
+                            Text(appString(StringKeys.CS_PDF_DOCUMENT), style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
+                            Text(appString(StringKeys.CS_PDF_DESC), style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
                         }
                     }
                 }
@@ -893,14 +892,14 @@ private fun ImportSheet(
                     ) {
                         Box(
                             Modifier.size(40.dp).clip(CircleShape)
-                                .background(VColors.gold.copy(alpha = 0.3f)),
+                                .background(VTheme.colors.gold.copy(alpha = 0.3f)),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text("📋", style = VTypography.body)
+                            Text("📋", style = VTheme.type.body)
                         }
                         Column(Modifier.weight(1f)) {
-                            Text(appString(StringKeys.CS_PASTE_TEXT), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
-                            Text(appString(StringKeys.CS_PASTE_TEXT_DESC), style = VTypography.caption.copy(color = VColors.ink2))
+                            Text(appString(StringKeys.CS_PASTE_TEXT), style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
+                            Text(appString(StringKeys.CS_PASTE_TEXT_DESC), style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
                         }
                     }
                 }
@@ -948,9 +947,9 @@ private fun ImportSheet(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        Text("⏳", style = VTypography.h1)
-                        Text(appString(StringKeys.CS_AI_READING), style = VTypography.body.copy(color = VColors.ink))
-                        Text(appString(StringKeys.CS_AI_VISION_DESC), style = VTypography.caption.copy(color = VColors.ink2))
+                        Text("⏳", style = VTheme.type.h1)
+                        Text(appString(StringKeys.CS_AI_READING), style = VTheme.type.body.copy(color = VTheme.colors.ink))
+                        Text(appString(StringKeys.CS_AI_VISION_DESC), style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
                     }
                 } else {
                     VEmptyState(
@@ -962,7 +961,7 @@ private fun ImportSheet(
                             appString(StringKeys.CS_PDF_BODY),
                     )
                     parseError?.let {
-                        Text(it, style = VTypography.caption.copy(color = VColors.error))
+                        Text(it, style = VTheme.type.caption.copy(color = VTheme.colors.error))
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         VButton(text = appString(StringKeys.CS_BACK), onClick = { importMode = null; parseError = null }, variant = VButtonVariant.Ghost)
@@ -986,8 +985,8 @@ private fun ImportSheet(
 
             // Paste Text mode
             if (importMode == "text") {
-                Text(appString(StringKeys.CS_PASTE_BELOW), style = VTypography.caption.copy(color = VColors.ink2))
-                Text(appString(StringKeys.CS_SUPPORTED_FORMATS), style = VTypography.caption.copy(color = VColors.ink3))
+                Text(appString(StringKeys.CS_PASTE_BELOW), style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
+                Text(appString(StringKeys.CS_SUPPORTED_FORMATS), style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
                 VInput(
                     value = pastedText,
                     onValueChange = { pastedText = it; parseError = null },
@@ -997,7 +996,7 @@ private fun ImportSheet(
                 )
 
                 parseError?.let {
-                    Text(it, style = VTypography.caption.copy(color = VColors.error))
+                    Text(it, style = VTheme.type.caption.copy(color = VTheme.colors.error))
                 }
 
                 val parseErrorMsg = appString(StringKeys.CS_PARSE_ERROR)
@@ -1150,29 +1149,29 @@ private fun EditableSlotCard(
                 // Move up
                 Box(
                     Modifier.size(28.dp).clip(CircleShape)
-                        .background(if (canMoveUp) VColors.sky.copy(alpha = 0.1f) else VColors.cream)
+                        .background(if (canMoveUp) VTheme.colors.sky.copy(alpha = 0.1f) else VTheme.colors.cream)
                         .clickable(enabled = canMoveUp) { onMoveUp() },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("↑", color = if (canMoveUp) VColors.sky else VColors.ink3, fontWeight = FontWeight.Bold)
+                    Text("↑", color = if (canMoveUp) VTheme.colors.sky else VTheme.colors.ink3, fontWeight = FontWeight.Bold)
                 }
                 // Move down
                 Box(
                     Modifier.size(28.dp).clip(CircleShape)
-                        .background(if (canMoveDown) VColors.sky.copy(alpha = 0.1f) else VColors.cream)
+                        .background(if (canMoveDown) VTheme.colors.sky.copy(alpha = 0.1f) else VTheme.colors.cream)
                         .clickable(enabled = canMoveDown) { onMoveDown() },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("↓", color = if (canMoveDown) VColors.sky else VColors.ink3, fontWeight = FontWeight.Bold)
+                    Text("↓", color = if (canMoveDown) VTheme.colors.sky else VTheme.colors.ink3, fontWeight = FontWeight.Bold)
                 }
                 // Remove
                 Box(
                     Modifier.size(28.dp).clip(CircleShape)
-                        .background(VColors.error.copy(alpha = 0.1f))
+                        .background(VTheme.colors.error.copy(alpha = 0.1f))
                         .clickable { onRemove() },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("×", color = VColors.error, fontWeight = FontWeight.Bold)
+                    Text("×", color = VTheme.colors.error, fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -1216,7 +1215,7 @@ private fun EditableSlotCard(
 private fun DayTimelinePreview(slots: List<SchoolDaySlotDto>) {
         VCard(Modifier.fillMaxWidth()) {
         slots.forEachIndexed { idx, slot ->
-            if (idx > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
+            if (idx > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(VTheme.colors.line))
             Row(
                 Modifier.fillMaxWidth().padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -1231,12 +1230,12 @@ private fun DayTimelinePreview(slots: List<SchoolDaySlotDto>) {
                 Column(Modifier.weight(1f)) {
                     Text(
                         slot.label.ifBlank { slot.slotType },
-                        style = VTypography.body.copy(color = VColors.ink),
+                        style = VTheme.type.body.copy(color = VTheme.colors.ink),
                         fontWeight = FontWeight.Medium,
                     )
                     Text(
                         "${slot.startTime} – ${slot.endTime}",
-                        style = VTypography.caption.copy(color = VColors.ink3),
+                        style = VTheme.type.caption.copy(color = VTheme.colors.ink3),
                     )
                 }
                 VBadge(
@@ -1266,20 +1265,20 @@ private fun ExistingConfigCard(config: SchoolDayConfigDto) {
             } else {
                 VBadge(text = appString(StringKeys.CS_INACTIVE), tone = VBadgeTone.Neutral)
             }
-            Text(config.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+            Text(config.name, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
         }
         Spacer(Modifier.height(4.dp))
         Text(
             appString(StringKeys.CS_CONFIG_DETAILS, "days" to config.applicableDays, "level" to config.classLevel, "count" to config.slots.size),
-            style = VTypography.caption.copy(color = VColors.ink3),
+            style = VTheme.type.caption.copy(color = VTheme.colors.ink3),
         )
         if (config.slots.isNotEmpty()) {
             Spacer(Modifier.height(8.dp))
             config.slots.forEachIndexed { i, slot ->
-                if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
+                if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(VTheme.colors.line))
                 Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(slot.label.ifBlank { slot.slotType }, style = VTypography.caption.copy(color = VColors.ink), modifier = Modifier.weight(1f))
-                    Text("${slot.startTime}–${slot.endTime}", style = VTypography.caption.copy(color = VColors.ink3))
+                    Text(slot.label.ifBlank { slot.slotType }, style = VTheme.type.caption.copy(color = VTheme.colors.ink), modifier = Modifier.weight(1f))
+                    Text("${slot.startTime}–${slot.endTime}", style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
                 }
             }
         }
@@ -1288,11 +1287,11 @@ private fun ExistingConfigCard(config: SchoolDayConfigDto) {
 
 private fun slotTypeColor(type: String): Color {
     return when (type) {
-        "TEACHING" -> VColors.sky
-        "BREAK" -> VColors.gold
-        "ASSEMBLY" -> VColors.violet
-        "LAB" -> VColors.violetSoft
-        else -> VColors.cream
+        "TEACHING" -> VTheme.colors.sky
+        "BREAK" -> VTheme.colors.gold
+        "ASSEMBLY" -> VTheme.colors.violet
+        "LAB" -> VTheme.colors.violetSoft
+        else -> VTheme.colors.cream
     }
 }
 
@@ -1355,7 +1354,7 @@ private fun ScheduleStepAssign(
 
         // ── Class selector ───────────────────────────────────────────────────
         if (state.classes.isEmpty()) {
-            Text(appString(StringKeys.CS_NO_CLASSES_FOUND), style = VTypography.caption.copy(color = VColors.ink2))
+            Text(appString(StringKeys.CS_NO_CLASSES_FOUND), style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
         } else {
             val selectedClassDto = state.classes.find { it.name == selectedClassName }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1417,7 +1416,7 @@ private fun ScheduleStepAssign(
             } else {
                 Text(
                     appString(StringKeys.CS_PERIODS_ON_DAY, "count" to existingPeriods.size, "day" to csWeekdayLabel(selectedDay)),
-                    style = VTypography.caption.copy(color = VColors.ink2),
+                    style = VTheme.type.caption.copy(color = VTheme.colors.ink2),
                 )
                 existingPeriods.sortedBy { it.startTime }.forEach { period ->
                     ManualPeriodRow(
@@ -1448,7 +1447,7 @@ private fun ScheduleStepAssign(
             }
             Text(
                 appString(StringKeys.CS_SLOTS_ASSIGNED, "assigned" to assignedCount, "total" to templateSlots.size),
-                style = VTypography.caption.copy(color = VColors.ink2),
+                style = VTheme.type.caption.copy(color = VTheme.colors.ink2),
             )
 
             // Slot rows
@@ -1470,7 +1469,7 @@ private fun ScheduleStepAssign(
             }
             if (orphanedPeriods.isNotEmpty()) {
                 Spacer(Modifier.height(4.dp))
-                Text(appString(StringKeys.CS_OTHER_PERIODS), style = VTypography.caption.copy(color = VColors.ink3))
+                Text(appString(StringKeys.CS_OTHER_PERIODS), style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
                 orphanedPeriods.forEach { period ->
                     ManualPeriodRow(
                         period = period,
@@ -1503,10 +1502,10 @@ private fun ScheduleStepAssign(
 
         // ── Messages ─────────────────────────────────────────────────────────
         state.infoMessage?.let {
-            Text(it, style = VTypography.caption.copy(color = VColors.success))
+            Text(it, style = VTheme.type.caption.copy(color = VTheme.colors.success))
         }
         state.errorMessage?.let {
-            Text(it, style = VTypography.caption.copy(color = VColors.error))
+            Text(it, style = VTheme.type.caption.copy(color = VTheme.colors.error))
         }
 
         // ── Navigation ───────────────────────────────────────────────────────
@@ -1680,31 +1679,31 @@ private fun SlotAssignmentRow(
                 Modifier.width(72.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(slot.startTime, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
-                Text("↓", style = VTypography.caption.copy(color = VColors.ink3))
-                Text(slot.endTime, style = VTypography.body.copy(color = VColors.ink2))
+                Text(slot.startTime, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
+                Text("↓", style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
+                Text(slot.endTime, style = VTheme.type.body.copy(color = VTheme.colors.ink2))
             }
 
             // Divider
-            Box(Modifier.width(1.dp).height(48.dp).background(VColors.line))
+            Box(Modifier.width(1.dp).height(48.dp).background(VTheme.colors.line))
 
             // Content
             Column(Modifier.weight(1f)) {
                 Text(
                     slot.label.ifBlank { appString(StringKeys.CS_SLOT_N, "n" to (slot.slotIndex + 1)) },
-                    style = VTypography.caption.copy(color = VColors.ink3),
+                    style = VTheme.type.caption.copy(color = VTheme.colors.ink3),
                 )
                 if (period != null) {
                     Spacer(Modifier.height(2.dp))
-                    Text(period.subject, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                    Text(period.subject, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
                     if (period.teacherName.isNotBlank()) {
-                        Text(period.teacherName, style = VTypography.caption.copy(color = VColors.ink2))
+                        Text(period.teacherName, style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
                     }
                     if (period.room.isNotBlank()) {
-                        Text(appString(StringKeys.CS_ROOM_N, "room" to period.room), style = VTypography.caption.copy(color = VColors.ink3))
+                        Text(appString(StringKeys.CS_ROOM_N, "room" to period.room), style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
                     }
                 } else {
-                    Text(appString(StringKeys.CS_TAP_TO_ASSIGN), style = VTypography.caption.copy(color = VColors.ink3))
+                    Text(appString(StringKeys.CS_TAP_TO_ASSIGN), style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
                 }
             }
 
@@ -1713,11 +1712,11 @@ private fun SlotAssignmentRow(
                 VBadge(text = appString(StringKeys.CS_ASSIGNED), tone = VBadgeTone.Success)
                 Box(
                     Modifier.size(28.dp).clip(CircleShape)
-                        .background(VColors.error.copy(alpha = 0.1f))
+                        .background(VTheme.colors.error.copy(alpha = 0.1f))
                         .clickable { onDelete() },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("×", color = VColors.error, fontWeight = FontWeight.Bold)
+                    Text("×", color = VTheme.colors.error, fontWeight = FontWeight.Bold)
                 }
             } else {
                 VBadge(text = appString(StringKeys.CS_EMPTY), tone = VBadgeTone.Neutral)
@@ -1745,32 +1744,32 @@ private fun ManualPeriodRow(
                 Modifier.width(72.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(period.startTime, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
-                Text("↓", style = VTypography.caption.copy(color = VColors.ink3))
-                Text(period.endTime, style = VTypography.body.copy(color = VColors.ink2))
+                Text(period.startTime, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
+                Text("↓", style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
+                Text(period.endTime, style = VTheme.type.body.copy(color = VTheme.colors.ink2))
             }
 
-            Box(Modifier.width(1.dp).height(48.dp).background(VColors.line))
+            Box(Modifier.width(1.dp).height(48.dp).background(VTheme.colors.line))
 
             // Content
             Column(Modifier.weight(1f)) {
-                Text(period.subject, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                Text(period.subject, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
                 if (period.teacherName.isNotBlank()) {
-                    Text(period.teacherName, style = VTypography.caption.copy(color = VColors.ink2))
+                    Text(period.teacherName, style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
                 }
                 if (period.room.isNotBlank()) {
-                    Text(appString(StringKeys.CS_ROOM_N, "room" to period.room), style = VTypography.caption.copy(color = VColors.ink3))
+                    Text(appString(StringKeys.CS_ROOM_N, "room" to period.room), style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
                 }
             }
 
             // Delete button
             Box(
                 Modifier.size(28.dp).clip(CircleShape)
-                    .background(VColors.error.copy(alpha = 0.1f))
+                    .background(VTheme.colors.error.copy(alpha = 0.1f))
                     .clickable { onDelete() },
                 contentAlignment = Alignment.Center,
             ) {
-                Text("×", color = VColors.error, fontWeight = FontWeight.Bold)
+                Text("×", color = VTheme.colors.error, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -1821,7 +1820,7 @@ private fun ManualPeriodEditorSheet(
             }
 
             // Teacher dropdown
-            Text(appString(StringKeys.CS_TEACHER), style = VTypography.caption.copy(color = VColors.ink2))
+            Text(appString(StringKeys.CS_TEACHER), style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
             var teacherMenuExpanded by remember { mutableStateOf(false) }
             ExposedDropdownMenuBox(
                 expanded = teacherMenuExpanded,
@@ -1841,7 +1840,7 @@ private fun ManualPeriodEditorSheet(
                 ) {
                     if (teachers.isEmpty()) {
                         DropdownMenuItem(
-                            text = { Text(appString(StringKeys.CS_NO_TEACHERS), color = VColors.ink3) },
+                            text = { Text(appString(StringKeys.CS_NO_TEACHERS), color = VTheme.colors.ink3) },
                             onClick = { teacherMenuExpanded = false },
                         )
                     } else {
@@ -1856,7 +1855,7 @@ private fun ManualPeriodEditorSheet(
                         }
                     }
                     DropdownMenuItem(
-                        text = { Text(appString(StringKeys.CS_ADD_NEW_TEACHER), color = VColors.violet, fontWeight = FontWeight.Bold) },
+                        text = { Text(appString(StringKeys.CS_ADD_NEW_TEACHER), color = VTheme.colors.violet, fontWeight = FontWeight.Bold) },
                         onClick = {
                             teacherMenuExpanded = false
                             showNewTeacher = true
@@ -1866,7 +1865,7 @@ private fun ManualPeriodEditorSheet(
             }
 
             // Subject dropdown
-            Text(appString(StringKeys.CS_SUBJECT_LABEL), style = VTypography.caption.copy(color = VColors.ink2))
+            Text(appString(StringKeys.CS_SUBJECT_LABEL), style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
             var subjectMenuExpanded by remember { mutableStateOf(false) }
             ExposedDropdownMenuBox(
                 expanded = subjectMenuExpanded,
@@ -1886,7 +1885,7 @@ private fun ManualPeriodEditorSheet(
                 ) {
                     if (subjectsForClass.isEmpty()) {
                         DropdownMenuItem(
-                            text = { Text(appString(StringKeys.CS_NO_SUBJECTS_CLASS), color = VColors.ink3) },
+                            text = { Text(appString(StringKeys.CS_NO_SUBJECTS_CLASS), color = VTheme.colors.ink3) },
                             onClick = { subjectMenuExpanded = false },
                         )
                     } else {
@@ -1902,7 +1901,7 @@ private fun ManualPeriodEditorSheet(
                     }
                     if (selectedClass != null) {
                         DropdownMenuItem(
-                            text = { Text(appString(StringKeys.CS_ADD_NEW_SUBJECT), color = VColors.violet, fontWeight = FontWeight.Bold) },
+                            text = { Text(appString(StringKeys.CS_ADD_NEW_SUBJECT), color = VTheme.colors.violet, fontWeight = FontWeight.Bold) },
                             onClick = {
                                 subjectMenuExpanded = false
                                 showNewSubject = true
@@ -2003,7 +2002,7 @@ private fun SlotAssignmentEditorSheet(
         VBottomSheetHeader(title = "${slot.label.ifBlank { appString(StringKeys.CS_SLOT_N, "n" to (slot.slotIndex + 1)) }} — ${csWeekdayLabel(weekday)}", subtitle = "${slot.startTime} – ${slot.endTime} · $className · $section")
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             // Teacher dropdown
-            Text(appString(StringKeys.CS_TEACHER), style = VTypography.caption.copy(color = VColors.ink2))
+            Text(appString(StringKeys.CS_TEACHER), style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
             var teacherMenuExpanded by remember { mutableStateOf(false) }
             ExposedDropdownMenuBox(
                 expanded = teacherMenuExpanded,
@@ -2023,7 +2022,7 @@ private fun SlotAssignmentEditorSheet(
                 ) {
                     if (teachers.isEmpty()) {
                         DropdownMenuItem(
-                            text = { Text(appString(StringKeys.CS_NO_TEACHERS), color = VColors.ink3) },
+                            text = { Text(appString(StringKeys.CS_NO_TEACHERS), color = VTheme.colors.ink3) },
                             onClick = { teacherMenuExpanded = false },
                         )
                     } else {
@@ -2038,7 +2037,7 @@ private fun SlotAssignmentEditorSheet(
                         }
                     }
                     DropdownMenuItem(
-                        text = { Text(appString(StringKeys.CS_ADD_NEW_TEACHER), color = VColors.violet, fontWeight = FontWeight.Bold) },
+                        text = { Text(appString(StringKeys.CS_ADD_NEW_TEACHER), color = VTheme.colors.violet, fontWeight = FontWeight.Bold) },
                         onClick = {
                             teacherMenuExpanded = false
                             showNewTeacher = true
@@ -2048,7 +2047,7 @@ private fun SlotAssignmentEditorSheet(
             }
 
             // Subject dropdown
-            Text(appString(StringKeys.CS_SUBJECT_LABEL), style = VTypography.caption.copy(color = VColors.ink2))
+            Text(appString(StringKeys.CS_SUBJECT_LABEL), style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
             var subjectMenuExpanded by remember { mutableStateOf(false) }
             ExposedDropdownMenuBox(
                 expanded = subjectMenuExpanded,
@@ -2068,7 +2067,7 @@ private fun SlotAssignmentEditorSheet(
                 ) {
                     if (subjectsForClass.isEmpty()) {
                         DropdownMenuItem(
-                            text = { Text(appString(StringKeys.CS_NO_SUBJECTS_CLASS), color = VColors.ink3) },
+                            text = { Text(appString(StringKeys.CS_NO_SUBJECTS_CLASS), color = VTheme.colors.ink3) },
                             onClick = { subjectMenuExpanded = false },
                         )
                     } else {
@@ -2084,7 +2083,7 @@ private fun SlotAssignmentEditorSheet(
                     }
                     if (selectedClass != null) {
                         DropdownMenuItem(
-                            text = { Text(appString(StringKeys.CS_ADD_NEW_SUBJECT), color = VColors.violet, fontWeight = FontWeight.Bold) },
+                            text = { Text(appString(StringKeys.CS_ADD_NEW_SUBJECT), color = VTheme.colors.violet, fontWeight = FontWeight.Bold) },
                             onClick = {
                                 subjectMenuExpanded = false
                                 showNewSubject = true
@@ -2183,7 +2182,7 @@ private fun CopyClassConfirmSheet(
         VBottomSheetHeader(title = appString(StringKeys.CS_COPY_FROM_CLASS_TITLE), subtitle = appString(StringKeys.CS_COPY_FROM_CLASS_DESC, "class" to targetClassName))
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             if (sourceClasses.isEmpty()) {
-                Text(appString(StringKeys.CS_NO_OTHER_CLASSES), style = VTypography.caption.copy(color = VColors.ink3))
+                Text(appString(StringKeys.CS_NO_OTHER_CLASSES), style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
             } else {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     sourceClasses.forEach { cls ->
@@ -2244,32 +2243,32 @@ private fun ScheduleStepReview(
                 Box(Modifier.weight(1f)) {
                     VCard(Modifier.fillMaxWidth()) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("${allPeriods.size}", style = VTypography.h2, color = VColors.violet)
-                            Text(appString(StringKeys.CS_PERIODS_LABEL), style = VTypography.caption.copy(color = VColors.ink2))
+                            Text("${allPeriods.size}", style = VTheme.type.h2, color = VTheme.colors.violet)
+                            Text(appString(StringKeys.CS_PERIODS_LABEL), style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
                         }
                     }
                 }
                 Box(Modifier.weight(1f)) {
                     VCard(Modifier.fillMaxWidth()) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("${uniqueClasses.size}", style = VTypography.h2, color = VColors.violet)
-                            Text(appString(StringKeys.CS_CLASSES_LABEL), style = VTypography.caption.copy(color = VColors.ink2))
+                            Text("${uniqueClasses.size}", style = VTheme.type.h2, color = VTheme.colors.violet)
+                            Text(appString(StringKeys.CS_CLASSES_LABEL), style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
                         }
                     }
                 }
                 Box(Modifier.weight(1f)) {
                     VCard(Modifier.fillMaxWidth()) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("${uniqueTeachers.size}", style = VTypography.h2, color = VColors.violet)
-                            Text(appString(StringKeys.CS_TEACHERS_LABEL), style = VTypography.caption.copy(color = VColors.ink2))
+                            Text("${uniqueTeachers.size}", style = VTheme.type.h2, color = VTheme.colors.violet)
+                            Text(appString(StringKeys.CS_TEACHERS_LABEL), style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
                         }
                     }
                 }
                 Box(Modifier.weight(1f)) {
                     VCard(Modifier.fillMaxWidth()) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("$daysWithPeriods", style = VTypography.h2, color = VColors.violet)
-                            Text(appString(StringKeys.CS_DAYS_LABEL), style = VTypography.caption.copy(color = VColors.ink2))
+                            Text("$daysWithPeriods", style = VTheme.type.h2, color = VTheme.colors.violet)
+                            Text(appString(StringKeys.CS_DAYS_LABEL), style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
                         }
                     }
                 }
@@ -2299,7 +2298,7 @@ private fun ScheduleStepReview(
                     VCard(Modifier.fillMaxWidth()) {
                         Text(
                             "${conflict.teacherName} — ${csWeekdayLabel(conflict.weekday)} ${conflict.startTime}–${conflict.endTime}",
-                            style = VTypography.body.copy(color = VColors.error),
+                            style = VTheme.type.body.copy(color = VTheme.colors.error),
                         )
                     }
                 }
@@ -2340,12 +2339,12 @@ private fun ReviewPeriodRow(period: TimetablePeriodDto) {
     ) {
         Text(
             period.startTime,
-            style = VTypography.caption.copy(color = VColors.ink2),
+            style = VTheme.type.caption.copy(color = VTheme.colors.ink2),
             modifier = Modifier.width(48.dp),
         )
         VBadge(text = period.className, tone = VBadgeTone.Arctic)
-        Text(period.subject, style = VTypography.caption.copy(color = VColors.ink), modifier = Modifier.weight(1f))
-        Text(period.teacherName, style = VTypography.caption.copy(color = VColors.ink3))
+        Text(period.subject, style = VTheme.type.caption.copy(color = VTheme.colors.ink), modifier = Modifier.weight(1f))
+        Text(period.teacherName, style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
     }
 }
 
@@ -2544,10 +2543,10 @@ private fun ExceptionsRequestsTab(
         }
 
         state.infoMessage?.let {
-            Text(it, style = VTypography.caption.copy(color = VColors.success))
+            Text(it, style = VTheme.type.caption.copy(color = VTheme.colors.success))
         }
         state.errorMessage?.let {
-            Text(it, style = VTypography.caption.copy(color = VColors.error))
+            Text(it, style = VTheme.type.caption.copy(color = VTheme.colors.error))
         }
 
         Spacer(Modifier.height(80.dp))
@@ -2583,20 +2582,20 @@ private fun ExceptionCard(
         VCard(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text(exception.date, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                Text(exception.date, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
                 Spacer(Modifier.height(4.dp))
-                Text("${exception.kind}", style = VTypography.caption.copy(color = VColors.ink2))
+                Text("${exception.kind}", style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
                 if (exception.note.isNotBlank()) {
-                    Text(exception.note, style = VTypography.caption.copy(color = VColors.ink3))
+                    Text(exception.note, style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
                 }
             }
             Box(
                 Modifier.size(28.dp).clip(CircleShape)
-                    .background(VColors.error.copy(alpha = 0.1f))
+                    .background(VTheme.colors.error.copy(alpha = 0.1f))
                     .clickable { onDelete() },
                 contentAlignment = Alignment.Center,
             ) {
-                Text("×", color = VColors.error, fontWeight = FontWeight.Bold)
+                Text("×", color = VTheme.colors.error, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -2654,8 +2653,8 @@ private fun ChangeRequestCard(
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text(request.teacherName, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
-                    Text("${request.className} · ${request.subject}", style = VTypography.caption.copy(color = VColors.ink2))
+                    Text(request.teacherName, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
+                    Text("${request.className} · ${request.subject}", style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
                 }
                 VBadge(
                     text = request.status,
@@ -2668,10 +2667,10 @@ private fun ChangeRequestCard(
                 )
             }
 
-            Text(appString(StringKeys.CS_DAY_LABEL, "day" to csWeekdayLabel(request.weekday), "start" to (request.startTime ?: ""), "end" to (request.endTime ?: "")), style = VTypography.caption.copy(color = VColors.ink3))
+            Text(appString(StringKeys.CS_DAY_LABEL, "day" to csWeekdayLabel(request.weekday), "start" to (request.startTime ?: ""), "end" to (request.endTime ?: "")), style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
 
             if (request.reason.isNotBlank()) {
-                Text(appString(StringKeys.CS_REASON_LABEL, "reason" to request.reason), style = VTypography.caption.copy(color = VColors.ink3))
+                Text(appString(StringKeys.CS_REASON_LABEL, "reason" to request.reason), style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
             }
 
             if (request.status == "PENDING") {

@@ -35,6 +35,7 @@ import com.littlebridge.enrollplus.feature.transport.domain.model.TransportAssig
 import com.littlebridge.enrollplus.feature.transport.presentation.TransportViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
+import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
@@ -46,11 +47,10 @@ import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 @Composable
 fun TransportManagementScreenV2(
@@ -189,7 +189,7 @@ private fun CreateRouteForm(viewModel: TransportViewModel) {
 
     VCard(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(appString(StringKeys.TRANS_NEW_ROUTE), style = VTypography.h3, color = VColors.ink)
+            Text(appString(StringKeys.TRANS_NEW_ROUTE), style = VTheme.type.h3, color = VTheme.colors.ink)
             VInput(
                 value = name,
                 onValueChange = { name = it },
@@ -228,7 +228,7 @@ private fun CreateVehicleForm(viewModel: TransportViewModel, routes: List<Transp
 
     VCard(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(appString(StringKeys.TRANS_NEW_VEHICLE), style = VTypography.h3, color = VColors.ink)
+            Text(appString(StringKeys.TRANS_NEW_VEHICLE), style = VTheme.type.h3, color = VTheme.colors.ink)
             VInput(
                 value = busNumber,
                 onValueChange = { busNumber = it },
@@ -257,7 +257,7 @@ private fun CreateVehicleForm(viewModel: TransportViewModel, routes: List<Transp
                 modifier = Modifier.fillMaxWidth(),
             )
             if (routes.isNotEmpty()) {
-                Text(appString(StringKeys.TRANS_ASSIGN_ROUTE), style = VTypography.caption, color = VColors.ink2)
+                Text(appString(StringKeys.TRANS_ASSIGN_ROUTE), style = VTheme.type.caption, color = VTheme.colors.ink2)
                 routes.forEach { route ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -271,7 +271,7 @@ private fun CreateVehicleForm(viewModel: TransportViewModel, routes: List<Transp
                             selected = selectedRouteId == route.id,
                             onClick = { selectedRouteId = if (selectedRouteId == route.id) "" else route.id },
                         )
-                        Text(route.name, style = VTypography.body, color = VColors.ink)
+                        Text(route.name, style = VTheme.type.body, color = VTheme.colors.ink)
                     }
                 }
             }
@@ -314,7 +314,7 @@ private fun CreateAssignmentForm(
 
     VCard(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(appString(StringKeys.TRANS_ASSIGN_STUDENT), style = VTypography.h3, color = VColors.ink)
+            Text(appString(StringKeys.TRANS_ASSIGN_STUDENT), style = VTheme.type.h3, color = VTheme.colors.ink)
             VInput(
                 value = studentId,
                 onValueChange = { studentId = it },
@@ -323,7 +323,7 @@ private fun CreateAssignmentForm(
                 modifier = Modifier.fillMaxWidth(),
             )
             if (routes.isNotEmpty()) {
-                Text(appString(StringKeys.TRANS_SELECT_ROUTE), style = VTypography.caption, color = VColors.ink2)
+                Text(appString(StringKeys.TRANS_SELECT_ROUTE), style = VTheme.type.caption, color = VTheme.colors.ink2)
                 routes.forEach { route ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -343,12 +343,12 @@ private fun CreateAssignmentForm(
                                 selectedStopId = ""
                             },
                         )
-                        Text(route.name, style = VTypography.body, color = VColors.ink)
+                        Text(route.name, style = VTheme.type.body, color = VTheme.colors.ink)
                     }
                 }
             }
             if (selectedRoute != null && selectedRoute.stops.isNotEmpty()) {
-                Text(appString(StringKeys.TRANS_SELECT_STOP), style = VTypography.caption, color = VColors.ink2)
+                Text(appString(StringKeys.TRANS_SELECT_STOP), style = VTheme.type.caption, color = VTheme.colors.ink2)
                 selectedRoute.stops.forEach { stop ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -364,12 +364,12 @@ private fun CreateAssignmentForm(
                             selected = selectedStopId == stop.id,
                             onClick = { selectedStopId = if (selectedStopId == stop.id) "" else stop.id },
                         )
-                        Text("${stop.name} (#${stop.sequence})", style = VTypography.body, color = VColors.ink)
+                        Text("${stop.name} (#${stop.sequence})", style = VTheme.type.body, color = VTheme.colors.ink)
                     }
                 }
             }
             if (vehicles.isNotEmpty()) {
-                Text(appString(StringKeys.TRANS_SELECT_VEHICLE), style = VTypography.caption, color = VColors.ink2)
+                Text(appString(StringKeys.TRANS_SELECT_VEHICLE), style = VTheme.type.caption, color = VTheme.colors.ink2)
                 vehicles.forEach { vehicle ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -385,7 +385,7 @@ private fun CreateAssignmentForm(
                             selected = selectedVehicleId == vehicle.id,
                             onClick = { selectedVehicleId = if (selectedVehicleId == vehicle.id) "" else vehicle.id },
                         )
-                        Text(vehicle.busNumber, style = VTypography.body, color = VColors.ink)
+                        Text(vehicle.busNumber, style = VTheme.type.body, color = VTheme.colors.ink)
                     }
                 }
             }
@@ -432,6 +432,7 @@ private fun RouteCard(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var showConfirmDelete by remember { mutableStateOf(false) }
     VCard(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -439,14 +440,14 @@ private fun RouteCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(route.name, style = VTypography.h3, color = VColors.ink)
+                Text(route.name, style = VTheme.type.h3, color = VTheme.colors.ink)
                 route.description?.let {
-                    Text(it, style = VTypography.caption, color = VColors.ink2)
+                    Text(it, style = VTheme.type.caption, color = VTheme.colors.ink2)
                 }
                 Text(
                     appString(StringKeys.TRANS_STOPS).replace("{count}", route.stops.size.toString()),
-                    style = VTypography.caption,
-                    color = VColors.ink2,
+                    style = VTheme.type.caption,
+                    color = VTheme.colors.ink2,
                 )
             }
             VBadge(
@@ -460,9 +461,23 @@ private fun RouteCard(
                 text = appString(StringKeys.COMMON_BUTTON_DELETE),
                 variant = VButtonVariant.Destructive,
                 size = VButtonSize.Sm,
-                onClick = onDelete,
+                onClick = { showConfirmDelete = true },
             )
         }
+    }
+
+    if (showConfirmDelete) {
+        VConfirmDialog(
+            visible = true,
+            title = appString(StringKeys.COMMON_BUTTON_DELETE),
+            message = "Are you sure you want to delete this route? This action cannot be undone.",
+            confirmLabel = appString(StringKeys.COMMON_BUTTON_DELETE),
+            onConfirm = {
+                onDelete()
+                showConfirmDelete = false
+            },
+            onDismiss = { showConfirmDelete = false },
+        )
     }
 }
 
@@ -472,6 +487,7 @@ private fun VehicleCard(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var showConfirmDelete by remember { mutableStateOf(false) }
     VCard(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -479,14 +495,14 @@ private fun VehicleCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(vehicle.busNumber, style = VTypography.h3, color = VColors.ink)
+                Text(vehicle.busNumber, style = VTheme.type.h3, color = VTheme.colors.ink)
                 Text(
                     appString(StringKeys.TRANS_CAPACITY_LABEL).replace("{count}", vehicle.capacity.toString()),
-                    style = VTypography.caption,
-                    color = VColors.ink2,
+                    style = VTheme.type.caption,
+                    color = VTheme.colors.ink2,
                 )
                 vehicle.driverName?.let {
-                    Text(appString(StringKeys.TRANS_DRIVER_LABEL).replace("{name}", it), style = VTypography.caption, color = VColors.ink2)
+                    Text(appString(StringKeys.TRANS_DRIVER_LABEL).replace("{name}", it), style = VTheme.type.caption, color = VTheme.colors.ink2)
                 }
             }
             VBadge(
@@ -499,7 +515,21 @@ private fun VehicleCard(
             text = appString(StringKeys.COMMON_BUTTON_DELETE),
             variant = VButtonVariant.Destructive,
             size = VButtonSize.Sm,
-            onClick = onDelete,
+            onClick = { showConfirmDelete = true },
+        )
+    }
+
+    if (showConfirmDelete) {
+        VConfirmDialog(
+            visible = true,
+            title = appString(StringKeys.COMMON_BUTTON_DELETE),
+            message = "Are you sure you want to delete this vehicle? This action cannot be undone.",
+            confirmLabel = appString(StringKeys.COMMON_BUTTON_DELETE),
+            onConfirm = {
+                onDelete()
+                showConfirmDelete = false
+            },
+            onDismiss = { showConfirmDelete = false },
         )
     }
 }
@@ -510,35 +540,50 @@ private fun AssignmentCard(
     onDeactivate: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var showConfirmDeactivate by remember { mutableStateOf(false) }
     VCard(modifier = modifier.fillMaxWidth()) {
         Column {
             Text(
                 assignment.studentName ?: assignment.studentId,
-                style = VTypography.h3,
-                color = VColors.ink,
+                style = VTheme.type.h3,
+                color = VTheme.colors.ink,
             )
             Text(
                 appString(StringKeys.TRANS_ROUTE_LABEL).replace("{name}", assignment.routeName ?: assignment.routeId),
-                style = VTypography.body,
-                color = VColors.ink2,
+                style = VTheme.type.body,
+                color = VTheme.colors.ink2,
             )
             Text(
                 appString(StringKeys.TRANS_STOP_LABEL).replace("{name}", assignment.stopName ?: assignment.stopId),
-                style = VTypography.caption,
-                color = VColors.ink2,
+                style = VTheme.type.caption,
+                color = VTheme.colors.ink2,
             )
             Text(
                 appString(StringKeys.TRANS_BUS_LABEL).replace("{name}", assignment.busNumber ?: assignment.vehicleId),
-                style = VTypography.caption,
-                color = VColors.ink2,
+                style = VTheme.type.caption,
+                color = VTheme.colors.ink2,
             )
             Spacer(Modifier.height(8.dp))
             VButton(
                 text = appString(StringKeys.TRANS_DEACTIVATE),
                 variant = VButtonVariant.Destructive,
                 size = VButtonSize.Sm,
-                onClick = onDeactivate,
+                onClick = { showConfirmDeactivate = true },
             )
         }
+    }
+
+    if (showConfirmDeactivate) {
+        VConfirmDialog(
+            visible = true,
+            title = appString(StringKeys.TRANS_DEACTIVATE),
+            message = "Are you sure you want to deactivate this assignment?",
+            confirmLabel = appString(StringKeys.TRANS_DEACTIVATE),
+            onConfirm = {
+                onDeactivate()
+                showConfirmDeactivate = false
+            },
+            onDismiss = { showConfirmDeactivate = false },
+        )
     }
 }

@@ -61,9 +61,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VShapes
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
@@ -71,7 +68,10 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.auth.ParentLinkChildScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.discovery.DiscoveryScreenV2
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VMotion
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
+import com.littlebridge.enrollplus.core.locale.StringKeys
 
 /**
  * ParentUnlinkedScreenV2 — the first-run experience for a parent with no child linked yet.
@@ -95,7 +95,7 @@ fun ParentUnlinkedScreenV2(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(VColors.cream)
+            .background(VTheme.colors.cream)
             .statusBarsPadding(),
     ) {
         AnimatedContent(
@@ -157,33 +157,33 @@ private fun ParentFeatureCarousel(
     val slides = remember {
         listOf(
             FeatureSlide(
-                title = "AI-Powered Learning",
-                subtitle = "Personalised AI tutor, smart reports and daily lesson summaries for every subject.",
-                accent = VColors.violet,
+                title = appString(StringKeys.PU_SLIDE_AI_TITLE),
+                subtitle = appString(StringKeys.PU_SLIDE_AI_SUB),
+                accent = VTheme.colors.violet,
                 artifact = { AiLearningArtifact() },
             ),
             FeatureSlide(
-                title = "Live Attendance & Safety",
-                subtitle = "Know when your child reaches school, track the bus in real-time and get instant alerts.",
-                accent = VColors.mint,
+                title = appString(StringKeys.PU_SLIDE_SAFETY_TITLE),
+                subtitle = appString(StringKeys.PU_SLIDE_SAFETY_SUB),
+                accent = VTheme.colors.mint,
                 artifact = { SafetyArtifact() },
             ),
             FeatureSlide(
-                title = "Direct Communication",
-                subtitle = "Chat with teachers and the school office in one threaded, WhatsApp-style inbox.",
-                accent = VColors.coral,
+                title = appString(StringKeys.PU_SLIDE_COMMS_TITLE),
+                subtitle = appString(StringKeys.PU_SLIDE_COMMS_SUB),
+                accent = VTheme.colors.coral,
                 artifact = { ConversationsArtifact() },
             ),
             FeatureSlide(
-                title = "Fees & Academics",
-                subtitle = "Pay fees, view report cards, track syllabus progress and never miss a deadline.",
-                accent = VColors.gold,
+                title = appString(StringKeys.PU_SLIDE_ACADEMIC_TITLE),
+                subtitle = appString(StringKeys.PU_SLIDE_ACADEMIC_SUB),
+                accent = VTheme.colors.gold,
                 artifact = { AcademicsArtifact() },
             ),
             FeatureSlide(
-                title = "Link Your Child",
-                subtitle = "Find your school in our premium marketplace and connect your child in minutes.",
-                accent = VColors.violet,
+                title = appString(StringKeys.PU_SLIDE_LINK_TITLE),
+                subtitle = appString(StringKeys.PU_SLIDE_LINK_SUB),
+                accent = VTheme.colors.violet,
                 artifact = { LinkChildArtifact() },
             ),
         )
@@ -195,7 +195,7 @@ private fun ParentFeatureCarousel(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(VColors.cream)
+            .background(VTheme.colors.cream)
             .navigationBarsPadding(),
     ) {
         PortalTopHeaderMinimal(
@@ -212,22 +212,22 @@ private fun ParentFeatureCarousel(
                 .padding(horizontal = 24.dp),
         ) {
             Text(
-                text = "Welcome to Enroll+",
-                style = VTypography.caption.copy(
+                text = appString(StringKeys.PU_WELCOME),
+                style = VTheme.type.caption.copy(
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = VColors.violet,
+                    color = VTheme.colors.violet,
                 ),
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "The school experience, reimagined.",
-                style = VTypography.h2.copy(fontSize = 26.sp, color = VColors.ink),
+                text = appString(StringKeys.PU_SUBTITLE),
+                style = VTheme.type.h2.copy(fontSize = 26.sp, color = VTheme.colors.ink),
                 fontWeight = FontWeight.ExtraBold,
             )
             Text(
-                text = "Swipe to explore what your child's school can do.",
-                style = VTypography.caption.copy(fontSize = 14.sp, color = VColors.ink3),
+                text = appString(StringKeys.PU_SWIPE_EXPLORE),
+                style = VTheme.type.caption.copy(fontSize = 14.sp, color = VTheme.colors.ink3),
             )
         }
 
@@ -267,7 +267,7 @@ private fun ParentFeatureCarousel(
             ) { last ->
                 if (last) {
                     VButton(
-                        text = "Link your child",
+                        text = appString(StringKeys.PU_CTA_LINK),
                         onClick = onLaunchLinkChild,
                         variant = VButtonVariant.Primary,
                         tone = VButtonTone.Lavender,
@@ -277,7 +277,7 @@ private fun ParentFeatureCarousel(
                     )
                 } else {
                     VButton(
-                        text = "Skip to marketplace",
+                        text = appString(StringKeys.PU_CTA_SKIP),
                         onClick = onLaunchMarketplace,
                         variant = VButtonVariant.Ghost,
                         tone = VButtonTone.Lavender,
@@ -313,9 +313,9 @@ private fun FeatureSlideCard(
     Column(
         modifier = modifier
             .fillMaxHeight(0.85f)
-            .clip(VShapes.xxl)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.xxl)
+            .clip(RoundedCornerShape(32.dp))
+            .background(VTheme.colors.surfaceCard)
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(32.dp))
             .graphicsLayer {
                 this.scaleX = scale
                 this.scaleY = scale
@@ -329,8 +329,8 @@ private fun FeatureSlideCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
-                .clip(VShapes.xxl)
-                .background(VColors.creamDeep)
+                .clip(RoundedCornerShape(32.dp))
+                .background(VTheme.colors.creamDeep)
                 .padding(20.dp),
             contentAlignment = Alignment.Center,
         ) {
@@ -350,7 +350,7 @@ private fun FeatureSlideCard(
             ) {
                 Text(
                     text = slide.title,
-                    style = VTypography.h2.copy(fontSize = 22.sp, color = VColors.ink),
+                    style = VTheme.type.h2.copy(fontSize = 22.sp, color = VTheme.colors.ink),
                     fontWeight = FontWeight.ExtraBold,
                 )
                 Box(
@@ -362,7 +362,7 @@ private fun FeatureSlideCard(
             }
             Text(
                 text = slide.subtitle,
-                style = VTypography.caption.copy(fontSize = 14.sp, color = VColors.ink2),
+                style = VTheme.type.caption.copy(fontSize = 14.sp, color = VTheme.colors.ink2),
                 lineHeight = 20.sp,
             )
         }
@@ -386,8 +386,8 @@ private fun SlideIndicator(count: Int, current: Int) {
                 modifier = Modifier
                     .width(width)
                     .height(8.dp)
-                    .clip(VShapes.full)
-                    .background(if (active) VColors.violet else VColors.line),
+                    .clip(RoundedCornerShape(50))
+                    .background(if (active) VTheme.colors.violet else VTheme.colors.line),
             )
         }
     }
@@ -405,14 +405,14 @@ private fun AiLearningArtifact() {
             modifier = Modifier
                 .size(220.dp)
                 .clip(CircleShape)
-                .background(VColors.violet.copy(alpha = 0.08f)),
+                .background(VTheme.colors.violet.copy(alpha = 0.08f)),
         )
         // Central card stack.
         Column(
             modifier = Modifier.fillMaxWidth(0.75f),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            ArtifactCard(height = 70.dp, color = VColors.violet) {
+            ArtifactCard(height = 70.dp, color = VTheme.colors.violet) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -421,40 +421,40 @@ private fun AiLearningArtifact() {
                     Box(
                         modifier = Modifier
                             .size(36.dp)
-                            .clip(VShapes.md)
-                            .background(VColors.white.copy(alpha = 0.2f)),
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(VTheme.colors.white.copy(alpha = 0.2f)),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             imageVector = VIcons.Sparkles,
-                            contentDescription = null,
-                            tint = VColors.white,
+                            contentDescription = "",
+                            tint = VTheme.colors.white,
                             modifier = Modifier.size(20.dp),
                         )
                     }
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Box(Modifier.width(80.dp).height(8.dp).clip(VShapes.full).background(VColors.white.copy(alpha = 0.4f)))
-                        Box(Modifier.width(120.dp).height(6.dp).clip(VShapes.full).background(VColors.white.copy(alpha = 0.25f)))
+                        Box(Modifier.width(80.dp).height(8.dp).clip(RoundedCornerShape(50)).background(VTheme.colors.white.copy(alpha = 0.4f)))
+                        Box(Modifier.width(120.dp).height(6.dp).clip(RoundedCornerShape(50)).background(VTheme.colors.white.copy(alpha = 0.25f)))
                     }
                 }
             }
-            ArtifactCard(height = 90.dp, color = VColors.mint) {
+            ArtifactCard(height = 90.dp, color = VTheme.colors.mint) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Box(Modifier.width(140.dp).height(8.dp).clip(VShapes.full).background(VColors.white.copy(alpha = 0.4f)))
-                    Box(Modifier.fillMaxWidth().height(6.dp).clip(VShapes.full).background(VColors.white.copy(alpha = 0.25f)))
-                    Box(Modifier.fillMaxWidth(0.7f).height(6.dp).clip(VShapes.full).background(VColors.white.copy(alpha = 0.25f)))
+                    Box(Modifier.width(140.dp).height(8.dp).clip(RoundedCornerShape(50)).background(VTheme.colors.white.copy(alpha = 0.4f)))
+                    Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(50)).background(VTheme.colors.white.copy(alpha = 0.25f)))
+                    Box(Modifier.fillMaxWidth(0.7f).height(6.dp).clip(RoundedCornerShape(50)).background(VTheme.colors.white.copy(alpha = 0.25f)))
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Box(Modifier.width(40.dp).height(18.dp).clip(VShapes.full).background(VColors.white.copy(alpha = 0.2f)))
-                        Box(Modifier.width(50.dp).height(18.dp).clip(VShapes.full).background(VColors.white.copy(alpha = 0.2f)))
+                        Box(Modifier.width(40.dp).height(18.dp).clip(RoundedCornerShape(50)).background(VTheme.colors.white.copy(alpha = 0.2f)))
+                        Box(Modifier.width(50.dp).height(18.dp).clip(RoundedCornerShape(50)).background(VTheme.colors.white.copy(alpha = 0.2f)))
                     }
                 }
             }
-            ArtifactCard(height = 60.dp, color = VColors.coral) {
+            ArtifactCard(height = 60.dp, color = VTheme.colors.coral) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Box(Modifier.size(40.dp).clip(VShapes.full).background(VColors.white.copy(alpha = 0.2f)))
+                    Box(Modifier.size(40.dp).clip(RoundedCornerShape(50)).background(VTheme.colors.white.copy(alpha = 0.2f)))
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Box(Modifier.width(100.dp).height(8.dp).clip(VShapes.full).background(VColors.white.copy(alpha = 0.4f)))
-                        Box(Modifier.width(70.dp).height(6.dp).clip(VShapes.full).background(VColors.white.copy(alpha = 0.25f)))
+                        Box(Modifier.width(100.dp).height(8.dp).clip(RoundedCornerShape(50)).background(VTheme.colors.white.copy(alpha = 0.4f)))
+                        Box(Modifier.width(70.dp).height(6.dp).clip(RoundedCornerShape(50)).background(VTheme.colors.white.copy(alpha = 0.25f)))
                     }
                 }
             }
@@ -470,23 +470,23 @@ private fun SafetyArtifact() {
             modifier = Modifier
                 .fillMaxWidth(0.6f)
                 .height(4.dp)
-                .clip(VShapes.full)
-                .background(VColors.mint.copy(alpha = 0.3f)),
+                .clip(RoundedCornerShape(50))
+                .background(VTheme.colors.mint.copy(alpha = 0.3f)),
         )
         // Bus icon moving along.
         Box(
             modifier = Modifier
                 .offset(x = 40.dp, y = (-40).dp)
                 .size(56.dp)
-                .clip(VShapes.xxl)
-                .background(VColors.mint)
-                .border(2.dp, VColors.white, VShapes.xxl),
+                .clip(RoundedCornerShape(32.dp))
+                .background(VTheme.colors.mint)
+                .border(2.dp, VTheme.colors.white, RoundedCornerShape(32.dp)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = VIcons.MapPin,
-                contentDescription = null,
-                tint = VColors.white,
+                contentDescription = "",
+                tint = VTheme.colors.white,
                 modifier = Modifier.size(28.dp),
             )
         }
@@ -496,7 +496,7 @@ private fun SafetyArtifact() {
                 modifier = Modifier
                     .size((80 + i * 40).dp)
                     .clip(CircleShape)
-                    .background(VColors.mint.copy(alpha = 0.08f / (i + 1))),
+                    .background(VTheme.colors.mint.copy(alpha = 0.08f / (i + 1))),
             )
         }
         // Student badge.
@@ -505,14 +505,14 @@ private fun SafetyArtifact() {
                 .offset(x = (-40).dp, y = 40.dp)
                 .size(64.dp)
                 .clip(CircleShape)
-                .background(VColors.white)
-                .border(2.dp, VColors.mint, CircleShape),
+                .background(VTheme.colors.white)
+                .border(2.dp, VTheme.colors.mint, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = VIcons.User,
-                contentDescription = null,
-                tint = VColors.mint,
+                contentDescription = "",
+                tint = VTheme.colors.mint,
                 modifier = Modifier.size(28.dp),
             )
         }
@@ -544,13 +544,13 @@ private fun ConversationsArtifact() {
                                     bottomEnd = if (alignRight) 4.dp else 20.dp,
                                 )
                             )
-                            .background(if (alignRight) VColors.coral else VColors.surfaceCard)
-                            .border(1.dp, VColors.line, RoundedCornerShape(20.dp))
+                            .background(if (alignRight) VTheme.colors.coral else VTheme.colors.surfaceCard)
+                            .border(1.dp, VTheme.colors.line, RoundedCornerShape(20.dp))
                             .padding(12.dp),
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Box(Modifier.width(80.dp).height(6.dp).clip(VShapes.full).background(if (alignRight) VColors.white.copy(alpha = 0.4f) else VColors.ink.copy(alpha = 0.2f)))
-                            Box(Modifier.fillMaxWidth(0.8f).height(6.dp).clip(VShapes.full).background(if (alignRight) VColors.white.copy(alpha = 0.25f) else VColors.ink.copy(alpha = 0.12f)))
+                            Box(Modifier.width(80.dp).height(6.dp).clip(RoundedCornerShape(50)).background(if (alignRight) VTheme.colors.white.copy(alpha = 0.4f) else VTheme.colors.ink.copy(alpha = 0.2f)))
+                            Box(Modifier.fillMaxWidth(0.8f).height(6.dp).clip(RoundedCornerShape(50)).background(if (alignRight) VTheme.colors.white.copy(alpha = 0.25f) else VTheme.colors.ink.copy(alpha = 0.12f)))
                         }
                     }
                 }
@@ -567,45 +567,45 @@ private fun AcademicsArtifact() {
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             // Report card.
-            ArtifactCard(height = 110.dp, color = VColors.gold) {
+            ArtifactCard(height = 110.dp, color = VTheme.colors.gold) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(36.dp).clip(VShapes.md).background(VColors.white.copy(alpha = 0.2f)))
+                        Box(Modifier.size(36.dp).clip(RoundedCornerShape(14.dp)).background(VTheme.colors.white.copy(alpha = 0.2f)))
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Box(Modifier.width(90.dp).height(8.dp).clip(VShapes.full).background(VColors.white.copy(alpha = 0.4f)))
-                            Box(Modifier.width(60.dp).height(6.dp).clip(VShapes.full).background(VColors.white.copy(alpha = 0.25f)))
+                            Box(Modifier.width(90.dp).height(8.dp).clip(RoundedCornerShape(50)).background(VTheme.colors.white.copy(alpha = 0.4f)))
+                            Box(Modifier.width(60.dp).height(6.dp).clip(RoundedCornerShape(50)).background(VTheme.colors.white.copy(alpha = 0.25f)))
                         }
                     }
-                    Box(Modifier.fillMaxWidth().height(6.dp).clip(VShapes.full).background(VColors.white.copy(alpha = 0.25f)))
-                    Box(Modifier.fillMaxWidth(0.6f).height(6.dp).clip(VShapes.full).background(VColors.white.copy(alpha = 0.25f)))
+                    Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(50)).background(VTheme.colors.white.copy(alpha = 0.25f)))
+                    Box(Modifier.fillMaxWidth(0.6f).height(6.dp).clip(RoundedCornerShape(50)).background(VTheme.colors.white.copy(alpha = 0.25f)))
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Box(Modifier.width(50.dp).height(22.dp).clip(VShapes.full).background(VColors.white.copy(alpha = 0.2f)))
-                        Box(Modifier.width(40.dp).height(22.dp).clip(VShapes.full).background(VColors.white.copy(alpha = 0.2f)))
+                        Box(Modifier.width(50.dp).height(22.dp).clip(RoundedCornerShape(50)).background(VTheme.colors.white.copy(alpha = 0.2f)))
+                        Box(Modifier.width(40.dp).height(22.dp).clip(RoundedCornerShape(50)).background(VTheme.colors.white.copy(alpha = 0.2f)))
                     }
                 }
             }
             // Circular progress.
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                ArtifactCard(height = 80.dp, color = VColors.violet, modifier = Modifier.weight(1f)) {
+                ArtifactCard(height = 80.dp, color = VTheme.colors.violet, modifier = Modifier.weight(1f)) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Box(
                             modifier = Modifier
                                 .size(50.dp)
                                 .clip(CircleShape)
-                                .background(VColors.white.copy(alpha = 0.2f)),
+                                .background(VTheme.colors.white.copy(alpha = 0.2f)),
                         )
                         Text(
                             text = "88%",
-                            style = VTypography.caption.copy(fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = VColors.white),
+                            style = VTheme.type.caption.copy(fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = VTheme.colors.white),
                         )
                     }
                 }
-                ArtifactCard(height = 80.dp, color = VColors.mint, modifier = Modifier.weight(1f)) {
+                ArtifactCard(height = 80.dp, color = VTheme.colors.mint, modifier = Modifier.weight(1f)) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = VIcons.Check,
-                            contentDescription = null,
-                            tint = VColors.white,
+                            contentDescription = "",
+                            tint = VTheme.colors.white,
                             modifier = Modifier.size(28.dp),
                         )
                     }
@@ -623,59 +623,59 @@ private fun LinkChildArtifact() {
             modifier = Modifier
                 .size(240.dp)
                 .clip(CircleShape)
-                .background(VColors.violet.copy(alpha = 0.08f)),
+                .background(VTheme.colors.violet.copy(alpha = 0.08f)),
         )
         // Floating school cards.
         Box(
             modifier = Modifier
                 .offset(x = (-60).dp, y = (-40).dp)
                 .size(64.dp)
-                .clip(VShapes.xl)
-                .background(VColors.violetSoft),
+                .clip(RoundedCornerShape(24.dp))
+                .background(VTheme.colors.violetSoft),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(imageVector = VIcons.School, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(28.dp))
+            Icon(imageVector = VIcons.School, contentDescription = "", tint = VTheme.colors.violet, modifier = Modifier.size(28.dp))
         }
         Box(
             modifier = Modifier
                 .offset(x = 60.dp, y = (-20).dp)
                 .size(64.dp)
-                .clip(VShapes.xl)
-                .background(VColors.mintSoft),
+                .clip(RoundedCornerShape(24.dp))
+                .background(VTheme.colors.mintSoft),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(imageVector = VIcons.MapPin, contentDescription = null, tint = VColors.mint, modifier = Modifier.size(28.dp))
+            Icon(imageVector = VIcons.MapPin, contentDescription = "", tint = VTheme.colors.mint, modifier = Modifier.size(28.dp))
         }
         Box(
             modifier = Modifier
                 .offset(x = (-40).dp, y = 50.dp)
                 .size(64.dp)
-                .clip(VShapes.xl)
-                .background(VColors.coralSoft),
+                .clip(RoundedCornerShape(24.dp))
+                .background(VTheme.colors.coralSoft),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(imageVector = VIcons.User, contentDescription = null, tint = VColors.coral, modifier = Modifier.size(28.dp))
+            Icon(imageVector = VIcons.User, contentDescription = "", tint = VTheme.colors.coral, modifier = Modifier.size(28.dp))
         }
         // Center CTA orb.
         Box(
             modifier = Modifier
                 .size(100.dp)
                 .clip(CircleShape)
-                .background(VColors.violet)
-                .border(4.dp, VColors.white, CircleShape),
+                .background(VTheme.colors.violet)
+                .border(4.dp, VTheme.colors.white, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(
                     imageVector = VIcons.UserPlus,
-                    contentDescription = null,
-                    tint = VColors.white,
+                    contentDescription = "",
+                    tint = VTheme.colors.white,
                     modifier = Modifier.size(28.dp),
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = "Link",
-                    style = VTypography.caption.copy(fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = VColors.white),
+                    style = VTheme.type.caption.copy(fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = VTheme.colors.white),
                 )
             }
         }
@@ -693,7 +693,7 @@ private fun ArtifactCard(
         modifier = modifier
             .fillMaxWidth()
             .height(height)
-            .clip(VShapes.xxl)
+            .clip(RoundedCornerShape(32.dp))
             .background(color)
             .padding(16.dp),
         contentAlignment = Alignment.Center,

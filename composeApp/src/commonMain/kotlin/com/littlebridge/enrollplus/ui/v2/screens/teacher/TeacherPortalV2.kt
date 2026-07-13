@@ -17,7 +17,6 @@ import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.feature.parent.presentation.NotificationsViewModel
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherObligationsViewModel
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherProfileViewModel
-import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VNavItem
 import com.littlebridge.enrollplus.ui.v2.components.VScreenScaffold
@@ -29,6 +28,7 @@ import com.littlebridge.enrollplus.ui.v2.screens.discovery.AcademicCalendarScree
 import com.littlebridge.enrollplus.ui.v2.screens.notifications.NotificationsScreenV2
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /** Full-screen overlays the teacher portal can push above its tab content. */
 private enum class TeacherOverlay { None, Notifications, HealthAlerts, TransportAttendance, Pews, ReportReview, ReportDraftEditor, Heatmap, DigitalIdCard, ScheduledMessages, EventRegistration, Messages, Calendar }
@@ -281,7 +281,7 @@ fun TeacherPortalV2(
         Box(
             Modifier
                 .fillMaxSize()
-                .background(VColors.cream),
+                .background(VTheme.colors.cream),
         ) {
             when (tab) {
                 "home" -> TeacherHomeScreenV2(

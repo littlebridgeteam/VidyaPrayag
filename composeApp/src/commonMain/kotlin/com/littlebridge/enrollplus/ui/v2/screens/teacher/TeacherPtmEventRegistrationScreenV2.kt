@@ -42,6 +42,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 @Composable
 fun TeacherPtmEventRegistrationScreenV2(
@@ -73,14 +75,14 @@ fun TeacherPtmEventRegistrationScreenV2(
         if (state.infoMessage != null) {
             Text(
                 text = state.infoMessage!!,
-                style = VtT.caption.coloredV(c.successInk),
+                style = VTheme.type.caption.colored(c.successInk),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             )
         }
         if (state.errorMessage != null) {
             Text(
                 text = state.errorMessage!!,
-                style = VtT.caption.coloredV(c.dangerInk),
+                style = VTheme.type.caption.colored(c.dangerInk),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             )
         }
@@ -139,9 +141,9 @@ private fun PtmDetailContent(
         item {
             VCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text(text = eventDetail.title, style = VtT.h3.coloredV(c.ink))
+                    Text(text = eventDetail.title, style = VTheme.type.h3.colored(c.ink))
                     Spacer(Modifier.height(4.dp))
-                    Text(text = eventDetail.date, style = VtT.body.coloredV(c.ink2))
+                    Text(text = eventDetail.date, style = VTheme.type.body.colored(c.ink2))
                     Spacer(Modifier.height(8.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -158,7 +160,7 @@ private fun PtmDetailContent(
             item {
                 Text(
                     text = "No slots configured for this event",
-                    style = VtT.body.coloredV(c.ink3),
+                    style = VTheme.type.body.colored(c.ink3),
                     modifier = Modifier.padding(16.dp),
                 )
             }
@@ -190,7 +192,7 @@ private fun SlotWithBookingsCard(
             ) {
                 Text(
                     text = "${slot.startTime} - ${slot.endTime}",
-                    style = VtT.h3.coloredV(c.ink),
+                    style = VTheme.type.h3.colored(c.ink),
                 )
                 VBadge(
                     text = "${slot.bookedCount}/${slot.capacity}",
@@ -202,7 +204,7 @@ private fun SlotWithBookingsCard(
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = "No bookings for this slot",
-                    style = VtT.caption.coloredV(c.ink3),
+                    style = VTheme.type.caption.colored(c.ink3),
                 )
             } else {
                 Spacer(Modifier.height(8.dp))
@@ -234,16 +236,16 @@ private fun BookingRow(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = booking.parentName,
-                style = VtT.body.coloredV(c.ink),
+                style = VTheme.type.body.colored(c.ink),
             )
             Text(
                 text = "Student: ${booking.studentName} • ${booking.attendeeCount} attendee(s)",
-                style = VtT.caption.coloredV(c.ink3),
+                style = VTheme.type.caption.colored(c.ink3),
             )
             if (booking.parentMobile.isNotBlank()) {
                 Text(
                     text = "📞 ${booking.parentMobile}",
-                    style = VtT.caption.coloredV(c.ink3),
+                    style = VTheme.type.caption.colored(c.ink3),
                 )
             }
         }
@@ -275,17 +277,17 @@ private fun PtmEventCard(
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = event.title,
-                style = VtT.h3.coloredV(c.ink),
+                style = VTheme.type.h3.colored(c.ink),
             )
             Spacer(Modifier.height(4.dp))
             Text(
                 text = event.date,
-                style = VtT.body.coloredV(c.ink2),
+                style = VTheme.type.body.colored(c.ink2),
             )
             if (event.className.isNotBlank()) {
                 Text(
                     text = "Classes: ${event.className}",
-                    style = VtT.caption.coloredV(c.ink3),
+                    style = VTheme.type.caption.colored(c.ink3),
                 )
             }
             Spacer(Modifier.height(8.dp))

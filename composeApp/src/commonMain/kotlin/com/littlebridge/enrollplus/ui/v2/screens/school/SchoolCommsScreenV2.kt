@@ -64,12 +64,11 @@ import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VMotion
-import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.ui.v2.theme.VMotion
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * SchoolCommsScreenV2 — `Admin.tsx → Comms`, wired to the real
@@ -195,24 +194,24 @@ private fun SchoolCommsContent(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(7.dp),
                 ) {
-                    Box(Modifier.size(5.dp).clip(CircleShape).background(VColors.violet))
+                    Box(Modifier.size(5.dp).clip(CircleShape).background(VTheme.colors.violet))
                     Text(
                         appString(StringKeys.SCH_COMMUNICATIONS),
-                        style = VTypography.accentLabel,
-                        color = VColors.violet,
+                        style = VTheme.type.accentLabel,
+                        color = VTheme.colors.violet,
                     )
                 }
                 Spacer(Modifier.height(6.dp))
                 Text(
                     text = buildAnnotatedString {
-                        withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold, color = VColors.ink)) {
+                        withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold, color = VTheme.colors.ink)) {
                             append("Comms")
                         }
-                        withStyle(SpanStyle(fontWeight = FontWeight.Normal, color = VColors.ink2)) {
+                        withStyle(SpanStyle(fontWeight = FontWeight.Normal, color = VTheme.colors.ink2)) {
                             append(" Hub")
                         }
                     },
-                    style = VTypography.h2,
+                    style = VTheme.type.h2,
                 )
             }
 
@@ -261,21 +260,21 @@ private fun AnnouncementsTab(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Text(appString(StringKeys.SCH_ANNOUNCEMENTS), style = VTypography.label, color = VColors.ink3)
+            Text(appString(StringKeys.SCH_ANNOUNCEMENTS), style = VTheme.type.label, color = VTheme.colors.ink3)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 VButton(
                     text = appString(StringKeys.SCH_SCHEDULED),
                     onClick = onOpenScheduledMessages,
                     variant = VButtonVariant.Ghost,
                     size = VButtonSize.Sm,
-                    leading = { Icon(VIcons.Clock, contentDescription = null, modifier = Modifier.size(14.dp)) },
+                    leading = { Icon(VIcons.Clock, contentDescription = "", modifier = Modifier.size(14.dp)) },
                 )
                 VButton(
                     text = appString(StringKeys.SCH_NEW),
                     onClick = onCreateEvent,
                     variant = VButtonVariant.Primary,
                     size = VButtonSize.Sm,
-                    leading = { Icon(VIcons.Plus, contentDescription = null, modifier = Modifier.size(14.dp)) },
+                    leading = { Icon(VIcons.Plus, contentDescription = "", modifier = Modifier.size(14.dp)) },
                     enabled = !state.isCreating,
                 )
             }
@@ -330,7 +329,7 @@ private fun MessagesTab(
     val errorMessage by viewModel.errorMessage.collectAsStateV2()
 
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(appString(StringKeys.SCH_MESSAGES), style = VTypography.label, color = VColors.ink3)
+        Text(appString(StringKeys.SCH_MESSAGES), style = VTheme.type.label, color = VTheme.colors.ink3)
         VStateHost(
             modifier = Modifier.fillMaxWidth().weight(1f),
             loading = isLoading,
@@ -372,7 +371,7 @@ private fun PtmTab(
     val state by viewModel.state.collectAsStateV2()
 
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(appString(StringKeys.SCH_PTM), style = VTypography.label, color = VColors.ink3)
+        Text(appString(StringKeys.SCH_PTM), style = VTheme.type.label, color = VTheme.colors.ink3)
         VStateHost(
             modifier = Modifier.fillMaxWidth().weight(1f),
             loading = state.isLoading,
@@ -414,7 +413,7 @@ private fun NotificationsTab(
     val state by viewModel.state.collectAsStateV2()
 
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(appString(StringKeys.SCH_DELIVERY_LOG), style = VTypography.label, color = VColors.ink3)
+        Text(appString(StringKeys.SCH_DELIVERY_LOG), style = VTheme.type.label, color = VTheme.colors.ink3)
         VStateHost(
             modifier = Modifier.fillMaxWidth().weight(1f),
             loading = state.isLoading,
@@ -451,10 +450,10 @@ private fun NotificationsTab(
 
 @Composable
 private fun FilterChip(label: String, active: Boolean, onClick: () -> Unit) {
-    val (bg, fg) = if (active) VColors.violetSoft to VColors.violet else VColors.creamDeep to VColors.ink3
+    val (bg, fg) = if (active) VTheme.colors.violetSoft to VTheme.colors.violet else VTheme.colors.creamDeep to VTheme.colors.ink3
     Text(
         label,
-        style = VTypography.caption.copy(fontWeight = if (active) FontWeight.Bold else FontWeight.Medium),
+        style = VTheme.type.caption.copy(fontWeight = if (active) FontWeight.Bold else FontWeight.Medium),
         color = fg,
         modifier = Modifier
             .clip(RoundedCornerShape(50))
@@ -482,7 +481,7 @@ private fun AnnouncementDetailV2(
         VBackHeader(title = appString(StringKeys.SCH_ANNOUNCEMENT), onBack = onBack)
         if (announcement == null) {
             Column(Modifier.fillMaxSize().padding(24.dp)) {
-                Text(appString(StringKeys.SCH_ANNOUNCEMENT_UNAVAILABLE), style = VTypography.h3, color = VColors.ink)
+                Text(appString(StringKeys.SCH_ANNOUNCEMENT_UNAVAILABLE), style = VTheme.type.h3, color = VTheme.colors.ink)
             }
             return
         }
@@ -495,25 +494,25 @@ private fun AnnouncementDetailV2(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(7.dp),
                 ) {
-                    Box(Modifier.size(5.dp).clip(CircleShape).background(VColors.violet))
-                    Text(announcement.category, style = VTypography.accentLabel, color = VColors.violet)
+                    Box(Modifier.size(5.dp).clip(CircleShape).background(VTheme.colors.violet))
+                    Text(announcement.category, style = VTheme.type.accentLabel, color = VTheme.colors.violet)
                 }
                 Spacer(Modifier.height(8.dp))
             }
-            Text(announcement.title, style = VTypography.h2, color = VColors.ink)
+            Text(announcement.title, style = VTheme.type.h2, color = VTheme.colors.ink)
             Text(
                 appString(StringKeys.SCH_POSTED_BY, "date" to announcement.date),
-                style = VTypography.caption,
-                color = VColors.ink3,
+                style = VTheme.type.caption,
+                color = VTheme.colors.ink3,
                 modifier = Modifier.padding(top = 4.dp),
             )
             Spacer(Modifier.height(16.dp))
-            Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.lineSoft))
+            Box(Modifier.fillMaxWidth().height(1.dp).background(VTheme.colors.lineSoft))
             Spacer(Modifier.height(16.dp))
             Text(
                 announcement.description,
-                style = VTypography.bodySmall.copy(lineHeight = 22.4.sp),
-                color = VColors.ink2,
+                style = VTheme.type.bodySmall.copy(lineHeight = 22.4.sp),
+                color = VTheme.colors.ink2,
             )
         }
     }

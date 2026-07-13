@@ -34,7 +34,6 @@ import com.littlebridge.enrollplus.feature.parent.presentation.ParentDashboardVi
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
-import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
@@ -99,7 +98,7 @@ fun ParentLibraryScreenV2(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(VColors.cream),
+            .background(VTheme.colors.cream),
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),

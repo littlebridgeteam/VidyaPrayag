@@ -61,6 +61,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 @Composable
 fun TeacherMessagesScreenV2(
@@ -215,14 +217,14 @@ private fun TeacherThreadRow(thread: TeacherMessageThreadDto, onClick: () -> Uni
             ) {
                 Text(
                     thread.senderName,
-                    style = VtT.bodyStrong.coloredV(c.ink).copy(fontWeight = if (thread.isRead) FontWeight.SemiBold else FontWeight.Bold),
+                    style = VTheme.type.bodyStrong.colored(c.ink).copy(fontWeight = if (thread.isRead) FontWeight.SemiBold else FontWeight.Bold),
                     modifier = Modifier.weight(1f, fill = false),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     thread.time,
-                    style = VtT.caption.coloredV(if (thread.isRead) c.ink3 else c.accent),
+                    style = VTheme.type.caption.colored(if (thread.isRead) c.ink3 else c.accent),
                 )
             }
             Spacer(Modifier.height(4.dp))
@@ -232,7 +234,7 @@ private fun TeacherThreadRow(thread: TeacherMessageThreadDto, onClick: () -> Uni
             ) {
                 Text(
                     thread.lastMessage,
-                    style = VtT.body.coloredV(if (thread.isRead) c.ink3 else c.ink2),
+                    style = VTheme.type.body.colored(if (thread.isRead) c.ink3 else c.ink2),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
@@ -247,7 +249,7 @@ private fun TeacherThreadRow(thread: TeacherMessageThreadDto, onClick: () -> Uni
                     ) {
                         Text(
                             if (thread.unreadCount > 99) "99+" else thread.unreadCount.toString(),
-                            style = VtT.caption.coloredV(Color.White).copy(fontWeight = FontWeight.Bold),
+                            style = VTheme.type.caption.colored(Color.White).copy(fontWeight = FontWeight.Bold),
                         )
                     }
                 }
@@ -325,7 +327,7 @@ private fun TeacherConversationContent(
                 ) {
                     Text(
                         replyError,
-                        style = VtT.caption.coloredV(c.dangerInk),
+                        style = VTheme.type.caption.colored(c.dangerInk),
                         modifier = Modifier.weight(1f),
                     )
                     val dismissInteraction = remember { MutableInteractionSource() }
@@ -395,14 +397,14 @@ private fun TeacherMessageBubble(msg: TeacherMessageDto) {
             if (isDeleted) {
                 Text(
                     "This message was deleted",
-                    style = VtT.body.coloredV(textColor).copy(
+                    style = VTheme.type.body.colored(textColor).copy(
                         fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
                     ),
                 )
             } else {
                 Text(
                     msg.body,
-                    style = VtT.body.coloredV(textColor),
+                    style = VTheme.type.body.colored(textColor),
                 )
             }
             Spacer(Modifier.height(4.dp))
@@ -416,7 +418,7 @@ private fun TeacherMessageBubble(msg: TeacherMessageDto) {
                         "READ" -> {
                             Icon(
                                 VIcons.Check,
-                                contentDescription = null,
+                                contentDescription = "",
                                 tint = Color.White.copy(alpha = 0.9f),
                                 modifier = Modifier.size(14.dp),
                             )
@@ -438,7 +440,7 @@ private fun TeacherMessageBubble(msg: TeacherMessageDto) {
                             Spacer(Modifier.size(2.dp))
                             Icon(
                                 VIcons.Check,
-                                contentDescription = null,
+                                contentDescription = "",
                                 tint = Color.White.copy(alpha = 0.7f),
                                 modifier = Modifier.size(14.dp),
                             )
@@ -456,13 +458,13 @@ private fun TeacherMessageBubble(msg: TeacherMessageDto) {
                 }
                 Text(
                     msg.time,
-                    style = VtT.caption.coloredV(timeColor).copy(fontSize = 10.sp),
+                    style = VTheme.type.caption.colored(timeColor).copy(fontSize = 10.sp),
                 )
                 if (msg.editedAt != null && !isDeleted) {
                     Spacer(Modifier.size(4.dp))
                     Text(
                         "edited",
-                        style = VtT.caption.coloredV(timeColor).copy(fontSize = 9.sp),
+                        style = VTheme.type.caption.colored(timeColor).copy(fontSize = 9.sp),
                     )
                 }
             }
@@ -511,7 +513,7 @@ private fun TeacherComposeBar(
                     placeholder = {
                         Text(
                             placeholder,
-                            style = VtT.body.coloredV(c.placeholder),
+                            style = VTheme.type.body.colored(c.placeholder),
                         )
                     },
                     enabled = enabled,
@@ -529,7 +531,7 @@ private fun TeacherComposeBar(
                     ),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
                     keyboardActions = KeyboardActions(onSend = { if (canSend) onSend() }),
-                    textStyle = VtT.body.coloredV(c.ink),
+                    textStyle = VTheme.type.body.colored(c.ink),
                 )
             }
 

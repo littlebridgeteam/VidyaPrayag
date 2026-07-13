@@ -40,9 +40,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.parent.domain.model.DashboardChildSummary
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VShapes
-import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 /**
  * Shared premium portal header used by Home, Academics, Fees, Conversations and Profile tabs.
@@ -75,11 +74,11 @@ fun ParentPortalHeader(
             Column(Modifier.weight(1f)) {
                 Text(
                     label.uppercase(),
-                    style = VTypography.caption.copy(
+                    style = VTheme.type.caption.copy(
                         fontSize = 10.sp,
                         letterSpacing = 1.2.sp,
                     ),
-                    color = VColors.ink3,
+                    color = VTheme.colors.ink3,
                     fontWeight = FontWeight.SemiBold,
                 )
                 Spacer(Modifier.height(2.dp))
@@ -94,15 +93,15 @@ fun ParentPortalHeader(
                 ) {
                     Text(
                         childName,
-                        style = VTypography.h2.copy(fontSize = 20.sp),
-                        color = VColors.ink,
+                        style = VTheme.type.h2.copy(fontSize = 20.sp),
+                        color = VTheme.colors.ink,
                         fontWeight = FontWeight.Bold,
                     )
                     if (children.size > 1) {
                         Icon(
                             Icons.Filled.KeyboardArrowDown,
                             contentDescription = "Select child",
-                            tint = VColors.ink3,
+                            tint = VTheme.colors.ink3,
                             modifier = Modifier.size(20.dp),
                         )
                     }
@@ -110,16 +109,16 @@ fun ParentPortalHeader(
                 DropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
-                    containerColor = VColors.white,
-                    shape = VShapes.lg,
+                    containerColor = VTheme.colors.white,
+                    shape = RoundedCornerShape(18.dp),
                 ) {
                     children.forEach { child ->
                         DropdownMenuItem(
                             text = {
                                 Text(
                                     child.name,
-                                    style = VTypography.body,
-                                    color = if (child.id == selectedChild?.id) VColors.violet else VColors.ink,
+                                    style = VTheme.type.body,
+                                    color = if (child.id == selectedChild?.id) VTheme.colors.violet else VTheme.colors.ink,
                                     fontWeight = if (child.id == selectedChild?.id) FontWeight.SemiBold else FontWeight.Normal,
                                 )
                             },
@@ -136,16 +135,16 @@ fun ParentPortalHeader(
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .clip(VShapes.full)
-                    .background(VColors.white)
-                    .border(1.dp, VColors.line, VShapes.full)
+                    .clip(RoundedCornerShape(50))
+                    .background(VTheme.colors.white)
+                    .border(1.dp, VTheme.colors.line, RoundedCornerShape(50))
                     .clickable(onClick = onOpenNotifications),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     Icons.Filled.Notifications,
                     contentDescription = "Notifications",
-                    tint = VColors.ink,
+                    tint = VTheme.colors.ink,
                     modifier = Modifier.size(20.dp),
                 )
                 if (unreadNotificationsCount > 0) {
@@ -155,13 +154,13 @@ fun ParentPortalHeader(
                             .padding(top = 6.dp, end = 6.dp)
                             .size(16.dp)
                             .clip(CircleShape)
-                            .background(VColors.error),
+                            .background(VTheme.colors.error),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
                             unreadNotificationsCount.coerceAtMost(99).toString(),
-                            style = VTypography.caption.copy(fontSize = 9.sp),
-                            color = VColors.white,
+                            style = VTheme.type.caption.copy(fontSize = 9.sp),
+                            color = VTheme.colors.white,
                             fontWeight = FontWeight.Bold,
                         )
                     }
@@ -215,24 +214,24 @@ fun PortalQuickActionChip(
 ) {
     Row(
         modifier = modifier
-            .clip(VShapes.lg)
-            .background(VColors.white)
-            .border(1.dp, VColors.line, VShapes.lg)
+            .clip(RoundedCornerShape(18.dp))
+            .background(VTheme.colors.white)
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(18.dp))
             .clickable(onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Box(
-            Modifier.size(36.dp).clip(VShapes.sm).background(iconBg),
+            Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(iconBg),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(18.dp))
+            Icon(icon, contentDescription = "", tint = iconColor, modifier = Modifier.size(18.dp))
         }
         Text(
             title,
-            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, lineHeight = 16.sp),
-            color = VColors.ink,
+            style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold, lineHeight = 16.sp),
+            color = VTheme.colors.ink,
         )
     }
 }
@@ -243,8 +242,8 @@ fun PortalTabChip(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    val bg = if (selected) VColors.white else VColors.surfaceTint
-    val fg = if (selected) VColors.ink else VColors.ink3
+    val bg = if (selected) VTheme.colors.white else VTheme.colors.surfaceTint
+    val fg = if (selected) VTheme.colors.ink else VTheme.colors.ink3
 
     Text(
         text = label,
@@ -252,8 +251,8 @@ fun PortalTabChip(
         fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
         color = fg,
         modifier = Modifier
-            .background(bg, VShapes.full)
-            .border(1.dp, if (selected) VColors.line else VColors.lineSoft, VShapes.full)
+            .background(bg, RoundedCornerShape(50))
+            .border(1.dp, if (selected) VTheme.colors.line else VTheme.colors.lineSoft, RoundedCornerShape(50))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -289,22 +288,22 @@ fun PremiumOverlayHeader(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(CircleShape)
-                        .background(VColors.surfaceCard)
-                        .border(1.dp, VColors.line, CircleShape)
+                        .background(VTheme.colors.surfaceCard)
+                        .border(1.dp, VTheme.colors.line, CircleShape)
                         .clickable(onClick = onBack),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
-                        tint = VColors.ink,
+                        tint = VTheme.colors.ink,
                         modifier = Modifier.size(20.dp),
                     )
                 }
                 Text(
                     title,
-                    style = VTypography.body.copy(fontWeight = FontWeight.Bold),
-                    color = VColors.ink,
+                    style = VTheme.type.body.copy(fontWeight = FontWeight.Bold),
+                    color = VTheme.colors.ink,
                 )
             }
             if (action != null) {
@@ -313,7 +312,7 @@ fun PremiumOverlayHeader(
                 }
             }
         }
-        Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line).padding(horizontal = 24.dp))
+        Box(Modifier.fillMaxWidth().height(1.dp).background(VTheme.colors.line).padding(horizontal = 24.dp))
     }
 }
 
@@ -328,12 +327,12 @@ fun PremiumCard(
     padding: Dp = 16.dp,
     content: @Composable () -> Unit,
 ) {
-    val shape = VShapes.lg
+    val shape = RoundedCornerShape(18.dp)
     var m = modifier
         .fillMaxWidth()
         .clip(shape)
-        .background(VColors.surfaceCard)
-        .border(1.dp, VColors.line, shape)
+        .background(VTheme.colors.surfaceCard)
+        .border(1.dp, VTheme.colors.line, shape)
     if (onClick != null) {
         m = m.clickable(onClick = onClick)
     }

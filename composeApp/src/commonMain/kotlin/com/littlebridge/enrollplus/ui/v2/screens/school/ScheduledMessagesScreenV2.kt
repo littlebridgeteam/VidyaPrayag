@@ -44,9 +44,8 @@ import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 @Composable
 fun ScheduledMessagesScreenV2(
@@ -139,11 +138,11 @@ private fun StatusFilterRow(
 @Composable
 private fun StatusChip(label: String, active: Boolean, onClick: () -> Unit) {
         val shape = RoundedCornerShape(12.dp)
-    val bg = if (active) VColors.sky.copy(alpha = 0.16f) else VColors.cream
-    val fg = if (active) VColors.sky else VColors.ink2
+    val bg = if (active) VTheme.colors.sky.copy(alpha = 0.16f) else VTheme.colors.cream
+    val fg = if (active) VTheme.colors.sky else VTheme.colors.ink2
     Text(
         text = label,
-        style = VTypography.label.copy(color = fg),
+        style = VTheme.type.label.copy(color = fg),
         modifier = Modifier
             .clip(shape)
             .background(bg)
@@ -170,7 +169,7 @@ private fun ScheduledMessageCard(
             ) {
                 Text(
                     text = message.title ?: message.messageType,
-                    style = VTypography.h3.copy(color = VColors.ink),
+                    style = VTheme.type.h3.copy(color = VTheme.colors.ink),
                     modifier = Modifier.weight(1f),
                 )
                 VBadge(text = badgeText, tone = badgeTone)
@@ -179,7 +178,7 @@ private fun ScheduledMessageCard(
             message.bodyPreview?.let {
                 Text(
                     text = it,
-                    style = VTypography.body.copy(color = VColors.ink2),
+                    style = VTheme.type.body.copy(color = VTheme.colors.ink2),
                     maxLines = 2,
                 )
             }
@@ -189,15 +188,15 @@ private fun ScheduledMessageCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                Icon(VIcons.Clock, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(14.dp))
+                Icon(VIcons.Clock, contentDescription = "", tint = VTheme.colors.ink3, modifier = Modifier.size(14.dp))
                 Text(
                     text = formatScheduledTime(message.scheduledAt),
-                    style = VTypography.caption.copy(color = VColors.ink3),
+                    style = VTheme.type.caption.copy(color = VTheme.colors.ink3),
                 )
                 message.audienceLabel?.let {
                     Spacer(Modifier.size(8.dp))
-                    Icon(VIcons.Users, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(14.dp))
-                    Text(it, style = VTypography.caption.copy(color = VColors.ink3))
+                    Icon(VIcons.Users, contentDescription = "", tint = VTheme.colors.ink3, modifier = Modifier.size(14.dp))
+                    Text(it, style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
                 }
             }
 
@@ -226,7 +225,7 @@ private fun ScheduledMessageCard(
             message.lastError?.let {
                 Text(
                     text = "Error: $it",
-                    style = VTypography.caption.copy(color = VColors.error),
+                    style = VTheme.type.caption.copy(color = VTheme.colors.error),
                 )
             }
         }

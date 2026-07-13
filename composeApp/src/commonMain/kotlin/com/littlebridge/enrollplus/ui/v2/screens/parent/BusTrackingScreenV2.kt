@@ -31,7 +31,6 @@ import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.feature.transport.domain.model.RouteProgress
 import com.littlebridge.enrollplus.feature.transport.domain.model.TransportStop
 import com.littlebridge.enrollplus.feature.transport.presentation.TransportViewModel
-import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VCard
@@ -67,7 +66,7 @@ fun BusTrackingScreenV2(
     Column(
         modifier
             .fillMaxSize()
-            .background(VColors.cream)
+            .background(VTheme.colors.cream)
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
@@ -172,7 +171,7 @@ private fun BusTrackingContent(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = VIcons.MapPin,
-                        contentDescription = null,
+                        contentDescription = "",
                         tint = c.accent,
                         modifier = Modifier.size(20.dp)
                     )

@@ -59,10 +59,9 @@ import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import androidx.compose.ui.text.font.FontWeight
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * RA-45: StudentRosterScreenV2 — the admin's live student roster.
@@ -205,17 +204,17 @@ private fun StudentCard(
             ) {
                 VAvatar(name = student.fullName, src = student.profilePhotoUrl, size = 52.dp)
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text(student.fullName, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink, maxLines = 1)
+                    Text(student.fullName, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.Bold), color = VTheme.colors.ink, maxLines = 1)
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
                             "Roll #${student.rollNumber}",
-                            style = VTypography.caption,
-                            color = VColors.ink3,
+                            style = VTheme.type.caption,
+                            color = VTheme.colors.ink3,
                         )
                         Text(
                             "Admission #${student.studentCode}",
-                            style = VTypography.caption,
-                            color = VColors.ink3,
+                            style = VTheme.type.caption,
+                            color = VTheme.colors.ink3,
                         )
                     }
                 }
@@ -227,32 +226,32 @@ private fun StudentCard(
                 Box {
                     Box(
                         Modifier.size(34.dp).clip(RoundedCornerShape(10.dp))
-                            .background(VColors.ink.copy(alpha = 0.06f))
+                            .background(VTheme.colors.ink.copy(alpha = 0.06f))
                             .clickable(enabled = !removing) { menuOpen = true },
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(VIcons.More, contentDescription = "Actions", tint = VColors.ink2, modifier = Modifier.size(18.dp))
+                        Icon(VIcons.More, contentDescription = "Actions", tint = VTheme.colors.ink2, modifier = Modifier.size(18.dp))
                     }
                     DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                         DropdownMenuItem(
                             text = { Text(appString(StringKeys.SCH_VIEW_PROFILE)) },
                             onClick = { menuOpen = false; onOpen() },
-                            leadingIcon = { Icon(VIcons.User, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                            leadingIcon = { Icon(VIcons.User, contentDescription = "", modifier = Modifier.size(18.dp)) },
                         )
                         DropdownMenuItem(
                             text = { Text(appString(StringKeys.COMMON_BUTTON_EDIT)) },
                             onClick = { menuOpen = false; onOpen() },
-                            leadingIcon = { Icon(VIcons.Settings, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                            leadingIcon = { Icon(VIcons.Settings, contentDescription = "", modifier = Modifier.size(18.dp)) },
                         )
                         DropdownMenuItem(
                             text = { Text(appString(StringKeys.SCH_CONTACT_PARENT)) },
                             onClick = { menuOpen = false; onOpen() },
-                            leadingIcon = { Icon(VIcons.Phone, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                            leadingIcon = { Icon(VIcons.Phone, contentDescription = "", modifier = Modifier.size(18.dp)) },
                         )
                         DropdownMenuItem(
-                            text = { Text(appString(StringKeys.SCH_REMOVE), style = VTypography.body.copy(color = VColors.error)) },
+                            text = { Text(appString(StringKeys.SCH_REMOVE), style = VTheme.type.body.copy(color = VTheme.colors.error)) },
                             onClick = { menuOpen = false; onRemove() },
-                            leadingIcon = { Icon(VIcons.Close, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                            leadingIcon = { Icon(VIcons.Close, contentDescription = "", modifier = Modifier.size(18.dp)) },
                         )
                     }
                 }
@@ -263,14 +262,14 @@ private fun StudentCard(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     student.parentName?.takeIf { it.isNotBlank() }?.let { parentName ->
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Icon(VIcons.User, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(14.dp))
-                            Text(parentName, style = VTypography.caption, color = VColors.ink2)
+                            Icon(VIcons.User, contentDescription = "", tint = VTheme.colors.ink3, modifier = Modifier.size(14.dp))
+                            Text(parentName, style = VTheme.type.caption, color = VTheme.colors.ink2)
                         }
                     }
                     student.parentPhone?.takeIf { it.isNotBlank() }?.let { phone ->
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Icon(VIcons.Phone, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(14.dp))
-                            Text(maskStudentPhone(phone), style = VTypography.caption, color = VColors.ink2)
+                            Icon(VIcons.Phone, contentDescription = "", tint = VTheme.colors.ink3, modifier = Modifier.size(14.dp))
+                            Text(maskStudentPhone(phone), style = VTheme.type.caption, color = VTheme.colors.ink2)
                         }
                     }
                 }
@@ -280,10 +279,10 @@ private fun StudentCard(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 VStatusDot(
                     color = when {
-                        student.status.equals("active", ignoreCase = true) && !lowAttendance && !homeworkLow && !student.feesPending && !student.isNewAdmission -> VColors.mint
-                        lowAttendance || student.feesPending -> VColors.coral
-                        homeworkLow || student.isNewAdmission -> VColors.gold
-                        else -> VColors.sky
+                        student.status.equals("active", ignoreCase = true) && !lowAttendance && !homeworkLow && !student.feesPending && !student.isNewAdmission -> VTheme.colors.mint
+                        lowAttendance || student.feesPending -> VTheme.colors.coral
+                        homeworkLow || student.isNewAdmission -> VTheme.colors.gold
+                        else -> VTheme.colors.sky
                     },
                     ring = false,
                 )
@@ -296,8 +295,8 @@ private fun StudentCard(
                         homeworkLow -> "Homework Due"
                         else -> "Healthy"
                     },
-                    style = VTypography.caption.copy(fontWeight = FontWeight.Medium),
-                    color = VColors.ink,
+                    style = VTheme.type.caption.copy(fontWeight = FontWeight.Medium),
+                    color = VTheme.colors.ink,
                 )
             }
 
@@ -348,8 +347,8 @@ private fun StudentProgressLabel(
 ) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(label, style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold), color = VColors.ink3)
-            Text(valueText, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+            Text(label, style = VTheme.type.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold), color = VTheme.colors.ink3)
+            Text(valueText, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.Bold), color = VTheme.colors.ink)
         }
         VProgressBar(value = value, tone = tone, height = 6.dp)
     }
@@ -358,13 +357,13 @@ private fun StudentProgressLabel(
 @Composable
 private fun MetricChip(icon: ImageVector, value: String, label: String, modifier: Modifier = Modifier) {
     Column(
-        modifier = modifier.clip(RoundedCornerShape(12.dp)).background(VColors.cream).padding(vertical = 10.dp, horizontal = 8.dp),
+        modifier = modifier.clip(RoundedCornerShape(12.dp)).background(VTheme.colors.cream).padding(vertical = 10.dp, horizontal = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(3.dp),
     ) {
-        Icon(icon, contentDescription = null, tint = VColors.sky, modifier = Modifier.size(16.dp))
-        Text(value, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
-        Text(label, style = VTypography.label.copy(color = VColors.ink3), maxLines = 1)
+        Icon(icon, contentDescription = "", tint = VTheme.colors.sky, modifier = Modifier.size(16.dp))
+        Text(value, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
+        Text(label, style = VTheme.type.label.copy(color = VTheme.colors.ink3), maxLines = 1)
     }
 }
 
@@ -417,10 +416,10 @@ private fun AddStudentSheet(
                 keyboardType = KeyboardType.Phone,
             )
             if (parentPhone.isNotBlank() && !phoneOk) {
-                Text(appString(StringKeys.SCH_PHONE_MIN_DIGITS), style = VTypography.label.copy(color = VColors.error))
+                Text(appString(StringKeys.SCH_PHONE_MIN_DIGITS), style = VTheme.type.label.copy(color = VTheme.colors.error))
             }
             if (error != null) {
-                Text(error, style = VTypography.body.copy(color = VColors.error))
+                Text(error, style = VTheme.type.body.copy(color = VTheme.colors.error))
             }
             Spacer(Modifier.height(2.dp))
             VButton(

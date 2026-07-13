@@ -179,7 +179,7 @@ private fun CommandRow(
         ) {
             Icon(
                 imageVector = resolveIcon(dest.icon),
-                contentDescription = null,
+                contentDescription = "",
                 tint = VTheme.colors.accent,
                 modifier = Modifier.size(20.dp),
             )
@@ -200,7 +200,7 @@ private fun CommandRow(
         }
         Icon(
             imageVector = VIcons.ArrowRight,
-            contentDescription = null,
+            contentDescription = "",
             tint = VTheme.colors.ink3,
             modifier = Modifier.size(18.dp),
         )

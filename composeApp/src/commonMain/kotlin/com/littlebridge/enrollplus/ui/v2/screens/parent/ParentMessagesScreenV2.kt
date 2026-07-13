@@ -63,14 +63,12 @@ import com.littlebridge.enrollplus.feature.parent.domain.model.ParentMessageThre
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentRecipientDto
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentMessageState
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentMessageViewModel
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VShapes
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VAvatar
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * RA-51: parent Messages inbox + conversation detail. Mirror of the admin
@@ -114,7 +112,7 @@ fun ParentMessagesScreenV2(
     Column(
         modifier
             .fillMaxSize()
-            .background(VColors.cream)
+            .background(VTheme.colors.cream)
             .statusBarsPadding()
             .imePadding()
             .navigationBarsPadding(),
@@ -159,15 +157,15 @@ private fun PremiumMessageHeader(
             modifier = Modifier
                 .size(40.dp)
                 .clip(CircleShape)
-                .background(VColors.surfaceCard)
-                .border(1.dp, VColors.line, CircleShape)
+                .background(VTheme.colors.surfaceCard)
+                .border(1.dp, VTheme.colors.line, CircleShape)
                 .clickable(onClick = onBack),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Back",
-                tint = VColors.ink,
+                tint = VTheme.colors.ink,
                 modifier = Modifier.size(20.dp),
             )
         }
@@ -184,16 +182,16 @@ private fun PremiumMessageHeader(
         Column(Modifier.weight(1f)) {
             Text(
                 title,
-                style = VTypography.body.copy(fontWeight = FontWeight.Bold),
-                color = VColors.ink,
+                style = VTheme.type.body.copy(fontWeight = FontWeight.Bold),
+                color = VTheme.colors.ink,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             if (subtitle.isNotBlank()) {
                 Text(
                     subtitle,
-                    style = VTypography.caption,
-                    color = VColors.ink3,
+                    style = VTheme.type.caption,
+                    color = VTheme.colors.ink3,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -201,7 +199,7 @@ private fun PremiumMessageHeader(
         }
     }
 
-    Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line).padding(horizontal = 24.dp))
+    Box(Modifier.fillMaxWidth().height(1.dp).background(VTheme.colors.line).padding(horizontal = 24.dp))
 }
 
 /**
@@ -308,7 +306,7 @@ private fun ParentThreadListContent(
         when {
             loading && threads.isEmpty() ->
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(36.dp))
+                    CircularProgressIndicator(color = VTheme.colors.violet, modifier = Modifier.size(36.dp))
                 }
 
             error != null && threads.isEmpty() ->
@@ -351,14 +349,14 @@ private fun ParentThreadListContent(
                 .padding(end = 20.dp, bottom = 20.dp)
                 .size(56.dp)
                 .clip(CircleShape)
-                .background(VColors.violet)
+                .background(VTheme.colors.violet)
                 .clickable(onClick = onCompose),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 VIcons.Edit3,
                 contentDescription = "New message",
-                tint = VColors.white,
+                tint = VTheme.colors.white,
                 modifier = Modifier.size(24.dp),
             )
         }
@@ -370,9 +368,9 @@ private fun ParentThreadRow(thread: ParentMessageThreadDto, onClick: () -> Unit)
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.lg)
+            .clip(RoundedCornerShape(18.dp))
+            .background(VTheme.colors.surfaceCard)
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(18.dp))
             .clickable(onClick = onClick)
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -391,26 +389,26 @@ private fun ParentThreadRow(thread: ParentMessageThreadDto, onClick: () -> Unit)
             ) {
                 Text(
                     thread.senderName,
-                    style = VTypography.body.copy(
+                    style = VTheme.type.body.copy(
                         fontWeight = if (thread.unreadCount > 0) FontWeight.Bold else FontWeight.SemiBold,
                     ),
-                    color = VColors.ink,
+                    color = VTheme.colors.ink,
                     modifier = Modifier.weight(1f, fill = false),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     thread.time,
-                    style = VTypography.caption,
-                    color = if (thread.unreadCount > 0) VColors.violet else VColors.ink3,
+                    style = VTheme.type.caption,
+                    color = if (thread.unreadCount > 0) VTheme.colors.violet else VTheme.colors.ink3,
                 )
             }
 
             if (thread.senderRole.isNotBlank()) {
                 Text(
                     thread.senderRole,
-                    style = VTypography.caption.copy(fontSize = 11.sp),
-                    color = VColors.ink3,
+                    style = VTheme.type.caption.copy(fontSize = 11.sp),
+                    color = VTheme.colors.ink3,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -423,8 +421,8 @@ private fun ParentThreadRow(thread: ParentMessageThreadDto, onClick: () -> Unit)
             ) {
                 Text(
                     thread.lastMessage,
-                    style = VTypography.bodySmall,
-                    color = if (thread.unreadCount > 0) VColors.ink2 else VColors.ink3,
+                    style = VTheme.type.bodySmall,
+                    color = if (thread.unreadCount > 0) VTheme.colors.ink2 else VTheme.colors.ink3,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
@@ -433,17 +431,17 @@ private fun ParentThreadRow(thread: ParentMessageThreadDto, onClick: () -> Unit)
                     Box(
                         Modifier
                             .clip(CircleShape)
-                            .background(VColors.violet)
+                            .background(VTheme.colors.violet)
                             .padding(horizontal = 8.dp, vertical = 2.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
                             if (thread.unreadCount > 99) "99+" else thread.unreadCount.toString(),
-                            style = VTypography.caption.copy(
+                            style = VTheme.type.caption.copy(
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                             ),
-                            color = VColors.white,
+                            color = VTheme.colors.white,
                         )
                     }
                 }
@@ -461,22 +459,22 @@ private fun ThreadEmptyCard(
     Column(
         Modifier
             .padding(horizontal = 32.dp)
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.lg)
+            .clip(RoundedCornerShape(18.dp))
+            .background(VTheme.colors.surfaceCard)
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(18.dp))
             .padding(28.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
-            Modifier.size(64.dp).clip(CircleShape).background(VColors.violetSoft),
+            Modifier.size(64.dp).clip(CircleShape).background(VTheme.colors.violetSoft),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(28.dp))
+            Icon(icon, contentDescription = "", tint = VTheme.colors.violet, modifier = Modifier.size(28.dp))
         }
         Spacer(Modifier.height(16.dp))
-        Text(title, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+        Text(title, style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold), color = VTheme.colors.ink)
         Spacer(Modifier.height(4.dp))
-        Text(body, style = VTypography.caption, color = VColors.ink2)
+        Text(body, style = VTheme.type.caption, color = VTheme.colors.ink2)
     }
 }
 
@@ -505,7 +503,7 @@ private fun ParentComposeNewContent(
             when {
                 loading && recipients.isEmpty() ->
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(36.dp))
+                        CircularProgressIndicator(color = VTheme.colors.violet, modifier = Modifier.size(36.dp))
                     }
 
                 error != null && recipients.isEmpty() ->
@@ -535,11 +533,11 @@ private fun ParentComposeNewContent(
                         item {
                             Text(
                                 "Select recipient",
-                                style = VTypography.caption.copy(
+                                style = VTheme.type.caption.copy(
                                     fontWeight = FontWeight.SemiBold,
                                     letterSpacing = 0.8.sp,
                                 ),
-                                color = VColors.ink3,
+                                color = VTheme.colors.ink3,
                                 modifier = Modifier.padding(bottom = 6.dp),
                             )
                         }
@@ -574,15 +572,15 @@ private fun ParentComposeNewContent(
 
 @Composable
 private fun ParentRecipientRow(recipient: ParentRecipientDto, isSelected: Boolean, onClick: () -> Unit) {
-    val bg = if (isSelected) VColors.violetSoft else VColors.surfaceCard
-    val borderColor = if (isSelected) VColors.violet else VColors.line
+    val bg = if (isSelected) VTheme.colors.violetSoft else VTheme.colors.surfaceCard
+    val borderColor = if (isSelected) VTheme.colors.violet else VTheme.colors.line
 
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(VShapes.lg)
+            .clip(RoundedCornerShape(18.dp))
             .background(bg)
-            .border(1.dp, borderColor, VShapes.lg)
+            .border(1.dp, borderColor, RoundedCornerShape(18.dp))
             .clickable(onClick = onClick)
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -592,16 +590,16 @@ private fun ParentRecipientRow(recipient: ParentRecipientDto, isSelected: Boolea
         Column(Modifier.weight(1f)) {
             Text(
                 recipient.name,
-                style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
-                color = VColors.ink,
+                style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold),
+                color = VTheme.colors.ink,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             if (recipient.subtitle.isNotBlank()) {
                 Text(
                     recipient.subtitle,
-                    style = VTypography.caption,
-                    color = VColors.ink2,
+                    style = VTheme.type.caption,
+                    color = VTheme.colors.ink2,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -612,13 +610,13 @@ private fun ParentRecipientRow(recipient: ParentRecipientDto, isSelected: Boolea
                 Modifier
                     .size(24.dp)
                     .clip(CircleShape)
-                    .background(VColors.violet),
+                    .background(VTheme.colors.violet),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     VIcons.Check,
                     contentDescription = "Selected",
-                    tint = VColors.white,
+                    tint = VTheme.colors.white,
                     modifier = Modifier.size(16.dp),
                 )
             }
@@ -656,12 +654,12 @@ private fun ParentConversationContent(
             Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .background(VColors.cream),
+                .background(VTheme.colors.cream),
         ) {
             when {
                 loading && messages.isEmpty() ->
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(36.dp))
+                        CircularProgressIndicator(color = VTheme.colors.violet, modifier = Modifier.size(36.dp))
                     }
 
                 error != null && messages.isEmpty() ->
@@ -709,29 +707,29 @@ private fun ParentConversationContent(
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .background(VColors.errorSoft)
+                        .background(VTheme.colors.errorSoft)
                         .padding(horizontal = 16.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
                         replyError,
-                        style = VTypography.caption,
-                        color = VColors.error,
+                        style = VTheme.type.caption,
+                        color = VTheme.colors.error,
                         modifier = Modifier.weight(1f),
                     )
                     Box(
                         Modifier
                             .size(28.dp)
                             .clip(CircleShape)
-                            .background(VColors.error.copy(alpha = 0.12f))
+                            .background(VTheme.colors.error.copy(alpha = 0.12f))
                             .clickable(onClick = onDismissReplyError),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             VIcons.Close,
                             contentDescription = "Dismiss",
-                            tint = VColors.error,
+                            tint = VTheme.colors.error,
                             modifier = Modifier.size(16.dp),
                         )
                     }
@@ -761,10 +759,10 @@ private fun ParentMessageBubble(msg: ParentMessageDto) {
     val isMine = msg.isMine
     val isDeleted = msg.deletedAt != null
 
-    val bubbleColor = if (isMine) VColors.violet else VColors.surfaceCard
-    val textColor = if (isMine) VColors.white else VColors.ink
-    val timeColor = if (isMine) VColors.white.copy(alpha = 0.7f) else VColors.ink3
-    val bubbleBorder = if (isMine) null else VColors.line
+    val bubbleColor = if (isMine) VTheme.colors.violet else VTheme.colors.surfaceCard
+    val textColor = if (isMine) VTheme.colors.white else VTheme.colors.ink
+    val timeColor = if (isMine) VTheme.colors.white.copy(alpha = 0.7f) else VTheme.colors.ink3
+    val bubbleBorder = if (isMine) null else VTheme.colors.line
 
     Row(
         Modifier.fillMaxWidth(),
@@ -789,7 +787,7 @@ private fun ParentMessageBubble(msg: ParentMessageDto) {
             if (isDeleted) {
                 Text(
                     "This message was deleted",
-                    style = VTypography.body.copy(
+                    style = VTheme.type.body.copy(
                         fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
                     ),
                     color = textColor,
@@ -797,7 +795,7 @@ private fun ParentMessageBubble(msg: ParentMessageDto) {
             } else {
                 Text(
                     msg.body,
-                    style = VTypography.bodySmall,
+                    style = VTheme.type.bodySmall,
                     color = textColor,
                 )
             }
@@ -814,7 +812,7 @@ private fun ParentMessageBubble(msg: ParentMessageDto) {
                             Icon(
                                 Icons.Filled.DoneAll,
                                 contentDescription = "Read",
-                                tint = VColors.white.copy(alpha = 0.95f),
+                                tint = VTheme.colors.white.copy(alpha = 0.95f),
                                 modifier = Modifier.size(14.dp),
                             )
                         }
@@ -822,7 +820,7 @@ private fun ParentMessageBubble(msg: ParentMessageDto) {
                             Icon(
                                 Icons.Filled.DoneAll,
                                 contentDescription = "Delivered",
-                                tint = VColors.white.copy(alpha = 0.6f),
+                                tint = VTheme.colors.white.copy(alpha = 0.6f),
                                 modifier = Modifier.size(14.dp),
                             )
                         }
@@ -830,7 +828,7 @@ private fun ParentMessageBubble(msg: ParentMessageDto) {
                             Icon(
                                 Icons.Filled.Done,
                                 contentDescription = "Sent",
-                                tint = VColors.white.copy(alpha = 0.5f),
+                                tint = VTheme.colors.white.copy(alpha = 0.5f),
                                 modifier = Modifier.size(14.dp),
                             )
                         }
@@ -839,7 +837,7 @@ private fun ParentMessageBubble(msg: ParentMessageDto) {
                 }
                 Text(
                     msg.time,
-                    style = VTypography.caption.copy(fontSize = 10.sp),
+                    style = VTheme.type.caption.copy(fontSize = 10.sp),
                     color = timeColor,
                 )
                 // P2-10: Edited label
@@ -847,7 +845,7 @@ private fun ParentMessageBubble(msg: ParentMessageDto) {
                     Spacer(Modifier.size(4.dp))
                     Text(
                         "Edited",
-                        style = VTypography.caption.copy(fontSize = 9.sp),
+                        style = VTheme.type.caption.copy(fontSize = 9.sp),
                         color = timeColor,
                     )
                 }
@@ -875,10 +873,10 @@ private fun ParentComposeBar(
     Column(
         modifier
             .fillMaxWidth()
-            .background(VColors.surfaceCard),
+            .background(VTheme.colors.surfaceCard),
     ) {
         // Subtle top hairline
-        Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
+        Box(Modifier.fillMaxWidth().height(1.dp).background(VTheme.colors.line))
 
         Row(
             Modifier
@@ -892,7 +890,7 @@ private fun ParentComposeBar(
                 Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(22.dp))
-                    .background(VColors.creamDeep)
+                    .background(VTheme.colors.creamDeep)
                     .padding(horizontal = 16.dp, vertical = 10.dp),
             ) {
                 OutlinedTextField(
@@ -902,8 +900,8 @@ private fun ParentComposeBar(
                     placeholder = {
                         Text(
                             placeholder,
-                            style = VTypography.body,
-                            color = VColors.ink3,
+                            style = VTheme.type.body,
+                            color = VTheme.colors.ink3,
                         )
                     },
                     enabled = enabled,
@@ -917,11 +915,11 @@ private fun ParentComposeBar(
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent,
                         disabledContainerColor = Color.Transparent,
-                        cursorColor = VColors.violet,
+                        cursorColor = VTheme.colors.violet,
                     ),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
                     keyboardActions = KeyboardActions(onSend = { if (canSend) onSend() }),
-                    textStyle = VTypography.body.copy(color = VColors.ink),
+                    textStyle = VTheme.type.body.copy(color = VTheme.colors.ink),
                 )
             }
 
@@ -930,13 +928,13 @@ private fun ParentComposeBar(
                 Modifier
                     .size(44.dp)
                     .clip(CircleShape)
-                    .background(if (canSend) VColors.violet else VColors.lineSoft)
+                    .background(if (canSend) VTheme.colors.violet else VTheme.colors.lineSoft)
                     .clickable(enabled = canSend, onClick = onSend),
                 contentAlignment = Alignment.Center,
             ) {
                 if (sending) {
                     CircularProgressIndicator(
-                        color = VColors.white,
+                        color = VTheme.colors.white,
                         strokeWidth = 2.dp,
                         modifier = Modifier.size(20.dp),
                     )
@@ -944,7 +942,7 @@ private fun ParentComposeBar(
                     Icon(
                         VIcons.Send,
                         contentDescription = "Send",
-                        tint = VColors.white,
+                        tint = VTheme.colors.white,
                         modifier = Modifier.size(20.dp),
                     )
                 }

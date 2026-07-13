@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -28,19 +29,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.feature.auth.domain.repository.AuthRepository
-import com.littlebridge.enrollplus.ui.components.VBackHeader
-import com.littlebridge.enrollplus.ui.components.VButton
-import com.littlebridge.enrollplus.ui.components.VInput
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VShapes
-import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
+import com.littlebridge.enrollplus.ui.v2.components.VButton
+import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
+import com.littlebridge.enrollplus.ui.v2.components.VInput
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
+import com.littlebridge.enrollplus.ui.v2.theme.colored
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -62,7 +61,7 @@ fun TeacherFirstLoginScreenV2(
     Column(
         modifier
             .fillMaxSize()
-            .background(VColors.cream)
+            .background(VTheme.colors.cream)
             .statusBarsPadding()
             .imePadding()
             .navigationBarsPadding(),
@@ -84,73 +83,66 @@ fun TeacherFirstLoginScreenV2(
                 Box(
                     modifier = Modifier
                         .size(56.dp)
-                        .background(VColors.violetSoft, VShapes.lg),
+                        .background(VTheme.colors.accentTint, RoundedCornerShape(16.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         Icons.Filled.Lock,
-                        contentDescription = null,
-                        tint = VColors.violet,
+                        contentDescription = "Lock icon",
+                        tint = VTheme.colors.accent,
                         modifier = Modifier.size(28.dp),
                     )
                 }
                 Spacer(Modifier.height(16.dp))
                 Text(
                     text = if (teacherName.isNullOrBlank()) appString(StringKeys.OB_WELCOME) else "${appString(StringKeys.OB_WELCOME)}, $teacherName",
-                    style = VTypography.caption,
-                    color = VColors.ink3,
+                    style = VTheme.type.caption.colored(VTheme.colors.ink3),
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
                     text = appString(StringKeys.AUTH_SET_NEW_PASSWORD),
-                    style = VTypography.h2,
-                    color = VColors.ink,
+                    style = VTheme.type.h2.colored(VTheme.colors.ink),
                     textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
                     text = appString(StringKeys.AUTH_FIRST_LOGIN_DESC),
-                    style = VTypography.bodySmall,
-                    color = VColors.ink2,
+                    style = VTheme.type.body.colored(VTheme.colors.ink2),
                     textAlign = TextAlign.Center,
                 )
             }
 
             VInput(
-                label = appString(StringKeys.AUTH_CURRENT_TEMP_PW),
                 value = current,
                 onValueChange = { current = it; error = null },
+                label = appString(StringKeys.AUTH_CURRENT_TEMP_PW),
                 placeholder = "••••••••",
-                keyboardType = KeyboardType.Password,
-                visualTransformation = PasswordVisualTransformation(),
+                isPassword = true,
                 modifier = Modifier.fillMaxWidth(),
             )
 
             VInput(
-                label = appString(StringKeys.AUTH_NEW_PASSWORD),
                 value = newPassword,
                 onValueChange = { newPassword = it; error = null },
+                label = appString(StringKeys.AUTH_NEW_PASSWORD),
                 placeholder = appString(StringKeys.AUTH_PASSWORD_8_PH),
-                keyboardType = KeyboardType.Password,
-                visualTransformation = PasswordVisualTransformation(),
+                isPassword = true,
                 modifier = Modifier.fillMaxWidth(),
             )
 
             VInput(
-                label = appString(StringKeys.AUTH_CONFIRM_PASSWORD),
                 value = confirm,
                 onValueChange = { confirm = it; error = null },
+                label = appString(StringKeys.AUTH_CONFIRM_PASSWORD),
                 placeholder = appString(StringKeys.AUTH_REENTER_PH),
-                keyboardType = KeyboardType.Password,
-                visualTransformation = PasswordVisualTransformation(),
+                isPassword = true,
                 modifier = Modifier.fillMaxWidth(),
             )
 
             if (error != null) {
                 Text(
                     text = error!!,
-                    style = VTypography.caption,
-                    color = VColors.error,
+                    style = VTheme.type.caption.colored(VTheme.colors.dangerInk),
                 )
             }
 
@@ -183,7 +175,7 @@ fun TeacherFirstLoginScreenV2(
             VButton(
                 text = appString(StringKeys.AUTH_NEED_HELP),
                 onClick = {},
-                variant = com.littlebridge.enrollplus.ui.components.VButtonVariant.Ghost,
+                variant = VButtonVariant.Ghost,
             )
         }
     }

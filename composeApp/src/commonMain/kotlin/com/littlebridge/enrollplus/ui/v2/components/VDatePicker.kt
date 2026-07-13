@@ -83,7 +83,7 @@ fun VDatePicker(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     VIcons.Calendar,
-                    contentDescription = null,
+                    contentDescription = "",
                     tint = if (enabled) c.tealDeep else c.ink3,
                     modifier = Modifier.size(18.dp),
                 )

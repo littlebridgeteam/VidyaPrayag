@@ -36,12 +36,10 @@ import com.littlebridge.enrollplus.feature.parent.domain.model.DashboardChildSum
 import com.littlebridge.enrollplus.feature.parent.presentation.FeeAnnouncement
 import com.littlebridge.enrollplus.feature.parent.presentation.FeeState
 import com.littlebridge.enrollplus.feature.parent.presentation.FeeViewModel
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VShapes
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * ParentFeesScreenV2 — premium Fees tab matching the Academics tab design language.
@@ -98,7 +96,7 @@ private fun ParentFeesContent(
     Column(
         modifier
             .fillMaxSize()
-            .background(VColors.cream)
+            .background(VTheme.colors.cream)
             .verticalScroll(rememberScrollState())
             .padding(bottom = 130.dp),
     ) {
@@ -116,15 +114,15 @@ private fun ParentFeesContent(
             chips = listOf(
                 QuickActionChipSpec(
                     icon = Icons.Filled.Payment,
-                    iconColor = VColors.violet,
-                    iconBg = VColors.violetSoft,
+                    iconColor = VTheme.colors.violet,
+                    iconBg = VTheme.colors.violetSoft,
                     title = "Pay\nNow",
                     onClick = onPayNow,
                 ),
                 QuickActionChipSpec(
                     icon = Icons.Filled.History,
-                    iconColor = VColors.success,
-                    iconBg = VColors.successSoft,
+                    iconColor = VTheme.colors.success,
+                    iconBg = VTheme.colors.successSoft,
                     title = "Fee\nHistory",
                     onClick = onFeeHistory,
                 ),
@@ -150,7 +148,7 @@ private fun ParentFeesContent(
         when {
             state.isLoading && isEmpty ->
                 Box(Modifier.fillMaxWidth().height(240.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(36.dp))
+                    CircularProgressIndicator(color = VTheme.colors.violet, modifier = Modifier.size(36.dp))
                 }
 
             state.error != null && isEmpty ->
@@ -176,17 +174,17 @@ private fun ParentFeesContent(
                 ) {
                     Text(
                         "Fee Overview",
-                        style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
-                        color = VColors.ink,
+                        style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold),
+                        color = VTheme.colors.ink,
                     )
 
                     // ── Balance + collection card ──────────────────────────────────────
                     Column(
                         Modifier
                             .fillMaxWidth()
-                            .clip(VShapes.lg)
-                            .background(VColors.surfaceCard)
-                            .border(1.dp, VColors.line, VShapes.lg)
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(VTheme.colors.surfaceCard)
+                            .border(1.dp, VTheme.colors.line, RoundedCornerShape(18.dp))
                             .padding(20.dp),
                     ) {
                         Row(
@@ -197,13 +195,13 @@ private fun ParentFeesContent(
                             Column {
                                 Text(
                                     "Balance due",
-                                    style = VTypography.caption,
-                                    color = VColors.ink3,
+                                    style = VTheme.type.caption,
+                                    color = VTheme.colors.ink3,
                                 )
                                 Text(
                                     state.outstandingFees,
-                                    style = VTypography.h2.copy(fontSize = 28.sp),
-                                    color = VColors.ink,
+                                    style = VTheme.type.h2.copy(fontSize = 28.sp),
+                                    color = VTheme.colors.ink,
                                 )
                                 if (state.overdueCount > 0) {
                                     Spacer(Modifier.height(6.dp))
@@ -211,25 +209,25 @@ private fun ParentFeesContent(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                                     ) {
-                                        Box(Modifier.size(6.dp).clip(CircleShape).background(VColors.error))
+                                        Box(Modifier.size(6.dp).clip(CircleShape).background(VTheme.colors.error))
                                         Text(
                                             "${state.overdueCount} overdue",
-                                            style = VTypography.caption,
-                                            color = VColors.error,
+                                            style = VTheme.type.caption,
+                                            color = VTheme.colors.error,
                                         )
                                     }
                                 }
                             }
                             Box(
                                 Modifier
-                                    .clip(VShapes.full)
-                                    .background(VColors.violetSoft)
+                                    .clip(RoundedCornerShape(50))
+                                    .background(VTheme.colors.violetSoft)
                                     .padding(horizontal = 14.dp, vertical = 8.dp),
                             ) {
                                 Text(
                                     "Pay Now",
-                                    style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
-                                    color = VColors.violet,
+                                    style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold),
+                                    color = VTheme.colors.violet,
                                 )
                             }
                         }
@@ -243,13 +241,13 @@ private fun ParentFeesContent(
                         ) {
                             Text(
                                 "Collected this term",
-                                style = VTypography.caption,
-                                color = VColors.ink3,
+                                style = VTheme.type.caption,
+                                color = VTheme.colors.ink3,
                             )
                             Text(
                                 state.totalCollected,
-                                style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
-                                color = VColors.success,
+                                style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold),
+                                color = VTheme.colors.success,
                             )
                         }
                         Spacer(Modifier.height(8.dp))
@@ -260,8 +258,8 @@ private fun ParentFeesContent(
                     if (state.announcements.isNotEmpty()) {
                         Text(
                             "Fee notices",
-                            style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
-                            color = VColors.ink,
+                            style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold),
+                            color = VTheme.colors.ink,
                         )
                         state.announcements.forEach { a ->
                             FeeAnnouncementCard(a)
@@ -280,14 +278,14 @@ private fun CollectionProgressBar(progress: Float) {
             .fillMaxWidth()
             .height(8.dp)
             .clip(RoundedCornerShape(50))
-            .background(VColors.line),
+            .background(VTheme.colors.line),
     ) {
         Box(
             Modifier
                 .fillMaxWidth(clamped)
                 .height(8.dp)
                 .clip(RoundedCornerShape(50))
-                .background(VColors.violet),
+                .background(VTheme.colors.violet),
         )
     }
 }
@@ -295,17 +293,17 @@ private fun CollectionProgressBar(progress: Float) {
 @Composable
 private fun FeeAnnouncementCard(a: FeeAnnouncement) {
     val badgeColor = when (a.type) {
-        "Emergency" -> VColors.error to VColors.errorSoft
-        "Payment" -> VColors.gold to VColors.goldSoft
-        else -> VColors.ink3 to VColors.creamDeep
+        "Emergency" -> VTheme.colors.error to VTheme.colors.errorSoft
+        "Payment" -> VTheme.colors.gold to VTheme.colors.goldSoft
+        else -> VTheme.colors.ink3 to VTheme.colors.creamDeep
     }
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.lg)
+            .clip(RoundedCornerShape(18.dp))
+            .background(VTheme.colors.surfaceCard)
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(18.dp))
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -313,24 +311,24 @@ private fun FeeAnnouncementCard(a: FeeAnnouncement) {
         Column(Modifier.weight(1f)) {
             Text(
                 a.title,
-                style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
-                color = VColors.ink,
+                style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold),
+                color = VTheme.colors.ink,
             )
             Text(
                 "${a.description} • ${a.time}",
-                style = VTypography.caption,
-                color = VColors.ink2,
+                style = VTheme.type.caption,
+                color = VTheme.colors.ink2,
             )
         }
         Box(
             Modifier
-                .clip(VShapes.full)
+                .clip(RoundedCornerShape(50))
                 .background(badgeColor.second)
                 .padding(horizontal = 10.dp, vertical = 4.dp),
         ) {
             Text(
                 a.type,
-                style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
+                style = VTheme.type.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
                 color = badgeColor.first,
             )
         }
@@ -347,21 +345,21 @@ private fun FeeStateCard(
         Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp)
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.lg)
+            .clip(RoundedCornerShape(18.dp))
+            .background(VTheme.colors.surfaceCard)
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(18.dp))
             .padding(28.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
-            Modifier.size(56.dp).clip(CircleShape).background(VColors.creamDeep),
+            Modifier.size(56.dp).clip(CircleShape).background(VTheme.colors.creamDeep),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(24.dp))
+            Icon(icon, contentDescription = "", tint = VTheme.colors.ink3, modifier = Modifier.size(24.dp))
         }
         Spacer(Modifier.height(12.dp))
-        Text(title, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+        Text(title, style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold), color = VTheme.colors.ink)
         Spacer(Modifier.height(4.dp))
-        Text(body, style = VTypography.caption, color = VColors.ink2)
+        Text(body, style = VTheme.type.caption, color = VTheme.colors.ink2)
     }
 }

@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 data class AuthState(
     val role: String? = null,
     val token: String? = null,
+    val userId: String? = null,
     val isLoaded: Boolean = false
 )
 
@@ -36,9 +37,10 @@ class MainViewModel(
 
     val authState: StateFlow<AuthState> = combine(
         preferenceRepository.getUserRole(),
-        preferenceRepository.getUserToken()
-    ) { role, token ->
-        AuthState(role, token, isLoaded = true)
+        preferenceRepository.getUserToken(),
+        preferenceRepository.getUserId()
+    ) { role, token, userId ->
+        AuthState(role, token, userId, isLoaded = true)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AuthState())
 
     val userRole: StateFlow<String?> = preferenceRepository.getUserRole()

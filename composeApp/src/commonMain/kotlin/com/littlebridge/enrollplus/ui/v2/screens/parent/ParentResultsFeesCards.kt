@@ -61,13 +61,13 @@ fun ParentResultsCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Icon(VIcons.TrendingUp, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(14.dp))
+                    Icon(VIcons.TrendingUp, contentDescription = "", tint = c.accentDeep, modifier = Modifier.size(14.dp))
                     Text(
                         "ACADEMICS",
                         style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 10.sp),
                     )
                 }
-                Icon(VIcons.ChevronRight, contentDescription = null, tint = c.ink3, modifier = Modifier.size(16.dp))
+                Icon(VIcons.ChevronRight, contentDescription = "", tint = c.ink3, modifier = Modifier.size(16.dp))
             }
             Spacer(Modifier.height(12.dp))
             Row(
@@ -83,7 +83,7 @@ fun ParentResultsCard(
                     Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(c.accent.copy(alpha = 0.14f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(VIcons.ClipboardList, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(20.dp))
+                    Icon(VIcons.ClipboardList, contentDescription = "", tint = c.accentDeep, modifier = Modifier.size(20.dp))
                 }
                 Column(Modifier.weight(1f)) {
                     Text(
@@ -221,7 +221,7 @@ fun ParentFeesCard(
                     Modifier.size(36.dp).clip(RoundedCornerShape(12.dp)).background(c.accent.copy(alpha = 0.12f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(VIcons.Wallet, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(17.dp))
+                    Icon(VIcons.Wallet, contentDescription = "", tint = c.accentDeep, modifier = Modifier.size(17.dp))
                 }
                 Column(Modifier.weight(1f)) {
                     Text(
@@ -233,7 +233,7 @@ fun ParentFeesCard(
                         style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp),
                     )
                 }
-                Icon(VIcons.ChevronRight, contentDescription = null, tint = c.ink3, modifier = Modifier.size(16.dp))
+                Icon(VIcons.ChevronRight, contentDescription = "", tint = c.ink3, modifier = Modifier.size(16.dp))
             }
         }
         return
@@ -253,7 +253,7 @@ fun ParentFeesCard(
             ) {
                 Icon(
                     VIcons.Wallet,
-                    contentDescription = null,
+                    contentDescription = "",
                     tint = if (overdue > 0) c.warningInk else c.successInk,
                     modifier = Modifier.size(17.dp),
                 )

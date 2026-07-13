@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentLeaveDto
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentLeaveState
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentLeaveViewModel
-import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
@@ -69,7 +68,7 @@ fun ParentLeaveScreenV2(
     Column(
         modifier
             .fillMaxSize()
-            .background(VColors.cream),
+            .background(VTheme.colors.cream),
     ) {
         PremiumOverlayHeader(title = appString(StringKeys.PLV_LEAVE), onBack = onBack)
         ParentLeaveContent(

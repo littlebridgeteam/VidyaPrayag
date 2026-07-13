@@ -2,6 +2,7 @@ package com.littlebridge.enrollplus.ui.v2.theme
 
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * VThemeRegistry — the single source of truth for all available themes.

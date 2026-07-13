@@ -49,10 +49,9 @@ import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * DailyAttendanceScreenV2 — admin daily attendance roster overlay.
@@ -153,11 +152,11 @@ private fun DailyAttendanceContent(
             VCard {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     Column(Modifier.weight(1f)) {
-                        Text(appString(StringKeys.SCH_PRESENT_TODAY), style = VTypography.label.copy(color = VColors.ink3))
+                        Text(appString(StringKeys.SCH_PRESENT_TODAY), style = VTheme.type.label.copy(color = VTheme.colors.ink3))
                         Spacer(Modifier.height(4.dp))
                         Text(
                             "${state.presentCount} / ${state.totalCount}",
-                            style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink),
+                            style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VTheme.colors.ink),
                         )
                     }
                     VBadge(text = state.attendancePercentage, tone = VBadgeTone.Arctic)
@@ -168,7 +167,7 @@ private fun DailyAttendanceContent(
 
             VCard(Modifier.staggeredItemEntrance(0, true)) {
                 state.attendees.forEachIndexed { i, a ->
-                    if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
+                    if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(VTheme.colors.line))
                     AttendeeRow(attendee = a, onSetStatus = { onUpdateStatus(a.id, it) })
                 }
             }
@@ -188,13 +187,13 @@ private fun AttendeeRow(
     ) {
         VAvatar(name = attendee.name.ifBlank { attendee.initials.ifBlank { "?" } }, src = attendee.imageUrl, size = 36.dp)
         Column(Modifier.weight(1f)) {
-            Text(attendee.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
-            Text(attendee.initials, style = VTypography.caption.copy(color = VColors.ink3))
+            Text(attendee.name, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
+            Text(attendee.initials, style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            StatusPill("P", attendee.status == AttendanceStatus.PRESENT, VColors.success) { onSetStatus(AttendanceStatus.PRESENT) }
-            StatusPill("A", attendee.status == AttendanceStatus.ABSENT, VColors.error) { onSetStatus(AttendanceStatus.ABSENT) }
-            StatusPill("L", attendee.status == AttendanceStatus.LATE, VColors.gold) { onSetStatus(AttendanceStatus.LATE) }
+            StatusPill("P", attendee.status == AttendanceStatus.PRESENT, VTheme.colors.success) { onSetStatus(AttendanceStatus.PRESENT) }
+            StatusPill("A", attendee.status == AttendanceStatus.ABSENT, VTheme.colors.error) { onSetStatus(AttendanceStatus.ABSENT) }
+            StatusPill("L", attendee.status == AttendanceStatus.LATE, VTheme.colors.gold) { onSetStatus(AttendanceStatus.LATE) }
         }
     }
 }
@@ -205,14 +204,14 @@ private fun StatusPill(letter: String, active: Boolean, tone: Color, onClick: ()
     Box(
         Modifier
             .clip(RoundedCornerShape(999.dp))
-            .background(if (active) tone else VColors.ink.copy(alpha = 0.06f))
+            .background(if (active) tone else VTheme.colors.ink.copy(alpha = 0.06f))
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
             .padding(horizontal = 10.dp, vertical = 6.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             letter,
-            style = VTypography.label.copy(color = if (active) VColors.surface else VColors.ink3).copy(fontWeight = FontWeight.SemiBold),
+            style = VTheme.type.label.copy(color = if (active) VTheme.colors.surface else VTheme.colors.ink3).copy(fontWeight = FontWeight.SemiBold),
         )
     }
 }

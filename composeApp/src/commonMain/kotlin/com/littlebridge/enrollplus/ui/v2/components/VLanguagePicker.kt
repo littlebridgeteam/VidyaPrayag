@@ -121,7 +121,7 @@ private fun VLanguageRow(
         if (isSelected) {
             Icon(
                 imageVector = VIcons.Check,
-                contentDescription = null,
+                contentDescription = "",
                 tint = accentColor,
                 modifier = Modifier.size(20.dp),
             )

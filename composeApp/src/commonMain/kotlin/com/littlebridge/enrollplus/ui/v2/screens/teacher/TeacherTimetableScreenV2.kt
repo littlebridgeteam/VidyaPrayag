@@ -42,9 +42,6 @@ import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.feature.admin.domain.model.TimetableChangeRequestDto
 import com.littlebridge.enrollplus.feature.teacher.domain.model.ResolvedPeriodDto
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherTimetableViewModel
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VShapes
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VBottomSheet
@@ -59,6 +56,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 private val WEEKDAY_LABELS = mapOf(
     1 to "Mon", 2 to "Tue", 3 to "Wed", 4 to "Thu", 5 to "Fri", 6 to "Sat", 7 to "Sun",
@@ -66,13 +65,13 @@ private val WEEKDAY_LABELS = mapOf(
 
 /** Give each subject a stable accent from the premium palette. */
 private fun periodAccent(subject: String): Color {
-    val palette = listOf(VColors.violet, VColors.mint, VColors.gold, VColors.sky, VColors.coral)
+    val palette = listOf(VTheme.colors.violet, VTheme.colors.mint, VTheme.colors.gold, VTheme.colors.sky, VTheme.colors.coral)
     val idx = (subject.hashCode().and(0x7FFFFFFF)) % palette.size
     return palette[idx]
 }
 
 private fun periodSoft(subject: String): Color {
-    val palette = listOf(VColors.violetSoft, VColors.mintSoft, VColors.goldSoft, VColors.skySoft, VColors.coralSoft)
+    val palette = listOf(VTheme.colors.violetSoft, VTheme.colors.mintSoft, VTheme.colors.goldSoft, VTheme.colors.skySoft, VTheme.colors.coralSoft)
     val idx = (subject.hashCode().and(0x7FFFFFFF)) % palette.size
     return palette[idx]
 }
@@ -114,7 +113,7 @@ fun TeacherTimetableScreenV2(
     Column(
         modifier
             .fillMaxSize()
-            .background(VColors.cream)
+            .background(VTheme.colors.cream)
             .statusBarsPadding()
             .padding(top = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -200,11 +199,11 @@ fun TeacherTimetableScreenV2(
                     )
                     state.infoMessage?.let {
                         Spacer(Modifier.height(8.dp))
-                        InfoLine(it, VColors.success)
+                        InfoLine(it, VTheme.colors.success)
                     }
                     state.errorMessage?.let {
                         Spacer(Modifier.height(8.dp))
-                        InfoLine(it, VColors.error)
+                        InfoLine(it, VTheme.colors.error)
                     }
                 }
             }
@@ -272,9 +271,9 @@ private fun SegmentSwitch(
     Row(
         modifier
             .fillMaxWidth()
-            .clip(VShapes.full)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.full)
+            .clip(RoundedCornerShape(50))
+            .background(VTheme.colors.surfaceCard)
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(50))
             .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -305,7 +304,7 @@ private fun SegmentTab(
 ) {
     val ix = remember { MutableInteractionSource() }
     val base = modifier
-        .clip(VShapes.full)
+        .clip(RoundedCornerShape(50))
         .clickable(interactionSource = ix, indication = null) { onClick() }
     val inner: @Composable () -> Unit = {
         Row(
@@ -315,22 +314,22 @@ private fun SegmentTab(
         ) {
             Text(
                 label,
-                style = VTypography.label.copy(
-                    color = if (active) VColors.white else VColors.ink2,
+                style = VTheme.type.label.copy(
+                    color = if (active) VTheme.colors.white else VTheme.colors.ink2,
                     fontWeight = if (active) FontWeight.Bold else FontWeight.SemiBold,
                 ),
             )
             if (badge > 0) {
                 Spacer(Modifier.width(6.dp))
                 Box(
-                    Modifier.size(18.dp).clip(VShapes.full)
-                        .background(if (active) VColors.white.copy(alpha = 0.25f) else VColors.coral),
+                    Modifier.size(18.dp).clip(RoundedCornerShape(50))
+                        .background(if (active) VTheme.colors.white.copy(alpha = 0.25f) else VTheme.colors.coral),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         badge.toString(),
-                        style = VTypography.caption.copy(
-                            color = if (active) VColors.white else VColors.white,
+                        style = VTheme.type.caption.copy(
+                            color = if (active) VTheme.colors.white else VTheme.colors.white,
                             fontWeight = FontWeight.Bold,
                         ),
                     )
@@ -339,7 +338,7 @@ private fun SegmentTab(
         }
     }
     if (active) {
-        Box(base.background(Brush.horizontalGradient(listOf(VColors.violet, VColors.violetHover)))) { inner() }
+        Box(base.background(Brush.horizontalGradient(listOf(VTheme.colors.violet, VTheme.colors.violetHover)))) { inner() }
     } else {
         Box(base) { inner() }
     }
@@ -375,29 +374,29 @@ private fun DayRail(
 private fun DayChip(label: String, active: Boolean, onClick: () -> Unit) {
     val ix = remember { MutableInteractionSource() }
     val base = Modifier
-        .clip(VShapes.full)
+        .clip(RoundedCornerShape(50))
         .clickable(interactionSource = ix, indication = null) { onClick() }
         .padding(horizontal = 18.dp, vertical = 10.dp)
     if (active) {
         Box(
             Modifier
-                .clip(VShapes.full)
-                .background(Brush.horizontalGradient(listOf(VColors.violet, VColors.violetHover)))
+                .clip(RoundedCornerShape(50))
+                .background(Brush.horizontalGradient(listOf(VTheme.colors.violet, VTheme.colors.violetHover)))
                 .clickable(interactionSource = ix, indication = null) { onClick() }
                 .padding(horizontal = 18.dp, vertical = 10.dp),
         ) {
-            Text(label, style = VTypography.label.copy(color = VColors.white, fontWeight = FontWeight.Bold))
+            Text(label, style = VTheme.type.label.copy(color = VTheme.colors.white, fontWeight = FontWeight.Bold))
         }
     } else {
         Box(
             Modifier
-                .clip(VShapes.full)
-                .background(VColors.surfaceCard)
-                .border(1.dp, VColors.line, VShapes.full)
+                .clip(RoundedCornerShape(50))
+                .background(VTheme.colors.surfaceCard)
+                .border(1.dp, VTheme.colors.line, RoundedCornerShape(50))
                 .clickable(interactionSource = ix, indication = null) { onClick() }
                 .padding(horizontal = 18.dp, vertical = 10.dp),
         ) {
-            Text(label, style = VTypography.label.copy(color = VColors.ink2, fontWeight = FontWeight.SemiBold))
+            Text(label, style = VTheme.type.label.copy(color = VTheme.colors.ink2, fontWeight = FontWeight.SemiBold))
         }
     }
 }
@@ -417,9 +416,9 @@ private fun PeriodTimelineCard(
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(VShapes.xl)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.xl),
+            .clip(RoundedCornerShape(24.dp))
+            .background(VTheme.colors.surfaceCard)
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(24.dp)),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Accent spine.
@@ -430,9 +429,9 @@ private fun PeriodTimelineCard(
             Modifier.width(66.dp).padding(vertical = 14.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(period.startTime, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold, color = VColors.ink))
-            Box(Modifier.width(1.dp).height(10.dp).background(VColors.line))
-            Text(period.endTime, style = VTypography.caption.copy(color = VColors.ink3))
+            Text(period.startTime, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.Bold, color = VTheme.colors.ink))
+            Box(Modifier.width(1.dp).height(10.dp).background(VTheme.colors.line))
+            Text(period.endTime, style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
         }
 
         // Content.
@@ -449,17 +448,17 @@ private fun PeriodTimelineCard(
             Spacer(Modifier.height(4.dp))
             Text(
                 period.subject,
-                style = VTypography.body.copy(fontWeight = FontWeight.Bold, color = VColors.ink),
+                style = VTheme.type.body.copy(fontWeight = FontWeight.Bold, color = VTheme.colors.ink),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             if (period.room.isNotBlank()) {
                 Spacer(Modifier.height(2.dp))
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Icon(VIcons.MapPin, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(13.dp))
+                    Icon(VIcons.MapPin, contentDescription = "", tint = VTheme.colors.ink3, modifier = Modifier.size(13.dp))
                     Text(
                         appString(StringKeys.TC_ROOM_N, "n" to period.room),
-                        style = VTypography.caption.copy(color = VColors.ink3),
+                        style = VTheme.type.caption.copy(color = VTheme.colors.ink3),
                     )
                 }
             }
@@ -472,7 +471,7 @@ private fun PeriodTimelineCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             ActionDisc(icon = VIcons.Edit3, tint = accent, bg = soft, onClick = onEdit)
-            ActionDisc(icon = VIcons.Close, tint = VColors.error, bg = VColors.errorSoft, onClick = onDelete)
+            ActionDisc(icon = VIcons.Close, tint = VTheme.colors.error, bg = VTheme.colors.errorSoft, onClick = onDelete)
         }
     }
 }
@@ -488,12 +487,12 @@ private fun ActionDisc(
     Box(
         Modifier
             .size(34.dp)
-            .clip(VShapes.full)
+            .clip(RoundedCornerShape(50))
             .background(bg)
             .clickable(interactionSource = ix, indication = null) { onClick() },
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(16.dp))
+        Icon(icon, contentDescription = "", tint = tint, modifier = Modifier.size(16.dp))
     }
 }
 
@@ -506,9 +505,9 @@ private fun ChangeRequestCard(req: TimetableChangeRequestDto) {
     Column(
         Modifier
             .fillMaxWidth()
-            .clip(VShapes.xl)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.xl)
+            .clip(RoundedCornerShape(24.dp))
+            .background(VTheme.colors.surfaceCard)
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(24.dp))
             .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
@@ -520,13 +519,13 @@ private fun ChangeRequestCard(req: TimetableChangeRequestDto) {
             Column(Modifier.weight(1f)) {
                 Text(
                     "${req.className} · ${req.subject}",
-                    style = VTypography.body.copy(fontWeight = FontWeight.Bold, color = VColors.ink),
+                    style = VTheme.type.body.copy(fontWeight = FontWeight.Bold, color = VTheme.colors.ink),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     "${WEEKDAY_LABELS[req.weekday] ?: ""} ${req.startTime ?: ""}–${req.endTime ?: ""}",
-                    style = VTypography.caption.copy(color = VColors.ink2),
+                    style = VTheme.type.caption.copy(color = VTheme.colors.ink2),
                 )
             }
             VBadge(text = req.kind.replace("_", " "), tone = VBadgeTone.Accent)
@@ -542,13 +541,13 @@ private fun ChangeRequestCard(req: TimetableChangeRequestDto) {
         if (req.reason.isNotBlank()) {
             Text(
                 appString(StringKeys.TC_REASON_COLON, "reason" to req.reason),
-                style = VTypography.caption.copy(color = VColors.ink3),
+                style = VTheme.type.caption.copy(color = VTheme.colors.ink3),
             )
         }
         if (req.adminNote.isNotBlank()) {
             Text(
                 appString(StringKeys.TC_ADMIN_NOTE_COLON, "note" to req.adminNote),
-                style = VTypography.caption.copy(color = VColors.ink3),
+                style = VTheme.type.caption.copy(color = VTheme.colors.ink3),
             )
         }
     }
@@ -557,8 +556,8 @@ private fun ChangeRequestCard(req: TimetableChangeRequestDto) {
 @Composable
 private fun InfoLine(text: String, tint: Color) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        Icon(VIcons.AlertCircle, contentDescription = null, tint = tint, modifier = Modifier.size(14.dp))
-        Text(text, style = VTypography.caption.copy(color = tint))
+        Icon(VIcons.AlertCircle, contentDescription = "", tint = tint, modifier = Modifier.size(14.dp))
+        Text(text, style = VTheme.type.caption.copy(color = tint))
     }
 }
 
@@ -603,9 +602,9 @@ private fun ChangeRequestSheet(
         ) {
 
                 if (kind == "NEW_PERIOD") {
-                    Text(appString(StringKeys.TC_CLASS_SUBJECT), style = VTypography.caption.copy(color = VColors.ink2))
+                    Text(appString(StringKeys.TC_CLASS_SUBJECT), style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
                     if (assignments.isEmpty()) {
-                        Text(appString(StringKeys.TC_NO_ASSIGNMENTS_FOUND), style = VTypography.caption.copy(color = VColors.ink3))
+                        Text(appString(StringKeys.TC_NO_ASSIGNMENTS_FOUND), style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
                     } else {
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             assignments.forEach { asg ->
@@ -620,14 +619,14 @@ private fun ChangeRequestSheet(
                 } else if (period != null) {
                     VCard(Modifier.fillMaxWidth()) {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("${period.className}-${period.section} ${period.subject}", style = VTypography.body.copy(fontWeight = FontWeight.Bold, color = VColors.ink))
-                            Text("${period.startTime}–${period.endTime} · ${appString(StringKeys.TC_ROOM_N, "n" to period.room)}", style = VTypography.caption.copy(color = VColors.ink2))
+                            Text("${period.className}-${period.section} ${period.subject}", style = VTheme.type.body.copy(fontWeight = FontWeight.Bold, color = VTheme.colors.ink))
+                            Text("${period.startTime}–${period.endTime} · ${appString(StringKeys.TC_ROOM_N, "n" to period.room)}", style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
                         }
                     }
                 }
 
                 if (kind != "DELETE_PERIOD") {
-                    Text(appString(StringKeys.TC_DAY), style = VTypography.caption.copy(color = VColors.ink2))
+                    Text(appString(StringKeys.TC_DAY), style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         (1..6).forEach { day ->
                             VBadge(

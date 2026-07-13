@@ -42,13 +42,12 @@ import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.feature.teacher.domain.model.TeacherClassSummaryDto
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherClassesViewModel
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VShapes
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 /** The five scoped tools the Update tab fronts. */
 enum class UpdateTool(
@@ -57,11 +56,11 @@ enum class UpdateTool(
     val accent: Color,
     val soft: Color,
 ) {
-    Attendance(StringKeys.TEACHER_ATTENDANCE, VIcons.ListChecks, VColors.violet, VColors.violetSoft),
-    Marks(StringKeys.TC_MARKS, VIcons.GraduationCap, VColors.mint, VColors.mintSoft),
-    Homework(StringKeys.TEACHER_HOMEWORK, VIcons.FileText, VColors.gold, VColors.goldSoft),
-    Syllabus(StringKeys.TEACHER_SYLLABUS, VIcons.BookOpen, VColors.sky, VColors.skySoft),
-    LessonPlan(StringKeys.TC_LESSON, VIcons.ClipboardList, VColors.coral, VColors.coralSoft),
+    Attendance(StringKeys.TEACHER_ATTENDANCE, VIcons.ListChecks, VTheme.colors.violet, VTheme.colors.violetSoft),
+    Marks(StringKeys.TC_MARKS, VIcons.GraduationCap, VTheme.colors.mint, VTheme.colors.mintSoft),
+    Homework(StringKeys.TEACHER_HOMEWORK, VIcons.FileText, VTheme.colors.gold, VTheme.colors.goldSoft),
+    Syllabus(StringKeys.TEACHER_SYLLABUS, VIcons.BookOpen, VTheme.colors.sky, VTheme.colors.skySoft),
+    LessonPlan(StringKeys.TC_LESSON, VIcons.ClipboardList, VTheme.colors.coral, VTheme.colors.coralSoft),
 }
 
 /**
@@ -112,7 +111,7 @@ fun TeacherUpdateScreenV2(
         LazyColumn(
             modifier = modifier
                 .fillMaxSize()
-                .background(VColors.cream)
+                .background(VTheme.colors.cream)
                 .statusBarsPadding(),
             contentPadding = PaddingValues(top = 12.dp, bottom = TeacherDockClearance),
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -174,7 +173,7 @@ fun TeacherUpdateScreenV2(
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .background(VColors.cream)
+                .background(VTheme.colors.cream)
                 .statusBarsPadding()
                 .padding(top = 12.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -256,36 +255,36 @@ private fun ToolPill(
 ) {
     val ix = remember { MutableInteractionSource() }
     val base = Modifier
-        .clip(VShapes.full)
+        .clip(RoundedCornerShape(50))
         .clickable(interactionSource = ix, indication = null) { onClick() }
     if (active) {
         Row(
             base
-                .background(Brush.horizontalGradient(listOf(VColors.violet, VColors.violetHover)))
+                .background(Brush.horizontalGradient(listOf(VTheme.colors.violet, VTheme.colors.violetHover)))
                 .padding(horizontal = 16.dp, vertical = 11.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Icon(tool.icon, contentDescription = null, tint = VColors.white, modifier = Modifier.size(17.dp))
+            Icon(tool.icon, contentDescription = "", tint = VTheme.colors.white, modifier = Modifier.size(17.dp))
             Text(
                 appString(tool.labelKey),
-                style = VTypography.label.copy(color = VColors.white, fontWeight = FontWeight.Bold),
+                style = VTheme.type.label.copy(color = VTheme.colors.white, fontWeight = FontWeight.Bold),
                 maxLines = 1,
             )
         }
     } else {
         Row(
             base
-                .background(VColors.surfaceCard)
-                .border(1.dp, VColors.line, VShapes.full)
+                .background(VTheme.colors.surfaceCard)
+                .border(1.dp, VTheme.colors.line, RoundedCornerShape(50))
                 .padding(horizontal = 16.dp, vertical = 11.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Icon(tool.icon, contentDescription = null, tint = tool.accent, modifier = Modifier.size(17.dp))
+            Icon(tool.icon, contentDescription = "", tint = tool.accent, modifier = Modifier.size(17.dp))
             Text(
                 appString(tool.labelKey),
-                style = VTypography.label.copy(color = VColors.ink2, fontWeight = FontWeight.SemiBold),
+                style = VTheme.type.label.copy(color = VTheme.colors.ink2, fontWeight = FontWeight.SemiBold),
                 maxLines = 1,
             )
         }
@@ -303,26 +302,26 @@ private fun ToolIntroCard(tool: UpdateTool) {
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(VShapes.xl)
+            .clip(RoundedCornerShape(24.dp))
             .background(tool.soft)
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Box(
-            Modifier.size(48.dp).clip(VShapes.lg).background(tool.accent.copy(alpha = 0.18f)),
+            Modifier.size(48.dp).clip(RoundedCornerShape(18.dp)).background(tool.accent.copy(alpha = 0.18f)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(tool.icon, contentDescription = null, tint = tool.accent, modifier = Modifier.size(24.dp))
+            Icon(tool.icon, contentDescription = "", tint = tool.accent, modifier = Modifier.size(24.dp))
         }
         Column(Modifier.weight(1f)) {
             Text(
                 appString(tool.labelKey),
-                style = VTypography.h3.copy(fontSize = 18.sp, color = VColors.ink),
+                style = VTheme.type.h3.copy(fontSize = 18.sp, color = VTheme.colors.ink),
             )
             Text(
                 toolBlurb(tool),
-                style = VTypography.caption.copy(color = VColors.ink2),
+                style = VTheme.type.caption.copy(color = VTheme.colors.ink2),
             )
         }
     }
@@ -347,45 +346,45 @@ private fun ScopeBar(tool: UpdateTool, label: String, onChange: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(VShapes.xl)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.xl)
+            .clip(RoundedCornerShape(24.dp))
+            .background(VTheme.colors.surfaceCard)
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(24.dp))
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Box(
-            Modifier.size(38.dp).clip(VShapes.md).background(tool.soft),
+            Modifier.size(38.dp).clip(RoundedCornerShape(14.dp)).background(tool.soft),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(tool.icon, contentDescription = null, tint = tool.accent, modifier = Modifier.size(19.dp))
+            Icon(tool.icon, contentDescription = "", tint = tool.accent, modifier = Modifier.size(19.dp))
         }
         Column(Modifier.weight(1f)) {
             Text(
                 appString(tool.labelKey),
-                style = VTypography.caption.copy(fontWeight = FontWeight.Bold, color = tool.accent),
+                style = VTheme.type.caption.copy(fontWeight = FontWeight.Bold, color = tool.accent),
                 maxLines = 1,
             )
             Text(
                 label,
-                style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold, color = VColors.ink),
+                style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold, color = VTheme.colors.ink),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
         }
         Row(
             Modifier
-                .clip(VShapes.full)
-                .background(VColors.violetSoft)
+                .clip(RoundedCornerShape(50))
+                .background(VTheme.colors.violetSoft)
                 .clickable(interactionSource = ix, indication = null) { onChange() }
                 .padding(horizontal = 12.dp, vertical = 7.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Icon(VIcons.ArrowLeft, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(14.dp))
+            Icon(VIcons.ArrowLeft, contentDescription = "", tint = VTheme.colors.violet, modifier = Modifier.size(14.dp))
             Text(
                 appString(StringKeys.TC_CHANGE),
-                style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, color = VColors.violet),
+                style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold, color = VTheme.colors.violet),
             )
         }
     }

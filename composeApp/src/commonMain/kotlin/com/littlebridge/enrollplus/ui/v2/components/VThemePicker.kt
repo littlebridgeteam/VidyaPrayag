@@ -124,7 +124,7 @@ private fun ThemePickerRow(
         ) {
             Icon(
                 icon,
-                contentDescription = null,
+                contentDescription = "",
                 tint = if (active) c.accentDeep else c.ink2,
                 modifier = Modifier.size(20.dp),
             )

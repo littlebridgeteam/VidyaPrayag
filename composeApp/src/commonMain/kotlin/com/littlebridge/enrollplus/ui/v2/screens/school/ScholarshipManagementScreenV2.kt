@@ -60,11 +60,10 @@ import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 @Composable
 fun ScholarshipManagementScreenV2(
@@ -274,15 +273,15 @@ private fun ScholarshipTabRow(selectedTab: Int, onTabSelected: (Int) -> Unit) {
                 Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(if (isSelected) VColors.violet else VColors.cream)
+                    .background(if (isSelected) VTheme.colors.violet else VTheme.colors.cream)
                     .clickable { onTabSelected(index) }
                     .padding(vertical = 10.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     label,
-                    style = VTypography.label,
-                    color = if (isSelected) Color.White else VColors.ink3,
+                    style = VTheme.type.label,
+                    color = if (isSelected) Color.White else VTheme.colors.ink3,
                 )
             }
         }
@@ -316,21 +315,21 @@ private fun ScholarshipSchemeCard(
             }
         }
         Spacer(Modifier.height(8.dp))
-        Text(scheme.title, style = VTypography.h3, color = VColors.ink)
+        Text(scheme.title, style = VTheme.type.h3, color = VTheme.colors.ink)
         if (scheme.description.isNotBlank()) {
             Spacer(Modifier.height(4.dp))
-            Text(scheme.description, style = VTypography.body, color = VColors.ink2)
+            Text(scheme.description, style = VTheme.type.body, color = VTheme.colors.ink2)
         }
         Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Column {
-                Text(appString(StringKeys.SCH_AWARD), style = VTypography.label, color = VColors.ink3)
-                Text(scheme.amount, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp), color = VColors.ink)
+                Text(appString(StringKeys.SCH_AWARD), style = VTheme.type.label, color = VTheme.colors.ink3)
+                Text(scheme.amount, style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp), color = VTheme.colors.ink)
             }
             if (scheme.eligibilityCriteria.isNotBlank()) {
                 Column(horizontalAlignment = Alignment.End) {
-                    Text(appString(StringKeys.SCH_ELIGIBILITY), style = VTypography.label, color = VColors.ink3)
-                    Text(scheme.eligibilityCriteria, style = VTypography.caption, color = VColors.ink2)
+                    Text(appString(StringKeys.SCH_ELIGIBILITY), style = VTheme.type.label, color = VTheme.colors.ink3)
+                    Text(scheme.eligibilityCriteria, style = VTheme.type.caption, color = VTheme.colors.ink2)
                 }
             }
         }
@@ -388,12 +387,12 @@ private fun ScholarshipApplicationReviewCard(
             Column(Modifier.weight(1f)) {
                 Text(
                     application.scholarshipTitle ?: application.institution,
-                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink,
+                    style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VTheme.colors.ink,
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
                     application.studentName ?: appString(StringKeys.SCH_STUDENT),
-                    style = VTypography.caption, color = VColors.ink3,
+                    style = VTheme.type.caption, color = VTheme.colors.ink3,
                 )
             }
             VBadge(text = application.status, tone = statusTone)
@@ -402,12 +401,12 @@ private fun ScholarshipApplicationReviewCard(
         val appText = application.parentApplicationText
         if (appText?.isNotBlank() == true) {
             Spacer(Modifier.height(8.dp))
-            Text(appText, style = VTypography.caption, color = VColors.ink2)
+            Text(appText, style = VTheme.type.caption, color = VTheme.colors.ink2)
         }
 
         if (application.documentUrls.isNotEmpty()) {
             Spacer(Modifier.height(8.dp))
-            Text(appString(StringKeys.SCH_DOCUMENTS).replace("{count}", application.documentUrls.size.toString()), style = VTypography.label, color = VColors.ink3)
+            Text(appString(StringKeys.SCH_DOCUMENTS).replace("{count}", application.documentUrls.size.toString()), style = VTheme.type.label, color = VTheme.colors.ink3)
         }
 
         if (application.status == "PENDING") {
@@ -491,8 +490,8 @@ private fun ScholarshipApplicationReviewCard(
         if (application.status == "DISBURSED" && application.disbursementAmount != null) {
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(appString(StringKeys.SCH_DISBURSED).replace("{amount}", application.disbursementAmount.toString()), style = VTypography.caption, color = VColors.ink3)
-                Text(appString(StringKeys.SCH_REF).replace("{ref}", application.disbursementReference ?: "—"), style = VTypography.caption, color = VColors.ink3)
+                Text(appString(StringKeys.SCH_DISBURSED).replace("{amount}", application.disbursementAmount.toString()), style = VTheme.type.caption, color = VTheme.colors.ink3)
+                Text(appString(StringKeys.SCH_REF).replace("{ref}", application.disbursementReference ?: "—"), style = VTheme.type.caption, color = VTheme.colors.ink3)
             }
         }
     }
@@ -522,10 +521,10 @@ private fun ScholarshipRenewalCard(
             Column(Modifier.weight(1f)) {
                 Text(
                     renewal.scholarshipTitle ?: appString(StringKeys.SCH_RENEWAL_FOR),
-                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink,
+                    style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VTheme.colors.ink,
                 )
                 Spacer(Modifier.height(2.dp))
-                Text(appString(StringKeys.SCH_RENEWAL_FOR), style = VTypography.caption, color = VColors.ink3)
+                Text(appString(StringKeys.SCH_RENEWAL_FOR), style = VTheme.type.caption, color = VTheme.colors.ink3)
             }
             VBadge(text = renewal.status, tone = statusTone)
         }
@@ -605,7 +604,7 @@ private fun ScholarshipSchemeForm(
         ) {
             Text(
                 if (isEdit) appString(StringKeys.SCH_EDIT_SCHEME) else appString(StringKeys.SCH_CREATE_SCHEME),
-                style = VTypography.h3, color = VColors.ink,
+                style = VTheme.type.h3, color = VTheme.colors.ink,
             )
             Spacer(Modifier.height(16.dp))
 
@@ -620,14 +619,14 @@ private fun ScholarshipSchemeForm(
                 Spacer(Modifier.height(12.dp))
 
                 // Scholarship type dropdown
-                Text(appString(StringKeys.SCH_TYPE), style = VTypography.label, color = VColors.ink3)
+                Text(appString(StringKeys.SCH_TYPE), style = VTheme.type.label, color = VTheme.colors.ink3)
                 Spacer(Modifier.height(4.dp))
                 Box {
                     Box(
                         Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(8.dp))
-                            .background(VColors.cream)
+                            .background(VTheme.colors.cream)
                             .clickable { typeDropdownOpen = !typeDropdownOpen }
                             .padding(horizontal = 12.dp, vertical = 12.dp),
                     ) {
@@ -638,12 +637,12 @@ private fun ScholarshipSchemeForm(
                         ) {
                             Text(
                                 typeOptions.firstOrNull { it.first == scholarshipType }?.second ?: scholarshipType,
-                                style = VTypography.body, color = VColors.ink,
+                                style = VTheme.type.body, color = VTheme.colors.ink,
                             )
                             Icon(
                                 imageVector = if (typeDropdownOpen) VIcons.ChevronUp else VIcons.ChevronDown,
-                                contentDescription = null,
-                                tint = VColors.ink3,
+                                contentDescription = "",
+                                tint = VTheme.colors.ink3,
                             )
                         }
                     }
@@ -669,9 +668,9 @@ private fun ScholarshipSchemeForm(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Text(label, style = VTypography.body, color = if (isSelected) VColors.violet else VColors.ink)
+                                    Text(label, style = VTheme.type.body, color = if (isSelected) VTheme.colors.violet else VTheme.colors.ink)
                                     if (isSelected) {
-                                        Icon(imageVector = VIcons.Check, contentDescription = null, tint = VColors.violet)
+                                        Icon(imageVector = VIcons.Check, contentDescription = "", tint = VTheme.colors.violet)
                                     }
                                 }
                             }
@@ -689,7 +688,7 @@ private fun ScholarshipSchemeForm(
                 Spacer(Modifier.height(8.dp))
 
                 // Category dropdown
-                Text(appString(StringKeys.SCH_CATEGORY), style = VTypography.label, color = VColors.ink3)
+                Text(appString(StringKeys.SCH_CATEGORY), style = VTheme.type.label, color = VTheme.colors.ink3)
                 Spacer(Modifier.height(4.dp))
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     categoryOptions.forEach { cat ->
@@ -697,11 +696,11 @@ private fun ScholarshipSchemeForm(
                         Box(
                             Modifier
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSelected) VColors.violet else VColors.cream)
+                                .background(if (isSelected) VTheme.colors.violet else VTheme.colors.cream)
                                 .clickable { category = cat }
                                 .padding(horizontal = 12.dp, vertical = 8.dp),
                         ) {
-                            Text(cat, style = VTypography.label, color = if (isSelected) Color.White else VColors.ink3)
+                            Text(cat, style = VTheme.type.label, color = if (isSelected) Color.White else VTheme.colors.ink3)
                         }
                     }
                 }
@@ -732,14 +731,14 @@ private fun ScholarshipSchemeForm(
                         Modifier
                             .size(20.dp)
                             .clip(CircleShape)
-                            .background(if (isRenewable) VColors.violet else VColors.cream),
+                            .background(if (isRenewable) VTheme.colors.violet else VTheme.colors.cream),
                         contentAlignment = Alignment.Center,
                     ) {
                         if (isRenewable) {
-                            Text("✓", style = VTypography.label, color = Color.White)
+                            Text("✓", style = VTheme.type.label, color = Color.White)
                         }
                     }
-                    Text(appString(StringKeys.SCH_RENEWABLE_LABEL), style = VTypography.body, color = VColors.ink)
+                    Text(appString(StringKeys.SCH_RENEWABLE_LABEL), style = VTheme.type.body, color = VTheme.colors.ink)
                 }
 
                 if (isRenewable) {
@@ -832,9 +831,9 @@ private fun DeleteConfirmationDialog(
                 .clickable(enabled = false) {},
             padding = 20.dp,
         ) {
-            Text(title, style = VTypography.h3, color = VColors.ink)
+            Text(title, style = VTheme.type.h3, color = VTheme.colors.ink)
             Spacer(Modifier.height(8.dp))
-            Text(message, style = VTypography.body, color = VColors.ink2)
+            Text(message, style = VTheme.type.body, color = VTheme.colors.ink2)
             Spacer(Modifier.height(16.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box(Modifier.weight(1f)) {

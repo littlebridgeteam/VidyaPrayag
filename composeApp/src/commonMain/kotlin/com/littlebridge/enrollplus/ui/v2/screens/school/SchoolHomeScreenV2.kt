@@ -78,9 +78,6 @@ import com.littlebridge.enrollplus.ui.v2.components.VGlassCard
 import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VShapes
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.locale.appString
@@ -508,7 +505,7 @@ private fun SearchChip(
     ) {
         Icon(
             imageVector = VIcons.Search,
-            contentDescription = null,
+            contentDescription = "",
             tint = VTheme.colors.ink3,
             modifier = Modifier.size(20.dp),
         )
@@ -520,7 +517,7 @@ private fun SearchChip(
         )
         Icon(
             imageVector = VIcons.ArrowRight,
-            contentDescription = null,
+            contentDescription = "",
             tint = VTheme.colors.ink3,
             modifier = Modifier.size(18.dp),
         )
@@ -602,7 +599,7 @@ private fun DigestTaskRow(
         ) {
             Icon(
                 imageVector = ROUTE_ICON_MAP[task.routeId] ?: VIcons.Star,
-                contentDescription = null,
+                contentDescription = "",
                 tint = VTheme.colors.accent,
                 modifier = Modifier.size(18.dp),
             )
@@ -688,7 +685,7 @@ private fun PinnedShortcutChip(
     ) {
         Icon(
             imageVector = ROUTE_ICON_MAP[routeId] ?: VIcons.Star,
-            contentDescription = null,
+            contentDescription = "",
             tint = VTheme.colors.accent,
             modifier = Modifier.size(16.dp),
         )
@@ -724,11 +721,11 @@ private fun QuickShortcuts(
             .padding(horizontal = 20.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        ShortcutChip("Announce", VIcons.Megaphone, VColors.violet, VColors.violetSoft, onAnnouncement)
-        ShortcutChip("Add Event", VIcons.Calendar, VColors.sky, VColors.skySoft, onEvent)
-        ShortcutChip("Reports", VIcons.FileText, VColors.gold, VColors.goldSoft, onReports)
-        ShortcutChip("Calendar", VIcons.Calendar, VColors.mint, VColors.mintSoft, onCalendar)
-        ShortcutChip("Transport", VIcons.MapPin, VColors.coral, VColors.coralSoft, onTransport)
+        ShortcutChip("Announce", VIcons.Megaphone, VTheme.colors.violet, VTheme.colors.violetSoft, onAnnouncement)
+        ShortcutChip("Add Event", VIcons.Calendar, VTheme.colors.sky, VTheme.colors.skySoft, onEvent)
+        ShortcutChip("Reports", VIcons.FileText, VTheme.colors.gold, VTheme.colors.goldSoft, onReports)
+        ShortcutChip("Calendar", VIcons.Calendar, VTheme.colors.mint, VTheme.colors.mintSoft, onCalendar)
+        ShortcutChip("Transport", VIcons.MapPin, VTheme.colors.coral, VTheme.colors.coralSoft, onTransport)
     }
 }
 
@@ -742,9 +739,9 @@ private fun ShortcutChip(
 ) {
     Row(
         modifier = Modifier
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.lg)
+            .clip(RoundedCornerShape(18.dp))
+            .background(VTheme.colors.surfaceCard)
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(18.dp))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -756,16 +753,16 @@ private fun ShortcutChip(
         Box(
             modifier = Modifier
                 .size(26.dp)
-                .clip(VShapes.sm)
+                .clip(RoundedCornerShape(10.dp))
                 .background(iconBg),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(14.dp))
+            Icon(icon, contentDescription = "", tint = iconTint, modifier = Modifier.size(14.dp))
         }
         Text(
             text = label,
-            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
-            color = VColors.ink,
+            style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold),
+            color = VTheme.colors.ink,
             maxLines = 1,
         )
     }
@@ -805,9 +802,9 @@ private fun KpiMiniCard(
     modifier: Modifier = Modifier,
 ) {
     val accentColor = when (kpi.deltaDirection) {
-        "up" -> VColors.success
-        "down" -> VColors.coral
-        else -> VColors.violet
+        "up" -> VTheme.colors.success
+        "down" -> VTheme.colors.coral
+        else -> VTheme.colors.violet
     }
     val icon = when (kpi.key) {
         "students" -> VIcons.UsersGroup
@@ -822,9 +819,9 @@ private fun KpiMiniCard(
 
     Column(
         modifier = modifier
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.lg)
+            .clip(RoundedCornerShape(18.dp))
+            .background(VTheme.colors.surfaceCard)
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(18.dp))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -839,16 +836,16 @@ private fun KpiMiniCard(
             Box(
                 modifier = Modifier
                     .size(32.dp)
-                    .clip(VShapes.sm)
+                    .clip(RoundedCornerShape(10.dp))
                     .background(accentColor.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = null, tint = accentColor, modifier = Modifier.size(16.dp))
+                Icon(icon, contentDescription = "", tint = accentColor, modifier = Modifier.size(16.dp))
             }
             if (kpi.deltaLabel.isNotBlank()) {
                 Text(
                     text = kpi.deltaLabel,
-                    style = VTypography.caption.copy(
+                    style = VTheme.type.caption.copy(
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                     ),
@@ -861,14 +858,14 @@ private fun KpiMiniCard(
 
         Text(
             text = formatKpiValue(kpi),
-            style = VTypography.h3.copy(fontWeight = FontWeight.ExtraBold),
-            color = VColors.ink,
+            style = VTheme.type.h3.copy(fontWeight = FontWeight.ExtraBold),
+            color = VTheme.colors.ink,
         )
         Spacer(Modifier.height(2.dp))
         Text(
             text = kpi.label,
-            style = VTypography.caption,
-            color = VColors.ink3,
+            style = VTheme.type.caption,
+            color = VTheme.colors.ink3,
             maxLines = 1,
         )
     }
@@ -892,13 +889,13 @@ private fun formatKpiValue(kpi: OverviewKpi): String {
 private fun PremiumCard(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
-    tint: Color = VColors.surfaceCard,
+    tint: Color = VTheme.colors.surfaceCard,
     content: @Composable () -> Unit,
 ) {
     val base = modifier
         .fillMaxWidth()
-        .background(tint, VShapes.lg)
-        .border(1.dp, VColors.line, VShapes.lg)
+        .background(tint, RoundedCornerShape(18.dp))
+        .border(1.dp, VTheme.colors.line, RoundedCornerShape(18.dp))
     val clickable = if (onClick != null) base.clickable(
         interactionSource = remember { MutableInteractionSource() },
         indication = null,
@@ -910,16 +907,16 @@ private fun PremiumCard(
 private fun MiniBadge(text: String, color: Color, bg: Color) {
     Text(
         text = text,
-        style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
+        style = VTheme.type.caption.copy(fontWeight = FontWeight.Bold),
         color = color,
-        modifier = Modifier.background(bg, VShapes.full).padding(horizontal = 8.dp, vertical = 3.dp),
+        modifier = Modifier.background(bg, RoundedCornerShape(50)).padding(horizontal = 8.dp, vertical = 3.dp),
     )
 }
 
 @Composable
 private fun CardDivider() {
     Box(
-        modifier = Modifier.fillMaxWidth().height(1.dp).background(VColors.lineSoft),
+        modifier = Modifier.fillMaxWidth().height(1.dp).background(VTheme.colors.lineSoft),
     )
 }
 
@@ -927,8 +924,8 @@ private fun CardDivider() {
 private fun CardHeader(
     label: String,
     icon: ImageVector,
-    iconTint: Color = VColors.violet,
-    iconBg: Color = VColors.violetSoft,
+    iconTint: Color = VTheme.colors.violet,
+    iconBg: Color = VTheme.colors.violetSoft,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -937,16 +934,16 @@ private fun CardHeader(
         Box(
             modifier = Modifier
                 .size(30.dp)
-                .clip(VShapes.sm)
+                .clip(RoundedCornerShape(10.dp))
                 .background(iconBg),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(15.dp))
+            Icon(icon, contentDescription = "", tint = iconTint, modifier = Modifier.size(15.dp))
         }
         Text(
             text = label,
-            style = VTypography.label.copy(fontWeight = FontWeight.SemiBold),
-            color = VColors.ink,
+            style = VTheme.type.label.copy(fontWeight = FontWeight.SemiBold),
+            color = VTheme.colors.ink,
         )
     }
 }
@@ -963,7 +960,7 @@ private fun AttentionCard(insights: List<OverviewInsight>, onOpen: () -> Unit) {
 
     PremiumCard(
         onClick = onOpen,
-        tint = if (hasHigh) VColors.coralSoft else VColors.surfaceCard,
+        tint = if (hasHigh) VTheme.colors.coralSoft else VTheme.colors.surfaceCard,
         modifier = Modifier.padding(horizontal = 20.dp),
     ) {
         Row(
@@ -973,11 +970,11 @@ private fun AttentionCard(insights: List<OverviewInsight>, onOpen: () -> Unit) {
             CardHeader(
                 if (count == 1) "1 item needs attention" else "$count items need attention",
                 VIcons.AlertCircle,
-                iconTint = if (hasHigh) VColors.coral else VColors.gold,
-                iconBg = if (hasHigh) VColors.coralSoft else VColors.goldSoft,
+                iconTint = if (hasHigh) VTheme.colors.coral else VTheme.colors.gold,
+                iconBg = if (hasHigh) VTheme.colors.coralSoft else VTheme.colors.goldSoft,
             )
             Spacer(Modifier.weight(1f))
-            MiniBadge(text = "$count", color = VColors.coral, bg = VColors.white)
+            MiniBadge(text = "$count", color = VTheme.colors.coral, bg = VTheme.colors.white)
         }
 
         Spacer(Modifier.height(14.dp))
@@ -985,9 +982,9 @@ private fun AttentionCard(insights: List<OverviewInsight>, onOpen: () -> Unit) {
         sorted.take(4).forEachIndexed { idx, insight ->
             if (idx > 0) { CardDivider(); Spacer(Modifier.height(10.dp)) }
             val dotColor = when (insight.severity.uppercase()) {
-                "HIGH" -> VColors.coral
-                "MEDIUM" -> VColors.gold
-                else -> VColors.violet
+                "HIGH" -> VTheme.colors.coral
+                "MEDIUM" -> VTheme.colors.gold
+                else -> VTheme.colors.violet
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1004,21 +1001,21 @@ private fun AttentionCard(insights: List<OverviewInsight>, onOpen: () -> Unit) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = insight.title,
-                        style = VTypography.bodySmall,
-                        color = VColors.ink,
+                        style = VTheme.type.bodySmall,
+                        color = VTheme.colors.ink,
                     )
                     if (insight.description.isNotBlank()) {
                         Text(
                             text = insight.description,
-                            style = VTypography.caption,
-                            color = VColors.ink3,
+                            style = VTheme.type.caption,
+                            color = VTheme.colors.ink3,
                         )
                     }
                 }
                 Icon(
                     Icons.Filled.ChevronRight,
-                    contentDescription = null,
-                    tint = VColors.ink3.copy(alpha = 0.4f),
+                    contentDescription = "",
+                    tint = VTheme.colors.ink3.copy(alpha = 0.4f),
                     modifier = Modifier.size(18.dp).padding(top = 2.dp),
                 )
             }
@@ -1038,15 +1035,15 @@ private fun severityWeight(severity: String): Int = when (severity.uppercase()) 
 @Composable
 private fun FeeAnalyticsCard(fa: OverviewFeeAnalytics, onClick: () -> Unit) {
     val rateColor = when {
-        fa.collectionRate >= 90 -> VColors.success
-        fa.collectionRate >= 70 -> VColors.violet
-        else -> VColors.gold
+        fa.collectionRate >= 90 -> VTheme.colors.success
+        fa.collectionRate >= 70 -> VTheme.colors.violet
+        else -> VTheme.colors.gold
     }
     PremiumCard(
         onClick = onClick,
         modifier = Modifier.padding(horizontal = 20.dp),
     ) {
-        CardHeader("Fee Collection", VIcons.Wallet, iconTint = VColors.violet)
+        CardHeader("Fee Collection", VIcons.Wallet, iconTint = VTheme.colors.violet)
         Spacer(Modifier.height(14.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -1062,21 +1059,21 @@ private fun FeeAnalyticsCard(fa: OverviewFeeAnalytics, onClick: () -> Unit) {
             ) {
                 Text(
                     text = "${fa.collectionRate}%",
-                    style = VTypography.h3.copy(fontWeight = FontWeight.ExtraBold, fontSize = 18.sp),
+                    style = VTheme.type.h3.copy(fontWeight = FontWeight.ExtraBold, fontSize = 18.sp),
                     color = rateColor,
                 )
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "\u20B9${formatAmount(fa.totalCollected)}",
-                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                    color = VColors.ink,
+                    style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.Bold),
+                    color = VTheme.colors.ink,
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
                     text = "\u20B9${formatAmount(fa.pending)} pending",
-                    style = VTypography.caption,
-                    color = VColors.coral,
+                    style = VTheme.type.caption,
+                    color = VTheme.colors.coral,
                 )
             }
         }
@@ -1096,12 +1093,12 @@ private fun formatAmount(v: Double): String = when {
 
 @Composable
 private fun ParentEngagementCard(pe: OverviewParentEngagement, onClick: () -> Unit) {
-    val engagementColor = if (pe.activeParentsPct >= 70) VColors.success else VColors.gold
+    val engagementColor = if (pe.activeParentsPct >= 70) VTheme.colors.success else VTheme.colors.gold
     PremiumCard(
         onClick = onClick,
         modifier = Modifier.padding(horizontal = 20.dp),
     ) {
-        CardHeader("Parent Engagement", VIcons.UsersGroup, iconTint = VColors.sky, iconBg = VColors.skySoft)
+        CardHeader("Parent Engagement", VIcons.UsersGroup, iconTint = VTheme.colors.sky, iconBg = VTheme.colors.skySoft)
         Spacer(Modifier.height(14.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -1117,22 +1114,22 @@ private fun ParentEngagementCard(pe: OverviewParentEngagement, onClick: () -> Un
             ) {
                 Text(
                     text = "${pe.activeParentsPct}%",
-                    style = VTypography.h3.copy(fontWeight = FontWeight.ExtraBold, fontSize = 18.sp),
+                    style = VTheme.type.h3.copy(fontWeight = FontWeight.ExtraBold, fontSize = 18.sp),
                     color = engagementColor,
                 )
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "${pe.activeParents} of ${pe.totalParents} parents active",
-                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
-                    color = VColors.ink,
+                    style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+                    color = VTheme.colors.ink,
                 )
                 if (pe.mostEngagedClass.isNotBlank()) {
                     Spacer(Modifier.height(4.dp))
                     Text(
                         text = "Top: ${pe.mostEngagedClass}",
-                        style = VTypography.caption,
-                        color = VColors.violet,
+                        style = VTheme.type.caption,
+                        color = VTheme.colors.violet,
                     )
                 }
             }
@@ -1149,14 +1146,14 @@ private fun ParentEngagementCard(pe: OverviewParentEngagement, onClick: () -> Un
                 ) {
                     Text(
                         text = lc.className,
-                        style = VTypography.caption,
-                        color = VColors.ink2,
+                        style = VTheme.type.caption,
+                        color = VTheme.colors.ink2,
                         modifier = Modifier.weight(1f),
                     )
                     Text(
                         text = "${lc.score}%",
-                        style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
-                        color = VColors.violet,
+                        style = VTheme.type.caption.copy(fontWeight = FontWeight.Bold),
+                        color = VTheme.colors.violet,
                     )
                 }
             }
@@ -1181,31 +1178,31 @@ private fun TeacherSpotlightCard(ts: OverviewTeacherSpotlight, onClick: () -> Un
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
-                modifier = Modifier.size(40.dp).clip(CircleShape).background(VColors.violetSoft),
+                modifier = Modifier.size(40.dp).clip(CircleShape).background(VTheme.colors.violetSoft),
                 contentAlignment = Alignment.Center,
             ) {
                 val initials = ts.name.split(" ").take(2).mapNotNull { it.firstOrNull()?.uppercase() }.joinToString("")
-                Text(initials, style = VTypography.label.copy(fontWeight = FontWeight.ExtraBold), color = VColors.violet)
+                Text(initials, style = VTheme.type.label.copy(fontWeight = FontWeight.ExtraBold), color = VTheme.colors.violet)
             }
             Spacer(Modifier.size(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = ts.name,
-                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                    color = VColors.ink,
+                    style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.Bold),
+                    color = VTheme.colors.ink,
                 )
                 if (ts.department.isNotBlank()) {
-                    Text(ts.department, style = VTypography.caption, color = VColors.ink3)
+                    Text(ts.department, style = VTheme.type.caption, color = VTheme.colors.ink3)
                 }
             }
-            MiniBadge(text = "${ts.score}", color = VColors.violet, bg = VColors.violetSoft)
+            MiniBadge(text = "${ts.score}", color = VTheme.colors.violet, bg = VTheme.colors.violetSoft)
         }
         if (ts.highlight.isNotBlank()) {
             Spacer(Modifier.height(8.dp))
             Text(
                 text = ts.highlight,
-                style = VTypography.caption,
-                color = VColors.ink2,
+                style = VTheme.type.caption,
+                color = VTheme.colors.ink2,
             )
         }
     }
@@ -1228,8 +1225,8 @@ private fun UpcomingCard(events: List<OverviewEvent>, onOpenCalendar: () -> Unit
             Spacer(Modifier.weight(1f))
             Text(
                 text = "View all",
-                style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
-                color = VColors.violet,
+                style = VTheme.type.caption.copy(fontWeight = FontWeight.Bold),
+                color = VTheme.colors.violet,
                 modifier = Modifier.clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -1246,18 +1243,18 @@ private fun UpcomingCard(events: List<OverviewEvent>, onOpenCalendar: () -> Unit
             ) {
                 Text(
                     text = if (event.daysAway == 0) "Today" else if (event.daysAway == 1) "1d" else "${event.daysAway}d",
-                    style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
-                    color = if (event.isHoliday) VColors.gold else VColors.violet,
+                    style = VTheme.type.caption.copy(fontWeight = FontWeight.Bold),
+                    color = if (event.isHoliday) VTheme.colors.gold else VTheme.colors.violet,
                     modifier = Modifier
                         .background(
-                            if (event.isHoliday) VColors.goldSoft else VColors.violetSoft,
-                            VShapes.full,
+                            if (event.isHoliday) VTheme.colors.goldSoft else VTheme.colors.violetSoft,
+                            RoundedCornerShape(50),
                         )
                         .padding(horizontal = 8.dp, vertical = 3.dp),
                 )
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(event.title, style = VTypography.bodySmall, color = VColors.ink, maxLines = 1)
-                    Text(event.date, style = VTypography.caption, color = VColors.ink3)
+                    Text(event.title, style = VTheme.type.bodySmall, color = VTheme.colors.ink, maxLines = 1)
+                    Text(event.date, style = VTheme.type.caption, color = VTheme.colors.ink3)
                 }
             }
             if (idx < minOf(events.size, 4) - 1) { Spacer(Modifier.height(10.dp)) }
@@ -1272,10 +1269,10 @@ private fun UpcomingCard(events: List<OverviewEvent>, onOpenCalendar: () -> Unit
 @Composable
 private fun AchievementsCard(achievements: List<OverviewAchievement>) {
     PremiumCard(
-        tint = VColors.goldSoft,
+        tint = VTheme.colors.goldSoft,
         modifier = Modifier.padding(horizontal = 20.dp),
     ) {
-        CardHeader("Achievements", VIcons.Star, iconTint = VColors.gold, iconBg = VColors.goldSoft)
+        CardHeader("Achievements", VIcons.Star, iconTint = VTheme.colors.gold, iconBg = VTheme.colors.goldSoft)
         Spacer(Modifier.height(12.dp))
         achievements.take(3).forEachIndexed { idx, ach ->
             if (idx > 0) { CardDivider(); Spacer(Modifier.height(10.dp)) }
@@ -1285,23 +1282,23 @@ private fun AchievementsCard(achievements: List<OverviewAchievement>) {
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Spacer(
-                    modifier = Modifier.padding(top = 6.dp).size(7.dp).clip(CircleShape).background(VColors.gold),
+                    modifier = Modifier.padding(top = 6.dp).size(7.dp).clip(CircleShape).background(VTheme.colors.gold),
                 )
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = ach.studentName,
-                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                        color = VColors.ink,
+                        style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        color = VTheme.colors.ink,
                     )
-                    Text(ach.title, style = VTypography.caption, color = VColors.ink2)
+                    Text(ach.title, style = VTheme.type.caption, color = VTheme.colors.ink2)
                     if (ach.detail.isNotBlank()) {
-                        Text(ach.detail, style = VTypography.caption, color = VColors.ink3)
+                        Text(ach.detail, style = VTheme.type.caption, color = VTheme.colors.ink3)
                     }
                 }
                 val (badgeColor, badgeBg) = when (ach.category.uppercase()) {
-                    "SPORTS" -> VColors.sky to VColors.skySoft
-                    "COMPETITION" -> VColors.coral to VColors.coralSoft
-                    else -> VColors.violet to VColors.violetSoft
+                    "SPORTS" -> VTheme.colors.sky to VTheme.colors.skySoft
+                    "COMPETITION" -> VTheme.colors.coral to VTheme.colors.coralSoft
+                    else -> VTheme.colors.violet to VTheme.colors.violetSoft
                 }
                 MiniBadge(text = ach.category.take(3).uppercase(), color = badgeColor, bg = badgeBg)
             }
@@ -1317,10 +1314,10 @@ private fun AchievementsCard(achievements: List<OverviewAchievement>) {
 @Composable
 private fun BirthdaysCard(birthdays: List<OverviewBirthday>) {
     PremiumCard(
-        tint = VColors.coralSoft,
+        tint = VTheme.colors.coralSoft,
         modifier = Modifier.padding(horizontal = 20.dp),
     ) {
-        CardHeader("Birthdays", VIcons.Heart, iconTint = VColors.coral, iconBg = VColors.coralSoft)
+        CardHeader("Birthdays", VIcons.Heart, iconTint = VTheme.colors.coral, iconBg = VTheme.colors.coralSoft)
         Spacer(Modifier.height(12.dp))
         birthdays.take(4).forEachIndexed { idx, bd ->
             if (idx > 0) { CardDivider(); Spacer(Modifier.height(10.dp)) }
@@ -1330,24 +1327,24 @@ private fun BirthdaysCard(birthdays: List<OverviewBirthday>) {
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Box(
-                    modifier = Modifier.size(32.dp).clip(CircleShape).background(VColors.goldSoft),
+                    modifier = Modifier.size(32.dp).clip(CircleShape).background(VTheme.colors.goldSoft),
                     contentAlignment = Alignment.Center,
                 ) {
                     val initials = bd.name.split(" ").take(2).mapNotNull { it.firstOrNull()?.uppercase() }.joinToString("")
-                    Text(initials, style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.gold)
+                    Text(initials, style = VTheme.type.caption.copy(fontWeight = FontWeight.Bold), color = VTheme.colors.gold)
                 }
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(bd.name, style = VTypography.bodySmall, color = VColors.ink)
+                    Text(bd.name, style = VTheme.type.bodySmall, color = VTheme.colors.ink)
                     Text(
                         text = if (bd.isToday) "Today \uD83C\uDF89" else bd.date,
-                        style = VTypography.caption,
-                        color = VColors.ink3,
+                        style = VTheme.type.caption,
+                        color = VTheme.colors.ink3,
                     )
                 }
                 MiniBadge(
                     text = bd.role.take(3).uppercase(),
-                    color = VColors.ink3,
-                    bg = VColors.surfaceTint,
+                    color = VTheme.colors.ink3,
+                    bg = VTheme.colors.surfaceTint,
                 )
             }
             if (idx < minOf(birthdays.size, 4) - 1) { Spacer(Modifier.height(10.dp)) }
@@ -1364,7 +1361,7 @@ private fun ActivityCard(activities: List<DashboardActivity>) {
     PremiumCard(
         modifier = Modifier.padding(horizontal = 20.dp),
     ) {
-        CardHeader("Recent Activity", VIcons.History, iconTint = VColors.ink3, iconBg = VColors.creamDeep)
+        CardHeader("Recent Activity", VIcons.History, iconTint = VTheme.colors.ink3, iconBg = VTheme.colors.creamDeep)
         Spacer(Modifier.height(12.dp))
         activities.take(4).forEachIndexed { idx, act ->
             if (idx > 0) { CardDivider(); Spacer(Modifier.height(10.dp)) }
@@ -1375,14 +1372,14 @@ private fun ActivityCard(activities: List<DashboardActivity>) {
             ) {
                 Spacer(
                     modifier = Modifier.padding(top = 6.dp).size(7.dp).clip(CircleShape)
-                        .background(VColors.violet.copy(alpha = 0.3f)),
+                        .background(VTheme.colors.violet.copy(alpha = 0.3f)),
                 )
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(act.title, style = VTypography.bodySmall, color = VColors.ink, maxLines = 1)
+                    Text(act.title, style = VTheme.type.bodySmall, color = VTheme.colors.ink, maxLines = 1)
                     if (act.description.isNotBlank()) {
-                        Text(act.description, style = VTypography.caption, color = VColors.ink3, maxLines = 2)
+                        Text(act.description, style = VTheme.type.caption, color = VTheme.colors.ink3, maxLines = 2)
                     }
-                    Text(act.time, style = VTypography.caption, color = VColors.ink3.copy(alpha = 0.6f))
+                    Text(act.time, style = VTheme.type.caption, color = VTheme.colors.ink3.copy(alpha = 0.6f))
                 }
             }
             if (idx < minOf(activities.size, 4) - 1) { Spacer(Modifier.height(10.dp)) }
@@ -1404,18 +1401,18 @@ private fun PulseCard(pulse: OverviewSchoolPulse, onClick: () -> Unit) {
         else -> pulse.message.takeIf { it.isNotBlank() } ?: "School status unavailable."
     }
     val badgeColor = when (pulse.status.uppercase()) {
-        "EXCELLENT" -> VColors.success
-        "HEALTHY" -> VColors.mint
-        "WATCH" -> VColors.gold
-        "CRITICAL" -> VColors.coral
-        else -> VColors.ink3
+        "EXCELLENT" -> VTheme.colors.success
+        "HEALTHY" -> VTheme.colors.mint
+        "WATCH" -> VTheme.colors.gold
+        "CRITICAL" -> VTheme.colors.coral
+        else -> VTheme.colors.ink3
     }
     val cardTint = when (pulse.status.uppercase()) {
-        "EXCELLENT" -> VColors.successSoft
-        "HEALTHY" -> VColors.mintSoft
-        "WATCH" -> VColors.goldSoft
-        "CRITICAL" -> VColors.coralSoft
-        else -> VColors.surfaceCard
+        "EXCELLENT" -> VTheme.colors.successSoft
+        "HEALTHY" -> VTheme.colors.mintSoft
+        "WATCH" -> VTheme.colors.goldSoft
+        "CRITICAL" -> VTheme.colors.coralSoft
+        else -> VTheme.colors.surfaceCard
     }
 
     PremiumCard(
@@ -1430,11 +1427,11 @@ private fun PulseCard(pulse: OverviewSchoolPulse, onClick: () -> Unit) {
         ) {
             Text(
                 text = statusText,
-                style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                color = VColors.ink,
+                style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.Bold),
+                color = VTheme.colors.ink,
                 modifier = Modifier.weight(1f),
             )
-            MiniBadge(text = "${pulse.score}", color = badgeColor, bg = VColors.white)
+            MiniBadge(text = "${pulse.score}", color = badgeColor, bg = VTheme.colors.white)
         }
         if (pulse.categories.isNotEmpty()) {
             Spacer(Modifier.height(12.dp))
@@ -1446,8 +1443,8 @@ private fun PulseCard(pulse: OverviewSchoolPulse, onClick: () -> Unit) {
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(cat.label, style = VTypography.caption, color = VColors.ink2, modifier = Modifier.weight(1f))
-                    Text("${cat.score}", style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = badgeColor)
+                    Text(cat.label, style = VTheme.type.caption, color = VTheme.colors.ink2, modifier = Modifier.weight(1f))
+                    Text("${cat.score}", style = VTheme.type.caption.copy(fontWeight = FontWeight.Bold), color = badgeColor)
                 }
             }
         }

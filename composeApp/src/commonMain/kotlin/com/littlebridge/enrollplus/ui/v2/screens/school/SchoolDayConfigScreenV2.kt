@@ -48,9 +48,8 @@ import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 private val VALID_LEVELS = setOf("ALL", "PRIMARY", "SECONDARY")
 private val SLOT_TYPES = listOf("TEACHING", "BREAK", "ASSEMBLY", "LAB", "FREE", "ZERO")
@@ -232,7 +231,7 @@ private fun SchoolDayConfigContent(
 
             val info = state.infoMessage
             if (info != null && !showForm) {
-                Text(info, style = VTypography.caption.copy(color = VColors.success))
+                Text(info, style = VTheme.type.caption.copy(color = VTheme.colors.success))
             }
         }
     }
@@ -259,12 +258,12 @@ private fun ConfigCard(
                     } else {
                         VBadge(text = appString(StringKeys.SCH_INACTIVE), tone = VBadgeTone.Neutral)
                     }
-                    Text(config.name, style = VTypography.h3.copy(color = VColors.ink))
+                    Text(config.name, style = VTheme.type.h3.copy(color = VTheme.colors.ink))
                 }
                 Spacer(Modifier.height(4.dp))
                 Text(
                     appString(StringKeys.SCH_DAYS_LEVEL, "days" to config.applicableDays, "level" to config.classLevel),
-                    style = VTypography.caption.copy(color = VColors.ink3),
+                    style = VTheme.type.caption.copy(color = VTheme.colors.ink3),
                 )
             }
         }
@@ -272,7 +271,7 @@ private fun ConfigCard(
         if (config.slots.isNotEmpty()) {
             Spacer(Modifier.height(12.dp))
             config.slots.forEachIndexed { i, slot ->
-                if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
+                if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(VTheme.colors.line))
                 SlotRow(slot)
             }
         }
@@ -321,21 +320,21 @@ private fun SlotRow(slot: SchoolDaySlotDto) {
         ) {
             Text(
                 slot.slotType,
-                style = VTypography.label.copy(color = VColors.ink),
+                style = VTheme.type.label.copy(color = VTheme.colors.ink),
             )
         }
         Column(Modifier.weight(1f)) {
             if (slot.label.isNotBlank()) {
-                Text(slot.label, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                Text(slot.label, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
             }
             Text(
                 "${slot.startTime} – ${slot.endTime}",
-                style = VTypography.caption.copy(color = VColors.ink3),
+                style = VTheme.type.caption.copy(color = VTheme.colors.ink3),
             )
         }
         Text(
             "#${slot.slotIndex}",
-            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2),
+            style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink2),
         )
     }
 }
@@ -343,11 +342,11 @@ private fun SlotRow(slot: SchoolDaySlotDto) {
 @Composable
 private fun slotTypeColor(type: String): androidx.compose.ui.graphics.Color {
     return when (type) {
-        "TEACHING" -> VColors.violet.copy(alpha = 0.1f)
-        "BREAK" -> VColors.gold.copy(alpha = 0.1f)
-        "ASSEMBLY" -> VColors.sky.copy(alpha = 0.1f)
-        "LAB" -> VColors.violetSoft.copy(alpha = 0.3f)
-        else -> VColors.cream
+        "TEACHING" -> VTheme.colors.violet.copy(alpha = 0.1f)
+        "BREAK" -> VTheme.colors.gold.copy(alpha = 0.1f)
+        "ASSEMBLY" -> VTheme.colors.sky.copy(alpha = 0.1f)
+        "LAB" -> VTheme.colors.violetSoft.copy(alpha = 0.3f)
+        else -> VTheme.colors.cream
     }
 }
 
@@ -365,22 +364,22 @@ private fun ConfigFormCard(
     infoMessage: String?,
 ) {
         VCard {
-        Text(title, style = VTypography.h3.copy(color = VColors.ink))
+        Text(title, style = VTheme.type.h3.copy(color = VTheme.colors.ink))
         Spacer(Modifier.height(12.dp))
         VInput(value = name, onValueChange = onNameChange, label = appString(StringKeys.SCH_NAME), placeholder = appString(StringKeys.SCH_NAME_PH))
         Spacer(Modifier.height(8.dp))
         VInput(value = days, onValueChange = onDaysChange, label = appString(StringKeys.SCH_APPLICABLE_DAYS), placeholder = appString(StringKeys.SCH_APPLICABLE_DAYS_PH))
         if (!daysValid && days.isNotBlank()) {
-            Text(appString(StringKeys.SCH_FORMAT_DAYS), style = VTypography.caption.copy(color = VColors.error))
+            Text(appString(StringKeys.SCH_FORMAT_DAYS), style = VTheme.type.caption.copy(color = VTheme.colors.error))
         }
         Spacer(Modifier.height(8.dp))
         VInput(value = level, onValueChange = onLevelChange, label = appString(StringKeys.SCH_CLASS_LEVEL), placeholder = appString(StringKeys.SCH_CLASS_LEVEL_PH))
         if (!levelValid && level.isNotBlank()) {
-            Text(appString(StringKeys.SCH_MUST_BE_LEVEL), style = VTypography.caption.copy(color = VColors.error))
+            Text(appString(StringKeys.SCH_MUST_BE_LEVEL), style = VTheme.type.caption.copy(color = VTheme.colors.error))
         }
 
         Spacer(Modifier.height(12.dp))
-        Text(appString(StringKeys.SCH_SLOTS_N, "count" to slots.size.toString()), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+        Text(appString(StringKeys.SCH_SLOTS_N, "count" to slots.size.toString()), style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
         if (slots.isNotEmpty()) {
             Spacer(Modifier.height(8.dp))
             slots.forEachIndexed { idx, slot ->
@@ -420,7 +419,7 @@ private fun ConfigFormCard(
 
         infoMessage?.let {
             Spacer(Modifier.height(8.dp))
-            Text(it, style = VTypography.caption.copy(color = VColors.success))
+            Text(it, style = VTheme.type.caption.copy(color = VTheme.colors.success))
         }
 
         Spacer(Modifier.height(12.dp))
@@ -458,10 +457,10 @@ private fun SlotEditorRow(
     onTypeChange: (String) -> Unit,
     onRemove: () -> Unit,
 ) {
-        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(VColors.cream).padding(8.dp)) {
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(VTheme.colors.cream).padding(8.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("#${slot.slotIndex}", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2))
-            Text(slot.slotType, style = VTypography.label.copy(color = slotTypeColor(slot.slotType)))
+            Text("#${slot.slotIndex}", style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink2))
+            Text(slot.slotType, style = VTheme.type.label.copy(color = slotTypeColor(slot.slotType)))
             Box(Modifier.weight(1f)) {}
             VButton(
                 text = "×",

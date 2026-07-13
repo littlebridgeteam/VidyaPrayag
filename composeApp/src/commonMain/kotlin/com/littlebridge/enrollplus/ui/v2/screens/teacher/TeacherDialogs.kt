@@ -18,6 +18,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
+import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * TeacherConfirmSheet — a calm, on-brand confirm sheet used for the deliberate, irreversible
@@ -41,7 +43,7 @@ fun TeacherConfirmSheet(
         modifier = modifier,
     ) {
         VBottomSheetHeader(title = title)
-        Text(body, style = VtT.body.coloredV(c.ink2).copy(fontSize = 13.5.sp))
+        Text(body, style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.5.sp))
         Spacer(Modifier.height(18.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             VButton(

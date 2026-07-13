@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
@@ -103,6 +104,31 @@ fun VProgressRing(
         }
         if (label != null) {
             Text(text = label, style = VTheme.type.dataSm.colored(VTheme.colors.ink))
+        }
+    }
+}
+
+@Composable
+fun VProgressBarSegments(
+    total: Int,
+    current: Int,
+    modifier: Modifier = Modifier,
+    barHeight: Int = 2,
+) {
+    val c = VTheme.colors
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp),
+    ) {
+        repeat(total) { index ->
+            val isCompleted = index <= current
+            val color = if (isCompleted) c.accent else c.hairline
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(barHeight.dp)
+                    .background(color, RoundedCornerShape(50)),
+            )
         }
     }
 }

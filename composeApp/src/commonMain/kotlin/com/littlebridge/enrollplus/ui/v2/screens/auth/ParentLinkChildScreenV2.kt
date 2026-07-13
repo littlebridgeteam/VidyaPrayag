@@ -45,6 +45,7 @@ import com.littlebridge.enrollplus.feature.parent.presentation.LinkChildState
 import com.littlebridge.enrollplus.feature.parent.presentation.LinkChildViewModel
 import com.littlebridge.enrollplus.feature.parent.presentation.SchoolMatch
 import com.littlebridge.enrollplus.ui.v2.components.VAvatar
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
@@ -54,15 +55,12 @@ import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.components.VLabel
+import com.littlebridge.enrollplus.ui.v2.components.VProgressBarSegments
 import com.littlebridge.enrollplus.ui.v2.components.VTag
 import com.littlebridge.enrollplus.core.locale.StringKeys
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
-import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.components.VBackHeader
-import com.littlebridge.enrollplus.ui.components.VProgressBarSegments
-import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
+import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -146,7 +144,7 @@ private fun ParentLinkChildContent(
     Column(
         modifier
             .fillMaxSize()
-            .background(VColors.cream)
+            .background(VTheme.colors.cream)
             .statusBarsPadding()
             .imePadding()
             .navigationBarsPadding(),
@@ -180,8 +178,8 @@ private fun ParentLinkChildContent(
                 appString(StringKeys.LINK_STEP2_SUB),
                 appString(StringKeys.LINK_STEP3_SUB).replace("{school}", state.selectedSchool?.name ?: theSchoolStr),
             )
-            Text(titles[step - 1], style = VTypography.h2.copy(color = c.ink))
-            Text(subtitles[step - 1], style = VTypography.caption.copy(color = c.ink2))
+            Text(titles[step - 1], style = VTheme.type.h2.colored(c.ink))
+            Text(subtitles[step - 1], style = VTheme.type.caption.colored(c.ink2))
             Spacer(Modifier.height(24.dp))
 
             AnimatedContent(
@@ -247,7 +245,7 @@ private fun ParentLinkChildContent(
                                 state.searchError != null -> {
                                     Text(
                                         state.searchError ?: appString(StringKeys.LINK_SEARCH_ERR),
-                                        style = VTheme.type.caption.colored(Color(0xFF7A1C18)),
+                                        style = VTheme.type.caption.colored(c.dangerInk),
                                     )
                                 }
                                 state.matches.isEmpty() -> {
@@ -282,7 +280,7 @@ private fun ParentLinkChildContent(
                                                         .background(c.teal),
                                                     contentAlignment = Alignment.Center,
                                                 ) {
-                                                    Icon(VIcons.GraduationCap, contentDescription = null, tint = c.ink, modifier = Modifier.size(18.dp))
+                                                    Icon(VIcons.GraduationCap, contentDescription = "Student", tint = c.ink, modifier = Modifier.size(18.dp))
                                                 }
                                                 Spacer(Modifier.width(d.md))
                                                 Column(Modifier.weight(1f)) {
@@ -358,7 +356,7 @@ private fun ParentLinkChildContent(
                                 state.linkError != null -> {
                                     Text(
                                         state.linkError ?: appString(StringKeys.LINK_ERR),
-                                        style = VTheme.type.caption.colored(Color(0xFF7A1C18)),
+                                        style = VTheme.type.caption.colored(c.dangerInk),
                                     )
                                 }
                                 // RA-48: a submitted request that the school admin must approve.
@@ -387,7 +385,7 @@ private fun ParentLinkChildContent(
                                                 }
                                                 Text(msg, style = VTheme.type.caption.colored(c.ink2))
                                             }
-                                            Icon(VIcons.Clock, contentDescription = null, tint = Color(0xFFB7791F), modifier = Modifier.size(18.dp))
+                                            Icon(VIcons.Clock, contentDescription = "Pending", tint = c.warningInk, modifier = Modifier.size(18.dp))
                                         }
                                     }
                                 }
@@ -405,7 +403,7 @@ private fun ParentLinkChildContent(
                                                 )
                                             }
                                             // §5: React resolved-child check = #155e3a (Auth.tsx L319).
-                                            Icon(VIcons.Check, contentDescription = null, tint = Color(0xFF155E3A), modifier = Modifier.size(18.dp))
+                                            Icon(VIcons.Check, contentDescription = "Approved", tint = c.successInk, modifier = Modifier.size(18.dp))
                                         }
                                     }
                                 }
@@ -463,7 +461,7 @@ private fun ParentLinkChildContent(
                 tone = VButtonTone.Teal,
                 soft = false,
                 enabled = ctaEnabled,
-                trailing = { Icon(VIcons.ArrowRight, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                trailing = { Icon(VIcons.ArrowRight, contentDescription = "Continue", modifier = Modifier.size(16.dp)) },
             )
             Spacer(Modifier.height(d.xl))
         }

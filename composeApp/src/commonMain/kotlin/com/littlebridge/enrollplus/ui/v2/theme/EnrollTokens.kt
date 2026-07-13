@@ -7,6 +7,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * ENROLL+ TEACHER PORTAL — SEMANTIC TOKEN BRIDGE

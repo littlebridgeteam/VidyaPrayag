@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -72,16 +73,15 @@ import com.littlebridge.enrollplus.feature.admin.presentation.InstitutionalBasic
 import com.littlebridge.enrollplus.feature.admin.presentation.LaunchInfoOBViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.OnboardingTeacherInput
 import com.littlebridge.enrollplus.feature.admin.presentation.TeacherProvisioningOBViewModel
-import com.littlebridge.enrollplus.ui.components.FilterChip
-import com.littlebridge.enrollplus.ui.components.VBackHeader
-import com.littlebridge.enrollplus.ui.components.VButton
-import com.littlebridge.enrollplus.ui.components.VButtonVariant
+import com.littlebridge.enrollplus.ui.v2.components.FilterChip
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
+import com.littlebridge.enrollplus.ui.v2.components.VButton
+import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VInput
-import com.littlebridge.enrollplus.ui.components.VProgressBar
-import com.littlebridge.enrollplus.ui.components.VProgressBarSegments
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VShapes
-import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
+import com.littlebridge.enrollplus.ui.v2.components.VProgressBarSegments
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
+import com.littlebridge.enrollplus.ui.v2.theme.colored
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -240,7 +240,7 @@ fun SchoolOnboardingScreenV2(
     Column(
         modifier
             .fillMaxSize()
-            .background(VColors.cream)
+            .background(VTheme.colors.cream)
             .statusBarsPadding()
             .imePadding(),
     ) {
@@ -249,15 +249,15 @@ fun SchoolOnboardingScreenV2(
         })
 
         Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp)) {
-            Text(appString(StringKeys.OB_ONBOARDING), style = VTypography.caption, color = VColors.ink3)
+            Text(appString(StringKeys.OB_ONBOARDING), style = VTheme.type.caption, color = VTheme.colors.ink3)
             Spacer(Modifier.height(8.dp))
             VProgressBarSegments(total = 6, current = step)
             Spacer(Modifier.height(16.dp))
-            Text(titles[step - 1], style = VTypography.h2, color = VColors.ink)
+            Text(titles[step - 1], style = VTheme.type.h2, color = VTheme.colors.ink)
             Text(
                 appString(StringKeys.OB_STEP_OF, "step" to step, "total" to 6),
-                style = VTypography.caption,
-                color = VColors.ink3,
+                style = VTheme.type.caption,
+                color = VTheme.colors.ink3,
             )
         }
 
@@ -329,13 +329,13 @@ fun SchoolOnboardingScreenV2(
                     val errMsg = currentError
                     if (!errMsg.isNullOrBlank()) {
                         Spacer(Modifier.height(4.dp))
-                        Text(errMsg, style = VTypography.caption, color = VColors.error)
+                        Text(errMsg, style = VTheme.type.caption, color = VTheme.colors.error)
                     }
                     Spacer(Modifier.height(8.dp))
                 }
         }
 
-        Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.lineSoft))
+        Box(Modifier.fillMaxWidth().height(1.dp).background(VTheme.colors.lineSoft))
         Row(
             Modifier
                 .fillMaxWidth()
@@ -369,8 +369,8 @@ private fun CreamCard(modifier: Modifier = Modifier, content: @Composable () -> 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(VColors.surfaceCard, VShapes.lg)
-            .border(1.dp, VColors.line, VShapes.lg)
+            .background(VTheme.colors.surfaceCard, RoundedCornerShape(18.dp))
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(18.dp))
             .padding(16.dp),
     ) { content() }
 }
@@ -379,9 +379,9 @@ private fun CreamCard(modifier: Modifier = Modifier, content: @Composable () -> 
 private fun MiniBadge(text: String, color: Color, bg: Color) {
     Text(
         text = text,
-        style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
+        style = VTheme.type.caption.copy(fontWeight = FontWeight.Bold),
         color = color,
-        modifier = Modifier.background(bg, VShapes.full).padding(horizontal = 8.dp, vertical = 3.dp),
+        modifier = Modifier.background(bg, RoundedCornerShape(50)).padding(horizontal = 8.dp, vertical = 3.dp),
     )
 }
 
@@ -389,10 +389,10 @@ private fun MiniBadge(text: String, color: Color, bg: Color) {
 private fun SimpleAvatar(name: String, size: androidx.compose.ui.unit.Dp) {
     val initials = name.split(" ").take(2).mapNotNull { it.firstOrNull()?.uppercase() }.joinToString("")
     Box(
-        modifier = Modifier.size(size).background(VColors.violetSoft, CircleShape),
+        modifier = Modifier.size(size).background(VTheme.colors.violetSoft, CircleShape),
         contentAlignment = Alignment.Center,
     ) {
-        Text(initials, style = VTypography.label, color = VColors.violet)
+        Text(initials, style = VTheme.type.label, color = VTheme.colors.violet)
     }
 }
 
@@ -411,13 +411,13 @@ private fun IdentityStep(
     VInput(shortName, onShortNameChange, label = appString(StringKeys.OB_ID_SHORT_NAME), placeholder = appString(StringKeys.OB_ID_SHORT_PH), modifier = Modifier.fillMaxWidth())
     VInput(affiliation, onAffiliationChange, label = appString(StringKeys.OB_ID_AFFIL), placeholder = appString(StringKeys.OB_ID_AFFIL_PH), modifier = Modifier.fillMaxWidth())
 
-    Text(appString(StringKeys.OB_ID_BOARD), style = VTypography.label, color = VColors.ink3)
+    Text(appString(StringKeys.OB_ID_BOARD), style = VTheme.type.label, color = VTheme.colors.ink3)
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         listOf("CBSE", "ICSE", "UP State", "Other").forEach { b ->
             FilterChip(label = b, selected = board == b, onClick = { onBoardChange(b) })
         }
     }
-    Text(appString(StringKeys.OB_ID_SCHOOL_TYPE), style = VTypography.label, color = VColors.ink3)
+    Text(appString(StringKeys.OB_ID_SCHOOL_TYPE), style = VTheme.type.label, color = VTheme.colors.ink3)
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         listOf("Government", "Private Aided", "Private Unaided", "Central").forEach { t ->
             FilterChip(label = t, selected = schoolType == t, onClick = { onSchoolTypeChange(t) })
@@ -437,7 +437,7 @@ private fun AcademicYearStep() {
     var endTime by remember { mutableStateOf("") }
     var periods by remember { mutableStateOf("") }
 
-    Text(appString(StringKeys.OB_AY_CURRENT), style = VTypography.label, color = VColors.ink3)
+    Text(appString(StringKeys.OB_AY_CURRENT), style = VTheme.type.label, color = VTheme.colors.ink3)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         listOf("2025-26", "2026-27").forEach { y -> FilterChip(label = y, selected = year == y, onClick = { year = y }) }
     }
@@ -445,7 +445,7 @@ private fun AcademicYearStep() {
         VInput(starts, { starts = it }, label = appString(StringKeys.OB_AY_STARTS), placeholder = appString(StringKeys.OB_AY_STARTS), modifier = Modifier.weight(1f))
         VInput(ends, { ends = it }, label = appString(StringKeys.OB_AY_ENDS), placeholder = appString(StringKeys.OB_AY_ENDS), modifier = Modifier.weight(1f))
     }
-    Text(appString(StringKeys.OB_AY_WORKING_DAYS), style = VTypography.label, color = VColors.ink3)
+    Text(appString(StringKeys.OB_AY_WORKING_DAYS), style = VTheme.type.label, color = VTheme.colors.ink3)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         FilterChip(label = "Mon–Fri", selected = workingDays == "Mon–Fri", onClick = { workingDays = "Mon–Fri" })
         FilterChip(label = "Mon–Sat", selected = workingDays == "Mon–Sat", onClick = { workingDays = "Mon–Sat" })
@@ -463,14 +463,14 @@ private fun ClassesStep(classesBuilt: MutableList<OBClass>) {
     var newClassName by remember { mutableStateOf("") }
 
     CreamCard {
-        Text(appString(StringKeys.OB_CL_TIP), style = VTypography.label, color = VColors.ink3)
-        Text(appString(StringKeys.OB_CL_TIP_BODY), style = VTypography.caption, color = VColors.ink2, modifier = Modifier.padding(top = 4.dp))
+        Text(appString(StringKeys.OB_CL_TIP), style = VTheme.type.label, color = VTheme.colors.ink3)
+        Text(appString(StringKeys.OB_CL_TIP_BODY), style = VTheme.type.caption, color = VTheme.colors.ink2, modifier = Modifier.padding(top = 4.dp))
     }
     classesBuilt.forEachIndexed { idx, cl ->
         CreamCard {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(cl.name, style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.weight(1f))
-                Text(appString(StringKeys.OB_CL_SECTIONS, "count" to cl.sections.size), style = VTypography.caption, color = VColors.ink3)
+                Text(cl.name, style = VTheme.type.body.copy(fontWeight = FontWeight.Bold), color = VTheme.colors.ink, modifier = Modifier.weight(1f))
+                Text(appString(StringKeys.OB_CL_SECTIONS, "count" to cl.sections.size), style = VTheme.type.caption, color = VTheme.colors.ink3)
             }
             Spacer(Modifier.height(8.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -484,7 +484,7 @@ private fun ClassesStep(classesBuilt: MutableList<OBClass>) {
         }
     }
     CreamCard {
-        Text(appString(StringKeys.OB_CL_ADD_MANUAL), style = VTypography.label, color = VColors.ink3)
+        Text(appString(StringKeys.OB_CL_ADD_MANUAL), style = VTheme.type.label, color = VTheme.colors.ink3)
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
             VInput(newClassName, { newClassName = it }, placeholder = appString(StringKeys.OB_CL_ADD_PH), modifier = Modifier.weight(1f))
@@ -515,13 +515,13 @@ private fun SubjectsStep(subjects: MutableList<OBSubject>, classCodes: List<Stri
     CreamCard {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f)) {
-                Text(appString(StringKeys.OB_SJ_OFFERED), style = VTypography.label, color = VColors.ink3)
-                Text(appString(StringKeys.OB_SJ_TAP_HINT), style = VTypography.caption, color = VColors.ink3, modifier = Modifier.padding(top = 2.dp))
+                Text(appString(StringKeys.OB_SJ_OFFERED), style = VTheme.type.label, color = VTheme.colors.ink3)
+                Text(appString(StringKeys.OB_SJ_TAP_HINT), style = VTheme.type.caption, color = VTheme.colors.ink3, modifier = Modifier.padding(top = 2.dp))
             }
             Text(
                 appString(StringKeys.OB_SJ_APPLY_ALL),
-                style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
-                color = VColors.violet,
+                style = VTheme.type.caption.copy(fontWeight = FontWeight.Bold),
+                color = VTheme.colors.violet,
                 modifier = Modifier.padding(start = 8.dp).clickable {
                     subjects.forEach { s -> s.classes.clear(); s.classes.addAll(classCodes) }
                 },
@@ -532,13 +532,13 @@ private fun SubjectsStep(subjects: MutableList<OBSubject>, classCodes: List<Stri
         CreamCard {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text(s.name, style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
-                    Text("${s.code} · ${s.type}", style = VTypography.caption, color = VColors.ink3)
+                    Text(s.name, style = VTheme.type.body.copy(fontWeight = FontWeight.Bold), color = VTheme.colors.ink)
+                    Text("${s.code} · ${s.type}", style = VTheme.type.caption, color = VTheme.colors.ink3)
                 }
                 MiniBadge(
                     text = if (s.classes.isEmpty()) appString(StringKeys.OB_SJ_NO_CLASSES) else "${s.classes.size} / ${classCodes.size}",
-                    color = if (s.classes.isEmpty()) VColors.gold else VColors.success,
-                    bg = if (s.classes.isEmpty()) VColors.goldSoft else VColors.successSoft,
+                    color = if (s.classes.isEmpty()) VTheme.colors.gold else VTheme.colors.success,
+                    bg = if (s.classes.isEmpty()) VTheme.colors.goldSoft else VTheme.colors.successSoft,
                 )
             }
             Spacer(Modifier.height(8.dp))
@@ -565,8 +565,8 @@ private fun TeachersStep(
     onAddTeacher: () -> Unit,
 ) {
     CreamCard {
-        Text(appString(StringKeys.OB_TC_ADD), style = VTypography.label, color = VColors.ink3)
-        Text(appString(StringKeys.OB_TC_ADD_DESC), style = VTypography.caption, color = VColors.ink3, modifier = Modifier.padding(top = 2.dp))
+        Text(appString(StringKeys.OB_TC_ADD), style = VTheme.type.label, color = VTheme.colors.ink3)
+        Text(appString(StringKeys.OB_TC_ADD_DESC), style = VTheme.type.caption, color = VTheme.colors.ink3, modifier = Modifier.padding(top = 2.dp))
         Spacer(Modifier.height(8.dp))
         VInput(newTeacherName, onNewTeacherNameChange, label = appString(StringKeys.OB_TC_FULL_NAME), placeholder = appString(StringKeys.OB_TC_FULL_NAME_PH), modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(8.dp))
@@ -584,10 +584,10 @@ private fun TeachersStep(
     if (teachers.isEmpty()) {
         CreamCard {
             Column(Modifier.fillMaxWidth().padding(vertical = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(Icons.Filled.Person, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(28.dp))
+                Icon(Icons.Filled.Person, contentDescription = "No teachers added", tint = VTheme.colors.ink3, modifier = Modifier.size(28.dp))
                 Spacer(Modifier.height(4.dp))
-                Text(appString(StringKeys.OB_TC_NONE_YET), style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
-                Text(appString(StringKeys.OB_TC_NONE_DESC), style = VTypography.caption, color = VColors.ink3, textAlign = TextAlign.Center)
+                Text(appString(StringKeys.OB_TC_NONE_YET), style = VTheme.type.body.copy(fontWeight = FontWeight.Bold), color = VTheme.colors.ink)
+                Text(appString(StringKeys.OB_TC_NONE_DESC), style = VTheme.type.caption, color = VTheme.colors.ink3, textAlign = TextAlign.Center)
             }
         }
         return
@@ -601,20 +601,20 @@ private fun TeachersStep(
     CreamCard {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f)) {
-                Text(appString(StringKeys.OB_TC_COVERAGE), style = VTypography.label, color = VColors.ink3)
-                Text(appString(StringKeys.OB_TC_COVERAGE_OF, "covered" to coveredCount, "total" to allSlots.size), style = VTypography.caption, color = VColors.ink3, modifier = Modifier.padding(top = 2.dp))
+                Text(appString(StringKeys.OB_TC_COVERAGE), style = VTheme.type.label, color = VTheme.colors.ink3)
+                Text(appString(StringKeys.OB_TC_COVERAGE_OF, "covered" to coveredCount, "total" to allSlots.size), style = VTheme.type.caption, color = VTheme.colors.ink3, modifier = Modifier.padding(top = 2.dp))
             }
             Text(
                 "$coverage%",
-                style = VTypography.h3.copy(fontWeight = FontWeight.ExtraBold),
-                color = if (coverage == 100) VColors.success else if (coverage > 50) VColors.violet else VColors.gold,
+                style = VTheme.type.h3.copy(fontWeight = FontWeight.ExtraBold),
+                color = if (coverage == 100) VTheme.colors.success else if (coverage > 50) VTheme.colors.violet else VTheme.colors.gold,
             )
         }
         Spacer(Modifier.height(8.dp))
-        VProgressBar(progress = coverage.toFloat() / 100f, modifier = Modifier.fillMaxWidth())
+        VProgressBar(value = coverage.toFloat(), modifier = Modifier.fillMaxWidth())
         if (coverage < 100 && allSlots.isNotEmpty()) {
             Spacer(Modifier.height(4.dp))
-            Text(appString(StringKeys.OB_TC_UNASSIGNED, "count" to (allSlots.size - coveredCount)), style = VTypography.caption, color = VColors.gold)
+            Text(appString(StringKeys.OB_TC_UNASSIGNED, "count" to (allSlots.size - coveredCount)), style = VTheme.type.caption, color = VTheme.colors.gold)
         }
     }
 
@@ -624,33 +624,33 @@ private fun TeachersStep(
                 SimpleAvatar(name = t.name, size = 40.dp)
                 Spacer(Modifier.width(16.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(t.name, style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                    Text(t.name, style = VTheme.type.body.copy(fontWeight = FontWeight.Bold), color = VTheme.colors.ink)
                     val meta = listOf(t.username, t.mobile).filter { it.isNotBlank() }.joinToString(" · ")
                     if (meta.isNotBlank()) {
-                        Text(meta, style = VTypography.caption, color = VColors.ink3)
+                        Text(meta, style = VTheme.type.caption, color = VTheme.colors.ink3)
                     }
                 }
-                MiniBadge(text = appString(StringKeys.OB_TC_SLOTS, "count" to t.assignments.size), color = VColors.violet, bg = VColors.violetSoft)
+                MiniBadge(text = appString(StringKeys.OB_TC_SLOTS, "count" to t.assignments.size), color = VTheme.colors.violet, bg = VTheme.colors.violetSoft)
             }
             Spacer(Modifier.height(8.dp))
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .clip(VShapes.sm)
-                    .border(1.dp, VColors.lineSoft, VShapes.sm),
+                    .clip(RoundedCornerShape(10.dp))
+                    .border(1.dp, VTheme.colors.lineSoft, RoundedCornerShape(10.dp)),
             ) {
-                Row(Modifier.fillMaxWidth().background(VColors.creamDeep), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.fillMaxWidth().background(VTheme.colors.creamDeep), verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         "SUBJECT",
-                        style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 0.05.em),
-                        color = VColors.ink3,
+                        style = VTheme.type.caption.copy(fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 0.05.em),
+                        color = VTheme.colors.ink3,
                         modifier = Modifier.width(110.dp).padding(horizontal = 10.dp, vertical = 8.dp),
                     )
                     classCodes.forEach { cc ->
                         Text(
                             cc,
-                            style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
-                            color = VColors.ink3,
+                            style = VTheme.type.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                            color = VTheme.colors.ink3,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.weight(1f).padding(horizontal = 4.dp, vertical = 8.dp),
                         )
@@ -658,10 +658,10 @@ private fun TeachersStep(
                 }
                 subjects.filter { it.classes.isNotEmpty() }.forEachIndexed { rowI, s ->
                     if (rowI > 0) {
-                        Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.lineSoft))
+                        Box(Modifier.fillMaxWidth().height(1.dp).background(VTheme.colors.lineSoft))
                     }
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text(s.name, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink, modifier = Modifier.width(110.dp).padding(horizontal = 10.dp, vertical = 8.dp))
+                        Text(s.name, style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold), color = VTheme.colors.ink, modifier = Modifier.width(110.dp).padding(horizontal = 10.dp, vertical = 8.dp))
                         classCodes.forEach { cc ->
                             val inSubject = s.classes.contains(cc)
                             val mine = t.assignments.any { it.first == s.name && it.second == cc }
@@ -690,13 +690,13 @@ private fun TeachersStep(
                         Box(
                             Modifier
                                 .clip(CircleShape)
-                                .background(VColors.violet.copy(alpha = 0.12f))
+                                .background(VTheme.colors.violet.copy(alpha = 0.12f))
                                 .padding(horizontal = 8.dp, vertical = 2.dp),
                         ) {
                             Text(
                                 "${a.first.take(4)}·${a.second}",
-                                style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 11.sp),
-                                color = VColors.violet,
+                                style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 11.sp),
+                                color = VTheme.colors.violet,
                             )
                         }
                     }
@@ -718,23 +718,23 @@ private fun MatrixCell(label: String, inSubject: Boolean, mine: Boolean, takenBy
     val available = inSubject && !mine && !takenByOther
     val bg = when {
         !inSubject -> Color.Transparent
-        mine -> VColors.violet
-        takenByOther -> VColors.creamDeep
-        else -> VColors.violet.copy(alpha = 0.08f)
+        mine -> VTheme.colors.violet
+        takenByOther -> VTheme.colors.creamDeep
+        else -> VTheme.colors.violet.copy(alpha = 0.08f)
     }
     val fg = when {
         mine -> Color.White
-        takenByOther -> VColors.ink3
-        else -> VColors.violet
+        takenByOther -> VTheme.colors.ink3
+        else -> VTheme.colors.violet
     }
     var cell = Modifier
         .padding(4.dp)
         .height(32.dp)
         .fillMaxWidth()
-        .clip(VShapes.sm)
+        .clip(RoundedCornerShape(10.dp))
         .background(bg)
     if (available) {
-        cell = cell.dashedBorder(VColors.violet.copy(alpha = 0.35f), strokeWidth = 1.dp, cornerRadius = 6.dp)
+        cell = cell.dashedBorder(VTheme.colors.violet.copy(alpha = 0.35f), strokeWidth = 1.dp, cornerRadius = 6.dp)
     }
     if (enabled) cell = cell.clickable(onClick = onClick)
     Box(
@@ -742,7 +742,7 @@ private fun MatrixCell(label: String, inSubject: Boolean, mine: Boolean, takenBy
         contentAlignment = Alignment.Center,
     ) {
         if (label.isNotEmpty()) {
-            Text(label, style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp), color = fg)
+            Text(label, style = VTheme.type.caption.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp), color = fg)
         }
     }
 }
@@ -751,21 +751,21 @@ private fun MatrixCell(label: String, inSubject: Boolean, mine: Boolean, takenBy
 private fun StudentsStep() {
     CreamCard {
         Column(Modifier.fillMaxWidth().padding(vertical = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(Icons.Filled.CloudUpload, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(32.dp))
+            Icon(Icons.Filled.CloudUpload, contentDescription = "Upload student CSV", tint = VTheme.colors.ink3, modifier = Modifier.size(32.dp))
             Spacer(Modifier.height(8.dp))
-            Text(appString(StringKeys.OB_ST_DROP_CSV), style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
-            Text(appString(StringKeys.OB_ST_OR_BROWSE), style = VTypography.caption, color = VColors.ink3)
+            Text(appString(StringKeys.OB_ST_DROP_CSV), style = VTheme.type.body.copy(fontWeight = FontWeight.Bold), color = VTheme.colors.ink)
+            Text(appString(StringKeys.OB_ST_OR_BROWSE), style = VTheme.type.caption, color = VTheme.colors.ink3)
             Spacer(Modifier.height(16.dp))
             VButton(text = appString(StringKeys.OB_ST_DOWNLOAD), onClick = {}, variant = VButtonVariant.Secondary)
         }
     }
     CreamCard {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(appString(StringKeys.OB_ST_NONE_YET), style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.weight(1f))
-            MiniBadge(text = appString(StringKeys.OB_ST_OPTIONAL), color = VColors.ink3, bg = VColors.surfaceTint)
+            Text(appString(StringKeys.OB_ST_NONE_YET), style = VTheme.type.body.copy(fontWeight = FontWeight.Bold), color = VTheme.colors.ink, modifier = Modifier.weight(1f))
+            MiniBadge(text = appString(StringKeys.OB_ST_OPTIONAL), color = VTheme.colors.ink3, bg = VTheme.colors.surfaceTint)
         }
         Spacer(Modifier.height(8.dp))
-        Text(appString(StringKeys.OB_ST_OPTIONAL_DESC), style = VTypography.caption, color = VColors.ink3)
+        Text(appString(StringKeys.OB_ST_OPTIONAL_DESC), style = VTheme.type.caption, color = VTheme.colors.ink3)
     }
 }
 
@@ -778,13 +778,13 @@ private fun CompletionScreen(
     Column(
         Modifier
             .fillMaxSize()
-            .background(VColors.cream)
+            .background(VTheme.colors.cream)
             .verticalScroll(rememberScrollState()),
     ) {
         Box(
             Modifier
                 .fillMaxWidth()
-                .background(VColors.violet),
+                .background(VTheme.colors.violet),
         ) {
             Column(
                 Modifier
@@ -796,24 +796,24 @@ private fun CompletionScreen(
                 Box(
                     Modifier
                         .size(96.dp)
-                        .clip(VShapes.xl)
+                        .clip(RoundedCornerShape(24.dp))
                         .background(Color.White.copy(alpha = 0.18f))
-                        .border(1.dp, Color.White.copy(alpha = 0.30f), VShapes.xl),
+                        .border(1.dp, Color.White.copy(alpha = 0.30f), RoundedCornerShape(24.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(44.dp))
+                    Icon(Icons.Filled.Check, contentDescription = "Onboarding complete", tint = Color.White, modifier = Modifier.size(44.dp))
                 }
                 Spacer(Modifier.height(28.dp))
                 Text(
                     appString(StringKeys.OB_CM_ALL_SET),
-                    style = VTypography.h1.copy(fontSize = 30.sp, letterSpacing = (-0.02).em),
+                    style = VTheme.type.h1.copy(fontSize = 30.sp, letterSpacing = (-0.02).em),
                     color = Color.White,
                     textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
                     appString(StringKeys.OB_CM_IS_LIVE, "school" to schoolName),
-                    style = VTypography.body,
+                    style = VTheme.type.body,
                     color = Color.White.copy(alpha = 0.88f),
                     textAlign = TextAlign.Center,
                 )
@@ -824,22 +824,22 @@ private fun CompletionScreen(
             OnboardingCompletedCard()
             val created = provisionedTeachers.filter { it.created && !it.initialPassword.isNullOrBlank() }
             if (created.isNotEmpty()) {
-                Text(appString(StringKeys.OB_CM_TEACHER_LOGINS), style = VTypography.label, color = VColors.ink3)
+                Text(appString(StringKeys.OB_CM_TEACHER_LOGINS), style = VTheme.type.label, color = VTheme.colors.ink3)
                 CreamCard {
-                    Text(appString(StringKeys.OB_CM_SHARE_OTP), style = VTypography.caption, color = VColors.ink3)
+                    Text(appString(StringKeys.OB_CM_SHARE_OTP), style = VTheme.type.caption, color = VTheme.colors.ink3)
                     created.forEach { t ->
                         Spacer(Modifier.height(8.dp))
-                        Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.lineSoft))
+                        Box(Modifier.fillMaxWidth().height(1.dp).background(VTheme.colors.lineSoft))
                         Spacer(Modifier.height(8.dp))
-                        Text(t.name, style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
-                        Text(t.identifier, style = VTypography.caption, color = VColors.ink3)
+                        Text(t.name, style = VTheme.type.body.copy(fontWeight = FontWeight.Bold), color = VTheme.colors.ink)
+                        Text(t.identifier, style = VTheme.type.caption, color = VTheme.colors.ink3)
                         Spacer(Modifier.height(2.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(appString(StringKeys.OB_CM_PASSWORD), style = VTypography.caption, color = VColors.ink3)
+                            Text(appString(StringKeys.OB_CM_PASSWORD), style = VTheme.type.caption, color = VTheme.colors.ink3)
                             Text(
                                 t.initialPassword.orEmpty(),
-                                style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
-                                color = VColors.violet,
+                                style = VTheme.type.caption.copy(fontWeight = FontWeight.Bold),
+                                color = VTheme.colors.violet,
                             )
                         }
                     }
@@ -848,12 +848,12 @@ private fun CompletionScreen(
             val failed = provisionedTeachers.filter { !it.created }
             if (failed.isNotEmpty()) {
                 CreamCard {
-                    Text(appString(StringKeys.OB_CM_COULDNT_CREATE), style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = VColors.gold)
+                    Text(appString(StringKeys.OB_CM_COULDNT_CREATE), style = VTheme.type.body.copy(fontWeight = FontWeight.Bold), color = VTheme.colors.gold)
                     failed.forEach { t ->
                         Text(
                             appString(StringKeys.OB_CM_ADD_LATER, "name" to t.name, "id" to t.identifier, "msg" to (t.message ?: "failed")),
-                            style = VTypography.caption,
-                            color = VColors.ink3,
+                            style = VTheme.type.caption,
+                            color = VTheme.colors.ink3,
                             modifier = Modifier.padding(top = 2.dp),
                         )
                     }
@@ -868,8 +868,8 @@ private fun CompletionScreen(
             )
             Text(
                 appString(StringKeys.OB_CM_EDIT_LATER),
-                style = VTypography.caption,
-                color = VColors.ink3,
+                style = VTheme.type.caption,
+                color = VTheme.colors.ink3,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,
             )
@@ -950,13 +950,13 @@ fun OnboardingCompletedCard(
                         this.alpha = alpha
                     }
                     .clip(CircleShape)
-                    .background(VColors.successSoft),
+                    .background(VTheme.colors.successSoft),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     Icons.Filled.Check,
-                    contentDescription = null,
-                    tint = VColors.success,
+                    contentDescription = "Success",
+                    tint = VTheme.colors.success,
                     modifier = Modifier.size(36.dp),
                 )
             }
@@ -965,15 +965,15 @@ fun OnboardingCompletedCard(
 
             Text(
                 text = appString(StringKeys.OB_CM_READY),
-                style = VTypography.h3,
-                color = VColors.ink,
+                style = VTheme.type.h3,
+                color = VTheme.colors.ink,
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(8.dp))
             Text(
                 text = appString(StringKeys.OB_CM_PROFILE_DONE),
-                style = VTypography.body,
-                color = VColors.ink3,
+                style = VTheme.type.body,
+                color = VTheme.colors.ink3,
                 textAlign = TextAlign.Center,
             )
         }

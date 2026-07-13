@@ -27,13 +27,12 @@ import com.littlebridge.enrollplus.ui.v2.components.*
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonProfile
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import coil3.compose.AsyncImage
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 private val PRESET_COLORS = listOf(
     "#2563EB",
@@ -173,7 +172,7 @@ private fun BrandingSettingsContent(
     Column(
         modifier
             .fillMaxSize()
-            .background(VColors.cream)
+            .background(VTheme.colors.cream)
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
@@ -189,13 +188,13 @@ private fun BrandingSettingsContent(
                 Modifier
                     .size(40.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(VColors.ink.copy(alpha = 0.06f))
+                    .background(VTheme.colors.ink.copy(alpha = 0.06f))
                     .clickable { onBack() },
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(VIcons.ArrowLeft, contentDescription = "Back", tint = VColors.ink, modifier = Modifier.size(20.dp))
+                Icon(VIcons.ArrowLeft, contentDescription = "Back", tint = VTheme.colors.ink, modifier = Modifier.size(20.dp))
             }
-            Text(appString(StringKeys.BRAND_TITLE), style = VTypography.h2.copy(color = VColors.ink))
+            Text(appString(StringKeys.BRAND_TITLE), style = VTheme.type.h2.copy(color = VTheme.colors.ink))
         }
 
         VStateHost(
@@ -220,8 +219,8 @@ private fun BrandingSettingsContent(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Icon(VIcons.Check, contentDescription = null, tint = VColors.success, modifier = Modifier.size(18.dp))
-                            Text(msg, style = VTypography.body.copy(color = VColors.ink))
+                            Icon(VIcons.Check, contentDescription = "", tint = VTheme.colors.success, modifier = Modifier.size(18.dp))
+                            Text(msg, style = VTheme.type.body.copy(color = VTheme.colors.ink))
                         }
                     }
                 }
@@ -231,8 +230,8 @@ private fun BrandingSettingsContent(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Icon(VIcons.AlertTriangle, contentDescription = null, tint = VColors.error, modifier = Modifier.size(18.dp))
-                            Text(err, style = VTypography.body.copy(color = VColors.error))
+                            Icon(VIcons.AlertTriangle, contentDescription = "", tint = VTheme.colors.error, modifier = Modifier.size(18.dp))
+                            Text(err, style = VTheme.type.body.copy(color = VTheme.colors.error))
                         }
                     }
                 }
@@ -246,7 +245,7 @@ private fun BrandingSettingsContent(
                     ) {
                         Text(
                             b.schoolName,
-                            style = VTypography.h3.copy(color = VColors.ink),
+                            style = VTheme.type.h3.copy(color = VTheme.colors.ink),
                         )
                         VBadge(
                             text = if (b.isCustomized) appString(StringKeys.BRAND_CUSTOMIZED) else appString(StringKeys.BRAND_DEFAULT),
@@ -264,7 +263,7 @@ private fun BrandingSettingsContent(
                 )
 
                 // ── Color Pickers ──────────────────────────────────────────
-                Text(appString(StringKeys.BRAND_COLORS), style = VTypography.h3.copy(color = VColors.ink))
+                Text(appString(StringKeys.BRAND_COLORS), style = VTheme.type.h3.copy(color = VTheme.colors.ink))
                 ColorPickerSection(
                     label = appString(StringKeys.BRAND_PRIMARY_COLOR),
                     currentColor = primaryColor,
@@ -300,10 +299,10 @@ private fun BrandingSettingsContent(
 
                 // ── Brand Assets Section ───────────────────────────────────
                 Spacer(Modifier.height(8.dp))
-                Text(appString(StringKeys.BRAND_ASSETS), style = VTypography.h3.copy(color = VColors.ink))
+                Text(appString(StringKeys.BRAND_ASSETS), style = VTheme.type.h3.copy(color = VTheme.colors.ink))
                 Text(
                     appString(StringKeys.BRAND_ASSETS_DESC),
-                    style = VTypography.caption.copy(color = VColors.ink3),
+                    style = VTheme.type.caption.copy(color = VTheme.colors.ink3),
                 )
                 AssetUploadRow(
                     label = appString(StringKeys.BRAND_LOGO),
@@ -356,10 +355,10 @@ private fun BrandingSettingsContent(
 
                 // ── Subdomain Section ──────────────────────────────────────
                 Spacer(Modifier.height(8.dp))
-                Text(appString(StringKeys.BRAND_SUBDOMAIN), style = VTypography.h3.copy(color = VColors.ink))
+                Text(appString(StringKeys.BRAND_SUBDOMAIN), style = VTheme.type.h3.copy(color = VTheme.colors.ink))
                 Text(
                     appString(StringKeys.BRAND_SUBDOMAIN_DESC),
-                    style = VTypography.caption.copy(color = VColors.ink3),
+                    style = VTheme.type.caption.copy(color = VTheme.colors.ink3),
                 )
 
                 branding?.customSubdomain?.let { existing ->
@@ -370,10 +369,10 @@ private fun BrandingSettingsContent(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Column {
-                                Text(appString(StringKeys.BRAND_CURRENT_SUBDOMAIN), style = VTypography.caption.copy(color = VColors.ink3))
+                                Text(appString(StringKeys.BRAND_CURRENT_SUBDOMAIN), style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
                                 Text(
                                     "$existing.vidyaprayag.com",
-                                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink),
+                                    style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink),
                                 )
                             }
                             VButton(
@@ -435,13 +434,13 @@ private fun BrandingSettingsContent(
                             ) {
                                 Icon(
                                     if (available) VIcons.Check else VIcons.Close,
-                                    contentDescription = null,
-                                    tint = if (available) VColors.success else VColors.error,
+                                    contentDescription = "",
+                                    tint = if (available) VTheme.colors.success else VTheme.colors.error,
                                     modifier = Modifier.size(18.dp),
                                 )
                                 Text(
                                     if (available) appString(StringKeys.BRAND_SUBDOMAIN_AVAIL) else appString(StringKeys.BRAND_SUBDOMAIN_TAKEN),
-                                    style = VTypography.body.copy(color = if (available) VColors.success else VColors.error),
+                                    style = VTheme.type.body.copy(color = if (available) VTheme.colors.success else VTheme.colors.error),
                                 )
                             }
                         }
@@ -478,7 +477,7 @@ private fun BrandingPreviewCard(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(appString(StringKeys.BRAND_LIVE_PREVIEW), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+            Text(appString(StringKeys.BRAND_LIVE_PREVIEW), style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
 
             // Mock login header
             Box(
@@ -552,7 +551,7 @@ private fun ColorSwatch(label: String, color: Color) {
                 .background(color)
                 .border(2.dp, Color.White, CircleShape),
         )
-        Text(label, style = VTypography.caption.copy(color = VColors.ink3), fontSize = 10.sp)
+        Text(label, style = VTheme.type.caption.copy(color = VTheme.colors.ink3), fontSize = 10.sp)
     }
 }
 
@@ -575,13 +574,13 @@ private fun ColorPickerSection(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(label, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                Text(label, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
                 Box(
                     modifier = Modifier
                         .size(32.dp)
                         .clip(CircleShape)
                         .background(parsedColor)
-                        .border(2.dp, VColors.line, CircleShape),
+                        .border(2.dp, VTheme.colors.line, CircleShape),
                 )
             }
 
@@ -598,7 +597,7 @@ private fun ColorPickerSection(
                             .background(parseHexColor(hex))
                             .border(
                                 width = if (hex.equals(hexInput, ignoreCase = true)) 3.dp else 0.dp,
-                                color = VColors.ink,
+                                color = VTheme.colors.ink,
                                 shape = CircleShape,
                             )
                             .clickable {
@@ -654,7 +653,7 @@ private fun AssetUploadRow(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(VColors.ink.copy(alpha = 0.06f)),
+                    .background(VTheme.colors.ink.copy(alpha = 0.06f)),
                 contentAlignment = Alignment.Center,
             ) {
                 if (url != null) {
@@ -664,15 +663,15 @@ private fun AssetUploadRow(
                         modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(10.dp)),
                     )
                 } else {
-                    Icon(VIcons.Upload, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(20.dp))
+                    Icon(VIcons.Upload, contentDescription = "", tint = VTheme.colors.ink3, modifier = Modifier.size(20.dp))
                 }
             }
 
             Column(modifier = Modifier.weight(1f)) {
-                Text(label, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                Text(label, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
                 Text(
                     if (url != null) appString(StringKeys.BRAND_UPLOADED) else appString(StringKeys.BRAND_NOT_SET),
-                    style = VTypography.caption.copy(color = VColors.ink3),
+                    style = VTheme.type.caption.copy(color = VTheme.colors.ink3),
                 )
             }
 
@@ -680,7 +679,7 @@ private fun AssetUploadRow(
                 androidx.compose.material3.CircularProgressIndicator(
                     modifier = Modifier.size(20.dp),
                     strokeWidth = 2.dp,
-                    color = VColors.violet,
+                    color = VTheme.colors.violet,
                 )
             } else {
                 if (url != null) {

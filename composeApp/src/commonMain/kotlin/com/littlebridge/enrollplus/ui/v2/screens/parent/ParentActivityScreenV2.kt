@@ -36,12 +36,11 @@ import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentAnnouncement
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentAnnouncementState
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentAnnouncementViewModel
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VShapes
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 /**
  * ParentActivityScreenV2 — school announcements feed, rebuilt with the same premium parent-portal
@@ -85,15 +84,15 @@ private fun ParentActivityContent(
     ) {
         Text(
             "Announcements",
-            style = VTypography.h3,
-            color = VColors.ink,
+            style = VTheme.type.h3,
+            color = VTheme.colors.ink,
             modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
         )
 
         when {
             state.isLoading && state.announcements.isEmpty() ->
                 Box(Modifier.fillMaxWidth().height(240.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(36.dp))
+                    CircularProgressIndicator(color = VTheme.colors.violet, modifier = Modifier.size(36.dp))
                 }
 
             state.error != null && state.announcements.isEmpty() ->
@@ -147,22 +146,22 @@ private fun ParentActivityContent(
 @Composable
 private fun AnnouncementCard(a: ParentAnnouncement) {
     val (tint, icon) = when (a.category.lowercase()) {
-        "holidays", "holiday" -> VColors.violet to VIcons.Calendar
-        "ptm" -> VColors.gold to VIcons.UsersGroup
+        "holidays", "holiday" -> VTheme.colors.violet to VIcons.Calendar
+        "ptm" -> VTheme.colors.gold to VIcons.UsersGroup
         "events", "event" -> Color(0xFF6C8DF5) to VIcons.Star
-        "reminder" -> VColors.error to VIcons.Clock
-        else -> VColors.sky to VIcons.Bell
+        "reminder" -> VTheme.colors.error to VIcons.Clock
+        else -> VTheme.colors.sky to VIcons.Bell
     }
 
-    val cardBg = if (a.isFeatured) VColors.violetSoft else VColors.surfaceCard
-    val borderColor = if (a.isFeatured) VColors.violet.copy(alpha = 0.3f) else VColors.line
+    val cardBg = if (a.isFeatured) VTheme.colors.violetSoft else VTheme.colors.surfaceCard
+    val borderColor = if (a.isFeatured) VTheme.colors.violet.copy(alpha = 0.3f) else VTheme.colors.line
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(VShapes.lg)
+            .clip(RoundedCornerShape(18.dp))
             .background(cardBg)
-            .border(1.dp, borderColor, VShapes.lg)
+            .border(1.dp, borderColor, RoundedCornerShape(18.dp))
             .padding(16.dp),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalAlignment = Alignment.Top,
@@ -171,34 +170,34 @@ private fun AnnouncementCard(a: ParentAnnouncement) {
             Modifier.size(44.dp).clip(CircleShape).background(tint.copy(alpha = 0.12f)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
+            Icon(icon, contentDescription = "", tint = tint, modifier = Modifier.size(20.dp))
         }
         Column(Modifier.weight(1f)) {
             Text(
                 a.title,
-                style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
-                color = VColors.ink,
+                style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold),
+                color = VTheme.colors.ink,
             )
             if (a.description.isNotBlank()) {
                 Spacer(Modifier.height(2.dp))
                 Text(
                     a.description,
-                    style = VTypography.caption,
-                    color = VColors.ink2,
+                    style = VTheme.type.caption,
+                    color = VTheme.colors.ink2,
                 )
             }
             Spacer(Modifier.height(6.dp))
             Text(
                 a.date,
-                style = VTypography.caption.copy(fontSize = 11.sp),
-                color = VColors.ink3,
+                style = VTheme.type.caption.copy(fontSize = 11.sp),
+                color = VTheme.colors.ink3,
             )
         }
         if (a.isFeatured) {
             Icon(
                 Icons.AutoMirrored.Filled.Send,
                 contentDescription = "Featured",
-                tint = VColors.violet,
+                tint = VTheme.colors.violet,
                 modifier = Modifier.size(16.dp),
             )
         }
@@ -214,21 +213,21 @@ private fun EmptyStateCard(
         Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp)
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
+            .clip(RoundedCornerShape(18.dp))
+            .background(VTheme.colors.surfaceCard)
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
-            Modifier.size(56.dp).clip(CircleShape).background(VColors.creamDeep),
+            Modifier.size(56.dp).clip(CircleShape).background(VTheme.colors.creamDeep),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(VIcons.Bell, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(24.dp))
+            Icon(VIcons.Bell, contentDescription = "", tint = VTheme.colors.ink3, modifier = Modifier.size(24.dp))
         }
         Spacer(Modifier.height(12.dp))
-        Text(title, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+        Text(title, style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold), color = VTheme.colors.ink)
         Spacer(Modifier.height(4.dp))
-        Text(body, style = VTypography.caption, color = VColors.ink2)
+        Text(body, style = VTheme.type.caption, color = VTheme.colors.ink2)
     }
 }
 
@@ -237,28 +236,28 @@ private fun WhatsAppSyncBanner() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(VShapes.lg)
-            .background(VColors.successSoft)
+            .clip(RoundedCornerShape(18.dp))
+            .background(VTheme.colors.successSoft)
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Box(
-            Modifier.size(36.dp).clip(CircleShape).background(VColors.success.copy(alpha = 0.12f)),
+            Modifier.size(36.dp).clip(CircleShape).background(VTheme.colors.success.copy(alpha = 0.12f)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(VIcons.Megaphone, contentDescription = null, tint = VColors.success, modifier = Modifier.size(18.dp))
+            Icon(VIcons.Megaphone, contentDescription = "", tint = VTheme.colors.success, modifier = Modifier.size(18.dp))
         }
         Column(Modifier.weight(1f)) {
             Text(
                 "WhatsApp sync is on",
-                style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
-                color = VColors.ink,
+                style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold),
+                color = VTheme.colors.ink,
             )
             Text(
                 "You'll also receive these updates on WhatsApp.",
-                style = VTypography.caption,
-                color = VColors.ink2,
+                style = VTheme.type.caption,
+                color = VTheme.colors.ink2,
             )
         }
     }

@@ -39,6 +39,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * Scoped student-profile drill-down (read-only). Loads `GET /teacher/students/{id}`
@@ -72,19 +74,19 @@ fun TeacherStudentProfilePane(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     TIconDisc(VIcons.Lock, c.ink3, c.cream, size = 56.dp, glyph = 26.dp)
                     Spacer(Modifier.height(12.dp))
-                    Text(appString(StringKeys.TC_NOT_YOUR_STUDENT), style = VtT.bodyStrong.coloredV(c.navyDeep))
+                    Text(appString(StringKeys.TC_NOT_YOUR_STUDENT), style = VTheme.type.bodyStrong.colored(c.navyDeep))
                     Spacer(Modifier.height(4.dp))
                     Text(
                         appString(StringKeys.TC_NOT_YOUR_STUDENT_DESC),
-                        style = VtT.caption.coloredV(c.ink3),
+                        style = VTheme.type.caption.colored(c.ink3),
                     )
                 }
             }
             state.error != null -> TeacherCenterState {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(appString(StringKeys.TC_COULDNT_LOAD_PROFILE), style = VtT.bodyStrong.coloredV(c.navyDeep))
+                    Text(appString(StringKeys.TC_COULDNT_LOAD_PROFILE), style = VTheme.type.bodyStrong.colored(c.navyDeep))
                     Spacer(Modifier.height(4.dp))
-                    Text(state.error!!, style = VtT.caption.coloredV(c.ink3))
+                    Text(state.error!!, style = VTheme.type.caption.colored(c.ink3))
                     Spacer(Modifier.height(14.dp))
                     VButton(appString(StringKeys.TC_TRY_AGAIN), onClick = { viewModel.retry() }, size = VButtonSize.Sm, tone = VButtonTone.Lavender)
                 }
@@ -126,19 +128,19 @@ private fun IdentityCard(p: StudentProfileData) {
             ) {
                 Text(
                     p.name.take(1).uppercase(),
-                    style = VtT.h2.coloredV(c.accentDeep),
+                    style = VTheme.type.h2.colored(c.accentDeep),
                 )
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text(p.name, style = VtT.h3.coloredV(c.navyDeep))
+                Text(p.name, style = VTheme.type.h3.colored(c.navyDeep))
                 Spacer(Modifier.height(2.dp))
                 Text(
                     buildString {
                         append("${p.className} · ${p.section}")
                         p.roll?.let { append(" · ${appString(StringKeys.TC_ROLL_LABEL)} $it") }
                     },
-                    style = VtT.body.coloredV(c.ink2),
+                    style = VTheme.type.body.colored(c.ink2),
                 )
             }
         }
@@ -169,11 +171,11 @@ private fun AttendanceProfileCard(p: StudentProfileData) {
                 Column(Modifier.weight(1f)) {
                     Text(
                         if (pct == null) appString(StringKeys.TC_NO_ATTENDANCE_DATA) else appString(StringKeys.TC_PERCENT_PRESENT_OVERALL, "pct" to pct.toString()),
-                        style = VtT.bodyStrong.coloredV(c.navyDeep),
+                        style = VTheme.type.bodyStrong.colored(c.navyDeep),
                     )
                     if (a.recent.isNotEmpty()) {
                         Spacer(Modifier.height(8.dp))
-                        Text(appString(StringKeys.TC_RECENT), style = VtT.label.coloredV(c.ink3).copy(fontSize = 9.sp, letterSpacing = 0.6.sp, fontWeight = FontWeight.Bold))
+                        Text(appString(StringKeys.TC_RECENT), style = VTheme.type.label.colored(c.ink3).copy(fontSize = 9.sp, letterSpacing = 0.6.sp, fontWeight = FontWeight.Bold))
                         Spacer(Modifier.height(6.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                             a.recent.take(8).forEach { day ->
@@ -227,14 +229,14 @@ private fun PerformanceCard(perf: List<StudentPerformanceDto>) {
                 if (i > 0) Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text(e.assessmentName, style = VtT.bodyStrong.coloredV(c.navyDeep))
+                        Text(e.assessmentName, style = VTheme.type.bodyStrong.colored(c.navyDeep))
                         Spacer(Modifier.height(2.dp))
                         Text(
                             buildString {
                                 append(e.subject)
                                 if (!e.date.isNullOrBlank()) append(" · ${prettyDateShort(e.date)}")
                             },
-                            style = VtT.caption.coloredV(c.ink3),
+                            style = VTheme.type.caption.colored(c.ink3),
                         )
                     }
                     when {
@@ -249,7 +251,7 @@ private fun PerformanceCard(perf: List<StudentPerformanceDto>) {
                             }
                             Text(
                                 "${fmt1(e.marks!!.toFloat())}/${e.max}",
-                                style = VtT.bodyStrong.coloredV(tint),
+                                style = VTheme.type.bodyStrong.colored(tint),
                             )
                         }
                     }
@@ -275,8 +277,8 @@ private fun FlagsCard(flags: List<String>) {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Icon(VIcons.AlertTriangle, contentDescription = null, tint = tint, modifier = Modifier.size(16.dp))
-                    Text(text, style = VtT.body.coloredV(tint).copy(fontWeight = FontWeight.SemiBold))
+                    Icon(VIcons.AlertTriangle, contentDescription = "", tint = tint, modifier = Modifier.size(16.dp))
+                    Text(text, style = VTheme.type.body.colored(tint).copy(fontWeight = FontWeight.SemiBold))
                 }
             }
         }
@@ -312,12 +314,12 @@ private fun ParentContactCard(name: String?, phone: String?) {
                 TIconDisc(VIcons.User, c.tealDeep, c.teal.copy(alpha = 0.14f), size = 40.dp, glyph = 18.dp)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(name ?: appString(StringKeys.TC_PARENT_GUARDIAN), style = VtT.bodyStrong.coloredV(c.navyDeep))
+                    Text(name ?: appString(StringKeys.TC_PARENT_GUARDIAN), style = VTheme.type.bodyStrong.colored(c.navyDeep))
                     if (!phone.isNullOrBlank()) {
                         Spacer(Modifier.height(2.dp))
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Icon(VIcons.Phone, contentDescription = null, tint = c.ink3, modifier = Modifier.size(13.dp))
-                            Text(phone, style = VtT.body.coloredV(c.ink2))
+                            Icon(VIcons.Phone, contentDescription = "", tint = c.ink3, modifier = Modifier.size(13.dp))
+                            Text(phone, style = VTheme.type.body.colored(c.ink2))
                         }
                     }
                 }

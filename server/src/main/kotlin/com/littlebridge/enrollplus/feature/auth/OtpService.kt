@@ -183,9 +183,12 @@ object OtpService {
         // LOGGING FOR TESTING (RA-66): log the plaintext code in non-production.
         // This ensures the OTP can be seen in Render logs during testing without
         // needing OTP_DEV_RETURN_CODE=true in the API response.
-       // if (!isProduction) {
+        // CRITICAL: the isProduction guard must NEVER be commented out — logging
+        // plaintext OTPs in production allows anyone with log access to take over
+        // any account.
+        if (!isProduction) {
             log.info("[TESTING] Generated OTP for {}: {}", identifier, code)
-       // }
+        }
 
         // RA-38: the resend-limit check and the UPSERT now run inside ONE
         // transaction with a `SELECT … FOR UPDATE` row lock. Previously the read

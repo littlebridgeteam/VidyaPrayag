@@ -41,9 +41,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VEmptyState
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import androidx.compose.ui.text.font.FontWeight
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 @Composable
 internal fun GenerateTab(
@@ -62,12 +61,12 @@ internal fun GenerateTab(
     ) {
         state.error?.let { err ->
             VCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                Text(err, color = VColors.error, style = VTypography.body)
+                Text(err, color = VTheme.colors.error, style = VTheme.type.body)
             }
         }
         state.infoMessage?.let { msg ->
             VCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                Text(msg, color = VColors.success, style = VTypography.body)
+                Text(msg, color = VTheme.colors.success, style = VTheme.type.body)
             }
         }
 
@@ -82,7 +81,7 @@ internal fun GenerateTab(
             return
         }
 
-        Text(appString(StringKeys.SCH_SELECT_TEMPLATE), style = VTypography.label.copy(color = VColors.ink3))
+        Text(appString(StringKeys.SCH_SELECT_TEMPLATE), style = VTheme.type.label.copy(color = VTheme.colors.ink3))
         Spacer(modifier = Modifier.height(8.dp))
 
         state.templates.forEach { template ->
@@ -92,7 +91,7 @@ internal fun GenerateTab(
                     .fillMaxWidth()
                     .padding(vertical = 4.dp)
                     .then(
-                        if (isSelected) Modifier.border(2.dp, VColors.violet, RoundedCornerShape(12.dp))
+                        if (isSelected) Modifier.border(2.dp, VTheme.colors.violet, RoundedCornerShape(12.dp))
                         else Modifier
                     )
                     .clickable(
@@ -106,14 +105,14 @@ internal fun GenerateTab(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(template.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                        Text(template.name, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
                         Text(
                             appString(StringKeys.SCH_TEMPLATE_STATUS, "role" to template.roleType.replaceFirstChar { it.uppercase() }, "status" to if (template.isActive) appString(StringKeys.SCH_ACTIVE_LABEL) else appString(StringKeys.SCH_INACTIVE)),
-                            style = VTypography.caption.copy(color = VColors.ink2),
+                            style = VTheme.type.caption.copy(color = VTheme.colors.ink2),
                         )
                     }
                     if (isSelected) {
-                        Icon(Icons.Filled.Check, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Filled.Check, contentDescription = "", tint = VTheme.colors.violet, modifier = Modifier.size(20.dp))
                     }
                 }
             }
@@ -121,7 +120,7 @@ internal fun GenerateTab(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Text(appString(StringKeys.SCH_SELECT_SCOPE), style = VTypography.label.copy(color = VColors.ink3))
+        Text(appString(StringKeys.SCH_SELECT_SCOPE), style = VTheme.type.label.copy(color = VTheme.colors.ink3))
         Spacer(modifier = Modifier.height(8.dp))
 
         listOf(
@@ -135,7 +134,7 @@ internal fun GenerateTab(
                     .fillMaxWidth()
                     .padding(vertical = 4.dp)
                     .then(
-                        if (isSelected) Modifier.border(2.dp, VColors.violet, RoundedCornerShape(12.dp))
+                        if (isSelected) Modifier.border(2.dp, VTheme.colors.violet, RoundedCornerShape(12.dp))
                         else Modifier
                     )
                     .clickable(
@@ -148,9 +147,9 @@ internal fun GenerateTab(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(label, style = VTypography.body.copy(color = VColors.ink))
+                    Text(label, style = VTheme.type.body.copy(color = VTheme.colors.ink))
                     if (isSelected) {
-                        Icon(Icons.Filled.Check, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Filled.Check, contentDescription = "", tint = VTheme.colors.violet, modifier = Modifier.size(20.dp))
                     }
                 }
             }
@@ -190,7 +189,7 @@ internal fun GenerateTab(
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = appString(StringKeys.SCH_RENDERING_CARDS),
-                style = VTypography.caption.copy(color = VColors.ink3),
+                style = VTheme.type.caption.copy(color = VTheme.colors.ink3),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )

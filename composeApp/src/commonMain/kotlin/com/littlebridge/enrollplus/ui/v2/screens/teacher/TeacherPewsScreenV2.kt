@@ -68,31 +68,31 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
+import com.littlebridge.enrollplus.ui.v2.theme.colored
 
 // ── Cream/violet token bridge for the PEWS attention list ────────────────────
 private object PewsColors {
-    val card get() = VColors.white
-    val cream get() = VColors.surfaceTint
-    val ink get() = VColors.ink
-    val ink2 get() = VColors.ink2
-    val ink3 get() = VColors.ink3
-    val teal get() = VColors.mint
-    val tealDeep get() = VColors.success
-    val success get() = VColors.success
-    val warningInk get() = VColors.gold
-    val dangerInk get() = VColors.error
+    val card get() = VTheme.colors.white
+    val cream get() = VTheme.colors.surfaceTint
+    val ink get() = VTheme.colors.ink
+    val ink2 get() = VTheme.colors.ink2
+    val ink3 get() = VTheme.colors.ink3
+    val teal get() = VTheme.colors.mint
+    val tealDeep get() = VTheme.colors.success
+    val success get() = VTheme.colors.success
+    val warningInk get() = VTheme.colors.gold
+    val dangerInk get() = VTheme.colors.error
 }
 
 private object PewsType {
-    val body: TextStyle get() = VTypography.body
-    val bodyStrong: TextStyle get() = VTypography.body
-    val caption: TextStyle get() = VTypography.caption
-    val label: TextStyle get() = VTypography.label
+    val body: TextStyle get() = VTheme.type.body
+    val bodyStrong: TextStyle get() = VTheme.type.body
+    val caption: TextStyle get() = VTheme.type.caption
+    val label: TextStyle get() = VTheme.type.label
 }
 
 private fun TextStyle.colored(color: Color): TextStyle = copy(color = color)
@@ -239,7 +239,7 @@ private fun TeacherStudentCard(
         if (!aiLine.isNullOrBlank()) {
             Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Icon(VIcons.Sparkles, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(13.dp))
+                Icon(VIcons.Sparkles, contentDescription = "", tint = c.tealDeep, modifier = Modifier.size(13.dp))
                 Text(aiLine, style = PewsType.caption.colored(c.ink2).copy(fontSize = 12.sp, lineHeight = 17.sp), maxLines = 3)
             }
         }
@@ -296,7 +296,7 @@ private fun TeacherStudentCard(
                         Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(c.teal.copy(alpha = 0.1f)).padding(8.dp)) {
                             Column {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(VIcons.Sparkles, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(12.dp))
+                                    Icon(VIcons.Sparkles, contentDescription = "", tint = c.tealDeep, modifier = Modifier.size(12.dp))
                                     Spacer(Modifier.size(4.dp))
                                     Text(appString(StringKeys.TC_PARENT_MESSAGE, "lang" to (draftLang?.uppercase() ?: "EN")), style = PewsType.label.colored(c.tealDeep).copy(fontWeight = FontWeight.Bold, fontSize = 10.sp), modifier = Modifier.weight(1f))
                                     if (parentDrafts[iv.id] != null) {
@@ -331,7 +331,7 @@ private fun TeacherStudentCard(
                         if (initiatorLabel != null) {
                             Spacer(Modifier.height(6.dp))
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Icon(VIcons.Check, contentDescription = null, tint = c.success, modifier = Modifier.size(13.dp))
+                                Icon(VIcons.Check, contentDescription = "", tint = c.success, modifier = Modifier.size(13.dp))
                                 Text(initiatorLabel, style = PewsType.caption.colored(c.ink2).copy(fontSize = 11.sp))
                             }
                         }

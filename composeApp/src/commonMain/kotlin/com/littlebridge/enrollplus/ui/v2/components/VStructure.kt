@@ -118,7 +118,7 @@ fun VEmptyState(
                     .background(c.ink.copy(alpha = if (c.isNight) 0.06f else 0.04f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = null, tint = c.ink3, modifier = Modifier.size(28.dp))
+                Icon(icon, contentDescription = "", tint = c.ink3, modifier = Modifier.size(28.dp))
             }
         }
         Text(title, style = VTheme.type.h3.colored(c.ink), textAlign = TextAlign.Center)
@@ -220,7 +220,7 @@ fun VConfirmDialog(
                     .background(c.danger.copy(alpha = if (c.isNight) 0.18f else 0.28f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = null, tint = c.dangerInk, modifier = Modifier.size(26.dp))
+                Icon(icon, contentDescription = "", tint = c.dangerInk, modifier = Modifier.size(26.dp))
             }
         }
         Text(

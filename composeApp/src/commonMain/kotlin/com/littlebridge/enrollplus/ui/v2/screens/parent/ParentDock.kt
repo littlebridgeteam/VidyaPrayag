@@ -28,9 +28,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VNavItem
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 @Composable
 fun ParentDock(
@@ -42,8 +41,8 @@ fun ParentDock(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .background(VColors.white)
-            .border(width = 1.dp, color = VColors.line, shape = RoundedCornerShape(0.dp))
+            .background(VTheme.colors.white)
+            .border(width = 1.dp, color = VTheme.colors.line, shape = RoundedCornerShape(0.dp))
             .navigationBarsPadding()
             .padding(top = 6.dp, bottom = 8.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
@@ -68,7 +67,7 @@ private fun DockItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val contentColor = if (active) VColors.violet else VColors.ink3
+    val contentColor = if (active) VTheme.colors.violet else VTheme.colors.ink3
     val interactionSource = remember { MutableInteractionSource() }
 
     Column(
@@ -88,7 +87,7 @@ private fun DockItem(
             modifier = Modifier
                 .size(32.dp)
                 .clip(CircleShape)
-                .background(if (active) VColors.violetSoft else VColors.white)
+                .background(if (active) VTheme.colors.violetSoft else VTheme.colors.white)
                 .padding(4.dp),
             contentAlignment = Alignment.Center,
         ) {
@@ -96,13 +95,13 @@ private fun DockItem(
                 badge = {
                     if (item.badge > 0) {
                         Badge(
-                            containerColor = VColors.error,
-                            contentColor = VColors.white,
+                            containerColor = VTheme.colors.error,
+                            contentColor = VTheme.colors.white,
                             modifier = Modifier.size(16.dp),
                         ) {
                             Text(
                                 text = if (item.badge > 99) "99+" else item.badge.toString(),
-                                style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
+                                style = VTheme.type.caption.copy(fontWeight = FontWeight.Bold),
                             )
                         }
                     }
@@ -119,7 +118,7 @@ private fun DockItem(
         if (active) {
             Text(
                 text = item.label,
-                style = VTypography.caption.copy(
+                style = VTheme.type.caption.copy(
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 10.sp,
                 ),

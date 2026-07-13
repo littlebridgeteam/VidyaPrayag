@@ -29,11 +29,10 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VEmptyState
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import kotlinx.coroutines.flow.StateFlow
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * Shared helpers for the `ui/v2` screen layer.
@@ -56,7 +55,7 @@ fun VLoadingState(modifier: Modifier = Modifier) {
         modifier.fillMaxSize().padding(vertical = 64.dp),
         contentAlignment = Alignment.Center,
     ) {
-        CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(36.dp))
+        CircularProgressIndicator(color = VTheme.colors.violet, modifier = Modifier.size(36.dp))
     }
 }
 
@@ -167,7 +166,7 @@ fun VSectionHeader(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(title, style = VTypography.label.copy(color = VColors.ink3))
+        Text(title, style = VTheme.type.label.copy(color = VTheme.colors.ink3))
         action?.invoke()
     }
 }
@@ -188,8 +187,8 @@ fun VPortalHeader(
     ) {
         VAvatar(name = name.ifBlank { "?" }, src = photoUrl, ring = true)
         Column(Modifier.weight(1f)) {
-            Text(subtitle, style = VTypography.caption.copy(color = VColors.ink3), textAlign = TextAlign.Start)
-            Text(name.ifBlank { "—" }, style = VTypography.h3.copy(color = VColors.ink))
+            Text(subtitle, style = VTheme.type.caption.copy(color = VTheme.colors.ink3), textAlign = TextAlign.Start)
+            Text(name.ifBlank { "—" }, style = VTheme.type.h3.copy(color = VTheme.colors.ink))
         }
         trailing?.invoke()
     }

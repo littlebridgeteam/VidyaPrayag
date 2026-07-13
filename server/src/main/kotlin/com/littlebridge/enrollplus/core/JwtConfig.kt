@@ -10,7 +10,7 @@
  *   - JWT_ISSUER       → default "vidyaprayag-api"
  *   - JWT_AUDIENCE     → default "vidyaprayag-app"
  *   - JWT_REALM        → default "vidyaprayag"
- *   - JWT_EXPIRY_SECS  → default 7 days for access token
+ *   - Access-token TTL is role-based: 30 min for admin roles, 24 h for others
  *
  * Token claims:
  *   - sub        : userId (UUID string)
@@ -75,10 +75,6 @@ object JwtConfig {
     val issuer: String   by lazy { env("JWT_ISSUER", "vidyaprayag-api") }
     val audience: String by lazy { env("JWT_AUDIENCE", "vidyaprayag-app") }
     val realm: String    by lazy { env("JWT_REALM", "vidyaprayag") }
-    // Default access-token TTL shortened to 1 day (was 7) to limit the blast
-    // radius of a leaked/forged token. Refresh tokens cover longer sessions.
-    val expirySecs: Long by lazy { env("JWT_EXPIRY_SECS", "86400").toLong() } // 1 day
-
     private val algorithm by lazy { Algorithm.HMAC256(secret) }
 
     val verifier: com.auth0.jwt.JWTVerifier by lazy {

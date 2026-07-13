@@ -40,12 +40,11 @@ import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.math.roundToInt
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * AdmissionsCrmScreenV2 — Admissions CRM dashboard overlay.
@@ -133,11 +132,11 @@ private fun AdmissionsCrmContent(
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Column(Modifier.weight(1f)) {
-                        Text("Conversion rate", style = VTypography.label.copy(color = VColors.ink3))
+                        Text("Conversion rate", style = VTheme.type.label.copy(color = VTheme.colors.ink3))
                         Spacer(Modifier.height(4.dp))
                         Text(
                             "${state.conversionRate.roundToInt()}%",
-                            style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink),
+                            style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VTheme.colors.ink),
                         )
                     }
                     VBadge(text = state.efficiencyLabel, tone = VBadgeTone.Arctic)
@@ -150,7 +149,7 @@ private fun AdmissionsCrmContent(
                 VCard {
                     Text(
                         "No recent enquiries to display.",
-                        style = VTypography.caption.copy(color = VColors.ink3),
+                        style = VTheme.type.caption.copy(color = VTheme.colors.ink3),
                     )
                 }
             } else {
@@ -165,9 +164,9 @@ private fun AdmissionsCrmContent(
 @Composable
 private fun KpiTile(label: String, value: String) {
         VCard {
-        Text(label, style = VTypography.label.copy(color = VColors.ink3))
+        Text(label, style = VTheme.type.label.copy(color = VTheme.colors.ink3))
         Spacer(Modifier.height(4.dp))
-        Text(value, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink))
+        Text(value, style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VTheme.colors.ink))
     }
 }
 
@@ -196,7 +195,7 @@ private fun EnquiryCard(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         enquiry.studentName,
-                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink),
+                        style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink),
                         modifier = Modifier.weight(1f, fill = false),
                     )
                     VBadge(text = badgeText, tone = badgeTone)
@@ -204,10 +203,10 @@ private fun EnquiryCard(
                 Spacer(Modifier.height(2.dp))
                 Text(
                     "${enquiry.parentName} · ${enquiry.className}",
-                    style = VTypography.caption.copy(color = VColors.ink2),
+                    style = VTheme.type.caption.copy(color = VTheme.colors.ink2),
                 )
                 Spacer(Modifier.height(2.dp))
-                Text(enquiry.date, style = VTypography.caption.copy(color = VColors.ink3))
+                Text(enquiry.date, style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
             }
         }
 

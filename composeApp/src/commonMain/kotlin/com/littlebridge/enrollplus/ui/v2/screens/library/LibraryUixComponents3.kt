@@ -147,7 +147,7 @@ fun FeaturedBookCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                Icon(VIcons.Star, contentDescription = null, tint = c.accent, modifier = Modifier.size(16.dp))
+                Icon(VIcons.Star, contentDescription = "", tint = c.accent, modifier = Modifier.size(16.dp))
                 Text(typeLabel, style = VTheme.type.caption.colored(c.accentDeep), fontWeight = FontWeight.Bold)
             }
             Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {

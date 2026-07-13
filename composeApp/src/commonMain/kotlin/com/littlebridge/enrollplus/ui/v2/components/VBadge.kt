@@ -76,7 +76,7 @@ fun VBadge(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp), // React gap-1
         ) {
-            Icon(leadingIcon, contentDescription = null, tint = fg, modifier = Modifier.size(14.dp))
+            Icon(leadingIcon, contentDescription = "", tint = fg, modifier = Modifier.size(14.dp))
             Text(text = text, style = textStyle)
         }
     } else {
@@ -132,7 +132,7 @@ fun VTag(
         )
         if (trailingIcon != null) {
             // React renders `<ChevronDown size={12} />` inline-block after the label.
-            Icon(trailingIcon, contentDescription = null, tint = fg, modifier = Modifier.size(12.dp))
+            Icon(trailingIcon, contentDescription = "", tint = fg, modifier = Modifier.size(12.dp))
         }
     }
 }

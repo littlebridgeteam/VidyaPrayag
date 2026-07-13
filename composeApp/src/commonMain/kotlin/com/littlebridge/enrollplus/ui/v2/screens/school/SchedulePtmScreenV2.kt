@@ -52,11 +52,10 @@ import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * SchedulePtmScreenV2 — Parent-Teacher Meeting console (admin overlay).
@@ -132,7 +131,7 @@ private fun SchedulePtmContent(
             // Schedule new PTM CTA / composer
             if (composerOpen) {
                 VCard {
-                    Text(appString(StringKeys.SCH_NEW_PTM), style = VTypography.h3.copy(color = VColors.ink))
+                    Text(appString(StringKeys.SCH_NEW_PTM), style = VTheme.type.h3.copy(color = VTheme.colors.ink))
                     Spacer(Modifier.height(12.dp))
                     VInput(value = title, onValueChange = { title = it }, label = appString(StringKeys.SCH_TITLE), placeholder = appString(StringKeys.SCH_TITLE_PH))
                     Spacer(Modifier.height(8.dp))
@@ -142,7 +141,7 @@ private fun SchedulePtmContent(
                     val info = state.infoMessage
                     if (info != null) {
                         Spacer(Modifier.height(8.dp))
-                        Text(info, style = VTypography.caption.copy(color = VColors.success))
+                        Text(info, style = VTheme.type.caption.copy(color = VTheme.colors.success))
                     }
                     Spacer(Modifier.height(12.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -192,12 +191,12 @@ private fun SchedulePtmContent(
                 VCard {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         VBadge(text = appString(StringKeys.SCH_ACTIVE), tone = VBadgeTone.Success)
-                        Text(state.activeEventTitle, style = VTypography.h3.copy(color = VColors.ink))
+                        Text(state.activeEventTitle, style = VTheme.type.h3.copy(color = VTheme.colors.ink))
                     }
                     Spacer(Modifier.height(4.dp))
                     Text(
                         "${state.activeEventDate} · ${state.activeEventSlot}",
-                        style = VTypography.caption.copy(color = VColors.ink2),
+                        style = VTheme.type.caption.copy(color = VTheme.colors.ink2),
                     )
                     Spacer(Modifier.height(12.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -225,7 +224,7 @@ private fun SchedulePtmContent(
                 VSectionHeader(title = appString(StringKeys.SCH_HISTORY))
                 VCard {
                     state.history.forEachIndexed { i, h ->
-                        if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
+                        if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(VTheme.colors.line))
                         HistoryRow(h, modifier = Modifier.staggeredItemEntrance(i, state.history.isNotEmpty()))
                     }
                 }
@@ -245,12 +244,12 @@ private fun KpiTile(label: String, value: String) {
         Column(
         Modifier
             .clip(RoundedCornerShape(12.dp))
-            .background(VColors.cream)
+            .background(VTheme.colors.cream)
             .padding(12.dp),
     ) {
-        Text(label, style = VTypography.label.copy(color = VColors.ink3))
+        Text(label, style = VTheme.type.label.copy(color = VTheme.colors.ink3))
         Spacer(Modifier.height(4.dp))
-        Text(value, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink))
+        Text(value, style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VTheme.colors.ink))
     }
 }
 
@@ -262,13 +261,13 @@ private fun HistoryRow(h: PTMHistoryItem, modifier: Modifier = Modifier) {
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Column(Modifier.weight(1f)) {
-            Text(h.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+            Text(h.title, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
             Spacer(Modifier.height(2.dp))
-            Text(h.date, style = VTypography.caption.copy(color = VColors.ink3))
+            Text(h.date, style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
         }
         Text(
             "${h.turnout}/${h.totalMet}",
-            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2),
+            style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink2),
         )
     }
 }
@@ -278,13 +277,13 @@ private fun ClassProgressCard(cp: ClassPTMProgress, modifier: Modifier = Modifie
     VCard(modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
             Column(Modifier.weight(1f)) {
-                Text(cp.className, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                Text(cp.className, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
                 Spacer(Modifier.height(2.dp))
-                Text(cp.teacherName, style = VTypography.caption.copy(color = VColors.ink3))
+                Text(cp.teacherName, style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
             }
             Text(
                 "${cp.metCount}/${cp.totalCount}",
-                style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2),
+                style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink2),
             )
         }
         Spacer(Modifier.height(10.dp))

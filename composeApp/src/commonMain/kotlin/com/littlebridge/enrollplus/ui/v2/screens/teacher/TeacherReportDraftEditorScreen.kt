@@ -33,6 +33,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * TeacherReportDraftEditorScreen — allows teachers to edit the AI-generated
@@ -61,7 +63,7 @@ fun TeacherReportDraftEditorScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             VButton(text = appString(StringKeys.COMMON_BUTTON_BACK), onClick = onBack, variant = VButtonVariant.Secondary, size = VButtonSize.Sm)
-            Text(appString(StringKeys.TC_EDIT_DRAFT), style = VtT.h3.coloredV(c.ink))
+            Text(appString(StringKeys.TC_EDIT_DRAFT), style = VTheme.type.h3.colored(c.ink))
         }
 
         when {
@@ -72,7 +74,7 @@ fun TeacherReportDraftEditorScreen(
             }
             state.error != null -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(state.error!!, style = VtT.body.coloredV(c.danger))
+                    Text(state.error!!, style = VTheme.type.body.colored(c.danger))
                 }
             }
             state.draft != null -> {
@@ -84,25 +86,25 @@ fun TeacherReportDraftEditorScreen(
                     VCard(Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text("${state.draft!!.className} ${state.draft!!.section} • ${state.draft!!.term}",
-                                style = VtT.body.coloredV(c.ink).copy(fontWeight = FontWeight.Medium))
-                            Text(appString(StringKeys.TC_STATUS_COLON, "status" to state.draft!!.status), style = VtT.caption.coloredV(c.ink2))
-                            Text(appString(StringKeys.TC_LANGUAGE_COLON, "lang" to state.draft!!.language), style = VtT.caption.coloredV(c.ink3))
+                                style = VTheme.type.body.colored(c.ink).copy(fontWeight = FontWeight.Medium))
+                            Text(appString(StringKeys.TC_STATUS_COLON, "status" to state.draft!!.status), style = VTheme.type.caption.colored(c.ink2))
+                            Text(appString(StringKeys.TC_LANGUAGE_COLON, "lang" to state.draft!!.language), style = VTheme.type.caption.colored(c.ink3))
                         }
                     }
 
                     // Editable draft content
-                    Text(appString(StringKeys.TC_AI_NARRATIVE_EDITABLE), style = VtT.label.coloredV(c.ink).copy(fontWeight = FontWeight.Bold))
+                    Text(appString(StringKeys.TC_AI_NARRATIVE_EDITABLE), style = VTheme.type.label.colored(c.ink).copy(fontWeight = FontWeight.Bold))
                     OutlinedTextField(
                         value = state.editedContent,
                         onValueChange = { viewModel.updateContent(it) },
                         modifier = Modifier.fillMaxWidth().height(280.dp),
-                        textStyle = VtT.body.coloredV(c.ink),
+                        textStyle = VTheme.type.body.colored(c.ink),
                     )
 
                     if (state.saved) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Icon(VIcons.Check, contentDescription = null, tint = c.success, modifier = Modifier.size(16.dp))
-                            Text(appString(StringKeys.TC_SAVED_SUCCESSFULLY), style = VtT.body.coloredV(c.success))
+                            Icon(VIcons.Check, contentDescription = "", tint = c.success, modifier = Modifier.size(16.dp))
+                            Text(appString(StringKeys.TC_SAVED_SUCCESSFULLY), style = VTheme.type.body.colored(c.success))
                         }
                     }
 

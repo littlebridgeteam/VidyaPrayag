@@ -48,8 +48,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.theme.VColors
-import com.littlebridge.enrollplus.ui.tokens.VColors as VTok
-import com.littlebridge.enrollplus.ui.tokens.VTypography as VTypo
 import com.littlebridge.enrollplus.util.nowMinutesOfDay
 
 /**
@@ -304,7 +302,7 @@ fun TPill(
 @Composable
 fun TIconDisc(icon: ImageVector, tint: Color, bg: Color, size: androidx.compose.ui.unit.Dp = 40.dp, glyph: androidx.compose.ui.unit.Dp = 20.dp) {
     Box(Modifier.size(size).clip(CircleShape).background(bg), contentAlignment = Alignment.Center) {
-        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(glyph))
+        Icon(icon, contentDescription = "", tint = tint, modifier = Modifier.size(glyph))
     }
 }
 

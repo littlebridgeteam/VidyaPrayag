@@ -54,7 +54,7 @@ fun ParentCoveredCard(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Icon(VIcons.BookOpen, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(14.dp))
+                Icon(VIcons.BookOpen, contentDescription = "", tint = c.accentDeep, modifier = Modifier.size(14.dp))
                 Text(
                     if (schoolDayEnded) appString(StringKeys.PCC_COVERED_SUMMARY) else appString(StringKeys.PCC_COVERED_LIVE),
                     style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 10.sp),
@@ -82,7 +82,7 @@ fun ParentCoveredCard(
                     Modifier.size(40.dp).clip(CircleShape).background(c.accent.copy(alpha = 0.14f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(VIcons.BookOpen, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(20.dp))
+                    Icon(VIcons.BookOpen, contentDescription = "", tint = c.accentDeep, modifier = Modifier.size(20.dp))
                 }
                 Column(Modifier.weight(1f)) {
                     Text(

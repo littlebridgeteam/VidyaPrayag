@@ -27,12 +27,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.parent.presentation.FeeViewModel
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VShapes
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 /**
  * ParentFeePaymentScreenV2 — premium pay-now overlay for the Fees tab.
@@ -55,7 +54,7 @@ fun ParentFeePaymentScreenV2(
     Column(
         modifier
             .fillMaxSize()
-            .background(VColors.cream),
+            .background(VTheme.colors.cream),
     ) {
         PremiumOverlayHeader(title = "Pay Fees", onBack = onBack)
 
@@ -69,28 +68,28 @@ fun ParentFeePaymentScreenV2(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(VShapes.lg)
-                    .background(VColors.violet)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(VTheme.colors.violet)
                     .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
                     "Outstanding Amount",
-                    style = VTypography.body,
-                    color = VColors.white.copy(alpha = 0.85f),
+                    style = VTheme.type.body,
+                    color = VTheme.colors.white.copy(alpha = 0.85f),
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
                     outstanding,
-                    style = VTypography.h2.copy(fontSize = 32.sp),
-                    color = VColors.white,
+                    style = VTheme.type.h2.copy(fontSize = 32.sp),
+                    color = VTheme.colors.white,
                 )
                 if (state.overdueCount > 0) {
                     Spacer(Modifier.height(8.dp))
                     Text(
                         "${state.overdueCount} overdue fee head(s)",
-                        style = VTypography.caption,
-                        color = VColors.gold,
+                        style = VTheme.type.caption,
+                        color = VTheme.colors.gold,
                     )
                 }
             }
@@ -99,14 +98,14 @@ fun ParentFeePaymentScreenV2(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(VShapes.lg)
-                    .background(VColors.surfaceCard)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(VTheme.colors.surfaceCard)
                     .padding(20.dp),
             ) {
                 Text(
                     "Payment Method",
-                    style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
-                    color = VColors.ink,
+                    style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold),
+                    color = VTheme.colors.ink,
                 )
                 Spacer(Modifier.height(12.dp))
                 Row(
@@ -114,26 +113,26 @@ fun ParentFeePaymentScreenV2(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Box(
-                        Modifier.size(40.dp).clip(CircleShape).background(VColors.violetSoft),
+                        Modifier.size(40.dp).clip(CircleShape).background(VTheme.colors.violetSoft),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             Icons.Filled.Payment,
-                            contentDescription = null,
-                            tint = VColors.violet,
+                            contentDescription = "",
+                            tint = VTheme.colors.violet,
                             modifier = Modifier.size(20.dp),
                         )
                     }
                     Column {
                         Text(
                             "Online Payment",
-                            style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
-                            color = VColors.ink,
+                            style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold),
+                            color = VTheme.colors.ink,
                         )
                         Text(
                             "Secure Razorpay gateway",
-                            style = VTypography.caption,
-                            color = VColors.ink2,
+                            style = VTheme.type.caption,
+                            color = VTheme.colors.ink2,
                         )
                     }
                 }
@@ -141,7 +140,7 @@ fun ParentFeePaymentScreenV2(
 
             if (state.isLoading) {
                 Box(Modifier.fillMaxWidth().height(56.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(28.dp))
+                    CircularProgressIndicator(color = VTheme.colors.violet, modifier = Modifier.size(28.dp))
                 }
             }
 
@@ -151,16 +150,16 @@ fun ParentFeePaymentScreenV2(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(VShapes.full)
-                    .background(if (hasOutstanding) VColors.violet else VColors.lineSoft)
+                    .clip(RoundedCornerShape(50))
+                    .background(if (hasOutstanding) VTheme.colors.violet else VTheme.colors.lineSoft)
                     .clickable(enabled = hasOutstanding, onClick = onPay)
                     .padding(vertical = 16.dp),
                 horizontalArrangement = Arrangement.Center,
             ) {
                 Text(
                     if (hasOutstanding) "Pay $outstanding" else "No fees due",
-                    style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
-                    color = if (hasOutstanding) VColors.white else VColors.ink3,
+                    style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold),
+                    color = if (hasOutstanding) VTheme.colors.white else VTheme.colors.ink3,
                 )
             }
         }

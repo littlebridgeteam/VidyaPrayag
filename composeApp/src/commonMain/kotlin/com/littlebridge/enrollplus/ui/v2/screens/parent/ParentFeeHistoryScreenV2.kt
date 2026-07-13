@@ -25,13 +25,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.parent.presentation.FeeViewModel
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VShapes
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 /**
  * ParentFeeHistoryScreenV2 — premium fee history overlay for the Fees tab.
@@ -51,7 +50,7 @@ fun ParentFeeHistoryScreenV2(
     Column(
         modifier
             .fillMaxSize()
-            .background(VColors.cream),
+            .background(VTheme.colors.cream),
     ) {
         PremiumOverlayHeader(title = "Fee History", onBack = onBack)
 
@@ -66,27 +65,27 @@ fun ParentFeeHistoryScreenV2(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(VShapes.lg)
-                    .background(VColors.success)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(VTheme.colors.success)
                     .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
                     "Total Collected",
-                    style = VTypography.body,
-                    color = VColors.white.copy(alpha = 0.85f),
+                    style = VTheme.type.body,
+                    color = VTheme.colors.white.copy(alpha = 0.85f),
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
                     totalCollected,
-                    style = VTypography.h2.copy(fontSize = 32.sp),
-                    color = VColors.white,
+                    style = VTheme.type.h2.copy(fontSize = 32.sp),
+                    color = VTheme.colors.white,
                 )
             }
 
             if (state.isLoading) {
                 Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                    androidx.compose.material3.CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(36.dp))
+                    androidx.compose.material3.CircularProgressIndicator(color = VTheme.colors.violet, modifier = Modifier.size(36.dp))
                 }
             } else {
                 EmptyHistoryCard()
@@ -100,29 +99,29 @@ private fun EmptyHistoryCard() {
     Column(
         Modifier
             .fillMaxWidth()
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.lg)
+            .clip(RoundedCornerShape(18.dp))
+            .background(VTheme.colors.surfaceCard)
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(18.dp))
             .padding(28.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
-            Modifier.size(56.dp).clip(CircleShape).background(VColors.creamDeep),
+            Modifier.size(56.dp).clip(CircleShape).background(VTheme.colors.creamDeep),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(VIcons.Wallet, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(24.dp))
+            Icon(VIcons.Wallet, contentDescription = "", tint = VTheme.colors.ink3, modifier = Modifier.size(24.dp))
         }
         Spacer(Modifier.height(12.dp))
         Text(
             "No payment history",
-            style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
-            color = VColors.ink,
+            style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold),
+            color = VTheme.colors.ink,
         )
         Spacer(Modifier.height(4.dp))
         Text(
             "Once you pay fees, the receipts will show up here.",
-            style = VTypography.caption,
-            color = VColors.ink2,
+            style = VTheme.type.caption,
+            color = VTheme.colors.ink2,
         )
     }
 }

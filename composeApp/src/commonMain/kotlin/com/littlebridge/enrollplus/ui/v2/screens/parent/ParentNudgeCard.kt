@@ -80,7 +80,7 @@ fun ParentNudgeCard(
             ) {
                 Icon(
                     VIcons.Heart,
-                    contentDescription = null,
+                    contentDescription = "",
                     tint = c.accent,
                     modifier = Modifier.size(20.dp),
                 )

@@ -69,7 +69,7 @@ fun VTimePicker(
         ) {
             Icon(
                 VIcons.Clock,
-                contentDescription = null,
+                contentDescription = "",
                 tint = if (enabled) c.tealDeep else c.ink3,
                 modifier = Modifier.size(18.dp),
             )

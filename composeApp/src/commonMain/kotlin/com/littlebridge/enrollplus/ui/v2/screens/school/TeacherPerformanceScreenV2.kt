@@ -41,11 +41,10 @@ import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * TeacherPerformanceScreenV2 — faculty-level analytics overlay.
@@ -112,9 +111,9 @@ private fun TeacherPerformanceContent(
             VCard {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     Column(Modifier.weight(1f)) {
-                        Text(appString(StringKeys.SCH_AGGREGATE_COMPLIANCE), style = VTypography.label.copy(color = VColors.ink3))
+                        Text(appString(StringKeys.SCH_AGGREGATE_COMPLIANCE), style = VTheme.type.label.copy(color = VTheme.colors.ink3))
                         Spacer(Modifier.height(4.dp))
-                        Text(state.aggregateCompliance.ifBlank { "—" }, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink))
+                        Text(state.aggregateCompliance.ifBlank { "—" }, style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VTheme.colors.ink))
                     }
                     if (state.complianceTrend.isNotBlank()) {
                         VBadge(text = state.complianceTrend, tone = VBadgeTone.Arctic)
@@ -127,7 +126,7 @@ private fun TeacherPerformanceContent(
                 VSectionHeader(title = appString(StringKeys.SCH_STAR_FACULTY))
                 VCard {
                     state.starFaculty.forEachIndexed { i, t ->
-                        if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
+                        if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(VTheme.colors.line))
                         StarRow(t, modifier = Modifier.staggeredItemEntrance(i, state.starFaculty.isNotEmpty()))
                     }
                 }
@@ -163,13 +162,13 @@ private fun StarRow(t: StarTeacher, modifier: Modifier = Modifier) {
         VBadge(text = "#${t.rank}", tone = if (t.rank == 1) VBadgeTone.Warning else VBadgeTone.Arctic)
         VAvatar(name = t.name.ifBlank { "?" }, src = t.imageUrl.ifBlank { null }, size = 36.dp)
         Column(Modifier.weight(1f)) {
-            Text(t.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+            Text(t.name, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
             Spacer(Modifier.height(2.dp))
-            Text(t.department, style = VTypography.caption.copy(color = VColors.ink3))
+            Text(t.department, style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
         }
         Text(
             t.score.toString().take(5),
-            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2),
+            style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink2),
         )
     }
 }
@@ -193,13 +192,13 @@ private fun AccountabilityCard(f: FacultyAccountability, modifier: Modifier = Mo
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         f.name,
-                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink),
+                        style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink),
                         modifier = Modifier.weight(1f, fill = false),
                     )
                     VBadge(text = f.riskCorrelation, tone = riskTone)
                 }
                 Spacer(Modifier.height(2.dp))
-                Text(f.department, style = VTypography.caption.copy(color = VColors.ink3))
+                Text(f.department, style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
             }
         }
         Spacer(Modifier.height(10.dp))
@@ -214,9 +213,9 @@ private fun AccountabilityCard(f: FacultyAccountability, modifier: Modifier = Mo
 @Composable
 private fun MiniStat(label: String, value: String) {
         Column {
-        Text(label, style = VTypography.label.copy(color = VColors.ink3))
+        Text(label, style = VTheme.type.label.copy(color = VTheme.colors.ink3))
         Spacer(Modifier.height(2.dp))
-        Text(value, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+        Text(value, style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
     }
 }
 
@@ -224,8 +223,8 @@ private fun MiniStat(label: String, value: String) {
 private fun DeptRow(d: DeptEfficiency, modifier: Modifier = Modifier) {
     Column(modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(d.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
-            Text("${d.percentage}%", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2))
+            Text(d.name, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
+            Text("${d.percentage}%", style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink2))
         }
         Spacer(Modifier.height(6.dp))
         VProgressBar(value = d.percentage.toFloat().coerceIn(0f, 100f))

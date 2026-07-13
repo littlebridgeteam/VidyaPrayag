@@ -473,7 +473,7 @@ private fun BookCard(
                     variant = VButtonVariant.Secondary,
                     tone = VButtonTone.Sand,
                     size = VButtonSize.Sm,
-                    leading = { Icon(VIcons.Share, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                    leading = { Icon(VIcons.Share, contentDescription = "", modifier = Modifier.size(16.dp)) },
                 )
             }
         }

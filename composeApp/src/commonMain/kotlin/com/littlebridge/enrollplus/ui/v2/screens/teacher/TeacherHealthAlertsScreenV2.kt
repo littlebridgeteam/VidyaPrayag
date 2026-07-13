@@ -34,6 +34,8 @@ import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 @Composable
 fun TeacherHealthAlertsScreenV2(
@@ -80,7 +82,7 @@ private fun TeacherHealthAlertsContent(alerts: List<HealthAlertDto>) {
     ) {
         Text(
             appString(StringKeys.TC_HEALTH_ALERTS_LIST_DESC),
-            style = VtT.caption.coloredV(c.ink2),
+            style = VTheme.type.caption.colored(c.ink2),
         )
 
         alerts.forEach { alert ->
@@ -94,18 +96,18 @@ private fun TeacherHealthAlertsContent(alerts: List<HealthAlertDto>) {
                         Modifier.size(40.dp).clip(CircleShape).background(c.danger.copy(alpha = 0.1f)),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(VIcons.AlertTriangle, contentDescription = null, tint = c.dangerInk, modifier = Modifier.size(20.dp))
+                        Icon(VIcons.AlertTriangle, contentDescription = "", tint = c.dangerInk, modifier = Modifier.size(20.dp))
                     }
                     Column(Modifier.weight(1f)) {
-                        Text(alert.studentName, style = VtT.bodyStrong.coloredV(c.ink))
-                        Text("${alert.className} - ${alert.section}", style = VtT.caption.coloredV(c.ink3))
+                        Text(alert.studentName, style = VTheme.type.bodyStrong.colored(c.ink))
+                        Text("${alert.className} - ${alert.section}", style = VTheme.type.caption.colored(c.ink3))
                         val allergies = parseJsonArray(alert.allergies)
                         val conditions = parseJsonArray(alert.chronicConditions)
                         if (allergies.isNotEmpty()) {
-                            Text(appString(StringKeys.TC_ALLERGIES_LABEL, "list" to allergies.joinToString(", ")), style = VtT.caption.coloredV(c.dangerInk))
+                            Text(appString(StringKeys.TC_ALLERGIES_LABEL, "list" to allergies.joinToString(", ")), style = VTheme.type.caption.colored(c.dangerInk))
                         }
                         if (conditions.isNotEmpty()) {
-                            Text(appString(StringKeys.TC_CONDITIONS_LABEL, "list" to conditions.joinToString(", ")), style = VtT.caption.coloredV(c.ink2))
+                            Text(appString(StringKeys.TC_CONDITIONS_LABEL, "list" to conditions.joinToString(", ")), style = VTheme.type.caption.colored(c.ink2))
                         }
                     }
                 }

@@ -33,7 +33,6 @@ import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
-import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
@@ -133,7 +132,7 @@ private fun ParentProfileContent(
     Column(
         modifier
             .fillMaxSize()
-            .background(VColors.cream)
+            .background(VTheme.colors.cream)
             .statusBarsPadding()
             .imePadding()
             .navigationBarsPadding()
@@ -223,7 +222,7 @@ private fun ParentProfileContent(
                                     }
                                     Icon(
                                         VIcons.ChevronRight,
-                                        contentDescription = null,
+                                        contentDescription = "",
                                         tint = c.ink3,
                                         modifier = Modifier.size(16.dp)
                                     )

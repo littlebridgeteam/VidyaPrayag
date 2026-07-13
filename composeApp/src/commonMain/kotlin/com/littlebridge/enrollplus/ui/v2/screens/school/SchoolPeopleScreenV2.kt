@@ -68,13 +68,12 @@ import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VMotion
-import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.ui.v2.theme.VMotion
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 private enum class PeopleSubTab {
     Teachers, Students, Staff;
@@ -250,20 +249,20 @@ private fun SchoolPeopleContent(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(7.dp),
                 ) {
-                    Box(Modifier.size(5.dp).clip(CircleShape).background(VColors.violet))
-                    Text(appString(StringKeys.PPL_TITLE), style = VTypography.accentLabel, color = VColors.violet)
+                    Box(Modifier.size(5.dp).clip(CircleShape).background(VTheme.colors.violet))
+                    Text(appString(StringKeys.PPL_TITLE), style = VTheme.type.accentLabel, color = VTheme.colors.violet)
                 }
                 Spacer(Modifier.height(6.dp))
                 Text(
                     text = buildAnnotatedString {
-                        withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold, color = VColors.ink)) {
+                        withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold, color = VTheme.colors.ink)) {
                             append("People")
                         }
-                        withStyle(SpanStyle(fontWeight = FontWeight.Normal, color = VColors.ink2)) {
+                        withStyle(SpanStyle(fontWeight = FontWeight.Normal, color = VTheme.colors.ink2)) {
                             append(" Directory")
                         }
                     },
-                    style = VTypography.h2,
+                    style = VTheme.type.h2,
                 )
             }
 
@@ -274,7 +273,7 @@ private fun SchoolPeopleContent(
                 onSelect = { label ->
                     subTab = PeopleSubTab.entries[subTabLabels.indexOf(label)]
                 },
-                activeColor = VColors.violet,
+                activeColor = VTheme.colors.violet,
             )
 
             HorizontalPager(
@@ -413,22 +412,22 @@ private fun TeachersSubTab(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(VColors.surfaceCard)
+                        .background(VTheme.colors.surfaceCard)
                         .clickable { menuExpanded = true },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(VIcons.More, contentDescription = "More", tint = VColors.ink, modifier = Modifier.size(20.dp))
+                    Icon(VIcons.More, contentDescription = "More", tint = VTheme.colors.ink, modifier = Modifier.size(20.dp))
                 }
                 DropdownMenu(
                     expanded = menuExpanded,
                     onDismissRequest = { menuExpanded = false },
-                    modifier = Modifier.background(VColors.surfaceCard, RoundedCornerShape(14.dp)),
+                    modifier = Modifier.background(VTheme.colors.surfaceCard, RoundedCornerShape(14.dp)),
                 ) {
                     DropdownMenuItem(
                         text = { Text(appString(StringKeys.PPL_ADD_TEACHER)) },
                         onClick = { menuExpanded = false; onAddClick() },
                         enabled = !state.isMutating,
-                        leadingIcon = { Icon(VIcons.Plus, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                        leadingIcon = { Icon(VIcons.Plus, contentDescription = "", modifier = Modifier.size(16.dp)) },
                     )
                 }
             }
@@ -572,32 +571,32 @@ private fun StudentsSubTab(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(VColors.surfaceCard)
+                        .background(VTheme.colors.surfaceCard)
                         .clickable { menuExpanded = true },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(VIcons.More, contentDescription = "More", tint = VColors.ink, modifier = Modifier.size(20.dp))
+                    Icon(VIcons.More, contentDescription = "More", tint = VTheme.colors.ink, modifier = Modifier.size(20.dp))
                 }
                 DropdownMenu(
                     expanded = menuExpanded,
                     onDismissRequest = { menuExpanded = false },
-                    modifier = Modifier.background(VColors.surfaceCard, RoundedCornerShape(14.dp)),
+                    modifier = Modifier.background(VTheme.colors.surfaceCard, RoundedCornerShape(14.dp)),
                 ) {
                     DropdownMenuItem(
                         text = { Text(appString(StringKeys.PPL_ADD_STUDENT)) },
                         onClick = { menuExpanded = false; onAddClick() },
-                        leadingIcon = { Icon(VIcons.Plus, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                        leadingIcon = { Icon(VIcons.Plus, contentDescription = "", modifier = Modifier.size(16.dp)) },
                     )
                     DropdownMenuItem(
                         text = { Text(appString(StringKeys.PPL_IMPORT_CSV)) },
                         onClick = { menuExpanded = false; onImportClick() },
-                        leadingIcon = { Icon(VIcons.Upload, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                        leadingIcon = { Icon(VIcons.Upload, contentDescription = "", modifier = Modifier.size(16.dp)) },
                     )
                     DropdownMenuItem(
                         text = { Text(appString(StringKeys.PPL_GRADUATE)) },
                         onClick = { menuExpanded = false; showGraduate = true },
                         enabled = !state.isLoading && state.students.isNotEmpty(),
-                        leadingIcon = { Icon(VIcons.Users, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                        leadingIcon = { Icon(VIcons.Users, contentDescription = "", modifier = Modifier.size(16.dp)) },
                     )
                 }
             }
@@ -686,8 +685,8 @@ private fun StudentsSubTab(
                 Spacer(Modifier.height(8.dp))
                 Text(
                     appString(StringKeys.PPL_MARK_ALUMNI_BODY, "count" to filtered.size),
-                    style = VTypography.caption,
-                    color = VColors.ink2,
+                    style = VTheme.type.caption,
+                    color = VTheme.colors.ink2,
                 )
                 Spacer(Modifier.height(16.dp))
                 VInput(
@@ -776,22 +775,22 @@ private fun StaffSubTab(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(VColors.surfaceCard)
+                        .background(VTheme.colors.surfaceCard)
                         .clickable { menuExpanded = true },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(VIcons.More, contentDescription = "More", tint = VColors.ink, modifier = Modifier.size(20.dp))
+                    Icon(VIcons.More, contentDescription = "More", tint = VTheme.colors.ink, modifier = Modifier.size(20.dp))
                 }
                 DropdownMenu(
                     expanded = menuExpanded,
                     onDismissRequest = { menuExpanded = false },
-                    modifier = Modifier.background(VColors.surfaceCard, RoundedCornerShape(14.dp)),
+                    modifier = Modifier.background(VTheme.colors.surfaceCard, RoundedCornerShape(14.dp)),
                 ) {
                     DropdownMenuItem(
                         text = { Text(appString(StringKeys.PPL_ADD_STAFF)) },
                         onClick = { menuExpanded = false; onAddClick() },
                         enabled = !state.isSaving,
-                        leadingIcon = { Icon(VIcons.Plus, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                        leadingIcon = { Icon(VIcons.Plus, contentDescription = "", modifier = Modifier.size(16.dp)) },
                     )
                 }
             }
@@ -919,8 +918,8 @@ private fun AddTeacherSheet(
             } else {
                 Text(
                     appString(StringKeys.PPL_OTP_HINT),
-                    style = VTypography.caption,
-                    color = VColors.ink2,
+                    style = VTheme.type.caption,
+                    color = VTheme.colors.ink2,
                 )
             }
             Spacer(Modifier.height(4.dp))
@@ -1066,7 +1065,7 @@ private fun AddStudentPeopleSheet(
                 keyboardType = KeyboardType.Phone,
             )
             if (error != null) {
-                Text(error, style = VTypography.caption, color = VColors.coral)
+                Text(error, style = VTheme.type.caption, color = VTheme.colors.coral)
             }
             Spacer(Modifier.height(2.dp))
             VButton(
@@ -1122,7 +1121,7 @@ private fun ImportStudentsSheet(
                 modifier = Modifier.fillMaxWidth().height(180.dp),
             )
             if (error != null) {
-                Text(error, style = VTypography.caption, color = VColors.coral)
+                Text(error, style = VTheme.type.caption, color = VTheme.colors.coral)
             }
             Spacer(Modifier.height(2.dp))
             VButton(

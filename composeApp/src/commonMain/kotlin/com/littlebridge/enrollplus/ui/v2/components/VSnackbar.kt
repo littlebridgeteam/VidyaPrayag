@@ -77,7 +77,7 @@ fun VSnackbar(
         ) {
             Icon(
                 imageVector = tone.toIcon(),
-                contentDescription = null,
+                contentDescription = "",
                 tint = iconColor,
                 modifier = Modifier.size(20.dp),
             )

@@ -66,7 +66,7 @@ fun SriPreview(score: Float, modifier: Modifier = Modifier) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Icon(VIcons.TrendingUp, contentDescription = null, tint = c.successInk, modifier = Modifier.size(11.dp))
+                Icon(VIcons.TrendingUp, contentDescription = "", tint = c.successInk, modifier = Modifier.size(11.dp))
                 Text(appString(StringKeys.SRI_YOY), style = VTheme.type.label.colored(c.successInk).copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold))
             }
         }

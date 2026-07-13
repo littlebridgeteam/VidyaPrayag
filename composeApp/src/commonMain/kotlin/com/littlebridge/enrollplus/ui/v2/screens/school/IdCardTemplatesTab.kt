@@ -57,10 +57,9 @@ import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VEmptyState
 import com.littlebridge.enrollplus.ui.v2.components.VProgressRing
 import com.littlebridge.enrollplus.ui.v2.components.VTag
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 // ════════════════════════════════════════════════════════════════════════════
 // STATS BANNER — Progress ring + breakdown + achievement badge
@@ -116,14 +115,14 @@ internal fun IdCardStatsBanner(
                 )
                 Text(
                     text = appString(StringKeys.IDCARD_TOTAL_CARDS),
-                    style = VTypography.caption.copy(color = VColors.ink3),
+                    style = VTheme.type.caption.copy(color = VTheme.colors.ink3),
                 )
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                StatRow(label = appString(StringKeys.IDCARD_STUDENTS), count = studentCards, color = VColors.violet)
-                StatRow(label = appString(StringKeys.IDCARD_TEACHERS), count = teacherCards, color = VColors.sky)
-                StatRow(label = appString(StringKeys.IDCARD_STAFF), count = staffCards, color = VColors.coral)
+                StatRow(label = appString(StringKeys.IDCARD_STUDENTS), count = studentCards, color = VTheme.colors.violet)
+                StatRow(label = appString(StringKeys.IDCARD_TEACHERS), count = teacherCards, color = VTheme.colors.sky)
+                StatRow(label = appString(StringKeys.IDCARD_STAFF), count = staffCards, color = VTheme.colors.coral)
             }
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -131,7 +130,7 @@ internal fun IdCardStatsBanner(
                     Modifier
                         .size(48.dp)
                         .clip(CircleShape)
-                        .background(VColors.violet.copy(alpha = 0.12f))
+                        .background(VTheme.colors.violet.copy(alpha = 0.12f))
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
@@ -142,13 +141,13 @@ internal fun IdCardStatsBanner(
                     Icon(
                         milestoneIcon,
                         contentDescription = milestoneLabel,
-                        tint = VColors.violetInk,
+                        tint = VTheme.colors.violetInk,
                         modifier = Modifier.size(24.dp),
                     )
                 }
                 Text(
                     text = milestoneLabel,
-                    style = VTypography.caption.copy(color = VColors.ink2).copy(fontWeight = FontWeight.Bold),
+                    style = VTheme.type.caption.copy(color = VTheme.colors.ink2).copy(fontWeight = FontWeight.Bold),
                     textAlign = TextAlign.Center,
                     modifier = Modifier.width(72.dp),
                 )
@@ -166,7 +165,7 @@ private fun StatRow(label: String, count: Int, color: Color) {
         Box(Modifier.size(8.dp).clip(CircleShape).background(color))
         Text(
             text = "$count $label",
-            style = VTypography.caption.copy(color = VColors.ink2),
+            style = VTheme.type.caption.copy(color = VTheme.colors.ink2),
         )
     }
 }
@@ -217,12 +216,12 @@ internal fun TemplatesTab(
     ) {
         state.error?.let { err ->
             VCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
-                Text(err, color = VColors.error, style = VTypography.body)
+                Text(err, color = VTheme.colors.error, style = VTheme.type.body)
             }
         }
         state.infoMessage?.let { msg ->
             VCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
-                Text(msg, color = VColors.success, style = VTypography.body)
+                Text(msg, color = VTheme.colors.success, style = VTheme.type.body)
             }
         }
 
@@ -253,7 +252,7 @@ internal fun TemplatesTab(
 
         Text(
             text = appString(StringKeys.IDCARD_CREATE_NEW),
-            style = VTypography.label.copy(color = VColors.ink3),
+            style = VTheme.type.label.copy(color = VTheme.colors.ink3),
             modifier = Modifier.padding(horizontal = 16.dp),
         )
         Spacer(modifier = Modifier.height(12.dp))
@@ -268,7 +267,7 @@ internal fun TemplatesTab(
             )
             Spacer(modifier = Modifier.height(12.dp))
 
-            Text(appString(StringKeys.IDCARD_CARD_TYPE), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+            Text(appString(StringKeys.IDCARD_CARD_TYPE), style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
             Spacer(modifier = Modifier.height(6.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("student" to appString(StringKeys.IDCARD_STUDENT), "teacher" to appString(StringKeys.IDCARD_TEACHER_ROLE), "staff" to appString(StringKeys.IDCARD_STAFF_ROLE)).forEach { (role, label) ->
@@ -282,7 +281,7 @@ internal fun TemplatesTab(
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(appString(StringKeys.IDCARD_FIELDS_DISPLAY), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+            Text(appString(StringKeys.IDCARD_FIELDS_DISPLAY), style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
             Spacer(modifier = Modifier.height(6.dp))
             AVAILABLE_FIELDS.chunked(3).forEach { rowFields ->
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -301,7 +300,7 @@ internal fun TemplatesTab(
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(appString(StringKeys.IDCARD_ACCENT_COLOR), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+            Text(appString(StringKeys.IDCARD_ACCENT_COLOR), style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
             Spacer(modifier = Modifier.height(6.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 PRESET_COLORS.forEach { (argb, name) ->
@@ -315,7 +314,7 @@ internal fun TemplatesTab(
             }
             Spacer(modifier = Modifier.height(20.dp))
 
-            Text(appString(StringKeys.IDCARD_LIVE_PREVIEW), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+            Text(appString(StringKeys.IDCARD_LIVE_PREVIEW), style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
             Spacer(modifier = Modifier.height(8.dp))
             LiveCardPreview(
                 templateName = templateName.ifBlank { appString(StringKeys.IDCARD_PREVIEW) },
@@ -366,13 +365,13 @@ private fun ColorSwatch(
                 .clip(CircleShape)
                 .background(color)
                 .then(
-                    if (selected) Modifier.border(3.dp, VColors.ink, CircleShape)
-                    else Modifier.border(1.dp, VColors.line, CircleShape)
+                    if (selected) Modifier.border(3.dp, VTheme.colors.ink, CircleShape)
+                    else Modifier.border(1.dp, VTheme.colors.line, CircleShape)
                 ),
         )
         Text(
             text = label,
-            style = VTypography.caption.copy(color = if (selected) VColors.ink else VColors.ink3),
+            style = VTheme.type.caption.copy(color = if (selected) VTheme.colors.ink else VTheme.colors.ink3),
             fontSize = 9.sp,
         )
     }
@@ -393,7 +392,7 @@ private fun LiveCardPreview(
             .padding(horizontal = 24.dp)
             .aspectRatio(54f / 86f)
             .clip(RoundedCornerShape(16.dp))
-            .background(VColors.surfaceCard)
+            .background(VTheme.colors.surfaceCard)
             .border(2.dp, accent, RoundedCornerShape(16.dp)),
     ) {
         Column(
@@ -410,13 +409,13 @@ private fun LiveCardPreview(
                 if ("school" in fields) {
                     Text(
                         text = "Vidya Prayag School",
-                        style = VTypography.caption.copy(color = Color.White).copy(fontWeight = FontWeight.Bold),
+                        style = VTheme.type.caption.copy(color = Color.White).copy(fontWeight = FontWeight.Bold),
                         modifier = Modifier.padding(horizontal = 12.dp),
                     )
                 } else {
                     Text(
                         text = appString(StringKeys.IDCARD_ID_CARD),
-                        style = VTypography.caption.copy(color = Color.White),
+                        style = VTheme.type.caption.copy(color = Color.White),
                         modifier = Modifier.padding(horizontal = 12.dp),
                     )
                 }
@@ -443,13 +442,13 @@ private fun LiveCardPreview(
                                 .background(accent.copy(alpha = 0.15f)),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Icon(Icons.Filled.Person, contentDescription = null, tint = accent, modifier = Modifier.size(32.dp))
+                            Icon(Icons.Filled.Person, contentDescription = "", tint = accent, modifier = Modifier.size(32.dp))
                         }
                     }
                     if ("qrOnFront" in fields) {
                         QrGridPreview(
                             size = 52.dp,
-                            color = VColors.ink,
+                            color = VTheme.colors.ink,
                         )
                     }
                 }
@@ -462,24 +461,24 @@ private fun LiveCardPreview(
                     if ("name" in fields) {
                         Text(
                             text = templateName,
-                            style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink),
+                            style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink),
                             maxLines = 2,
                         )
                     }
                     if ("role" in fields) {
                         Text(
                             text = roleType.replaceFirstChar { it.uppercase() },
-                            style = VTypography.caption.copy(color = accent).copy(fontWeight = FontWeight.Bold),
+                            style = VTheme.type.caption.copy(color = accent).copy(fontWeight = FontWeight.Bold),
                         )
                     }
                     if ("class" in fields) {
-                        Text("Class 10-A", style = VTypography.caption.copy(color = VColors.ink2))
+                        Text("Class 10-A", style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
                     }
                     if ("bloodGroup" in fields) {
-                        Text("Blood: B+", style = VTypography.caption.copy(color = VColors.ink2))
+                        Text("Blood: B+", style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
                     }
                     if ("emergencyContact" in fields) {
-                        Text("Emergency: +91 98765 43210", style = VTypography.caption.copy(color = VColors.ink2), maxLines = 2)
+                        Text("Emergency: +91 98765 43210", style = VTheme.type.caption.copy(color = VTheme.colors.ink2), maxLines = 2)
                     }
                 }
             }
@@ -494,7 +493,7 @@ private fun LiveCardPreview(
             ) {
                 Text(
                     text = appString(StringKeys.IDCARD_SCAN_QR),
-                    style = VTypography.caption.copy(color = Color.White).copy(fontSize = 8.sp),
+                    style = VTheme.type.caption.copy(color = Color.White).copy(fontSize = 8.sp),
                     modifier = Modifier.padding(horizontal = 12.dp),
                 )
             }
@@ -578,7 +577,7 @@ private fun TemplateCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(template.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                Text(template.name, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     VBadge(

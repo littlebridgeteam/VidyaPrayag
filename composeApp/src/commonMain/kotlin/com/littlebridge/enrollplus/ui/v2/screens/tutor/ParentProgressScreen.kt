@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.feature.tutor.domain.model.ProgressCardDto
 import com.littlebridge.enrollplus.feature.tutor.domain.model.TopicProgressDto
 import com.littlebridge.enrollplus.feature.tutor.presentation.ParentProgressViewModel
-import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VEmptyState
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
@@ -64,7 +63,7 @@ fun ParentProgressScreen(
     Box(
         modifier
             .fillMaxSize()
-            .background(VColors.cream)
+            .background(VTheme.colors.cream)
     ) {
         Column(
             Modifier.fillMaxSize(),

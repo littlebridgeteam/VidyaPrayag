@@ -43,9 +43,6 @@ import com.littlebridge.enrollplus.feature.teacher.domain.model.AssessmentType
 import com.littlebridge.enrollplus.feature.teacher.presentation.GradebookMode
 import com.littlebridge.enrollplus.feature.teacher.presentation.GradebookStudentMark
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherGradebookViewModel
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VShapes
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
@@ -57,6 +54,8 @@ import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.util.todayIso
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 /**
  * TeacherMarksScreenV2 — the scoped gradebook (Doc 07), rebuilt on the cream token base
@@ -81,7 +80,7 @@ fun TeacherMarksScreenV2(
         if (assignmentId.isNotBlank() && state.assignmentId != assignmentId) viewModel.load(assignmentId, scopeLabel)
     }
 
-    Box(modifier.fillMaxSize().background(VColors.cream)) {
+    Box(modifier.fillMaxSize().background(VTheme.colors.cream)) {
         when (state.mode) {
             GradebookMode.List -> MarksListMode(viewModel, scopeLabel)
             GradebookMode.Marks -> MarksGridMode(viewModel)
@@ -107,9 +106,9 @@ private fun MarksListMode(viewModel: TeacherGradebookViewModel, scopeLabel: Stri
         item {
             VtCard(padding = 16.dp) {
                 Column {
-                    VtEyebrow(appString(StringKeys.TC_TESTS_AND_MARKS), dot = VColors.violet)
+                    VtEyebrow(appString(StringKeys.TC_TESTS_AND_MARKS), dot = VTheme.colors.violet)
                     Spacer(Modifier.height(6.dp))
-                    Text(scopeLabel.ifBlank { state.scopeHint }, style = VTypography.h3.copy(fontSize = 18.sp, color = VColors.ink, fontWeight = FontWeight.ExtraBold))
+                    Text(scopeLabel.ifBlank { state.scopeHint }, style = VTheme.type.h3.copy(fontSize = 18.sp, color = VTheme.colors.ink, fontWeight = FontWeight.ExtraBold))
                     Spacer(Modifier.height(12.dp))
                     VButton(
                         text = if (composerOpen) appString(StringKeys.COMMON_BUTTON_CLOSE) else appString(StringKeys.TC_CREATE_A_TEST),
@@ -117,7 +116,7 @@ private fun MarksListMode(viewModel: TeacherGradebookViewModel, scopeLabel: Stri
                         full = true,
                         variant = if (composerOpen) VButtonVariant.Ghost else VButtonVariant.Primary,
                         tone = VButtonTone.Lavender,
-                        leading = { Icon(if (composerOpen) VIcons.Close else VIcons.Plus, contentDescription = null, modifier = Modifier.size(15.dp)) },
+                        leading = { Icon(if (composerOpen) VIcons.Close else VIcons.Plus, contentDescription = "", modifier = Modifier.size(15.dp)) },
                     )
                 }
             }
@@ -131,7 +130,7 @@ private fun MarksListMode(viewModel: TeacherGradebookViewModel, scopeLabel: Stri
             state.isListLoading && state.assessments.isEmpty() -> item { Box(Modifier.fillMaxWidth().height(80.dp), contentAlignment = Alignment.Center) { TeacherSpinner() } }
             state.listError != null && state.assessments.isEmpty() -> item {
                 VtCard { Column {
-                    Text(appString(StringKeys.TC_COULDNT_LOAD_TESTS), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold, color = VColors.ink))
+                    Text(appString(StringKeys.TC_COULDNT_LOAD_TESTS), style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold, color = VTheme.colors.ink))
                     Spacer(Modifier.height(8.dp))
                     VButton(appString(StringKeys.COMMON_BUTTON_RETRY), onClick = { viewModel.retryList() }, tone = VButtonTone.Lavender, size = VButtonSize.Sm)
                 } }
@@ -141,7 +140,7 @@ private fun MarksListMode(viewModel: TeacherGradebookViewModel, scopeLabel: Stri
                     title = appString(StringKeys.TC_NO_TESTS_YET),
                     subtext = appString(StringKeys.TC_CREATE_FIRST_TEST),
                     icon = VIcons.GraduationCap,
-                    tint = VColors.violet,
+                    tint = VTheme.colors.violet,
                 )
             }
             else -> items(state.assessments, key = { it.id }) { a -> AssessmentRow(a, viewModel) }
@@ -154,22 +153,22 @@ private fun CreateAssessmentComposer(viewModel: TeacherGradebookViewModel, onDon
     val state by viewModel.state.collectAsStateV2()
     VtCard(padding = 16.dp) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(appString(StringKeys.TC_NEW_TEST), style = VTypography.h3.copy(fontSize = 18.sp, color = VColors.ink, fontWeight = FontWeight.ExtraBold))
+            Text(appString(StringKeys.TC_NEW_TEST), style = VTheme.type.h3.copy(fontSize = 18.sp, color = VTheme.colors.ink, fontWeight = FontWeight.ExtraBold))
             VInput(value = state.createName, onValueChange = viewModel::setCreateName, label = appString(StringKeys.TC_TEST_NAME), placeholder = appString(StringKeys.TC_TEST_NAME_PH))
             // Type chips
-            Text(appString(StringKeys.TC_TYPE), style = VTypography.label.copy(color = VColors.ink2))
+            Text(appString(StringKeys.TC_TYPE), style = VTheme.type.label.copy(color = VTheme.colors.ink2))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 AssessmentType.ALL.forEach { t ->
                     val active = state.createType == t
                     Box(
                         Modifier
-                            .clip(VShapes.full)
-                            .background(if (active) VColors.violetSoft else VColors.creamDeep)
-                            .border(1.dp, if (active) VColors.violet.copy(alpha = 0.5f) else VColors.line, VShapes.full)
+                            .clip(RoundedCornerShape(50))
+                            .background(if (active) VTheme.colors.violetSoft else VTheme.colors.creamDeep)
+                            .border(1.dp, if (active) VTheme.colors.violet.copy(alpha = 0.5f) else VTheme.colors.line, RoundedCornerShape(50))
                             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { viewModel.setCreateType(t) }
                             .padding(horizontal = 10.dp, vertical = 6.dp),
                     ) {
-                        Text(t.replaceFirstChar { it.uppercase() }, style = VTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (active) VColors.violet else VColors.ink2))
+                        Text(t.replaceFirstChar { it.uppercase() }, style = VTheme.type.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (active) VTheme.colors.violet else VTheme.colors.ink2))
                     }
                 }
             }
@@ -179,7 +178,7 @@ private fun CreateAssessmentComposer(viewModel: TeacherGradebookViewModel, onDon
             }
             VDatePicker(value = state.createExamDate, onValueChange = viewModel::setCreateExamDate, label = appString(StringKeys.TC_EXAM_DATE), placeholder = appString(StringKeys.TC_PICK_TEST_DATE))
             if (state.createError != null) {
-                Text(state.createError ?: "", style = VTypography.caption.copy(fontSize = 12.sp, color = VColors.coral))
+                Text(state.createError ?: "", style = VTheme.type.caption.copy(fontSize = 12.sp, color = VTheme.colors.coral))
             }
             VButton(
                 text = appString(StringKeys.TC_CREATE_TEST),
@@ -202,10 +201,10 @@ private fun AssessmentRow(a: AssessmentDto, viewModel: TeacherGradebookViewModel
     val statusTint: Color
     val statusLabel: String
     when {
-        a.isPublished -> { statusTint = VColors.success; statusLabel = appString(StringKeys.TC_PUBLISHED) }
-        a.status == AssessmentStatus.MARKS_PENDING -> { statusTint = VColors.gold; statusLabel = appString(StringKeys.TC_MARKS_PENDING) }
-        !examPassed -> { statusTint = VColors.sky; statusLabel = appString(StringKeys.TC_SCHEDULED) }
-        else -> { statusTint = VColors.violet; statusLabel = appString(StringKeys.TC_READY_TO_MARK) }
+        a.isPublished -> { statusTint = VTheme.colors.success; statusLabel = appString(StringKeys.TC_PUBLISHED) }
+        a.status == AssessmentStatus.MARKS_PENDING -> { statusTint = VTheme.colors.gold; statusLabel = appString(StringKeys.TC_MARKS_PENDING) }
+        !examPassed -> { statusTint = VTheme.colors.sky; statusLabel = appString(StringKeys.TC_SCHEDULED) }
+        else -> { statusTint = VTheme.colors.violet; statusLabel = appString(StringKeys.TC_READY_TO_MARK) }
     }
     VtCard(
         padding = 14.dp,
@@ -214,7 +213,7 @@ private fun AssessmentRow(a: AssessmentDto, viewModel: TeacherGradebookViewModel
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             VtIconDisc(VIcons.GraduationCap, tint = statusTint, bg = statusTint.copy(alpha = 0.12f), size = 42.dp, glyph = 21.dp)
             Column(Modifier.weight(1f)) {
-                Text(a.name, style = VTypography.bodySmall.copy(fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = VColors.ink), maxLines = 1)
+                Text(a.name, style = VTheme.type.bodySmall.copy(fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = VTheme.colors.ink), maxLines = 1)
                 Spacer(Modifier.height(2.dp))
                 Text(
                     buildString {
@@ -222,15 +221,15 @@ private fun AssessmentRow(a: AssessmentDto, viewModel: TeacherGradebookViewModel
                         if (examDate != null) append(" · ${prettyDateShort(examDate)}")
                         if (a.rosterCount > 0) append(" · ${appString(StringKeys.TC_ENTERED_N_OF_N, "entered" to a.enteredCount.toString(), "total" to a.rosterCount.toString())}")
                     },
-                    style = VTypography.caption.copy(fontSize = 11.5.sp, color = VColors.ink3),
+                    style = VTheme.type.caption.copy(fontSize = 11.5.sp, color = VTheme.colors.ink3),
                 )
                 Spacer(Modifier.height(6.dp))
                 VtPill(statusLabel, bg = statusTint.copy(alpha = 0.14f), fg = statusTint)
             }
             if (canEnter || a.isPublished) {
-                Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(20.dp))
+                Icon(VIcons.ChevronRight, contentDescription = "", tint = VTheme.colors.ink3, modifier = Modifier.size(20.dp))
             } else {
-                Icon(VIcons.Lock, contentDescription = appString(StringKeys.TC_LOCKED_UNTIL_EXAM), tint = VColors.ink3, modifier = Modifier.size(16.dp))
+                Icon(VIcons.Lock, contentDescription = appString(StringKeys.TC_LOCKED_UNTIL_EXAM), tint = VTheme.colors.ink3, modifier = Modifier.size(16.dp))
             }
         }
     }
@@ -256,27 +255,27 @@ private fun MarksGridMode(viewModel: TeacherGradebookViewModel) {
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
-                            Modifier.size(30.dp).clip(VShapes.full).background(VColors.creamDeep)
+                            Modifier.size(30.dp).clip(RoundedCornerShape(50)).background(VTheme.colors.creamDeep)
                                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { viewModel.backToList() },
                             contentAlignment = Alignment.Center,
-                        ) { Icon(VIcons.ArrowLeft, contentDescription = appString(StringKeys.COMMON_BUTTON_BACK), tint = VColors.ink, modifier = Modifier.size(15.dp)) }
+                        ) { Icon(VIcons.ArrowLeft, contentDescription = appString(StringKeys.COMMON_BUTTON_BACK), tint = VTheme.colors.ink, modifier = Modifier.size(15.dp)) }
                         Spacer(Modifier.width(10.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(a?.name ?: appString(StringKeys.TC_MARKS), style = VTypography.h3.copy(fontSize = 18.sp, color = VColors.ink, fontWeight = FontWeight.ExtraBold), maxLines = 1)
-                            Text(appString(StringKeys.TC_MAX_N_ENTERED_N_OF_N, "max" to state.maxMarks.toString(), "entered" to state.enteredCount.toString(), "total" to state.rosterCount.toString()), style = VTypography.caption.copy(fontSize = 11.sp, color = VColors.ink3))
+                            Text(a?.name ?: appString(StringKeys.TC_MARKS), style = VTheme.type.h3.copy(fontSize = 18.sp, color = VTheme.colors.ink, fontWeight = FontWeight.ExtraBold), maxLines = 1)
+                            Text(appString(StringKeys.TC_MAX_N_ENTERED_N_OF_N, "max" to state.maxMarks.toString(), "entered" to state.enteredCount.toString(), "total" to state.rosterCount.toString()), style = VTheme.type.caption.copy(fontSize = 11.sp, color = VTheme.colors.ink3))
                         }
                         state.liveAverage?.let { avg ->
                             Column(horizontalAlignment = Alignment.End) {
-                                Text(fmt1(avg), style = VTypography.h3.copy(fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = VColors.violetHover))
-                                Text(appString(StringKeys.TC_AVG), style = VTypography.label.copy(fontSize = 9.sp, color = VColors.ink3))
+                                Text(fmt1(avg), style = VTheme.type.h3.copy(fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = VTheme.colors.violetHover))
+                                Text(appString(StringKeys.TC_AVG), style = VTheme.type.label.copy(fontSize = 9.sp, color = VTheme.colors.ink3))
                             }
                         }
                     }
                     if (a?.isPublished == true) {
                         Spacer(Modifier.height(10.dp))
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Icon(VIcons.ShieldCheck, contentDescription = null, tint = VColors.success, modifier = Modifier.size(15.dp))
-                            Text(appString(StringKeys.TC_PUBLISHED_PARENTS_NOTIFIED), style = VTypography.caption.copy(fontSize = 11.5.sp, color = VColors.success))
+                            Icon(VIcons.ShieldCheck, contentDescription = "", tint = VTheme.colors.success, modifier = Modifier.size(15.dp))
+                            Text(appString(StringKeys.TC_PUBLISHED_PARENTS_NOTIFIED), style = VTheme.type.caption.copy(fontSize = 11.5.sp, color = VTheme.colors.success))
                         }
                     }
                 }
@@ -287,7 +286,7 @@ private fun MarksGridMode(viewModel: TeacherGradebookViewModel) {
             state.isMarksLoading && state.students.isEmpty() -> item { Box(Modifier.fillMaxWidth().height(80.dp), contentAlignment = Alignment.Center) { TeacherSpinner() } }
             state.marksError != null && state.students.isEmpty() -> item {
                 VtCard { Column {
-                    Text(appString(StringKeys.TC_COULDNT_LOAD_ROSTER), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold, color = VColors.ink))
+                    Text(appString(StringKeys.TC_COULDNT_LOAD_ROSTER), style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold, color = VTheme.colors.ink))
                     Spacer(Modifier.height(8.dp))
                     VButton(appString(StringKeys.COMMON_BUTTON_RETRY), onClick = { viewModel.retryMarks() }, tone = VButtonTone.Lavender, size = VButtonSize.Sm)
                 } }
@@ -300,7 +299,7 @@ private fun MarksGridMode(viewModel: TeacherGradebookViewModel) {
         if (a?.isPublished != true) {
             item {
                 Spacer(Modifier.height(4.dp))
-                if (state.saveError != null) { Text(state.saveError ?: "", style = VTypography.caption.copy(fontSize = 12.sp, color = VColors.coral)); Spacer(Modifier.height(8.dp)) }
+                if (state.saveError != null) { Text(state.saveError ?: "", style = VTheme.type.caption.copy(fontSize = 12.sp, color = VTheme.colors.coral)); Spacer(Modifier.height(8.dp)) }
                 VButton(
                     text = appString(StringKeys.TC_SAVE_MARKS),
                     onClick = { viewModel.save() },
@@ -314,7 +313,7 @@ private fun MarksGridMode(viewModel: TeacherGradebookViewModel) {
                     stateful = true,
                 )
                 Spacer(Modifier.height(8.dp))
-                if (state.publishError != null) { Text(state.publishError ?: "", style = VTypography.caption.copy(fontSize = 12.sp, color = VColors.coral)); Spacer(Modifier.height(8.dp)) }
+                if (state.publishError != null) { Text(state.publishError ?: "", style = VTheme.type.caption.copy(fontSize = 12.sp, color = VTheme.colors.coral)); Spacer(Modifier.height(8.dp)) }
                 VButton(
                     text = appString(StringKeys.TC_PUBLISH_NOTIFY_PARENTS),
                     onClick = { publishConfirm = true },
@@ -323,7 +322,7 @@ private fun MarksGridMode(viewModel: TeacherGradebookViewModel) {
                     size = VButtonSize.Lg,
                     enabled = state.canPublish,
                     loading = state.isPublishing,
-                    leading = { Icon(VIcons.Send, contentDescription = null, modifier = Modifier.size(15.dp)) },
+                    leading = { Icon(VIcons.Send, contentDescription = "", modifier = Modifier.size(15.dp)) },
                 )
             }
         }
@@ -345,28 +344,28 @@ private fun MarkRow(s: GradebookStudentMark, maxMarks: Int, readOnly: Boolean, o
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(VShapes.md)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.md)
+            .clip(RoundedCornerShape(14.dp))
+            .background(VTheme.colors.surfaceCard)
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(14.dp))
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Column(Modifier.weight(1f)) {
-            Text(s.name, style = VTypography.bodySmall.copy(fontSize = 14.sp, fontWeight = FontWeight.Bold, color = VColors.ink), maxLines = 1)
-            Text(appString(StringKeys.TC_ROLL_N, "n" to s.rollNo.toString()), style = VTypography.caption.copy(fontSize = 11.sp, color = VColors.ink3))
+            Text(s.name, style = VTheme.type.bodySmall.copy(fontSize = 14.sp, fontWeight = FontWeight.Bold, color = VTheme.colors.ink), maxLines = 1)
+            Text(appString(StringKeys.TC_ROLL_N, "n" to s.rollNo.toString()), style = VTheme.type.caption.copy(fontSize = 11.sp, color = VTheme.colors.ink3))
         }
         // AB toggle
         val abActive = s.isAbsent
         Box(
             Modifier
-                .clip(VShapes.sm)
-                .background(if (abActive) VColors.coral.copy(alpha = 0.16f) else VColors.creamDeep)
-                .border(1.dp, if (abActive) VColors.coral.copy(alpha = 0.5f) else VColors.line, VShapes.sm)
+                .clip(RoundedCornerShape(10.dp))
+                .background(if (abActive) VTheme.colors.coral.copy(alpha = 0.16f) else VTheme.colors.creamDeep)
+                .border(1.dp, if (abActive) VTheme.colors.coral.copy(alpha = 0.5f) else VTheme.colors.line, RoundedCornerShape(10.dp))
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, enabled = !readOnly) { onToggleAbsent() }
                 .padding(horizontal = 10.dp, vertical = 8.dp),
         ) {
-            Text("AB", style = VTypography.bodySmall.copy(fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (abActive) VColors.coral else VColors.ink3))
+            Text("AB", style = VTheme.type.bodySmall.copy(fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (abActive) VTheme.colors.coral else VTheme.colors.ink3))
         }
         // Mark input
         MarkInput(value = s.marks, maxMarks = maxMarks, enabled = !readOnly && !s.isAbsent, onChange = onMark)
@@ -380,9 +379,9 @@ private fun MarkInput(value: Float?, maxMarks: Int, enabled: Boolean, onChange: 
         Box(
             Modifier
                 .width(58.dp)
-                .clip(VShapes.sm)
-                .background(if (enabled) VColors.creamDeep else VColors.creamDeep.copy(alpha = 0.5f))
-                .border(1.dp, VColors.line, VShapes.sm)
+                .clip(RoundedCornerShape(10.dp))
+                .background(if (enabled) VTheme.colors.creamDeep else VTheme.colors.creamDeep.copy(alpha = 0.5f))
+                .border(1.dp, VTheme.colors.line, RoundedCornerShape(10.dp))
                 .padding(horizontal = 8.dp, vertical = 8.dp),
             contentAlignment = Alignment.Center,
         ) {
@@ -395,16 +394,16 @@ private fun MarkInput(value: Float?, maxMarks: Int, enabled: Boolean, onChange: 
                 singleLine = true,
                 enabled = enabled,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                textStyle = VTypography.body.copy(fontSize = 15.sp, fontWeight = FontWeight.Bold, color = VColors.ink, textAlign = androidx.compose.ui.text.style.TextAlign.Center),
-                cursorBrush = SolidColor(VColors.violet),
+                textStyle = VTheme.type.body.copy(fontSize = 15.sp, fontWeight = FontWeight.Bold, color = VTheme.colors.ink, textAlign = androidx.compose.ui.text.style.TextAlign.Center),
+                cursorBrush = SolidColor(VTheme.colors.violet),
                 decorationBox = { inner ->
                     Box(contentAlignment = Alignment.Center) {
-                        if (display.isBlank()) Text("—", style = VTypography.body.copy(fontSize = 15.sp, color = VColors.ink3))
+                        if (display.isBlank()) Text("—", style = VTheme.type.body.copy(fontSize = 15.sp, color = VTheme.colors.ink3))
                         inner()
                     }
                 },
             )
         }
-        Text(" /$maxMarks", style = VTypography.caption.copy(fontSize = 11.sp, color = VColors.ink3))
+        Text(" /$maxMarks", style = VTheme.type.caption.copy(fontSize = 11.sp, color = VTheme.colors.ink3))
     }
 }

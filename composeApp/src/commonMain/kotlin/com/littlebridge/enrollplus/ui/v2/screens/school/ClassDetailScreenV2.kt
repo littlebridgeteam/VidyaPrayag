@@ -57,11 +57,10 @@ import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 private val DETAIL_TABS = listOf("Students", "Teachers", "Timetable", "Analytics")
 private val WEEKDAY_NAMES = listOf("", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
@@ -199,21 +198,21 @@ private fun StudentRowCard(
         ) {
             VAvatar(name = student.fullName, src = student.profilePhotoUrl, size = 44.dp)
             Column(Modifier.weight(1f)) {
-                Text(student.fullName, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink, maxLines = 1)
+                Text(student.fullName, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VTheme.colors.ink, maxLines = 1)
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     if (student.section.isNotBlank()) VBadge(text = appString(StringKeys.CD_SEC).replace("{section}", student.section), tone = VBadgeTone.Accent)
-                    Text(appString(StringKeys.CD_ROLL).replace("{number}", student.rollNumber), style = VTypography.caption, color = VColors.ink3)
+                    Text(appString(StringKeys.CD_ROLL).replace("{number}", student.rollNumber), style = VTheme.type.caption, color = VTheme.colors.ink3)
                 }
                 if (student.attendancePercent > 0f) {
-                    Text(appString(StringKeys.CD_ATTENDANCE).replace("{percent}", student.attendancePercent.toInt().toString()), style = VTypography.label, color = VColors.ink3)
+                    Text(appString(StringKeys.CD_ATTENDANCE).replace("{percent}", student.attendancePercent.toInt().toString()), style = VTheme.type.label, color = VTheme.colors.ink3)
                 }
             }
             Box(
                 Modifier.size(28.dp).clip(CircleShape)
-                    .background(VColors.violet.copy(alpha = 0.1f)),
+                    .background(VTheme.colors.violet.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("›", color = VColors.violet, fontWeight = FontWeight.Bold)
+                Text("›", color = VTheme.colors.violet, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -245,7 +244,7 @@ private fun ClassTeachersSubTab(
 
     if (tt == null && classesState.isLoading) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(appString(StringKeys.CD_LOADING_TIMETABLE), style = VTypography.body, color = VColors.ink2)
+            Text(appString(StringKeys.CD_LOADING_TIMETABLE), style = VTheme.type.body, color = VTheme.colors.ink2)
         }
     } else if (classTeachers.isEmpty()) {
         VEmptyState(
@@ -293,17 +292,17 @@ private fun TeacherRowCard(
         ) {
             VAvatar(name = teacher.name, size = 44.dp)
             Column(Modifier.weight(1f)) {
-                Text(teacher.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink, maxLines = 1)
+                Text(teacher.name, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VTheme.colors.ink, maxLines = 1)
                 if (teacher.subject.isNotBlank()) {
-                    Text(teacher.subject, style = VTypography.caption, color = VColors.ink2)
+                    Text(teacher.subject, style = VTheme.type.caption, color = VTheme.colors.ink2)
                 }
             }
             Box(
                 Modifier.size(28.dp).clip(CircleShape)
-                    .background(VColors.violet.copy(alpha = 0.1f)),
+                    .background(VTheme.colors.violet.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("›", color = VColors.violet, fontWeight = FontWeight.Bold)
+                Text("›", color = VTheme.colors.violet, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -321,7 +320,7 @@ private fun ClassTimetableSubTab(
 
     if (tt == null && classesState.isLoading) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(appString(StringKeys.CD_LOADING_TIMETABLE), style = VTypography.body, color = VColors.ink2)
+            Text(appString(StringKeys.CD_LOADING_TIMETABLE), style = VTheme.type.body, color = VTheme.colors.ink2)
         }
         return
     }
@@ -384,16 +383,16 @@ private fun ClassPeriodRow(period: TimetablePeriodDto) {
             Column(Modifier.weight(1f)) {
                 Text(
                     "${period.startTime} – ${period.endTime}",
-                    style = VTypography.body,
+                    style = VTheme.type.body,
                     fontWeight = FontWeight.Medium,
-                    color = VColors.ink,
+                    color = VTheme.colors.ink,
                 )
                 Spacer(Modifier.height(4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     if (period.section.isNotBlank()) VBadge(text = period.section, tone = VBadgeTone.Accent)
-                    Text(period.subject, style = VTypography.caption, color = VColors.ink2)
+                    Text(period.subject, style = VTheme.type.caption, color = VTheme.colors.ink2)
                     if (period.teacherName.isNotBlank()) {
-                        Text("• ${period.teacherName}", style = VTypography.caption, color = VColors.ink3)
+                        Text("• ${period.teacherName}", style = VTheme.type.caption, color = VTheme.colors.ink3)
                     }
                 }
             }
@@ -452,7 +451,7 @@ private fun ClassAnalyticsSubTab(
                 VSectionHeader(title = appString(StringKeys.CD_SUBJECT_MATRIX))
                 VCard {
                     state.subjectMatrix.forEachIndexed { i, s ->
-                        if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
+                        if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(VTheme.colors.line))
                         AnalyticsSubjectRow(s)
                     }
                 }
@@ -483,10 +482,10 @@ private fun ClassAnalyticsSubTab(
                     ) {
                         VBadge(text = "★ 1ST", tone = VBadgeTone.Warning)
                         Column(Modifier.weight(1f)) {
-                            Text(state.topPerformerName, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+                            Text(state.topPerformerName, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VTheme.colors.ink)
                             if (state.topPerformerDetails.isNotBlank()) {
                                 Spacer(Modifier.height(2.dp))
-                                Text(state.topPerformerDetails, style = VTypography.caption, color = VColors.ink3)
+                                Text(state.topPerformerDetails, style = VTheme.type.caption, color = VTheme.colors.ink3)
                             }
                         }
                     }
@@ -506,16 +505,16 @@ private fun ClassAnalyticsSubTab(
 @Composable
 private fun AnalyticsKpi(label: String, value: String) {
     VCard {
-        Text(label, style = VTypography.label, color = VColors.ink3)
+        Text(label, style = VTheme.type.label, color = VTheme.colors.ink3)
         Spacer(Modifier.height(4.dp))
-        Text(value, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp), color = VColors.ink)
+        Text(value, style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp), color = VTheme.colors.ink)
     }
 }
 
 @Composable
 private fun AnalyticsRiskTile(label: String, value: String, tone: VBadgeTone) {
     Column {
-        Text(label, style = VTypography.label, color = VColors.ink3)
+        Text(label, style = VTheme.type.label, color = VTheme.colors.ink3)
         Spacer(Modifier.height(4.dp))
         VBadge(text = value, tone = tone)
     }
@@ -525,8 +524,8 @@ private fun AnalyticsRiskTile(label: String, value: String, tone: VBadgeTone) {
 private fun AnalyticsGradeRow(g: com.littlebridge.enrollplus.feature.admin.presentation.GradeDistribution) {
     Column {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(g.grade, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
-            Text("${g.percentage}%", style = VTypography.bodySmall, color = VColors.ink2)
+            Text(g.grade, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VTheme.colors.ink)
+            Text("${g.percentage}%", style = VTheme.type.bodySmall, color = VTheme.colors.ink2)
         }
         Spacer(Modifier.height(6.dp))
         VProgressBar(value = (g.value * 100f).coerceIn(0f, 100f))
@@ -545,8 +544,8 @@ private fun AnalyticsSubjectRow(s: com.littlebridge.enrollplus.feature.admin.pre
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(s.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink, modifier = Modifier.weight(1f))
-        Text("${s.percentage}%", style = VTypography.bodySmall, color = VColors.ink2)
+        Text(s.name, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VTheme.colors.ink, modifier = Modifier.weight(1f))
+        Text("${s.percentage}%", style = VTheme.type.bodySmall, color = VTheme.colors.ink2)
         VBadge(text = trendText, tone = trendTone)
     }
 }
@@ -568,16 +567,16 @@ private fun AnalyticsProgressRow(p: com.littlebridge.enrollplus.feature.admin.pr
             Box(
                 Modifier
                     .clip(RoundedCornerShape(999.dp))
-                    .background(VColors.cream)
+                    .background(VTheme.colors.cream)
                     .padding(horizontal = 12.dp, vertical = 8.dp),
             ) {
-                Text(p.initials.take(2).uppercase(), style = VTypography.bodySmall, color = VColors.ink)
+                Text(p.initials.take(2).uppercase(), style = VTheme.type.bodySmall, color = VTheme.colors.ink)
             }
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         p.name,
-                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink,
+                        style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VTheme.colors.ink,
                         modifier = Modifier.weight(1f, fill = false),
                     )
                     VBadge(text = p.status, tone = statusTone)
@@ -585,10 +584,10 @@ private fun AnalyticsProgressRow(p: com.littlebridge.enrollplus.feature.admin.pr
                 Spacer(Modifier.height(4.dp))
                 Text(
                     "${appString(StringKeys.CD_MATH)} ${p.math} · ${appString(StringKeys.CD_SCI)} ${p.science} · ${appString(StringKeys.CD_LIT)} ${p.literature}",
-                    style = VTypography.bodySmall, color = VColors.ink2,
+                    style = VTheme.type.bodySmall, color = VTheme.colors.ink2,
                 )
                 Spacer(Modifier.height(2.dp))
-                Text(appString(StringKeys.CD_ATTENDANCE_LABEL).replace("{percent}", p.attendance), style = VTypography.caption, color = VColors.ink3)
+                Text(appString(StringKeys.CD_ATTENDANCE_LABEL).replace("{percent}", p.attendance), style = VTheme.type.caption, color = VTheme.colors.ink3)
             }
         }
     }

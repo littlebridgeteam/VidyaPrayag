@@ -177,7 +177,7 @@ private fun CurrentClassFace(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Icon(VIcons.Clock, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(14.dp))
+                Icon(VIcons.Clock, contentDescription = "", tint = c.accentDeep, modifier = Modifier.size(14.dp))
                 Text(
                     "CURRENT CLASS",
                     style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 10.sp),
@@ -246,7 +246,7 @@ private fun CurrentClassFace(
                 Modifier.size(40.dp).clip(CircleShape).background(tint.copy(alpha = 0.16f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
+                Icon(icon, contentDescription = "", tint = tint, modifier = Modifier.size(20.dp))
             }
             Column(Modifier.weight(1f)) {
                 Text(
@@ -522,7 +522,7 @@ private fun ScheduleEmptyPlate() {
             Modifier.size(40.dp).clip(CircleShape).background(c.accent.copy(alpha = 0.14f)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(VIcons.Calendar, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(20.dp))
+            Icon(VIcons.Calendar, contentDescription = "", tint = c.accentDeep, modifier = Modifier.size(20.dp))
         }
         Column(Modifier.weight(1f)) {
             Text(
@@ -642,7 +642,7 @@ private fun ParentBellScheduleSection(slots: List<ParentBellSlotDto>) {
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Icon(VIcons.Clock, contentDescription = null, tint = c.ink3, modifier = Modifier.size(12.dp))
+            Icon(VIcons.Clock, contentDescription = "", tint = c.ink3, modifier = Modifier.size(12.dp))
             Text(
                 "BELL SCHEDULE",
                 style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 9.5.sp),

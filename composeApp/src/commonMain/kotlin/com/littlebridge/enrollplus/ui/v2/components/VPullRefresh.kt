@@ -8,15 +8,15 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * VPullRefresh — the single pull-to-refresh wrapper (FEATURE 7).
  *
  * Thin wrapper over Material3's [PullToRefreshBox] so every scrollable list screen gets the same
  * gesture + the same brand-tinted indicator with one call. RULE-1: the indicator is tinted with
- * the existing primary brand token ([VColors.violetInk]) and drawn on the existing surface
- * token ([VColors.surfaceCard]) — no new colours. RULE-3: reuse this instead of re-deriving the
+ * the existing primary brand token ([VTheme.colors.violetInk]) and drawn on the existing surface
+ * token ([VTheme.colors.surfaceCard]) — no new colours. RULE-3: reuse this instead of re-deriving the
  * state/indicator at every callsite.
  *
  * Wire `isRefreshing` to the ViewModel's "refresh in flight" flag and `onRefresh` to its refresh
@@ -45,8 +45,8 @@ fun VPullRefresh(
                 state = state,
                 isRefreshing = isRefreshing,
                 modifier = Modifier.align(Alignment.TopCenter),
-                containerColor = VColors.surfaceCard,
-                color = VColors.violetInk,
+                containerColor = VTheme.colors.surfaceCard,
+                color = VTheme.colors.violetInk,
             )
         },
     ) {

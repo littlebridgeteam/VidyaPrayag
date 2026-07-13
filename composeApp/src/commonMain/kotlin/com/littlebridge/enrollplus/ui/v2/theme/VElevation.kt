@@ -8,6 +8,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * VElevation — the design's 3-tier navy-tinted shadow system (UI_FIDELITY_AUDIT §13.1).

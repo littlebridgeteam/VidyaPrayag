@@ -31,7 +31,6 @@ import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
 import com.littlebridge.enrollplus.feature.reportcard.domain.model.ReportCardModels
 import com.littlebridge.enrollplus.feature.reportcard.presentation.ParentReportViewModel
-import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
@@ -77,7 +76,7 @@ fun ParentReportScreen(
     }
 
     Column(
-        Modifier.fillMaxSize().background(VColors.cream),
+        Modifier.fillMaxSize().background(VTheme.colors.cream),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         PremiumOverlayHeader(title = appString(StringKeys.PR_AI_REPORT_CARD), onBack = onBack)
@@ -91,7 +90,7 @@ fun ParentReportScreen(
             state.error != null -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(VIcons.AlertCircle, contentDescription = null, tint = c.danger, modifier = Modifier.size(32.dp))
+                        Icon(VIcons.AlertCircle, contentDescription = "", tint = c.danger, modifier = Modifier.size(32.dp))
                         Spacer(Modifier.height(8.dp))
                         Text(state.error!!, style = VTheme.type.body.colored(c.ink2))
                     }
@@ -100,7 +99,7 @@ fun ParentReportScreen(
             state.isEmpty -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(VIcons.Sparkles, contentDescription = null, tint = c.accent, modifier = Modifier.size(32.dp))
+                        Icon(VIcons.Sparkles, contentDescription = "", tint = c.accent, modifier = Modifier.size(32.dp))
                         Spacer(Modifier.height(8.dp))
                         Text(appString(StringKeys.PR_NO_REPORTS), style = VTheme.type.body.colored(c.ink2))
                         Text(appString(StringKeys.PR_NO_REPORTS_DESC),
@@ -134,7 +133,7 @@ private fun ConferencePackCard(pack: ReportCardModels.ConferencePack) {
     VCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Icon(VIcons.Sparkles, contentDescription = null, tint = c.accent, modifier = Modifier.size(16.dp))
+                Icon(VIcons.Sparkles, contentDescription = "", tint = c.accent, modifier = Modifier.size(16.dp))
                 Text(appString(StringKeys.PR_CONFERENCE_PACK), style = VTheme.type.h3.colored(c.ink).copy(fontSize = 16.sp))
             }
             Text(appString(StringKeys.PR_CONFERENCE_SUBTITLE,

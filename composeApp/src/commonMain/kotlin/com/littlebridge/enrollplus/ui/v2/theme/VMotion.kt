@@ -29,6 +29,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import kotlin.math.sqrt
 import kotlinx.coroutines.launch
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * VMotion — the design's spring/entrance tokens (UI_FIDELITY_AUDIT §13.2/§13.3).

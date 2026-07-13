@@ -43,9 +43,8 @@ import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * ClassPerformanceScreenV2 — class-level analytics overlay.
@@ -131,7 +130,7 @@ private fun ClassPerformanceContent(
                 VSectionHeader(title = appString(StringKeys.SCH_SUBJECT_MATRIX))
                 VCard {
                     state.subjectMatrix.forEachIndexed { i, s ->
-                        if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
+                        if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(VTheme.colors.line))
                         SubjectRow(s)
                     }
                 }
@@ -154,10 +153,10 @@ private fun ClassPerformanceContent(
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         VBadge(text = appString(StringKeys.SCH_STAR_1ST), tone = VBadgeTone.Warning)
                         Column(Modifier.weight(1f)) {
-                            Text(state.topPerformerName, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                            Text(state.topPerformerName, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
                             if (state.topPerformerDetails.isNotBlank()) {
                                 Spacer(Modifier.height(2.dp))
-                                Text(state.topPerformerDetails, style = VTypography.caption.copy(color = VColors.ink3))
+                                Text(state.topPerformerDetails, style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
                             }
                         }
                     }
@@ -176,16 +175,16 @@ private fun ClassPerformanceContent(
 @Composable
 private fun Kpi(label: String, value: String) {
         VCard {
-        Text(label, style = VTypography.label.copy(color = VColors.ink3))
+        Text(label, style = VTheme.type.label.copy(color = VTheme.colors.ink3))
         Spacer(Modifier.height(4.dp))
-        Text(value, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink))
+        Text(value, style = VTheme.type.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VTheme.colors.ink))
     }
 }
 
 @Composable
 private fun RiskTile(label: String, value: String, tone: VBadgeTone) {
         Column {
-        Text(label, style = VTypography.label.copy(color = VColors.ink3))
+        Text(label, style = VTheme.type.label.copy(color = VTheme.colors.ink3))
         Spacer(Modifier.height(4.dp))
         VBadge(text = value, tone = tone)
     }
@@ -195,8 +194,8 @@ private fun RiskTile(label: String, value: String, tone: VBadgeTone) {
 private fun GradeRow(g: GradeDistribution) {
         Column {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(g.grade, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
-            Text("${g.percentage}%", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2))
+            Text(g.grade, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
+            Text("${g.percentage}%", style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink2))
         }
         Spacer(Modifier.height(6.dp))
         VProgressBar(value = (g.value * 100f).coerceIn(0f, 100f))
@@ -215,8 +214,8 @@ private fun SubjectRow(s: SubjectMatrixItem) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(s.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink), modifier = Modifier.weight(1f))
-        Text("${s.percentage}%", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2))
+        Text(s.name, style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink), modifier = Modifier.weight(1f))
+        Text("${s.percentage}%", style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink2))
         VBadge(text = trendText, tone = trendTone)
     }
 }
@@ -238,16 +237,16 @@ private fun ProgressRow(p: ProgressMonitoringItem) {
             Box(
                 Modifier
                     .clip(RoundedCornerShape(999.dp))
-                    .background(VColors.cream)
+                    .background(VTheme.colors.cream)
                     .padding(horizontal = 12.dp, vertical = 8.dp),
             ) {
-                Text(p.initials.take(2).uppercase(), style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                Text(p.initials.take(2).uppercase(), style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink))
             }
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         p.name,
-                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink),
+                        style = VTheme.type.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink),
                         modifier = Modifier.weight(1f, fill = false),
                     )
                     VBadge(text = p.status, tone = statusTone)
@@ -255,10 +254,10 @@ private fun ProgressRow(p: ProgressMonitoringItem) {
                 Spacer(Modifier.height(4.dp))
                 Text(
                     appString(StringKeys.SCH_PROGRESS_SCORES, "math" to p.math, "science" to p.science, "literature" to p.literature),
-                    style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2),
+                    style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VTheme.colors.ink2),
                 )
                 Spacer(Modifier.height(2.dp))
-                Text(appString(StringKeys.SCH_PROGRESS_ATTENDANCE, "attendance" to p.attendance), style = VTypography.caption.copy(color = VColors.ink3))
+                Text(appString(StringKeys.SCH_PROGRESS_ATTENDANCE, "attendance" to p.attendance), style = VTheme.type.caption.copy(color = VTheme.colors.ink3))
             }
         }
     }

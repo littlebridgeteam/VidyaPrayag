@@ -32,7 +32,6 @@ import com.littlebridge.enrollplus.feature.health.domain.model.HealthProfileDto
 import com.littlebridge.enrollplus.feature.health.domain.model.ImmunizationDto
 import com.littlebridge.enrollplus.feature.health.domain.model.ParentHealthResponse
 import com.littlebridge.enrollplus.feature.health.presentation.ParentHealthViewModel
-import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VCard
@@ -60,7 +59,7 @@ fun ParentHealthScreenV2(
     Column(
         modifier
             .fillMaxSize()
-            .background(VColors.cream)
+            .background(VTheme.colors.cream)
             .statusBarsPadding()
             .navigationBarsPadding(),
     ) {
@@ -104,7 +103,7 @@ private fun ParentHealthContent(data: ParentHealthResponse?) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Icon(VIcons.Heart, contentDescription = null, tint = c.ink3, modifier = Modifier.size(32.dp))
+                    Icon(VIcons.Heart, contentDescription = "", tint = c.ink3, modifier = Modifier.size(32.dp))
                     Text(appString(StringKeys.PHS_NO_PROFILE), style = VTheme.type.bodyStrong.colored(c.ink))
                     Text(
                         appString(StringKeys.PHS_NO_PROFILE_DESC),
@@ -201,7 +200,7 @@ private fun ImmunizationCard(imm: ImmunizationDto) {
                 Modifier.size(36.dp).clip(CircleShape).background(c.teal.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(VIcons.Heart, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(18.dp))
+                Icon(VIcons.Heart, contentDescription = "", tint = c.tealDeep, modifier = Modifier.size(18.dp))
             }
         }
     }
@@ -240,7 +239,7 @@ private fun IncidentCard(inc: HealthIncidentDto) {
             }
             if (inc.parentNotified) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Icon(VIcons.Check, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(14.dp))
+                    Icon(VIcons.Check, contentDescription = "", tint = c.tealDeep, modifier = Modifier.size(14.dp))
                     Text(appString(StringKeys.PHS_PARENT_NOTIFIED), style = VTheme.type.caption.colored(c.tealDeep))
                 }
             }

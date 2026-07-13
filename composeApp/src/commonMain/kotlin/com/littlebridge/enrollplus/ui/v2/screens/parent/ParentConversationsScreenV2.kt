@@ -26,10 +26,10 @@ import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.feature.parent.domain.model.DashboardChildSummary
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentMessageViewModel
-import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VMotion
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * ParentConversationsScreenV2 — Phase 3 (commit 9).
@@ -82,7 +82,7 @@ fun ParentConversationsScreenV2(
     Column(
         modifier
             .fillMaxSize()
-            .background(VColors.cream)
+            .background(VTheme.colors.cream)
             .statusBarsPadding()
             .imePadding()
             .navigationBarsPadding()

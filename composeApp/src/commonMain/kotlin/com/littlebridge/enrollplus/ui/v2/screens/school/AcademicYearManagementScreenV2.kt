@@ -44,9 +44,8 @@ import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 
 /**
  * AcademicYearManagementScreenV2 — the REAL replacement for the Settings
@@ -68,7 +67,7 @@ fun AcademicYearManagementScreenV2(
     var start by remember { mutableStateOf("") }
     var end by remember { mutableStateOf("") }
 
-    Column(modifier.fillMaxSize().background(VColors.surface).statusBarsPadding().imePadding().navigationBarsPadding()) {
+    Column(modifier.fillMaxSize().background(VTheme.colors.surface).statusBarsPadding().imePadding().navigationBarsPadding()) {
         VBackHeader(
             title = appString(StringKeys.SCH_ACADEMIC_YEAR),
             onBack = onBack,
@@ -172,8 +171,8 @@ private fun YearCard(
         VCard(modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text(year.name, style = VTypography.h3.copy(color = VColors.ink))
-                Text("${year.startDate} → ${year.endDate}", style = VTypography.caption.copy(color = VColors.ink2))
+                Text(year.name, style = VTheme.type.h3.copy(color = VTheme.colors.ink))
+                Text("${year.startDate} → ${year.endDate}", style = VTheme.type.caption.copy(color = VTheme.colors.ink2))
             }
             VBadge(
                 text = year.status,
@@ -187,8 +186,8 @@ private fun YearCard(
         if (year.academicDays != null || year.holidayDays != null) {
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                year.academicDays?.let { Text(appString(StringKeys.SCH_SCHOOL_DAYS, "count" to it.toString()), style = VTypography.caption.copy(color = VColors.ink3)) }
-                year.holidayDays?.let { Text(appString(StringKeys.SCH_HOLIDAYS, "count" to it.toString()), style = VTypography.caption.copy(color = VColors.ink3)) }
+                year.academicDays?.let { Text(appString(StringKeys.SCH_SCHOOL_DAYS, "count" to it.toString()), style = VTheme.type.caption.copy(color = VTheme.colors.ink3)) }
+                year.holidayDays?.let { Text(appString(StringKeys.SCH_HOLIDAYS, "count" to it.toString()), style = VTheme.type.caption.copy(color = VTheme.colors.ink3)) }
             }
         }
         Spacer(Modifier.height(12.dp))

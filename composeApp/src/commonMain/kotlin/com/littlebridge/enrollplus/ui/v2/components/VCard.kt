@@ -131,7 +131,7 @@ fun VActionCard(
                 Icon(
                     imageVector = icon,
 
-                    contentDescription = null,
+                    contentDescription = "",
 
                     tint = c.tealDeep,
 
@@ -203,7 +203,7 @@ fun VActionCard(
                 Icon(
                     imageVector = VIcons.ArrowRight,
 
-                    contentDescription = null,
+                    contentDescription = "",
 
                     tint = c.ink3,
 

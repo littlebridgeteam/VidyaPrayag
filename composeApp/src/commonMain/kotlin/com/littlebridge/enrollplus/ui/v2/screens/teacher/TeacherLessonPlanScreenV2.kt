@@ -49,37 +49,37 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
+import com.littlebridge.enrollplus.ui.v2.theme.colored
 
 // ── Cream/violet token bridge for the lesson plan surface ────────────────────
 // Maps the legacy VTheme accessor names used across this screen onto the new
 // cream/violet token system, keeping every mode/dialog layout unchanged.
 private object LpColors {
-    val background get() = VColors.cream
-    val card get() = VColors.white
-    val cream get() = VColors.surfaceTint
-    val hairline get() = VColors.line
-    val ink get() = VColors.ink
-    val ink2 get() = VColors.ink2
-    val ink3 get() = VColors.ink3
-    val navyDeep get() = VColors.ink
-    val accent get() = VColors.violet
-    val accentDeep get() = VColors.violetInk
-    val teal get() = VColors.mint
-    val tealDeep get() = VColors.success
-    val dangerInk get() = VColors.error
+    val background get() = VTheme.colors.cream
+    val card get() = VTheme.colors.white
+    val cream get() = VTheme.colors.surfaceTint
+    val hairline get() = VTheme.colors.line
+    val ink get() = VTheme.colors.ink
+    val ink2 get() = VTheme.colors.ink2
+    val ink3 get() = VTheme.colors.ink3
+    val navyDeep get() = VTheme.colors.ink
+    val accent get() = VTheme.colors.violet
+    val accentDeep get() = VTheme.colors.violetInk
+    val teal get() = VTheme.colors.mint
+    val tealDeep get() = VTheme.colors.success
+    val dangerInk get() = VTheme.colors.error
 }
 
 private object LpType {
-    val h3: TextStyle get() = VTypography.h3
-    val body: TextStyle get() = VTypography.body
-    val bodyStrong: TextStyle get() = VTypography.body
-    val caption: TextStyle get() = VTypography.caption
-    val label: TextStyle get() = VTypography.label
+    val h3: TextStyle get() = VTheme.type.h3
+    val body: TextStyle get() = VTheme.type.body
+    val bodyStrong: TextStyle get() = VTheme.type.body
+    val caption: TextStyle get() = VTheme.type.caption
+    val label: TextStyle get() = VTheme.type.label
 }
 
 private fun TextStyle.colored(color: Color): TextStyle = copy(color = color)
@@ -150,7 +150,7 @@ private fun LessonPlanListMode(viewModel: TeacherLessonPlanViewModel, scopeLabel
                             variant = VButtonVariant.Primary,
                             tone = VButtonTone.Lavender,
                             size = VButtonSize.Md,
-                            leading = { Icon(VIcons.Plus, contentDescription = null, modifier = Modifier.size(15.dp)) },
+                            leading = { Icon(VIcons.Plus, contentDescription = "", modifier = Modifier.size(15.dp)) },
                         )
                         VButton(
                             text = appString(StringKeys.TC_CALENDAR),
@@ -159,7 +159,7 @@ private fun LessonPlanListMode(viewModel: TeacherLessonPlanViewModel, scopeLabel
                             variant = VButtonVariant.Secondary,
                             tone = VButtonTone.Lavender,
                             size = VButtonSize.Md,
-                            leading = { Icon(VIcons.Calendar, contentDescription = null, modifier = Modifier.size(15.dp)) },
+                            leading = { Icon(VIcons.Calendar, contentDescription = "", modifier = Modifier.size(15.dp)) },
                         )
                         VButton(
                             text = appString(StringKeys.TC_TEMPLATES),
@@ -168,7 +168,7 @@ private fun LessonPlanListMode(viewModel: TeacherLessonPlanViewModel, scopeLabel
                             variant = VButtonVariant.Secondary,
                             tone = VButtonTone.Lavender,
                             size = VButtonSize.Md,
-                            leading = { Icon(VIcons.ClipboardList, contentDescription = null, modifier = Modifier.size(15.dp)) },
+                            leading = { Icon(VIcons.ClipboardList, contentDescription = "", modifier = Modifier.size(15.dp)) },
                         )
                     }
                 }
@@ -539,7 +539,7 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
                             variant = VButtonVariant.Secondary,
                             tone = VButtonTone.Teal,
                             size = VButtonSize.Md,
-                            leading = { Icon(VIcons.Check, contentDescription = null, modifier = Modifier.size(15.dp)) },
+                            leading = { Icon(VIcons.Check, contentDescription = "", modifier = Modifier.size(15.dp)) },
                             enabled = !e.isCompleted && !e.isSkipped,
                         )
                         VButton(
@@ -596,7 +596,7 @@ private fun SaveTemplateDialog(viewModel: TeacherLessonPlanViewModel) {
                         .clickable(interactionSource = ix, indication = null) { viewModel.setTemplateShared(!state.templateIsShared) },
                     contentAlignment = Alignment.Center,
                 ) {
-                    if (state.templateIsShared) Icon(VIcons.Check, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(14.dp))
+                    if (state.templateIsShared) Icon(VIcons.Check, contentDescription = "", tint = c.accentDeep, modifier = Modifier.size(14.dp))
                 }
                 Text(appString(StringKeys.TC_SHARE_WITH_TEACHERS), style = LpType.body.colored(c.ink).copy(fontSize = 13.sp))
             }
@@ -881,7 +881,7 @@ private fun PickerRow(
                 .border(1.dp, if (selected) c.accent else c.hairline, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            if (selected) Icon(VIcons.Check, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(12.dp))
+            if (selected) Icon(VIcons.Check, contentDescription = "", tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(12.dp))
         }
         Text(
             label,

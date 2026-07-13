@@ -183,7 +183,7 @@ private fun TodayFace(
                 Modifier.size(40.dp).clip(CircleShape).background(tone.dot.copy(alpha = 0.18f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(tone.icon, contentDescription = null, tint = tone.dot, modifier = Modifier.size(20.dp))
+                Icon(tone.icon, contentDescription = "", tint = tone.dot, modifier = Modifier.size(20.dp))
             }
             Column(Modifier.weight(1f)) {
                 Text(
@@ -452,7 +452,7 @@ private fun CircleIcon(
             .then(if (enabled) Modifier.clickable(interactionSource = ix, indication = null, onClick = onClick) else Modifier),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, contentDescription = null, tint = if (enabled) tint else c.placeholder, modifier = Modifier.size(15.dp))
+        Icon(icon, contentDescription = "", tint = if (enabled) tint else c.placeholder, modifier = Modifier.size(15.dp))
     }
 }
 

@@ -85,15 +85,14 @@ import com.littlebridge.enrollplus.feature.parent.presentation.ParentAcademicsVi
 import com.littlebridge.enrollplus.feature.parent.presentation.TrackProgressState
 import com.littlebridge.enrollplus.feature.parent.presentation.TrackProgressViewModel
 import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizSubmitResponse
-import com.littlebridge.enrollplus.ui.components.VButton
-import com.littlebridge.enrollplus.ui.components.VButtonVariant
-import com.littlebridge.enrollplus.ui.components.VProgressBar
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VMotion
-import com.littlebridge.enrollplus.ui.tokens.VShapes
-import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.ui.v2.components.VButton
+import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
+import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
+import com.littlebridge.enrollplus.ui.v2.theme.VMotion
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SCREEN ENTRY POINT
@@ -222,7 +221,7 @@ private fun ParentAcademicsContent(
     Column(
         modifier
             .fillMaxSize()
-            .background(VColors.cream)
+            .background(VTheme.colors.cream)
             .verticalScroll(rememberScrollState())
             .padding(bottom = 100.dp),
     ) {
@@ -403,14 +402,14 @@ private fun OverviewTab(
     ) {
         QuickActionTile(
             icon = Icons.Filled.Description,
-            iconColor = VColors.violet,
+            iconColor = VTheme.colors.violet,
             title = "Report Card",
             onClick = onOpenReport,
             modifier = Modifier.weight(1f),
         )
         QuickActionTile(
             icon = Icons.Filled.CalendarMonth,
-            iconColor = VColors.coral,
+            iconColor = VTheme.colors.coral,
             title = "Apply Leave",
             onClick = onOpenLeave,
             modifier = Modifier.weight(1f),
@@ -422,14 +421,14 @@ private fun OverviewTab(
     ) {
         QuickActionTile(
             icon = Icons.Filled.Favorite,
-            iconColor = VColors.error,
+            iconColor = VTheme.colors.error,
             title = "Health Records",
             onClick = onOpenHealth,
             modifier = Modifier.weight(1f),
         )
         QuickActionTile(
             icon = Icons.Filled.School,
-            iconColor = VColors.gold,
+            iconColor = VTheme.colors.gold,
             title = "Syllabus",
             onClick = onOpenSyllabus,
             modifier = Modifier.weight(1f),
@@ -450,8 +449,8 @@ private fun AcademicSnapshotCard(
     Column(
         Modifier
             .fillMaxWidth()
-            .background(VColors.surfaceCard, VShapes.lg)
-            .border(1.dp, VColors.line, VShapes.lg)
+            .background(VTheme.colors.surfaceCard, RoundedCornerShape(18.dp))
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(18.dp))
             .padding(20.dp),
     ) {
         // ── Identity row ──
@@ -464,42 +463,42 @@ private fun AcademicSnapshotCard(
             Column(Modifier.weight(1f)) {
                 Text(
                     childName,
-                    style = VTypography.h3.copy(fontSize = 16.sp),
-                    color = VColors.ink,
+                    style = VTheme.type.h3.copy(fontSize = 16.sp),
+                    color = VTheme.colors.ink,
                     fontWeight = FontWeight.Bold,
                 )
                 Spacer(Modifier.height(4.dp))
                 if (level > 0) {
-                    MiniBadge(text = "Level $level", color = VColors.violet, bg = VColors.violetSoft)
+                    MiniBadge(text = "Level $level", color = VTheme.colors.violet, bg = VTheme.colors.violetSoft)
                 } else {
-                    Text("Academic Overview", style = VTypography.caption, color = VColors.ink3)
+                    Text("Academic Overview", style = VTheme.type.caption, color = VTheme.colors.ink3)
                 }
             }
             Text(
                 "$progressPct%",
-                style = VTypography.h2.copy(fontSize = 24.sp),
-                color = VColors.violet,
+                style = VTheme.type.h2.copy(fontSize = 24.sp),
+                color = VTheme.colors.violet,
                 fontWeight = FontWeight.ExtraBold,
             )
         }
 
         // ── Progress bar ──
         Spacer(Modifier.height(14.dp))
-        VProgressBar(progress = progressPct / 100f, barHeight = 6)
+        VProgressBar(value = progressPct, height = 6.dp)
 
         // ── Journey description ──
         if (journey.isNotBlank()) {
             Spacer(Modifier.height(12.dp))
             Text(
                 journey,
-                style = VTypography.body.copy(fontSize = 13.sp),
-                color = VColors.ink2,
+                style = VTheme.type.body.copy(fontSize = 13.sp),
+                color = VTheme.colors.ink2,
             )
         }
 
         // ── Inline mini-stats (divider + 3-column row) ──
         Spacer(Modifier.height(16.dp))
-        HorizontalDivider(color = VColors.lineSoft)
+        HorizontalDivider(color = VTheme.colors.lineSoft)
         Spacer(Modifier.height(14.dp))
         Row(
             Modifier.fillMaxWidth(),
@@ -532,12 +531,12 @@ private fun InlineStat(value: String, label: String, modifier: Modifier = Modifi
     ) {
         Text(
             value,
-            style = VTypography.h3.copy(fontSize = 16.sp),
-            color = VColors.ink,
+            style = VTheme.type.h3.copy(fontSize = 16.sp),
+            color = VTheme.colors.ink,
             fontWeight = FontWeight.Bold,
         )
         Spacer(Modifier.height(2.dp))
-        Text(label, style = VTypography.caption.copy(fontSize = 10.sp), color = VColors.ink3)
+        Text(label, style = VTheme.type.caption.copy(fontSize = 10.sp), color = VTheme.colors.ink3)
     }
 }
 
@@ -551,21 +550,21 @@ private fun QuickActionTile(
 ) {
     Column(
         modifier
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.lg)
+            .clip(RoundedCornerShape(18.dp))
+            .background(VTheme.colors.surfaceCard)
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(18.dp))
             .clickable(onClick = onClick)
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Box(
-            Modifier.size(36.dp).clip(VShapes.sm).background(iconColor.copy(alpha = 0.12f)),
+            Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(iconColor.copy(alpha = 0.12f)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(18.dp))
+            Icon(icon, contentDescription = "", tint = iconColor, modifier = Modifier.size(18.dp))
         }
-        Text(title, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+        Text(title, style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold), color = VTheme.colors.ink)
     }
 }
 
@@ -578,23 +577,23 @@ private fun CompetencyCard(comp: AcademicCompetency, tone: Color) {
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Box(
-                Modifier.size(36.dp).clip(VShapes.sm).background(tone.copy(alpha = 0.14f)),
+                Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(tone.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     comp.title.take(2).uppercase(),
-                    style = VTypography.label.copy(fontWeight = FontWeight.ExtraBold, fontSize = 11.sp),
+                    style = VTheme.type.label.copy(fontWeight = FontWeight.ExtraBold, fontSize = 11.sp),
                     color = tone,
                 )
             }
             Column(Modifier.weight(1f)) {
-                Text(comp.title, style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
+                Text(comp.title, style = VTheme.type.body, color = VTheme.colors.ink, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(6.dp))
                 TintedBar((comp.progress * 100f), tone)
             }
             Text(
                 "${(comp.progress * 100f).toInt()}%",
-                style = VTypography.body.copy(fontWeight = FontWeight.Bold),
+                style = VTheme.type.body.copy(fontWeight = FontWeight.Bold),
                 color = tone,
             )
         }
@@ -611,12 +610,12 @@ private fun EmotionalIntelligenceCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Icon(Icons.Filled.Spa, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
-            Text("Emotional Intelligence", style = VTypography.label, color = VColors.ink, fontWeight = FontWeight.Bold)
+            Icon(Icons.Filled.Spa, contentDescription = "", tint = VTheme.colors.violet, modifier = Modifier.size(18.dp))
+            Text("Emotional Intelligence", style = VTheme.type.label, color = VTheme.colors.ink, fontWeight = FontWeight.Bold)
         }
         if (description.isNotBlank()) {
             Spacer(Modifier.height(8.dp))
-            Text(description, style = VTypography.body, color = VColors.ink2)
+            Text(description, style = VTheme.type.body, color = VTheme.colors.ink2)
         }
         if (metrics.isNotEmpty()) {
             Spacer(Modifier.height(12.dp))
@@ -627,8 +626,8 @@ private fun EmotionalIntelligenceCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(trait, style = VTypography.caption, color = VColors.ink2)
-                    Text("${(score * 100f).toInt()}%", style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = tone)
+                    Text(trait, style = VTheme.type.caption, color = VTheme.colors.ink2)
+                    Text("${(score * 100f).toInt()}%", style = VTheme.type.caption.copy(fontWeight = FontWeight.Bold), color = tone)
                 }
                 TintedBar(score * 100f, tone, height = 6.dp)
             }
@@ -665,20 +664,20 @@ private fun BadgeChip(badge: AchievementBadge) {
                 Modifier
                     .fillMaxSize()
                     .background(
-                        if (colors.isNotEmpty()) Brush.linearGradient(colors) else Brush.linearGradient(listOf(VColors.violet, VColors.violetSoft))
+                        if (colors.isNotEmpty()) Brush.linearGradient(colors) else Brush.linearGradient(listOf(VTheme.colors.violet, VTheme.colors.violetSoft))
                     ),
             )
             Icon(
                 if (badge.isLocked) Icons.Filled.School else Icons.Filled.Insights,
-                contentDescription = null,
+                contentDescription = "",
                 tint = Color.White.copy(alpha = alpha),
                 modifier = Modifier.size(24.dp),
             )
         }
         Text(
             badge.title,
-            style = VTypography.caption.copy(fontSize = 10.sp),
-            color = VColors.ink2.copy(alpha = alpha),
+            style = VTheme.type.caption.copy(fontSize = 10.sp),
+            color = VTheme.colors.ink2.copy(alpha = alpha),
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,
@@ -708,22 +707,22 @@ private fun AttendanceTab(academics: ParentAcademicsState, onRetry: () -> Unit) 
         CreamCard {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
                 Column(Modifier.weight(1f)) {
-                    Text("This Term", style = VTypography.label, color = VColors.ink3)
-                    Text("Attendance Rate", style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.padding(top = 2.dp))
+                    Text("This Term", style = VTheme.type.label, color = VTheme.colors.ink3)
+                    Text("Attendance Rate", style = VTheme.type.body.copy(fontWeight = FontWeight.Bold), color = VTheme.colors.ink, modifier = Modifier.padding(top = 2.dp))
                 }
                 Text(
                     "${data.attendanceRate}%",
-                    style = VTypography.h3.copy(fontWeight = FontWeight.ExtraBold),
-                    color = if (data.attendanceRate >= 75) VColors.success else VColors.gold,
+                    style = VTheme.type.h3.copy(fontWeight = FontWeight.ExtraBold),
+                    color = if (data.attendanceRate >= 75) VTheme.colors.success else VTheme.colors.gold,
                 )
             }
             Spacer(Modifier.height(8.dp))
-            VProgressBar(progress = data.attendanceRate / 100f, barHeight = 8)
+            VProgressBar(value = data.attendanceRate, height = 8.dp)
             Spacer(Modifier.height(16.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                AttendanceStat("Present", data.presentDays, VColors.success, Modifier.weight(1f))
-                AttendanceStat("Late", data.lateDays, VColors.gold, Modifier.weight(1f))
-                AttendanceStat("Absent", data.absentDays, VColors.error, Modifier.weight(1f))
+                AttendanceStat("Present", data.presentDays, VTheme.colors.success, Modifier.weight(1f))
+                AttendanceStat("Late", data.lateDays, VTheme.colors.gold, Modifier.weight(1f))
+                AttendanceStat("Absent", data.absentDays, VTheme.colors.error, Modifier.weight(1f))
             }
         }
     } else {
@@ -733,14 +732,14 @@ private fun AttendanceTab(academics: ParentAcademicsState, onRetry: () -> Unit) 
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 Box(
-                    Modifier.size(40.dp).clip(VShapes.sm).background(VColors.success.copy(alpha = 0.12f)),
+                    Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(VTheme.colors.success.copy(alpha = 0.12f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Filled.CalendarMonth, contentDescription = null, tint = VColors.success, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Filled.CalendarMonth, contentDescription = "", tint = VTheme.colors.success, modifier = Modifier.size(20.dp))
                 }
                 Column(Modifier.weight(1f)) {
-                    Text("No Attendance Records", style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
-                    Text("Attendance data will appear here once available.", style = VTypography.caption, color = VColors.ink3)
+                    Text("No Attendance Records", style = VTheme.type.body, color = VTheme.colors.ink, fontWeight = FontWeight.SemiBold)
+                    Text("Attendance data will appear here once available.", style = VTheme.type.caption, color = VTheme.colors.ink3)
                 }
             }
         }
@@ -753,14 +752,14 @@ private fun AttendanceTab(academics: ParentAcademicsState, onRetry: () -> Unit) 
 private fun AttendanceStat(label: String, count: Int, accent: Color, modifier: Modifier = Modifier) {
     Column(
         modifier
-            .clip(VShapes.md)
+            .clip(RoundedCornerShape(14.dp))
             .background(accent.copy(alpha = 0.10f))
             .padding(vertical = 12.dp, horizontal = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text("$count", style = VTypography.h3.copy(fontSize = 18.sp), color = accent, fontWeight = FontWeight.ExtraBold)
+        Text("$count", style = VTheme.type.h3.copy(fontSize = 18.sp), color = accent, fontWeight = FontWeight.ExtraBold)
         Spacer(Modifier.height(2.dp))
-        Text(label, style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold), color = VColors.ink2)
+        Text(label, style = VTheme.type.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold), color = VTheme.colors.ink2)
     }
 }
 
@@ -789,10 +788,10 @@ private fun MarksTab(academics: ParentAcademicsState, onRetry: () -> Unit) {
         val marksValue = m.marks
         val pct = if (marksValue != null && m.maxMarks > 0) (marksValue / m.maxMarks * 100.0) else null
         val gradeColor = when {
-            pct == null -> VColors.ink3
-            pct >= 75 -> VColors.success
-            pct >= 40 -> VColors.gold
-            else -> VColors.error
+            pct == null -> VTheme.colors.ink3
+            pct >= 75 -> VTheme.colors.success
+            pct >= 40 -> VTheme.colors.gold
+            else -> VTheme.colors.error
         }
         val subjectColor = subjectPalette[idx % subjectPalette.size]
 
@@ -803,23 +802,23 @@ private fun MarksTab(academics: ParentAcademicsState, onRetry: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(
-                    Modifier.size(40.dp).clip(VShapes.sm).background(subjectColor.copy(alpha = 0.14f)),
+                    Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(subjectColor.copy(alpha = 0.14f)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         m.subject.take(2).uppercase(),
-                        style = VTypography.label.copy(fontWeight = FontWeight.ExtraBold, fontSize = 12.sp),
+                        style = VTheme.type.label.copy(fontWeight = FontWeight.ExtraBold, fontSize = 12.sp),
                         color = subjectColor,
                     )
                 }
                 Column(Modifier.weight(1f)) {
-                    Text(m.examName, style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
-                    Text(m.subject, style = VTypography.caption, color = VColors.ink3)
+                    Text(m.examName, style = VTheme.type.body, color = VTheme.colors.ink, fontWeight = FontWeight.SemiBold)
+                    Text(m.subject, style = VTheme.type.caption, color = VTheme.colors.ink3)
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         if (marksValue != null) "${marksValue.toInt()} / ${m.maxMarks}" else "—",
-                        style = VTypography.body.copy(fontWeight = FontWeight.Bold),
+                        style = VTheme.type.body.copy(fontWeight = FontWeight.Bold),
                         color = gradeColor,
                     )
                     if (pct != null) {
@@ -925,25 +924,25 @@ private fun SyllabusSubjectCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
-                Modifier.size(36.dp).clip(VShapes.sm).background(tone.copy(alpha = 0.14f)),
+                Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(tone.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     subjectName.take(2).uppercase(),
-                    style = VTypography.label.copy(fontWeight = FontWeight.ExtraBold, fontSize = 11.sp),
+                    style = VTheme.type.label.copy(fontWeight = FontWeight.ExtraBold, fontSize = 11.sp),
                     color = tone,
                 )
             }
-            Text(subjectName, style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            Text(subjectName, style = VTheme.type.body, color = VTheme.colors.ink, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
             if (isAiEstimated) {
-                MiniBadge(text = "AI", color = VColors.violet, bg = VColors.violetSoft)
+                MiniBadge(text = "AI", color = VTheme.colors.violet, bg = VTheme.colors.violetSoft)
                 Spacer(Modifier.width(4.dp))
             }
-            Text("$progress%", style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = tone)
+            Text("$progress%", style = VTheme.type.body.copy(fontWeight = FontWeight.Bold), color = tone)
             Icon(
                 if (expanded) Icons.Filled.ExpandMore else Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = if (expanded) "Collapse" else "Expand",
-                tint = VColors.ink3,
+                tint = VTheme.colors.ink3,
                 modifier = Modifier.size(18.dp),
             )
         }
@@ -953,13 +952,13 @@ private fun SyllabusSubjectCard(
             Spacer(Modifier.height(4.dp))
             Text(
                 "Teacher hasn't updated progress. Estimated based on scheduled classes.",
-                style = VTypography.caption.copy(fontSize = 10.sp, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic),
-                color = VColors.ink3,
+                style = VTheme.type.caption.copy(fontSize = 10.sp, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic),
+                color = VTheme.colors.ink3,
             )
         }
         if (expanded && units.isNotEmpty()) {
             Spacer(Modifier.height(12.dp))
-            HorizontalDivider(color = VColors.lineSoft)
+            HorizontalDivider(color = VTheme.colors.lineSoft)
             Spacer(Modifier.height(8.dp))
             units.forEach { u ->
                 Row(
@@ -969,21 +968,21 @@ private fun SyllabusSubjectCard(
                 ) {
                     Text(
                         u.title,
-                        style = VTypography.caption,
-                        color = if (u.isCovered) VColors.ink else VColors.ink2,
+                        style = VTheme.type.caption,
+                        color = if (u.isCovered) VTheme.colors.ink else VTheme.colors.ink2,
                         modifier = Modifier.weight(1f),
                     )
                     if (u.isCovered) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             if (u.isAiEstimated) {
-                                Text("EST", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 10.sp), color = VColors.violet)
+                                Text("EST", style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 10.sp), color = VTheme.colors.violet)
                             } else {
-                                Icon(Icons.Filled.Check, contentDescription = null, tint = VColors.success, modifier = Modifier.size(13.dp))
-                                Text(u.coveredOn ?: "Covered", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.success)
+                                Icon(Icons.Filled.Check, contentDescription = "", tint = VTheme.colors.success, modifier = Modifier.size(13.dp))
+                                Text(u.coveredOn ?: "Covered", style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold), color = VTheme.colors.success)
                             }
                         }
                     } else {
-                        Text("Pending", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.gold)
+                        Text("Pending", style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold), color = VTheme.colors.gold)
                     }
                 }
             }
@@ -1043,29 +1042,29 @@ private fun QuizzesTab(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(
-                    Modifier.size(40.dp).clip(VShapes.sm).background(VColors.violet.copy(alpha = 0.12f)),
+                    Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(VTheme.colors.violet.copy(alpha = 0.12f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Filled.Quiz, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Filled.Quiz, contentDescription = "", tint = VTheme.colors.violet, modifier = Modifier.size(20.dp))
                 }
                 Column(Modifier.weight(1f)) {
-                    Text(quiz.title.ifBlank { "Quiz" }, style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
+                    Text(quiz.title.ifBlank { "Quiz" }, style = VTheme.type.body, color = VTheme.colors.ink, fontWeight = FontWeight.SemiBold)
                     Text(
                         "${quiz.subject} · ${quiz.numQuestions} questions",
-                        style = VTypography.caption,
-                        color = VColors.ink3,
+                        style = VTheme.type.caption,
+                        color = VTheme.colors.ink3,
                     )
                 }
                 when (quiz.status) {
                     "PUBLISHED" -> {
-                        MiniBadge(text = "Start", color = VColors.violet, bg = VColors.violetSoft)
-                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Open", tint = VColors.violet, modifier = Modifier.size(16.dp))
+                        MiniBadge(text = "Start", color = VTheme.colors.violet, bg = VTheme.colors.violetSoft)
+                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Open", tint = VTheme.colors.violet, modifier = Modifier.size(16.dp))
                     }
                     "SUBMITTED" -> {
-                        MiniBadge(text = "Result", color = VColors.success, bg = VColors.successSoft)
-                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "View", tint = VColors.violet, modifier = Modifier.size(16.dp))
+                        MiniBadge(text = "Result", color = VTheme.colors.success, bg = VTheme.colors.successSoft)
+                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "View", tint = VTheme.colors.violet, modifier = Modifier.size(16.dp))
                     }
-                    else -> MiniBadge(text = "Pending", color = VColors.ink3, bg = VColors.surfaceTint)
+                    else -> MiniBadge(text = "Pending", color = VTheme.colors.ink3, bg = VTheme.colors.surfaceTint)
                 }
             }
         }
@@ -1085,15 +1084,15 @@ private fun QuizDetailCard(
     CreamCard {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Box(
-                Modifier.size(32.dp).clip(CircleShape).background(VColors.creamDeep)
+                Modifier.size(32.dp).clip(CircleShape).background(VTheme.colors.creamDeep)
                     .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onBack() },
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = VColors.ink2, modifier = Modifier.size(18.dp))
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = VTheme.colors.ink2, modifier = Modifier.size(18.dp))
             }
-            Icon(Icons.Filled.Quiz, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(20.dp))
-            Text(detail.title.ifBlank { "Quiz" }, style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-            Text(detail.subject, style = VTypography.caption, color = VColors.ink3)
+            Icon(Icons.Filled.Quiz, contentDescription = "", tint = VTheme.colors.violet, modifier = Modifier.size(20.dp))
+            Text(detail.title.ifBlank { "Quiz" }, style = VTheme.type.body, color = VTheme.colors.ink, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            Text(detail.subject, style = VTheme.type.caption, color = VTheme.colors.ink3)
         }
         Spacer(Modifier.height(16.dp))
 
@@ -1109,7 +1108,7 @@ private fun QuizDetailCard(
                         "MATCH" -> " (Match)"
                         else -> ""
                     }
-                    Text("${qIdx + 1}. ${q.question}$typeLabel", style = VTypography.body.copy(fontSize = 14.sp, fontWeight = FontWeight.SemiBold), color = VColors.ink)
+                    Text("${qIdx + 1}. ${q.question}$typeLabel", style = VTheme.type.body.copy(fontSize = 14.sp, fontWeight = FontWeight.SemiBold), color = VTheme.colors.ink)
                     Spacer(Modifier.height(8.dp))
 
                     when (q.questionType) {
@@ -1118,14 +1117,14 @@ private fun QuizDetailCard(
                                 value = textAnswers[q.id] ?: "",
                                 onValueChange = { textAnswers[q.id] = it },
                                 modifier = Modifier.fillMaxWidth(),
-                                placeholder = { Text("Type your answer...", style = VTypography.body.copy(fontSize = 13.sp), color = VColors.ink3) },
+                                placeholder = { Text("Type your answer...", style = VTheme.type.body.copy(fontSize = 13.sp), color = VTheme.colors.ink3) },
                                 singleLine = true,
-                                shape = VShapes.sm,
+                                shape = RoundedCornerShape(10.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = VColors.violet,
-                                    unfocusedBorderColor = VColors.line,
+                                    focusedBorderColor = VTheme.colors.violet,
+                                    unfocusedBorderColor = VTheme.colors.line,
                                     focusedContainerColor = Color.Transparent,
-                                    unfocusedContainerColor = VColors.creamDeep,
+                                    unfocusedContainerColor = VTheme.colors.creamDeep,
                                 ),
                             )
                         }
@@ -1135,9 +1134,9 @@ private fun QuizDetailCard(
                                 val selected = answers[q.id] == optIdx
                                 Row(
                                     Modifier.fillMaxWidth().padding(vertical = 4.dp)
-                                        .clip(VShapes.sm)
-                                        .background(if (selected) VColors.violetSoft else VColors.creamDeep)
-                                        .border(1.dp, if (selected) VColors.violet else VColors.line, VShapes.sm)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(if (selected) VTheme.colors.violetSoft else VTheme.colors.creamDeep)
+                                        .border(1.dp, if (selected) VTheme.colors.violet else VTheme.colors.line, RoundedCornerShape(10.dp))
                                         .clickable {
                                             answers[q.id] = optIdx
                                             if (q.questionType == "TRUE_FALSE") textAnswers[q.id] = opt
@@ -1148,13 +1147,13 @@ private fun QuizDetailCard(
                                 ) {
                                     Box(
                                         Modifier.size(20.dp).clip(CircleShape)
-                                            .background(if (selected) VColors.violet else VColors.surfaceCard)
-                                            .border(1.dp, if (selected) VColors.violet else VColors.line, CircleShape),
+                                            .background(if (selected) VTheme.colors.violet else VTheme.colors.surfaceCard)
+                                            .border(1.dp, if (selected) VTheme.colors.violet else VTheme.colors.line, CircleShape),
                                         contentAlignment = Alignment.Center,
                                     ) {
-                                        if (selected) Icon(Icons.Filled.Check, contentDescription = null, tint = VColors.white, modifier = Modifier.size(12.dp))
+                                        if (selected) Icon(Icons.Filled.Check, contentDescription = "", tint = VTheme.colors.white, modifier = Modifier.size(12.dp))
                                     }
-                                    Text(opt, style = VTypography.body.copy(fontSize = 13.sp), color = VColors.ink)
+                                    Text(opt, style = VTheme.type.body.copy(fontSize = 13.sp), color = VTheme.colors.ink)
                                 }
                             }
                         }
@@ -1167,7 +1166,7 @@ private fun QuizDetailCard(
 
         val quizErr = academics.quizSubmitError
         if (quizErr != null) {
-            Text(quizErr, style = VTypography.caption, color = VColors.error)
+            Text(quizErr, style = VTheme.type.caption, color = VTheme.colors.error)
             Spacer(Modifier.height(8.dp))
         }
 
@@ -1201,13 +1200,13 @@ private fun QuizResultCard(
     CreamCard {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
             Box(
-                Modifier.size(64.dp).clip(CircleShape).background(VColors.violetSoft),
+                Modifier.size(64.dp).clip(CircleShape).background(VTheme.colors.violetSoft),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("${result.percentage}%", style = VTypography.h3.copy(fontSize = 20.sp), color = VColors.violet, fontWeight = FontWeight.ExtraBold)
+                Text("${result.percentage}%", style = VTheme.type.h3.copy(fontSize = 20.sp), color = VTheme.colors.violet, fontWeight = FontWeight.ExtraBold)
             }
             Spacer(Modifier.height(12.dp))
-            Text("Score: ${result.score} / ${result.totalMarks}", style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
+            Text("Score: ${result.score} / ${result.totalMarks}", style = VTheme.type.body, color = VTheme.colors.ink, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(16.dp))
 
             Column(
@@ -1216,26 +1215,26 @@ private fun QuizResultCard(
             ) {
                 result.questionResults.forEachIndexed { idx, qr ->
                     Column(
-                        Modifier.fillMaxWidth().clip(VShapes.sm)
-                            .background(if (qr.correct) VColors.success.copy(alpha = 0.06f) else VColors.error.copy(alpha = 0.06f))
-                            .border(1.dp, if (qr.correct) VColors.success.copy(alpha = 0.2f) else VColors.error.copy(alpha = 0.2f), VShapes.sm)
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
+                            .background(if (qr.correct) VTheme.colors.success.copy(alpha = 0.06f) else VTheme.colors.error.copy(alpha = 0.06f))
+                            .border(1.dp, if (qr.correct) VTheme.colors.success.copy(alpha = 0.2f) else VTheme.colors.error.copy(alpha = 0.2f), RoundedCornerShape(10.dp))
                             .padding(10.dp),
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Icon(if (qr.correct) Icons.Filled.Check else Icons.Filled.Close, contentDescription = null, tint = if (qr.correct) VColors.success else VColors.error, modifier = Modifier.size(16.dp))
-                            Text("${idx + 1}. ${qr.question}", style = VTypography.body.copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold), color = VColors.ink)
+                            Icon(if (qr.correct) Icons.Filled.Check else Icons.Filled.Close, contentDescription = "", tint = if (qr.correct) VTheme.colors.success else VTheme.colors.error, modifier = Modifier.size(16.dp))
+                            Text("${idx + 1}. ${qr.question}", style = VTheme.type.body.copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold), color = VTheme.colors.ink)
                         }
                         Spacer(Modifier.height(6.dp))
                         if (qr.selectedAnswer.isNotBlank()) {
-                            Text("Your answer: ${qr.selectedAnswer}", style = VTypography.caption.copy(fontSize = 12.sp), color = if (qr.correct) VColors.success else VColors.error)
+                            Text("Your answer: ${qr.selectedAnswer}", style = VTheme.type.caption.copy(fontSize = 12.sp), color = if (qr.correct) VTheme.colors.success else VTheme.colors.error)
                         }
                         if (!qr.correct && qr.correctAnswer.isNotBlank()) {
-                            Text("Correct: ${qr.correctAnswer}", style = VTypography.caption.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold), color = VColors.success)
+                            Text("Correct: ${qr.correctAnswer}", style = VTheme.type.caption.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold), color = VTheme.colors.success)
                         }
                         val expl = qr.explanation
                         if (!expl.isNullOrBlank()) {
                             Spacer(Modifier.height(2.dp))
-                            Text(expl, style = VTypography.caption.copy(fontSize = 11.sp), color = VColors.ink2)
+                            Text(expl, style = VTheme.type.caption.copy(fontSize = 11.sp), color = VTheme.colors.ink2)
                         }
                     }
                 }
@@ -1244,15 +1243,15 @@ private fun QuizResultCard(
             Spacer(Modifier.height(16.dp))
 
             if (academics.leaderboardLoading) {
-                Text("Loading leaderboard...", style = VTypography.caption, color = VColors.ink3)
+                Text("Loading leaderboard...", style = VTheme.type.caption, color = VTheme.colors.ink3)
             } else if (academics.leaderboardError != null) {
-                Text(academics.leaderboardError!!, style = VTypography.caption, color = VColors.ink3)
+                Text(academics.leaderboardError!!, style = VTheme.type.caption, color = VTheme.colors.ink3)
             } else {
                 val lb = academics.leaderboard
                 if (lb != null && lb.entries.isNotEmpty()) {
-                    Text("Leaderboard", style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
+                    Text("Leaderboard", style = VTheme.type.body, color = VTheme.colors.ink, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(4.dp))
-                    Text("${lb.totalParticipants} participants", style = VTypography.caption, color = VColors.ink3)
+                    Text("${lb.totalParticipants} participants", style = VTheme.type.caption, color = VTheme.colors.ink3)
                     Spacer(Modifier.height(10.dp))
                     Column(
                         Modifier.fillMaxWidth().heightIn(max = 300.dp).verticalScroll(rememberScrollState()),
@@ -1261,21 +1260,21 @@ private fun QuizResultCard(
                         lb.entries.forEach { entry ->
                             Row(
                                 Modifier.fillMaxWidth().padding(vertical = 4.dp)
-                                    .clip(VShapes.sm)
-                                    .background(if (entry.isCurrentStudent) VColors.violetSoft else Color.Transparent)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(if (entry.isCurrentStudent) VTheme.colors.violetSoft else Color.Transparent)
                                     .padding(horizontal = 8.dp, vertical = 6.dp),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Text("#${entry.rank}", style = VTypography.body.copy(fontSize = 13.sp, fontWeight = FontWeight.Bold), color = VColors.violet)
+                                Text("#${entry.rank}", style = VTheme.type.body.copy(fontSize = 13.sp, fontWeight = FontWeight.Bold), color = VTheme.colors.violet)
                                 Text(
                                     entry.studentName + if (entry.isCurrentStudent) " (You)" else "",
-                                    style = VTypography.body.copy(fontSize = 13.sp),
-                                    color = VColors.ink,
+                                    style = VTheme.type.body.copy(fontSize = 13.sp),
+                                    color = VTheme.colors.ink,
                                     modifier = Modifier.weight(1f),
                                 )
-                                Text("${entry.score}/${entry.totalMarks}", style = VTypography.body.copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold), color = VColors.ink)
-                                Text("${entry.percentage}%", style = VTypography.body.copy(fontSize = 13.sp, fontWeight = FontWeight.Bold), color = VColors.success)
+                                Text("${entry.score}/${entry.totalMarks}", style = VTheme.type.body.copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold), color = VTheme.colors.ink)
+                                Text("${entry.percentage}%", style = VTheme.type.body.copy(fontSize = 13.sp, fontWeight = FontWeight.Bold), color = VTheme.colors.success)
                             }
                         }
                     }
@@ -1313,14 +1312,14 @@ private fun HomeworkTab(academics: ParentAcademicsState, onRetry: () -> Unit) {
         CreamCard {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Box(
-                    Modifier.size(36.dp).clip(CircleShape).background(VColors.violetSoft),
+                    Modifier.size(36.dp).clip(CircleShape).background(VTheme.colors.violetSoft),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Filled.Insights, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Filled.Insights, contentDescription = "", tint = VTheme.colors.violet, modifier = Modifier.size(18.dp))
                 }
                 Column(Modifier.weight(1f)) {
-                    Text("AI Summary", style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
-                    Text(data.aiSummary!!, style = VTypography.caption, color = VColors.ink2)
+                    Text("AI Summary", style = VTheme.type.body, color = VTheme.colors.ink, fontWeight = FontWeight.SemiBold)
+                    Text(data.aiSummary!!, style = VTheme.type.caption, color = VTheme.colors.ink2)
                 }
             }
         }
@@ -1334,20 +1333,20 @@ private fun HomeworkTab(academics: ParentAcademicsState, onRetry: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text(entry.subject, style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
+                    Text(entry.subject, style = VTheme.type.body, color = VTheme.colors.ink, fontWeight = FontWeight.SemiBold)
                     if (entry.summaryText.isNotBlank()) {
-                        Text(entry.summaryText, style = VTypography.caption, color = VColors.ink3)
+                        Text(entry.summaryText, style = VTheme.type.caption, color = VTheme.colors.ink3)
                     }
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("${entry.coveragePct}%", style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = VColors.violet)
+                    Text("${entry.coveragePct}%", style = VTheme.type.body.copy(fontWeight = FontWeight.Bold), color = VTheme.colors.violet)
                     if (entry.isAiEstimated) {
-                        MiniBadge(text = "AI Est.", color = VColors.violet, bg = VColors.violetSoft)
+                        MiniBadge(text = "AI Est.", color = VTheme.colors.violet, bg = VTheme.colors.violetSoft)
                     }
                 }
             }
             Spacer(Modifier.height(8.dp))
-            VProgressBar(progress = entry.coveragePct / 100f, barHeight = 6)
+            VProgressBar(value = entry.coveragePct, height = 6.dp)
         }
     }
 }
@@ -1357,10 +1356,10 @@ private fun HomeworkTab(academics: ParentAcademicsState, onRetry: () -> Unit) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 private val subjectPalette = listOf(
-    VColors.violet,
-    VColors.coral,
-    VColors.gold,
-    VColors.success,
+    VTheme.colors.violet,
+    VTheme.colors.coral,
+    VTheme.colors.gold,
+    VTheme.colors.success,
 )
 
 @Composable
@@ -1371,8 +1370,8 @@ private fun CreamCard(
     Column(
         modifier
             .fillMaxWidth()
-            .background(VColors.surfaceCard, VShapes.lg)
-            .border(1.dp, VColors.line, VShapes.lg)
+            .background(VTheme.colors.surfaceCard, RoundedCornerShape(18.dp))
+            .border(1.dp, VTheme.colors.line, RoundedCornerShape(18.dp))
             .padding(16.dp),
     ) {
         content()
@@ -1383,26 +1382,26 @@ private fun CreamCard(
 private fun MiniBadge(text: String, color: Color, bg: Color) {
     Text(
         text = text,
-        style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
+        style = VTheme.type.caption.copy(fontWeight = FontWeight.Bold),
         color = color,
-        modifier = Modifier.background(bg, VShapes.full).padding(horizontal = 8.dp, vertical = 3.dp),
+        modifier = Modifier.background(bg, RoundedCornerShape(50)).padding(horizontal = 8.dp, vertical = 3.dp),
     )
 }
 
 @Composable
-private fun SimpleAvatar(name: String, size: androidx.compose.ui.unit.Dp, textColor: Color = VColors.violet, bg: Color = VColors.violetSoft) {
+private fun SimpleAvatar(name: String, size: androidx.compose.ui.unit.Dp, textColor: Color = VTheme.colors.violet, bg: Color = VTheme.colors.violetSoft) {
     val initials = name.split(" ").take(2).mapNotNull { it.firstOrNull()?.uppercase() }.joinToString("")
     Box(
         modifier = Modifier.size(size).background(bg, CircleShape),
         contentAlignment = Alignment.Center,
     ) {
-        Text(initials, style = VTypography.label, color = textColor)
+        Text(initials, style = VTheme.type.label, color = textColor)
     }
 }
 
 @Composable
 private fun SectionLabel(text: String) {
-    Text(text, style = VTypography.label, color = VColors.ink2, fontWeight = FontWeight.Bold)
+    Text(text, style = VTheme.type.label, color = VTheme.colors.ink2, fontWeight = FontWeight.Bold)
 }
 
 @Composable
@@ -1415,7 +1414,7 @@ private fun TintedBar(value: Float, fill: Color, height: androidx.compose.ui.uni
     Box(
         Modifier.fillMaxWidth().height(height).clip(androidx.compose.foundation.shape.RoundedCornerShape(50)),
     ) {
-        Box(Modifier.fillMaxWidth().height(height).clip(androidx.compose.foundation.shape.RoundedCornerShape(50)).background(VColors.line)) {
+        Box(Modifier.fillMaxWidth().height(height).clip(androidx.compose.foundation.shape.RoundedCornerShape(50)).background(VTheme.colors.line)) {
             Box(
                 Modifier.fillMaxWidth(animated).height(height).clip(androidx.compose.foundation.shape.RoundedCornerShape(50)).background(fill),
             )
@@ -1426,7 +1425,7 @@ private fun TintedBar(value: Float, fill: Color, height: androidx.compose.ui.uni
 @Composable
 private fun LoadingState() {
     Box(Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(color = VColors.violet, strokeWidth = 2.dp, modifier = Modifier.size(32.dp))
+        CircularProgressIndicator(color = VTheme.colors.violet, strokeWidth = 2.dp, modifier = Modifier.size(32.dp))
     }
 }
 
@@ -1438,14 +1437,14 @@ private fun ErrorState(message: String, onRetry: (() -> Unit)? = null) {
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Box(
-                Modifier.size(40.dp).clip(VShapes.sm).background(VColors.error.copy(alpha = 0.12f)),
+                Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(VTheme.colors.error.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Filled.Close, contentDescription = null, tint = VColors.error, modifier = Modifier.size(20.dp))
+                Icon(Icons.Filled.Close, contentDescription = "", tint = VTheme.colors.error, modifier = Modifier.size(20.dp))
             }
             Column(Modifier.weight(1f)) {
-                Text("Something went wrong", style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
-                Text(message, style = VTypography.caption, color = VColors.ink3)
+                Text("Something went wrong", style = VTheme.type.body, color = VTheme.colors.ink, fontWeight = FontWeight.SemiBold)
+                Text(message, style = VTheme.type.caption, color = VTheme.colors.ink3)
             }
             if (onRetry != null) {
                 VButton("Retry", onClick = onRetry, variant = VButtonVariant.Secondary)
@@ -1462,9 +1461,9 @@ private fun EmptyState(title: String, body: String) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Icon(Icons.Filled.TaskAlt, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(32.dp))
-            Text(title, style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
-            Text(body, style = VTypography.caption, color = VColors.ink3, textAlign = TextAlign.Center)
+            Icon(Icons.Filled.TaskAlt, contentDescription = "", tint = VTheme.colors.ink3, modifier = Modifier.size(32.dp))
+            Text(title, style = VTheme.type.body, color = VTheme.colors.ink, fontWeight = FontWeight.SemiBold)
+            Text(body, style = VTheme.type.caption, color = VTheme.colors.ink3, textAlign = TextAlign.Center)
         }
     }
 }
