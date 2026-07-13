@@ -322,8 +322,8 @@ fun Route.parentMessagesRouting() {
                     ?: run { call.fail("Invalid id"); return@get }
 
                 // Phase 1 (§9.2): pagination via offset/limit query params.
-                val offset = call.parameters["offset"]?.toIntOrNull() ?: 0
-                val limit = call.parameters["limit"]?.toIntOrNull() ?: 50
+                val offset = (call.parameters["offset"]?.toIntOrNull() ?: 0).coerceAtLeast(0)
+                val limit = (call.parameters["limit"]?.toIntOrNull() ?: 50).coerceIn(1, 100)
 
                 val payload = dbQuery {
                     val thread = MessageThreadsTable.selectAll()
@@ -465,6 +465,10 @@ fun Route.parentMessagesRouting() {
                 val replyTo = req.replyToId?.let { runCatching { UUID.fromString(it) }.getOrNull() }
 
                 // Phase 1: map attachment DTOs to core AttachmentInput.
+                if (req.attachments.size > 10) {
+                    call.fail("Maximum 10 attachments per message", HttpStatusCode.BadRequest, "TOO_MANY_ATTACHMENTS")
+                    return@post
+                }
                 val attachmentInputs = req.attachments.map { att ->
                     AttachmentInput(
                         fileName = att.fileName,

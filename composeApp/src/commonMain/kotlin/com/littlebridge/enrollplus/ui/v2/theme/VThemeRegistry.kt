@@ -44,6 +44,18 @@ object VThemeRegistry {
             icon = VIcons.Bookmark,
         ),
         VThemeDef(
+            id = "midnight",
+            displayName = "Midnight",
+            description = "Deep violet night",
+            colors = NightVColors.copy(
+                background = NightVColors.accentTint,
+                card = NightVColors.accentTint,
+                accent = NightVColors.accentSoft,
+            ),
+            isDark = true,
+            icon = VIcons.Star,
+        ),
+        VThemeDef(
             id = "warm",
             displayName = "Warm",
             description = "Cream & lavender",

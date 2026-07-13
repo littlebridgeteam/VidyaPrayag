@@ -46,7 +46,9 @@ data class SchedulePTMState(
     val isLoading: Boolean = false,
     val isCreating: Boolean = false,
     val errorMessage: String? = null,
-    val infoMessage: String? = null
+    val infoMessage: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class SchedulePTMViewModel(
@@ -85,7 +87,9 @@ class SchedulePTMViewModel(
                         readReceipts = data?.activeEvent?.readReceipts ?: 0,
                         history = data?.history?.map { it.toUiModel() } ?: emptyList(),
                         classProgress = data?.classProgress?.map { it.toUiModel() } ?: emptyList(),
-                        isLoading = false
+                        isLoading = false,
+                        isStale = result.isStale,
+                        isOffline = result.isOffline,
                     )
                 }
                 is NetworkResult.Error -> {

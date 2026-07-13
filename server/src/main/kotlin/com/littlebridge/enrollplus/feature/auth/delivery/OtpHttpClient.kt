@@ -59,6 +59,6 @@ internal object OtpHttpClient {
             }
             install(ContentNegotiation) { json(codec) }
             install(Logging) { level = LogLevel.NONE }  // privacy: no code in logs
-        }
+        }.also { com.littlebridge.enrollplus.core.HttpClientRegistry.register(it) }
     }
 }

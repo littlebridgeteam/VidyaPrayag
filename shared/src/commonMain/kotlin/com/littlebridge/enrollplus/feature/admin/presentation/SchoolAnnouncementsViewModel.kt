@@ -47,7 +47,9 @@ data class SchoolAnnouncementsState(
     val isLoading: Boolean = false,
     val isCreating: Boolean = false,
     val errorMessage: String? = null,
-    val infoMessage: String? = null
+    val infoMessage: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class SchoolAnnouncementsViewModel(
@@ -80,7 +82,9 @@ class SchoolAnnouncementsViewModel(
                     _state.value = _state.value.copy(
                         allAnnouncements = all,
                         announcements = applyCategoryFilter(all, _state.value.selectedCategory),
-                        isLoading = false
+                        isLoading = false,
+                        isStale = result.isStale,
+                        isOffline = result.isOffline,
                     )
                 }
                 is NetworkResult.Error -> {
@@ -115,7 +119,9 @@ class SchoolAnnouncementsViewModel(
                     _state.value = _state.value.copy(
                         allAnnouncements = all,
                         announcements = applyCategoryFilter(all, _state.value.selectedCategory),
-                        isLoading = false
+                        isLoading = false,
+                        isStale = result.isStale,
+                        isOffline = result.isOffline,
                     )
                 }
                 is NetworkResult.Error -> {

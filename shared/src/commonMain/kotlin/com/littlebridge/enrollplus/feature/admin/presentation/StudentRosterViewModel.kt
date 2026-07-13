@@ -15,7 +15,9 @@ import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.feature.admin.domain.model.BulkImportStudentsRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.CreateStudentRequest
+import com.littlebridge.enrollplus.feature.admin.domain.model.LinkRequestCountDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.StudentDto
+import com.littlebridge.enrollplus.feature.admin.domain.repository.LinkRequestsRepository
 import com.littlebridge.enrollplus.feature.admin.domain.repository.StudentsRepository
 import com.littlebridge.enrollplus.util.AppLogger
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +30,8 @@ data class StudentRosterState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val students: List<StudentDto> = emptyList(),
+    // People Tab: parent→child link request badge count
+    val linkRequestCount: Int = 0,
     // add-student dialog
     val isSaving: Boolean = false,
     val addError: String? = null,
@@ -35,11 +39,14 @@ data class StudentRosterState(
     val removingIds: Set<String> = emptySet(),
     // bulk import dialog (manual multi-add + CSV)
     val isImporting: Boolean = false,
-    val importError: String? = null
+    val importError: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false
 )
 
 class StudentRosterViewModel(
     private val repository: StudentsRepository,
+    private val linkRequestsRepository: LinkRequestsRepository,
     private val preferenceRepository: PreferenceRepository
 ) : ViewModel() {
 
@@ -56,16 +63,29 @@ class StudentRosterViewModel(
                 _state.value = _state.value.copy(isLoading = false, error = "You are not signed in. Please log in again.")
                 return@launch
             }
-            when (val r = repository.getStudents(token)) {
+            val studentsResult = repository.getStudents(token)
+            val countResult = linkRequestsRepository.getLinkRequestCount(token)
+            val count = when (countResult) {
+                is NetworkResult.Success -> countResult.data.data?.let { it.pending + it.needsReview } ?: 0
+                else -> 0
+            }
+            when (studentsResult) {
                 is NetworkResult.Success -> {
-                    _state.value = _state.value.copy(isLoading = false, error = null, students = r.data.data?.students.orEmpty())
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = null,
+                        students = studentsResult.data.data?.students.orEmpty(),
+                        linkRequestCount = count,
+                        isStale = studentsResult.isStale,
+                        isOffline = studentsResult.isOffline,
+                    )
                 }
                 is NetworkResult.Error -> {
-                    AppLogger.e("StudentRosterVM", "getStudents error: ${r.message}")
-                    _state.value = _state.value.copy(isLoading = false, error = r.message)
+                    AppLogger.e("StudentRosterVM", "getStudents error: ${studentsResult.message}")
+                    _state.value = _state.value.copy(isLoading = false, error = studentsResult.message, linkRequestCount = count)
                 }
                 is NetworkResult.ConnectionError -> {
-                    _state.value = _state.value.copy(isLoading = false, error = "Connection error. Check your internet.")
+                    _state.value = _state.value.copy(isLoading = false, error = "Connection error. Check your internet.", linkRequestCount = count)
                 }
             }
         }

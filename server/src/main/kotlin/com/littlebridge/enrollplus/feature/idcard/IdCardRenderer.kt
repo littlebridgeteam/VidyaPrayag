@@ -2,6 +2,7 @@ package com.littlebridge.enrollplus.feature.idcard
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import org.slf4j.LoggerFactory
 import java.awt.Color
 import java.awt.Font
 import java.awt.Graphics2D
@@ -20,6 +21,7 @@ import javax.imageio.ImageIO
  */
 object IdCardRenderer {
 
+    private val logger = LoggerFactory.getLogger(IdCardRenderer::class.java)
     private val json = Json { ignoreUnknownKeys = true }
 
     private const val CARD_W = 638   // 54mm at ~300 DPI
@@ -102,7 +104,8 @@ object IdCardRenderer {
                 try {
                     val photoImg = loadRemoteImage(data.photoUrl, photoW, photoH)
                     g.drawImage(photoImg, photoX, photoY, photoW, photoH, null)
-                } catch (_: Exception) {
+                } catch (e: Exception) {
+                    logger.warn("ID card photo load failed for url={}: {}", data.photoUrl, e.message, e)
                     drawPlaceholder(g, photoX, photoY, photoW, photoH, "PHOTO")
                 }
             } else {
@@ -143,7 +146,8 @@ object IdCardRenderer {
             try {
                 val qrImg = ImageIO.read(data.qrCodePng.inputStream())
                 g.drawImage(qrImg, qrX, qrY, qrSize, qrSize, null)
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                logger.warn("ID card front QR render failed: {}", e.message, e)
                 drawPlaceholder(g, qrX, qrY, qrSize, qrSize, "QR")
             }
         }
@@ -180,7 +184,8 @@ object IdCardRenderer {
         try {
             val qrImg = ImageIO.read(data.qrCodePng.inputStream())
             g.drawImage(qrImg, qrX, qrY, qrSize, qrSize, null)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            logger.warn("ID card back QR render failed: {}", e.message, e)
             drawPlaceholder(g, qrX, qrY, qrSize, qrSize, "QR")
         }
 

@@ -384,8 +384,8 @@ fun Route.academicCalendarRouting() {
                     CalendarEventsTable.update({
                         (CalendarEventsTable.schoolId eq ctx.schoolId) and (CalendarEventsTable.eventCode eq code)
                     }) {
-                        req.title?.let { v -> it[title] = v.trim() }
-                        req.description?.let { v -> it[description] = v.trim() }
+                        req.title?.let { v -> it[title] = com.littlebridge.enrollplus.core.HtmlSanitizer.sanitize(v.trim()) }
+                        req.description?.let { v -> it[description] = com.littlebridge.enrollplus.core.HtmlSanitizer.sanitize(v.trim()) }
                         req.type?.let { v -> it[type] = v.uppercase() }
                         req.status?.let { v -> it[status] = v.uppercase() }
                         // T-004: typed `date` columns — parse validated String at boundary.
@@ -533,7 +533,7 @@ private suspend fun notifyEvent(
             body = dto.description.take(140),
             schoolId = schoolId,
             actorId = actorId,
-            deepLink = "calendar/${dto.id}",
+            deepLink = "/calendar/${dto.id}",
             refType = "calendar_event",
             refId = dto.id
         )

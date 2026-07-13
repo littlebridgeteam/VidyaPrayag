@@ -42,12 +42,21 @@ fun AuthenticationConfig.configureJwt(name: String = "jwt") {
             // Deactivating a user (is_active=false) instantly invalidates every
             // already-issued access token on its next use.
             val uid = runCatching { UUID.fromString(sub) }.getOrNull() ?: return@validate null
-            val active = dbQuery {
+            val userRow = dbQuery {
                 AppUsersTable.selectAll().where { AppUsersTable.id eq uid }
-                    .singleOrNull()?.get(AppUsersTable.isActive)
+                    .singleOrNull()
             }
             // Unknown user (no row) or deactivated → reject the principal.
-            if (active != true) null else JWTPrincipal(credential.payload)
+            if (userRow == null || userRow[AppUsersTable.isActive] != true) return@validate null
+            // SEC-022: reject tokens issued before the last password change.
+            val passwordChangedAt = userRow[AppUsersTable.passwordChangedAt]
+            if (passwordChangedAt != null) {
+                val tokenIssuedAt = credential.payload.issuedAt
+                if (tokenIssuedAt == null || tokenIssuedAt.toInstant().isBefore(passwordChangedAt)) {
+                    return@validate null
+                }
+            }
+            JWTPrincipal(credential.payload)
         }
         challenge { _, _ ->
             call.respond(

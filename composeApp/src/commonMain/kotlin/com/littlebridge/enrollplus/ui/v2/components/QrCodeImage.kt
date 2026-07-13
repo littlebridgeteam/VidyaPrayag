@@ -81,7 +81,7 @@ private object QrMatrixGenerator {
         drawFinderPattern(matrix, QUIET_ZONE, QUIET_ZONE + size - 7, size)
 
         // Encode data bytes into the matrix
-        encodeData(matrix, size, data.toByteArray(Charsets.UTF_8))
+        encodeData(matrix, size, data.encodeToByteArray())
 
         return matrix
     }

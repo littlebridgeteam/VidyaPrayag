@@ -1,14 +1,8 @@
 package com.littlebridge.enrollplus.ui.v2.screens.teacher
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,23 +38,27 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
+import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizDto
 import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizQuestionDto
 import com.littlebridge.enrollplus.feature.teacher.domain.model.SylAutoFillChapter
-import com.littlebridge.enrollplus.feature.teacher.domain.model.SylParsedUnit
 import com.littlebridge.enrollplus.feature.teacher.presentation.SyllabusUnit
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherSyllabusViewModel
-import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherSyllabusState
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VShapes
+import com.littlebridge.enrollplus.ui.tokens.VTypography
+import androidx.compose.ui.text.TextStyle
+import com.littlebridge.enrollplus.util.formatDecimal
 import org.koin.compose.viewmodel.koinViewModel
+
 
 /**
  * TeacherSyllabusScreenV2 — the scoped syllabus tracker (Doc 08 §2). Reached PRE-SCOPED with a
@@ -76,9 +74,11 @@ fun TeacherSyllabusScreenV2(
     assignmentId: String,
     scopeLabel: String,
     modifier: Modifier = Modifier,
+    tool: UpdateTool = UpdateTool.Syllabus,
+    onToolChange: (UpdateTool) -> Unit = {},
+    onChangeClass: () -> Unit = {},
     viewModel: TeacherSyllabusViewModel = koinViewModel(),
 ) {
-    val c = VTheme.colors
     val state by viewModel.state.collectAsStateV2()
 
     LaunchedEffect(assignmentId) {
@@ -89,17 +89,17 @@ fun TeacherSyllabusScreenV2(
         }
     }
 
-    Box(modifier.fillMaxSize().background(c.background)) {
+    Box(modifier.fillMaxSize().background(VColors.cream)) {
         when {
             state.isLoading && state.units.isEmpty() -> TeacherCenterState { TeacherSpinner() }
             state.error != null && state.units.isEmpty() -> TeacherCenterState {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Couldn't load syllabus", style = VTheme.type.h3.colored(c.ink))
+                    Text(appString(StringKeys.TC_COULDNT_LOAD_SYLLABUS), style = VTypography.h3.copy(color = VColors.ink))
                     Spacer(Modifier.height(12.dp))
-                    VButton("Retry", onClick = { viewModel.retry() }, tone = VButtonTone.Lavender)
+                    VButton(appString(StringKeys.COMMON_BUTTON_RETRY), onClick = { viewModel.retry() }, tone = VButtonTone.Lavender)
                 }
             }
-            else -> SyllabusBody(viewModel, scopeLabel)
+            else -> SyllabusBody(viewModel, scopeLabel, tool, onToolChange, onChangeClass)
         }
 
         // ── Parse syllabus bottom sheet ──
@@ -123,34 +123,62 @@ fun TeacherSyllabusScreenV2(
 }
 
 @Composable
-private fun SyllabusBody(viewModel: TeacherSyllabusViewModel, scopeLabel: String) {
-    val c = VTheme.colors
+private fun SyllabusBody(
+    viewModel: TeacherSyllabusViewModel,
+    scopeLabel: String,
+    tool: UpdateTool,
+    onToolChange: (UpdateTool) -> Unit,
+    onChangeClass: () -> Unit,
+) {
     val state by viewModel.state.collectAsStateV2()
     val pct = (state.progress * 100).toInt()
 
     LazyColumn(
-        Modifier.fillMaxSize().padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(top = 14.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        Modifier.fillMaxSize().padding(horizontal = 20.dp),
+        contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        // ── Header card with progress ring + edit toggle ──
+        // ── Scrollable scoped chrome ──
         item {
-            TCard(padding = 16.dp) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    TRing(percent = pct, modifier = Modifier.size(72.dp), accent = c.tealDeep, label = "$pct%", labelSize = 16.sp)
-                    Spacer(Modifier.width(16.dp))
-                    Column(Modifier.weight(1f)) {
-                        TEyebrow("SYLLABUS", dot = c.tealDeep)
-                        Spacer(Modifier.height(4.dp))
-                        Text(scopeLabel.ifBlank { "${state.className}-${state.section} · ${state.subject}" }, style = VTheme.type.bodyStrong.colored(c.navyDeep).copy(fontSize = 15.sp, fontWeight = FontWeight.ExtraBold))
-                        Text("${state.coveredCount} of ${state.totalCount} units covered", style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp))
+            ScopedToolHeader(
+                tool = tool,
+                scopeLabel = scopeLabel,
+                onToolChange = onToolChange,
+                onChangeClass = onChangeClass,
+            )
+        }
+
+        // ── Header: compact progress + edit toggle ──
+        item {
+            VtCard {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            VtEyebrow(appString(StringKeys.TC_SYLLABUS), dot = VColors.success)
+                        }
+                        Box(
+                            Modifier.size(34.dp).clip(CircleShape).background(if (state.isEditing) VColors.violet.copy(alpha = 0.14f) else VColors.surfaceTint)
+                                .clickable { viewModel.toggleEditing() },
+                            contentAlignment = Alignment.Center,
+                        ) { Icon(VIcons.Edit3, contentDescription = appString(StringKeys.TC_EDIT), tint = if (state.isEditing) VColors.violetInk else VColors.ink2, modifier = Modifier.size(16.dp)) }
                     }
-                    val ix = remember { MutableInteractionSource() }
-                    Box(
-                        Modifier.size(34.dp).clip(CircleShape).background(if (state.isEditing) c.accent.copy(alpha = 0.14f) else c.cream)
-                            .clickable(interactionSource = ix, indication = null) { viewModel.toggleEditing() },
-                        contentAlignment = Alignment.Center,
-                    ) { Icon(VIcons.Edit3, contentDescription = "Edit", tint = if (state.isEditing) c.accentDeep else c.ink2, modifier = Modifier.size(16.dp)) }
+
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("$pct%", style = VTypography.h2, color = VColors.success)
+                        Column(Modifier.weight(1f)) {
+                            androidx.compose.foundation.Canvas(Modifier.fillMaxWidth().height(8.dp)) {
+                                drawRoundRect(color = VColors.surfaceTint, size = size, cornerRadius = androidx.compose.ui.geometry.CornerRadius(4.dp.toPx()))
+                                val w = size.width * state.progress.coerceIn(0f, 1f)
+                                drawRoundRect(color = VColors.success, size = size.copy(width = w), cornerRadius = androidx.compose.ui.geometry.CornerRadius(4.dp.toPx()))
+                            }
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                appString(StringKeys.TC_N_OF_N_UNITS_COVERED, "covered" to state.coveredCount.toString(), "total" to state.totalCount.toString()),
+                                style = VTypography.caption,
+                                color = VColors.ink2,
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -170,32 +198,32 @@ private fun SyllabusBody(viewModel: TeacherSyllabusViewModel, scopeLabel: String
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
                 VButton(
-                    "Auto-fill",
+                    appString(StringKeys.TC_AUTO_FILL),
                     onClick = { viewModel.autoFill() },
                     modifier = Modifier.weight(1f),
                     variant = VButtonVariant.Secondary,
                     tone = VButtonTone.Lavender,
-                    size = VButtonSize.Sm,
+                    size = VButtonSize.Md,
                     loading = state.isAutoFilling,
-                    leading = { Icon(VIcons.Sparkles, contentDescription = null, modifier = Modifier.size(14.dp)) },
+                    leading = { Icon(VIcons.Sparkles, contentDescription = null, modifier = Modifier.size(16.dp)) },
                 )
                 VButton(
-                    "Daily Log",
+                    appString(StringKeys.TC_DAILY_LOG),
                     onClick = { viewModel.openDailyLogPopup() },
                     modifier = Modifier.weight(1f),
                     variant = VButtonVariant.Secondary,
                     tone = VButtonTone.Teal,
-                    size = VButtonSize.Sm,
-                    leading = { Icon(VIcons.ClipboardList, contentDescription = null, modifier = Modifier.size(14.dp)) },
+                    size = VButtonSize.Md,
+                    leading = { Icon(VIcons.ClipboardList, contentDescription = null, modifier = Modifier.size(16.dp)) },
                 )
                 VButton(
-                    "Quiz",
+                    appString(StringKeys.TC_QUIZ),
                     onClick = { viewModel.openQuizSheetFromButton() },
                     modifier = Modifier.weight(1f),
                     variant = VButtonVariant.Secondary,
                     tone = VButtonTone.Lavender,
-                    size = VButtonSize.Sm,
-                    leading = { Icon(VIcons.GraduationCap, contentDescription = null, modifier = Modifier.size(14.dp)) },
+                    size = VButtonSize.Md,
+                    leading = { Icon(VIcons.GraduationCap, contentDescription = null, modifier = Modifier.size(16.dp)) },
                 )
             }
         }
@@ -204,7 +232,15 @@ private fun SyllabusBody(viewModel: TeacherSyllabusViewModel, scopeLabel: String
         if (state.isEditing) {
             item {
                 if (state.addingUnderParentId == null) {
-                    VButton("Add a chapter", onClick = { viewModel.openAdd(null) }, full = true, variant = VButtonVariant.Secondary, tone = VButtonTone.Teal, size = VButtonSize.Md, leading = { Icon(VIcons.Plus, contentDescription = null, modifier = Modifier.size(15.dp)) })
+                    VButton(
+                        appString(StringKeys.TC_ADD_A_CHAPTER),
+                        onClick = { viewModel.openAdd(null) },
+                        full = true,
+                        variant = VButtonVariant.Secondary,
+                        tone = VButtonTone.Teal,
+                        size = VButtonSize.Md,
+                        leading = { Icon(VIcons.Plus, contentDescription = null, modifier = Modifier.size(15.dp)) },
+                    )
                 } else {
                     AddUnitComposer(viewModel)
                 }
@@ -216,14 +252,16 @@ private fun SyllabusBody(viewModel: TeacherSyllabusViewModel, scopeLabel: String
             item { EmptyStateOptions(viewModel) }
         } else if (state.units.isEmpty() && state.autoFillError != null) {
             item {
-                TCard { Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                    TIconDisc(VIcons.AlertCircle, tint = c.dangerInk, bg = c.danger.copy(alpha = 0.14f), size = 48.dp, glyph = 24.dp)
-                    Spacer(Modifier.height(10.dp))
-                    Text("No NCERT reference found", style = VTheme.type.h3.colored(c.ink))
-                    Text(state.autoFillError ?: "", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp))
-                    Spacer(Modifier.height(12.dp))
-                    EmptyStateOptions(viewModel)
-                } }
+                VtCard {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                        VtIconDisc(VIcons.AlertCircle, tint = VColors.error, bg = VColors.error.copy(alpha = 0.14f), size = 48.dp, glyph = 24.dp)
+                        Spacer(Modifier.height(10.dp))
+                        Text(appString(StringKeys.TC_NO_NCERT_REFERENCE_FOUND), style = VTypography.bodySmall, color = VColors.ink, fontWeight = FontWeight.SemiBold)
+                        Text(state.autoFillError ?: "", style = VTypography.caption, color = VColors.ink3)
+                        Spacer(Modifier.height(12.dp))
+                        EmptyStateOptions(viewModel)
+                    }
+                }
             }
         } else {
             // ── Syllabus unit rows (3-level hierarchy) ──
@@ -244,7 +282,7 @@ private fun SyllabusBody(viewModel: TeacherSyllabusViewModel, scopeLabel: String
         if (state.quizzes.isNotEmpty()) {
             item {
                 Spacer(Modifier.height(6.dp))
-                TEyebrow("QUIZZES", dot = c.accent)
+                VtEyebrow(appString(StringKeys.TC_QUIZZES), dot = VColors.violet)
                 Spacer(Modifier.height(8.dp))
             }
             items(state.quizzes, key = { it.id }) { q ->
@@ -256,17 +294,16 @@ private fun SyllabusBody(viewModel: TeacherSyllabusViewModel, scopeLabel: String
 
 @Composable
 private fun AddUnitComposer(viewModel: TeacherSyllabusViewModel) {
-    val c = VTheme.colors
     val state by viewModel.state.collectAsStateV2()
     val isChapter = state.addingUnderParentId.isNullOrBlank()
-    TCard(padding = 16.dp) {
+    VtCard {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(if (isChapter) "New chapter" else "New topic", style = VTheme.type.bodyStrong.colored(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold))
-            VInput(value = state.addTitle, onValueChange = viewModel::setAddTitle, placeholder = if (isChapter) "Chapter title" else "Topic title")
-            if (state.addError != null) Text(state.addError ?: "", style = VTheme.type.caption.colored(c.dangerInk).copy(fontSize = 12.sp))
+            Text(if (isChapter) appString(StringKeys.TC_NEW_CHAPTER) else appString(StringKeys.TC_NEW_TOPIC), style = VTypography.body.copy(color = VColors.ink))
+            VInput(value = state.addTitle, onValueChange = viewModel::setAddTitle, placeholder = if (isChapter) appString(StringKeys.TC_CHAPTER_TITLE) else appString(StringKeys.TC_TOPIC_TITLE))
+            if (state.addError != null) Text(state.addError ?: "", style = VTypography.caption.copy(color = VColors.error))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                VButton("Cancel", onClick = { viewModel.closeAdd() }, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost, size = VButtonSize.Md)
-                VButton("Add", onClick = { viewModel.submitAdd() }, modifier = Modifier.weight(1f), tone = VButtonTone.Teal, size = VButtonSize.Md, loading = state.isAdding)
+                VButton(appString(StringKeys.COMMON_BUTTON_CANCEL), onClick = { viewModel.closeAdd() }, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost, size = VButtonSize.Md)
+                VButton(appString(StringKeys.TC_ADD), onClick = { viewModel.submitAdd() }, modifier = Modifier.weight(1f), tone = VButtonTone.Teal, size = VButtonSize.Md, loading = state.isAdding)
             }
         }
     }
@@ -282,59 +319,62 @@ private fun SyllabusRow(
     onAddTopic: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    val c = VTheme.colors
     val indent = (u.depth.coerceIn(0, 3) * 16).dp
-    val ix = remember { MutableInteractionSource() }
     Row(
         Modifier
             .fillMaxWidth()
             .padding(start = indent)
             .clip(RoundedCornerShape(16.dp))
-            .background(if (u.isCovered) c.teal.copy(alpha = 0.08f) else c.card)
-            .border(1.dp, if (u.isCovered) c.teal.copy(alpha = 0.35f) else c.hairline, RoundedCornerShape(16.dp))
-            .clickable(interactionSource = ix, indication = null, enabled = !isUpdating) { onToggle() }
-            .padding(12.dp),
+            .background(if (u.isCovered) VColors.mint.copy(alpha = 0.08f) else VColors.white)
+            .border(1.dp, if (u.isCovered) VColors.mint.copy(alpha = 0.35f) else VColors.line, RoundedCornerShape(16.dp))
+            .clickable(enabled = !isUpdating) { onToggle() }
+            .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         // Coverage check disc.
         Box(
-            Modifier.size(26.dp).clip(CircleShape).background(if (u.isCovered) c.tealDeep else c.cream).border(1.dp, if (u.isCovered) c.tealDeep else c.hairline, CircleShape),
+            Modifier.size(28.dp).clip(CircleShape).background(if (u.isCovered) VColors.success else VColors.surfaceTint).border(1.dp, if (u.isCovered) VColors.success else VColors.line, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            if (isUpdating) TeacherSpinner(14.dp)
-            else if (u.isCovered) Icon(VIcons.Check, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(14.dp))
+            if (isUpdating) TeacherSpinner(16.dp)
+            else if (u.isCovered) Icon(VIcons.Check, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(15.dp))
         }
         Column(Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     u.title,
-                    style = (if (u.isChapter) VTheme.type.bodyStrong else VTheme.type.body).colored(c.ink).copy(fontSize = if (u.isChapter) 14.5.sp else 13.5.sp, fontWeight = if (u.isChapter) FontWeight.ExtraBold else FontWeight.Medium),
+                    style = if (u.isChapter) VTypography.body else VTypography.bodySmall,
+                    color = VColors.ink,
+                    fontWeight = if (u.isChapter) FontWeight.Bold else FontWeight.Medium,
                 )
                 if (isDraft) {
-                    TPill("DRAFT", bg = c.accent.copy(alpha = 0.14f), fg = c.accentDeep)
+                    VtPill(appString(StringKeys.TC_DRAFT), bg = VColors.violet.copy(alpha = 0.14f), fg = VColors.violetInk)
                 }
             }
             if (u.isCovered && !u.coveredOn.isNullOrBlank()) {
-                Text("Covered ${prettyDateShort(u.coveredOn)}", style = VTheme.type.caption.colored(c.tealDeep).copy(fontSize = 10.5.sp))
+                Text(
+                    appString(StringKeys.TC_COVERED_DATE, "date" to prettyDateShort(u.coveredOn)),
+                    style = VTypography.caption,
+                    color = VColors.success,
+                )
             }
         }
         // Add topic button (edit mode, chapters only)
         if (editing && u.isChapter) {
             Box(
-                Modifier.size(28.dp).clip(CircleShape).background(c.cream)
-                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onAddTopic() },
+                Modifier.size(32.dp).clip(CircleShape).background(VColors.surfaceTint)
+                    .clickable { onAddTopic() },
                 contentAlignment = Alignment.Center,
-            ) { Icon(VIcons.Plus, contentDescription = "Add topic", tint = c.ink2, modifier = Modifier.size(14.dp)) }
+            ) { Icon(VIcons.Plus, contentDescription = appString(StringKeys.TC_ADD_TOPIC), tint = VColors.ink2, modifier = Modifier.size(16.dp)) }
         }
         // Delete button (edit mode)
         if (editing) {
-            val ixDel = remember { MutableInteractionSource() }
             Box(
-                Modifier.size(28.dp).clip(CircleShape).background(c.danger.copy(alpha = 0.1f))
-                    .clickable(interactionSource = ixDel, indication = null) { onDelete() },
+                Modifier.size(32.dp).clip(CircleShape).background(VColors.error.copy(alpha = 0.1f))
+                    .clickable { onDelete() },
                 contentAlignment = Alignment.Center,
-            ) { Icon(VIcons.Minus, contentDescription = "Delete", tint = c.dangerInk, modifier = Modifier.size(14.dp)) }
+            ) { Icon(VIcons.Minus, contentDescription = appString(StringKeys.COMMON_BUTTON_DELETE), tint = VColors.error, modifier = Modifier.size(16.dp)) }
         }
     }
 }
@@ -343,62 +383,55 @@ private fun SyllabusRow(
 
 @Composable
 private fun ParseSyllabusSheet(viewModel: TeacherSyllabusViewModel) {
-    val c = VTheme.colors
     val state by viewModel.state.collectAsStateV2()
 
     Box(
         Modifier
             .fillMaxSize()
-            .background(c.ink.copy(alpha = 0.4f))
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-            ) { viewModel.closeParseSheet() },
+            .background(VColors.ink.copy(alpha = 0.4f))
+            .clickable { viewModel.closeParseSheet() },
     ) {
-        TCard(
+        VtCard(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .heightIn(min = 200.dp, max = 520.dp)
-                .padding(bottom = 0.dp),
+                .padding(bottom = TeacherDockClearance),
             padding = 20.dp,
         ) {
+            // Block tap propagation to scrim.
             Column(
                 Modifier.fillMaxWidth().clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                ) {},
+                onClick = {},
+                ),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(VIcons.Sparkles, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(20.dp))
+                    Icon(VIcons.Sparkles, contentDescription = null, tint = VColors.violetInk, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Parse Syllabus", style = VTheme.type.h3.colored(c.navyDeep).copy(fontSize = 17.sp))
+                    Text(appString(StringKeys.TC_PARSE_SYLLABUS), style = VTypography.h3.copy(color = VColors.ink))
                     Spacer(Modifier.weight(1f))
                     Box(
-                        Modifier.size(28.dp).clip(CircleShape).background(c.cream)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                            ) { viewModel.closeParseSheet() },
+                        Modifier.size(28.dp).clip(CircleShape).background(VColors.surfaceTint)
+                            .clickable { viewModel.closeParseSheet() },
                         contentAlignment = Alignment.Center,
-                    ) { Icon(VIcons.Close, contentDescription = "Close", tint = c.ink2, modifier = Modifier.size(16.dp)) }
+                    ) { Icon(VIcons.Close, contentDescription = appString(StringKeys.COMMON_BUTTON_CLOSE), tint = VColors.ink2, modifier = Modifier.size(16.dp)) }
                 }
 
                 if (state.parsedUnits.isEmpty()) {
-                    Text("Paste your syllabus text below. AI will extract chapters and topics.", style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.sp))
+                    Text(appString(StringKeys.TC_PASTE_SYLLABUS_HINT), style = VTypography.body.copy(color = VColors.ink2))
                     VInput(
                         value = state.parseRawText,
                         onValueChange = viewModel::setParseRawText,
-                        placeholder = "e.g. Chapter 1: Number Systems\n1.1 Real Numbers\n1.2 Irrational Numbers...",
+                        placeholder = appString(StringKeys.TC_PASTE_SYLLABUS_PH),
                         singleLine = false,
                         modifier = Modifier.fillMaxWidth().heightIn(min = 120.dp, max = 200.dp),
                     )
                     if (state.parseError != null) {
-                        Text(state.parseError ?: "", style = VTheme.type.caption.colored(c.dangerInk).copy(fontSize = 12.sp))
+                        Text(state.parseError ?: "", style = VTypography.caption.copy(color = VColors.error))
                     }
                     VButton(
-                        "Parse with AI",
+                        appString(StringKeys.TC_PARSE_WITH_AI),
                         onClick = { viewModel.parseSyllabus() },
                         full = true,
                         tone = VButtonTone.Lavender,
@@ -406,7 +439,7 @@ private fun ParseSyllabusSheet(viewModel: TeacherSyllabusViewModel) {
                         leading = { Icon(VIcons.Sparkles, contentDescription = null, modifier = Modifier.size(16.dp)) },
                     )
                 } else {
-                    Text("Preview (${state.parsedUnits.size} units found)", style = VTheme.type.bodyStrong.colored(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold, fontSize = 14.sp))
+                    Text(appString(StringKeys.TC_PREVIEW_N_UNITS_FOUND, "count" to state.parsedUnits.size.toString()), style = VTypography.body.copy(color = VColors.ink))
                     LazyColumn(
                         Modifier.fillMaxWidth().heightIn(max = 240.dp),
                         verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -414,17 +447,17 @@ private fun ParseSyllabusSheet(viewModel: TeacherSyllabusViewModel) {
                         items(state.parsedUnits) { pu ->
                             val indent = (pu.depth * 16).dp
                             Row(Modifier.fillMaxWidth().padding(start = indent), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text(if (pu.depth == 0) "•" else "–", style = VTheme.type.body.colored(c.ink3).copy(fontSize = 13.sp))
-                                Text(pu.title, style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp, fontWeight = if (pu.depth == 0) FontWeight.Bold else FontWeight.Normal))
+                                Text(if (pu.depth == 0) "•" else "–", style = VTypography.body.copy(color = VColors.ink3))
+                                Text(pu.title, style = VTypography.body.copy(color = VColors.ink))
                             }
                         }
                     }
                     if (state.parseError != null) {
-                        Text(state.parseError ?: "", style = VTheme.type.caption.colored(c.dangerInk).copy(fontSize = 12.sp))
+                        Text(state.parseError ?: "", style = VTypography.caption.copy(color = VColors.error))
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        VButton("Cancel", onClick = { viewModel.closeParseSheet() }, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost, size = VButtonSize.Md)
-                        VButton("Confirm & Create", onClick = { viewModel.confirmParsedSyllabus() }, modifier = Modifier.weight(1f), tone = VButtonTone.Lavender, size = VButtonSize.Md, loading = state.isParsing)
+                        VButton(appString(StringKeys.COMMON_BUTTON_CANCEL), onClick = { viewModel.closeParseSheet() }, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost, size = VButtonSize.Md)
+                        VButton(appString(StringKeys.TC_CONFIRM_AND_CREATE), onClick = { viewModel.confirmParsedSyllabus() }, modifier = Modifier.weight(1f), tone = VButtonTone.Lavender, size = VButtonSize.Md, loading = state.isParsing)
                     }
                 }
             }
@@ -436,7 +469,6 @@ private fun ParseSyllabusSheet(viewModel: TeacherSyllabusViewModel) {
 
 @Composable
 private fun DailyLogPopup(viewModel: TeacherSyllabusViewModel) {
-    val c = VTheme.colors
     val state by viewModel.state.collectAsStateV2()
     val expandedChapters = remember { mutableStateMapOf<String, Boolean>() }
     val expandedTopics = remember { mutableStateMapOf<String, Boolean>() }
@@ -444,54 +476,50 @@ private fun DailyLogPopup(viewModel: TeacherSyllabusViewModel) {
     Box(
         Modifier
             .fillMaxSize()
-            .background(c.ink.copy(alpha = 0.4f))
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-            ) { viewModel.dismissDailyLogPopup() },
+            .background(VColors.ink.copy(alpha = 0.4f))
+            .clickable { viewModel.dismissDailyLogPopup() },
     ) {
-        TCard(
+        VtCard(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .heightIn(min = 200.dp, max = 620.dp),
+                .heightIn(min = 200.dp, max = 620.dp)
+                .padding(bottom = TeacherDockClearance),
             padding = 20.dp,
         ) {
+            // Block tap propagation from sheet content to the scrim dismiss layer.
             Column(
                 Modifier.fillMaxWidth().clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                ) {},
+                onClick = {},
+                ),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(VIcons.ClipboardList, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(20.dp))
-                    Spacer(Modifier.width(8.dp))
+                    Icon(VIcons.ClipboardList, contentDescription = null, tint = VColors.success, modifier = Modifier.size(22.dp))
+                    Spacer(Modifier.width(10.dp))
                     Column {
-                        Text("Daily Class Log", style = VTheme.type.h3.colored(c.navyDeep).copy(fontSize = 17.sp))
-                        Text("${state.dailyLogClassName} · ${state.dailyLogSubject}", style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp))
+                        Text(appString(StringKeys.TC_DAILY_CLASS_LOG), style = VTypography.bodySmall, color = VColors.ink, fontWeight = FontWeight.Bold)
+                        Text("${state.dailyLogClassName} · ${state.dailyLogSubject}", style = VTypography.caption, color = VColors.ink2)
                     }
                     Spacer(Modifier.weight(1f))
                     Box(
-                        Modifier.size(28.dp).clip(CircleShape).background(c.cream)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                            ) { viewModel.closeDailyLogPopup() },
+                        Modifier.size(32.dp).clip(CircleShape).background(VColors.surfaceTint)
+                            .clickable { viewModel.closeDailyLogPopup() },
                         contentAlignment = Alignment.Center,
-                    ) { Icon(VIcons.Close, contentDescription = "Close", tint = c.ink2, modifier = Modifier.size(16.dp)) }
+                    ) { Icon(VIcons.Close, contentDescription = appString(StringKeys.COMMON_BUTTON_CLOSE), tint = VColors.ink2, modifier = Modifier.size(17.dp)) }
                 }
 
                 val selectedCount = state.dailyLogSelectedTopicIds.size
                 Text(
-                    if (selectedCount == 0) "Select topics covered today" else "$selectedCount topic${if (selectedCount > 1) "s" else ""} selected",
-                    style = VTheme.type.bodyStrong.colored(c.ink2).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
+                    if (selectedCount == 0) appString(StringKeys.TC_SELECT_TOPICS_COVERED_TODAY) else appString(StringKeys.TC_N_TOPICS_SELECTED, "count" to selectedCount.toString()),
+                    style = VTypography.label,
+                    color = VColors.ink2,
                 )
 
                 if (state.units.isNotEmpty()) {
                     LazyColumn(
                         Modifier.fillMaxWidth().weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         state.chapters.forEach { chapter ->
                             val chapterTopics = state.units.filter { it.parentId == chapter.id }
@@ -537,39 +565,37 @@ private fun DailyLogPopup(viewModel: TeacherSyllabusViewModel) {
                 }
 
                 // Coverage slider
-                Text("Coverage: ${state.dailyLogCoveragePct}%", style = VTheme.type.bodyStrong.colored(c.ink2).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
+                Text(appString(StringKeys.TC_COVERAGE_N_PCT, "pct" to state.dailyLogCoveragePct.toString()), style = VTypography.label, color = VColors.ink2)
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    val ixMinus = remember { MutableInteractionSource() }
-                    val ixPlus = remember { MutableInteractionSource() }
                     Box(
-                        Modifier.size(32.dp).clip(CircleShape).background(c.cream)
-                            .clickable(interactionSource = ixMinus, indication = null) { viewModel.setDailyLogCoveragePct(state.dailyLogCoveragePct - 10) },
+                        Modifier.size(36.dp).clip(CircleShape).background(VColors.surfaceTint)
+                            .clickable { viewModel.setDailyLogCoveragePct(state.dailyLogCoveragePct - 10) },
                         contentAlignment = Alignment.Center,
-                    ) { Icon(VIcons.Minus, contentDescription = null, tint = c.ink2, modifier = Modifier.size(16.dp)) }
-                    Text("${state.dailyLogCoveragePct}%", style = VTheme.type.bodyStrong.colored(c.navyDeep).copy(fontSize = 16.sp, fontWeight = FontWeight.ExtraBold))
+                    ) { Icon(VIcons.Minus, contentDescription = null, tint = VColors.ink2, modifier = Modifier.size(18.dp)) }
+                    Text("${state.dailyLogCoveragePct}%", style = VTypography.bodySmall, color = VColors.ink, fontWeight = FontWeight.Bold)
                     Box(
-                        Modifier.size(32.dp).clip(CircleShape).background(c.cream)
-                            .clickable(interactionSource = ixPlus, indication = null) { viewModel.setDailyLogCoveragePct(state.dailyLogCoveragePct + 10) },
+                        Modifier.size(36.dp).clip(CircleShape).background(VColors.surfaceTint)
+                            .clickable { viewModel.setDailyLogCoveragePct(state.dailyLogCoveragePct + 10) },
                         contentAlignment = Alignment.Center,
-                    ) { Icon(VIcons.Plus, contentDescription = null, tint = c.ink2, modifier = Modifier.size(16.dp)) }
+                    ) { Icon(VIcons.Plus, contentDescription = null, tint = VColors.ink2, modifier = Modifier.size(18.dp)) }
                 }
 
                 // Summary text
                 VInput(
                     value = state.dailyLogSummary,
                     onValueChange = viewModel::setDailyLogSummary,
-                    placeholder = "What was taught today? (optional)",
+                    placeholder = appString(StringKeys.TC_WHAT_TAUGHT_TODAY_OPTIONAL),
                     singleLine = false,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 60.dp, max = 100.dp),
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 80.dp, max = 120.dp),
                 )
 
                 if (state.dailyLogError != null) {
-                    Text(state.dailyLogError ?: "", style = VTheme.type.caption.colored(c.dangerInk).copy(fontSize = 12.sp))
+                    Text(state.dailyLogError ?: "", style = VTypography.caption, color = VColors.error)
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    VButton("Skip", onClick = { viewModel.dismissDailyLogPopup() }, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost, size = VButtonSize.Md)
-                    VButton("Save Log", onClick = { viewModel.saveDailyLog() }, modifier = Modifier.weight(1f), tone = VButtonTone.Teal, size = VButtonSize.Md, loading = state.isSavingDailyLog)
+                    VButton(appString(StringKeys.TC_SKIP), onClick = { viewModel.dismissDailyLogPopup() }, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost, size = VButtonSize.Md)
+                    VButton(appString(StringKeys.TC_SAVE_LOG), onClick = { viewModel.saveDailyLog() }, modifier = Modifier.weight(1f), tone = VButtonTone.Teal, size = VButtonSize.Md, loading = state.isSavingDailyLog)
                 }
             }
         }
@@ -578,21 +604,20 @@ private fun DailyLogPopup(viewModel: TeacherSyllabusViewModel) {
 
 @Composable
 private fun DailyLogChapterRow(title: String, expanded: Boolean, onToggle: () -> Unit) {
-    val c = VTheme.colors
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(c.cream)
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onToggle() }
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(VColors.surfaceTint)
+            .clickable { onToggle() }
+            .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Icon(
             if (expanded) VIcons.ChevronDown else VIcons.ChevronRight,
             contentDescription = null,
-            tint = c.ink2,
-            modifier = Modifier.size(16.dp),
+            tint = VColors.ink2,
+            modifier = Modifier.size(18.dp),
         )
-        Text(title, style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 13.sp, fontWeight = FontWeight.Bold))
+        Text(title, style = VTypography.bodySmall, color = VColors.ink, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -605,43 +630,40 @@ private fun DailyLogTopicRow(
     onToggleSelect: () -> Unit,
     onToggleExpand: () -> Unit,
 ) {
-    val c = VTheme.colors
     Row(
         Modifier.fillMaxWidth().padding(start = 28.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(if (selected) c.teal.copy(alpha = 0.08f) else androidx.compose.ui.graphics.Color.Transparent)
-            .padding(horizontal = 8.dp, vertical = 6.dp),
+            .clip(RoundedCornerShape(10.dp))
+            .background(if (selected) VColors.mint.copy(alpha = 0.08f) else androidx.compose.ui.graphics.Color.Transparent)
+            .clickable { onToggleSelect() }
+            .padding(horizontal = 10.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Box(
-            Modifier.size(18.dp).clip(CircleShape)
-                .background(if (selected) c.tealDeep else c.cream)
-                .border(1.dp, if (selected) c.tealDeep else c.hairline, CircleShape)
-                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onToggleSelect() },
+            Modifier.size(22.dp).clip(CircleShape)
+                .background(if (selected) VColors.success else VColors.surfaceTint)
+                .border(1.dp, if (selected) VColors.success else VColors.line, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            if (selected) Icon(VIcons.Check, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(11.dp))
+            if (selected) Icon(VIcons.Check, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(13.dp))
         }
         Text(
             title,
-            style = VTheme.type.body.colored(c.ink).copy(fontSize = 12.sp),
-            modifier = Modifier.weight(1f).clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-            ) { onToggleSelect() },
+            style = VTypography.caption,
+            color = VColors.ink,
+            modifier = Modifier.weight(1f),
         )
         if (hasSubtopics) {
             Box(
-                Modifier.size(20.dp).clip(CircleShape)
-                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onToggleExpand() },
+                Modifier.size(28.dp).clip(CircleShape)
+                    .clickable { onToggleExpand() },
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     if (expanded) VIcons.ChevronDown else VIcons.ChevronRight,
                     contentDescription = null,
-                    tint = c.ink3,
-                    modifier = Modifier.size(14.dp),
+                    tint = VColors.ink3,
+                    modifier = Modifier.size(16.dp),
                 )
             }
         }
@@ -650,25 +672,24 @@ private fun DailyLogTopicRow(
 
 @Composable
 private fun DailyLogSubtopicRow(title: String, selected: Boolean, onToggle: () -> Unit) {
-    val c = VTheme.colors
     Row(
         Modifier.fillMaxWidth().padding(start = 56.dp)
-            .clip(RoundedCornerShape(6.dp))
-            .background(if (selected) c.teal.copy(alpha = 0.06f) else androidx.compose.ui.graphics.Color.Transparent)
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onToggle() }
-            .padding(horizontal = 8.dp, vertical = 5.dp),
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (selected) VColors.mint.copy(alpha = 0.06f) else androidx.compose.ui.graphics.Color.Transparent)
+            .clickable { onToggle() }
+            .padding(horizontal = 10.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Box(
-            Modifier.size(14.dp).clip(CircleShape)
-                .background(if (selected) c.tealDeep else c.cream)
-                .border(1.dp, if (selected) c.tealDeep else c.hairline, CircleShape),
+            Modifier.size(18.dp).clip(CircleShape)
+                .background(if (selected) VColors.success else VColors.surfaceTint)
+                .border(1.dp, if (selected) VColors.success else VColors.line, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            if (selected) Icon(VIcons.Check, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(9.dp))
+            if (selected) Icon(VIcons.Check, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(11.dp))
         }
-        Text(title, style = VTheme.type.body.colored(c.ink2).copy(fontSize = 11.sp))
+        Text(title, style = VTypography.caption, color = VColors.ink2)
     }
 }
 
@@ -676,77 +697,71 @@ private fun DailyLogSubtopicRow(title: String, selected: Boolean, onToggle: () -
 
 @Composable
 private fun QuizSheet(viewModel: TeacherSyllabusViewModel) {
-    val c = VTheme.colors
     val state by viewModel.state.collectAsStateV2()
 
     Box(
         Modifier
             .fillMaxSize()
-            .background(c.ink.copy(alpha = 0.4f))
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-            ) { viewModel.closeQuizSheet() },
+            .background(VColors.ink.copy(alpha = 0.4f))
+            .clickable { viewModel.closeQuizSheet() },
     ) {
-        TCard(
+        VtCard(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .heightIn(min = 200.dp, max = 600.dp),
+                .heightIn(min = 200.dp, max = 620.dp)
+                .padding(bottom = TeacherDockClearance),
             padding = 20.dp,
         ) {
+            // Block tap propagation to scrim.
             Column(
-                Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                ) {},
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+                Modifier.fillMaxWidth().clickable(
+                onClick = {},
+                ),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(VIcons.Sparkles, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(20.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text("Generate Quiz", style = VTheme.type.h3.colored(c.navyDeep).copy(fontSize = 17.sp))
+                    Icon(VIcons.Sparkles, contentDescription = null, tint = VColors.violetInk, modifier = Modifier.size(22.dp))
+                    Spacer(Modifier.width(10.dp))
+                    Text(appString(StringKeys.TC_GENERATE_QUIZ), style = VTypography.bodySmall, color = VColors.ink, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.weight(1f))
                     Box(
-                        Modifier.size(28.dp).clip(CircleShape).background(c.cream)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                            ) { viewModel.closeQuizSheet() },
+                        Modifier.size(32.dp).clip(CircleShape).background(VColors.surfaceTint)
+                            .clickable { viewModel.closeQuizSheet() },
                         contentAlignment = Alignment.Center,
-                    ) { Icon(VIcons.Close, contentDescription = "Close", tint = c.ink2, modifier = Modifier.size(16.dp)) }
+                    ) { Icon(VIcons.Close, contentDescription = appString(StringKeys.COMMON_BUTTON_CLOSE), tint = VColors.ink2, modifier = Modifier.size(17.dp)) }
                 }
 
                 // ── Unit selection (multiple) ──────────────────────────────
-                Text("Select units", style = VTheme.type.bodyStrong.colored(c.ink2).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
+                Text(appString(StringKeys.TC_SELECT_UNITS), style = VTypography.label, color = VColors.ink2)
                 val allUnits = state.units
-                Column(
-                    Modifier.fillMaxWidth().heightIn(max = 150.dp).verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                LazyColumn(
+                    Modifier.fillMaxWidth().heightIn(max = 160.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    allUnits.forEach { u ->
+                    items(allUnits, key = { it.id }) { u ->
                         val isSelected = u.id in state.quizSelectedUnitIds
-                        val ixUnit = remember { MutableInteractionSource() }
                         Row(
                             Modifier.fillMaxWidth()
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSelected) c.accent.copy(alpha = 0.08f) else Color.Transparent)
-                                .clickable(interactionSource = ixUnit, indication = null) { viewModel.toggleQuizUnit(u.id) }
-                                .padding(horizontal = 8.dp, vertical = 6.dp),
+                                .clip(VShapes.md)
+                                .background(if (isSelected) VColors.violet.copy(alpha = 0.08f) else Color.Transparent)
+                                .clickable { viewModel.toggleQuizUnit(u.id) }
+                                .padding(horizontal = 10.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
                             Box(
-                                Modifier.size(16.dp).clip(RoundedCornerShape(4.dp))
-                                    .background(if (isSelected) c.accentDeep else c.cream)
-                                    .border(1.dp, if (isSelected) c.accentDeep else c.hairline, RoundedCornerShape(4.dp)),
+                                Modifier.size(20.dp).clip(VShapes.sm)
+                                    .background(if (isSelected) VColors.violetInk else VColors.surfaceTint)
+                                    .border(1.dp, if (isSelected) VColors.violetInk else VColors.line, VShapes.sm),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                if (isSelected) Icon(VIcons.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(12.dp))
+                                if (isSelected) Icon(VIcons.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
                             }
                             Text(
                                 u.title,
-                                style = VTheme.type.body.colored(if (isSelected) c.navyDeep else c.ink2).copy(fontSize = 12.sp),
+                                style = VTypography.bodySmall,
+                                color = if (isSelected) VColors.ink else VColors.ink2,
                                 maxLines = 1,
                             )
                         }
@@ -754,77 +769,79 @@ private fun QuizSheet(viewModel: TeacherSyllabusViewModel) {
                 }
 
                 // ── Question types ─────────────────────────────────────────
-                Text("Question types", style = VTheme.type.bodyStrong.colored(c.ink2).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("MCQ" to "MCQ", "FILL_BLANK" to "Fill-ups", "TRUE_FALSE" to "True/False", "MATCH" to "Match").forEach { (type, label) ->
+                Text(appString(StringKeys.TC_QUESTION_TYPES), style = VTypography.label, color = VColors.ink2)
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    listOf("MCQ" to appString(StringKeys.TC_MCQ), "FILL_BLANK" to appString(StringKeys.TC_FILL_UPS), "TRUE_FALSE" to appString(StringKeys.TC_TRUE_FALSE), "MATCH" to appString(StringKeys.TC_MATCH)).forEach { (type, label) ->
                         val selected = type in state.quizQuestionTypes
-                        val ixType = remember { MutableInteractionSource() }
                         Box(
                             Modifier
                                 .weight(1f)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(if (selected) c.accent.copy(alpha = 0.14f) else c.cream)
-                                .border(1.dp, if (selected) c.accentDeep else c.hairline, RoundedCornerShape(10.dp))
-                                .clickable(interactionSource = ixType, indication = null) { viewModel.toggleQuizQuestionType(type) }
-                                .padding(vertical = 8.dp),
+                                .clip(VShapes.md)
+                                .background(if (selected) VColors.violet.copy(alpha = 0.14f) else VColors.surfaceTint)
+                                .border(1.dp, if (selected) VColors.violetInk else VColors.line, VShapes.md)
+                                .clickable { viewModel.toggleQuizQuestionType(type) }
+                                .heightIn(min = 42.dp)
+                                .padding(vertical = 10.dp),
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(
                                 label,
-                                style = VTheme.type.body.colored(if (selected) c.accentDeep else c.ink2).copy(fontSize = 11.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal),
+                                style = VTypography.caption,
+                                color = if (selected) VColors.violetInk else VColors.ink2,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                             )
                         }
                     }
                 }
 
                 // ── Number of questions ────────────────────────────────────
-                Text("Number of questions: ${state.quizNumQuestions}", style = VTheme.type.bodyStrong.colored(c.ink2).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
+                Text(appString(StringKeys.TC_NUMBER_OF_QUESTIONS_N, "count" to state.quizNumQuestions.toString()), style = VTypography.label, color = VColors.ink2)
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    val ixMinus = remember { MutableInteractionSource() }
-                    val ixPlus = remember { MutableInteractionSource() }
                     Box(
-                        Modifier.size(32.dp).clip(CircleShape).background(c.cream)
-                            .clickable(interactionSource = ixMinus, indication = null) { viewModel.setQuizNumQuestions(state.quizNumQuestions - 1) },
+                        Modifier.size(36.dp).clip(CircleShape).background(VColors.surfaceTint)
+                            .clickable { viewModel.setQuizNumQuestions(state.quizNumQuestions - 1) },
                         contentAlignment = Alignment.Center,
-                    ) { Icon(VIcons.Minus, contentDescription = null, tint = c.ink2, modifier = Modifier.size(16.dp)) }
-                    Text("${state.quizNumQuestions}", style = VTheme.type.bodyStrong.colored(c.navyDeep).copy(fontSize = 16.sp, fontWeight = FontWeight.ExtraBold))
+                    ) { Icon(VIcons.Minus, contentDescription = null, tint = VColors.ink2, modifier = Modifier.size(18.dp)) }
+                    Text("${state.quizNumQuestions}", style = VTypography.bodySmall, color = VColors.ink, fontWeight = FontWeight.Bold)
                     Box(
-                        Modifier.size(32.dp).clip(CircleShape).background(c.cream)
-                            .clickable(interactionSource = ixPlus, indication = null) { viewModel.setQuizNumQuestions(state.quizNumQuestions + 1) },
+                        Modifier.size(36.dp).clip(CircleShape).background(VColors.surfaceTint)
+                            .clickable { viewModel.setQuizNumQuestions(state.quizNumQuestions + 1) },
                         contentAlignment = Alignment.Center,
-                    ) { Icon(VIcons.Plus, contentDescription = null, tint = c.ink2, modifier = Modifier.size(16.dp)) }
+                    ) { Icon(VIcons.Plus, contentDescription = null, tint = VColors.ink2, modifier = Modifier.size(18.dp)) }
                 }
 
                 // ── Difficulty ─────────────────────────────────────────────
-                Text("Difficulty", style = VTheme.type.bodyStrong.colored(c.ink2).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("EASY", "MEDIUM", "HARD").forEach { diff ->
+                Text(appString(StringKeys.TC_DIFFICULTY), style = VTypography.label, color = VColors.ink2)
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    listOf("EASY" to appString(StringKeys.TC_EASY), "MEDIUM" to appString(StringKeys.TC_MEDIUM), "HARD" to appString(StringKeys.TC_HARD)).forEach { (diff, label) ->
                         val selected = state.quizDifficulty == diff
-                        val ixDiff = remember { MutableInteractionSource() }
                         Box(
                             Modifier
                                 .weight(1f)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(if (selected) c.accent.copy(alpha = 0.14f) else c.cream)
-                                .border(1.dp, if (selected) c.accentDeep else c.hairline, RoundedCornerShape(10.dp))
-                                .clickable(interactionSource = ixDiff, indication = null) { viewModel.setQuizDifficulty(diff) }
+                                .clip(VShapes.md)
+                                .background(if (selected) VColors.violet.copy(alpha = 0.14f) else VColors.surfaceTint)
+                                .border(1.dp, if (selected) VColors.violetInk else VColors.line, VShapes.md)
+                                .clickable { viewModel.setQuizDifficulty(diff) }
+                                .heightIn(min = 42.dp)
                                 .padding(vertical = 10.dp),
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(
-                                diff.lowercase().replaceFirstChar { it.uppercase() },
-                                style = VTheme.type.body.colored(if (selected) c.accentDeep else c.ink2).copy(fontSize = 13.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal),
+                                label,
+                                style = VTypography.bodySmall,
+                                color = if (selected) VColors.violetInk else VColors.ink2,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                             )
                         }
                     }
                 }
 
                 if (state.quizError != null) {
-                    Text(state.quizError ?: "", style = VTheme.type.caption.colored(c.dangerInk).copy(fontSize = 12.sp))
+                    Text(state.quizError ?: "", style = VTypography.caption, color = VColors.error)
                 }
 
                 VButton(
-                    "Generate Quiz",
+                    appString(StringKeys.TC_GENERATE_QUIZ),
                     onClick = { viewModel.generateQuiz() },
                     full = true,
                     tone = VButtonTone.Lavender,
@@ -840,19 +857,18 @@ private fun QuizSheet(viewModel: TeacherSyllabusViewModel) {
 
 @Composable
 private fun QuizRow(q: QuizDto, onPublish: () -> Unit, onLeaderboard: () -> Unit = {}) {
-    val c = VTheme.colors
-    TCard(padding = 14.dp) {
+    VtCard(padding = 14.dp) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            TIconDisc(VIcons.GraduationCap, tint = c.accentDeep, bg = c.accent.copy(alpha = 0.14f), size = 36.dp, glyph = 18.dp)
+            VtIconDisc(VIcons.GraduationCap, tint = VColors.violetInk, bg = VColors.violet.copy(alpha = 0.14f), size = 36.dp, glyph = 18.dp)
             Column(Modifier.weight(1f)) {
-                Text(q.title.ifBlank { "Quiz" }, style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 14.sp, fontWeight = FontWeight.Bold))
-                Text("${q.questions.size} questions · ${q.status}", style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 11.sp))
+                Text(q.title.ifBlank { appString(StringKeys.TC_QUIZ) }, style = VTypography.body.copy(color = VColors.ink))
+                Text(appString(StringKeys.TC_N_QUESTIONS_STATUS, "count" to q.questions.size.toString(), "status" to q.status), style = VTypography.caption.copy(color = VColors.ink2))
             }
             if (q.status == "DRAFT") {
-                VButton("Publish", onClick = onPublish, size = VButtonSize.Sm, tone = VButtonTone.Lavender, variant = VButtonVariant.Secondary)
+                VButton(appString(StringKeys.TC_PUBLISH), onClick = onPublish, size = VButtonSize.Sm, tone = VButtonTone.Lavender, variant = VButtonVariant.Secondary)
             } else {
-                TPill("Published", bg = c.teal.copy(alpha = 0.14f), fg = c.tealDeep)
-                VButton("Results", onClick = onLeaderboard, size = VButtonSize.Sm, tone = VButtonTone.Sky, variant = VButtonVariant.Secondary)
+                VtPill(appString(StringKeys.TC_PUBLISHED), bg = VColors.mint.copy(alpha = 0.14f), fg = VColors.success)
+                VButton(appString(StringKeys.TC_RESULTS), onClick = onLeaderboard, size = VButtonSize.Sm, tone = VButtonTone.Sky, variant = VButtonVariant.Secondary)
             }
         }
     }
@@ -862,46 +878,45 @@ private fun QuizRow(q: QuizDto, onPublish: () -> Unit, onLeaderboard: () -> Unit
 
 @Composable
 private fun EmptyStateOptions(viewModel: TeacherSyllabusViewModel) {
-    val c = VTheme.colors
     val state by viewModel.state.collectAsStateV2()
     Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-        Text("No units yet", style = VTheme.type.h3.colored(c.ink).copy(fontSize = 16.sp))
-        Text("Choose how to build your syllabus:", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp))
+        Text(appString(StringKeys.TC_NO_UNITS_YET), style = VTypography.h3.copy(color = VColors.ink))
+        Text(appString(StringKeys.TC_CHOOSE_HOW_TO_BUILD_SYLLABUS), style = VTypography.caption.copy(color = VColors.ink3))
         Spacer(Modifier.height(4.dp))
         // Option 1: Auto-fill from NCERT
-        TCard(padding = 16.dp, onClick = { viewModel.autoFill() }) {
+        VtCard(padding = 16.dp, onClick = { viewModel.autoFill() }) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                TIconDisc(VIcons.Sparkles, tint = c.accentDeep, bg = c.accent.copy(alpha = 0.14f), size = 40.dp, glyph = 20.dp)
+                VtIconDisc(VIcons.Sparkles, tint = VColors.violetInk, bg = VColors.violet.copy(alpha = 0.14f), size = 40.dp, glyph = 20.dp)
                 Column(Modifier.weight(1f)) {
-                    Text("Auto-fill from NCERT", style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 14.sp, fontWeight = FontWeight.ExtraBold))
-                    Text("Fetch the standard CBSE/NCERT syllabus for this class & subject", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp))
+                    Text(appString(StringKeys.TC_AUTO_FILL_FROM_NCERT), style = VTypography.body.copy(color = VColors.ink))
+                    Text(appString(StringKeys.TC_FETCH_STANDARD_NCERT_SYLLABUS), style = VTypography.caption.copy(color = VColors.ink3))
                 }
             }
         }
         // Option 2: Paste text for AI parse
-        TCard(padding = 16.dp, onClick = { viewModel.openParseSheet() }) {
+        VtCard(padding = 16.dp, onClick = { viewModel.openParseSheet() }) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                TIconDisc(VIcons.ClipboardList, tint = c.tealDeep, bg = c.teal.copy(alpha = 0.14f), size = 40.dp, glyph = 20.dp)
+                VtIconDisc(VIcons.ClipboardList, tint = VColors.success, bg = VColors.mint.copy(alpha = 0.14f), size = 40.dp, glyph = 20.dp)
                 Column(Modifier.weight(1f)) {
-                    Text("Paste syllabus text", style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 14.sp, fontWeight = FontWeight.ExtraBold))
-                    Text("AI will extract chapters and topics from pasted text", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp))
+                    Text(appString(StringKeys.TC_PASTE_SYLLABUS_TEXT), style = VTypography.body.copy(color = VColors.ink))
+                    Text(appString(StringKeys.TC_AI_EXTRACT_CHAPTERS_TOPICS), style = VTypography.caption.copy(color = VColors.ink3))
                 }
             }
         }
         // Option 3: Add manually
-        TCard(padding = 16.dp, onClick = { viewModel.toggleEditing(); viewModel.openAdd(null) }) {
+        VtCard(padding = 16.dp, onClick = { viewModel.toggleEditing(); viewModel.openAdd(null) }) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                TIconDisc(VIcons.Plus, tint = c.ink2, bg = c.cream, size = 40.dp, glyph = 20.dp)
+                VtIconDisc(VIcons.Plus, tint = VColors.ink2, bg = VColors.surfaceTint, size = 40.dp, glyph = 20.dp)
                 Column(Modifier.weight(1f)) {
-                    Text("Add manually", style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 14.sp, fontWeight = FontWeight.ExtraBold))
-                    Text("Create chapters and topics one by one", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp))
+                    Text(appString(StringKeys.TC_ADD_MANUALLY), style = VTypography.body.copy(color = VColors.ink))
+                    Text(appString(StringKeys.TC_CREATE_CHAPTERS_TOPICS_ONE_BY_ONE), style = VTypography.caption.copy(color = VColors.ink3))
                 }
             }
         }
         if (state.isAutoFilling) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
                 TeacherSpinner(16.dp)
-                Text("Fetching NCERT reference…", style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp))
+                Text(appString(StringKeys.TC_FETCHING_NCERT_REFERENCE), style = VTypography.caption.copy(color = VColors.ink2))
             }
         }
     }
@@ -911,52 +926,51 @@ private fun EmptyStateOptions(viewModel: TeacherSyllabusViewModel) {
 
 @Composable
 private fun PaceWarningBanner(warning: com.littlebridge.enrollplus.feature.teacher.domain.model.SylPaceWarning) {
-    val c = VTheme.colors
     val isBehind = warning.level == "BEHIND" || warning.level == "CRITICAL"
-    val bg = if (isBehind) c.danger.copy(alpha = 0.08f) else c.accent.copy(alpha = 0.08f)
-    val fg = if (isBehind) c.dangerInk else c.accentDeep
+    val bg = if (isBehind) VColors.error.copy(alpha = 0.08f) else VColors.violet.copy(alpha = 0.08f)
+    val fg = if (isBehind) VColors.error else VColors.violetInk
     val icon = if (isBehind) VIcons.AlertCircle else VIcons.Sparkles
     val label = when (warning.level) {
-        "CRITICAL" -> "Critically behind"
-        "BEHIND" -> "Behind schedule"
-        "AHEAD" -> "Ahead of schedule"
-        else -> "Pace update"
+        "CRITICAL" -> appString(StringKeys.TC_CRITICALLY_BEHIND)
+        "BEHIND" -> appString(StringKeys.TC_BEHIND_SCHEDULE)
+        "AHEAD" -> appString(StringKeys.TC_AHEAD_OF_SCHEDULE)
+        else -> appString(StringKeys.TC_PACE_UPDATE)
     }
-    TCard(padding = 14.dp) {
+    VtCard(padding = 14.dp) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Box(Modifier.size(32.dp).clip(CircleShape).background(bg), contentAlignment = Alignment.Center) {
                 Icon(icon, contentDescription = null, tint = fg, modifier = Modifier.size(16.dp))
             }
             Column(Modifier.weight(1f)) {
-                Text(label, style = VTheme.type.bodyStrong.colored(fg).copy(fontSize = 13.sp, fontWeight = FontWeight.ExtraBold))
+                Text(label, style = VTypography.body.copy(color = fg))
                 Text(
-                    "Expected ${warning.expectedPct}% · Actual ${warning.actualPct}% · Δ ${warning.deviationPct}%",
-                    style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 11.sp),
+                    appString(StringKeys.TC_PACE_EXPECTED_ACTUAL, "expected" to warning.expectedPct.toString(), "actual" to warning.actualPct.toString(), "delta" to warning.deviationPct.toString()),
+                    style = VTypography.caption.copy(color = VColors.ink2),
                 )
                 if (warning.message.isNotBlank()) {
-                    Text(warning.message, style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp))
+                    Text(warning.message, style = VTypography.caption.copy(color = VColors.ink3))
                 }
                 Spacer(Modifier.height(4.dp))
                 val metricsText = buildString {
                     if (warning.classesElapsed > 0) {
-                        append("${warning.classesElapsed} classes done")
-                        if (warning.classesRemaining > 0) append(" · ${warning.classesRemaining} left")
+                        append(appString(StringKeys.TC_N_CLASSES_DONE, "count" to warning.classesElapsed.toString()))
+                        if (warning.classesRemaining > 0) append(" · " + appString(StringKeys.TC_N_LEFT, "count" to warning.classesRemaining.toString()))
                     }
                     if (warning.weeklyPeriods > 0) {
-                        append(" · ${warning.weeklyPeriods}/week")
+                        append(" · " + appString(StringKeys.TC_N_PER_WEEK, "count" to warning.weeklyPeriods.toString()))
                     }
                     if (warning.holidayDaysCounted > 0) {
-                        append(" · ${warning.holidayDaysCounted} holidays")
+                        append(" · " + appString(StringKeys.TC_N_HOLIDAYS, "count" to warning.holidayDaysCounted.toString()))
                     }
                 }
                 if (metricsText.isNotBlank()) {
-                    Text(metricsText, style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp))
+                    Text(metricsText, style = VTypography.caption.copy(color = VColors.ink3))
                 }
                 if (warning.estimatedCompletionDate.isNotBlank()) {
-                    Text("Est. completion: ${warning.estimatedCompletionDate}", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp))
+                    Text(appString(StringKeys.TC_EST_COMPLETION_DATE, "date" to warning.estimatedCompletionDate), style = VTypography.caption.copy(color = VColors.ink3))
                 }
                 if (warning.avgCoveragePerClass > 0) {
-                    Text("Avg ${"%.1f".format(warning.avgCoveragePerClass)}%/class", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp))
+                    Text(appString(StringKeys.TC_AVG_N_PCT_PER_CLASS, "pct" to formatDecimal(warning.avgCoveragePerClass, 1)), style = VTypography.caption.copy(color = VColors.ink3))
                 }
             }
         }
@@ -967,24 +981,23 @@ private fun PaceWarningBanner(warning: com.littlebridge.enrollplus.feature.teach
 
 @Composable
 private fun DraftApprovalBar(viewModel: TeacherSyllabusViewModel) {
-    val c = VTheme.colors
     val state by viewModel.state.collectAsStateV2()
     val draftCount = state.draftUnits.size
-    TCard(padding = 14.dp) {
+    VtCard(padding = 14.dp) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Box(Modifier.size(28.dp).clip(CircleShape).background(c.accent.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
-                    Icon(VIcons.ShieldCheck, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(14.dp))
+                Box(Modifier.size(28.dp).clip(CircleShape).background(VColors.violet.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
+                    Icon(VIcons.ShieldCheck, contentDescription = null, tint = VColors.violetInk, modifier = Modifier.size(14.dp))
                 }
-                Text("$draftCount draft unit${if (draftCount != 1) "s" else ""} pending approval", style = VTheme.type.bodyStrong.colored(c.accentDeep).copy(fontSize = 13.sp, fontWeight = FontWeight.ExtraBold))
+                Text(appString(StringKeys.TC_N_DRAFT_UNITS_PENDING_APPROVAL, "count" to draftCount.toString()), style = VTypography.body.copy(color = VColors.violetInk))
             }
-            Text("Draft units are not visible to parents until approved.", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp))
+            Text(appString(StringKeys.TC_DRAFT_UNITS_NOT_VISIBLE_TO_PARENTS), style = VTypography.caption.copy(color = VColors.ink3))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                VButton("Reject All", onClick = { viewModel.rejectAllDrafts() }, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost, size = VButtonSize.Sm, loading = state.isApproving)
-                VButton("Approve All", onClick = { viewModel.approveAllDrafts() }, modifier = Modifier.weight(1f), tone = VButtonTone.Lavender, size = VButtonSize.Sm, loading = state.isApproving)
+                VButton(appString(StringKeys.TC_REJECT_ALL), onClick = { viewModel.rejectAllDrafts() }, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost, size = VButtonSize.Sm, loading = state.isApproving)
+                VButton(appString(StringKeys.TC_APPROVE_ALL), onClick = { viewModel.approveAllDrafts() }, modifier = Modifier.weight(1f), tone = VButtonTone.Lavender, size = VButtonSize.Sm, loading = state.isApproving)
             }
             if (state.approveError != null) {
-                Text(state.approveError ?: "", style = VTheme.type.caption.colored(c.dangerInk).copy(fontSize = 11.sp))
+                Text(state.approveError ?: "", style = VTypography.caption.copy(color = VColors.error))
             }
         }
     }
@@ -994,61 +1007,54 @@ private fun DraftApprovalBar(viewModel: TeacherSyllabusViewModel) {
 
 @Composable
 private fun AutoFillPreviewSheet(viewModel: TeacherSyllabusViewModel) {
-    val c = VTheme.colors
     val state by viewModel.state.collectAsStateV2()
 
     Box(
         Modifier
             .fillMaxSize()
-            .background(c.ink.copy(alpha = 0.4f))
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-            ) { viewModel.dismissAutoFillPreview() },
+            .background(VColors.ink.copy(alpha = 0.4f))
+            .clickable { viewModel.dismissAutoFillPreview() },
     ) {
-        TCard(
+        VtCard(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .heightIn(min = 200.dp, max = 600.dp)
-                .padding(bottom = 0.dp),
+                .padding(bottom = TeacherDockClearance),
             padding = 20.dp,
         ) {
+            // Block tap propagation to scrim.
             Column(
                 Modifier.fillMaxWidth().clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                ) {},
+                onClick = {},
+                ),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(VIcons.Sparkles, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(20.dp))
+                    Icon(VIcons.Sparkles, contentDescription = null, tint = VColors.violetInk, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
                     Column {
-                        Text("NCERT Auto-fill", style = VTheme.type.h3.colored(c.navyDeep).copy(fontSize = 17.sp))
+                        Text(appString(StringKeys.TC_NCERT_AUTO_FILL), style = VTypography.h3.copy(color = VColors.ink))
                         if (state.autoFillSource.isNotBlank()) {
-                            Text(state.autoFillSource, style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp))
+                            Text(state.autoFillSource, style = VTypography.caption.copy(color = VColors.ink2))
                         }
                     }
                     Spacer(Modifier.weight(1f))
                     Box(
-                        Modifier.size(28.dp).clip(CircleShape).background(c.cream)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                            ) { viewModel.dismissAutoFillPreview() },
+                        Modifier.size(28.dp).clip(CircleShape).background(VColors.surfaceTint)
+                            .clickable { viewModel.dismissAutoFillPreview() },
                         contentAlignment = Alignment.Center,
-                    ) { Icon(VIcons.Close, contentDescription = "Close", tint = c.ink2, modifier = Modifier.size(16.dp)) }
+                    ) { Icon(VIcons.Close, contentDescription = appString(StringKeys.COMMON_BUTTON_CLOSE), tint = VColors.ink2, modifier = Modifier.size(16.dp)) }
                 }
 
                 val totalChapters = state.autoFillChapters.size
                 val totalTopics = state.autoFillChapters.sumOf { ch -> ch.topics.size }
                 val totalSubtopics = state.autoFillChapters.sumOf { ch -> ch.topics.sumOf { t -> t.subtopics.size } }
                 val totalUnits = totalChapters + totalTopics + totalSubtopics
-                val subtopicText = if (totalSubtopics > 0) ", $totalSubtopics subtopics" else ""
+                val subtopicText = if (totalSubtopics > 0) ", " + appString(StringKeys.TC_N_SUBTOPICS, "count" to totalSubtopics.toString()) else ""
                 Text(
-                    "Preview: $totalChapters chapters, $totalTopics topics$subtopicText — $totalUnits units will be created as DRAFT for your review.",
-                    style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.sp),
+                    appString(StringKeys.TC_AUTO_FILL_PREVIEW, "chapters" to totalChapters.toString(), "topics" to totalTopics.toString(), "subtopics" to subtopicText, "units" to totalUnits.toString()),
+                    style = VTypography.body.copy(color = VColors.ink2),
                 )
 
                 LazyColumn(
@@ -1061,12 +1067,12 @@ private fun AutoFillPreviewSheet(viewModel: TeacherSyllabusViewModel) {
                 }
 
                 if (state.autoFillError != null) {
-                    Text(state.autoFillError ?: "", style = VTheme.type.caption.colored(c.dangerInk).copy(fontSize = 12.sp))
+                    Text(state.autoFillError ?: "", style = VTypography.caption.copy(color = VColors.error))
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    VButton("Cancel", onClick = { viewModel.dismissAutoFillPreview() }, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost, size = VButtonSize.Md)
-                    VButton("Create as Draft", onClick = { viewModel.confirmAutoFill() }, modifier = Modifier.weight(1f), tone = VButtonTone.Lavender, size = VButtonSize.Md, loading = state.isAutoFilling)
+                    VButton(appString(StringKeys.COMMON_BUTTON_CANCEL), onClick = { viewModel.dismissAutoFillPreview() }, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost, size = VButtonSize.Md)
+                    VButton(appString(StringKeys.TC_CREATE_AS_DRAFT), onClick = { viewModel.confirmAutoFill() }, modifier = Modifier.weight(1f), tone = VButtonTone.Lavender, size = VButtonSize.Md, loading = state.isAutoFilling)
                 }
             }
         }
@@ -1075,21 +1081,20 @@ private fun AutoFillPreviewSheet(viewModel: TeacherSyllabusViewModel) {
 
 @Composable
 private fun AutoFillChapterRow(ch: SylAutoFillChapter) {
-    val c = VTheme.colors
-    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(c.cream).padding(12.dp)) {
-        Text(ch.title, style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 14.sp, fontWeight = FontWeight.ExtraBold))
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(VColors.surfaceTint).padding(12.dp)) {
+        Text(ch.title, style = VTypography.body.copy(color = VColors.ink))
         if (ch.topics.isNotEmpty()) {
             Spacer(Modifier.height(6.dp))
             ch.topics.forEach { t ->
                 Row(Modifier.fillMaxWidth().padding(start = 12.dp, top = 2.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("–", style = VTheme.type.body.colored(c.ink3).copy(fontSize = 12.sp))
-                    Text(t.title, style = VTheme.type.body.colored(c.ink2).copy(fontSize = 12.sp))
+                    Text("–", style = VTypography.body.copy(color = VColors.ink3))
+                    Text(t.title, style = VTypography.body.copy(color = VColors.ink2))
                 }
                 if (t.subtopics.isNotEmpty()) {
                     t.subtopics.forEach { st ->
                         Row(Modifier.fillMaxWidth().padding(start = 28.dp, top = 1.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("·", style = VTheme.type.body.colored(c.ink3).copy(fontSize = 11.sp))
-                            Text(st.title, style = VTheme.type.body.colored(c.ink3).copy(fontSize = 11.sp))
+                            Text("·", style = VTypography.body.copy(color = VColors.ink3))
+                            Text(st.title, style = VTypography.body.copy(color = VColors.ink3))
                         }
                     }
                 }
@@ -1102,51 +1107,45 @@ private fun AutoFillChapterRow(ch: SylAutoFillChapter) {
 
 @Composable
 private fun QuizPreviewSheet(viewModel: TeacherSyllabusViewModel) {
-    val c = VTheme.colors
     val state by viewModel.state.collectAsStateV2()
     val quiz = state.generatedQuiz ?: return
 
     Box(
         Modifier
             .fillMaxSize()
-            .background(c.ink.copy(alpha = 0.4f))
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-            ) { viewModel.closeQuizPreview() },
+            .background(VColors.ink.copy(alpha = 0.4f))
+            .clickable { viewModel.closeQuizPreview() },
     ) {
-        TCard(
+        VtCard(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .heightIn(min = 200.dp, max = 700.dp),
+                .heightIn(min = 200.dp, max = 700.dp)
+                .padding(bottom = TeacherDockClearance),
             padding = 20.dp,
         ) {
+            // Block tap propagation to scrim; keep content scrollable.
             Column(
                 Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                ) {},
+                onClick = {},
+                ),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 // Header
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(VIcons.GraduationCap, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(20.dp))
+                    Icon(VIcons.GraduationCap, contentDescription = null, tint = VColors.violetInk, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Quiz Preview", style = VTheme.type.h3.colored(c.navyDeep).copy(fontSize = 17.sp))
+                    Text(appString(StringKeys.TC_QUIZ_PREVIEW), style = VTypography.h3.copy(color = VColors.ink))
                     Spacer(Modifier.weight(1f))
                     Box(
-                        Modifier.size(28.dp).clip(CircleShape).background(c.cream)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                            ) { viewModel.closeQuizPreview() },
+                        Modifier.size(28.dp).clip(CircleShape).background(VColors.surfaceTint)
+                            .clickable { viewModel.closeQuizPreview() },
                         contentAlignment = Alignment.Center,
-                    ) { Icon(VIcons.Close, contentDescription = "Close", tint = c.ink2, modifier = Modifier.size(16.dp)) }
+                    ) { Icon(VIcons.Close, contentDescription = appString(StringKeys.COMMON_BUTTON_CLOSE), tint = VColors.ink2, modifier = Modifier.size(16.dp)) }
                 }
 
-                Text(quiz.title, style = VTheme.type.bodyStrong.colored(c.ink2).copy(fontSize = 13.sp))
-                Text("${quiz.questions.size} questions · ${quiz.status}", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp))
+                Text(quiz.title, style = VTypography.body.copy(color = VColors.ink2))
+                Text(appString(StringKeys.TC_N_QUESTIONS_STATUS, "count" to quiz.questions.size.toString(), "status" to quiz.status), style = VTypography.caption.copy(color = VColors.ink3))
 
                 // Questions list
                 quiz.questions.forEachIndexed { idx, q ->
@@ -1180,7 +1179,7 @@ private fun QuizPreviewSheet(viewModel: TeacherSyllabusViewModel) {
                     )
                 } else {
                     VButton(
-                        "+ Add Question",
+                        appString(StringKeys.TC_ADD_QUESTION),
                         onClick = { viewModel.openAddQuestion() },
                         variant = VButtonVariant.Ghost,
                         tone = VButtonTone.Teal,
@@ -1191,13 +1190,13 @@ private fun QuizPreviewSheet(viewModel: TeacherSyllabusViewModel) {
                 }
 
                 if (state.quizPreviewError != null) {
-                    Text(state.quizPreviewError ?: "", style = VTheme.type.caption.colored(c.dangerInk).copy(fontSize = 12.sp))
+                    Text(state.quizPreviewError ?: "", style = VTypography.caption.copy(color = VColors.error))
                 }
 
                 // Action buttons
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     VButton(
-                        "Regenerate All",
+                        appString(StringKeys.TC_REGENERATE_ALL),
                         onClick = { viewModel.regenerateQuizQuestions() },
                         modifier = Modifier.weight(1f),
                         variant = VButtonVariant.Secondary,
@@ -1207,7 +1206,7 @@ private fun QuizPreviewSheet(viewModel: TeacherSyllabusViewModel) {
                         leading = { Icon(VIcons.Sparkles, contentDescription = null, modifier = Modifier.size(14.dp)) },
                     )
                     VButton(
-                        "Publish Quiz",
+                        appString(StringKeys.TC_PUBLISH_QUIZ),
                         onClick = { viewModel.publishGeneratedQuiz() },
                         modifier = Modifier.weight(1f),
                         tone = VButtonTone.Lavender,
@@ -1226,46 +1225,44 @@ private fun QuestionPreviewCard(
     question: QuizQuestionDto,
     onEdit: () -> Unit,
 ) {
-    val c = VTheme.colors
-    val ixEdit = remember { MutableInteractionSource() }
 
     Column(
         Modifier.fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(c.cream)
-            .border(1.dp, c.hairline, RoundedCornerShape(12.dp))
+            .background(VColors.surfaceTint)
+            .border(1.dp, VColors.line, RoundedCornerShape(12.dp))
             .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Q$index", style = VTheme.type.bodyStrong.colored(c.accentDeep).copy(fontSize = 13.sp, fontWeight = FontWeight.Bold))
+            Text("Q$index", style = VTypography.body.copy(color = VColors.violetInk))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(question.question, style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp))
+                Text(question.question, style = VTypography.body.copy(color = VColors.ink))
                 if (question.options.isNotEmpty()) {
                     question.options.forEachIndexed { i, opt ->
                         val isCorrect = opt.startsWith(question.correctAnswer, ignoreCase = true) ||
                             question.correctIndex == i
                         Text(
                             opt,
-                            style = VTheme.type.body.colored(if (isCorrect) c.tealDeep else c.ink2).copy(
+                            style = VTypography.body.copy(color = if (isCorrect) VColors.success else VColors.ink2).copy(
                                 fontSize = 12.sp,
                                 fontWeight = if (isCorrect) FontWeight.Bold else FontWeight.Normal,
                             ),
                         )
                     }
                 } else if (question.correctAnswer.isNotBlank()) {
-                    Text("Answer: ${question.correctAnswer}", style = VTheme.type.body.colored(c.tealDeep).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
+                    Text(appString(StringKeys.TC_ANSWER_COLON, "answer" to question.correctAnswer), style = VTypography.body.copy(color = VColors.success))
                 }
                 if (!question.explanation.isNullOrBlank()) {
-                    Text("Explanation: ${question.explanation}", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp))
+                    Text(appString(StringKeys.TC_EXPLANATION_COLON, "explanation" to question.explanation), style = VTypography.caption.copy(color = VColors.ink3))
                 }
-                Text(question.questionType, style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp))
+                Text(question.questionType, style = VTypography.caption.copy(color = VColors.ink3))
             }
             Box(
-                Modifier.size(26.dp).clip(CircleShape).background(c.accent.copy(alpha = 0.1f))
-                    .clickable(interactionSource = ixEdit, indication = null) { onEdit() },
+                Modifier.size(26.dp).clip(CircleShape).background(VColors.violet.copy(alpha = 0.1f))
+                    .clickable { onEdit() },
                 contentAlignment = Alignment.Center,
-            ) { Icon(VIcons.Edit3, contentDescription = "Edit", tint = c.accentDeep, modifier = Modifier.size(13.dp)) }
+            ) { Icon(VIcons.Edit3, contentDescription = appString(StringKeys.TC_EDIT), tint = VColors.violetInk, modifier = Modifier.size(13.dp)) }
         }
     }
 }
@@ -1278,7 +1275,6 @@ private fun AddQuestionCard(
     onSave: (question: String, options: List<String>, correctAnswer: String, explanation: String?, questionType: String) -> Unit,
     onCancel: () -> Unit,
 ) {
-    val c = VTheme.colors
     var questionText by remember { mutableStateOf("") }
     var optionsText by remember { mutableStateOf("") }
     var correctAnswer by remember { mutableStateOf("") }
@@ -1288,25 +1284,24 @@ private fun AddQuestionCard(
     Column(
         Modifier.fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(c.accent.copy(alpha = 0.06f))
-            .border(1.dp, c.accentDeep.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+            .background(VColors.violet.copy(alpha = 0.06f))
+            .border(1.dp, VColors.violetInk.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
             .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text("Add New Question", style = VTheme.type.bodyStrong.colored(c.accentDeep).copy(fontSize = 13.sp, fontWeight = FontWeight.Bold))
+        Text(appString(StringKeys.TC_ADD_NEW_QUESTION), style = VTypography.body.copy(color = VColors.violetInk))
 
         // Question type selector
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf("MCQ" to "MCQ", "FILL_BLANK" to "Fill-ups", "TRUE_FALSE" to "True/False").forEach { (type, label) ->
+            listOf("MCQ" to appString(StringKeys.TC_MCQ), "FILL_BLANK" to appString(StringKeys.TC_FILL_UPS), "TRUE_FALSE" to appString(StringKeys.TC_TRUE_FALSE)).forEach { (type, label) ->
                 val selected = questionType == type
-                val ixType = remember { MutableInteractionSource() }
                 Box(
                     Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(if (selected) c.accent.copy(alpha = 0.14f) else c.cream)
-                        .border(1.dp, if (selected) c.accentDeep else c.hairline, RoundedCornerShape(8.dp))
-                        .clickable(interactionSource = ixType, indication = null) {
+                        .background(if (selected) VColors.violet.copy(alpha = 0.14f) else VColors.surfaceTint)
+                        .border(1.dp, if (selected) VColors.violetInk else VColors.line, RoundedCornerShape(8.dp))
+                        .clickable {
                             questionType = type
                             if (type == "TRUE_FALSE") {
                                 correctAnswer = "true"
@@ -1318,7 +1313,7 @@ private fun AddQuestionCard(
                         .padding(vertical = 6.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(label, style = VTheme.type.caption.colored(if (selected) c.accentDeep else c.ink2).copy(fontSize = 11.sp))
+                    Text(label, style = VTypography.caption.copy(color = if (selected) VColors.violetInk else VColors.ink2).copy(fontSize = 11.sp))
                 }
             }
         }
@@ -1326,39 +1321,38 @@ private fun AddQuestionCard(
         VInput(
             value = questionText,
             onValueChange = { questionText = it },
-            placeholder = "Question text",
+            placeholder = appString(StringKeys.TC_QUESTION_TEXT),
             singleLine = false,
             modifier = Modifier.fillMaxWidth().heightIn(min = 60.dp, max = 120.dp),
         )
 
         if (questionType == "MCQ") {
-            Text("Options (one per line):", style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 11.sp))
+            Text(appString(StringKeys.TC_OPTIONS_ONE_PER_LINE), style = VTypography.caption.copy(color = VColors.ink2))
             VInput(
                 value = optionsText,
                 onValueChange = { optionsText = it },
-                placeholder = "A) ...\nB) ...\nC) ...\nD) ...",
+                placeholder = appString(StringKeys.TC_OPTIONS_PH),
                 singleLine = false,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 80.dp, max = 140.dp),
             )
         }
 
         if (questionType == "TRUE_FALSE") {
-            Text("Correct answer:", style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 11.sp))
+            Text(appString(StringKeys.TC_CORRECT_ANSWER), style = VTypography.caption.copy(color = VColors.ink2))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("true" to "True", "false" to "False").forEach { (value, label) ->
+                listOf("true" to appString(StringKeys.TC_TRUE), "false" to appString(StringKeys.TC_FALSE)).forEach { (value, label) ->
                     val selected = correctAnswer.equals(value, ignoreCase = true)
-                    val ixTF = remember { MutableInteractionSource() }
                     Box(
                         Modifier
                             .weight(1f)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(if (selected) c.accent.copy(alpha = 0.14f) else c.cream)
-                            .border(1.dp, if (selected) c.accentDeep else c.hairline, RoundedCornerShape(8.dp))
-                            .clickable(interactionSource = ixTF, indication = null) { correctAnswer = value }
+                            .background(if (selected) VColors.violet.copy(alpha = 0.14f) else VColors.surfaceTint)
+                            .border(1.dp, if (selected) VColors.violetInk else VColors.line, RoundedCornerShape(8.dp))
+                            .clickable { correctAnswer = value }
                             .padding(vertical = 8.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text(label, style = VTheme.type.body.colored(if (selected) c.accentDeep else c.ink2).copy(fontSize = 13.sp))
+                        Text(label, style = VTypography.body.copy(color = if (selected) VColors.violetInk else VColors.ink2).copy(fontSize = 13.sp))
                     }
                 }
             }
@@ -1366,22 +1360,22 @@ private fun AddQuestionCard(
             VInput(
                 value = correctAnswer,
                 onValueChange = { correctAnswer = it },
-                placeholder = if (questionType == "FILL_BLANK") "Correct answer text" else "Correct answer (e.g. A, B)",
+                placeholder = if (questionType == "FILL_BLANK") appString(StringKeys.TC_CORRECT_ANSWER_TEXT) else appString(StringKeys.TC_CORRECT_ANSWER_EG_AB),
             )
         }
 
         VInput(
             value = explanation,
             onValueChange = { explanation = it },
-            placeholder = "Explanation (optional)",
+            placeholder = appString(StringKeys.TC_EXPLANATION_OPTIONAL),
             singleLine = false,
             modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp, max = 80.dp),
         )
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            VButton("Cancel", onClick = onCancel, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost, size = VButtonSize.Md)
+            VButton(appString(StringKeys.COMMON_BUTTON_CANCEL), onClick = onCancel, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost, size = VButtonSize.Md)
             VButton(
-                "Add",
+                appString(StringKeys.TC_ADD),
                 onClick = {
                     val opts = if (questionType == "MCQ") optionsText.split("\n").map { it.trim() }.filter { it.isNotEmpty() } else emptyList()
                     onSave(questionText, opts, correctAnswer, explanation.ifBlank { null }, questionType)
@@ -1402,7 +1396,6 @@ private fun EditableQuestionCard(
     onSave: (question: String, options: List<String>, correctAnswer: String, explanation: String?, questionType: String) -> Unit,
     onCancel: () -> Unit,
 ) {
-    val c = VTheme.colors
     var questionText by remember { mutableStateOf(question.question) }
     var optionsText by remember { mutableStateOf(question.options.joinToString("\n")) }
     var correctAnswer by remember { mutableStateOf(question.correctAnswer) }
@@ -1412,49 +1405,48 @@ private fun EditableQuestionCard(
     Column(
         Modifier.fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(c.accent.copy(alpha = 0.06f))
-            .border(1.dp, c.accentDeep.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+            .background(VColors.violet.copy(alpha = 0.06f))
+            .border(1.dp, VColors.violetInk.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
             .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text("Editing Question", style = VTheme.type.bodyStrong.colored(c.accentDeep).copy(fontSize = 13.sp, fontWeight = FontWeight.Bold))
+        Text(appString(StringKeys.TC_EDITING_QUESTION), style = VTypography.body.copy(color = VColors.violetInk))
 
         VInput(
             value = questionText,
             onValueChange = { questionText = it },
-            placeholder = "Question text",
+            placeholder = appString(StringKeys.TC_QUESTION_TEXT),
             singleLine = false,
             modifier = Modifier.fillMaxWidth().heightIn(min = 60.dp, max = 120.dp),
         )
 
         if (questionType == "MCQ") {
-            Text("Options (one per line):", style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 11.sp))
+            Text(appString(StringKeys.TC_OPTIONS_ONE_PER_LINE), style = VTypography.caption.copy(color = VColors.ink2))
             VInput(
                 value = optionsText,
                 onValueChange = { optionsText = it },
-                placeholder = "A) ...\nB) ...\nC) ...\nD) ...",
+                placeholder = appString(StringKeys.TC_OPTIONS_PH),
                 singleLine = false,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 80.dp, max = 140.dp),
             )
         }
 
         if (questionType == "TRUE_FALSE") {
-            Text("Correct answer:", style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 11.sp))
+            Text(appString(StringKeys.TC_CORRECT_ANSWER), style = VTypography.caption.copy(color = VColors.ink2))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("true" to "True", "false" to "False").forEach { (value, label) ->
+                listOf("true" to appString(StringKeys.TC_TRUE), "false" to appString(StringKeys.TC_FALSE)).forEach { (value, label) ->
                     val selected = correctAnswer.equals(value, ignoreCase = true)
-                    val ixTF = remember { MutableInteractionSource() }
                     Box(
                         Modifier
                             .weight(1f)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(if (selected) c.accent.copy(alpha = 0.14f) else c.cream)
-                            .border(1.dp, if (selected) c.accentDeep else c.hairline, RoundedCornerShape(8.dp))
-                            .clickable(interactionSource = ixTF, indication = null) { correctAnswer = value }
+                            .background(if (selected) VColors.violet.copy(alpha = 0.14f) else VColors.surfaceTint)
+                            .border(1.dp, if (selected) VColors.violetInk else VColors.line, RoundedCornerShape(8.dp))
+                            .clickable { correctAnswer = value }
                             .padding(vertical = 8.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text(label, style = VTheme.type.body.colored(if (selected) c.accentDeep else c.ink2).copy(fontSize = 13.sp))
+                        Text(label, style = VTypography.body.copy(color = if (selected) VColors.violetInk else VColors.ink2).copy(fontSize = 13.sp))
                     }
                 }
             }
@@ -1462,14 +1454,14 @@ private fun EditableQuestionCard(
             VInput(
                 value = correctAnswer,
                 onValueChange = { correctAnswer = it },
-                placeholder = if (questionType == "FILL_BLANK") "Correct answer text" else "Correct answer (e.g. A, B)",
+                placeholder = if (questionType == "FILL_BLANK") appString(StringKeys.TC_CORRECT_ANSWER_TEXT) else appString(StringKeys.TC_CORRECT_ANSWER_EG_AB),
             )
         }
 
         VInput(
             value = explanation,
             onValueChange = { explanation = it },
-            placeholder = "Explanation (optional)",
+            placeholder = appString(StringKeys.TC_EXPLANATION_OPTIONAL),
             singleLine = false,
             modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp, max = 80.dp),
         )
@@ -1477,29 +1469,28 @@ private fun EditableQuestionCard(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf("MCQ", "FILL_BLANK", "TRUE_FALSE").forEach { type ->
                 val selected = questionType == type
-                val ixType = remember { MutableInteractionSource() }
                 Box(
                     Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(if (selected) c.accent.copy(alpha = 0.14f) else c.cream)
-                        .border(1.dp, if (selected) c.accentDeep else c.hairline, RoundedCornerShape(8.dp))
-                        .clickable(interactionSource = ixType, indication = null) { questionType = type }
+                        .background(if (selected) VColors.violet.copy(alpha = 0.14f) else VColors.surfaceTint)
+                        .border(1.dp, if (selected) VColors.violetInk else VColors.line, RoundedCornerShape(8.dp))
+                        .clickable { questionType = type }
                         .padding(vertical = 6.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         type.replace("_", " "),
-                        style = VTheme.type.body.colored(if (selected) c.accentDeep else c.ink2).copy(fontSize = 10.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal),
+                        style = VTypography.body.copy(color = if (selected) VColors.violetInk else VColors.ink2).copy(fontSize = 10.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal),
                     )
                 }
             }
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            VButton("Cancel", onClick = onCancel, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost, size = VButtonSize.Md)
+            VButton(appString(StringKeys.COMMON_BUTTON_CANCEL), onClick = onCancel, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost, size = VButtonSize.Md)
             VButton(
-                "Save",
+                appString(StringKeys.COMMON_BUTTON_SAVE),
                 onClick = {
                     val opts = if (questionType == "MCQ") optionsText.split("\n").map { it.trim() }.filter { it.isNotEmpty() } else emptyList()
                     onSave(questionText, opts, correctAnswer, explanation.ifBlank { null }, questionType)
@@ -1517,123 +1508,172 @@ private fun EditableQuestionCard(
 
 @Composable
 private fun QuizLeaderboardSheet(viewModel: TeacherSyllabusViewModel) {
-    val c = VTheme.colors
     val state by viewModel.state.collectAsStateV2()
 
     Box(
         Modifier
             .fillMaxSize()
-            .background(c.ink.copy(alpha = 0.4f))
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-            ) { viewModel.closeLeaderboard() },
+            .background(VColors.ink.copy(alpha = 0.4f))
+            .clickable { viewModel.closeLeaderboard() },
     ) {
-        TCard(
+        VtCard(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .heightIn(min = 200.dp, max = 650.dp),
+                .heightIn(min = 200.dp, max = 650.dp)
+                .padding(bottom = TeacherDockClearance),
             padding = 20.dp,
         ) {
+            // Block tap propagation to scrim; keep content scrollable.
             Column(
                 Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                ) {},
+                onClick = {},
+                ),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 // Header
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(VIcons.GraduationCap, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(20.dp))
+                    Icon(VIcons.GraduationCap, contentDescription = null, tint = VColors.violetInk, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Quiz Leaderboard", style = VTheme.type.h3.colored(c.navyDeep).copy(fontSize = 17.sp))
+                    Text(appString(StringKeys.TC_QUIZ_LEADERBOARD), style = VTypography.h3.copy(color = VColors.ink))
                     Spacer(Modifier.weight(1f))
                     Box(
-                        Modifier.size(28.dp).clip(CircleShape).background(c.cream)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                            ) { viewModel.closeLeaderboard() },
+                        Modifier.size(28.dp).clip(CircleShape).background(VColors.surfaceTint)
+                            .clickable { viewModel.closeLeaderboard() },
                         contentAlignment = Alignment.Center,
-                    ) { Icon(VIcons.Close, contentDescription = "Close", tint = c.ink2, modifier = Modifier.size(16.dp)) }
+                    ) { Icon(VIcons.Close, contentDescription = appString(StringKeys.COMMON_BUTTON_CLOSE), tint = VColors.ink2, modifier = Modifier.size(16.dp)) }
                 }
 
                 val lb = state.leaderboard
                 if (state.leaderboardLoading) {
                     Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
-                        Text("Loading leaderboard...", style = VTheme.type.body.colored(c.ink2))
+                        Text(appString(StringKeys.TC_LOADING_LEADERBOARD), style = VTypography.body.copy(color = VColors.ink2))
                     }
                 } else if (state.leaderboardError != null) {
                     Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
-                        Text(state.leaderboardError ?: "", style = VTheme.type.body.colored(c.dangerInk))
+                        Text(state.leaderboardError ?: "", style = VTypography.body.copy(color = VColors.error))
                     }
                 } else if (lb != null) {
                     // Quiz info
-                    Text(lb.quizTitle.ifBlank { "Quiz" }, style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 15.sp))
+                    Text(lb.quizTitle.ifBlank { appString(StringKeys.TC_QUIZ) }, style = VTypography.body.copy(color = VColors.ink))
                     if (lb.subject.isNotBlank()) {
-                        Text(lb.subject, style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp))
+                        Text(lb.subject, style = VTypography.caption.copy(color = VColors.ink2))
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Text("${lb.totalParticipants} attempted", style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp))
-                        Text("${lb.totalStudents} enrolled", style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp))
+                        Text(appString(StringKeys.TC_N_ATTEMPTED, "count" to lb.totalParticipants.toString()), style = VTypography.caption.copy(color = VColors.ink2))
+                        Text(appString(StringKeys.TC_N_ENROLLED, "count" to lb.totalStudents.toString()), style = VTypography.caption.copy(color = VColors.ink2))
                     }
 
                     if (lb.entries.isEmpty()) {
                         Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
-                            Text("No attempts yet", style = VTheme.type.body.colored(c.ink2))
+                            Text(appString(StringKeys.TC_NO_ATTEMPTS_YET), style = VTypography.body.copy(color = VColors.ink2))
                         }
                     } else {
+                        // ── Compare Attendance toggle ──
+                        Row(
+                            Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Box(
+                                Modifier.size(20.dp).clip(CircleShape)
+                                    .background(if (state.compareAttendance) VColors.success else VColors.surfaceTint)
+                                    .border(1.dp, if (state.compareAttendance) VColors.success else VColors.line, CircleShape)
+                                    .clickable { viewModel.toggleCompareAttendance() },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                if (state.compareAttendance) Icon(VIcons.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(12.dp))
+                            }
+                            Text(
+                                "Compare Attendance",
+                                style = VTypography.body.copy(color = VColors.ink2),
+                            )
+                            if (state.attendanceAnalyticsLoading) {
+                                TeacherSpinner(12.dp)
+                            }
+                        }
+
+                        // Build at-risk lookup by name for matching
+                        val atRiskMap = state.attendanceAnalytics?.atRiskStudents?.associateBy { it.name } ?: emptyMap()
+
                         // Column headers
                         Row(
                             Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text("#", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp, fontWeight = FontWeight.Bold), modifier = Modifier.width(28.dp))
-                            Text("Student", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp, fontWeight = FontWeight.Bold), modifier = Modifier.weight(1f))
-                            Text("Score", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp, fontWeight = FontWeight.Bold))
-                            Text("%", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp, fontWeight = FontWeight.Bold))
+                            Text("#", style = VTypography.caption.copy(color = VColors.ink3), modifier = Modifier.width(28.dp))
+                            Text(appString(StringKeys.TC_STUDENT), style = VTypography.caption.copy(color = VColors.ink3), modifier = Modifier.weight(1f))
+                            Text(appString(StringKeys.TC_SCORE), style = VTypography.caption.copy(color = VColors.ink3))
+                            Text("%", style = VTypography.caption.copy(color = VColors.ink3))
+                            if (state.compareAttendance) {
+                                Text("Att", style = VTypography.caption.copy(color = VColors.ink3), modifier = Modifier.width(36.dp))
+                            }
                         }
 
                         lb.entries.forEach { entry ->
+                            val atRisk = atRiskMap[entry.studentName]
                             Row(
                                 Modifier.fillMaxWidth()
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(c.cream.copy(alpha = 0.5f))
+                                    .background(VColors.surfaceTint.copy(alpha = 0.5f))
                                     .padding(horizontal = 8.dp, vertical = 8.dp),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(
                                     "${entry.rank}",
-                                    style = VTheme.type.bodyStrong.colored(
-                                        if (entry.rank <= 3) c.accentDeep else c.ink
+                                    style = VTypography.body.copy(color = 
+                                        if (entry.rank <= 3) VColors.violetInk else VColors.ink
                                     ).copy(fontSize = 13.sp, fontWeight = FontWeight.Bold),
                                     modifier = Modifier.width(28.dp),
                                 )
                                 Text(
-                                    entry.studentName.ifBlank { "Student" },
-                                    style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp),
+                                    entry.studentName.ifBlank { appString(StringKeys.TC_STUDENT) },
+                                    style = VTypography.body.copy(color = VColors.ink),
                                     modifier = Modifier.weight(1f),
                                 )
                                 Text(
                                     "${entry.score}/${entry.totalMarks}",
-                                    style = VTheme.type.body.colored(c.ink).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
+                                    style = VTypography.body.copy(color = VColors.ink),
                                 )
                                 Text(
                                     "${entry.percentage}%",
-                                    style = VTheme.type.body.colored(
-                                        if (entry.percentage >= 50) c.tealDeep else c.dangerInk
+                                    style = VTypography.body.copy(color = 
+                                        if (entry.percentage >= 50) VColors.success else VColors.error
                                     ).copy(fontSize = 13.sp, fontWeight = FontWeight.Bold),
                                 )
+                                if (state.compareAttendance) {
+                                    if (atRisk != null) {
+                                        Box(
+                                            Modifier.width(36.dp).clip(RoundedCornerShape(4.dp)).background(VColors.error.copy(alpha = 0.12f)),
+                                            contentAlignment = Alignment.Center,
+                                        ) {
+                                            Text("${atRisk.attendancePercentage}%", style = VTypography.caption.copy(color = VColors.error))
+                                        }
+                                    } else {
+                                        Text("—", style = VTypography.caption.copy(color = VColors.ink3), modifier = Modifier.width(36.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                    }
+                                }
+                            }
+                        }
+
+                        // Legend for attendance comparison
+                        if (state.compareAttendance && state.attendanceAnalytics != null) {
+                            Row(
+                                Modifier.fillMaxWidth().padding(top = 6.dp, start = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                Box(Modifier.size(8.dp).clip(RoundedCornerShape(2.dp)).background(VColors.error.copy(alpha = 0.12f)))
+                                Text("Below 75% attendance", style = VTypography.caption.copy(color = VColors.ink3))
                             }
                         }
                     }
                 }
 
                 Spacer(Modifier.height(8.dp))
-                VButton("Close", onClick = { viewModel.closeLeaderboard() }, full = true, variant = VButtonVariant.Secondary, tone = VButtonTone.Navy, size = VButtonSize.Md)
+                VButton(appString(StringKeys.COMMON_BUTTON_CLOSE), onClick = { viewModel.closeLeaderboard() }, full = true, variant = VButtonVariant.Secondary, tone = VButtonTone.Navy, size = VButtonSize.Md)
             }
         }
     }

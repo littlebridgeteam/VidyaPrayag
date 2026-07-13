@@ -19,7 +19,7 @@ const TYPES = [
 
 export default function AnnouncementsPage() {
   return (
-    <Suspense fallback={<div className="h-40 animate-pulse rounded-2xl bg-navy/5" />}>
+    <Suspense fallback={<Skeleton className="h-40" />}>
       <AnnouncementsInner />
     </Suspense>
   );

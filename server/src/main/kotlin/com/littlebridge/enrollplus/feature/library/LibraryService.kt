@@ -185,6 +185,27 @@ class LibraryService(
             if (copy.status != "available") throw LibraryConflictException("Copy is not available")
             val activeIssue = repo.findActiveIssueForCopy(schoolId, copyId)
             if (activeIssue != null) throw LibraryConflictException("Copy already issued")
+        } else {
+            // Auto-assign first available copy
+            val availableCopy = repo.listCopiesForBook(schoolId, UUID.fromString(req.bookId))
+                .firstOrNull { it.status == "available" }
+            if (availableCopy != null) {
+                // Use this copy
+                val resolvedCopyId = availableCopy.id
+                val today0 = LocalDate.now()
+                val dueDate0 = dueDateCalculator.calculate(today0, loanDays)
+                val issueId0 = repo.createIssue(
+                    schoolId, UUID.fromString(req.bookId), resolvedCopyId, borrowerId,
+                    req.borrowerType, req.borrowerName, today0, dueDate0,
+                )
+                val updated = repo.updateCopyStatusConditional(schoolId, resolvedCopyId, "available", "issued")
+                if (updated == 0) throw LibraryConflictException("COPY_ALREADY_ISSUED")
+                repo.updateBookAvailability(schoolId, UUID.fromString(req.bookId), -1)
+                repo.appendAuditLog(schoolId, actorId, actorName, "ISSUE_BOOK", "issue", issueId0,
+                    metadata = mapOf("bookId" to req.bookId, "borrowerName" to req.borrowerName))
+                LibraryEventBus.publish(BookIssued(schoolId, UUID.fromString(req.bookId), resolvedCopyId, borrowerId, req.borrowerName, dueDate0, actorId, actorName))
+                return repo.findIssueById(schoolId, issueId0)!!.toDto(book.title)
+            }
         }
 
         val today = LocalDate.now()
@@ -305,6 +326,10 @@ class LibraryService(
                 category = "library",
                 title = "📖 Book Renewed: ${book?.title ?: "Book"}",
                 body = "Your due date has been extended to $newDueDate. Renewal ${issue.renewalCount + 1} of $maxRenewals.",
+                schoolId = schoolId,
+                deepLink = "/student/library",
+                refType = "library_issue",
+                refId = issueId.toString(),
             )
         }
 
@@ -344,6 +369,10 @@ class LibraryService(
                 category = "library",
                 title = "📕 Book Marked Lost: ${book.title}",
                 body = "Your book has been marked as lost. A fine of ₹$fine has been charged.",
+                schoolId = schoolId,
+                deepLink = "/student/library",
+                refType = "library_issue",
+                refId = issueId.toString(),
             )
         }
 
@@ -376,6 +405,10 @@ class LibraryService(
                 category = "library",
                 title = "💰 Fine Paid: ${book?.title ?: "Book"}",
                 body = "Your fine of ₹${issue?.fineAmount ?: 0.0} has been paid.",
+                schoolId = schoolId,
+                deepLink = "/student/library",
+                refType = "library_issue",
+                refId = issueId.toString(),
             )
         }
     }
@@ -402,6 +435,10 @@ class LibraryService(
                 category = "library",
                 title = "✅ Fine Waived: ${book?.title ?: "Book"}",
                 body = "Your fine of ₹${issue.fineAmount} has been waived. Reason: $sanitizedReason",
+                schoolId = schoolId,
+                deepLink = "/student/library",
+                refType = "library_issue",
+                refId = issueId.toString(),
             )
         }
     }
@@ -637,12 +674,12 @@ class LibraryService(
 
     suspend fun updateSettings(schoolId: UUID, req: UpdateSettingsRequest, actorId: UUID, actorName: String): LibrarySettingsDto {
         val updates = mutableMapOf<String, Any?>()
-        req.defaultLoanDays?.let { updates["defaultLoanDays"] = it }
-        req.finePerDay?.let { updates["finePerDay"] = it }
-        req.maxBooksPerStudent?.let { updates["maxBooksPerStudent"] = it }
-        req.maxRenewals?.let { updates["maxRenewals"] = it }
-        req.reservationTimeoutDays?.let { updates["reservationTimeoutDays"] = it }
-        req.dueReminderDays?.let { updates["dueReminderDays"] = it }
+        req.defaultLoanDays?.let { updates["defaultLoanDays"] = it.coerceIn(1, 365) }
+        req.finePerDay?.let { updates["finePerDay"] = it.coerceAtLeast(0.0) }
+        req.maxBooksPerStudent?.let { updates["maxBooksPerStudent"] = it.coerceIn(1, 50) }
+        req.maxRenewals?.let { updates["maxRenewals"] = it.coerceIn(0, 20) }
+        req.reservationTimeoutDays?.let { updates["reservationTimeoutDays"] = it.coerceIn(1, 90) }
+        req.dueReminderDays?.let { updates["dueReminderDays"] = it.coerceIn(0, 30) }
         req.fineCapEnabled?.let { updates["fineCapEnabled"] = it }
         req.quickIssueEnabled?.let { updates["quickIssueEnabled"] = it }
         req.bulkReturnEnabled?.let { updates["bulkReturnEnabled"] = it }

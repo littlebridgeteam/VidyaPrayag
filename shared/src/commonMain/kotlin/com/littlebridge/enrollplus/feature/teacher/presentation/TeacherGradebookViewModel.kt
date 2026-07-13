@@ -11,7 +11,10 @@ import com.littlebridge.enrollplus.feature.teacher.domain.model.AssessmentTrendP
 import com.littlebridge.enrollplus.feature.teacher.domain.model.AssessmentType
 import com.littlebridge.enrollplus.feature.teacher.domain.model.CreateAssessmentRequestV2
 import com.littlebridge.enrollplus.feature.teacher.domain.model.MarkSaveEntryDto
+import com.littlebridge.enrollplus.feature.teacher.domain.model.MarksImportOcrRequest
+import com.littlebridge.enrollplus.feature.teacher.domain.model.MarksImportTextRequest
 import com.littlebridge.enrollplus.feature.teacher.domain.model.MarksSaveRequest
+import com.littlebridge.enrollplus.feature.teacher.domain.model.ParsedMarkDto
 import com.littlebridge.enrollplus.feature.teacher.domain.repository.TeacherRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -100,6 +103,15 @@ data class TeacherGradebookState(
     // Both null → no comparison shown; the screen invites the teacher to pick two.
     val compareLeftId: String? = null,
     val compareRightId: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
+
+    // ── Marks import (AI OCR / text) ───────────────────────────────────────────
+    val importEntries: List<ParsedMarkDto> = emptyList(),
+    val isImporting: Boolean = false,
+    val importError: String? = null,
+    val importMatchedCount: Int = 0,
+    val importUnmatchedCount: Int = 0,
 ) {
     val enteredCount: Int get() = students.count { it.marks != null || it.isAbsent }
     val rosterCount: Int get() = students.size
@@ -168,7 +180,7 @@ class TeacherGradebookViewModel(
             }
             when (val r = repository.listAssessments(t, asg)) {
                 is NetworkResult.Success ->
-                    _state.update { it.copy(isListLoading = false, assessments = r.data.data.assessments) }
+                    _state.update { it.copy(isListLoading = false, assessments = r.data.data.assessments, isStale = r.isStale, isOffline = r.isOffline) }
                 is NetworkResult.Error ->
                     _state.update { it.copy(isListLoading = false, listError = r.message) }
                 is NetworkResult.ConnectionError ->
@@ -287,6 +299,8 @@ class TeacherGradebookViewModel(
                                     remark = e.remark,
                                 )
                             },
+                            isStale = r.isStale,
+                            isOffline = r.isOffline,
                         )
                     }
                 }
@@ -504,6 +518,8 @@ class TeacherGradebookViewModel(
                             history = d,
                             compareLeftId = recent.getOrNull(0)?.assessmentId,
                             compareRightId = recent.getOrNull(1)?.assessmentId,
+                            isStale = r.isStale,
+                            isOffline = r.isOffline,
                         )
                     }
                 }
@@ -520,6 +536,88 @@ class TeacherGradebookViewModel(
     /** Back from history to the scoped assessment list. */
     fun backFromHistory() {
         _state.update { it.copy(mode = GradebookMode.List) }
+    }
+
+    // ── Marks import (AI OCR / text) ───────────────────────────────────────────
+
+    /** Import marks from an image via AI OCR. Returns parsed entries matched to roster. */
+    fun importMarksOcr(imageBase64: String, mimeType: String = "image/jpeg") {
+        val assessment = _state.value.activeAssessment ?: return
+        viewModelScope.launch {
+            _state.update { it.copy(isImporting = true, importError = null, importEntries = emptyList()) }
+            val t = token() ?: run {
+                _state.update { it.copy(isImporting = false, importError = "Not authenticated") }
+                return@launch
+            }
+            when (val r = repository.importMarksOcr(t, assessment.id, MarksImportOcrRequest(image = imageBase64, mimeType = mimeType))) {
+                is NetworkResult.Success -> {
+                    val d = r.data.data
+                    _state.update {
+                        it.copy(
+                            isImporting = false,
+                            importEntries = d.entries,
+                            importMatchedCount = d.matchedCount,
+                            importUnmatchedCount = d.unmatchedCount,
+                        )
+                    }
+                }
+                is NetworkResult.Error ->
+                    _state.update { it.copy(isImporting = false, importError = r.message) }
+                is NetworkResult.ConnectionError ->
+                    _state.update { it.copy(isImporting = false, importError = "Connection error") }
+            }
+        }
+    }
+
+    /** Import marks from pasted text via AI parsing. Returns parsed entries matched to roster. */
+    fun importMarksText(text: String) {
+        val assessment = _state.value.activeAssessment ?: return
+        viewModelScope.launch {
+            _state.update { it.copy(isImporting = true, importError = null, importEntries = emptyList()) }
+            val t = token() ?: run {
+                _state.update { it.copy(isImporting = false, importError = "Not authenticated") }
+                return@launch
+            }
+            when (val r = repository.importMarksText(t, assessment.id, MarksImportTextRequest(text = text))) {
+                is NetworkResult.Success -> {
+                    val d = r.data.data
+                    _state.update {
+                        it.copy(
+                            isImporting = false,
+                            importEntries = d.entries,
+                            importMatchedCount = d.matchedCount,
+                            importUnmatchedCount = d.unmatchedCount,
+                        )
+                    }
+                }
+                is NetworkResult.Error ->
+                    _state.update { it.copy(isImporting = false, importError = r.message) }
+                is NetworkResult.ConnectionError ->
+                    _state.update { it.copy(isImporting = false, importError = "Connection error") }
+            }
+        }
+    }
+
+    /** Apply matched import entries to the marks grid. Only matched entries update the grid. */
+    fun applyImportedMarks() {
+        val importEntries = _state.value.importEntries
+        if (importEntries.isEmpty()) return
+        _state.update { s ->
+            val updated = s.students.map { st ->
+                importEntries.firstOrNull { it.matched && it.studentId == st.studentId }?.let { p ->
+                    st.copy(
+                        marks = p.marks?.coerceIn(0f, s.maxMarks.toFloat()),
+                        isAbsent = p.isAbsent,
+                    )
+                } ?: st
+            }
+            s.copy(students = updated, importEntries = emptyList(), saveSuccess = false)
+        }
+    }
+
+    /** Clear import results without applying. */
+    fun clearImport() {
+        _state.update { it.copy(importEntries = emptyList(), importError = null, importMatchedCount = 0, importUnmatchedCount = 0) }
     }
 
     /**

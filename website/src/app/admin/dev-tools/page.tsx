@@ -1,9 +1,11 @@
 "use client";
+import { errorMessage } from "@/lib/errorUtils";
+
 
 import { useState, useCallback } from "react";
 import { adminApi } from "@/lib/admin/client";
 import { useAdminAuth } from "@/lib/admin/session";
-import { Card, CardHeader, Badge, FadeIn, EmptyState } from "@/components/admin/Primitives";
+import { Card, CardHeader, Badge, FadeIn, EmptyState, Skeleton } from "@/components/admin/Primitives";
 import { AdminButton } from "@/components/admin/Toolbar";
 import { IconBolt, IconCheck, IconPulse, IconMessage, IconWarning } from "@/components/admin/icons";
 import { AiTokenMonitor } from "@/components/admin/devtools/AiTokenMonitor";
@@ -85,7 +87,7 @@ function OtpProviderCard() {
       setData(res);
       setSelected(res.runtimeOverride ?? res.envPinnedProvider ?? "auto");
     } catch (e: unknown) {
-      setMsg({ text: `Failed to load: ${(e as Error).message}`, ok: false });
+      setMsg({ text: `Failed to load: ${errorMessage(e)}`, ok: false });
     } finally {
       setLoading(false);
     }
@@ -107,7 +109,7 @@ function OtpProviderCard() {
       });
       await load();
     } catch (e: unknown) {
-      setMsg({ text: `Failed: ${(e as Error).message}`, ok: false });
+      setMsg({ text: `Failed: ${errorMessage(e)}`, ok: false });
     } finally {
       setSaving(false);
     }
@@ -128,7 +130,10 @@ function OtpProviderCard() {
       />
       <div className="px-6 pb-6 pt-4">
         {loading ? (
-          <p className="text-[13px] text-ink-3">Loading providers…</p>
+          <div className="space-y-3">
+            <Skeleton className="h-12" />
+            <Skeleton className="h-10" />
+          </div>
         ) : data ? (
           <div className="space-y-4">
             {/* Provider dropdown */}
@@ -216,7 +221,7 @@ function PulseTriggerCard() {
       const res = await adminApi.triggerPulse();
       setResult(res);
     } catch (e: unknown) {
-      setError((e as Error).message);
+      setError(errorMessage(e));
     } finally {
       setTriggering(false);
     }
@@ -284,7 +289,7 @@ function SendNotificationCard() {
       setBody("");
       setDeepLink("");
     } catch (e: unknown) {
-      setError((e as Error).message);
+      setError(errorMessage(e));
     } finally {
       setSending(false);
     }
@@ -391,7 +396,7 @@ function PewsTriggerCard() {
       const res = await adminApi.triggerPews();
       setResult(res);
     } catch (e: unknown) {
-      setError((e as Error).message);
+      setError(errorMessage(e));
     } finally {
       setTriggering(false);
     }

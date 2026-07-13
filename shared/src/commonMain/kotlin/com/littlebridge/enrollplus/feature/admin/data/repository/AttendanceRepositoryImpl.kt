@@ -1,5 +1,7 @@
 package com.littlebridge.enrollplus.feature.admin.data.repository
 
+import com.littlebridge.enrollplus.core.cache.CacheManager
+import com.littlebridge.enrollplus.core.cache.cacheFirstNetworkResult
 import com.littlebridge.enrollplus.core.model.ApiResponse
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.feature.admin.data.remote.AttendanceApi
@@ -7,7 +9,8 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.AttendanceResponse
 import com.littlebridge.enrollplus.feature.admin.domain.repository.AttendanceRepository
 
 class AttendanceRepositoryImpl(
-    private val api: AttendanceApi
+    private val api: AttendanceApi,
+    private val cache: CacheManager,
 ) : AttendanceRepository {
 
     override suspend fun getDailyAttendance(
@@ -15,5 +18,6 @@ class AttendanceRepositoryImpl(
         type: String,
         grade: String?,
         date: String?
-    ): NetworkResult<ApiResponse<AttendanceResponse>> = api.getDailyAttendance(token, type, grade, date)
+    ): NetworkResult<ApiResponse<AttendanceResponse>> =
+        cacheFirstNetworkResult(cache, "admin_daily_attendance_${type}_${grade ?: "all"}_${date ?: "today"}", ApiResponse.serializer(AttendanceResponse.serializer())) { api.getDailyAttendance(token, type, grade, date) }
 }

@@ -43,7 +43,9 @@ data class LaunchInfoState(
         AppModule("1", "Student LMS", "Core Learning Experience", true, "school"),
         AppModule("2", "Fee Management", "Automated Financial Flows", true, "payments"),
         AppModule("3", "Parent Gateway", "Real-time Communication", false, "forum")
-    )
+    ),
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 /**
@@ -124,7 +126,9 @@ class LaunchInfoOBViewModel(
                     _state.value = current.copy(
                         schoolName = schoolName,
                         documents = docs,
-                        modules = modules
+                        modules = modules,
+                        isStale = result.isStale,
+                        isOffline = result.isOffline,
                     )
                     AppLogger.d("OnboardingReview", "Loaded REVIEW step: school=$schoolName, docs=${docs.size}, modules=${modules.size}")
                 }

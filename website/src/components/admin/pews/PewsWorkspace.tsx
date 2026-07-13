@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   usePewsCohort,
   usePewsEffectiveness,
@@ -39,12 +40,13 @@ type Filter = "all" | "medium" | "high";
  * PEWS API; AI fields render only when present.
  */
 export function PewsWorkspace() {
+  const searchParams = useSearchParams();
   const [filter, setFilter] = useState<Filter>("all");
   const minLevel: PewsRiskLevel = filter === "high" ? "high" : filter === "medium" ? "medium" : "watch";
   const { data: cohort, isLoading, mutate } = usePewsCohort(minLevel);
   const { data: effectiveness, mutate: mutateEff } = usePewsEffectiveness();
   const { data: trend } = usePewsTrend(30);
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(searchParams.get("student"));
   const [running, setRunning] = useState(false);
   const [runMsg, setRunMsg] = useState<string | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
@@ -84,15 +86,12 @@ export function PewsWorkspace() {
     setRunMsg(null);
     setJobStatus(null);
     try {
-      const res = await adminApi.pewsRun() as unknown as Record<string, unknown>;
-      // If the server returns a job_id, we're in async mode — poll for status
-      if (res.job_id) {
-        const id = res.job_id as string;
-        setJobId(id);
+      const res = await adminApi.pewsRun();
+      if ("job_id" in res) {
+        setJobId(res.job_id);
         setRunMsg("Recompute queued — polling for status…");
       } else {
-        // Legacy sync mode — result has at_risk directly
-        const atRisk = (res.at_risk as number) ?? 0;
+        const atRisk = res.at_risk ?? 0;
         setRunMsg(`Recompute complete — ${atRisk} student${atRisk === 1 ? "" : "s"} at risk.`);
         setRunning(false);
         await Promise.all([mutate(), mutateEff()]);

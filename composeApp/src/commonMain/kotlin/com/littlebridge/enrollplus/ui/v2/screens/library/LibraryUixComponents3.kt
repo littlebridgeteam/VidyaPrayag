@@ -14,10 +14,8 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -37,9 +35,15 @@ import com.littlebridge.enrollplus.feature.library.domain.model.FeaturedBookDto
 import com.littlebridge.enrollplus.feature.library.domain.model.LibraryBookDto
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
+import com.littlebridge.enrollplus.ui.v2.components.VBottomSheet
+import com.littlebridge.enrollplus.ui.v2.components.VBottomSheetHeader
+import com.littlebridge.enrollplus.ui.v2.components.VButton
+import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 
@@ -133,7 +137,7 @@ fun FeaturedBookCard(
 ) {
     val c = VTheme.colors
     val haptics = rememberLibraryHaptics()
-    val typeLabel = if (featured.type == "MONTH") "Book of the Month" else "Book of the Week"
+    val typeLabel = if (featured.type == "MONTH") appString(StringKeys.LIB_UIX_BOOK_OF_MONTH) else appString(StringKeys.LIB_UIX_BOOK_OF_WEEK)
 
     VCard(modifier.fillMaxWidth().clickable { haptics.tap(); onClick() }, elevated = true) {
         Column {
@@ -187,7 +191,7 @@ fun VoiceSearchBar(
     isListening: Boolean,
     onToggleListening: () -> Unit,
     modifier: Modifier = Modifier,
-    placeholder: String = "Search books, authors...",
+    placeholder: String = appString(StringKeys.LIB_UIX_SEARCH_PLACEHOLDER),
 ) {
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.weight(1f)) {
@@ -214,17 +218,16 @@ fun GuidedQuickIssueDialog(
     val haptics = rememberLibraryHaptics()
     var step by remember { mutableStateOf(1) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
+    VBottomSheet(
+        visible = true,
+        onDismiss = onDismiss,
         modifier = modifier,
-        title = {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Quick Issue", style = VTheme.type.bodyStrong.colored(c.ink))
-                VBadge(text = "Step $step/3", tone = VBadgeTone.Accent)
-            }
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    ) {
+        VBottomSheetHeader(
+            title = appString(StringKeys.LIB_UIX_QUICK_ISSUE),
+            subtitle = appString(StringKeys.LIB_UIX_STEP, "step" to step),
+        )
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     repeat(3) { i ->
                         Box(
@@ -236,7 +239,7 @@ fun GuidedQuickIssueDialog(
                 }
                 when (step) {
                     1 -> {
-                        Text("Confirm Book", style = VTheme.type.caption.colored(c.ink2))
+                        Text(appString(StringKeys.LIB_UIX_CONFIRM_BOOK), style = VTheme.type.caption.colored(c.ink2))
                         if (book != null) VCard {
                             Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 BookCover(book.title, book.author, book.coverUrl, Modifier.size(48.dp, 72.dp))
@@ -246,41 +249,51 @@ fun GuidedQuickIssueDialog(
                                     AvailabilityBadge(book.availableCopies, book.totalCopies)
                                 }
                             }
-                        } else Text("No book selected. Search and select a book first.", style = VTheme.type.caption.colored(c.ink3))
+                        } else Text(appString(StringKeys.LIB_UIX_NO_BOOK_SELECTED), style = VTheme.type.caption.colored(c.ink3))
                     }
                     2 -> {
-                        Text("Borrower Details", style = VTheme.type.caption.colored(c.ink2))
-                        VInput(value = borrowerName, onValueChange = onBorrowerNameChange, label = "Borrower name", placeholder = "Enter name", singleLine = true)
+                        Text(appString(StringKeys.LIB_UIX_BORROWER_DETAILS), style = VTheme.type.caption.colored(c.ink2))
+                        VInput(value = borrowerName, onValueChange = onBorrowerNameChange, label = appString(StringKeys.LIB_UIX_BORROWER_NAME), placeholder = appString(StringKeys.LIB_UIX_ENTER_NAME), singleLine = true)
                     }
                     3 -> {
-                        Text("Review & Confirm", style = VTheme.type.caption.colored(c.ink2))
+                        Text(appString(StringKeys.LIB_UIX_REVIEW_CONFIRM), style = VTheme.type.caption.colored(c.ink2))
                         VCard {
                             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 book?.let {
-                                    Text("Book: ${it.title}", style = VTheme.type.body.colored(c.ink))
-                                    Text("Author: ${it.author ?: "Unknown"}", style = VTheme.type.caption.colored(c.ink2))
+                                    Text(appString(StringKeys.LIB_UIX_BOOK_LABEL, "title" to it.title), style = VTheme.type.body.colored(c.ink))
+                                    Text(appString(StringKeys.LIB_UIX_AUTHOR_LABEL, "name" to (it.author ?: appString(StringKeys.LIB_UIX_UNKNOWN))), style = VTheme.type.caption.colored(c.ink2))
                                 }
-                                Text("Borrower: $borrowerName", style = VTheme.type.body.colored(c.ink))
-                                Text("Due date: 14 days from today", style = VTheme.type.caption.colored(c.ink3))
+                                Text(appString(StringKeys.LIB_UIX_BORROWER_LABEL, "name" to borrowerName), style = VTheme.type.body.colored(c.ink))
+                                Text(appString(StringKeys.LIB_UIX_DUE_DATE_14), style = VTheme.type.caption.colored(c.ink3))
                             }
                         }
                     }
                 }
             }
-        },
-        confirmButton = {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            VButton(
+                text = appString(StringKeys.COMMON_BUTTON_CANCEL),
+                onClick = { step = 1; onDismiss() },
+                modifier = Modifier.weight(1f),
+                variant = VButtonVariant.Ghost,
+            )
             if (step < 3) {
-                TextButton({
-                    if (step == 1 && book == null) return@TextButton
-                    if (step == 2 && borrowerName.isBlank()) return@TextButton
-                    haptics.confirm(); step++
-                }) { Text("Next") }
+                VButton(
+                    text = appString(StringKeys.COMMON_BUTTON_NEXT),
+                    onClick = {
+                        if (step == 1 && book == null) return@VButton
+                        if (step == 2 && borrowerName.isBlank()) return@VButton
+                        haptics.confirm(); step++
+                    },
+                    modifier = Modifier.weight(1f),
+                )
             } else {
-                TextButton({ haptics.confirm(); onIssue(); step = 1 }) { Text("Issue Book") }
+                VButton(
+                    text = appString(StringKeys.LIB_UIX_ISSUE_BOOK),
+                    onClick = { haptics.confirm(); onIssue(); step = 1 },
+                    modifier = Modifier.weight(1f),
+                )
             }
-        },
-        dismissButton = {
-            TextButton({ step = 1; onDismiss() }) { Text("Cancel") }
-        },
-    )
+        }
+    }
 }

@@ -37,7 +37,9 @@ data class ResultsState(
     val belowCount: Int = 0,
     val students: List<StudentResult> = emptyList(),
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class ResultsViewModel(
@@ -75,7 +77,9 @@ class ResultsViewModel(
                         meetingCount = summary?.meetingCount ?: 0,
                         belowCount = summary?.belowCount ?: 0,
                         students = data?.students?.map { it.toUiModel() } ?: emptyList(),
-                        isLoading = false
+                        isLoading = false,
+                        isStale = result.isStale,
+                        isOffline = result.isOffline,
                     )
                 }
                 is NetworkResult.Error -> {

@@ -73,6 +73,8 @@ data class HomeworkBoardRow(
     val rollNo: Int?,
     val status: String,
     val submittedAt: String?,
+    val submissionText: String = "",
+    val attachments: List<HomeworkAttachmentDto> = emptyList(),
     val grade: String?,
     val hasExtension: Boolean,
     val extendedTo: String?,
@@ -105,6 +107,8 @@ data class TeacherHomeworkState(
     val items: List<HomeworkSummary> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
     // ── assign composer ──
     val isComposerOpen: Boolean = false,
     val composerTitle: String = "",
@@ -159,7 +163,7 @@ class TeacherHomeworkViewModel(
             }
             when (val result = repository.listHomework(t, assignmentId)) {
                 is NetworkResult.Success ->
-                    _state.update { it.copy(isLoading = false, items = result.data.data.items.map { d -> d.toUi() }) }
+                    _state.update { it.copy(isLoading = false, items = result.data.data.items.map { d -> d.toUi() }, isStale = result.isStale, isOffline = result.isOffline) }
                 is NetworkResult.Error -> _state.update { it.copy(isLoading = false, error = result.message) }
                 is NetworkResult.ConnectionError -> _state.update { it.copy(isLoading = false, error = "Connection error") }
             }
@@ -446,6 +450,8 @@ private fun HomeworkSubmissionRowDto.toUi() = HomeworkBoardRow(
     rollNo = rollNo,
     status = status,
     submittedAt = submittedAt,
+    submissionText = submissionText,
+    attachments = attachments.map { HomeworkAttachmentDto(it.id, it.url, it.filename, it.mime, it.sizeBytes) },
     grade = grade,
     hasExtension = hasExtension,
     extendedTo = extendedTo,

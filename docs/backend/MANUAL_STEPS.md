@@ -43,8 +43,10 @@ JWT_REALM=vidyaprayag
 JWT_EXPIRY_SECS=604800
 ```
 
-The dev fallback (`vidyaprayag-dev-secret-change-me`) is **insecure**. Leaving
-it as-is in prod is treated as a critical security finding.
+The old dev fallback (`vidyaprayag-dev-secret-change-me`) has been **removed**.
+In production, `JWT_SECRET` is required (min 32 characters) — the server refuses
+to boot without it. In development, if `JWT_SECRET` is unset, an ephemeral random
+secret is generated via `SecureRandom` (tokens will not survive a restart).
 
 ## 3. Replace SHA-256 with BCrypt (recommended)
 

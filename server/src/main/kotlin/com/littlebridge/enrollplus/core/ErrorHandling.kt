@@ -41,14 +41,14 @@ import org.slf4j.LoggerFactory
 private val errorLog = LoggerFactory.getLogger("VidyaPrayag.Errors")
 
 /**
- * RA-40: production signal, identical to `JwtConfig.isProduction` /
- * `OtpService.isProduction` — a managed deploy (Render/Supabase) always sets
- * `DATABASE_URL`. Used to HARD-GATE the `DEBUG_ERRORS` leak so a stray
+ * RA-40: production signal — delegates to RuntimeEnvironment.isProduction
+ * for consistency with JwtConfig, EncryptionService, and CORS config.
+ * Used to HARD-GATE the `DEBUG_ERRORS` leak so a stray
  * `DEBUG_ERRORS=true` on a prod dyno can never echo raw exception detail to
  * clients.
  */
 private val isProduction: Boolean
-    get() = System.getenv("DATABASE_URL")?.takeIf { it.isNotBlank() } != null
+    get() = RuntimeEnvironment.isProduction
 
 /**
  * Kill-switch response body for AI Tutor 2.0 modules.
@@ -85,19 +85,19 @@ fun StatusPagesConfig.configureErrorHandling() {
     exception<BadRequestException> { call, cause ->
         call.respond(
             HttpStatusCode.BadRequest,
-            ApiError(message = "Invalid request: ${cause.message ?: "malformed body"}")
+            ApiError(message = "Invalid request: ${cause.message ?: "malformed body"}", requestId = call.requestIdSafe())
         )
     }
     exception<IllegalArgumentException> { call, cause ->
         call.respond(
             HttpStatusCode.BadRequest,
-            ApiError(message = cause.message ?: "Bad request")
+            ApiError(message = cause.message ?: "Bad request", requestId = call.requestIdSafe())
         )
     }
     exception<NotFoundException> { call, cause ->
         call.respond(
             HttpStatusCode.NotFound,
-            ApiError(message = cause.message ?: "Resource not found")
+            ApiError(message = cause.message ?: "Resource not found", requestId = call.requestIdSafe())
         )
     }
     exception<Throwable> { call, cause ->
@@ -110,7 +110,7 @@ fun StatusPagesConfig.configureErrorHandling() {
         // RA-40: DEBUG_ERRORS echoes raw exception detail to the client. It is
         // opt-in (default off) AND hard-gated to non-production: even if
         // DEBUG_ERRORS=true is set on a prod dyno, the leak is suppressed whenever
-        // DATABASE_URL is configured (same prod signal as JwtConfig/OtpService).
+        // RuntimeEnvironment.isProduction is true.
         // NEVER set DEBUG_ERRORS=true in production.
         val showFullError = !isProduction && System.getenv("DEBUG_ERRORS") == "true"
         val message = if (showFullError) {
@@ -121,7 +121,7 @@ fun StatusPagesConfig.configureErrorHandling() {
 
         call.respond(
             HttpStatusCode.InternalServerError,
-            ApiError(message = message)
+            ApiError(message = message, requestId = call.requestIdSafe())
         )
     }
 
@@ -147,6 +147,7 @@ fun StatusPagesConfig.configureErrorHandling() {
         val hasBearer = call.request.header(HttpHeaders.Authorization)?.startsWith("Bearer ") == true
         val isGateway = uri.startsWith("/api/v1/gateway")
 
+        val rid = call.requestIdSafe()
         if (uri.startsWith("/api/v1/") && !hasBearer && !isGateway)  {
             call.respond(
                 HttpStatusCode.Unauthorized,
@@ -154,13 +155,14 @@ fun StatusPagesConfig.configureErrorHandling() {
                     message = "Missing or invalid Authorization header. " +
                               "Send 'Authorization: Bearer <jwt>' (login first to get one). " +
                               "If the endpoint really is public, double-check the path: $uri",
-                    errorCode = "UNAUTHORIZED"
+                    errorCode = "UNAUTHORIZED",
+                    requestId = rid
                 )
             )
         } else {
             call.respond(
                 HttpStatusCode.NotFound,
-                ApiError(message = "Endpoint not found: $uri")
+                ApiError(message = "Endpoint not found: $uri", requestId = rid)
             )
         }
     }

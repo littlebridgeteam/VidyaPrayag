@@ -1,299 +1,606 @@
-# Offline Mode & Sync — Engineering Plan (Vidya Prayag)
+# Offline Mode Implementation Plan
 
-> Status: PROPOSED · Owner: AI-features · Branch: `ai-features-fix`
-> Scope: Kotlin Multiplatform (Android / iOS / Desktop-JVM / Web) + Ktor server
-> Goal: A **robust, no-failure offline-first system** that lets users keep working
-> with no connectivity and **automatically, safely syncs** when the network returns —
-> with zero data loss, zero duplicate writes, and zero UI crashes at any layer.
+## Goal
 
----
-
-## 0. TL;DR
-
-We introduce an **offline-first data pipeline** built on the project's *existing*
-Clean-Architecture + MVVM + Koin + Room + Ktor foundation. Nothing in the current
-feature code is rewritten; we **wrap** the data layer:
-
-1. **Connectivity** — an `expect/actual` `NetworkMonitor` exposing `Flow<NetworkStatus>`.
-2. **Local cache (read path)** — Room is the single source of truth (SSOT). UI reads
-   from Room; the network only *refreshes* Room (the pattern `SchoolRepositoryImpl`
-   already uses).
-3. **Outbox (write path)** — every offline mutation is appended to a durable
-   `outbox_operation` table with an **idempotency key**, then replayed by a
-   `SyncEngine` when online.
-4. **Sync engine** — a single-flight, retry-with-backoff, conflict-aware worker that
-   drains the outbox and reconciles server truth back into Room.
-5. **No-failure guarantees** — every layer is total (no uncaught exceptions), every
-   write is idempotent, every conflict has a deterministic resolution policy, and the
-   web target (which has no Room) degrades gracefully to online-only.
-
-The work is delivered through a **Plan → Build → Test → Review → Iterate loop**
-(§9) so each feature reaches an "ideal" bar before the next is started.
+Every screen in the app should:
+1. **Open instantly** showing last cached data from Room (no skeleton if cache exists)
+2. **Background fetch** fresh data from server
+3. **Server responds** → update cache, UI refreshes seamlessly
+4. **Network fails** → keep showing cached data with a subtle "offline" indicator
+5. **No cache + no network** → show "Unable to load" with retry button
+6. **No cache + server loads** → show skeleton briefly, then fresh data
 
 ---
 
-## 1. Where this fits the current architecture
+## Current State
 
-Confirmed from the codebase (do **not** deviate from these patterns):
+### What works offline today
+- **Schools list** — `SchoolRepositoryImpl` reads from Room via `RoomSchoolLocalDataSource` (but `refresh()` is never called automatically, so cache may be stale)
+- **Library** — `LibraryRepositoryImpl` has full cache-on-success + fallback-on-error pattern (the gold standard)
 
-| Concern | Existing mechanism | Offline mode reuses it by… |
-|---|---|---|
-| Layering | Clean Arch: `feature/<x>/{domain,data,presentation}` | Adding a `data/local` + outbox under the same feature folders |
-| Presentation | MVVM — `ViewModel` + `StateFlow`, Koin `factory` | ViewModels gain an `isOffline`/`syncState` field; no new pattern |
-| DI | Koin `commonModule` + `expect fun platformModule()` | New singles registered in `commonModule`; platform bits in each `platformModule.*` |
-| Local DB | Room `roomMain` source set (android/jvm/ios), `AppDatabase` v1 | Bump schema, add DAOs/entities, add a migration |
-| Web | **No Room** — `InMemorySchoolLocalDataSource`, `LocalStoragePreferenceManager` | Web uses an in-memory/no-op outbox → online-only, never crashes |
-| Remote | Ktor `HttpClient` single + `safeApiCall` → `NetworkResult` | `ConnectionError` is the offline signal; reused unchanged |
-| Auth | `installTokenAuth` + `TokenAuthenticator` (401 refresh) | Sync engine pauses on auth-failure, resumes after re-login |
+### What's dead code (built but not wired)
+- `OfflineAwareEventRepository` — full cache+outbox for events, not registered in Koin
+- `EventSyncEngine` — polls outbox every 30s, not started anywhere
+- `AnnouncementDao`, `TeacherDayCacheDao`, `OutboxOperationDao` — registered in DI, no repository consumes them
 
-**Design principles we commit to** (and how):
+### What has zero offline support (every open = network call + skeleton)
+- **Parent**: Dashboard, Track Progress, Fees, Scholarships, Announcements, Notifications, Attendance, Marks, Syllabus, Timetable, Leave, Messages, Pulse, Daily Summary, Quiz
+- **Teacher**: Today, Week, Classes, Class Detail, Student Profile, Attendance, Syllabus, Homework, Gradebook, Messages, Lesson Plans, Leave, Check-in, Obligations, Profile, Timetable
+- **Admin**: Dashboard, Students, Teachers, Staff, Admissions, Announcements, Messages, Calendar, Attendance, Leave, Analytics, Results, Onboarding, School Profile, Classes, School Day Config
+- **Cross-feature**: Health, Transport, PEWS, Report Card, Alumni, Scholarship, Branding, ID Card, Tutor, Scheduling, Events, i18n
 
-- **SOLID**
-  - *S* — `NetworkMonitor`, `OutboxDao`, `SyncEngine`, `ConflictResolver`,
-    `OutboxOperationSerializer` are each one responsibility.
-  - *O* — new mutations are added by registering an `OutboxHandler`, never by editing
-    the engine. (Strategy/registry pattern.)
-  - *L* — `OfflineFirstRepository<T>` substitutes anywhere a plain repository is used;
-    same interface, richer behaviour.
-  - *I* — small interfaces: `Syncable`, `OutboxHandler`, `ConflictResolver<T>`.
-  - *D* — engine depends on `OutboxHandler`/`NetworkMonitor` abstractions, resolved
-    via Koin; no concrete feature dependency.
-- **MVVM** — UI ↔ ViewModel ↔ UseCase ↔ Repository ↔ (Local SSOT + Remote). Sync is a
-  background concern invisible to Composables except via a small `SyncStatus` state.
-- **Offline-first / SSOT** — the screen *always* renders Room; the network is a
-  best-effort updater. This is the single rule that removes "offline crash" classes.
+### Architecture summary
+- **22 repository implementations** across all features
+- **~70 ViewModels** registered in Koin
+- **Room DB v3** with 9 entities, `fallbackToDestructiveMigration(dropAllTables = true)`
+- All repos return `NetworkResult<T>` (Success / Error / ConnectionError)
+- All VMs expose either `UiState<T>` (Loading/Success/Error) or custom `XxxUiState(isLoading, error, data)`
 
 ---
 
-## 2. Module / package layout (new files only)
+## Architecture: Generic JSON Cache
 
+### Why not per-feature entities?
+Creating 20+ entity classes + DAOs for every feature would be a massive effort. Instead, we use a **single generic key-value cache** — one entity, one DAO, one helper class. Any repository adopts offline mode with ~5 lines of change per method.
+
+### New components
+
+#### 1. `CacheEntity` (Room entity)
 ```
-shared/src/commonMain/.../core/
-├── connectivity/
-│   ├── NetworkMonitor.kt              (expect interface + NetworkStatus enum)
-│   └── ConnectivityModule.kt          (Koin wiring helper, optional)
-├── offline/
-│   ├── outbox/
-│   │   ├── OutboxOperation.kt         (domain model: id, idempotencyKey, type, payload, status, attempts, createdAt, lastError)
-│   │   ├── OutboxStatus.kt            (PENDING / IN_FLIGHT / FAILED / DONE)
-│   │   ├── OutboxRepository.kt        (interface: enqueue/peek/markDone/markFailed/observePending)
-│   │   ├── OutboxHandler.kt           (interface: type tag + suspend execute(payload): SyncResult)
-│   │   └── OutboxHandlerRegistry.kt   (maps type -> handler; OCP extension point)
-│   ├── sync/
-│   │   ├── SyncEngine.kt              (single-flight drain loop, backoff, pause/resume)
-│   │   ├── SyncState.kt              (IDLE / SYNCING / ERROR + pendingCount)
-│   │   ├── SyncResult.kt             (Success / RetryableFailure / PermanentFailure / Conflict)
-│   │   └── BackoffPolicy.kt          (exponential + jitter, capped)
-│   └── conflict/
-│       └── ConflictResolver.kt        (interface + default Last-Write-Wins/Server-Wins)
-└── offline/OfflineFirstRepository.kt  (small reusable base: cacheThenNetwork helper)
-
-shared/src/roomMain/.../core/offline/
-├── OutboxOperationEntity.kt + OutboxDao.kt
-└── (AppDatabase gains outboxDao(); version 1 -> 2 + Migration)
-
-Platform actuals:
-shared/src/androidMain/.../core/connectivity/NetworkMonitor.android.kt   (ConnectivityManager)
-shared/src/iosMain/.../core/connectivity/NetworkMonitor.ios.kt          (NWPathMonitor)
-shared/src/jvmMain/.../core/connectivity/NetworkMonitor.jvm.kt          (reachability poll)
-shared/src/jsMain + wasmJsMain/.../NetworkMonitor.web.kt                (navigator.onLine + events)
-shared/src/jsMain + wasmJsMain/.../offline/InMemoryOutboxRepository.kt  (no-op/online-only)
+key: String (PK)     — e.g. "parent_dashboard", "teacher_today_2026-07-09"
+dataJson: String     — serialized response JSON
+cachedAt: Long       — System.currentTimeMillis()
+ttlMs: Long          — time-to-live (0 = never expire, or e.g. 24h for daily data)
 ```
 
-Server (`/server`): add **idempotency support** — accept an `Idempotency-Key`
-header on every mutating endpoint, store `(key -> response)` for a TTL window, and
-replay the stored response on duplicate keys. This is what makes retries truly safe.
-
----
-
-## 3. Core contracts (the no-failure spine)
-
-### 3.1 NetworkMonitor (expect/actual)
+#### 2. `CacheDao`
 ```kotlin
-enum class NetworkStatus { Available, Unavailable, Unknown }
+@Dao interface CacheDao {
+    @Query("SELECT * FROM cache_entity WHERE `key` = :key")
+    suspend fun get(key: String): CacheEntity?
 
-interface NetworkMonitor {
-    val status: StateFlow<NetworkStatus>   // hot, always has a current value
-    fun start(); fun stop()
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun put(entity: CacheEntity)
+
+    @Query("DELETE FROM cache_entity WHERE `key` = :key")
+    suspend fun delete(key: String)
+
+    @Query("DELETE FROM cache_entity WHERE cachedAt < :before")
+    suspend fun evictOlderThan(before: Long)
+
+    @Query("SELECT COUNT(*) FROM cache_entity")
+    suspend fun count(): Int
 }
 ```
-- Android: `ConnectivityManager.NetworkCallback` + `NetworkCapabilities.NET_CAPABILITY_VALIDATED`.
-- iOS: `NWPathMonitor`. JVM: lightweight reachability poll (e.g. HEAD to base URL, 15s).
-- Web: `window.navigator.onLine` + `online`/`offline` events.
-- **Total**: any failure to determine status → `Unknown` (treated as "try, but don't assume online").
 
-### 3.2 OutboxOperation (durable intent)
+#### 3. `CacheManager` (Koin singleton)
 ```kotlin
-data class OutboxOperation(
-    val id: String,                 // local UUID
-    val idempotencyKey: String,     // == id, sent as Idempotency-Key header
-    val type: String,               // e.g. "attendance.markDaily"
-    val payloadJson: String,        // serialized request DTO
-    val status: OutboxStatus,
-    val attempts: Int,
-    val nextAttemptAt: Long,        // backoff schedule
-    val createdAt: Long,
-    val lastError: String? = null,
+class CacheManager(private val dao: CacheDao, private val json: Json) {
+
+    // Read cache by key, deserialize to T
+    suspend fun <T> read(key: String, deserializer: KSerializer<T>): T?
+
+    // Write cache by key
+    suspend fun <T> write(key: String, data: T, serializer: KSerializer<T>, ttlMs: Long = 0)
+
+    // Check if cache exists and is not expired
+    suspend fun isFresh(key: String): Boolean
+
+    // Delete cache entry
+    suspend fun evict(key: String)
+
+    // Periodic cleanup
+    suspend fun cleanup()
+}
+```
+
+#### 4. `cacheFirst()` helper function
+```kotlin
+/**
+ * Cache-first pattern: try cache → emit immediately → fetch from API → update cache → return.
+ * If no cache, just fetch from API.
+ * If API fails and cache exists, return cache.
+ * If API fails and no cache, return the error.
+ */
+suspend fun <T> cacheFirst(
+    cache: CacheManager,
+    cacheKey: String,
+    serializer: KSerializer<T>,
+    ttlMs: Long = 0,
+    networkCall: suspend () -> NetworkResult<T>,
+): NetworkResult<T>
+```
+
+**Flow:**
+```
+1. Read cache by key
+2. If cache exists AND is fresh → return NetworkResult.Success(cachedData)
+   (UI shows cached data immediately)
+3. Call networkCall()
+4. If network succeeds → write to cache → return NetworkResult.Success(freshData)
+   (UI updates with fresh data)
+5. If network fails AND cache exists (even if stale) → return NetworkResult.Success(cachedData)
+   (UI keeps showing cached data, offline indicator can be shown)
+6. If network fails AND no cache → return the NetworkResult.Error/ConnectionError
+   (UI shows "Unable to load" with retry)
+```
+
+**For background refresh (stale-while-revalidate):**
+```kotlin
+/**
+ * Stale-while-revalidate: return cache immediately if exists,
+ * then fetch from network in background and update.
+ */
+suspend fun <T> swr(
+    cache: CacheManager,
+    cacheKey: String,
+    serializer: KSerializer<T>,
+    ttlMs: Long = 0,
+    networkCall: suspend () -> NetworkResult<T>,
+): SwrResult<T>
+
+data class SwrResult<T>(
+    val data: T,           // either cached or fresh
+    val isStale: Boolean,  // true if data came from cache (background refresh may be in progress)
+    val isOffline: Boolean,// true if network failed and we're showing cache
 )
 ```
-Ordering: FIFO per `(entityType, entityId)`; independent entities sync in parallel.
 
-### 3.3 OutboxHandler (OCP extension point — one per mutation type)
+---
+
+## UiState Enhancement
+
+### Current `UiState`
 ```kotlin
-interface OutboxHandler {
-    val type: String
-    suspend fun execute(op: OutboxOperation): SyncResult
-}
-sealed interface SyncResult {
-    data object Success : SyncResult
-    data class Retryable(val reason: String) : SyncResult     // network/5xx
-    data class Permanent(val reason: String) : SyncResult     // 4xx validation
-    data class Conflict(val serverState: String) : SyncResult // 409
+sealed class UiState<out T> {
+    data object Loading : UiState<Nothing>()
+    data class Success<T>(val data: T) : UiState<T>()
+    data class Error(val message: String) : UiState<Nothing>()
 }
 ```
-Adding a new offline-capable action = implement a handler + register it. **The engine
-never changes.** (Open/Closed.)
 
-### 3.4 SyncEngine (the worker)
-- **Single-flight**: a `Mutex` ensures only one drain runs; new triggers coalesce.
-- **Triggers**: (a) connectivity → `Available`, (b) new enqueue, (c) app foreground,
-  (d) periodic safety tick.
-- **Drain loop**: read PENDING ops due now → set IN_FLIGHT → call handler → map result:
-  - `Success` → markDone, reconcile cache.
-  - `Retryable` → increment attempts, schedule `nextAttemptAt` via `BackoffPolicy`,
-    set back to PENDING. Cap attempts (e.g. 12) → then FAILED (surfaced to user, kept).
-  - `Permanent` → FAILED, surface to user, keep payload for manual review/discard.
-  - `Conflict` → run `ConflictResolver`, then Success or FAILED.
-- **Auth pause**: on refresh-failure (`onRefreshFailed`) the engine pauses; resumes on
-  next successful auth/login. No tight error loop.
-- **Crash-safety**: IN_FLIGHT ops are reset to PENDING on engine start (a process kill
-  mid-flight is recovered; the server idempotency key prevents double-apply).
-
-### 3.5 ConflictResolver (deterministic)
-Default policy: **Server-wins for reads, Last-Write-Wins for user's own edits**, with
-a per-feature override slot. Health/marks/attendance use **Server-authoritative +
-re-queue** (never silently overwrite graded data). Each feature declares its policy;
-the default is safe.
-
----
-
-## 4. Read path vs write path
-
-**Read (cache-then-network)** — generalize the existing `SchoolRepositoryImpl`:
+### Enhanced `UiState`
+```kotlin
+sealed class UiState<out T> {
+    data object Loading : UiState<Nothing>()
+    data class Success<T>(
+        val data: T,
+        val isStale: Boolean = false,    // true if showing cached data while refreshing
+        val isOffline: Boolean = false,  // true if network failed and showing cache
+    ) : UiState<T>()
+    data class Error(val message: String) : UiState<Nothing>()
+}
 ```
-ViewModel collects repo.observeX()  ->  Room Flow (instant, even offline)
-repo.refreshX()  ->  safeApiCall  ->  Success: upsert Room  |  ConnectionError: no-op, keep cache
-```
-UI shows cached data + a subtle "offline / last updated …" banner. **Never blank, never crash.**
 
-**Write (enqueue-then-sync)**:
-```
-ViewModel calls useCase  ->  repo.mutateX(dto)
-   1. optimistic local apply to Room (UI updates instantly)
-   2. outbox.enqueue(type, dto, idempotencyKey)
-   3. trigger SyncEngine (fires now if online, else waits for connectivity)
-SyncEngine later  ->  handler.execute  ->  server (Idempotency-Key)  ->  reconcile Room
+- `isStale = true` → UI shows a subtle "Updating..." indicator
+- `isOffline = true` → UI shows a subtle "Offline" banner
+- Both false → fresh data, no indicator
+
+### For custom UiState classes (e.g. `StudentProfileUiState`)
+Add two fields:
+```kotlin
+data class StudentProfileUiState(
+    val isLoading: Boolean = false,
+    val error: String? = null,
+    val profile: StudentProfileDto? = null,
+    val isStale: Boolean = false,    // NEW
+    val isOffline: Boolean = false,  // NEW
+    // ... existing fields
+)
 ```
 
 ---
 
-## 5. Server-side requirements (the other half of "no failure")
+## VStateHost Enhancement (UI layer)
 
-1. **Idempotency**: middleware that reads `Idempotency-Key`; on first sight, process &
-   store the response keyed by `(key, userId, route)` for ~24h; on replay, return the
-   stored response without re-executing. *This is mandatory* — without it, mobile retries
-   create duplicates.
-2. **Server timestamps / versions**: mutating responses return `updatedAt`/`version` so
-   the client can do `updatedAt`-based conflict resolution.
-3. **Stable IDs**: server must accept the client-generated UUID (or return a mapping) so
-   optimistic local rows can be reconciled to their server identity.
-4. **Batch-friendly**: optionally a `/sync/batch` endpoint to drain many ops in one round
-   trip (phase 2 optimization, not required for correctness).
+The `VStateHost` composable needs to handle the new stale/offline states:
+
+- **`Success(isStale=true)`** → show content + small "Updating..." pill at top
+- **`Success(isOffline=true)`** → show content + "Offline — showing saved data" banner
+- **`Loading` + has previous data** → keep showing previous data with a subtle loading indicator (don't flash skeleton)
+- **`Loading` + no previous data** → show skeleton (first launch only)
+- **`Error`** → show "Unable to load" with retry
 
 ---
 
-## 6. Phased delivery (each phase ends "ideal", then loop to next)
+## Database Migration
 
-- **Phase 0 — Foundations (no behaviour change)**
-  `NetworkMonitor` (+actuals), `SyncState`/`SyncStatus` Koin singles, an offline banner
-  composable. Bump `AppDatabase` to v2 with `outbox_operation` + Migration. Web no-ops.
-- **Phase 1 — Read-offline for high-value screens**
-  Convert 2–3 read-heavy features (e.g. Announcements, Today/schedule, Student roster)
-  to cache-then-network. Verify they render fully offline.
-- **Phase 2 — Outbox + SyncEngine + one write feature**
-  Wire the engine; make **Attendance marking** offline-capable end-to-end (enqueue,
-  optimistic UI, idempotent replay, conflict policy). This is the reference implementation.
-- **Phase 3 — Roll out writes** to remaining safe mutations (leave requests, messages,
-  homework submissions, health notes) one handler at a time.
-- **Phase 4 — Hardening**: storage caps + eviction (LRU on cache, never on outbox),
-  encryption-at-rest review, telemetry (pending count, oldest pending age), QA matrix.
+### Current: v3 with 9 entities
+### Target: v4 with 10 entities (add `CacheEntity`)
+
+Since `fallbackToDestructiveMigration(dropAllTables = true)` is used, bumping to v4 will drop all tables and recreate. This is acceptable during development. For production, we'd add a proper migration, but for now destructive migration is fine.
+
+### Changes:
+1. Add `CacheEntity` to `AppDatabase` entities array
+2. Add `abstract fun cacheDao(): CacheDao` to `AppDatabase`
+3. Bump version to 4
+4. Register `CacheDao` in all 3 platform modules (Android, iOS, JVM)
+5. Register `CacheManager` in `commonModule`
 
 ---
 
-## 7. Failure-mode matrix (every branch is handled — "no failure at any level")
+## Implementation Phases
 
-| Failure | Layer | Guaranteed behaviour |
+### Phase 1: Infrastructure (foundation)
+**Files to create:**
+- `shared/src/roomMain/.../core/database/CacheEntity.kt` — entity + DAO
+- `shared/src/commonMain/.../core/cache/CacheManager.kt` — singleton helper
+- `shared/src/commonMain/.../core/cache/CacheFirst.kt` — `cacheFirst()` + `swr()` helper functions
+
+**Files to modify:**
+- `shared/src/roomMain/.../core/database/AppDatabase.kt` — add entity, bump to v4
+- `shared/src/androidMain/.../di/PlatformModule.android.kt` — register `cacheDao`
+- `shared/src/iosMain/.../di/PlatformModule.ios.kt` — register `cacheDao`
+- `shared/src/jvmMain/.../di/PlatformModule.jvm.kt` — register `cacheDao`
+- `shared/src/commonMain/.../di/Koin.kt` — register `CacheManager` singleton
+- `shared/src/commonMain/.../domain/util/UIState.kt` — add `isStale`, `isOffline` to `Success`
+
+**Verification:** Build all 4 targets green. No behavior change yet.
+
+---
+
+### Phase 2: Parent Portal (highest user impact)
+Parent portal is the most frequently opened portal. Every parent opens the app daily to check child updates.
+
+**Repository changes** — `ParentRepositoryImpl`:
+Inject `CacheManager` and wrap each GET method:
+
+| Method | Cache Key | TTL |
 |---|---|---|
-| No network on read | repo | Serve Room cache + offline banner; never blank/crash |
-| No network on write | repo | Optimistic Room write + enqueue; UI succeeds locally |
-| App killed mid-sync | engine | IN_FLIGHT→PENDING on restart; idempotency key prevents double-apply |
-| Server 5xx / timeout | engine | Retryable → exponential backoff + jitter, capped attempts |
-| Server 4xx validation | engine | Permanent → mark FAILED, surface to user, keep payload |
-| Conflict (409 / stale) | resolver | Deterministic policy per feature; graded data never auto-clobbered |
-| Auth token expired | engine | Pause sync; `installTokenAuth` refresh; resume or wait for re-login |
-| Duplicate enqueue (double tap) | outbox | Same idempotency key / dedup on `(type,entityId,hash)` |
-| Web target (no Room) | DI | In-memory no-op outbox → online-only; identical API, never crashes |
-| Corrupt cached row | repo | Lenient deserialize (`ignoreUnknownKeys`), drop-and-refetch on parse error |
-| Storage full | engine | Outbox is bounded + alerts; cache eviction frees space; writes never silently lost |
-| Migration failure | DB | Tested migration + fallback; never `fallbackToDestructiveMigration` on outbox table |
+| `getDashboard` | `parent_dashboard` | 0 (always refresh) |
+| `getTrackProgress` | `parent_track_progress` | 1h |
+| `getFees` | `parent_fees_{childId}` | 1h |
+| `getScholarships` | `parent_scholarships` | 24h |
+| `getAnnouncements` | `parent_announcements` | 0 |
+| `getNotifications` | `parent_notifications` | 0 |
+| `getChildAttendance` | `parent_attendance_{childId}` | 1h |
+| `getChildMarks` | `parent_marks_{childId}` | 1h |
+| `getChildSyllabus` | `parent_syllabus_{childId}` | 24h |
+| `getChildTimetable` | `parent_timetable_{childId}` | 24h |
+| `getLeaveRequests` | `parent_leave_requests` | 0 |
+| `getMessageThreads` | `parent_message_threads` | 0 |
+| `getThreadMessages` | `parent_thread_messages_{threadId}` | 0 |
+| `getLatestPulse` | `parent_pulse_{childId}` | 24h |
+| `getPulseHistory` | `parent_pulse_history_{childId}` | 24h |
+| `getDailySummary` | `parent_daily_summary_{childId}_{date}` | 24h |
+| `getSyllabusV2` | `parent_syllabus_v2_{childId}` | 24h |
+| `getQuizList` | `parent_quiz_list_{childId}` | 1h |
+| `getQuizDetail` | `parent_quiz_detail_{quizId}` | 1h |
+| `getQuizLeaderboard` | `parent_quiz_leaderboard_{childId}_{quizId}` | 1h |
+| `getQuizResult` | `parent_quiz_result_{childId}_{quizId}` | 24h |
+| `getMessageRecipients` | `parent_message_recipients` | 24h |
+| `getUnreadCount` | `parent_unread_count` | 0 (always fresh) |
+
+**Write operations** (NOT cached, but queue for offline sync if needed):
+- `markNotificationRead`, `markAllNotificationsRead`, `markNotificationByRef`
+- `clearReadNotifications`, `clearAllNotifications`
+- `applyLeave`, `sendMessage`, `linkChild`, `submitQuiz`, `searchSchools`
+
+**ViewModel changes** — each parent VM:
+- `ParentHomeViewModel` — emit cached `Success(isStale=true)` immediately, then fresh `Success(isStale=false)`
+- `FeeViewModel`, `ScholarshipsViewModel`, `ParentAnnouncementViewModel`, `NotificationsViewModel`
+- `TrackProgressViewModel`, `ParentAcademicsViewModel`, `ParentDashboardViewModel`
+- `ParentLeaveViewModel`, `ParentMessageViewModel`, `ParentPulseViewModel`
+- `ParentProfileViewModel`, `LinkChildViewModel`
+
+**Files to modify:**
+- `shared/src/commonMain/.../feature/parent/data/repository/ParentRepositoryImpl.kt`
+- `shared/src/commonMain/.../di/Koin.kt` (add `CacheManager` param to `ParentRepositoryImpl`)
+- All parent ViewModels (~12 files)
+
+**Verification:** Open parent app → dashboard shows instantly from cache → background refresh updates if needed. Kill network → reopen → still shows data.
 
 ---
 
-## 8. Testing strategy (gates the loop)
+### Phase 3: Teacher Portal
+Teacher portal is opened multiple times daily for attendance, marks, homework.
 
-- **Unit (commonTest)**: `BackoffPolicy`, `OutboxHandlerRegistry`, `ConflictResolver`,
-  `SyncEngine` with fake handlers/monitor (offline→online transitions, retry caps,
-  single-flight, crash recovery).
-- **Repository tests**: fake `NetworkMonitor` + in-memory Room → assert cache-then-network
-  and enqueue-then-sync semantics.
-- **Idempotency tests (server)**: same key twice → one effect, identical response.
-- **Build gates**: `./gradlew :shared:compileKotlinJvm :shared:jvmTest` then
-  `:composeApp:assembleDevDebug` and `:composeApp:wasmJsBrowserDistribution` (web must
-  still compile with no-op outbox).
-- **Manual QA matrix**: airplane-mode mark attendance → reconnect → verify single server
-  row; kill app mid-sync; flaky-network (5xx) replay; concurrent edits on two devices.
+**Repository changes** — `TeacherRepositoryImpl`:
+
+| Method | Cache Key | TTL |
+|---|---|---|
+| `getDay` | `teacher_day_{date}` | 0 (always refresh, time-sensitive) |
+| `getWeek` | `teacher_week_{date}` | 0 |
+| `listClassesV2` | `teacher_classes_v2` | 24h |
+| `getClassDetailV2` | `teacher_class_detail_{assignmentId}` | 1h |
+| `getStudentProfileV2` | `teacher_student_profile_{studentId}` | 1h |
+| `loadAttendance` | `teacher_attendance_{assignmentId}_{date}` | 24h |
+| `loadSyllabus` | `teacher_syllabus_{assignmentId}` | 24h |
+| `listHomework` | `teacher_homework_{assignmentId}` | 0 |
+| `getHomeworkBoard` | `teacher_homework_board_{homeworkId}_{assignmentId}` | 0 |
+| `listAssessments` | `teacher_assessments_{assignmentId}_{status}` | 0 |
+| `getAssessmentMarks` | `teacher_assessment_marks_{assessmentId}` | 0 |
+| `getAssessmentHistory` | `teacher_assessment_history_{assignmentId}` | 24h |
+| `getCheckInStatus` | `teacher_checkin_status_{date}` | 0 |
+| `getObligations` | `teacher_obligations` | 0 |
+| `getProfile` | `teacher_profile` | 24h |
+| `getMessageThreads` | `teacher_message_threads` | 0 |
+| `getThreadMessages` | `teacher_thread_messages_{threadId}` | 0 |
+| `getUnreadCount` | `teacher_unread_count` | 0 |
+| `getLeaveRequests` | `teacher_leave_requests_{status}` | 0 |
+| `getMyLeave` | `teacher_my_leave_{status}` | 0 |
+| `listLessonPlans` | `teacher_lesson_plans_{assignmentId}_{status}` | 0 |
+| `getLessonPlan` | `teacher_lesson_plan_{planId}` | 0 |
+| `getLessonCalendar` | `teacher_lesson_calendar_{assignmentId}_{month}` | 24h |
+| `listLessonTemplates` | `teacher_lesson_templates_{assignmentId}` | 24h |
+| `listDailyLogs` | `teacher_daily_logs_{assignmentId}` | 24h |
+| `shouldShowDailyLogPopup` | `teacher_daily_log_popup` | 0 |
+| `getPopupPrefs` | `teacher_popup_prefs` | 24h |
+| `listQuizzes` | `teacher_quizzes_{assignmentId}` | 0 |
+| `getQuizResults` | `teacher_quiz_results_{quizId}` | 0 |
+| `getQuizLeaderboard` | `teacher_quiz_leaderboard_{quizId}` | 0 |
+| `getTimetableChangeRequests` | `teacher_timetable_change_requests` | 0 |
+| `getPaceWarning` | `teacher_pace_warning_{assignmentId}` | 0 |
+
+**Write operations** (NOT cached):
+- `saveAttendance`, `assignHomework`, `reviewHomeworkSubmission`, `closeHomework`, `grantHomeworkExtension`
+- `createAssessmentV2`, `saveAssessmentMarks`, `publishAssessment`, `unpublishAssessment`
+- `createSyllabusUnit`, `updateSyllabusUnit`, `toggleSyllabusProgress`, `deleteSyllabusUnit`
+- `checkIn`, `broadcastToClass`, `sendMessage`, `markThreadRead`
+- `decideLeaveRequest`, `applyMyLeave`
+- `createLessonPlan`, `updateLessonPlan`, `deleteLessonPlan`, `completeLessonPlan`, `skipLessonPlan`
+- `saveLessonTemplate`, `deleteLessonTemplate`, `instantiateLessonFromTemplate`
+- `submitTimetableChangeRequest`, `createDailyLog`, `setPopupPrefs`
+- `parseSyllabus`, `confirmParsedSyllabus`, `autoFillSyllabus`, `confirmAutoFillSyllabus`
+- `approveSyllabus`, `rejectSyllabus`
+- `generateQuiz`, `publishQuiz`, `updateQuizQuestion`, `addQuizQuestion`, `regenerateQuiz`
+
+**ViewModel changes** — each teacher VM:
+- `TeacherTodayViewModel`, `TeacherCheckInViewModel`, `TeacherObligationsViewModel`
+- `TeacherClassesViewModel`, `TeacherStudentProfileViewModel`, `TeacherAttendanceViewModel`
+- `TeacherGradebookViewModel`, `TeacherSyllabusViewModel`, `TeacherHomeworkViewModel`
+- `TeacherMessageViewModel`, `TeacherLessonPlanViewModel`, `TeacherProfileViewModel`
+- `TeacherProfileActionsViewModel`, `TeacherLeaveViewModel`, `TeacherTimetableViewModel`
+
+**Files to modify:**
+- `shared/src/commonMain/.../feature/teacher/data/repository/TeacherRepositoryImpl.kt`
+- `shared/src/commonMain/.../di/Koin.kt` (add `CacheManager` param)
+- All teacher ViewModels (~15 files)
+
+**Verification:** Open teacher app → Today screen shows instantly from cache → background refresh updates.
 
 ---
 
-## 9. The Plan→Build→Test→Review→Iterate loop (graph)
+### Phase 4: Admin Portal
+Admin portal is opened for management tasks. Less frequent but still needs offline for dashboards.
+
+**Repository changes** — multiple admin repositories:
+
+| Repository | Key GET methods to cache | TTL |
+|---|---|---|
+| `AdminDashboardRepositoryImpl` | `getDashboard` | 0 |
+| `StudentsRepositoryImpl` | `getStudentRoster`, `getStudentProfile`, `getTeacherProfile` | 1h |
+| `TeachersRepositoryImpl` | `getTeacherRoster` | 1h |
+| `StaffRepositoryImpl` | `getStaffList` | 1h |
+| `AdmissionRepositoryImpl` | `getApplications`, `getApplicationDetail` | 0 |
+| `AnnouncementsRepositoryImpl` | `listAnnouncements` | 0 |
+| `MessagesRepositoryImpl` | `getThreads`, `getThreadMessages` | 0 |
+| `PtmRepositoryImpl` | `listPtms`, `getPtmDetail` | 0 |
+| `CalendarRepositoryImpl` | `getEvents` | 0 |
+| `AcademicCalendarPlatformRepositoryImpl` | `getCalendarEvents` | 0 |
+| `AcademicYearRepositoryImpl` | `listAcademicYears` | 24h |
+| `AttendanceRepositoryImpl` | `getDailyAttendance` | 0 |
+| `LeaveRequestsRepositoryImpl` | `getLeaveRequests` | 0 |
+| `LinkRequestsRepositoryImpl` | `getLinkRequests` | 0 |
+| `AnalyticsRepositoryImpl` | `getAnalytics`, `getStudentAnalytics`, `getTeacherPerformance`, `getClassPerformance`, `getSyllabusCoverage`, `getPaceAlerts` | 1h |
+| `ResultsRepositoryImpl` | `getResults` | 0 |
+| `SchoolProfileRepositoryImpl` | `getSchoolProfile` | 24h |
+| `SchoolClassesRepositoryImpl` | `getClasses`, `getSubjects` | 24h |
+| `SchoolDayConfigRepositoryImpl` | `getSchoolDayConfig` | 24h |
+| `OnboardingRepositoryImpl` | `getOnboardingStatus` | 24h |
+| `UserProfileRepositoryImpl` | `getUserProfile` | 24h |
+| `TeacherAssignmentRepositoryImpl` | `getOverview`, `getOptions` | 1h |
+
+**ViewModel changes** — ~25 admin ViewModels
+
+**Files to modify:**
+- ~20 admin repository implementations
+- `shared/src/commonMain/.../di/Koin.kt` (add `CacheManager` param to each repo)
+- ~25 admin ViewModels
+
+**Verification:** Open admin app → dashboard shows instantly from cache → background refresh updates.
+
+---
+
+### Phase 5: Cross-Feature Repositories
+Features shared across portals.
+
+| Repository | Key GET methods to cache | TTL |
+|---|---|---|
+| `HealthRepositoryImpl` | `getHealthRecords`, `getHealthAlerts` | 0 |
+| `TransportRepositoryImpl` | `getRoutes`, `getLiveTracking` | 0 |
+| `PewsRepositoryImpl` | `getCohorts`, `getStudentDetail`, `getEffectiveness` | 1h |
+| `ReportCardRepositoryImpl` | `getReports`, `getDraft`, `getEffectiveness` | 0 |
+| `AlumniRepositoryImpl` | `getAlumniList` | 24h |
+| `ScholarshipRepositoryImpl` | `getScholarships` | 24h |
+| `BrandingRepositoryImpl` | `getBrandingKit` | 24h |
+| `IdCardRepositoryImpl` | `getIdCards` | 24h |
+| `TutorRepositoryImpl` | `getSubjects`, `getChatHistory`, `getPlan`, `getPractice` | 0 |
+| `ScheduledMessageRepositoryImpl` | `getScheduledMessages` | 0 |
+| `EventRegistrationRepositoryImpl` | `listParentEvents`, `getTeacherPtmEvents`, `listAdminEvents` | 0 |
+| `NotificationRepositoryImpl` | (notifications already cached via ParentRepository) | — |
+| `LanguageRepositoryImpl` | `getLanguagePref` | 24h |
+| `ContentRepositoryImpl` | `getLandingContent` | 24h |
+
+**ViewModel changes** — ~20 cross-feature ViewModels
+
+**Files to modify:**
+- ~14 cross-feature repository implementations
+- `shared/src/commonMain/.../di/Koin.kt`
+- ~20 ViewModels
+
+**Verification:** Open any cross-feature screen → shows cached data instantly.
+
+---
+
+### Phase 6: UI Polish + Offline Indicator
+Enhance the UI layer to show stale/offline states.
+
+**Changes to `VStateHost` (or equivalent state host):**
+- When `Success(isStale=true)` → show content + subtle "Updating..." indicator
+- When `Success(isOffline=true)` → show content + "Offline" banner
+- When `Loading` + previous data exists → keep showing previous data with loading indicator (no skeleton flash)
+- When `Error` + no previous data → show "Unable to load" with retry
+
+**New component: `VOfflineBanner`**
+- Small dismissible banner at top of screen
+- Shows "You're offline — showing saved data"
+- Auto-hides when connection restored
+
+**New component: `VStaleIndicator`**
+- Small pill/spinner in app bar or top of content
+- Shows "Updating..." while background refresh runs
+- Disappears when fresh data arrives
+
+**Files to create/modify:**
+- `composeApp/src/commonMain/.../ui/v2/components/VOfflineBanner.kt` (new)
+- `composeApp/src/commonMain/.../ui/v2/components/VStaleIndicator.kt` (new)
+- `composeApp/src/commonMain/.../ui/v2/screens/Shared.kt` (modify `VStateHost`)
+
+**Verification:** Kill network → reopen app → see cached data with "Offline" banner. Restore network → banner disappears, data refreshes.
+
+---
+
+### Phase 7: Offline Write Queue (Future Enhancement)
+For write operations when offline (e.g., teacher marks attendance offline).
+
+**Already partially built:**
+- `EventOutboxDao` + `EventSyncEngine` (for events, not wired)
+- `OutboxOperationDao` (generic, not consumed)
+- `LibraryPendingActionDao` (for library, wired)
+
+**Plan:**
+- Wire `EventSyncEngine` into Koin and start it on app launch
+- Create a generic `WriteOutboxManager` that any feature can use
+- Queue write operations when `NetworkResult.ConnectionError`
+- Sync engine polls every 30s, replays pending operations
+- UI shows "Pending sync" indicator when outbox has items
+
+**Scope:** This is a larger effort and can be done after the read-side offline mode is complete. The read-side cache (Phases 1-6) is the priority — it solves the "skeleton on every open" problem.
+
+---
+
+## Cache Key Naming Convention
 
 ```
-        ┌──────────────────────────────────────────────────────┐
-        v                                                        │
- ┌────────────┐   ┌────────────┐   ┌────────────┐   ┌─────────────────┐
- │  PLAN node │ → │ BUILD node │ → │  TEST node │ → │  REVIEW node    │
- │ pick next  │   │ minimal,   │   │ unit+build │   │ SOLID/MVVM +    │
- │ phase item │   │ no junk    │   │ +QA gate   │   │ failure-matrix  │
- └────────────┘   └────────────┘   └────────────┘   └────────┬────────┘
-                                                              │
-                                  PASS (ideal) → commit ──────┘
-                                  FAIL → loop back to BUILD with findings
+{portal}_{feature}_{params}
+
+Examples:
+  parent_dashboard
+  parent_fees_child123
+  parent_attendance_child456
+  teacher_day_2026-07-09
+  teacher_classes_v2
+  admin_dashboard
+  admin_student_roster
+  cross_health_records
+  cross_transport_routes
 ```
-**Exit criteria per item ("ideal"):** compiles on all targets · all tests green ·
-every row of the failure-matrix demonstrably handled for that feature · no dead/duplicate
-code · adheres to `DEVELOPMENT_STANDARDS.md` · reviewer (or GLM god-mode prompt, see
-`docs/`) finds no further enhancement.
+
+Rules:
+- Lowercase, underscore-separated
+- Portal prefix: `parent_`, `teacher_`, `admin_`, `cross_`
+- Feature name: `dashboard`, `fees`, `attendance`, etc.
+- Parameters: child ID, date, assignment ID, etc. appended with `_`
+- No spaces, no special characters
 
 ---
 
-## 10. Non-goals / explicit constraints
+## TTL Strategy
 
-- No new architecture pattern, no rewrite of existing features, **no junk/scaffolding code**.
-- Web stays online-only (no Room there) but uses the identical repository API.
-- Outbox rows are **never** destructively dropped by a migration.
-- Sensitive payloads in the outbox follow the existing redaction rules.
+| TTL | Use Case | Examples |
+|---|---|---|
+| **0 (always refresh)** | Time-sensitive, frequently changing data | Dashboard, notifications, messages, attendance, today's schedule |
+| **1 hour** | Moderately fresh data | Fees, marks, assessments, homework, leave requests |
+| **24 hours** | Rarely changing data | Profile, syllabus, timetable, classes list, academic year, branding |
+
+TTL determines how long cache is considered "fresh":
+- **Fresh cache** → return immediately, still fetch from network in background (SWR)
+- **Stale cache (past TTL)** → return immediately, fetch from network (cache is better than nothing)
+- **No cache** → show skeleton, fetch from network
+
+Even with TTL=0, cache is still used if network fails. TTL only controls whether we bother hitting the network when we have fresh cache. With TTL=0, we always hit the network but show cache first.
 
 ---
 
-*Companion artifact:* `docs/GLM_GODMODE_PROMPT.md` — a reusable, document-grounded prompt
-that drives an LLM (GLM 5.2) to execute this plan inside the Plan→Build→Test→Review loop.
+## Cache Eviction
+
+- **On logout** → `CacheManager.evictAll()` — clear all cached data when user logs out (different user shouldn't see previous user's data)
+- **On user switch** → clear portal-specific caches
+- **Periodic cleanup** → `CacheManager.cleanup()` called on app launch, evicts entries older than 7 days
+- **Manual eviction** → when a write operation succeeds, evict the related cache key so next read gets fresh data (e.g., after `saveAttendance`, evict `teacher_attendance_{assignmentId}_{date}`)
+
+---
+
+## Serialization Considerations
+
+The app uses `kotlinx.serialization` with `Json` configured in Koin. The `CacheManager` will use the same `Json` instance for serialization/deserialization.
+
+**Challenge:** Some response types are wrapped in `ApiResponse<T>` and some are direct types. The `CacheManager` needs to handle both:
+- `NetworkResult<ApiResponse<T>>` → serialize/deserialize the full `ApiResponse<T>`
+- `NetworkResult<T>` → serialize/deserialize `T` directly
+
+**Solution:** The `cacheFirst()` helper is generic — it takes a `KSerializer<T>` and handles serialization of the actual `NetworkResult.Success.data` payload. The caller specifies what to serialize.
+
+---
+
+## Risk Mitigation
+
+| Risk | Mitigation |
+|---|---|
+| Cache schema mismatch after API changes | `fallbackToDestructiveMigration` handles DB schema. For JSON mismatch, wrap deserialization in try-catch → if fails, treat as no cache |
+| Cache grows too large | Periodic cleanup (7-day eviction) + manual eviction on logout |
+| Stale data shown as "fresh" | `isStale` flag in UiState → UI always indicates when data is from cache |
+| Security: cached data persists after logout | `evictAll()` on logout in `AuthRepositoryImpl.logout()` |
+| Cross-user data leak | Cache keys include portal prefix but NOT user ID. On logout, all cache is cleared. On login, fresh data is fetched. |
+| Build breaks from serialization | Use `Json { ignoreUnknownKeys = true }` (already configured) — extra fields in cached JSON won't break deserialization |
+
+---
+
+## File Impact Summary
+
+| Phase | New Files | Modified Files | Estimated Lines Changed |
+|---|---|---|---|
+| Phase 1: Infrastructure | 3 | 6 | ~200 |
+| Phase 2: Parent | 0 | ~14 | ~400 |
+| Phase 3: Teacher | 0 | ~16 | ~500 |
+| Phase 4: Admin | 0 | ~45 | ~800 |
+| Phase 5: Cross-feature | 0 | ~34 | ~500 |
+| Phase 6: UI Polish | 2 | 1 | ~200 |
+| Phase 7: Write Queue | 3 | ~10 | ~400 (future) |
+| **Total (Phases 1-6)** | **5** | **~116** | **~2,600** |
+
+---
+
+## Execution Order
+
+```
+Phase 1 (Infrastructure)
+  ↓ Build green
+Phase 2 (Parent Portal)
+  ↓ Build green + manual test
+Phase 3 (Teacher Portal)
+  ↓ Build green + manual test
+Phase 4 (Admin Portal)
+  ↓ Build green + manual test
+Phase 5 (Cross-Feature)
+  ↓ Build green + manual test
+Phase 6 (UI Polish)
+  ↓ Build green + manual test
+Phase 7 (Write Queue — future)
+```
+
+Each phase is independently shippable. After Phase 1, the infrastructure exists but no behavior changes. After Phase 2, parent portal has offline mode. Each subsequent phase adds offline to one more portal.
+
+---
+
+## Testing Checklist (Per Phase)
+
+- [ ] Build all 4 targets green (server, shared JVM, shared Android, composeApp Android)
+- [ ] Open app with network → data loads normally
+- [ ] Close app, kill network, reopen → cached data shows instantly
+- [ ] Close app, reopen with network → cached data shows, then updates with fresh data
+- [ ] Clear app data (no cache), open with network → skeleton shows briefly, then data
+- [ ] Clear app data, open without network → "Unable to load" with retry
+- [ ] Logout → cache cleared → login as different user → no stale data from previous user
+- [ ] No crashes, no ANRs, no memory leaks

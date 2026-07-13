@@ -35,6 +35,7 @@ import com.littlebridge.enrollplus.core.fail
 import com.littlebridge.enrollplus.core.ok
 import com.littlebridge.enrollplus.core.requireSchoolContext
 import com.littlebridge.enrollplus.db.AcademicCalendarTable
+import com.littlebridge.enrollplus.db.CalendarEventsTable
 import com.littlebridge.enrollplus.db.AttendanceRecordsTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.FacultyTable
@@ -137,25 +138,37 @@ fun Route.schoolRouting() {
                 }
 
                 val events = dbQuery {
-                    AcademicCalendarTable.selectAll()
-                        .where { AcademicCalendarTable.schoolId eq schoolId }
-                        .filter { row ->
-                            val d = runCatching { LocalDate.parse(row[AcademicCalendarTable.date]) }.getOrNull()
-                                ?: return@filter false
-                            val inRange = !d.isBefore(rangeStart) && !d.isAfter(rangeEnd)
-                            val stdOk = standard.isNullOrBlank() ||
-                                row[AcademicCalendarTable.standard] == null ||
-                                row[AcademicCalendarTable.standard] == standard
-                            inRange && stdOk
+                    // Read from CalendarEventsTable (the new academic calendar system)
+                    // — active events (DRAFT + PUBLISHED for school staff; parents only see PUBLISHED).
+                    CalendarEventsTable.selectAll()
+                        .where {
+                            (CalendarEventsTable.schoolId eq schoolId) and
+                                (CalendarEventsTable.isActive eq true)
                         }
-                        .map {
-                            CalendarEventDto(
-                                date = it[AcademicCalendarTable.date],
-                                day = it[AcademicCalendarTable.day],
-                                eventId = it[AcademicCalendarTable.eventId],
-                                eventTitle = it[AcademicCalendarTable.eventTitle],
-                                eventDescription = it[AcademicCalendarTable.eventDescription] ?: ""
-                            )
+                        .filter { row ->
+                            val s = row[CalendarEventsTable.startDate]
+                            val e = row[CalendarEventsTable.endDate]
+                            !s.isAfter(rangeEnd) && !e.isBefore(rangeStart)
+                        }
+                        .sortedBy { it[CalendarEventsTable.startDate] }
+                        .flatMap { row ->
+                            val s = row[CalendarEventsTable.startDate]
+                            val e = row[CalendarEventsTable.endDate]
+                            val dates = if (s == e) listOf(s) else {
+                                generateSequence(s) { it.plusDays(1) }
+                                    .takeWhile { !it.isAfter(e) }
+                                    .toList()
+                            }
+                            dates.filter { d -> !d.isBefore(rangeStart) && !d.isAfter(rangeEnd) }
+                                .map { d ->
+                                    CalendarEventDto(
+                                        date = d.toString(),
+                                        day = d.dayOfWeek.name.lowercase().replaceFirstChar { it.uppercase() },
+                                        eventId = row[CalendarEventsTable.eventCode],
+                                        eventTitle = row[CalendarEventsTable.title],
+                                        eventDescription = row[CalendarEventsTable.description]
+                                    )
+                                }
                         }
                 }
 

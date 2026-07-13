@@ -21,6 +21,8 @@ data class PaceAlertsState(
     val isRecalculating: Boolean = false,
     val errorMessage: String? = null,
     val resolvingAlertId: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class PaceAlertsViewModel(
@@ -60,6 +62,8 @@ class PaceAlertsViewModel(
                     snapshots = snapshots,
                     alerts = alerts,
                     errorMessage = error,
+                    isStale = (snapshotsResult as? NetworkResult.Success)?.isStale ?: false,
+                    isOffline = (alertsResult as? NetworkResult.Success)?.isOffline ?: false,
                 )
             }
         }

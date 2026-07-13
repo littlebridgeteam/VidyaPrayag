@@ -52,7 +52,7 @@ class VoiceService {
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true })
         }
-    }
+    }.also { com.littlebridge.enrollplus.core.HttpClientRegistry.register(it) }
 
     @Serializable
     data class TranscriptionResult(

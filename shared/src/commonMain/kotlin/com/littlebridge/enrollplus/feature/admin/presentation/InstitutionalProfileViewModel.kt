@@ -53,7 +53,9 @@ data class InstitutionalProfileState(
     // gallery/tour buttons can show a spinner instead of the old URL dialog.
     val isUploading: Boolean = false,
     val errorMessage: String? = null,
-    val infoMessage: String? = null
+    val infoMessage: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class InstitutionalProfileViewModel(
@@ -98,7 +100,9 @@ class InstitutionalProfileViewModel(
                         storageUsedHuman  = gal?.storageUsed ?: "0 B",
                         totalStorageHuman = gal?.totalStorage ?: "10 GB",
                         storageUsage      = computeStorageFraction(gal?.storageUsed, gal?.totalStorage),
-                        profileCompletion = computeCompletion(mission, model, lang, images.size, firstVideo)
+                        profileCompletion = computeCompletion(mission, model, lang, images.size, firstVideo),
+                        isStale           = result.isStale,
+                        isOffline         = result.isOffline,
                     )
                 }
                 is NetworkResult.Error -> {

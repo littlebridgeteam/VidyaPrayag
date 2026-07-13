@@ -34,12 +34,15 @@ data class AcademicCalendarState(
     val syllabusTargets: List<SyllabusTarget> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val infoMessage: String? = null
+    val infoMessage: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class AcademicCalendarViewModel(
     private val calendarRepository: CalendarRepository,
-    private val preferenceRepository: PreferenceRepository
+    private val preferenceRepository: PreferenceRepository,
+    private val calendarEndpoint: String = "api/v1/school/calendar"
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AcademicCalendarState())
@@ -65,7 +68,7 @@ class AcademicCalendarViewModel(
                 return@launch
             }
 
-            when (val result = calendarRepository.getCalendar(token, date, viewType)) {
+            when (val result = calendarRepository.getCalendar(token, date, viewType, calendarEndpoint)) {
                 is NetworkResult.Success -> {
                     val data = result.data.data
                     val summary = data?.summary
@@ -78,7 +81,9 @@ class AcademicCalendarViewModel(
                         conflicts = 0,   // server doesn't return conflicts count yet
                         currentDate = resolvedAnchor,
                         currentMonth = formatMonthLabel(resolvedAnchor),
-                        isLoading = false
+                        isLoading = false,
+                        isStale = result.isStale,
+                        isOffline = result.isOffline,
                     )
                 }
                 is NetworkResult.Error -> {

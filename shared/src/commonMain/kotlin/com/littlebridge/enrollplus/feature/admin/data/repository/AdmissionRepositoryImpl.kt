@@ -9,6 +9,9 @@
  */
 package com.littlebridge.enrollplus.feature.admin.data.repository
 
+import com.littlebridge.enrollplus.core.cache.CacheManager
+import com.littlebridge.enrollplus.core.cache.cacheFirstNetworkResult
+import com.littlebridge.enrollplus.core.model.ApiResponse
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.feature.admin.data.remote.AdmissionApi
 import com.littlebridge.enrollplus.feature.admin.domain.model.CreateEnquiryRequest
@@ -18,23 +21,23 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.EnquirySummary
 import com.littlebridge.enrollplus.feature.admin.domain.repository.AdmissionRepository
 
 class AdmissionRepositoryImpl(
-    private val api: AdmissionApi
+    private val api: AdmissionApi,
+    private val cache: CacheManager,
 ) : AdmissionRepository {
 
     override suspend fun getSummary(token: String): NetworkResult<EnquirySummary> {
-        return when (val result = api.getSummary(token)) {
+        val r = cacheFirstNetworkResult(cache, "admin_admission_summary", ApiResponse.serializer(EnquirySummary.serializer())) { api.getSummary(token) }
+        return when (r) {
             is NetworkResult.Success -> {
-                val envelope = result.data
+                val envelope = r.data
                 val data = envelope.data
                 when {
-                    !envelope.success -> NetworkResult.Error(
-                        envelope.message.ifBlank { "Failed to fetch enquiry summary" }
-                    )
+                    !envelope.success -> NetworkResult.Error(envelope.message.ifBlank { "Failed to fetch enquiry summary" })
                     data == null -> NetworkResult.Error("No data in response")
-                    else -> NetworkResult.Success(data)
+                    else -> NetworkResult.Success(data, isStale = r.isStale, isOffline = r.isOffline)
                 }
             }
-            is NetworkResult.Error -> NetworkResult.Error(result.message, result.code)
+            is NetworkResult.Error -> NetworkResult.Error(r.message, r.code)
             is NetworkResult.ConnectionError -> NetworkResult.ConnectionError
         }
     }
@@ -44,19 +47,18 @@ class AdmissionRepositoryImpl(
         page: Int,
         limit: Int
     ): NetworkResult<EnquiryListResponse> {
-        return when (val result = api.listEnquiries(token, page, limit)) {
+        val r = cacheFirstNetworkResult(cache, "admin_admission_enquiries_${page}_$limit", ApiResponse.serializer(EnquiryListResponse.serializer())) { api.listEnquiries(token, page, limit) }
+        return when (r) {
             is NetworkResult.Success -> {
-                val envelope = result.data
+                val envelope = r.data
                 val data = envelope.data
                 when {
-                    !envelope.success -> NetworkResult.Error(
-                        envelope.message.ifBlank { "Failed to fetch enquiries" }
-                    )
+                    !envelope.success -> NetworkResult.Error(envelope.message.ifBlank { "Failed to fetch enquiries" })
                     data == null -> NetworkResult.Error("No data in response")
-                    else -> NetworkResult.Success(data)
+                    else -> NetworkResult.Success(data, isStale = r.isStale, isOffline = r.isOffline)
                 }
             }
-            is NetworkResult.Error -> NetworkResult.Error(result.message, result.code)
+            is NetworkResult.Error -> NetworkResult.Error(r.message, r.code)
             is NetworkResult.ConnectionError -> NetworkResult.ConnectionError
         }
     }

@@ -56,7 +56,7 @@ object EnvConfig {
     private val localProps: Map<String, String> by lazy {
         val candidates = listOf(
             File("local.properties"),
-            File("../local.properties"),
+            File(".." + File.separator + "local.properties"),
             File(System.getProperty("user.dir"), "local.properties"),
         )
         val props = mutableMapOf<String, String>()

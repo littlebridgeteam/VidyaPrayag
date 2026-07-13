@@ -1,20 +1,24 @@
 package com.littlebridge.enrollplus.feature.parent.domain.repository
 
 import com.littlebridge.enrollplus.core.network.NetworkResult
+import com.littlebridge.enrollplus.core.notification.NotificationFeedRepository
 import com.littlebridge.enrollplus.feature.parent.domain.model.*
 import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizSubmitRequest
 import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizSubmitResponse
 
-interface ParentRepository {
+interface ParentRepository : NotificationFeedRepository {
     suspend fun getDashboard(token: String): NetworkResult<ParentDashboardResponse>
     suspend fun getTrackProgress(token: String): NetworkResult<TrackProgressResponse>
     suspend fun getFees(token: String, childId: String? = null): NetworkResult<FeeResponse>
     suspend fun getScholarships(token: String): NetworkResult<ScholarshipsResponse>
     suspend fun getAnnouncements(token: String): NetworkResult<ParentAnnouncementsResponse>
-    suspend fun getNotifications(token: String): NetworkResult<ParentNotificationsResponse>
+    override suspend fun getNotifications(token: String): NetworkResult<ParentNotificationsResponse>
     /** RA-46: persist read state on the server. */
-    suspend fun markNotificationRead(token: String, id: String): NetworkResult<Unit>
-    suspend fun markAllNotificationsRead(token: String): NetworkResult<Unit>
+    override suspend fun markNotificationRead(token: String, id: String): NetworkResult<Unit>
+    override suspend fun markAllNotificationsRead(token: String): NetworkResult<Unit>
+    override suspend fun markNotificationByRef(token: String, refType: String, refId: String): NetworkResult<Unit>
+    override suspend fun clearReadNotifications(token: String): NetworkResult<Unit>
+    override suspend fun clearAllNotifications(token: String): NetworkResult<Unit>
     // RA-43/RA-56: child-scoped academic reads.
     suspend fun getChildAttendance(token: String, childId: String): NetworkResult<ParentAttendanceResponse>
     suspend fun getChildMarks(token: String, childId: String): NetworkResult<ParentMarksResponse>
@@ -45,7 +49,20 @@ interface ParentRepository {
     suspend fun getSyllabusV2(token: String, childId: String): NetworkResult<ParentSyllabusV2Response>
     suspend fun getQuizList(token: String, childId: String): NetworkResult<ParentQuizListResponse>
     suspend fun getQuizDetail(token: String, quizId: String): NetworkResult<ParentQuizDetailResponse>
-    suspend fun submitQuiz(token: String, request: QuizSubmitRequest): NetworkResult<QuizSubmitResponse>
+    suspend fun submitQuiz(token: String, childId: String, request: QuizSubmitRequest): NetworkResult<QuizSubmitResponse>
     suspend fun getQuizLeaderboard(token: String, childId: String, quizId: String): NetworkResult<QuizLeaderboardResponse>
     suspend fun getQuizResult(token: String, childId: String, quizId: String): NetworkResult<QuizSubmitResponse>
+
+    // ── Skill Test System (AI-generated weekly MCQ tests) ───────────────────
+    suspend fun getSkillTestEligibility(token: String, childId: String): NetworkResult<SkillTestEligibilityResponse>
+    suspend fun startSkillTest(token: String, childId: String): NetworkResult<SkillTestStartResponse>
+    suspend fun submitSkillTestAnswer(token: String, attemptId: String, request: SkillTestAnswerRequest): NetworkResult<SkillTestAnswerResponse>
+    suspend fun getSkillTestBestScore(token: String, childId: String): NetworkResult<SkillTestBestScoreResponse>
+    suspend fun getSkillTestHistory(token: String, childId: String): NetworkResult<SkillTestHistoryResponse>
+    suspend fun getSkillTestReview(token: String, attemptId: String): NetworkResult<SkillTestReviewResponse>
+
+    // ── Parent Homework Submission ──────────────────────────────────────────
+    suspend fun getParentHomeworkList(token: String, childId: String): NetworkResult<ParentHomeworkListResponse>
+    suspend fun getParentHomeworkDetail(token: String, childId: String, homeworkId: String): NetworkResult<ParentHomeworkDetailResponse>
+    suspend fun submitParentHomework(token: String, childId: String, homeworkId: String, request: ParentSubmitHomeworkRequest): NetworkResult<ParentHomeworkMutationResponse>
 }

@@ -77,6 +77,27 @@ class ParentApi(
         }
     }
 
+    /** Mark a notification read by refType+refId (for push tap auto-read). */
+    suspend fun markNotificationByRef(token: String, refType: String, refId: String): NetworkResult<Unit> {
+        return safeApiCall {
+            client.post(getUrl("api/v1/notifications/mark-by-ref?refType=$refType&refId=$refId"))
+        }
+    }
+
+    /** Clear all read notifications from the server. */
+    suspend fun clearReadNotifications(token: String): NetworkResult<Unit> {
+        return safeApiCall {
+            client.delete(getUrl("api/v1/notifications/clear-all"))
+        }
+    }
+
+    /** Clear every notification for this user. */
+    suspend fun clearAllNotifications(token: String): NetworkResult<Unit> {
+        return safeApiCall {
+            client.delete(getUrl("api/v1/notifications/all"))
+        }
+    }
+
     // ── RA-43 / RA-56: child-scoped academic reads ───────────────────────────
     // childId is a server-issued UUID (no encoding hazard); the school+child
     // ownership check lives server-side in requireOwnedChild().
@@ -234,9 +255,9 @@ class ParentApi(
     }
 
     /** Submit quiz answers → get result with correct answers + explanations. */
-    suspend fun submitQuiz(token: String, request: QuizSubmitRequest): NetworkResult<QuizSubmitResponse> {
+    suspend fun submitQuiz(token: String, childId: String, request: QuizSubmitRequest): NetworkResult<QuizSubmitResponse> {
         return safeApiCall {
-            client.post(getUrl("api/v1/parent/quiz/submit")) {
+            client.post(getUrl("api/v1/parent/child/$childId/quiz/submit")) {
                 contentType(ContentType.Application.Json)
                 setBody(request)
             }
@@ -254,6 +275,81 @@ class ParentApi(
     suspend fun getQuizResult(token: String, childId: String, quizId: String): NetworkResult<QuizSubmitResponse> {
         return safeApiCall {
             client.get(getUrl("api/v1/parent/child/$childId/quiz/$quizId/result"))
+        }
+    }
+
+    // ── Skill Test System (AI-generated weekly MCQ tests) ───────────────────
+    // SEPARATE from teacher-generated quizzes above. These endpoints hit
+    // /api/v1/parent/skill-test/* — see SkillTestRouting.kt on the server.
+
+    suspend fun getSkillTestEligibility(token: String, childId: String): NetworkResult<SkillTestEligibilityResponse> {
+        return safeApiCall {
+            client.get(getUrl("api/v1/parent/skill-test/$childId/eligibility"))
+        }
+    }
+
+    suspend fun startSkillTest(token: String, childId: String): NetworkResult<SkillTestStartResponse> {
+        return safeApiCall {
+            client.post(getUrl("api/v1/parent/skill-test/$childId/start"))
+        }
+    }
+
+    suspend fun submitSkillTestAnswer(
+        token: String,
+        attemptId: String,
+        request: SkillTestAnswerRequest,
+    ): NetworkResult<SkillTestAnswerResponse> {
+        return safeApiCall {
+            client.post(getUrl("api/v1/parent/skill-test/$attemptId/answer")) {
+                contentType(ContentType.Application.Json)
+                setBody(request)
+            }
+        }
+    }
+
+    suspend fun getSkillTestBestScore(token: String, childId: String): NetworkResult<SkillTestBestScoreResponse> {
+        return safeApiCall {
+            client.get(getUrl("api/v1/parent/skill-test/$childId/best-score"))
+        }
+    }
+
+    suspend fun getSkillTestHistory(token: String, childId: String): NetworkResult<SkillTestHistoryResponse> {
+        return safeApiCall {
+            client.get(getUrl("api/v1/parent/skill-test/$childId/history"))
+        }
+    }
+
+    suspend fun getSkillTestReview(token: String, attemptId: String): NetworkResult<SkillTestReviewResponse> {
+        return safeApiCall {
+            client.get(getUrl("api/v1/parent/skill-test/$attemptId/review"))
+        }
+    }
+
+    // ── Parent Homework Submission ──────────────────────────────────────────
+
+    suspend fun getParentHomeworkList(token: String, childId: String): NetworkResult<ParentHomeworkListResponse> {
+        return safeApiCall {
+            client.get(getUrl("api/v1/parent/child/$childId/homework"))
+        }
+    }
+
+    suspend fun getParentHomeworkDetail(token: String, childId: String, homeworkId: String): NetworkResult<ParentHomeworkDetailResponse> {
+        return safeApiCall {
+            client.get(getUrl("api/v1/parent/child/$childId/homework/$homeworkId"))
+        }
+    }
+
+    suspend fun submitParentHomework(
+        token: String,
+        childId: String,
+        homeworkId: String,
+        request: ParentSubmitHomeworkRequest,
+    ): NetworkResult<ParentHomeworkMutationResponse> {
+        return safeApiCall {
+            client.post(getUrl("api/v1/parent/child/$childId/homework/$homeworkId/submit")) {
+                contentType(ContentType.Application.Json)
+                setBody(request)
+            }
         }
     }
 }

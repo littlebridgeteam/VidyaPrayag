@@ -15,11 +15,13 @@ import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
+import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
 
 class SnapshotRepositoryImpl : SnapshotRepository {
+    private val logger = LoggerFactory.getLogger(SnapshotRepositoryImpl::class.java)
     private val json = Json { encodeDefaults = true; ignoreUnknownKeys = true }
     private val signalSerializer = ListSerializer(SignalDto.serializer())
 
@@ -128,7 +130,10 @@ class SnapshotRepositoryImpl : SnapshotRepository {
     private fun org.jetbrains.exposed.sql.ResultRow.toEntity(): SnapshotEntity {
         val signals: List<SignalDto> = try {
             json.decodeFromString(signalSerializer, this[PewsRiskSnapshotsTable.signalsJson])
-        } catch (_: Exception) { emptyList() }
+        } catch (e: Exception) {
+            logger.warn("toEntity: corrupt signalsJson for snapshot id={}", this[PewsRiskSnapshotsTable.id].value, e)
+            emptyList()
+        }
 
         return SnapshotEntity(
             id = this[PewsRiskSnapshotsTable.id].value,

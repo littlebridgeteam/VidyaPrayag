@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.feature.scholarship.domain.model.ApplyScholarshipRequest
 import com.littlebridge.enrollplus.feature.scholarship.domain.model.ScholarshipScheme
 import com.littlebridge.enrollplus.feature.scholarship.presentation.ScholarshipViewModel
-import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
+import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
@@ -48,11 +48,14 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
@@ -82,18 +85,19 @@ fun ScholarshipWorkflowScreenV2(
     Column(
         modifier
             .fillMaxSize()
+            .background(VColors.cream)
             .statusBarsPadding()
             .imePadding()
             .navigationBarsPadding()
     ) {
-        VBackHeader(title = "Scholarships", onBack = onBack)
+        PremiumOverlayHeader(title = appString(StringKeys.SW_SCHOLARSHIPS), onBack = onBack)
 
         VStateHost(
             loading = state.isLoading,
             error = state.error,
             isEmpty = state.parentScholarships.isEmpty() && state.parentApplications.isEmpty(),
-            emptyTitle = "No scholarships yet",
-            emptyBody = "Scholarship opportunities will appear here as your school publishes them.",
+            emptyTitle = appString(StringKeys.SW_NO_SCHOLARSHIPS),
+            emptyBody = appString(StringKeys.SW_NO_SCHOLARSHIPS_DESC),
             emptyIcon = VIcons.Sparkles,
             onRetry = { viewModel.loadParentScholarships() },
             modifier = Modifier.fillMaxSize(),
@@ -117,7 +121,7 @@ fun ScholarshipWorkflowScreenV2(
 
                 // Available scholarships
                 if (state.parentScholarships.isNotEmpty()) {
-                    VSectionHeader(title = "AVAILABLE SCHOLARSHIPS (${state.parentScholarships.size})")
+                    VSectionHeader(title = appString(StringKeys.SW_AVAILABLE, "count" to state.parentScholarships.size))
                     state.parentScholarships.forEach { s ->
                         GamifiedScholarshipCard(
                             scheme = s,
@@ -131,7 +135,7 @@ fun ScholarshipWorkflowScreenV2(
 
                 // My applications
                 if (state.parentApplications.isNotEmpty()) {
-                    VSectionHeader(title = "MY APPLICATIONS (${state.parentApplications.size})")
+                    VSectionHeader(title = appString(StringKeys.SW_MY_APPLICATIONS, "count" to state.parentApplications.size))
                     state.parentApplications.forEach { app ->
                         ApplicationStatusCard(application = app)
                     }
@@ -185,7 +189,7 @@ private fun GamificationCard(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Column(Modifier.weight(1f)) {
-                Text("Profile Strength", style = VTheme.type.label.colored(c.ink3))
+                Text(appString(StringKeys.SW_PROFILE_STRENGTH), style = VTheme.type.label.colored(c.ink3))
                 Spacer(Modifier.height(4.dp))
                 Text(
                     "$profileStrength%",
@@ -200,7 +204,7 @@ private fun GamificationCard(
                     .padding(horizontal = 16.dp, vertical = 8.dp),
             ) {
                 Text(
-                    "LVL $currentLevel",
+                    appString(StringKeys.SW_LEVEL, "level" to currentLevel),
                     style = VTheme.type.bodyStrong,
                     color = c.accent,
                 )
@@ -212,12 +216,12 @@ private fun GamificationCard(
 
         // Stats row
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            StatTile(label = "Applications", value = totalApplications.toString(), modifier = Modifier.weight(1f))
-            StatTile(label = "Approved", value = approvedCount.toString(), modifier = Modifier.weight(1f))
+            StatTile(label = appString(StringKeys.SW_APPLICATIONS), value = totalApplications.toString(), modifier = Modifier.weight(1f))
+            StatTile(label = appString(StringKeys.SW_APPROVED), value = approvedCount.toString(), modifier = Modifier.weight(1f))
             if (totalAwarded > 0) {
-                StatTile(label = "Awarded", value = "₹${totalAwarded.toLong()}", modifier = Modifier.weight(1f))
+                StatTile(label = appString(StringKeys.SW_AWARDED), value = "₹${totalAwarded.toLong()}", modifier = Modifier.weight(1f))
             } else {
-                StatTile(label = "Day Streak", value = streakDays.toString(), modifier = Modifier.weight(1f))
+                StatTile(label = appString(StringKeys.SW_DAY_STREAK), value = streakDays.toString(), modifier = Modifier.weight(1f))
             }
         }
     }
@@ -265,10 +269,10 @@ private fun GamifiedScholarshipCard(
             VBadge(text = scheme.category, tone = categoryTone)
             VBadge(text = scheme.scholarshipType.replace("_", " "), tone = typeTone)
             if (scheme.isCritical) {
-                VBadge(text = "HOT", tone = VBadgeTone.Danger)
+                VBadge(text = appString(StringKeys.SW_HOT), tone = VBadgeTone.Danger)
             }
             if (scheme.isRenewable) {
-                VBadge(text = "Renewable", tone = VBadgeTone.Neutral)
+                VBadge(text = appString(StringKeys.SW_RENEWABLE), tone = VBadgeTone.Neutral)
             }
         }
         Spacer(Modifier.height(8.dp))
@@ -282,7 +286,7 @@ private fun GamifiedScholarshipCard(
         if (scheme.eligibilityCriteria.isNotBlank()) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 Icon(VIcons.Sparkles, contentDescription = null, tint = c.ink3, modifier = Modifier.size(14.dp))
-                Text("Eligibility: ", style = VTheme.type.label.colored(c.ink3))
+                Text(appString(StringKeys.SW_ELIGIBILITY), style = VTheme.type.label.colored(c.ink3))
                 Text(scheme.eligibilityCriteria, style = VTheme.type.caption.colored(c.ink2))
             }
             Spacer(Modifier.height(8.dp))
@@ -294,14 +298,14 @@ private fun GamifiedScholarshipCard(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Column {
-                Text("Award", style = VTheme.type.label.colored(c.ink3))
+                Text(appString(StringKeys.SW_AWARD), style = VTheme.type.label.colored(c.ink3))
                 Spacer(Modifier.height(2.dp))
                 Text(scheme.amount, style = VTheme.type.dataLg.colored(c.ink))
             }
             val endDate = scheme.endDate
             if (endDate != null && endDate.isNotBlank()) {
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("Apply by", style = VTheme.type.label.colored(c.ink3))
+                    Text(appString(StringKeys.SW_APPLY_BY), style = VTheme.type.label.colored(c.ink3))
                     Spacer(Modifier.height(2.dp))
                     Text(endDate, style = VTheme.type.dataSm.colored(c.ink2))
                 }
@@ -310,7 +314,7 @@ private fun GamifiedScholarshipCard(
 
         Spacer(Modifier.height(12.dp))
         VButton(
-            text = "Apply Now",
+            text = appString(StringKeys.SW_APPLY_NOW),
             onClick = onApply,
             variant = VButtonVariant.Primary,
             size = VButtonSize.Md,
@@ -345,7 +349,7 @@ private fun ApplicationStatusCard(
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    application.studentName ?: "Student",
+                    application.studentName ?: appString(StringKeys.SW_STUDENT),
                     style = VTheme.type.caption.colored(c.ink3),
                 )
             }
@@ -354,14 +358,14 @@ private fun ApplicationStatusCard(
 
         if (application.remarks?.isNotBlank() == true) {
             Spacer(Modifier.height(8.dp))
-            Text("Remarks: ${application.remarks}", style = VTheme.type.caption.colored(c.ink3))
+            Text(appString(StringKeys.SW_REMARKS, "remarks" to application.remarks), style = VTheme.type.caption.colored(c.ink3))
         }
 
         if (application.status == "DISBURSED" && application.disbursementAmount != null) {
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Disbursed: ₹${application.disbursementAmount}", style = VTheme.type.caption.colored(c.success))
-                Text("Ref: ${application.disbursementReference ?: "—"}", style = VTheme.type.caption.colored(c.ink3))
+                Text(appString(StringKeys.SW_DISBURSED, "amount" to application.disbursementAmount), style = VTheme.type.caption.colored(c.success))
+                Text(appString(StringKeys.SW_REF, "ref" to (application.disbursementReference ?: "—")), style = VTheme.type.caption.colored(c.ink3))
             }
         }
     }
@@ -392,15 +396,15 @@ private fun ApplyScholarshipForm(
                 .fillMaxWidth()
                 .clickable(enabled = false) {},
         ) {
-            Text("Apply for Scholarship", style = VTheme.type.h3.colored(c.ink))
+            Text(appString(StringKeys.SW_APPLY_FOR_SCHOLARSHIP), style = VTheme.type.h3.colored(c.ink))
             Spacer(Modifier.height(4.dp))
             Text(scheme.title, style = VTheme.type.body.colored(c.ink2))
             Spacer(Modifier.height(16.dp))
 
-            VInput(value = childId, onValueChange = { childId = it }, label = "Child ID *", modifier = Modifier.fillMaxWidth())
+            VInput(value = childId, onValueChange = { childId = it }, label = appString(StringKeys.SW_CHILD_ID), modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(8.dp))
 
-            Text("Documents (URLs)", style = VTheme.type.label.colored(c.ink3))
+            Text(appString(StringKeys.SW_DOCUMENTS), style = VTheme.type.label.colored(c.ink3))
             Spacer(Modifier.height(4.dp))
             documents.forEach { doc ->
                 Row(
@@ -416,11 +420,11 @@ private fun ApplyScholarshipForm(
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box(Modifier.weight(1f)) {
-                    VInput(value = documentUrl, onValueChange = { documentUrl = it }, label = "Document URL", modifier = Modifier.fillMaxWidth())
+                    VInput(value = documentUrl, onValueChange = { documentUrl = it }, label = appString(StringKeys.SW_DOCUMENT_URL), modifier = Modifier.fillMaxWidth())
                 }
                 Box(Modifier.align(Alignment.Bottom)) {
                     VButton(
-                        text = "Add",
+                        text = appString(StringKeys.SW_ADD),
                         onClick = {
                             if (documentUrl.isNotBlank()) {
                                 documents = documents + documentUrl
@@ -437,7 +441,7 @@ private fun ApplyScholarshipForm(
             VInput(
                 value = applicationText,
                 onValueChange = { applicationText = it },
-                label = "Application Text (optional)",
+                label = appString(StringKeys.SW_APPLICATION_TEXT),
                 modifier = Modifier.fillMaxWidth(),
             )
 
@@ -445,7 +449,7 @@ private fun ApplyScholarshipForm(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box(Modifier.weight(1f)) {
                     VButton(
-                        text = "Cancel",
+                        text = appString(StringKeys.SW_CANCEL),
                         onClick = onDismiss,
                         variant = VButtonVariant.Secondary,
                         size = VButtonSize.Md,
@@ -454,7 +458,7 @@ private fun ApplyScholarshipForm(
                 }
                 Box(Modifier.weight(1f)) {
                     VButton(
-                        text = "Submit",
+                        text = appString(StringKeys.SW_SUBMIT),
                         onClick = {
                             if (childId.isNotBlank()) {
                                 onApply(childId, documents, applicationText.ifBlank { null })

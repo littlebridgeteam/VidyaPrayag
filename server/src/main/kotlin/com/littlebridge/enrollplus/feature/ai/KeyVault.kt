@@ -28,6 +28,7 @@
 package com.littlebridge.enrollplus.feature.ai
 
 import com.littlebridge.enrollplus.core.EnvConfig
+import com.littlebridge.enrollplus.core.RuntimeEnvironment
 import com.littlebridge.enrollplus.db.AiProviderConfigTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -207,8 +208,7 @@ object KeyVault {
     /** Resolved base-url cache (env override or DB or baked default). */
     private val baseUrlCache = ConcurrentHashMap<String, String>()
 
-    @Volatile
-    private var bootstrapped = false
+    private val bootstrapped = java.util.concurrent.atomic.AtomicBoolean(false)
 
     // ------------------------------------------------------------------
     // Env reading — delegated to the shared, .env-aware EnvConfig so the AI
@@ -233,8 +233,23 @@ object KeyVault {
      * Safe to call once at boot. Never logs a plaintext key.
      */
     suspend fun bootstrapFromEnv() {
-        if (bootstrapped) return
-        bootstrapped = true
+        if (!bootstrapped.compareAndSet(false, true)) return
+
+        if (RuntimeEnvironment.isProduction) {
+            val plaintextKeys = dbQuery {
+                AiProviderConfigTable.selectAll()
+                    .where { AiProviderConfigTable.isActive eq true }
+                    .map { it[AiProviderConfigTable.apiKeyEncrypted] }
+                    .filter { it.startsWith("plain:") }
+            }
+            if (plaintextKeys.isNotEmpty()) {
+                throw IllegalStateException(
+                    "FATAL: Found ${plaintextKeys.size} provider key(s) stored in plaintext " +
+                    "in ai_provider_config. Refusing to boot in production with unencrypted keys. " +
+                    "Set AI_ENCRYPTION_KEY and re-seed providers to migrate."
+                )
+            }
+        }
 
         if (!encryption.isConfigured) {
             log.warn(

@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -32,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.feature.reportcard.domain.model.ReportCardModels
 import com.littlebridge.enrollplus.feature.reportcard.presentation.AdminReportPublishViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VButton
@@ -39,8 +39,13 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
+import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 
 /**
  * AdminReportPublishScreen — admin oversight for report card generation
@@ -53,13 +58,12 @@ fun AdminReportPublishScreen(
     viewModel: AdminReportPublishViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
-    val c = VTheme.colors
-    var termInput by remember { mutableStateOf("Term 1") }
+        var termInput by remember { mutableStateOf("Term 1") }
 
     LaunchedEffect(Unit) { viewModel.loadTermConfig() }
 
     Column(
-        Modifier.fillMaxSize().background(c.background),
+        Modifier.fillMaxSize().background(VColors.surface),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         // Header
@@ -68,8 +72,8 @@ fun AdminReportPublishScreen(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            VButton(text = "Back", onClick = onBack, variant = VButtonVariant.Secondary, size = VButtonSize.Sm)
-            Text("Report Card Publishing", style = VTheme.type.h3.colored(c.ink))
+            VButton(text = appString(StringKeys.COMMON_BUTTON_BACK), onClick = onBack, variant = VButtonVariant.Secondary, size = VButtonSize.Sm)
+            Text(appString(StringKeys.SCH_REPORT_CARD_PUBLISHING), style = VTypography.h3.copy(color = VColors.ink))
         }
 
         // Term input + load
@@ -81,12 +85,12 @@ fun AdminReportPublishScreen(
             OutlinedTextField(
                 value = termInput,
                 onValueChange = { termInput = it },
-                label = { Text("Term") },
+                label = { Text(appString(StringKeys.SCH_TERM)) },
                 modifier = Modifier.weight(1f),
                 singleLine = true,
             )
             VButton(
-                text = "Load",
+                text = appString(StringKeys.COMMON_BUTTON_APPLY),
                 onClick = { viewModel.loadOversight(termInput) },
                 size = VButtonSize.Sm,
             )
@@ -96,10 +100,10 @@ fun AdminReportPublishScreen(
         state.termConfig?.let { config ->
             VCard(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                 Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    ConfigChip("Enabled", if (config.enabled) "Yes" else "No")
-                    ConfigChip("Current Term", config.currentTerm ?: "Not set")
-                    ConfigChip("Concurrency", config.batchConcurrency.toString())
-                    ConfigChip("Fallback", if (config.fallbackOnAiFail) "On" else "Off")
+                    ConfigChip(appString(StringKeys.SCH_ENABLED), if (config.enabled) appString(StringKeys.COMMON_YES) else appString(StringKeys.COMMON_NO))
+                    ConfigChip(appString(StringKeys.SCH_CURRENT_TERM), config.currentTerm ?: appString(StringKeys.SCH_NOT_SET))
+                    ConfigChip(appString(StringKeys.SCH_CONCURRENCY), config.batchConcurrency.toString())
+                    ConfigChip(appString(StringKeys.SCH_FALLBACK), if (config.fallbackOnAiFail) appString(StringKeys.COMMON_YES) else appString(StringKeys.COMMON_NO))
                 }
             }
         }
@@ -108,8 +112,8 @@ fun AdminReportPublishScreen(
             Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                 VCard(Modifier.fillMaxWidth()) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Icon(VIcons.Check, contentDescription = null, tint = c.success, modifier = Modifier.size(16.dp))
-                        Text("$count reports published successfully", style = VTheme.type.body.colored(c.ink))
+                        Icon(VIcons.Check, contentDescription = null, tint = VColors.success, modifier = Modifier.size(16.dp))
+                        Text(appString(StringKeys.SCH_N_REPORTS_PUBLISHED, "count" to count.toString()), style = VTypography.body.copy(color = VColors.ink))
                     }
                 }
             }
@@ -117,28 +121,30 @@ fun AdminReportPublishScreen(
 
         when {
             state.isLoading -> {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = c.accent)
-                }
+                SkeletonList(rows = 4, withAvatar = false)
             }
             state.error != null -> {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(state.error!!, style = VTheme.type.body.colored(c.danger))
-                }
+                VStateHost(loading = false, error = state.error, isEmpty = false, onRetry = { viewModel.loadOversight(termInput) }) {}
             }
             state.oversight != null -> {
-                LazyColumn(
-                    Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    items(state.oversight!!.classes) { row ->
-                        OversightClassCard(
-                            row = row,
-                            publishing = state.publishing,
-                            onPublish = { viewModel.publishClass(row.className, row.section, row.term) },
-                        )
+                VPullRefresh(isRefreshing = state.publishing, onRefresh = { viewModel.loadOversight(termInput) }) {
+                    LazyColumn(
+                        Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        items(state.oversight!!.classes) { row ->
+                            OversightClassCard(
+                                row = row,
+                                publishing = state.publishing,
+                                onPublish = { viewModel.publishClass(row.className, row.section, row.term) },
+                                modifier = Modifier.staggeredItemEntrance(state.oversight!!.classes.indexOf(row), state.oversight!!.classes.isNotEmpty()),
+                            )
+                        }
                     }
                 }
+            }
+            else -> {
+                VStateHost(loading = false, error = null, isEmpty = true, emptyTitle = appString(StringKeys.SCH_NO_DATA_YET), onRetry = { viewModel.loadOversight(termInput) }) {}
             }
         }
     }
@@ -146,10 +152,9 @@ fun AdminReportPublishScreen(
 
 @Composable
 private fun ConfigChip(label: String, value: String) {
-    val c = VTheme.colors
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, style = VTheme.type.body.colored(c.ink).copy(fontWeight = FontWeight.Medium, fontSize = 13.sp))
-        Text(label, style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp))
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(value, style = VTypography.body.copy(color = VColors.ink).copy(fontWeight = FontWeight.Medium, fontSize = 13.sp))
+        Text(label, style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 10.sp))
     }
 }
 
@@ -158,29 +163,29 @@ private fun OversightClassCard(
     row: ReportCardModels.ClassOversightRow,
     publishing: Boolean,
     onPublish: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    VCard(Modifier.fillMaxWidth()) {
+    VCard(modifier.fillMaxWidth()) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("${row.className} ${row.section}", style = VTheme.type.h3.colored(c.ink).copy(fontSize = 15.sp))
-                Text("${row.totalDrafts} drafts", style = VTheme.type.caption.colored(c.ink2))
+                Text("${row.className} ${row.section}", style = VTypography.h3.copy(color = VColors.ink).copy(fontSize = 15.sp))
+                Text("${row.totalDrafts} " + appString(StringKeys.SCH_DRAFTS), style = VTypography.caption.copy(color = VColors.ink2))
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                StatusChip("Draft", row.draftCount, c.warning)
-                StatusChip("Flagged", row.flaggedCount, c.danger)
-                StatusChip("Approved", row.approvedCount, c.success)
-                StatusChip("Published", row.publishedCount, c.accent)
+                StatusChip(appString(StringKeys.SCH_DRAFT), row.draftCount, VColors.gold)
+                StatusChip(appString(StringKeys.SCH_FLAGGED), row.flaggedCount, VColors.error)
+                StatusChip(appString(StringKeys.SCH_APPROVED), row.approvedCount, VColors.success)
+                StatusChip(appString(StringKeys.SCH_PUBLISHED), row.publishedCount, VColors.violet)
             }
 
             if (row.approvedCount > 0 && row.publishedCount == 0) {
                 VButton(
-                    text = if (publishing) "Publishing…" else "Publish ${row.approvedCount} Approved",
+                    text = if (publishing) appString(StringKeys.SCH_PUBLISHING) else appString(StringKeys.SCH_PUBLISH_N_APPROVED, "count" to row.approvedCount.toString()),
                     onClick = onPublish,
                     size = VButtonSize.Sm,
                     enabled = !publishing,
@@ -192,13 +197,12 @@ private fun OversightClassCard(
 
 @Composable
 private fun StatusChip(label: String, count: Int, color: androidx.compose.ui.graphics.Color) {
-    val c = VTheme.colors
-    Row(
+        Row(
         Modifier.clip(RoundedCornerShape(6.dp)).background(color.copy(alpha = 0.1f)).padding(horizontal = 8.dp, vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Text("$count", style = VTheme.type.body.colored(color).copy(fontWeight = FontWeight.Bold, fontSize = 12.sp))
-        Text(label, style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp))
+        Text("$count", style = VTypography.body.copy(color = color).copy(fontWeight = FontWeight.Bold, fontSize = 12.sp))
+        Text(label, style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 10.sp))
     }
 }

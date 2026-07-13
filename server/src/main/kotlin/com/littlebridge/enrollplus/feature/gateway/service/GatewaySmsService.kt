@@ -113,11 +113,21 @@ class GatewaySmsService(
             )
         }
 
+        // FCM rejected the token (likely UNREGISTERED) — deactivate it so the
+        // next OTP request selects a different gateway device instead of
+        // retrying the same stale token forever.
+        val deactivated = deviceRepository.deactivateByFcmToken(device.fcmToken)
+        log.warn(
+            "[GatewaySms] FCM dispatch failed — deactivated {} device(s) with stale token for device={}",
+            deactivated,
+            device.deviceId,
+        )
+
         return GatewayDispatchResult(
             requestId = requestId,
             ok = true,
             dispatched = false,
-            note = "FCM dispatch failed; left pending",
+            note = "FCM dispatch failed; device deactivated; left pending",
         )
     }
 

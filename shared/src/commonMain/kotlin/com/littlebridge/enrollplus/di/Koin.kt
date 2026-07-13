@@ -1,692 +1,1537 @@
 package com.littlebridge.enrollplus.di
 
+
+
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
+
 import com.littlebridge.enrollplus.feature.schools.data.remote.KtorSchoolApi
+
 import com.littlebridge.enrollplus.feature.schools.data.repository.SchoolRepositoryImpl
+
 import com.littlebridge.enrollplus.feature.schools.domain.repository.SchoolRepository
+
 import com.littlebridge.enrollplus.feature.schools.domain.usecase.GetSchoolsUseCase
+
 import com.littlebridge.enrollplus.presentation.MainViewModel
+
 import com.littlebridge.enrollplus.feature.parent.presentation.FeeViewModel
+
 import com.littlebridge.enrollplus.feature.parent.presentation.ScholarshipsViewModel
+
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentAnnouncementViewModel
+
 import com.littlebridge.enrollplus.feature.parent.presentation.NotificationsViewModel
+
 import com.littlebridge.enrollplus.feature.parent.presentation.LinkChildViewModel
+
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentHomeViewModel
+
+import com.littlebridge.enrollplus.feature.parent.presentation.ParentHomeworkViewModel
+
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentProfileViewModel
+
 import com.littlebridge.enrollplus.feature.parent.presentation.TrackProgressViewModel
+
 import com.littlebridge.enrollplus.feature.admin.presentation.SchoolDashboardViewModel
+import com.littlebridge.enrollplus.feature.admin.presentation.PinnedScreensViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.InstitutionalBasicOBViewModel
+
 import com.littlebridge.enrollplus.feature.admin.presentation.BrandingInfoOBViewModel
+
 import com.littlebridge.enrollplus.feature.admin.presentation.AcademicInfoOBViewModel
+
 import com.littlebridge.enrollplus.feature.admin.presentation.LaunchInfoOBViewModel
+
 import com.littlebridge.enrollplus.feature.admin.presentation.InstitutionalProfileViewModel
+import com.littlebridge.enrollplus.feature.admin.presentation.BrandingPhotosViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.AdmissionCRMViewModel
+
 import com.littlebridge.enrollplus.feature.admin.presentation.SchoolAnnouncementsViewModel
+
 import com.littlebridge.enrollplus.feature.admin.presentation.MessagesViewModel
+
 import com.littlebridge.enrollplus.feature.admin.presentation.SchedulePTMViewModel
+import com.littlebridge.enrollplus.feature.admin.presentation.CommsDeliveryLogViewModel
+import com.littlebridge.enrollplus.feature.admin.domain.usecase.GetDeliveryLogUseCase
 import com.littlebridge.enrollplus.feature.admin.presentation.AcademicCalendarViewModel
+
 import com.littlebridge.enrollplus.feature.admin.presentation.LeaveRequestsViewModel
+
 import com.littlebridge.enrollplus.feature.admin.presentation.DailyAttendanceViewModel
+
 import com.littlebridge.enrollplus.feature.admin.presentation.AnalyticsDashboardViewModel
+
 import com.littlebridge.enrollplus.feature.admin.presentation.StudentAnalyticsViewModel
+
 import com.littlebridge.enrollplus.feature.admin.presentation.TeacherPerformanceViewModel
+
 import com.littlebridge.enrollplus.feature.admin.presentation.ClassPerformanceViewModel
+
 import com.littlebridge.enrollplus.feature.admin.presentation.SyllabusCoverageViewModel
+
 import com.littlebridge.enrollplus.feature.admin.presentation.PaceAlertsViewModel
+
 import com.littlebridge.enrollplus.feature.admin.presentation.ResultsViewModel
+
 import com.littlebridge.enrollplus.util.AppConfig
+
 import com.littlebridge.enrollplus.util.AppLogger
+
 import com.littlebridge.enrollplus.core.network.buildRefreshClient
+
 import com.littlebridge.enrollplus.core.network.clearBearerCache
+
 import com.littlebridge.enrollplus.core.network.installTokenAuth
+
 import io.ktor.client.*
+
 import io.ktor.client.plugins.*
+
 import io.ktor.client.plugins.contentnegotiation.*
+
 import io.ktor.serialization.kotlinx.json.*
+
 import kotlinx.serialization.json.Json
+
 import org.koin.core.context.startKoin
+
 import org.koin.core.module.Module
+
 import org.koin.dsl.KoinAppDeclaration
+
 import org.koin.dsl.module
 
+
+
 val commonModule = module {
+
     // Remote
+
     single {
+
         val prefs: PreferenceRepository = get()
+
         // Plain client (NO Auth plugin) used solely to perform the refresh-token
+
         // exchange, so the bearer refresh path never recurses through itself.
+
         val refreshClient = buildRefreshClient(get())
 
+
+
         // Forward reference to the authenticated client so the refresh-failure
+
         // logout path can evict its in-memory bearer-token cache. Assigned right
+
         // after the client is built, before any request can run.
+
         lateinit var authedClient: HttpClient
 
+
+
         authedClient = HttpClient(get()) {
+
             install(ContentNegotiation) {
+
                 json(Json { ignoreUnknownKeys = true })
+
             }
+
+
 
             install(HttpRedirect) {
+
                 checkHttpMethod = false
+
             }
+
+
 
             install(HttpTimeout) {
-                requestTimeoutMillis = 60000
-                connectTimeoutMillis = 60000
-                socketTimeoutMillis = 60000
+
+                requestTimeoutMillis = 30_000
+
+                connectTimeoutMillis = 15_000
+
+                socketTimeoutMillis = 30_000
+
             }
 
+
+
             // Auth: attach the stored access token to every request and, on a
+
             // 401, automatically exchange the persisted refresh token for a new
+
             // access token (audit §3.4, finding F). On refresh failure the user
+
             // is logged out cleanly. Implemented in TokenAuthenticator.kt — this
+
             // call is the only wiring needed; every API call through this client
+
             // gets transparent 401 refresh + retry.
+
             installTokenAuth(
+
                 prefs = prefs,
+
                 refreshClient = refreshClient,
+
                 onRefreshFailed = {
+
                     // Reuse the existing logout primitives: clear the persisted
+
                     // session FIRST so loadTokens() reads null on the next request,
+
                     // then evict the Auth plugin's cached bearer token. The
+
                     // reactive authState (App.kt observes getUserToken()) sees the
+
                     // null token and navigates back to landing.
+
                     prefs.clearSession()
+
                     authedClient.clearBearerCache()
+
                 },
+
             )
+
         }
+
         authedClient
+
     }
+
     // RA-S01: session-manager wraps the singleton HttpClient so logout can evict
+
     // the Ktor Auth plugin's in-memory bearer-token cache (clearToken()).
+
     single { com.littlebridge.enrollplus.core.network.SessionManager(get()) }
+
+    // Offline-mode: generic JSON cache manager backed by Room (or NoopCacheStorage on web)
+
+    single {
+
+        com.littlebridge.enrollplus.core.cache.CacheManager(
+
+            storage = get(),
+
+            json = Json { ignoreUnknownKeys = true; isLenient = true },
+
+        )
+
+    }
+
     single { KtorSchoolApi(get(), AppConfig.schoolBaseUrl) }
+
     single { 
+
         com.littlebridge.enrollplus.feature.content.data.remote.ContentApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     single { 
+
         com.littlebridge.enrollplus.feature.auth.data.remote.AuthApi(
+
             client = get(),
+
             baseUrl = AppConfig.authBaseUrl
+
         ) 
+
     }
+
     single {
+
         com.littlebridge.enrollplus.feature.parent.data.remote.ParentApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     single {
+
         com.littlebridge.enrollplus.feature.admin.data.remote.OnboardingApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     single {
+
         com.littlebridge.enrollplus.feature.admin.data.remote.AdmissionApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     single {
+
         com.littlebridge.enrollplus.feature.admin.data.remote.MessagesApi(
+
+            client = get(),
+
+            baseUrl = AppConfig.schoolBaseUrl
+
+        )
+
+    }
+
+    single {
+        com.littlebridge.enrollplus.feature.admin.data.remote.DeliveryLogApi(
             client = get(),
             baseUrl = AppConfig.schoolBaseUrl
         )
     }
     single {
         com.littlebridge.enrollplus.feature.admin.data.remote.AnnouncementsApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     single {
+
         com.littlebridge.enrollplus.feature.admin.data.remote.TeachersApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     // RA-47: institutional-profile (schools row) read/edit
+
     single {
+
         com.littlebridge.enrollplus.feature.admin.data.remote.SchoolProfileApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     // RA-45: student roster + student/teacher profile detail
+
     single {
+
         com.littlebridge.enrollplus.feature.admin.data.remote.StudentsApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     // RA-TAM: Teacher Assignment Management (reusable assignment module)
+
     single {
+
         com.littlebridge.enrollplus.feature.admin.data.remote.TeacherAssignmentApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     // RA-S17: Non-teaching-staff vertical
+
     single {
+
         com.littlebridge.enrollplus.feature.admin.data.remote.StaffApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     // RA-52: admin Records rollups (attendance / marks / fees)
+
     single {
+
         com.littlebridge.enrollplus.feature.admin.data.remote.RecordsApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     single {
+
         com.littlebridge.enrollplus.feature.admin.data.remote.PtmApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     single {
+
         com.littlebridge.enrollplus.feature.admin.data.remote.CalendarApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     // VP-CAL: Academic Calendar platform + Academic Year management
+
     single {
+
         com.littlebridge.enrollplus.feature.admin.data.remote.AcademicCalendarPlatformApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     single {
+
         com.littlebridge.enrollplus.feature.admin.data.remote.AcademicYearApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     single {
+
         com.littlebridge.enrollplus.feature.admin.data.remote.AttendanceApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     single {
+
         com.littlebridge.enrollplus.feature.admin.data.remote.LeaveRequestsApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     // RA-48: school-admin link-request queue API.
+
     single {
+
         com.littlebridge.enrollplus.feature.admin.data.remote.LinkRequestsApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     single {
+
         com.littlebridge.enrollplus.feature.admin.data.remote.AnalyticsApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     // Redesigned admin home dashboard (summary / analytics / activity).
+
     single {
+
         com.littlebridge.enrollplus.feature.admin.data.remote.AdminDashboardApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     single {
+
         com.littlebridge.enrollplus.feature.admin.data.remote.ResultsApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     single {
+
         com.littlebridge.enrollplus.feature.admin.data.remote.UserProfileApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     single {
+
         com.littlebridge.enrollplus.feature.admin.data.remote.MediaApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     // Teacher vertical (master doc G1)
+
     single {
+
         com.littlebridge.enrollplus.feature.teacher.data.remote.TeacherApi(
+
+            client = get(),
+
+            baseUrl = AppConfig.schoolBaseUrl
+
+        )
+
+    }
+
+    // Exam Ecosystem (EXAM_ECOSYSTEM_PLAN.md)
+    single {
+        com.littlebridge.enrollplus.feature.exam.data.remote.ExamApi(
             client = get(),
             baseUrl = AppConfig.schoolBaseUrl
         )
     }
+    single { com.littlebridge.enrollplus.feature.exam.data.repository.ExamRepository(get()) }
+
     // Notification FOUNDATION (push infra) — device-token registration client.
+
     // The admin broadcast endpoint is server-only, so the client surface is a
+
     // single POST /api/device-tokens call invoked by the Android token registrar.
+
     single {
+
         com.littlebridge.enrollplus.feature.notification.data.remote.NotificationApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     // Health Records (P1-12) — admin/nurse + teacher + parent health endpoints.
+
     single {
+
         com.littlebridge.enrollplus.feature.health.data.remote.HealthApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     // PEWS (Predictive Early Warning System) — cross-role (admin / teacher / parent).
+
     single {
+
         com.littlebridge.enrollplus.feature.pews.data.remote.PewsApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
+
 
     // Repositories
+
     single<SchoolRepository> { SchoolRepositoryImpl(get(), get()) }
+
     single<com.littlebridge.enrollplus.feature.content.domain.repository.ContentRepository> { 
+
         com.littlebridge.enrollplus.feature.content.data.repository.ContentRepositoryImpl(get())
+
     }
-    single<com.littlebridge.enrollplus.feature.auth.domain.repository.AuthRepository> { 
+
+    single<com.littlebridge.enrollplus.feature.auth.domain.repository.AuthRepository> {
+
         // RA-S05: 4th arg = SelectedChildHolder (cleared on logout).
-        com.littlebridge.enrollplus.feature.auth.data.repository.AuthRepositoryImpl(get(), get(), get(), get())
+
+        // 5th arg = LocaleManager (syncs languagePref from login response).
+
+        com.littlebridge.enrollplus.feature.auth.data.repository.AuthRepositoryImpl(get(), get(), get(), get(), get(), get())
+
     }
+
     single<com.littlebridge.enrollplus.feature.parent.domain.repository.ParentRepository> {
-        com.littlebridge.enrollplus.feature.parent.data.repository.ParentRepositoryImpl(get())
+
+        com.littlebridge.enrollplus.feature.parent.data.repository.ParentRepositoryImpl(get(), get())
+
     }
+
+    single<com.littlebridge.enrollplus.core.notification.NotificationFeedRepository> {
+
+        get<com.littlebridge.enrollplus.feature.parent.domain.repository.ParentRepository>()
+
+    }
+
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.OnboardingRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.OnboardingRepositoryImpl(get())
+
+        com.littlebridge.enrollplus.feature.admin.data.repository.OnboardingRepositoryImpl(get(), get())
+
     }
+
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.AdmissionRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.AdmissionRepositoryImpl(get())
+
+        com.littlebridge.enrollplus.feature.admin.data.repository.AdmissionRepositoryImpl(get(), get())
+
     }
+
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.MessagesRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.MessagesRepositoryImpl(get())
+
+        com.littlebridge.enrollplus.feature.admin.data.repository.MessagesRepositoryImpl(get(), get())
+
+    }
+    single<com.littlebridge.enrollplus.feature.admin.domain.repository.DeliveryLogRepository> {
+        com.littlebridge.enrollplus.feature.admin.data.repository.DeliveryLogRepositoryImpl(get())
     }
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.AnnouncementsRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.AnnouncementsRepositoryImpl(get())
+
+        com.littlebridge.enrollplus.feature.admin.data.repository.AnnouncementsRepositoryImpl(get(), get())
+
     }
+
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.TeachersRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.TeachersRepositoryImpl(get())
+
+        com.littlebridge.enrollplus.feature.admin.data.repository.TeachersRepositoryImpl(get(), get())
+
     }
+
     // RA-47
+
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.SchoolProfileRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.SchoolProfileRepositoryImpl(get())
+
+        com.littlebridge.enrollplus.feature.admin.data.repository.SchoolProfileRepositoryImpl(get(), get())
+
     }
+
     // RA-45
+
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.StudentsRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.StudentsRepositoryImpl(get())
+
+        com.littlebridge.enrollplus.feature.admin.data.repository.StudentsRepositoryImpl(get(), get())
+
     }
+
     // RA-TAM: Teacher Assignment Management repository
+
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.TeacherAssignmentRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.TeacherAssignmentRepositoryImpl(get())
+
+        com.littlebridge.enrollplus.feature.admin.data.repository.TeacherAssignmentRepositoryImpl(get(), get())
+
     }
+
     // RA-S17
+
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.StaffRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.StaffRepositoryImpl(get())
+
+        com.littlebridge.enrollplus.feature.admin.data.repository.StaffRepositoryImpl(get(), get())
+
     }
+
     // RA-52
+
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.RecordsRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.RecordsRepositoryImpl(get())
+
+        com.littlebridge.enrollplus.feature.admin.data.repository.RecordsRepositoryImpl(get(), get())
+
     }
+
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.PtmRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.PtmRepositoryImpl(get())
+
+        com.littlebridge.enrollplus.feature.admin.data.repository.PtmRepositoryImpl(get(), get())
+
     }
+
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.CalendarRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.CalendarRepositoryImpl(get())
+
+        com.littlebridge.enrollplus.feature.admin.data.repository.CalendarRepositoryImpl(get(), get())
+
     }
+
     // VP-CAL: Academic Calendar platform + Academic Year management repositories
+
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.AcademicCalendarPlatformRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.AcademicCalendarPlatformRepositoryImpl(get())
+
+        com.littlebridge.enrollplus.feature.admin.data.repository.AcademicCalendarPlatformRepositoryImpl(get(), get())
+
     }
+
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.AcademicYearRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.AcademicYearRepositoryImpl(get())
+
+        com.littlebridge.enrollplus.feature.admin.data.repository.AcademicYearRepositoryImpl(get(), get())
+
     }
+
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.AttendanceRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.AttendanceRepositoryImpl(get())
+
+        com.littlebridge.enrollplus.feature.admin.data.repository.AttendanceRepositoryImpl(get(), get())
+
     }
+
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.LeaveRequestsRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.LeaveRequestsRepositoryImpl(get())
+
+        com.littlebridge.enrollplus.feature.admin.data.repository.LeaveRequestsRepositoryImpl(get(), get())
+
     }
+
     // RA-48: school-admin link-request queue repository.
+
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.LinkRequestsRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.LinkRequestsRepositoryImpl(get())
+
+        com.littlebridge.enrollplus.feature.admin.data.repository.LinkRequestsRepositoryImpl(get(), get())
+
     }
+
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.AnalyticsRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.AnalyticsRepositoryImpl(get())
+
+        com.littlebridge.enrollplus.feature.admin.data.repository.AnalyticsRepositoryImpl(get(), get())
+
     }
+
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.AdminDashboardRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.AdminDashboardRepositoryImpl(get())
+
+        com.littlebridge.enrollplus.feature.admin.data.repository.AdminDashboardRepositoryImpl(get(), get())
+
     }
+
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.ResultsRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.ResultsRepositoryImpl(get())
+
+        com.littlebridge.enrollplus.feature.admin.data.repository.ResultsRepositoryImpl(get(), get())
+
     }
+
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.UserProfileRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.UserProfileRepositoryImpl(get())
+
+        com.littlebridge.enrollplus.feature.admin.data.repository.UserProfileRepositoryImpl(get(), get())
+
     }
+
     single<com.littlebridge.enrollplus.feature.teacher.domain.repository.TeacherRepository> {
-        com.littlebridge.enrollplus.feature.teacher.data.repository.TeacherRepositoryImpl(get())
+
+        com.littlebridge.enrollplus.feature.teacher.data.repository.TeacherRepositoryImpl(get(), get())
+
     }
+
     // Notification FOUNDATION repository — delegates to NotificationApi.
+
     single<com.littlebridge.enrollplus.feature.notification.domain.repository.NotificationRepository> {
+
         com.littlebridge.enrollplus.feature.notification.data.repository.NotificationRepositoryImpl(get())
+
     }
+
     // Health Records repository (P1-12)
+
     single<com.littlebridge.enrollplus.feature.health.domain.repository.HealthRepository> {
+
         com.littlebridge.enrollplus.feature.health.data.repository.HealthRepositoryImpl(get())
+
     }
+
     // PEWS repository
+
     single<com.littlebridge.enrollplus.feature.pews.domain.repository.PewsRepository> {
+
         com.littlebridge.enrollplus.feature.pews.data.repository.PewsRepositoryImpl(get())
+
     }
+
+
 
     // AI Report Card 2.0 — cross-role (teacher / admin / parent)
+
     single {
+
         com.littlebridge.enrollplus.feature.reportcard.data.remote.ReportCardApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     single<com.littlebridge.enrollplus.feature.reportcard.domain.repository.ReportCardRepository> {
+
         com.littlebridge.enrollplus.feature.reportcard.data.repository.ReportCardRepositoryImpl(get())
+
     }
+
+
 
     // Alumni Management (ALUMNI_MANAGEMENT_SPEC.md)
+
     single {
+
         com.littlebridge.enrollplus.feature.alumni.data.remote.AlumniApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     single<com.littlebridge.enrollplus.feature.alumni.domain.repository.AlumniRepository> {
+
         com.littlebridge.enrollplus.feature.alumni.data.repository.AlumniRepositoryImpl(get())
+
     }
+
+
 
     // Transport Tracking (TRANSPORT_TRACKING_SPEC.md)
+
     single {
+
         com.littlebridge.enrollplus.feature.transport.data.remote.TransportApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     single<com.littlebridge.enrollplus.feature.transport.domain.repository.TransportRepository> {
+
         com.littlebridge.enrollplus.feature.transport.data.repository.TransportRepositoryImpl(get())
+
     }
+
+
 
     // Scholarship Workflow (SCHOLARSHIP_WORKFLOW_SPEC.md)
+
     single {
+
         com.littlebridge.enrollplus.feature.scholarship.data.remote.ScholarshipApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     single<com.littlebridge.enrollplus.feature.scholarship.domain.repository.ScholarshipRepository> {
+
         com.littlebridge.enrollplus.feature.scholarship.data.repository.ScholarshipRepositoryImpl(get())
+
     }
+
+
+
+    // Gamification (GAMIFICATION_SYSTEM_SPEC.md)
+
+    single {
+
+        com.littlebridge.enrollplus.feature.gamification.data.remote.GamificationApi(
+
+            client = get(),
+
+            baseUrl = AppConfig.schoolBaseUrl
+
+        )
+
+    }
+
+    single<com.littlebridge.enrollplus.feature.gamification.domain.repository.GamificationRepository> {
+
+        com.littlebridge.enrollplus.feature.gamification.data.repository.GamificationRepositoryImpl(get())
+
+    }
+
+
 
     // School Branding Kit (SCHOOL_BRANDING_KIT_SPEC.md)
+
     single {
+
         com.littlebridge.enrollplus.feature.branding.data.remote.BrandingApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
-    }
-    single<com.littlebridge.enrollplus.feature.branding.domain.repository.BrandingRepository> {
-        com.littlebridge.enrollplus.feature.branding.data.repository.BrandingRepositoryImpl(get())
-    }
-    // Dynamic theming — app-lifecycle singleton holding school branding
-    single {
-        com.littlebridge.enrollplus.feature.branding.presentation.BrandingThemeManager(get(), get())
+
     }
 
-    // ID Card Generation (ID_CARD_GENERATION_SPEC.md)
+    single<com.littlebridge.enrollplus.feature.branding.domain.repository.BrandingRepository> {
+
+        com.littlebridge.enrollplus.feature.branding.data.repository.BrandingRepositoryImpl(get())
+
+    }
+
+    // Dynamic theming — app-lifecycle singleton holding school branding
+
     single {
+
+        com.littlebridge.enrollplus.feature.branding.presentation.BrandingThemeManager(get(), get())
+
+    }
+
+
+
+    // ID Card Generation (ID_CARD_GENERATION_SPEC.md)
+
+    single {
+
         com.littlebridge.enrollplus.feature.idcard.data.remote.IdCardApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     single<com.littlebridge.enrollplus.feature.idcard.domain.repository.IdCardRepository> {
+
         com.littlebridge.enrollplus.feature.idcard.data.repository.IdCardRepositoryImpl(get())
+
     }
+
+
 
     // Message Scheduling (MESSAGE_SCHEDULING_PLAN.md §7)
+
     single {
+
         com.littlebridge.enrollplus.feature.scheduling.data.remote.ScheduledMessageApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     single<com.littlebridge.enrollplus.feature.scheduling.domain.repository.ScheduledMessageRepository> {
+
         com.littlebridge.enrollplus.feature.scheduling.data.repository.ScheduledMessageRepositoryImpl(get())
+
     }
+
+
 
     // Event Registration & RSVP System (EVENT_REGISTRATION_PLAN.md §4)
-    single {
-        com.littlebridge.enrollplus.feature.event.data.remote.EventRegistrationApi(
-            client = get(),
-            baseUrl = AppConfig.schoolBaseUrl
-        )
-    }
-    single<com.littlebridge.enrollplus.feature.event.domain.repository.EventRegistrationRepository> {
-        com.littlebridge.enrollplus.feature.event.data.repository.EventRegistrationRepositoryImpl(get())
-    }
 
     single {
-        com.littlebridge.enrollplus.feature.admin.data.remote.SchoolDayConfigApi(
+
+        com.littlebridge.enrollplus.feature.event.data.remote.EventRegistrationApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
+    single<com.littlebridge.enrollplus.feature.event.domain.repository.EventRegistrationRepository> {
+
+        com.littlebridge.enrollplus.feature.event.data.repository.EventRegistrationRepositoryImpl(get())
+
+    }
+
+    // Branded Export System
+
+    single {
+
+        com.littlebridge.enrollplus.feature.export.data.remote.ExportApi(
+
+            client = get(),
+
+            baseUrl = AppConfig.schoolBaseUrl
+
+        )
+
+    }
+
+    single<com.littlebridge.enrollplus.feature.export.domain.repository.ExportRepository> {
+
+        com.littlebridge.enrollplus.feature.export.data.repository.ExportRepositoryImpl(get())
+
+    }
+
+
+
+    single {
+
+        com.littlebridge.enrollplus.feature.admin.data.remote.SchoolDayConfigApi(
+
+            client = get(),
+
+            baseUrl = AppConfig.schoolBaseUrl
+
+        )
+
+    }
+
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.SchoolDayConfigRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.SchoolDayConfigRepositoryImpl(get())
+
+        com.littlebridge.enrollplus.feature.admin.data.repository.SchoolDayConfigRepositoryImpl(get(), get())
+
     }
+
+
 
     // Timetable AI Import (OCR + text parsing)
+
     single {
+
         com.littlebridge.enrollplus.feature.admin.data.remote.TimetableImportApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
+
 
     // Classes & Subjects management (consolidated admin screen)
+
     single {
+
         com.littlebridge.enrollplus.feature.admin.data.remote.SchoolClassesApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.SchoolClassesRepository> {
-        com.littlebridge.enrollplus.feature.admin.data.repository.SchoolClassesRepositoryImpl(get())
+
+        com.littlebridge.enrollplus.feature.admin.data.repository.SchoolClassesRepositoryImpl(get(), get())
+
     }
+
+
 
     // UseCases
+
     factory { GetSchoolsUseCase(get()) }
+    factory { GetDeliveryLogUseCase(get()) }
+
+
+
+    // ── Multi-Language i18n (MULTI_LANGUAGE_SPEC.md) ──────────────────
+
+    single {
+
+        com.littlebridge.enrollplus.feature.i18n.data.remote.LanguageApi(
+
+            client = get(),
+
+            baseUrl = AppConfig.schoolBaseUrl
+
+        )
+
+    }
+
+    single<com.littlebridge.enrollplus.feature.i18n.domain.repository.LanguageRepository> {
+
+        com.littlebridge.enrollplus.feature.i18n.data.repository.LanguageRepositoryImpl(get())
+
+    }
+
+    factory { com.littlebridge.enrollplus.feature.i18n.domain.usecase.GetLanguagePrefUseCase(get()) }
+
+    factory { com.littlebridge.enrollplus.feature.i18n.domain.usecase.UpdateLanguagePrefUseCase(get()) }
+
+    single { com.littlebridge.enrollplus.core.locale.NetworkMonitor() }
+
+    single { com.littlebridge.enrollplus.core.locale.LocaleManager(get(), get(), get()) }
+
 }
+
+
 
 val viewModelModule = module {
+
     factory { MainViewModel(get(), get(), get(), get()) }
+
     factory { com.littlebridge.enrollplus.presentation.PermissionViewModel(get(), get()) }
+
     // Schools-discovery marketplace VM — drives DiscoveryScreenV2 off the real
+
     // GET /api/v1/parent/schools/discover endpoint. See BACKEND_GAPS.md §3.
+
     factory {
+
         com.littlebridge.enrollplus.feature.schools.presentation.SchoolDiscoveryViewModel(
+
             get(),  // KtorSchoolApi
+
             get(),  // PreferenceRepository
+
         )
+
     }
+
     // NOTE (SWEEP-B): the following V1 parent VMs were registered here but had
+
     // ZERO injection/usage anywhere after the V1->V2 screen migration
+
     // (ParentDashboardViewModel superseded by ParentHomeViewModel + SchoolDiscoveryViewModel;
+
     //  ChildBasicInfo/YourPreferences/LocationRequest/CareerPath/DailyStatus/ParentReports/
+
     //  ParentSchedulePTM/ParentMessage screens dropped in V2). Their dead factory
+
     // registrations were removed to keep the Koin graph clean — every remaining
+
     // registration below is actually consumed via koinViewModel().
+
     // RA-S05: a single, app-scoped holder so every parent tab shares the same
+
     // selected-child id (switching the child on one tab updates all of them).
+
     single { com.littlebridge.enrollplus.core.state.SelectedChildHolder() }
+
     factory { FeeViewModel(get(), get(), get()) }
+
     factory { ScholarshipsViewModel(get(), get()) }
+
     factory { ParentAnnouncementViewModel(get(), get()) }
-    factory { NotificationsViewModel(get(), get()) }
+
+    factory { NotificationsViewModel(get<com.littlebridge.enrollplus.core.notification.NotificationFeedRepository>(), get()) }
+
     factory { LinkChildViewModel(get(), get()) }
+
     factory { ParentHomeViewModel(get(), get(), get()) }
+
     factory { ParentProfileViewModel(get(), get()) }
+
     factory { TrackProgressViewModel(get(), get()) }
+
+    factory { ParentHomeworkViewModel(get(), get(), get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.parent.presentation.ParentAcademicsViewModel(get(), get(), get()) }
+
+    factory { com.littlebridge.enrollplus.feature.parent.presentation.SkillTestViewModel(get(), get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.parent.presentation.ParentDashboardViewModel(get(), get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.parent.presentation.ParentLeaveViewModel(get(), get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.parent.presentation.ParentMessageViewModel(get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.parent.presentation.ParentPulseViewModel(get(), get(), get()) }
+
     factory { SchoolDashboardViewModel(get(), get(), get()) }
+    factory { PinnedScreensViewModel(get(), get()) }
     factory { InstitutionalBasicOBViewModel(get(), get()) }
+
     factory { BrandingInfoOBViewModel(get(), get(), get()) }
+
     factory { AcademicInfoOBViewModel(get(), get()) }
+
     // Onboarding-time teacher provisioning (creates REAL loginable teacher
+
     // accounts via TeachersRepository → POST /school/teachers).
+
     factory { com.littlebridge.enrollplus.feature.admin.presentation.TeacherProvisioningOBViewModel(get(), get()) }
+
     factory { LaunchInfoOBViewModel(get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.admin.presentation.OnboardingGateViewModel(get(), get()) }
+
     factory { InstitutionalProfileViewModel(get(), get(), get()) }
+    factory { BrandingPhotosViewModel(get(), get(), get(), get(), get()) }
     factory { com.littlebridge.enrollplus.feature.admin.presentation.SchoolProfileViewModel(get(), get()) } // RA-47
-    factory { com.littlebridge.enrollplus.feature.admin.presentation.StudentRosterViewModel(get(), get()) } // RA-45
+    factory { com.littlebridge.enrollplus.feature.admin.presentation.StudentRosterViewModel(get(), get(), get()) } // RA-45 + link count
     factory { com.littlebridge.enrollplus.feature.admin.presentation.StaffViewModel(get(), get()) } // RA-S17
+
     factory { com.littlebridge.enrollplus.feature.admin.presentation.StudentProfileViewModel(get(), get()) } // RA-45
+
     factory { com.littlebridge.enrollplus.feature.admin.presentation.TeacherProfileViewModel(get(), get(), get()) } // RA-45 (+RA-S17 delete-in-profile)
+
     factory { com.littlebridge.enrollplus.feature.admin.presentation.TeacherAssignmentViewModel(get(), get()) } // RA-TAM: reusable assignment module
+
     factory { com.littlebridge.enrollplus.feature.admin.presentation.SchoolRecordsViewModel(get(), get()) } // RA-52
+
     factory { AdmissionCRMViewModel(get(), get()) }
+
     factory { SchoolAnnouncementsViewModel(get(), get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.admin.presentation.SchoolTeachersViewModel(get(), get()) }
+
     factory { MessagesViewModel(get(), get(), get()) }
+    factory { CommsDeliveryLogViewModel(get(), get()) }
     factory { SchedulePTMViewModel(get(), get()) }
+
     factory { AcademicCalendarViewModel(get(), get()) }
+
+    // CYC-006: Named qualifiers for all portal calendar VMs.
+
+    // School and teacher share the default (school endpoint). Parent uses a separate endpoint.
+
+    factory(qualifier = org.koin.core.qualifier.named("schoolCalendar")) { AcademicCalendarViewModel(get(), get(), "api/v1/school/calendar") }
+
+    factory(qualifier = org.koin.core.qualifier.named("teacherCalendar")) { AcademicCalendarViewModel(get(), get(), "api/v1/school/calendar") }
+
+    // Parent-specific calendar VM uses the parent endpoint (school endpoint returns 403)
+
+    factory(qualifier = org.koin.core.qualifier.named("parentCalendar")) { AcademicCalendarViewModel(get(), get(), "api/v1/parent/calendar") }
+
     // VP-CAL: premium Academic Calendar platform + unified create-event + Academic Year mgmt
+
     factory { com.littlebridge.enrollplus.feature.admin.presentation.AcademicCalendarPlatformViewModel(get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.admin.presentation.UnifiedCreateEventViewModel(get()) }
+
     factory { com.littlebridge.enrollplus.feature.admin.presentation.AcademicYearViewModel(get(), get()) }
+
     factory { LeaveRequestsViewModel(get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.admin.presentation.LinkRequestsViewModel(get(), get()) }
+
     factory { DailyAttendanceViewModel(get(), get()) }
+
     factory { AnalyticsDashboardViewModel(get(), get()) }
+
     factory { StudentAnalyticsViewModel(get(), get()) }
+
     factory { TeacherPerformanceViewModel(get(), get()) }
+
     factory { ClassPerformanceViewModel(get(), get()) }
+
     factory { SyllabusCoverageViewModel(get(), get()) }
+
     factory { PaceAlertsViewModel(get(), get()) }
+
     factory { ResultsViewModel(get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.content.presentation.LandingViewModel(get()) }
+
     factory { com.littlebridge.enrollplus.feature.auth.presentation.AuthViewModel(get()) }
+
     // Teacher vertical (master doc G1) — all (TeacherRepository, PreferenceRepository)
+
     // T-601 (DELETE-don't-patch): TeacherHomeViewModel factory removed — the legacy
+
     // Home tab is replaced by the Today tab (Doc 04 §4). See TeacherTodayViewModel below.
+
     // T-105: the new Today tab (server-resolved schedule).
+
     factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherTodayViewModel(get(), get()) }
+
     // T-106c: teacher self check-in (Doc 06 §2) — backs the Today greeting band pill.
+
     factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherCheckInViewModel(get(), get()) }
+
     // T-107: real obligations strip (Doc 04 §5.5) — backs the Today "what needs me" strip.
+
     factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherObligationsViewModel(get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherClassesViewModel(get(), get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherStudentProfileViewModel(get(), get()) } // T-505
+
     factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherAttendanceViewModel(get(), get()) }
+
+    factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherAttendanceAnalyticsViewModel(get(), get()) }
+
+    factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherInsightsViewModel(get(), get()) }
+
     // T-305: the rebuilt gradebook state holder (replaces the legacy split of
+
     // TeacherMarksViewModel + TeacherAssessmentsViewModel, both deleted in T-305).
+
     factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherGradebookViewModel(get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherSyllabusViewModel(get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherHomeworkViewModel(get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherMessageViewModel(get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherLessonPlanViewModel(get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherProfileViewModel(get(), get()) }
+
+    // Exam Ecosystem ViewModels
+    factory { com.littlebridge.enrollplus.feature.exam.presentation.ExamTimetablesViewModel(get(), get()) }
+    factory { com.littlebridge.enrollplus.feature.exam.presentation.ExamSyllabusViewModel(get(), get()) }
+    factory { com.littlebridge.enrollplus.feature.exam.presentation.ParentExamViewModel(get(), get()) }
+
     // T-602b: the actionable Profile VM (own-leave list/apply, password change via
+
     // AuthRepository, theme pref) — (TeacherRepository, PreferenceRepository, AuthRepository).
+
     factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherProfileActionsViewModel(get(), get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherLeaveViewModel(get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherTimetableViewModel(get(), get()) }
+
     // PEWS (Predictive Early Warning System) view models
+
     factory { com.littlebridge.enrollplus.feature.pews.presentation.PewsCohortViewModel(get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.pews.presentation.PewsStudentDetailViewModel(get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.pews.presentation.TeacherPewsViewModel(get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.pews.presentation.ParentNudgeViewModel(get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.pews.presentation.PewsEffectivenessViewModel(get(), get()) }
+
     // Health Records (P1-12) — admin/nurse + teacher + parent view models
+
     factory { com.littlebridge.enrollplus.feature.health.presentation.AdminHealthViewModel(get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.health.presentation.TeacherHealthAlertsViewModel(get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.health.presentation.ParentHealthViewModel(get(), get()) }
+
     // Alumni Management (ALUMNI_MANAGEMENT_SPEC.md)
+
     factory { com.littlebridge.enrollplus.feature.alumni.presentation.AlumniViewModel(get(), get()) }
+
     // Transport Tracking (TRANSPORT_TRACKING_SPEC.md)
+
     factory { com.littlebridge.enrollplus.feature.transport.presentation.TransportViewModel(get(), get()) }
 
+
+
     // AI Report Card 2.0 — cross-role view models
+
     factory { com.littlebridge.enrollplus.feature.reportcard.presentation.TeacherReportReviewViewModel(get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.reportcard.presentation.TeacherReportDraftEditorViewModel(get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.reportcard.presentation.AdminReportPublishViewModel(get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.reportcard.presentation.AdminReportEffectivenessViewModel(get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.reportcard.presentation.ParentReportViewModel(get(), get()) }
 
+
+
     // AI Tutor 2.0 — API + repository + view models
+
     single {
+
         com.littlebridge.enrollplus.feature.tutor.data.remote.TutorApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     single<com.littlebridge.enrollplus.feature.tutor.domain.repository.TutorRepository> {
+
         com.littlebridge.enrollplus.feature.tutor.data.repository.TutorRepositoryImpl(get())
+
     }
+
     factory { com.littlebridge.enrollplus.feature.tutor.presentation.TutorChatViewModel(get(), get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.tutor.presentation.TutorPlanViewModel(get(), get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.tutor.presentation.TutorPracticeViewModel(get(), get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.tutor.presentation.TeacherHeatmapViewModel(get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.tutor.presentation.ParentProgressViewModel(get(), get(), get()) }
+
     // Scholarship Workflow (SCHOLARSHIP_WORKFLOW_SPEC.md)
+
     factory { com.littlebridge.enrollplus.feature.scholarship.presentation.ScholarshipViewModel(get(), get()) }
+
     // School Branding Kit (SCHOOL_BRANDING_KIT_SPEC.md)
+
     factory { com.littlebridge.enrollplus.feature.branding.presentation.BrandingViewModel(get(), get()) }
+
     // ID Card Generation (ID_CARD_GENERATION_SPEC.md)
+
     factory { com.littlebridge.enrollplus.feature.idcard.presentation.IdCardViewModel(get(), get()) }
+
     // Library Management (LIBRARY_MANAGEMENT_SPEC.md)
+
     single {
+
         com.littlebridge.enrollplus.feature.library.data.remote.LibraryApi(
+
             client = get(),
+
             baseUrl = AppConfig.schoolBaseUrl
+
         )
+
     }
+
     single<com.littlebridge.enrollplus.feature.library.domain.repository.LibraryRepository> {
+
         com.littlebridge.enrollplus.feature.library.data.repository.LibraryRepositoryImpl(get(), getOrNull())
+
     }
+
     factory { com.littlebridge.enrollplus.feature.library.presentation.SchoolLibraryViewModel(get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.library.presentation.StudentLibraryViewModel(get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.library.presentation.ParentLibraryViewModel(get(), get()) }
+
     // Message Scheduling (MESSAGE_SCHEDULING_PLAN.md §8)
+
     factory { com.littlebridge.enrollplus.feature.scheduling.presentation.ScheduledMessagesViewModel(get(), get()) }
+
     // Event Registration & RSVP System (EVENT_REGISTRATION_PLAN.md §4)
+
     factory { com.littlebridge.enrollplus.feature.event.presentation.ParentEventRegistrationViewModel(get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.event.presentation.TeacherEventRegistrationViewModel(get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.event.presentation.AdminEventRegistrationViewModel(get(), get()) }
+
+    // Branded Export System
+
+    factory { com.littlebridge.enrollplus.feature.export.presentation.ExportViewModel(get(), get()) }
+
     // School Day Configuration (TIMETABLE_CLASS_TEACHER_PLAN.md Phase 0)
+
     factory { com.littlebridge.enrollplus.feature.admin.presentation.SchoolDayConfigViewModel(get(), get(), get()) }
+
     // Classes & Subjects consolidated management screen
+
     factory { com.littlebridge.enrollplus.feature.admin.presentation.ClassesSubjectsViewModel(get(), get(), get()) }
+
+    // Gamification — parent view model for child's gamification data
+
+    factory { com.littlebridge.enrollplus.feature.gamification.presentation.ParentGamificationViewModel(get(), get()) }
+
+    // Gamification — teacher view model for class/student gamification actions
+
+    factory { com.littlebridge.enrollplus.feature.gamification.presentation.TeacherGamificationViewModel(get(), get()) }
+
+    // Gamification — admin view model for gamification management
+
+    factory { com.littlebridge.enrollplus.feature.gamification.presentation.AdminGamificationViewModel(get(), get()) }
+
 }
+
+
 
 fun initKoin(
+
     appDeclaration: KoinAppDeclaration = {}
+
 ) = startKoin {
+
     appDeclaration()
+
     modules(commonModule, viewModelModule, platformModule())
+
 }
 
+
+
 // For iOS
+
 fun initKoin() = initKoin {}
+

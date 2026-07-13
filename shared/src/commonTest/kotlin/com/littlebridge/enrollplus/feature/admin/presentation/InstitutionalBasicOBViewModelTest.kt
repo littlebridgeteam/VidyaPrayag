@@ -134,6 +134,8 @@ class InstitutionalBasicOBViewModelTest {
         override suspend fun setFontScale(scale: Float) {}
         override fun getCachedBranding(): Flow<String?> = MutableStateFlow(null)
         override suspend fun setCachedBranding(brandingJson: String?) {}
+        override fun getLanguagePref(): Flow<String> = MutableStateFlow("en")
+        override suspend fun setLanguagePref(lang: String) {}
         override suspend fun clearSession() {}
     }
 

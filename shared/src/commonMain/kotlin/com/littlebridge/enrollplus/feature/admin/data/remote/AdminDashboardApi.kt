@@ -19,6 +19,7 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardActi
 import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardAnalytics
 import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardOverview
 import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardSummary
+import com.littlebridge.enrollplus.feature.admin.domain.model.DailyDigest
 import com.littlebridge.enrollplus.feature.teacher.domain.model.PaceSnapshotsResponse
 import com.littlebridge.enrollplus.feature.teacher.domain.model.PaceAlertsResponse
 import com.littlebridge.enrollplus.feature.teacher.domain.model.PaceAlertResolveResponse
@@ -68,6 +69,13 @@ class AdminDashboardApi(
         token: String
     ): NetworkResult<ApiResponse<AdminDashboardOverview>> = safeApiCall {
         client.get(getUrl("api/admin/dashboard/overview"))
+    }
+
+    /** Daily focus digest for the redesigned home hero. */
+    suspend fun getDigest(
+        token: String
+    ): NetworkResult<ApiResponse<DailyDigest>> = safeApiCall {
+        client.get(getUrl("api/admin/dashboard/digest"))
     }
 
     // ── Agentic Syllabus — pace monitoring (admin) ───────────────────────────
