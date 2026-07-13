@@ -64,7 +64,7 @@
 <td align="center" width="20%"><img src="https://img.shields.io/badge/₹0-Compute_Cost-FF6B35?style=for-the-badge&labelColor=0f0f23&color=FF6B35" alt="cost" /></td>
 </tr>
 <tr>
-<td align="center"><sub>GitHub commits in 1 year</sub></td>
+<td align="center"><sub>GitHub contributions in 1 year</sub></td>
 <td align="center"><sub>Quantum Insights · Enroll+ · FORGE-X · Job Bot</sub></td>
 <td align="center"><sub>Quantum Insights · Enroll+</sub></td>
 <td align="center"><sub>Groq · Cerebras · Gemini · DeepSeek · Mistral · OpenRouter · NVIDIA NIM · Cloudflare · HuggingFace · Fireworks · SambaNova · Llama · Chronos</sub></td>
@@ -293,7 +293,7 @@ Multi-agent system that automates the full job application pipeline on Telegram.
 
 <br>
 
-<img src="https://github-readme-activity-graph.vercel.app/graph?username=hereugo-ak&theme=tokyo-night&hide_border=true&bg_color=0f0f23&color=58a6ff&line=2ea043&point=ff6b35&area=true&area_color=2ea04330&title=Contribution%20Activity%20(1000%2B%20commits)" width="90%" />
+<img src="https://github-readme-activity-graph.vercel.app/graph?username=hereugo-ak&theme=tokyo-night&hide_border=true&bg_color=0f0f23&color=58a6ff&line=2ea043&point=ff6b35&area=true&area_color=2ea04330&title=Contribution%20Activity%20(1000%2B%20contributions)" width="90%" />
 
 <br><br>
 
