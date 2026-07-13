@@ -3,7 +3,6 @@ package com.littlebridge.enrollplus.ui.v2.screens.teacher
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,7 +31,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -73,6 +71,9 @@ fun TeacherMarksScreenV2(
     assignmentId: String,
     scopeLabel: String,
     modifier: Modifier = Modifier,
+    tool: UpdateTool = UpdateTool.Marks,
+    onToolChange: (UpdateTool) -> Unit = {},
+    onChangeClass: () -> Unit = {},
     onImportMarks: () -> Unit = {},
     viewModel: TeacherGradebookViewModel = koinViewModel(),
 ) {
@@ -84,9 +85,9 @@ fun TeacherMarksScreenV2(
 
     Box(modifier.fillMaxSize().background(VColors.cream)) {
         when (state.mode) {
-            GradebookMode.List -> MarksListMode(viewModel, scopeLabel)
-            GradebookMode.Marks -> MarksGridMode(viewModel, onImportMarks)
-            GradebookMode.History -> MarksListMode(viewModel, scopeLabel) // history not surfaced in update flow
+            GradebookMode.List -> MarksListMode(viewModel, scopeLabel, tool, onToolChange, onChangeClass)
+            GradebookMode.Marks -> MarksGridMode(viewModel, scopeLabel, tool, onToolChange, onChangeClass, onImportMarks)
+            GradebookMode.History -> MarksListMode(viewModel, scopeLabel, tool, onToolChange, onChangeClass)
         }
     }
 }
@@ -96,22 +97,33 @@ fun TeacherMarksScreenV2(
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun MarksListMode(viewModel: TeacherGradebookViewModel, scopeLabel: String) {
+private fun MarksListMode(
+    viewModel: TeacherGradebookViewModel,
+    scopeLabel: String,
+    tool: UpdateTool,
+    onToolChange: (UpdateTool) -> Unit,
+    onChangeClass: () -> Unit,
+) {
     val state by viewModel.state.collectAsStateV2()
     var composerOpen by remember { mutableStateOf(false) }
 
     LazyColumn(
-        Modifier.fillMaxSize().padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(top = 14.dp, bottom = TeacherDockClearance),
+        Modifier.fillMaxSize().padding(horizontal = 20.dp),
+        contentPadding = PaddingValues(top = 16.dp, bottom = TeacherDockClearance),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            VtCard(padding = 16.dp) {
-                Column {
-                    VtEyebrow(appString(StringKeys.TC_TESTS_AND_MARKS), dot = VColors.violet)
-                    Spacer(Modifier.height(6.dp))
-                    Text(scopeLabel.ifBlank { state.scopeHint }, style = VTypography.h3.copy(fontSize = 18.sp, color = VColors.ink, fontWeight = FontWeight.ExtraBold))
-                    Spacer(Modifier.height(12.dp))
+            ScopedToolHeader(
+                tool = tool,
+                scopeLabel = scopeLabel,
+                onToolChange = onToolChange,
+                onChangeClass = onChangeClass,
+            )
+        }
+
+        item {
+            VtCard {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     VButton(
                         text = if (composerOpen) appString(StringKeys.COMMON_BUTTON_CLOSE) else appString(StringKeys.TC_CREATE_A_TEST),
                         onClick = { composerOpen = !composerOpen },
@@ -132,7 +144,7 @@ private fun MarksListMode(viewModel: TeacherGradebookViewModel, scopeLabel: Stri
             state.isListLoading && state.assessments.isEmpty() -> item { Box(Modifier.fillMaxWidth().height(80.dp), contentAlignment = Alignment.Center) { TeacherSpinner() } }
             state.listError != null && state.assessments.isEmpty() -> item {
                 VtCard { Column {
-                    Text(appString(StringKeys.TC_COULDNT_LOAD_TESTS), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold, color = VColors.ink))
+                    Text(appString(StringKeys.TC_COULDNT_LOAD_TESTS), style = VTypography.bodySmall, color = VColors.ink)
                     Spacer(Modifier.height(8.dp))
                     VButton(appString(StringKeys.COMMON_BUTTON_RETRY), onClick = { viewModel.retryList() }, tone = VButtonTone.Lavender, size = VButtonSize.Sm)
                 } }
@@ -153,12 +165,12 @@ private fun MarksListMode(viewModel: TeacherGradebookViewModel, scopeLabel: Stri
 @Composable
 private fun CreateAssessmentComposer(viewModel: TeacherGradebookViewModel, onDone: () -> Unit) {
     val state by viewModel.state.collectAsStateV2()
-    VtCard(padding = 16.dp) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(appString(StringKeys.TC_NEW_TEST), style = VTypography.h3.copy(fontSize = 18.sp, color = VColors.ink, fontWeight = FontWeight.ExtraBold))
+    VtCard {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(appString(StringKeys.TC_NEW_TEST), style = VTypography.bodySmall, color = VColors.ink)
             VInput(value = state.createName, onValueChange = viewModel::setCreateName, label = appString(StringKeys.TC_TEST_NAME), placeholder = appString(StringKeys.TC_TEST_NAME_PH))
             // Type chips
-            Text(appString(StringKeys.TC_TYPE), style = VTypography.label.copy(color = VColors.ink2))
+            Text(appString(StringKeys.TC_TYPE), style = VTypography.label, color = VColors.ink2)
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 AssessmentType.ALL.forEach { t ->
                     val active = state.createType == t
@@ -167,10 +179,10 @@ private fun CreateAssessmentComposer(viewModel: TeacherGradebookViewModel, onDon
                             .clip(VShapes.full)
                             .background(if (active) VColors.violetSoft else VColors.creamDeep)
                             .border(1.dp, if (active) VColors.violet.copy(alpha = 0.5f) else VColors.line, VShapes.full)
-                            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { viewModel.setCreateType(t) }
-                            .padding(horizontal = 10.dp, vertical = 6.dp),
+                            .clickable { viewModel.setCreateType(t) }
+                            .padding(horizontal = 12.dp, vertical = 7.dp),
                     ) {
-                        Text(t.replaceFirstChar { it.uppercase() }, style = VTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (active) VColors.violet else VColors.ink2))
+                        Text(t.replaceFirstChar { it.uppercase() }, style = VTypography.caption, color = if (active) VColors.violet else VColors.ink2)
                     }
                 }
             }
@@ -180,7 +192,7 @@ private fun CreateAssessmentComposer(viewModel: TeacherGradebookViewModel, onDon
             }
             VDatePicker(value = state.createExamDate, onValueChange = viewModel::setCreateExamDate, label = appString(StringKeys.TC_EXAM_DATE), placeholder = appString(StringKeys.TC_PICK_TEST_DATE))
             if (state.createError != null) {
-                Text(state.createError ?: "", style = VTypography.caption.copy(fontSize = 12.sp, color = VColors.coral))
+                Text(state.createError ?: "", style = VTypography.caption, color = VColors.coral)
             }
             VButton(
                 text = appString(StringKeys.TC_CREATE_TEST),
@@ -195,7 +207,6 @@ private fun CreateAssessmentComposer(viewModel: TeacherGradebookViewModel, onDon
 
 @Composable
 private fun AssessmentRow(a: AssessmentDto, viewModel: TeacherGradebookViewModel) {
-    // Per directive: marks open only once the exam date has passed (a scheduled future test is locked).
     val today = todayIso()
     val examDate = a.examDate
     val examPassed = examDate == null || examDate <= today
@@ -209,21 +220,21 @@ private fun AssessmentRow(a: AssessmentDto, viewModel: TeacherGradebookViewModel
         else -> { statusTint = VColors.violet; statusLabel = appString(StringKeys.TC_READY_TO_MARK) }
     }
     VtCard(
-        padding = 14.dp,
         onClick = if (canEnter || a.isPublished) ({ viewModel.openMarks(a) }) else null,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            VtIconDisc(VIcons.GraduationCap, tint = statusTint, bg = statusTint.copy(alpha = 0.12f), size = 42.dp, glyph = 21.dp)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            VtIconDisc(VIcons.GraduationCap, tint = statusTint, bg = statusTint.copy(alpha = 0.12f), size = 44.dp, glyph = 22.dp)
             Column(Modifier.weight(1f)) {
-                Text(a.name, style = VTypography.bodySmall.copy(fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = VColors.ink), maxLines = 1)
-                Spacer(Modifier.height(2.dp))
+                Text(a.name, style = VTypography.bodySmall, color = VColors.ink, maxLines = 1)
+                Spacer(Modifier.height(4.dp))
                 Text(
                     buildString {
                         append(appString(StringKeys.TC_MAX_N, "n" to a.maxMarks.toString()))
                         if (examDate != null) append(" · ${prettyDateShort(examDate)}")
                         if (a.rosterCount > 0) append(" · ${appString(StringKeys.TC_ENTERED_N_OF_N, "entered" to a.enteredCount.toString(), "total" to a.rosterCount.toString())}")
                     },
-                    style = VTypography.caption.copy(fontSize = 11.5.sp, color = VColors.ink3),
+                    style = VTypography.caption,
+                    color = VColors.ink3,
                 )
                 Spacer(Modifier.height(6.dp))
                 VtPill(statusLabel, bg = statusTint.copy(alpha = 0.14f), fg = statusTint)
@@ -231,7 +242,7 @@ private fun AssessmentRow(a: AssessmentDto, viewModel: TeacherGradebookViewModel
             if (canEnter || a.isPublished) {
                 Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(20.dp))
             } else {
-                Icon(VIcons.Lock, contentDescription = appString(StringKeys.TC_LOCKED_UNTIL_EXAM), tint = VColors.ink3, modifier = Modifier.size(16.dp))
+                Icon(VIcons.Lock, contentDescription = appString(StringKeys.TC_LOCKED_UNTIL_EXAM), tint = VColors.ink3, modifier = Modifier.size(18.dp))
             }
         }
     }
@@ -242,42 +253,57 @@ private fun AssessmentRow(a: AssessmentDto, viewModel: TeacherGradebookViewModel
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun MarksGridMode(viewModel: TeacherGradebookViewModel, onImportMarks: () -> Unit = {}) {
+private fun MarksGridMode(
+    viewModel: TeacherGradebookViewModel,
+    scopeLabel: String,
+    tool: UpdateTool,
+    onToolChange: (UpdateTool) -> Unit,
+    onChangeClass: () -> Unit,
+    onImportMarks: () -> Unit = {},
+) {
     val state by viewModel.state.collectAsStateV2()
     val a = state.activeAssessment
     var publishConfirm by remember { mutableStateOf(false) }
 
     LazyColumn(
-        Modifier.fillMaxSize().padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(top = 14.dp, bottom = TeacherDockClearance),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        Modifier.fillMaxSize().padding(horizontal = 20.dp),
+        contentPadding = PaddingValues(top = 16.dp, bottom = TeacherDockClearance),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            VtCard(padding = 16.dp) {
-                Column {
+            ScopedToolHeader(
+                tool = tool,
+                scopeLabel = scopeLabel,
+                onToolChange = onToolChange,
+                onChangeClass = onChangeClass,
+            )
+        }
+
+        item {
+            VtCard {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
-                            Modifier.size(30.dp).clip(VShapes.full).background(VColors.creamDeep)
-                                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { viewModel.backToList() },
+                            Modifier.size(32.dp).clip(VShapes.full).background(VColors.creamDeep)
+                                .clickable { viewModel.backToList() },
                             contentAlignment = Alignment.Center,
-                        ) { Icon(VIcons.ArrowLeft, contentDescription = appString(StringKeys.COMMON_BUTTON_BACK), tint = VColors.ink, modifier = Modifier.size(15.dp)) }
+                        ) { Icon(VIcons.ArrowLeft, contentDescription = appString(StringKeys.COMMON_BUTTON_BACK), tint = VColors.ink, modifier = Modifier.size(16.dp)) }
                         Spacer(Modifier.width(10.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(a?.name ?: appString(StringKeys.TC_MARKS), style = VTypography.h3.copy(fontSize = 18.sp, color = VColors.ink, fontWeight = FontWeight.ExtraBold), maxLines = 1)
-                            Text(appString(StringKeys.TC_MAX_N_ENTERED_N_OF_N, "max" to state.maxMarks.toString(), "entered" to state.enteredCount.toString(), "total" to state.rosterCount.toString()), style = VTypography.caption.copy(fontSize = 11.sp, color = VColors.ink3))
+                            Text(a?.name ?: appString(StringKeys.TC_MARKS), style = VTypography.bodySmall, color = VColors.ink, maxLines = 1)
+                            Text(appString(StringKeys.TC_MAX_N_ENTERED_N_OF_N, "max" to state.maxMarks.toString(), "entered" to state.enteredCount.toString(), "total" to state.rosterCount.toString()), style = VTypography.caption, color = VColors.ink3)
                         }
                         state.liveAverage?.let { avg ->
                             Column(horizontalAlignment = Alignment.End) {
-                                Text(fmt1(avg), style = VTypography.h3.copy(fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = VColors.violetHover))
-                                Text(appString(StringKeys.TC_AVG), style = VTypography.label.copy(fontSize = 9.sp, color = VColors.ink3))
+                                Text(fmt1(avg), style = VTypography.bodySmall, color = VColors.violet)
+                                Text(appString(StringKeys.TC_AVG), style = VTypography.caption, color = VColors.ink3)
                             }
                         }
                     }
                     if (a?.isPublished == true) {
-                        Spacer(Modifier.height(10.dp))
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Icon(VIcons.ShieldCheck, contentDescription = null, tint = VColors.success, modifier = Modifier.size(15.dp))
-                            Text(appString(StringKeys.TC_PUBLISHED_PARENTS_NOTIFIED), style = VTypography.caption.copy(fontSize = 11.5.sp, color = VColors.success))
+                            Text(appString(StringKeys.TC_PUBLISHED_PARENTS_NOTIFIED), style = VTypography.caption, color = VColors.success)
                         }
                     }
                 }
@@ -288,7 +314,7 @@ private fun MarksGridMode(viewModel: TeacherGradebookViewModel, onImportMarks: (
             state.isMarksLoading && state.students.isEmpty() -> item { Box(Modifier.fillMaxWidth().height(80.dp), contentAlignment = Alignment.Center) { TeacherSpinner() } }
             state.marksError != null && state.students.isEmpty() -> item {
                 VtCard { Column {
-                    Text(appString(StringKeys.TC_COULDNT_LOAD_ROSTER), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold, color = VColors.ink))
+                    Text(appString(StringKeys.TC_COULDNT_LOAD_ROSTER), style = VTypography.bodySmall, color = VColors.ink)
                     Spacer(Modifier.height(8.dp))
                     VButton(appString(StringKeys.COMMON_BUTTON_RETRY), onClick = { viewModel.retryMarks() }, tone = VButtonTone.Lavender, size = VButtonSize.Sm)
                 } }
@@ -301,9 +327,8 @@ private fun MarksGridMode(viewModel: TeacherGradebookViewModel, onImportMarks: (
         if (a?.isPublished != true) {
             item {
                 Spacer(Modifier.height(4.dp))
-                // ── Import marks via AI OCR / text ───────────────────────────
                 VButton(
-                    text = "Import Marks (OCR / Text)",
+                    text = appString(StringKeys.TC_IMPORT_MARKS),
                     onClick = onImportMarks,
                     full = true,
                     variant = VButtonVariant.Secondary,
@@ -312,7 +337,7 @@ private fun MarksGridMode(viewModel: TeacherGradebookViewModel, onImportMarks: (
                     leading = { Icon(VIcons.Upload, contentDescription = null, modifier = Modifier.size(15.dp)) },
                 )
                 Spacer(Modifier.height(8.dp))
-                if (state.saveError != null) { Text(state.saveError ?: "", style = VTypography.caption.copy(fontSize = 12.sp, color = VColors.coral)); Spacer(Modifier.height(8.dp)) }
+                if (state.saveError != null) { Text(state.saveError ?: "", style = VTypography.caption, color = VColors.coral); Spacer(Modifier.height(8.dp)) }
                 VButton(
                     text = appString(StringKeys.TC_SAVE_MARKS),
                     onClick = { viewModel.save() },
@@ -326,7 +351,7 @@ private fun MarksGridMode(viewModel: TeacherGradebookViewModel, onImportMarks: (
                     stateful = true,
                 )
                 Spacer(Modifier.height(8.dp))
-                if (state.publishError != null) { Text(state.publishError ?: "", style = VTypography.caption.copy(fontSize = 12.sp, color = VColors.coral)); Spacer(Modifier.height(8.dp)) }
+                if (state.publishError != null) { Text(state.publishError ?: "", style = VTypography.caption, color = VColors.coral); Spacer(Modifier.height(8.dp)) }
                 VButton(
                     text = appString(StringKeys.TC_PUBLISH_NOTIFY_PARENTS),
                     onClick = { publishConfirm = true },
@@ -354,34 +379,31 @@ private fun MarksGridMode(viewModel: TeacherGradebookViewModel, onImportMarks: (
 
 @Composable
 private fun MarkRow(s: GradebookStudentMark, maxMarks: Int, readOnly: Boolean, onMark: (Float?) -> Unit, onToggleAbsent: () -> Unit) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clip(VShapes.md)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.md)
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(s.name, style = VTypography.bodySmall.copy(fontSize = 14.sp, fontWeight = FontWeight.Bold, color = VColors.ink), maxLines = 1)
-            Text(appString(StringKeys.TC_ROLL_N, "n" to s.rollNo.toString()), style = VTypography.caption.copy(fontSize = 11.sp, color = VColors.ink3))
-        }
-        // AB toggle
-        val abActive = s.isAbsent
-        Box(
-            Modifier
-                .clip(VShapes.sm)
-                .background(if (abActive) VColors.coral.copy(alpha = 0.16f) else VColors.creamDeep)
-                .border(1.dp, if (abActive) VColors.coral.copy(alpha = 0.5f) else VColors.line, VShapes.sm)
-                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, enabled = !readOnly) { onToggleAbsent() }
-                .padding(horizontal = 10.dp, vertical = 8.dp),
+    VtCard {
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text("AB", style = VTypography.bodySmall.copy(fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (abActive) VColors.coral else VColors.ink3))
+            Column(Modifier.weight(1f)) {
+                Text(s.name, style = VTypography.bodySmall, color = VColors.ink, maxLines = 1)
+                Text(appString(StringKeys.TC_ROLL_N, "n" to s.rollNo.toString()), style = VTypography.caption, color = VColors.ink3)
+            }
+            // AB toggle
+            val abActive = s.isAbsent
+            Box(
+                Modifier
+                    .clip(VShapes.sm)
+                    .background(if (abActive) VColors.coral.copy(alpha = 0.16f) else VColors.creamDeep)
+                    .border(1.dp, if (abActive) VColors.coral.copy(alpha = 0.5f) else VColors.line, VShapes.sm)
+                    .clickable(enabled = !readOnly) { onToggleAbsent() }
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+            ) {
+                Text("AB", style = VTypography.bodySmall, color = if (abActive) VColors.coral else VColors.ink3)
+            }
+            // Mark input
+            MarkInput(value = s.marks, maxMarks = maxMarks, enabled = !readOnly && !s.isAbsent, onChange = onMark)
         }
-        // Mark input
-        MarkInput(value = s.marks, maxMarks = maxMarks, enabled = !readOnly && !s.isAbsent, onChange = onMark)
     }
 }
 
@@ -391,11 +413,11 @@ private fun MarkInput(value: Float?, maxMarks: Int, enabled: Boolean, onChange: 
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(
             Modifier
-                .width(58.dp)
+                .width(64.dp)
                 .clip(VShapes.sm)
                 .background(if (enabled) VColors.creamDeep else VColors.creamDeep.copy(alpha = 0.5f))
                 .border(1.dp, VColors.line, VShapes.sm)
-                .padding(horizontal = 8.dp, vertical = 8.dp),
+                .padding(horizontal = 8.dp, vertical = 10.dp),
             contentAlignment = Alignment.Center,
         ) {
             androidx.compose.foundation.text.BasicTextField(
@@ -407,16 +429,16 @@ private fun MarkInput(value: Float?, maxMarks: Int, enabled: Boolean, onChange: 
                 singleLine = true,
                 enabled = enabled,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                textStyle = VTypography.body.copy(fontSize = 15.sp, fontWeight = FontWeight.Bold, color = VColors.ink, textAlign = androidx.compose.ui.text.style.TextAlign.Center),
+                textStyle = VTypography.body.copy(color = VColors.ink, textAlign = androidx.compose.ui.text.style.TextAlign.Center),
                 cursorBrush = SolidColor(VColors.violet),
                 decorationBox = { inner ->
                     Box(contentAlignment = Alignment.Center) {
-                        if (display.isBlank()) Text("—", style = VTypography.body.copy(fontSize = 15.sp, color = VColors.ink3))
+                        if (display.isBlank()) Text("—", style = VTypography.body, color = VColors.ink3)
                         inner()
                     }
                 },
             )
         }
-        Text(" /$maxMarks", style = VTypography.caption.copy(fontSize = 11.sp, color = VColors.ink3))
+        Text(" /$maxMarks", style = VTypography.caption, color = VColors.ink3)
     }
 }

@@ -1,0 +1,183 @@
+﻿To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+Type-safe project accessors is an incubating feature.
+> Task :server:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :server:compileKotlin
+.\gradlew.bat : e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/skilltest/SkillTestService.kt:865:17 None of the following candidates is 
+applicable:
+At line:1 char:1
++ .\gradlew.bat :server:compileKotlin --no-daemon --console=plain -Pser ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (e: file:///C:/U... is applicable::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+fun <S, ID : EntityID<S>, E : Expression<S>> set(column: Column<ID>, value: E): Unit
+fun <S> set(column: Column<S>, value: S): Unit
+fun <S> set(column: Column<S>, value: Query): Unit
+fun <T, S : T?, E : Expression<S>> set(column: Column<T>, value: E): Unit
+fun <S : Comparable<S>> set(column: Column<EntityID<S>>, value: S): Unit
+fun <S : Comparable<S>> set(column: Column<EntityID<S>?>, value: S?): Unit
+fun <S> set(column: CompositeColumn<S>, value: S): Unit
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/skilltest/SkillTestService.kt:866:17 None of the following candidates is applicable:
+fun <S, ID : EntityID<S>, E : Expression<S>> set(column: Column<ID>, value: E): Unit
+fun <S> set(column: Column<S>, value: S): Unit
+fun <S> set(column: Column<S>, value: Query): Unit
+fun <T, S : T?, E : Expression<S>> set(column: Column<T>, value: E): Unit
+fun <S : Comparable<S>> set(column: Column<EntityID<S>>, value: S): Unit
+fun <S : Comparable<S>> set(column: Column<EntityID<S>?>, value: S?): Unit
+fun <S> set(column: CompositeColumn<S>, value: S): Unit
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/skilltest/SkillTestService.kt:867:17 None of the following candidates is applicable:
+fun <S, ID : EntityID<S>, E : Expression<S>> set(column: Column<ID>, value: E): Unit
+fun <S> set(column: Column<S>, value: S): Unit
+fun <S> set(column: Column<S>, value: Query): Unit
+fun <T, S : T?, E : Expression<S>> set(column: Column<T>, value: E): Unit
+fun <S : Comparable<S>> set(column: Column<EntityID<S>>, value: S): Unit
+fun <S : Comparable<S>> set(column: Column<EntityID<S>?>, value: S?): Unit
+fun <S> set(column: CompositeColumn<S>, value: S): Unit
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/skilltest/SkillTestService.kt:868:17 None of the following candidates is applicable:
+fun <S, ID : EntityID<S>, E : Expression<S>> set(column: Column<ID>, value: E): Unit
+fun <S> set(column: Column<S>, value: S): Unit
+fun <S> set(column: Column<S>, value: Query): Unit
+fun <T, S : T?, E : Expression<S>> set(column: Column<T>, value: E): Unit
+fun <S : Comparable<S>> set(column: Column<EntityID<S>>, value: S): Unit
+fun <S : Comparable<S>> set(column: Column<EntityID<S>?>, value: S?): Unit
+fun <S> set(column: CompositeColumn<S>, value: S): Unit
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/skilltest/SkillTestService.kt:869:17 None of the following candidates is applicable:
+fun <S, ID : EntityID<S>, E : Expression<S>> set(column: Column<ID>, value: E): Unit
+fun <S> set(column: Column<S>, value: S): Unit
+fun <S> set(column: Column<S>, value: Query): Unit
+fun <T, S : T?, E : Expression<S>> set(column: Column<T>, value: E): Unit
+fun <S : Comparable<S>> set(column: Column<EntityID<S>>, value: S): Unit
+fun <S : Comparable<S>> set(column: Column<EntityID<S>?>, value: S?): Unit
+fun <S> set(column: CompositeColumn<S>, value: S): Unit
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/skilltest/SkillTestService.kt:870:17 None of the following candidates is applicable:
+fun <S, ID : EntityID<S>, E : Expression<S>> set(column: Column<ID>, value: E): Unit
+fun <S> set(column: Column<S>, value: S): Unit
+fun <S> set(column: Column<S>, value: Query): Unit
+fun <T, S : T?, E : Expression<S>> set(column: Column<T>, value: E): Unit
+fun <S : Comparable<S>> set(column: Column<EntityID<S>>, value: S): Unit
+fun <S : Comparable<S>> set(column: Column<EntityID<S>?>, value: S?): Unit
+fun <S> set(column: CompositeColumn<S>, value: S): Unit
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/skilltest/SkillTestService.kt:871:17 None of the following candidates is applicable:
+fun <S, ID : EntityID<S>, E : Expression<S>> set(column: Column<ID>, value: E): Unit
+fun <S> set(column: Column<S>, value: S): Unit
+fun <S> set(column: Column<S>, value: Query): Unit
+fun <T, S : T?, E : Expression<S>> set(column: Column<T>, value: E): Unit
+fun <S : Comparable<S>> set(column: Column<EntityID<S>>, value: S): Unit
+fun <S : Comparable<S>> set(column: Column<EntityID<S>?>, value: S?): Unit
+fun <S> set(column: CompositeColumn<S>, value: S): Unit
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/skilltest/SkillTestService.kt:879:17 None of the following candidates is applicable:
+fun <S, ID : EntityID<S>, E : Expression<S>> set(column: Column<ID>, value: E): Unit
+fun <S> set(column: Column<S>, value: S): Unit
+fun <S> set(column: Column<S>, value: Query): Unit
+fun <T, S : T?, E : Expression<S>> set(column: Column<T>, value: E): Unit
+fun <S : Comparable<S>> set(column: Column<EntityID<S>>, value: S): Unit
+fun <S : Comparable<S>> set(column: Column<EntityID<S>?>, value: S?): Unit
+fun <S> set(column: CompositeColumn<S>, value: S): Unit
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/skilltest/SkillTestService.kt:880:17 None of the following candidates is applicable:
+fun <S, ID : EntityID<S>, E : Expression<S>> set(column: Column<ID>, value: E): Unit
+fun <S> set(column: Column<S>, value: S): Unit
+fun <S> set(column: Column<S>, value: Query): Unit
+fun <T, S : T?, E : Expression<S>> set(column: Column<T>, value: E): Unit
+fun <S : Comparable<S>> set(column: Column<EntityID<S>>, value: S): Unit
+fun <S : Comparable<S>> set(column: Column<EntityID<S>?>, value: S?): Unit
+fun <S> set(column: CompositeColumn<S>, value: S): Unit
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/skilltest/SkillTestService.kt:881:17 None of the following candidates is applicable:
+fun <S, ID : EntityID<S>, E : Expression<S>> set(column: Column<ID>, value: E): Unit
+fun <S> set(column: Column<S>, value: S): Unit
+fun <S> set(column: Column<S>, value: Query): Unit
+fun <T, S : T?, E : Expression<S>> set(column: Column<T>, value: E): Unit
+fun <S : Comparable<S>> set(column: Column<EntityID<S>>, value: S): Unit
+fun <S : Comparable<S>> set(column: Column<EntityID<S>?>, value: S?): Unit
+fun <S> set(column: CompositeColumn<S>, value: S): Unit
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/skilltest/SkillTestService.kt:882:17 None of the following candidates is applicable:
+fun <S, ID : EntityID<S>, E : Expression<S>> set(column: Column<ID>, value: E): Unit
+fun <S> set(column: Column<S>, value: S): Unit
+fun <S> set(column: Column<S>, value: Query): Unit
+fun <T, S : T?, E : Expression<S>> set(column: Column<T>, value: E): Unit
+fun <S : Comparable<S>> set(column: Column<EntityID<S>>, value: S): Unit
+fun <S : Comparable<S>> set(column: Column<EntityID<S>?>, value: S?): Unit
+fun <S> set(column: CompositeColumn<S>, value: S): Unit
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/skilltest/SkillTestService.kt:883:17 None of the following candidates is applicable:
+fun <S, ID : EntityID<S>, E : Expression<S>> set(column: Column<ID>, value: E): Unit
+fun <S> set(column: Column<S>, value: S): Unit
+fun <S> set(column: Column<S>, value: Query): Unit
+fun <T, S : T?, E : Expression<S>> set(column: Column<T>, value: E): Unit
+fun <S : Comparable<S>> set(column: Column<EntityID<S>>, value: S): Unit
+fun <S : Comparable<S>> set(column: Column<EntityID<S>?>, value: S?): Unit
+fun <S> set(column: CompositeColumn<S>, value: S): Unit
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/skilltest/SkillTestService.kt:884:17 None of the following candidates is applicable:
+fun <S, ID : EntityID<S>, E : Expression<S>> set(column: Column<ID>, value: E): Unit
+fun <S> set(column: Column<S>, value: S): Unit
+fun <S> set(column: Column<S>, value: Query): Unit
+fun <T, S : T?, E : Expression<S>> set(column: Column<T>, value: E): Unit
+fun <S : Comparable<S>> set(column: Column<EntityID<S>>, value: S): Unit
+fun <S : Comparable<S>> set(column: Column<EntityID<S>?>, value: S?): Unit
+fun <S> set(column: CompositeColumn<S>, value: S): Unit
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/skilltest/SkillTestService.kt:885:17 None of the following candidates is applicable:
+fun <S, ID : EntityID<S>, E : Expression<S>> set(column: Column<ID>, value: E): Unit
+fun <S> set(column: Column<S>, value: S): Unit
+fun <S> set(column: Column<S>, value: Query): Unit
+fun <T, S : T?, E : Expression<S>> set(column: Column<T>, value: E): Unit
+fun <S : Comparable<S>> set(column: Column<EntityID<S>>, value: S): Unit
+fun <S : Comparable<S>> set(column: Column<EntityID<S>?>, value: S?): Unit
+fun <S> set(column: CompositeColumn<S>, value: S): Unit
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/teacher/TeacherHomeworkRouting.kt:329:39 Not enough information to infer type argument for 
+'K'.
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/teacher/TeacherHomeworkRouting.kt:330:13 Cannot infer type for this parameter. Specify it 
+explicitly.
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/teacher/TeacherHomeworkRouting.kt:330:13 Not enough information to infer type argument for 
+'K'.
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/teacher/TeacherHomeworkRouting.kt:330:13 Not enough information to infer type argument for 
+'V'.
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/teacher/TeacherHomeworkRouting.kt:334:18 Cannot infer type for this parameter. Specify it 
+explicitly.
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/teacher/TeacherHomeworkRouting.kt:334:18 Not enough information to infer type argument for 
+'R'.
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/teacher/TeacherHomeworkRouting.kt:334:22 Cannot infer type for this parameter. Specify it 
+explicitly.
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/teacher/TeacherHomeworkRouting.kt:335:74 Unresolved reference 'value'.
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/teacher/TeacherHomeworkRouting.kt:335:80 Cannot infer type for this parameter. Specify it 
+explicitly.
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/teacher/TeacherHomeworkRouting.kt:335:80 Not enough information to infer type argument for 
+'B'.
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/teacher/TeacherHomeworkRouting.kt:343:18 Cannot infer type for this parameter. Specify it 
+explicitly.
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/teacher/TeacherHomeworkRouting.kt:343:18 Not enough information to infer type argument for 
+'T'.
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/teacher/TeacherHomeworkRouting.kt:343:18 Not enough information to infer type argument for 
+'K'.
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/teacher/TeacherHomeworkRouting.kt:343:18 Not enough information to infer type argument for 
+'V'.
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/teacher/TeacherHomeworkRouting.kt:343:26 Cannot infer type for this parameter. Specify it 
+explicitly.
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/teacher/TeacherHomeworkRouting.kt:343:31 Function invocation 'first()' expected.
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/teacher/TeacherHomeworkRouting.kt:343:40 Cannot infer type for this parameter. Specify it 
+explicitly.
+e: file:///C:/Users/HP/Devin1/VidyaPrayag/server/src/main/kotlin/com/littlebridge/enrollplus/feature/teacher/TeacherHomeworkRouting.kt:343:45 Unresolved reference 'second'.
+
+> Task :server:compileKotlin FAILED
+
+[Incubating] Problems report is available at: file:///C:/Users/HP/Devin1/VidyaPrayag/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':server:compileKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 44s
+1 actionable task: 1 executed

@@ -1654,6 +1654,7 @@ object StringKeys {
     const val TC_HOLIDAY                               = "tc.holiday"
     const val TC_HOLIDAY_NOTICE                        = "tc.holiday_notice"
     const val TC_HOW_ASSESS_OPTIONAL                   = "tc.how_assess_optional"
+    const val TC_IMPORT_MARKS                          = "tc.import_marks"
     const val TC_IMPROVING                             = "tc.improving"
     const val TC_INITIATED_BY                          = "tc.initiated_by"
     const val TC_INSTANTIATE_FROM_TEMPLATE             = "tc.instantiate_from_template"
@@ -1745,6 +1746,7 @@ object StringKeys {
     const val TC_NO_ACTIVE_HOMEWORK                    = "tc.no_active_homework"
     const val TC_NO_ACTIVE_HOMEWORK_CLASS              = "tc.no_active_homework_class"
     const val TC_NO_ALLOCATIONS                        = "tc.no_allocations"
+    const val TC_ASSIGNMENTS_WILL_APPEAR               = "tc.assignments_will_appear"
     const val TC_NO_ASSIGNMENTS_FOUND                  = "tc.no_assignments_found"
     const val TC_NO_ATTEMPTS_YET                       = "tc.no_attempts_yet"
     const val TC_NO_ATTENDANCE_DATA                    = "tc.no_attendance_data"
@@ -1785,6 +1787,7 @@ object StringKeys {
     const val TC_N_PER_WEEK                            = "tc.n_per_week"
     const val TC_N_QUESTIONS_STATUS                    = "tc.n_questions_status"
     const val TC_N_STUDENTS                            = "tc.n_students"
+    const val TC_N_STUDENTS_ABSENT                     = "tc.n_students_absent"
     const val TC_N_SUBTOPICS                           = "tc.n_subtopics"
     const val TC_N_TOPICS_SELECTED                     = "tc.n_topics_selected"
     const val TC_N_TURNED_IN                           = "tc.n_turned_in"
@@ -1797,6 +1800,8 @@ object StringKeys {
     const val TC_PARENT_CONTACT                        = "tc.parent_contact"
     const val TC_PARENT_GUARDIAN                       = "tc.parent_guardian"
     const val TC_PARENT_MESSAGE                        = "tc.parent_message"
+    const val TC_NOTIFY_PARENTS                        = "tc.notify_parents"
+    const val TC_NOTIFY_PARENTS_ABOUT_ABSENCE            = "tc.notify_parents_about_absence"
     const val TC_PARSE_SYLLABUS                        = "tc.parse_syllabus"
     const val TC_PARSE_WITH_AI                         = "tc.parse_with_ai"
     const val TC_PASSWORD                              = "tc.password"
@@ -1831,6 +1836,11 @@ object StringKeys {
     const val TC_QUESTION_TEXT                         = "tc.question_text"
     const val TC_QUESTION_TYPES                        = "tc.question_types"
     const val TC_QUIZ                                  = "tc.quiz"
+    const val TC_NO_QUIZZES_CREATED_YET                = "tc.no_quizzes_created_yet"
+    const val TC_LESSON_COMPLETED                      = "tc.lesson_completed"
+    const val TC_CREATE_QUIZ_TO_ASSESS                 = "tc.create_quiz_to_assess"
+    const val TC_NOT_NOW                               = "tc.not_now"
+    const val TC_CREATE_QUIZ                           = "tc.create_quiz"
     const val TC_QUIZZES                               = "tc.quizzes"
     const val TC_QUIZ_LEADERBOARD                      = "tc.quiz_leaderboard"
     const val TC_QUIZ_PREVIEW                          = "tc.quiz_preview"
@@ -4646,6 +4656,7 @@ object AppStrings {
         StringKeys.TC_HOLIDAY                               to "Holiday",
         StringKeys.TC_HOLIDAY_NOTICE                        to "Holiday",
         StringKeys.TC_HOW_ASSESS_OPTIONAL                   to "How will you assess? (optional)",
+        StringKeys.TC_IMPORT_MARKS                          to "Import Marks (OCR / Text)",
         StringKeys.TC_IMPROVING                             to "Improving",
         StringKeys.TC_INITIATED_BY                          to "Initiated by",
         StringKeys.TC_INSTANTIATE_FROM_TEMPLATE             to "Use this template",
@@ -4737,6 +4748,7 @@ object AppStrings {
         StringKeys.TC_NO_ACTIVE_HOMEWORK                    to "No active homework",
         StringKeys.TC_NO_ACTIVE_HOMEWORK_CLASS              to "No active homework for this class",
         StringKeys.TC_NO_ALLOCATIONS                        to "No allocations yet",
+        StringKeys.TC_ASSIGNMENTS_WILL_APPEAR               to "Your class assignments will appear here once allocated.",
         StringKeys.TC_NO_ASSIGNMENTS_FOUND                  to "No assignments found.",
         StringKeys.TC_NO_ATTEMPTS_YET                       to "No attempts yet",
         StringKeys.TC_NO_ATTENDANCE_DATA                    to "No attendance data",
@@ -4777,6 +4789,7 @@ object AppStrings {
         StringKeys.TC_N_PER_WEEK                            to "{count}/week",
         StringKeys.TC_N_QUESTIONS_STATUS                    to "{count} questions · {status}",
         StringKeys.TC_N_STUDENTS                            to "{count} students",
+        StringKeys.TC_N_STUDENTS_ABSENT                     to "{count} absent today",
         StringKeys.TC_N_SUBTOPICS                           to "{count} subtopics",
         StringKeys.TC_N_TOPICS_SELECTED                     to "{count} topics selected",
         StringKeys.TC_N_TURNED_IN                           to "{count} turned in",
@@ -4789,6 +4802,8 @@ object AppStrings {
         StringKeys.TC_PARENT_CONTACT                        to "Parent contact",
         StringKeys.TC_PARENT_GUARDIAN                       to "Parent/Guardian",
         StringKeys.TC_PARENT_MESSAGE                        to "Parent message",
+        StringKeys.TC_NOTIFY_PARENTS                        to "Notify parents",
+        StringKeys.TC_NOTIFY_PARENTS_ABOUT_ABSENCE            to "Notify parents about the absence via Messages.",
         StringKeys.TC_PARSE_SYLLABUS                        to "Parse Syllabus",
         StringKeys.TC_PARSE_WITH_AI                         to "Parse with AI",
         StringKeys.TC_PASSWORD                              to "Password",
@@ -4823,6 +4838,11 @@ object AppStrings {
         StringKeys.TC_QUESTION_TEXT                         to "Question text",
         StringKeys.TC_QUESTION_TYPES                        to "Question types",
         StringKeys.TC_QUIZ                                  to "Quiz",
+        StringKeys.TC_NO_QUIZZES_CREATED_YET                to "No quizzes created yet for this class.",
+        StringKeys.TC_LESSON_COMPLETED                      to "Lesson completed!",
+        StringKeys.TC_CREATE_QUIZ_TO_ASSESS                 to "Create a quiz to assess \"{title}\".",
+        StringKeys.TC_NOT_NOW                               to "Not Now",
+        StringKeys.TC_CREATE_QUIZ                           to "Create Quiz",
         StringKeys.TC_QUIZZES                               to "QUIZZES",
         StringKeys.TC_QUIZ_LEADERBOARD                      to "Quiz Leaderboard",
         StringKeys.TC_QUIZ_PREVIEW                          to "Quiz Preview",
@@ -7617,6 +7637,7 @@ object AppStrings {
         StringKeys.TC_HOLIDAY                               to "अवकाश",
         StringKeys.TC_HOLIDAY_NOTICE                        to "Holiday",
         StringKeys.TC_HOW_ASSESS_OPTIONAL                   to "How will you assess? (optional)",
+        StringKeys.TC_IMPORT_MARKS                          to "Import Marks (OCR / Text)",
         StringKeys.TC_IMPROVING                             to "Improving",
         StringKeys.TC_INITIATED_BY                          to "Initiated by",
         StringKeys.TC_INSTANTIATE_FROM_TEMPLATE             to "Use this template",
@@ -7708,6 +7729,7 @@ object AppStrings {
         StringKeys.TC_NO_ACTIVE_HOMEWORK                    to "No active homework",
         StringKeys.TC_NO_ACTIVE_HOMEWORK_CLASS              to "No active homework for this class",
         StringKeys.TC_NO_ALLOCATIONS                        to "No allocations yet",
+        StringKeys.TC_ASSIGNMENTS_WILL_APPEAR               to "आवंटन होने पर आपकी कक्षा असाइनमेंट यहाँ दिखाई देंगे।",
         StringKeys.TC_NO_ASSIGNMENTS_FOUND                  to "No assignments found.",
         StringKeys.TC_NO_ATTEMPTS_YET                       to "No attempts yet",
         StringKeys.TC_NO_ATTENDANCE_DATA                    to "No attendance data",
@@ -7748,6 +7770,7 @@ object AppStrings {
         StringKeys.TC_N_PER_WEEK                            to "{count}/week",
         StringKeys.TC_N_QUESTIONS_STATUS                    to "{count} questions · {status}",
         StringKeys.TC_N_STUDENTS                            to "{count} students",
+        StringKeys.TC_N_STUDENTS_ABSENT                     to "{count} absent today",
         StringKeys.TC_N_SUBTOPICS                           to "{count} subtopics",
         StringKeys.TC_N_TOPICS_SELECTED                     to "{count} topics selected",
         StringKeys.TC_N_TURNED_IN                           to "{count} turned in",
@@ -7760,6 +7783,8 @@ object AppStrings {
         StringKeys.TC_PARENT_CONTACT                        to "Parent contact",
         StringKeys.TC_PARENT_GUARDIAN                       to "Parent/Guardian",
         StringKeys.TC_PARENT_MESSAGE                        to "Parent message",
+        StringKeys.TC_NOTIFY_PARENTS                        to "Notify parents",
+        StringKeys.TC_NOTIFY_PARENTS_ABOUT_ABSENCE            to "Notify parents about the absence via Messages.",
         StringKeys.TC_PARSE_SYLLABUS                        to "Parse Syllabus",
         StringKeys.TC_PARSE_WITH_AI                         to "Parse with AI",
         StringKeys.TC_PASSWORD                              to "पासवर्ड",
@@ -7794,6 +7819,11 @@ object AppStrings {
         StringKeys.TC_QUESTION_TEXT                         to "Question text",
         StringKeys.TC_QUESTION_TYPES                        to "Question types",
         StringKeys.TC_QUIZ                                  to "क्विक़्",
+        StringKeys.TC_NO_QUIZZES_CREATED_YET                to "इस कक्षा के लिए अभी तक कोई क्विज़ नहीं बनाया गया है।",
+        StringKeys.TC_LESSON_COMPLETED                      to "पाठ पूरा हुआ!",
+        StringKeys.TC_CREATE_QUIZ_TO_ASSESS                 to "\"{title}\" का मूल्यांकन करने के लिए एक क्विज़ बनाएं।",
+        StringKeys.TC_NOT_NOW                               to "अभी नहीं",
+        StringKeys.TC_CREATE_QUIZ                           to "क्विज़ बनाएं",
         StringKeys.TC_QUIZZES                               to "QUIZZES",
         StringKeys.TC_QUIZ_LEADERBOARD                      to "Quiz Leaderboard",
         StringKeys.TC_QUIZ_PREVIEW                          to "Quiz Preview",
