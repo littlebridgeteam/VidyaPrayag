@@ -10,5 +10,6 @@ class ExportRepositoryImpl(
     private val api: ExportApi,
 ) : ExportRepository {
     override suspend fun getExportTypes(token: String) = api.getExportTypes(token)
+    override suspend fun listAssessments(token: String, classId: String?) = api.listAssessments(token, classId)
     override suspend fun generateExport(token: String, request: ExportRequest) = api.generateExport(token, request)
 }

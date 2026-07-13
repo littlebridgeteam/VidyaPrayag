@@ -14,6 +14,7 @@ object FlywayMigrationRunner {
             .baselineVersion("1")
             .locations("classpath:db/migration")
             .validateOnMigrate(true)
+            .outOfOrder(true)
             .load()
 
         flyway.repair()

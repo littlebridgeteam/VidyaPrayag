@@ -1,7 +1,7 @@
 -- V10: Create announcement_delivery_logs and child_holistic_metrics
 --   Both tables are defined in Tables.kt but were never provisioned in production.
 
--- ── announcement_delivery_logs ──────────────────────────────────────────────
+-- ── announcement_delivery_logs ─────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS announcement_delivery_logs (
     id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     school_id             UUID NOT NULL,
@@ -21,7 +21,7 @@ CREATE INDEX IF NOT EXISTS ix_adl_school_announcement
 CREATE INDEX IF NOT EXISTS ix_adl_school_created
     ON announcement_delivery_logs (school_id, created_at);
 
--- ── child_holistic_metrics ───────────────────────────────────────────────────
+-- ── child_holistic_metrics ─────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS child_holistic_metrics (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     child_id        UUID NOT NULL UNIQUE REFERENCES children(id),

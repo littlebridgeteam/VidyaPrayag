@@ -7,6 +7,7 @@ import com.littlebridge.enrollplus.feature.export.domain.model.*
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -26,6 +27,14 @@ class ExportApi(
         safeApiCall {
             client.get(url("api/v1/school/export/types")) {
                 header("Authorization", "Bearer $token")
+            }
+        }
+
+    suspend fun listAssessments(token: String, classId: String?): NetworkResult<ApiResponse<ExportAssessmentsResponse>> =
+        safeApiCall {
+            client.get(url("api/v1/school/export/assessments")) {
+                header("Authorization", "Bearer $token")
+                if (classId != null) parameter("class_id", classId)
             }
         }
 

@@ -23,6 +23,14 @@ fun Route.exportRouting() {
                 call.ok(types)
             }
 
+            // GET assessments for export dropdown (optionally filtered by classId)
+            get("/assessments") {
+                val ctx = call.requireSchoolOrTeacherContext() ?: return@get
+                val classId = call.request.queryParameters["class_id"]
+                val assessments = service.listAssessmentsForExport(ctx.schoolId, classId, ctx.role, ctx.userId)
+                call.ok(assessments)
+            }
+
             // POST generate an export
             post {
                 val ctx = call.requireSchoolOrTeacherContext() ?: return@post
@@ -44,10 +52,12 @@ fun Route.exportRouting() {
                         role = ctx.role,
                         request = req,
                     )
-                    if (result.downloadUrl == null) {
-                        call.ok(result, result.message ?: "No data found")
-                    } else {
+                    if (result.downloadUrl != null) {
                         call.ok(result, "Export generated successfully")
+                    } else if (result.dataUrl != null) {
+                        call.ok(result, "Export generated (inline download)")
+                    } else {
+                        call.ok(result, result.message ?: "No data found")
                     }
                 } catch (e: SecurityException) {
                     call.fail(e.message ?: "Access denied", HttpStatusCode.Forbidden, "EXPORT_FORBIDDEN")

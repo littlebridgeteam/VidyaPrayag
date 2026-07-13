@@ -341,6 +341,8 @@ object TeacherSubjectAssignmentsTable : UUIDTable("teacher_subject_assignments",
             "ux_tsa_unique",
             schoolId, className, section, subject, teacherName
         )
+        index("idx_tsa_school_active", isUnique = false, schoolId, isActive)
+        index("idx_tsa_teacher", isUnique = false, teacherId)
     }
 }
 
@@ -571,6 +573,7 @@ object AttendanceRecordsTable : UUIDTable("attendance_records", "id") {
             "ux_att_records_typed_unique",
             schoolId, date, type, studentId, assignmentId
         )
+        index("idx_att_records_assignment_date", isUnique = false, schoolId, assignmentId, date)
     }
 }
 
@@ -631,6 +634,7 @@ object EnrollmentsTable : UUIDTable("enrollments", "id") {
             "ux_enrollments_unique",
             studentId, classId, section, startDate
         )
+        index("idx_enrollments_class_section_status", isUnique = false, classId, section, status)
     }
 }
 
@@ -1020,6 +1024,10 @@ object AssessmentsTable : UUIDTable("assessments", "id") {
     // AI Tutor 2.0: optional FK to curriculum_units for per-topic score derivation.
     // Nullable for backward compat — existing assessments have no topic mapping.
     val topicId         = uuid("topic_id").nullable()           // FK curriculum_units.id
+    init {
+        index("idx_assessments_school_active", isUnique = false, schoolId, isActive)
+        index("idx_assessments_assignment", isUnique = false, assignmentId)
+    }
 }
 
 /**
@@ -1057,6 +1065,7 @@ object AssessmentMarksTable : UUIDTable("assessment_marks", "id") {
     val enteredAt    = timestamp("entered_at").nullable()
     init {
         uniqueIndex("ux_assessment_marks_unique", assessmentId, studentId)
+        index("idx_assessment_marks_student_ref", isUnique = false, studentRef)
     }
 }
 
@@ -1387,6 +1396,7 @@ object TeacherPeriodsTable : UUIDTable("teacher_periods", "id") {
     init {
         // Doc 05 §2.1: no double-booking a teacher in the same weekday slot.
         uniqueIndex("ux_periods_no_double_book", schoolId, teacherId, weekday, startTime)
+        index("idx_periods_teacher_assignment", isUnique = false, schoolId, teacherId, assignmentId, isActive)
     }
 }
 

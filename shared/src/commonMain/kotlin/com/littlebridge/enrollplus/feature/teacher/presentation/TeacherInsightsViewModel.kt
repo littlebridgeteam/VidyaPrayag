@@ -42,20 +42,27 @@ class TeacherInsightsViewModel(
 
     fun deriveFromClassSummaries(classes: List<TeacherClassSummaryDto>) {
         val insights = buildList {
-            classes.forEach { cls ->
-                val scope = if (cls.section.isBlank()) {
-                    "${cls.className} · ${cls.subject}"
-                } else {
-                    "${cls.className}-${cls.section} · ${cls.subject}"
-                }
+            // Group by className-section to avoid duplicate at-risk cards when a teacher
+            // teaches multiple subjects for the same class.
+            val byClassSection = classes.groupBy { "${it.className}-${it.section}" }
 
-                if (cls.atRiskCount > 0) {
+            byClassSection.forEach { (_, sectionClasses) ->
+                val first = sectionClasses.first()
+                val scope = if (first.section.isBlank()) {
+                    "${first.className} · ${first.subject}"
+                } else {
+                    "${first.className}-${first.section} · ${first.subject}"
+                }
+                val maxAtRisk = sectionClasses.maxOf { it.atRiskCount }
+                val anyAssignmentId = sectionClasses.firstOrNull { it.assignmentId.isNotBlank() }?.assignmentId
+
+                if (maxAtRisk > 0) {
                     add(InsightCard(
-                        id = "at_risk_${cls.assignmentId}",
-                        title = "${cls.atRiskCount} at-risk student${if (cls.atRiskCount > 1) "s" else ""} in ${cls.className}-${cls.section}",
+                        id = "at_risk_${first.className}_${first.section}",
+                        title = "$maxAtRisk at-risk student${if (maxAtRisk > 1) "s" else ""} in ${first.className}-${first.section}",
                         description = "Attendance below 75%. Review and notify parents.",
-                        severity = if (cls.atRiskCount >= 3) InsightSeverity.HIGH else InsightSeverity.MEDIUM,
-                        assignmentId = cls.assignmentId,
+                        severity = if (maxAtRisk >= 3) InsightSeverity.HIGH else InsightSeverity.MEDIUM,
+                        assignmentId = anyAssignmentId,
                         scopeLabel = scope,
                         actionLabel = "View Insights",
                         icon = "trending_down",
@@ -63,13 +70,15 @@ class TeacherInsightsViewModel(
                     ))
                 }
 
-                if (!cls.todayAttendanceMarked && cls.isClassTeacher) {
+                // Unmarked attendance: only one card per class section (not per subject)
+                val unmarkedClass = sectionClasses.firstOrNull { !it.todayAttendanceMarked && it.isClassTeacher }
+                if (unmarkedClass != null) {
                     add(InsightCard(
-                        id = "unmarked_${cls.assignmentId}",
-                        title = "Attendance not marked for ${cls.className}-${cls.section}",
+                        id = "unmarked_${first.className}_${first.section}",
+                        title = "Attendance not marked for ${first.className}-${first.section}",
                         description = "Mark today's attendance to keep records current.",
                         severity = InsightSeverity.MEDIUM,
-                        assignmentId = cls.assignmentId,
+                        assignmentId = unmarkedClass.assignmentId,
                         scopeLabel = scope,
                         actionLabel = "Mark Now",
                         icon = "clock",
