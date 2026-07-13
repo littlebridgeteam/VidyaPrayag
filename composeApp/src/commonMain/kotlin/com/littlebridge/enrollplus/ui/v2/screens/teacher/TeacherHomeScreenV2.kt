@@ -3,7 +3,6 @@ package com.littlebridge.enrollplus.ui.v2.screens.teacher
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,11 +36,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.feature.event.domain.model.TeacherPtmEventDto
 import com.littlebridge.enrollplus.feature.event.presentation.TeacherEventRegistrationState
@@ -311,9 +308,6 @@ private fun NowTeachingCard(
                 Text(
                     text = appString(StringKeys.TC_NOW_TEACHING).uppercase(),
                     style = VTypography.label.copy(
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.8.sp,
                         color = VColors.white.copy(alpha = 0.85f),
                     ),
                 )
@@ -389,13 +383,12 @@ private fun HeroCta(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val ix = remember { MutableInteractionSource() }
     Row(
         modifier = modifier
             .clip(VShapes.lg)
             .background(tone.copy(alpha = 0.14f))
             .border(1.dp, tone.copy(alpha = 0.25f), VShapes.lg)
-            .clickable(interactionSource = ix, indication = null) { onClick() }
+            .clickable { onClick() }
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -403,11 +396,7 @@ private fun HeroCta(
         Icon(icon, contentDescription = null, tint = tone, modifier = Modifier.size(18.dp))
         Text(
             text = text,
-            style = VTypography.label.copy(
-                fontSize = 12.sp,
-                color = tone,
-                fontWeight = FontWeight.Bold,
-            ),
+            style = VTypography.label.copy(color = tone),
         )
     }
 }
@@ -476,7 +465,6 @@ private fun ScheduleCard(
     onClick: () -> Unit,
 ) {
     val accent = if (isNow) VColors.violet else VColors.ink3
-    val ix = remember { MutableInteractionSource() }
     Column(
         modifier = Modifier
             .width(160.dp)
@@ -487,7 +475,7 @@ private fun ScheduleCard(
                 color = if (isNow) VColors.violet.copy(alpha = 0.35f) else VColors.line,
                 shape = VShapes.lg,
             )
-            .clickable(interactionSource = ix, indication = null) { onClick() }
+            .clickable { onClick() }
             .padding(16.dp),
     ) {
         StatusPill(
@@ -498,7 +486,7 @@ private fun ScheduleCard(
         Spacer(Modifier.height(12.dp))
         Text(
             text = period.classLabel,
-            style = VTypography.h3.copy(fontSize = 18.sp, color = VColors.ink),
+            style = VTypography.h3.copy(color = VColors.ink),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
@@ -638,12 +626,11 @@ private data class PendingItem(
 
 @Composable
 private fun PendingRow(item: PendingItem) {
-    val ix = remember { MutableInteractionSource() }
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(VShapes.md)
-            .clickable(interactionSource = ix, indication = null) { item.onClick() }
+            .clickable { item.onClick() }
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -660,10 +647,7 @@ private fun PendingRow(item: PendingItem) {
         Column(Modifier.weight(1f)) {
             Text(
                 text = item.label,
-                style = VTypography.bodySmall.copy(
-                    fontWeight = FontWeight.SemiBold,
-                    color = VColors.ink,
-                ),
+                style = VTypography.body.copy(color = VColors.ink),
             )
             Text(
                 text = "${item.count} ${item.suffix}",
@@ -672,7 +656,7 @@ private fun PendingRow(item: PendingItem) {
         }
         Text(
             text = item.count.toString(),
-            style = VTypography.h3.copy(fontSize = 20.sp, color = item.tint),
+            style = VTypography.h3.copy(color = item.tint),
         )
     }
 }
@@ -727,13 +711,12 @@ private data class QuickAction(
 
 @Composable
 private fun QuickActionTile(action: QuickAction, modifier: Modifier = Modifier) {
-    val ix = remember { MutableInteractionSource() }
     Column(
         modifier = modifier
             .clip(VShapes.lg)
             .background(VColors.surfaceCard)
             .border(1.dp, VColors.line, VShapes.lg)
-            .clickable(interactionSource = ix, indication = null) { action.onClick() }
+            .clickable { action.onClick() }
             .padding(16.dp),
         horizontalAlignment = Alignment.Start,
     ) {
@@ -749,10 +732,7 @@ private fun QuickActionTile(action: QuickAction, modifier: Modifier = Modifier) 
         Spacer(Modifier.height(12.dp))
         Text(
             text = action.label,
-            style = VTypography.bodySmall.copy(
-                fontWeight = FontWeight.Bold,
-                color = VColors.ink,
-            ),
+            style = VTypography.body.copy(color = VColors.ink),
         )
     }
 }
@@ -792,12 +772,11 @@ private fun MyClassesList(
 @Composable
 private fun ClassRow(cls: TeacherClassSummaryDto, onClick: () -> Unit) {
     val accent = subjectColor(VColors, cls.subject.ifBlank { cls.className })
-    val ix = remember { MutableInteractionSource() }
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(VShapes.md)
-            .clickable(interactionSource = ix, indication = null) { onClick() }
+            .clickable { onClick() }
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -811,26 +790,20 @@ private fun ClassRow(cls: TeacherClassSummaryDto, onClick: () -> Unit) {
         ) {
             Text(
                 text = cls.className.take(1).uppercase(),
-                style = VTypography.h3.copy(fontSize = 18.sp, color = accent),
+                style = VTypography.h3.copy(color = accent),
             )
         }
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = "Class ${cls.className}-${cls.section}",
-                    style = VTypography.bodySmall.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        color = VColors.ink,
-                    ),
+                    style = VTypography.body.copy(color = VColors.ink),
                 )
                 if (cls.isClassTeacher) {
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = "CT",
-                        style = VTypography.caption.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = VColors.violet,
-                        ),
+                        style = VTypography.caption.copy(color = VColors.violet),
                         modifier = Modifier
                             .clip(VShapes.full)
                             .background(VColors.violetSoft)
@@ -903,12 +876,11 @@ private fun UpcomingEventsList(
 
 @Composable
 private fun EventRow(event: TeacherPtmEventDto, onClick: () -> Unit) {
-    val ix = remember { MutableInteractionSource() }
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(VShapes.md)
-            .clickable(interactionSource = ix, indication = null) { onClick() }
+            .clickable { onClick() }
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -922,16 +894,13 @@ private fun EventRow(event: TeacherPtmEventDto, onClick: () -> Unit) {
             verticalArrangement = Arrangement.Center,
         ) {
             val (day, mon) = event.date.prettyDayMon()
-            Text(text = day, style = VTypography.bodySmall.copy(fontWeight = FontWeight.ExtraBold, color = VColors.violet))
-            Text(text = mon, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, color = VColors.violetInk))
+            Text(text = day, style = VTypography.body.copy(color = VColors.violet))
+            Text(text = mon, style = VTypography.caption.copy(color = VColors.violetInk))
         }
         Column(Modifier.weight(1f)) {
             Text(
                 text = event.title,
-                style = VTypography.bodySmall.copy(
-                    fontWeight = FontWeight.SemiBold,
-                    color = VColors.ink,
-                ),
+                style = VTypography.body.copy(color = VColors.ink),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -1000,12 +969,11 @@ private fun InsightRow(insight: InsightCard, onTap: () -> Unit) {
         InsightSeverity.MEDIUM -> VColors.gold
         InsightSeverity.LOW -> VColors.violet
     }
-    val ix = remember { MutableInteractionSource() }
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(VShapes.md)
-            .clickable(interactionSource = ix, indication = null) { onTap() }
+            .clickable { onTap() }
             .padding(vertical = 6.dp),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -1020,10 +988,7 @@ private fun InsightRow(insight: InsightCard, onTap: () -> Unit) {
         Column(Modifier.weight(1f)) {
             Text(
                 text = insight.title,
-                style = VTypography.bodySmall.copy(
-                    fontWeight = FontWeight.SemiBold,
-                    color = VColors.ink,
-                ),
+                style = VTypography.body.copy(color = VColors.ink),
             )
             if (insight.description.isNotBlank()) {
                 Text(
@@ -1038,11 +1003,7 @@ private fun InsightRow(insight: InsightCard, onTap: () -> Unit) {
             ) {
                 Text(
                     text = insight.actionLabel,
-                    style = VTypography.caption.copy(
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = VColors.violet,
-                    ),
+                    style = VTypography.caption.copy(color = VColors.violet),
                 )
                 Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(12.dp))
             }
@@ -1067,14 +1028,13 @@ private fun SectionHeader(
     ) {
         Text(
             text = title,
-            style = VTypography.h3.copy(fontSize = 18.sp, color = VColors.ink),
+            style = VTypography.h3.copy(color = VColors.ink),
         )
         if (actionLabel != null && onAction != null) {
-            val ix = remember { MutableInteractionSource() }
             Text(
                 text = actionLabel,
                 style = VTypography.label.copy(color = VColors.violet),
-                modifier = Modifier.clickable(interactionSource = ix, indication = null) { onAction() },
+                modifier = Modifier.clickable { onAction() },
             )
         }
     }
@@ -1106,10 +1066,7 @@ private fun StatusPill(
 ) {
     Text(
         text = label,
-        style = VTypography.caption.copy(
-            fontWeight = FontWeight.Bold,
-            color = fg,
-        ),
+        style = VTypography.caption.copy(color = fg),
         modifier = modifier
             .clip(VShapes.full)
             .background(bg)
@@ -1142,10 +1099,7 @@ private fun EmptyCard(
             }
             Text(
                 text = text,
-                style = VTypography.bodySmall.copy(
-                    fontWeight = FontWeight.SemiBold,
-                    color = VColors.ink,
-                ),
+                style = VTypography.body.copy(color = VColors.ink),
                 textAlign = TextAlign.Center,
             )
             if (subtext != null) {

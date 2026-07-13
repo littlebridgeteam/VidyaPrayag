@@ -3,7 +3,6 @@ package com.littlebridge.enrollplus.ui.v2.screens.teacher
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,7 +35,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.core.locale.StringKeys
@@ -328,10 +326,9 @@ private fun SegmentTab(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val ix = remember { MutableInteractionSource() }
     val base = modifier
         .clip(VShapes.full)
-        .clickable(interactionSource = ix, indication = null) { onClick() }
+        .clickable { onClick() }
     val inner: @Composable () -> Unit = {
         Row(
             Modifier.fillMaxWidth().padding(vertical = 10.dp),
@@ -340,10 +337,7 @@ private fun SegmentTab(
         ) {
             Text(
                 label,
-                style = VTypography.label.copy(
-                    color = if (active) VColors.white else VColors.ink2,
-                    fontWeight = if (active) FontWeight.Bold else FontWeight.SemiBold,
-                ),
+                style = VTypography.label.copy(color = if (active) VColors.white else VColors.ink2),
             )
             if (badge > 0) {
                 Spacer(Modifier.width(6.dp))
@@ -354,10 +348,7 @@ private fun SegmentTab(
                 ) {
                     Text(
                         badge.toString(),
-                        style = VTypography.caption.copy(
-                            color = if (active) VColors.white else VColors.white,
-                            fontWeight = FontWeight.Bold,
-                        ),
+                        style = VTypography.caption.copy(color = VColors.white),
                     )
                 }
             }
@@ -398,20 +389,15 @@ private fun DayRail(
 
 @Composable
 private fun DayChip(label: String, active: Boolean, onClick: () -> Unit) {
-    val ix = remember { MutableInteractionSource() }
-    val base = Modifier
-        .clip(VShapes.full)
-        .clickable(interactionSource = ix, indication = null) { onClick() }
-        .padding(horizontal = 18.dp, vertical = 10.dp)
     if (active) {
         Box(
             Modifier
                 .clip(VShapes.full)
                 .background(Brush.horizontalGradient(listOf(VColors.violet, VColors.violetHover)))
-                .clickable(interactionSource = ix, indication = null) { onClick() }
+                .clickable { onClick() }
                 .padding(horizontal = 18.dp, vertical = 10.dp),
         ) {
-            Text(label, style = VTypography.label.copy(color = VColors.white, fontWeight = FontWeight.Bold))
+            Text(label, style = VTypography.label.copy(color = VColors.white))
         }
     } else {
         Box(
@@ -419,10 +405,10 @@ private fun DayChip(label: String, active: Boolean, onClick: () -> Unit) {
                 .clip(VShapes.full)
                 .background(VColors.surfaceCard)
                 .border(1.dp, VColors.line, VShapes.full)
-                .clickable(interactionSource = ix, indication = null) { onClick() }
+                .clickable { onClick() }
                 .padding(horizontal = 18.dp, vertical = 10.dp),
         ) {
-            Text(label, style = VTypography.label.copy(color = VColors.ink2, fontWeight = FontWeight.SemiBold))
+            Text(label, style = VTypography.label.copy(color = VColors.ink2))
         }
     }
 }
@@ -455,7 +441,7 @@ private fun PeriodTimelineCard(
             Modifier.width(66.dp).padding(vertical = 14.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(period.startTime, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold, color = VColors.ink))
+            Text(period.startTime, style = VTypography.bodySmall.copy(color = VColors.ink))
             Box(Modifier.width(1.dp).height(10.dp).background(VColors.line))
             Text(period.endTime, style = VTypography.caption.copy(color = VColors.ink3))
         }
@@ -474,7 +460,7 @@ private fun PeriodTimelineCard(
             Spacer(Modifier.height(4.dp))
             Text(
                 period.subject,
-                style = VTypography.body.copy(fontWeight = FontWeight.Bold, color = VColors.ink),
+                style = VTypography.body.copy(color = VColors.ink),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -509,13 +495,12 @@ private fun ActionDisc(
     bg: Color,
     onClick: () -> Unit,
 ) {
-    val ix = remember { MutableInteractionSource() }
     Box(
         Modifier
             .size(34.dp)
             .clip(VShapes.full)
             .background(bg)
-            .clickable(interactionSource = ix, indication = null) { onClick() },
+            .clickable { onClick() },
         contentAlignment = Alignment.Center,
     ) {
         Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(16.dp))
@@ -545,7 +530,7 @@ private fun ChangeRequestCard(req: TimetableChangeRequestDto) {
             Column(Modifier.weight(1f)) {
                 Text(
                     "${req.className} · ${req.subject}",
-                    style = VTypography.body.copy(fontWeight = FontWeight.Bold, color = VColors.ink),
+                    style = VTypography.body.copy(color = VColors.ink),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -645,7 +630,7 @@ private fun ChangeRequestSheet(
                 } else if (period != null) {
                     VCard(Modifier.fillMaxWidth()) {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("${period.className}-${period.section} ${period.subject}", style = VTypography.body.copy(fontWeight = FontWeight.Bold, color = VColors.ink))
+                            Text("${period.className}-${period.section} ${period.subject}", style = VTypography.body.copy(color = VColors.ink))
                             Text("${period.startTime}–${period.endTime} · ${appString(StringKeys.TC_ROOM_N, "n" to period.room)}", style = VTypography.caption.copy(color = VColors.ink2))
                         }
                     }

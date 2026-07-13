@@ -7,9 +7,11 @@ import platform.Foundation.NSCalendarUnitMinute
 import platform.Foundation.NSCalendarUnitMonth
 import platform.Foundation.NSCalendarUnitYear
 import platform.Foundation.NSDate
+import platform.Foundation.NSTimeZone
 
 actual fun todayIso(): String {
     val cal = NSCalendar.currentCalendar
+    cal.timeZone = NSTimeZone.timeZoneWithName("Asia/Kolkata")
     val comps = cal.components(
         NSCalendarUnitYear or NSCalendarUnitMonth or NSCalendarUnitDay,
         fromDate = NSDate()
@@ -19,6 +21,7 @@ actual fun todayIso(): String {
 
 actual fun nowMinutesOfDay(): Int {
     val cal = NSCalendar.currentCalendar
+    cal.timeZone = NSTimeZone.timeZoneWithName("Asia/Kolkata")
     val comps = cal.components(
         NSCalendarUnitHour or NSCalendarUnitMinute,
         fromDate = NSDate()

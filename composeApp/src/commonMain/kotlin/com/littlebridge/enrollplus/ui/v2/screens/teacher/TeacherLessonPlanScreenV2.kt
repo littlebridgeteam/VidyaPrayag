@@ -3,7 +3,6 @@ package com.littlebridge.enrollplus.ui.v2.screens.teacher
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -50,39 +49,9 @@ import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
 import org.koin.compose.viewmodel.koinViewModel
-
-// ── Cream/violet token bridge for the lesson plan surface ────────────────────
-// Maps the legacy VTheme accessor names used across this screen onto the new
-// cream/violet token system, keeping every mode/dialog layout unchanged.
-private object LpColors {
-    val background get() = VColors.cream
-    val card get() = VColors.white
-    val cream get() = VColors.surfaceTint
-    val hairline get() = VColors.line
-    val ink get() = VColors.ink
-    val ink2 get() = VColors.ink2
-    val ink3 get() = VColors.ink3
-    val navyDeep get() = VColors.ink
-    val accent get() = VColors.violet
-    val accentDeep get() = VColors.violetInk
-    val teal get() = VColors.mint
-    val tealDeep get() = VColors.success
-    val dangerInk get() = VColors.error
-}
-
-private object LpType {
-    val h3: TextStyle get() = VTypography.h3
-    val body: TextStyle get() = VTypography.body
-    val bodyStrong: TextStyle get() = VTypography.body
-    val caption: TextStyle get() = VTypography.caption
-    val label: TextStyle get() = VTypography.label
-}
-
-private fun TextStyle.colored(color: Color): TextStyle = copy(color = color)
 
 /**
  * TeacherLessonPlanScreenV2 — the scoped lesson plan surface (LESSON_PLANNING_SPEC P1-20).
@@ -97,9 +66,11 @@ fun TeacherLessonPlanScreenV2(
     assignmentId: String,
     scopeLabel: String,
     modifier: Modifier = Modifier,
+    tool: UpdateTool = UpdateTool.LessonPlan,
+    onToolChange: (UpdateTool) -> Unit = {},
+    onChangeClass: () -> Unit = {},
     viewModel: TeacherLessonPlanViewModel = koinViewModel(),
 ) {
-    val c = LpColors
     val state by viewModel.state.collectAsStateV2()
 
     LaunchedEffect(assignmentId) {
@@ -108,12 +79,12 @@ fun TeacherLessonPlanScreenV2(
         }
     }
 
-    Box(modifier.fillMaxSize().background(c.background)) {
+    Box(modifier.fillMaxSize().background(VColors.cream)) {
         when (state.mode) {
-            LessonPlanMode.List -> LessonPlanListMode(viewModel, scopeLabel)
-            LessonPlanMode.Editor -> LessonPlanEditorMode(viewModel)
-            LessonPlanMode.Calendar -> LessonPlanCalendarMode(viewModel)
-            LessonPlanMode.Templates -> LessonPlanTemplatesMode(viewModel)
+            LessonPlanMode.List -> LessonPlanListMode(viewModel, scopeLabel, tool, onToolChange, onChangeClass)
+            LessonPlanMode.Editor -> LessonPlanEditorMode(viewModel, scopeLabel, tool, onToolChange, onChangeClass)
+            LessonPlanMode.Calendar -> LessonPlanCalendarMode(viewModel, scopeLabel, tool, onToolChange, onChangeClass)
+            LessonPlanMode.Templates -> LessonPlanTemplatesMode(viewModel, scopeLabel, tool, onToolChange, onChangeClass)
         }
     }
 }
@@ -123,26 +94,33 @@ fun TeacherLessonPlanScreenV2(
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun LessonPlanListMode(viewModel: TeacherLessonPlanViewModel, scopeLabel: String) {
-    val c = LpColors
+private fun LessonPlanListMode(
+    viewModel: TeacherLessonPlanViewModel,
+    scopeLabel: String,
+    tool: UpdateTool,
+    onToolChange: (UpdateTool) -> Unit,
+    onChangeClass: () -> Unit,
+) {
     val state by viewModel.state.collectAsStateV2()
 
     LazyColumn(
-        Modifier.fillMaxSize().padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(top = 14.dp, bottom = 24.dp),
+        Modifier.fillMaxSize().padding(horizontal = 20.dp),
+        contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            VtCard(padding = 16.dp) {
-                Column {
-                    VtEyebrow(appString(StringKeys.TC_LESSON_PLANS), dot = c.accent)
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        scopeLabel.ifBlank { state.scopeLabel },
-                        style = LpType.h3.colored(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold),
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ScopedToolHeader(
+                tool = tool,
+                scopeLabel = scopeLabel,
+                onToolChange = onToolChange,
+                onChangeClass = onChangeClass,
+            )
+        }
+
+        item {
+            VtCard {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         VButton(
                             text = appString(StringKeys.TC_NEW_PLAN),
                             onClick = { viewModel.openNewEditor() },
@@ -197,7 +175,7 @@ private fun LessonPlanListMode(viewModel: TeacherLessonPlanViewModel, scopeLabel
             state.error != null && state.items.isEmpty() -> item {
                 VtCard {
                     Column {
-                        Text(appString(StringKeys.TC_COULDNT_LOAD_LESSON_PLANS), style = LpType.bodyStrong.colored(c.ink))
+                        Text(appString(StringKeys.TC_COULDNT_LOAD_LESSON_PLANS), style = VTypography.bodySmall, color = VColors.ink)
                         Spacer(Modifier.height(8.dp))
                         VButton(appString(StringKeys.COMMON_BUTTON_RETRY), onClick = { viewModel.retry() }, tone = VButtonTone.Lavender, size = VButtonSize.Sm)
                     }
@@ -209,10 +187,10 @@ private fun LessonPlanListMode(viewModel: TeacherLessonPlanViewModel, scopeLabel
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        VtIconDisc(VIcons.ClipboardList, tint = c.accent, bg = c.accent.copy(alpha = 0.14f), size = 48.dp, glyph = 24.dp)
+                        VtIconDisc(VIcons.ClipboardList, tint = VColors.violet, bg = VColors.violet.copy(alpha = 0.14f), size = 48.dp, glyph = 24.dp)
                         Spacer(Modifier.height(10.dp))
-                        Text(appString(StringKeys.TC_NO_LESSON_PLANS_YET), style = LpType.h3.colored(c.ink))
-                        Text(appString(StringKeys.TC_CREATE_FIRST_LESSON_PLAN), style = LpType.caption.colored(c.ink3).copy(fontSize = 12.sp))
+                        Text(appString(StringKeys.TC_NO_LESSON_PLANS_YET), style = VTypography.bodySmall, color = VColors.ink)
+                        Text(appString(StringKeys.TC_CREATE_FIRST_LESSON_PLAN), style = VTypography.caption, color = VColors.ink3)
                     }
                 }
             }
@@ -225,31 +203,28 @@ private fun LessonPlanListMode(viewModel: TeacherLessonPlanViewModel, scopeLabel
 
 @Composable
 private fun LessonStatusChip(label: String, active: Boolean, onClick: () -> Unit) {
-    val c = LpColors
-    val ix = remember { MutableInteractionSource() }
     Box(
         Modifier
-            .clip(RoundedCornerShape(999.dp))
-            .background(if (active) c.accent.copy(alpha = 0.14f) else c.cream)
-            .border(1.dp, if (active) c.accent.copy(alpha = 0.5f) else c.hairline, RoundedCornerShape(999.dp))
-            .clickable(interactionSource = ix, indication = null) { onClick() }
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .clip(VShapes.full)
+            .background(if (active) VColors.violet.copy(alpha = 0.14f) else VColors.surfaceTint)
+            .border(1.dp, if (active) VColors.violet.copy(alpha = 0.5f) else VColors.line, VShapes.full)
+            .clickable { onClick() }
+            .padding(horizontal = 12.dp, vertical = 7.dp),
     ) {
         Text(
             label,
-            style = LpType.label.colored(if (active) c.accentDeep else c.ink3).copy(fontSize = 11.sp, fontWeight = FontWeight.Bold),
+            style = VTypography.caption,
+            color = if (active) VColors.violetInk else VColors.ink3,
         )
     }
 }
 
 @Composable
 private fun LessonPlanRow(plan: LessonPlanSummary, onClick: () -> Unit) {
-    val c = LpColors
-    val ix = remember { MutableInteractionSource() }
     val statusColor = when (plan.status) {
-        "completed" -> c.tealDeep
-        "skipped" -> c.ink3
-        else -> c.accent
+        "completed" -> VColors.success
+        "skipped" -> VColors.ink3
+        else -> VColors.violet
     }
     val statusIcon = when (plan.status) {
         "completed" -> VIcons.Check
@@ -259,28 +234,30 @@ private fun LessonPlanRow(plan: LessonPlanSummary, onClick: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(c.card)
-            .border(1.dp, c.hairline, RoundedCornerShape(18.dp))
-            .clickable(interactionSource = ix, indication = null) { onClick() }
-            .padding(14.dp),
+            .clip(VShapes.lg)
+            .background(VColors.white)
+            .border(1.dp, VColors.line, VShapes.lg)
+            .clickable { onClick() }
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         VtIconDisc(statusIcon, tint = statusColor, bg = statusColor.copy(alpha = 0.12f), size = 44.dp, glyph = 22.dp)
         Column(Modifier.weight(1f)) {
             Text(
                 plan.title,
-                style = LpType.bodyStrong.colored(c.ink).copy(fontSize = 15.sp, fontWeight = FontWeight.ExtraBold),
+                style = VTypography.bodySmall,
+                color = VColors.ink,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
-            Spacer(Modifier.height(2.dp))
+            Spacer(Modifier.height(4.dp))
             val dateText = plan.plannedDate?.let { prettyDateShort(it) } ?: appString(StringKeys.TC_NO_DATE)
             val unitText = plan.unitTitle?.let { " · $it" } ?: ""
             Text(
                 "$dateText · ${plan.durationMinutes} min$unitText",
-                style = LpType.caption.colored(c.ink2).copy(fontSize = 12.sp),
+                style = VTypography.caption,
+                color = VColors.ink2,
             )
         }
         VtPill(plan.status.uppercase(), bg = statusColor.copy(alpha = 0.12f), fg = statusColor)
@@ -292,8 +269,13 @@ private fun LessonPlanRow(plan: LessonPlanSummary, onClick: () -> Unit) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
-    val c = LpColors
+private fun LessonPlanEditorMode(
+    viewModel: TeacherLessonPlanViewModel,
+    scopeLabel: String,
+    tool: UpdateTool,
+    onToolChange: (UpdateTool) -> Unit,
+    onChangeClass: () -> Unit,
+) {
     val state by viewModel.state.collectAsStateV2()
     val e = state.editor
 
@@ -307,27 +289,36 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
         contentPadding = PaddingValues(top = 14.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        // Scrollable scoped chrome
+        item {
+            ScopedToolHeader(
+                tool = tool,
+                scopeLabel = scopeLabel,
+                onToolChange = onToolChange,
+                onChangeClass = onChangeClass,
+            )
+        }
+
         // Header
         item {
-            VtCard(padding = 16.dp) {
+            VtCard {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    val ix = remember { MutableInteractionSource() }
-                    Box(
-                        Modifier.size(34.dp).clip(CircleShape).background(c.cream)
-                            .clickable(interactionSource = ix, indication = null) { viewModel.closeEditor() },
+                                    Box(
+                        Modifier.size(34.dp).clip(CircleShape).background(VColors.surfaceTint)
+                            .clickable { viewModel.closeEditor() },
                         contentAlignment = Alignment.Center,
-                    ) { Icon(VIcons.ArrowLeft, contentDescription = appString(StringKeys.COMMON_BUTTON_BACK), tint = c.ink2, modifier = Modifier.size(18.dp)) }
+                    ) { Icon(VIcons.ArrowLeft, contentDescription = appString(StringKeys.COMMON_BUTTON_BACK), tint = VColors.ink2, modifier = Modifier.size(18.dp)) }
                     Spacer(Modifier.width(12.dp))
-                    VtEyebrow(if (e.isNew) appString(StringKeys.TC_NEW_LESSON_PLAN) else appString(StringKeys.TC_EDIT_LESSON_PLAN), dot = c.accent)
+                    VtEyebrow(if (e.isNew) appString(StringKeys.TC_NEW_LESSON_PLAN) else appString(StringKeys.TC_EDIT_LESSON_PLAN), dot = VColors.violet)
                 }
             }
         }
 
         // Title
         item {
-            VtCard(padding = 16.dp) {
+            VtCard {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(appString(StringKeys.TC_TITLE), style = LpType.label.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
+                    Text(appString(StringKeys.TC_TITLE), style = VTypography.label.copy(color = VColors.ink2))
                     VInput(value = e.title, onValueChange = viewModel::setEditorTitle, placeholder = appString(StringKeys.TC_LESSON_TITLE))
                 }
             }
@@ -335,15 +326,15 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
 
         // Planned date + duration
         item {
-            VtCard(padding = 16.dp) {
+            VtCard {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Column(Modifier.weight(1f)) {
-                        Text(appString(StringKeys.TC_PLANNED_DATE), style = LpType.label.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
+                        Text(appString(StringKeys.TC_PLANNED_DATE), style = VTypography.label.copy(color = VColors.ink2))
                         Spacer(Modifier.height(6.dp))
                         VInput(value = e.plannedDate, onValueChange = viewModel::setEditorDate, placeholder = "YYYY-MM-DD")
                     }
                     Column(Modifier.width(100.dp)) {
-                        Text(appString(StringKeys.TC_MINUTES), style = LpType.label.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
+                        Text(appString(StringKeys.TC_MINUTES), style = VTypography.label.copy(color = VColors.ink2))
                         Spacer(Modifier.height(6.dp))
                         VInput(value = e.durationMinutes.toString(), onValueChange = { v -> v.toIntOrNull()?.let { viewModel.setEditorDuration(it) } }, placeholder = "45")
                     }
@@ -353,11 +344,11 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
 
         // Curriculum unit picker
         item {
-            VtCard(padding = 16.dp) {
+            VtCard {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(appString(StringKeys.TC_CURRICULUM_UNIT_OPTIONAL), style = LpType.label.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
+                    Text(appString(StringKeys.TC_CURRICULUM_UNIT_OPTIONAL), style = VTypography.label.copy(color = VColors.ink2))
                     if (state.syllabusUnits.isEmpty()) {
-                        Text(appString(StringKeys.TC_NO_SYLLABUS_UNITS), style = LpType.caption.colored(c.ink3).copy(fontSize = 12.sp))
+                        Text(appString(StringKeys.TC_NO_SYLLABUS_UNITS), style = VTypography.caption.copy(color = VColors.ink3))
                     } else {
                         UnitPicker(
                             units = state.syllabusUnits,
@@ -371,11 +362,11 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
 
         // Homework link picker
         item {
-            VtCard(padding = 16.dp) {
+            VtCard {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(appString(StringKeys.TC_LINK_HOMEWORK_OPTIONAL), style = LpType.label.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
+                    Text(appString(StringKeys.TC_LINK_HOMEWORK_OPTIONAL), style = VTypography.label.copy(color = VColors.ink2))
                     if (state.homeworkOptions.isEmpty()) {
-                        Text(appString(StringKeys.TC_NO_ACTIVE_HOMEWORK_CLASS), style = LpType.caption.colored(c.ink3).copy(fontSize = 12.sp))
+                        Text(appString(StringKeys.TC_NO_ACTIVE_HOMEWORK_CLASS), style = VTypography.caption.copy(color = VColors.ink3))
                     } else {
                         HomeworkPicker(
                             homework = state.homeworkOptions,
@@ -389,30 +380,30 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
 
         // Quiz attach — show existing quizzes for this assignment
         item {
-            VtCard(padding = 16.dp) {
+            VtCard {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Icon(VIcons.GraduationCap, contentDescription = null, tint = c.accent, modifier = Modifier.size(16.dp))
-                        Text("Quiz", style = LpType.label.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
+                        Icon(VIcons.GraduationCap, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(16.dp))
+                        Text(appString(StringKeys.TC_QUIZ), style = VTypography.label.copy(color = VColors.ink2))
                     }
                     if (state.existingQuizzes.isEmpty()) {
-                        Text("No quizzes created yet for this class.", style = LpType.caption.colored(c.ink3).copy(fontSize = 12.sp))
+                        Text(appString(StringKeys.TC_NO_QUIZZES_CREATED_YET), style = VTypography.caption.copy(color = VColors.ink3))
                     } else {
                         state.existingQuizzes.forEach { quiz ->
                             Row(
-                                Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(c.cream).padding(10.dp),
+                                Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(VColors.surfaceTint).padding(10.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
                                 Box(
-                                    Modifier.size(28.dp).clip(CircleShape).background(c.accent.copy(alpha = 0.12f)),
+                                    Modifier.size(28.dp).clip(CircleShape).background(VColors.violet.copy(alpha = 0.12f)),
                                     contentAlignment = Alignment.Center,
-                                ) { Icon(VIcons.GraduationCap, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(14.dp)) }
+                                ) { Icon(VIcons.GraduationCap, contentDescription = null, tint = VColors.violetInk, modifier = Modifier.size(14.dp)) }
                                 Column(Modifier.weight(1f)) {
-                                    Text(quiz.title.ifBlank { "Untitled Quiz" }, style = LpType.body.colored(c.ink).copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
-                                    Text("${quiz.questions.size} questions · ${quiz.status}", style = LpType.caption.colored(c.ink3).copy(fontSize = 11.sp))
+                                    Text(quiz.title.ifBlank { "Untitled Quiz" }, style = VTypography.body.copy(color = VColors.ink))
+                                    Text("${quiz.questions.size} questions · ${quiz.status}", style = VTypography.caption.copy(color = VColors.ink3))
                                 }
-                                VtPill(quiz.status.uppercase(), bg = c.accent.copy(alpha = 0.12f), fg = c.accentDeep)
+                                VtPill(quiz.status.uppercase(), bg = VColors.violet.copy(alpha = 0.12f), fg = VColors.violetInk)
                             }
                         }
                     }
@@ -422,19 +413,18 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
 
         // Objectives
         item {
-            VtCard(padding = 16.dp) {
+            VtCard {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(appString(StringKeys.TC_OBJECTIVES), style = LpType.label.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
+                    Text(appString(StringKeys.TC_OBJECTIVES), style = VTypography.label.copy(color = VColors.ink2))
                     e.objectives.forEachIndexed { i, obj ->
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Box(Modifier.size(6.dp).clip(CircleShape).background(c.accent))
-                            Text(obj, style = LpType.body.colored(c.ink).copy(fontSize = 14.sp), modifier = Modifier.weight(1f))
-                            val ix = remember { MutableInteractionSource() }
-                            Box(
-                                Modifier.size(24.dp).clip(CircleShape).background(c.cream)
-                                    .clickable(interactionSource = ix, indication = null) { viewModel.removeObjective(i) },
+                            Box(Modifier.size(6.dp).clip(CircleShape).background(VColors.violet))
+                            Text(obj, style = VTypography.body.copy(color = VColors.ink), modifier = Modifier.weight(1f))
+                                                    Box(
+                                Modifier.size(24.dp).clip(CircleShape).background(VColors.surfaceTint)
+                                    .clickable { viewModel.removeObjective(i) },
                                 contentAlignment = Alignment.Center,
-                            ) { Icon(VIcons.Close, contentDescription = appString(StringKeys.TC_REMOVE), tint = c.ink3, modifier = Modifier.size(12.dp)) }
+                            ) { Icon(VIcons.Close, contentDescription = appString(StringKeys.TC_REMOVE), tint = VColors.ink3, modifier = Modifier.size(12.dp)) }
                         }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -458,19 +448,18 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
 
         // Activities
         item {
-            VtCard(padding = 16.dp) {
+            VtCard {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(appString(StringKeys.TC_ACTIVITIES), style = LpType.label.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
+                    Text(appString(StringKeys.TC_ACTIVITIES), style = VTypography.label.copy(color = VColors.ink2))
                     e.activities.forEachIndexed { i, act ->
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Box(Modifier.size(6.dp).clip(CircleShape).background(c.tealDeep))
-                            Text("${act.activity} (${act.durationMin} min)", style = LpType.body.colored(c.ink).copy(fontSize = 14.sp), modifier = Modifier.weight(1f))
-                            val ix = remember { MutableInteractionSource() }
-                            Box(
-                                Modifier.size(24.dp).clip(CircleShape).background(c.cream)
-                                    .clickable(interactionSource = ix, indication = null) { viewModel.removeActivity(i) },
+                            Box(Modifier.size(6.dp).clip(CircleShape).background(VColors.success))
+                            Text("${act.activity} (${act.durationMin} min)", style = VTypography.body.copy(color = VColors.ink), modifier = Modifier.weight(1f))
+                                                    Box(
+                                Modifier.size(24.dp).clip(CircleShape).background(VColors.surfaceTint)
+                                    .clickable { viewModel.removeActivity(i) },
                                 contentAlignment = Alignment.Center,
-                            ) { Icon(VIcons.Close, contentDescription = appString(StringKeys.TC_REMOVE), tint = c.ink3, modifier = Modifier.size(12.dp)) }
+                            ) { Icon(VIcons.Close, contentDescription = appString(StringKeys.TC_REMOVE), tint = VColors.ink3, modifier = Modifier.size(12.dp)) }
                         }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -505,19 +494,18 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
 
         // Resources
         item {
-            VtCard(padding = 16.dp) {
+            VtCard {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(appString(StringKeys.TC_RESOURCES), style = LpType.label.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
+                    Text(appString(StringKeys.TC_RESOURCES), style = VTypography.label.copy(color = VColors.ink2))
                     e.resources.forEachIndexed { i, res ->
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Box(Modifier.size(6.dp).clip(CircleShape).background(c.tealDeep))
-                            Text(res, style = LpType.body.colored(c.ink).copy(fontSize = 14.sp), modifier = Modifier.weight(1f))
-                            val ix = remember { MutableInteractionSource() }
-                            Box(
-                                Modifier.size(24.dp).clip(CircleShape).background(c.cream)
-                                    .clickable(interactionSource = ix, indication = null) { viewModel.removeResource(i) },
+                            Box(Modifier.size(6.dp).clip(CircleShape).background(VColors.success))
+                            Text(res, style = VTypography.body.copy(color = VColors.ink), modifier = Modifier.weight(1f))
+                                                    Box(
+                                Modifier.size(24.dp).clip(CircleShape).background(VColors.surfaceTint)
+                                    .clickable { viewModel.removeResource(i) },
                                 contentAlignment = Alignment.Center,
-                            ) { Icon(VIcons.Close, contentDescription = appString(StringKeys.TC_REMOVE), tint = c.ink3, modifier = Modifier.size(12.dp)) }
+                            ) { Icon(VIcons.Close, contentDescription = appString(StringKeys.TC_REMOVE), tint = VColors.ink3, modifier = Modifier.size(12.dp)) }
                         }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -541,9 +529,9 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
 
         // Assessment method
         item {
-            VtCard(padding = 16.dp) {
+            VtCard {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(appString(StringKeys.TC_ASSESSMENT_METHOD), style = LpType.label.colored(c.ink2).copy(fontSize = 12.sp, fontWeight = FontWeight.Bold))
+                    Text(appString(StringKeys.TC_ASSESSMENT_METHOD), style = VTypography.label.copy(color = VColors.ink2))
                     VInput(value = e.assessmentMethod, onValueChange = viewModel::setEditorAssessment, placeholder = appString(StringKeys.TC_HOW_ASSESS_OPTIONAL))
                 }
             }
@@ -552,7 +540,7 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
         // Error
         if (e.error != null) {
             item {
-                Text(e.error ?: "", style = LpType.caption.colored(c.dangerInk).copy(fontSize = 12.sp))
+                Text(e.error ?: "", style = VTypography.caption.copy(color = VColors.error))
             }
         }
 
@@ -619,24 +607,22 @@ private fun LessonPlanEditorMode(viewModel: TeacherLessonPlanViewModel) {
 
 @Composable
 private fun SaveTemplateDialog(viewModel: TeacherLessonPlanViewModel) {
-    val c = LpColors
     val state by viewModel.state.collectAsStateV2()
-    VtCard(padding = 16.dp) {
+    VtCard {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(appString(StringKeys.TC_SAVE_AS_TEMPLATE), style = LpType.h3.colored(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold))
+            Text(appString(StringKeys.TC_SAVE_AS_TEMPLATE), style = VTypography.h3.copy(color = VColors.ink))
             VInput(value = state.templateTitle, onValueChange = viewModel::setTemplateTitle, placeholder = appString(StringKeys.TC_TEMPLATE_TITLE))
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                val ix = remember { MutableInteractionSource() }
-                Box(
+                            Box(
                     Modifier.size(24.dp).clip(CircleShape)
-                        .background(if (state.templateIsShared) c.accent.copy(alpha = 0.14f) else c.cream)
-                        .border(1.dp, if (state.templateIsShared) c.accent else c.hairline, CircleShape)
-                        .clickable(interactionSource = ix, indication = null) { viewModel.setTemplateShared(!state.templateIsShared) },
+                        .background(if (state.templateIsShared) VColors.violet.copy(alpha = 0.14f) else VColors.surfaceTint)
+                        .border(1.dp, if (state.templateIsShared) VColors.violet else VColors.line, CircleShape)
+                        .clickable { viewModel.setTemplateShared(!state.templateIsShared) },
                     contentAlignment = Alignment.Center,
                 ) {
-                    if (state.templateIsShared) Icon(VIcons.Check, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(14.dp))
+                    if (state.templateIsShared) Icon(VIcons.Check, contentDescription = null, tint = VColors.violetInk, modifier = Modifier.size(14.dp))
                 }
-                Text(appString(StringKeys.TC_SHARE_WITH_TEACHERS), style = LpType.body.colored(c.ink).copy(fontSize = 13.sp))
+                Text(appString(StringKeys.TC_SHARE_WITH_TEACHERS), style = VTypography.body.copy(color = VColors.ink))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 VButton(appString(StringKeys.COMMON_BUTTON_CANCEL), onClick = { viewModel.closeSaveTemplateDialog() }, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost, size = VButtonSize.Md)
@@ -651,8 +637,13 @@ private fun SaveTemplateDialog(viewModel: TeacherLessonPlanViewModel) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun LessonPlanCalendarMode(viewModel: TeacherLessonPlanViewModel) {
-    val c = LpColors
+private fun LessonPlanCalendarMode(
+    viewModel: TeacherLessonPlanViewModel,
+    scopeLabel: String,
+    tool: UpdateTool,
+    onToolChange: (UpdateTool) -> Unit,
+    onChangeClass: () -> Unit,
+) {
     val state by viewModel.state.collectAsStateV2()
     val cal = state.calendar
 
@@ -662,18 +653,26 @@ private fun LessonPlanCalendarMode(viewModel: TeacherLessonPlanViewModel) {
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item {
-            VtCard(padding = 16.dp) {
+            ScopedToolHeader(
+                tool = tool,
+                scopeLabel = scopeLabel,
+                onToolChange = onToolChange,
+                onChangeClass = onChangeClass,
+            )
+        }
+
+        item {
+            VtCard {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    val ix = remember { MutableInteractionSource() }
-                    Box(
-                        Modifier.size(34.dp).clip(CircleShape).background(c.cream)
-                            .clickable(interactionSource = ix, indication = null) { viewModel.closeCalendar() },
+                                    Box(
+                        Modifier.size(34.dp).clip(CircleShape).background(VColors.surfaceTint)
+                            .clickable { viewModel.closeCalendar() },
                         contentAlignment = Alignment.Center,
-                    ) { Icon(VIcons.ArrowLeft, contentDescription = appString(StringKeys.COMMON_BUTTON_BACK), tint = c.ink2, modifier = Modifier.size(18.dp)) }
+                    ) { Icon(VIcons.ArrowLeft, contentDescription = appString(StringKeys.COMMON_BUTTON_BACK), tint = VColors.ink2, modifier = Modifier.size(18.dp)) }
                     Spacer(Modifier.width(12.dp))
-                    VtEyebrow(appString(StringKeys.TC_CALENDAR), dot = c.accent)
+                    VtEyebrow(appString(StringKeys.TC_CALENDAR), dot = VColors.violet)
                     Spacer(Modifier.width(8.dp))
-                    Text(cal.month.ifBlank { "—" }, style = LpType.h3.colored(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold))
+                    Text(cal.month.ifBlank { "—" }, style = VTypography.h3.copy(color = VColors.ink))
                 }
             }
         }
@@ -684,25 +683,25 @@ private fun LessonPlanCalendarMode(viewModel: TeacherLessonPlanViewModel) {
             item {
                 VtCard {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                        VtIconDisc(VIcons.Calendar, tint = c.accent, bg = c.accent.copy(alpha = 0.14f), size = 48.dp, glyph = 24.dp)
+                        VtIconDisc(VIcons.Calendar, tint = VColors.violet, bg = VColors.violet.copy(alpha = 0.14f), size = 48.dp, glyph = 24.dp)
                         Spacer(Modifier.height(10.dp))
-                        Text(appString(StringKeys.TC_NO_PLANS_THIS_MONTH), style = LpType.h3.colored(c.ink))
+                        Text(appString(StringKeys.TC_NO_PLANS_THIS_MONTH), style = VTypography.h3.copy(color = VColors.ink))
                     }
                 }
             }
         } else {
             items(cal.days, key = { it.date }) { day ->
-                VtCard(padding = 12.dp) {
+                VtCard {
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
                             prettyDateShort(day.date),
-                            style = LpType.bodyStrong.colored(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold),
+                            style = VTypography.body.copy(color = VColors.ink),
                         )
                         day.plans.forEach { plan ->
                             val statusColor = when (plan.status) {
-                                "completed" -> c.tealDeep
-                                "skipped" -> c.ink3
-                                else -> c.accent
+                                "completed" -> VColors.success
+                                "skipped" -> VColors.ink3
+                                else -> VColors.violet
                             }
                             Row(
                                 Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
@@ -713,8 +712,8 @@ private fun LessonPlanCalendarMode(viewModel: TeacherLessonPlanViewModel) {
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
                                 Box(Modifier.size(6.dp).clip(CircleShape).background(statusColor))
-                                Text(plan.title, style = LpType.body.colored(c.ink).copy(fontSize = 13.sp), modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                Text(plan.status, style = LpType.caption.colored(statusColor).copy(fontSize = 10.sp, fontWeight = FontWeight.Bold))
+                                Text(plan.title, style = VTypography.body.copy(color = VColors.ink), modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(plan.status, style = VTypography.caption.copy(color = statusColor))
                             }
                         }
                     }
@@ -729,8 +728,13 @@ private fun LessonPlanCalendarMode(viewModel: TeacherLessonPlanViewModel) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun LessonPlanTemplatesMode(viewModel: TeacherLessonPlanViewModel) {
-    val c = LpColors
+private fun LessonPlanTemplatesMode(
+    viewModel: TeacherLessonPlanViewModel,
+    scopeLabel: String,
+    tool: UpdateTool,
+    onToolChange: (UpdateTool) -> Unit,
+    onChangeClass: () -> Unit,
+) {
     val state by viewModel.state.collectAsStateV2()
 
     LazyColumn(
@@ -739,16 +743,24 @@ private fun LessonPlanTemplatesMode(viewModel: TeacherLessonPlanViewModel) {
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item {
-            VtCard(padding = 16.dp) {
+            ScopedToolHeader(
+                tool = tool,
+                scopeLabel = scopeLabel,
+                onToolChange = onToolChange,
+                onChangeClass = onChangeClass,
+            )
+        }
+
+        item {
+            VtCard {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    val ix = remember { MutableInteractionSource() }
-                    Box(
-                        Modifier.size(34.dp).clip(CircleShape).background(c.cream)
-                            .clickable(interactionSource = ix, indication = null) { viewModel.closeTemplates() },
+                                    Box(
+                        Modifier.size(34.dp).clip(CircleShape).background(VColors.surfaceTint)
+                            .clickable { viewModel.closeTemplates() },
                         contentAlignment = Alignment.Center,
-                    ) { Icon(VIcons.ArrowLeft, contentDescription = appString(StringKeys.COMMON_BUTTON_BACK), tint = c.ink2, modifier = Modifier.size(18.dp)) }
+                    ) { Icon(VIcons.ArrowLeft, contentDescription = appString(StringKeys.COMMON_BUTTON_BACK), tint = VColors.ink2, modifier = Modifier.size(18.dp)) }
                     Spacer(Modifier.width(12.dp))
-                    VtEyebrow(appString(StringKeys.TC_TEMPLATES), dot = c.accent)
+                    VtEyebrow(appString(StringKeys.TC_TEMPLATES), dot = VColors.violet)
                 }
             }
         }
@@ -759,7 +771,7 @@ private fun LessonPlanTemplatesMode(viewModel: TeacherLessonPlanViewModel) {
             item {
                 VtCard {
                     Column {
-                        Text(appString(StringKeys.TC_COULDNT_LOAD_TEMPLATES), style = LpType.bodyStrong.colored(c.ink))
+                        Text(appString(StringKeys.TC_COULDNT_LOAD_TEMPLATES), style = VTypography.body.copy(color = VColors.ink))
                         Spacer(Modifier.height(8.dp))
                         VButton(appString(StringKeys.COMMON_BUTTON_RETRY), onClick = { viewModel.loadTemplates() }, tone = VButtonTone.Lavender, size = VButtonSize.Sm)
                     }
@@ -769,10 +781,10 @@ private fun LessonPlanTemplatesMode(viewModel: TeacherLessonPlanViewModel) {
             item {
                 VtCard {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                        VtIconDisc(VIcons.ClipboardList, tint = c.accent, bg = c.accent.copy(alpha = 0.14f), size = 48.dp, glyph = 24.dp)
+                        VtIconDisc(VIcons.ClipboardList, tint = VColors.violet, bg = VColors.violet.copy(alpha = 0.14f), size = 48.dp, glyph = 24.dp)
                         Spacer(Modifier.height(10.dp))
-                        Text(appString(StringKeys.TC_NO_TEMPLATES_YET), style = LpType.h3.colored(c.ink))
-                        Text(appString(StringKeys.TC_SAVE_LESSON_AS_TEMPLATE), style = LpType.caption.colored(c.ink3).copy(fontSize = 12.sp))
+                        Text(appString(StringKeys.TC_NO_TEMPLATES_YET), style = VTypography.h3.copy(color = VColors.ink))
+                        Text(appString(StringKeys.TC_SAVE_LESSON_AS_TEMPLATE), style = VTypography.caption.copy(color = VColors.ink3))
                     }
                 }
             }
@@ -799,18 +811,17 @@ private fun TemplateRow(
     onInstantiate: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    val c = LpColors
-    VtCard(padding = 14.dp) {
+    VtCard {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                VtIconDisc(VIcons.ClipboardList, tint = c.accent, bg = c.accent.copy(alpha = 0.12f), size = 40.dp, glyph = 20.dp)
+                VtIconDisc(VIcons.ClipboardList, tint = VColors.violet, bg = VColors.violet.copy(alpha = 0.12f), size = 40.dp, glyph = 20.dp)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(template.title, style = LpType.bodyStrong.colored(c.ink).copy(fontSize = 15.sp, fontWeight = FontWeight.ExtraBold), maxLines = 2, overflow = TextOverflow.Ellipsis)
-                    Text("${template.objectives.size} objectives · ${template.durationMinutes} min", style = LpType.caption.colored(c.ink2).copy(fontSize = 12.sp))
+                    Text(template.title, style = VTypography.body.copy(color = VColors.ink), maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text("${template.objectives.size} objectives · ${template.durationMinutes} min", style = VTypography.caption.copy(color = VColors.ink2))
                 }
                 if (template.isShared) {
-                    VtPill(appString(StringKeys.TC_SHARED), bg = c.teal.copy(alpha = 0.12f), fg = c.tealDeep)
+                    VtPill(appString(StringKeys.TC_SHARED), bg = VColors.mint.copy(alpha = 0.12f), fg = VColors.success)
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -836,12 +847,11 @@ private fun TemplateRow(
 
 @Composable
 private fun InstantiateDialog(viewModel: TeacherLessonPlanViewModel) {
-    val c = LpColors
     val state by viewModel.state.collectAsStateV2()
-    VtCard(padding = 16.dp) {
+    VtCard {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(appString(StringKeys.TC_INSTANTIATE_FROM_TEMPLATE), style = LpType.h3.colored(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold))
-            Text(appString(StringKeys.TC_PICK_DATE_FOR_LESSON), style = LpType.body.colored(c.ink2).copy(fontSize = 13.sp))
+            Text(appString(StringKeys.TC_INSTANTIATE_FROM_TEMPLATE), style = VTypography.h3.copy(color = VColors.ink))
+            Text(appString(StringKeys.TC_PICK_DATE_FOR_LESSON), style = VTypography.body.copy(color = VColors.ink2))
             VInput(value = state.instantiateDate, onValueChange = viewModel::setInstantiateDate, placeholder = "YYYY-MM-DD")
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 VButton(appString(StringKeys.COMMON_BUTTON_CANCEL), onClick = { viewModel.closeInstantiateDialog() }, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost, size = VButtonSize.Md)
@@ -900,30 +910,28 @@ private fun PickerRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = LpColors
-    val ix = remember { MutableInteractionSource() }
     Row(
         modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(if (selected) c.accent.copy(alpha = 0.10f) else c.cream)
-            .border(1.dp, if (selected) c.accent.copy(alpha = 0.4f) else c.hairline, RoundedCornerShape(12.dp))
-            .clickable(interactionSource = ix, indication = null) { onClick() }
+            .background(if (selected) VColors.violet.copy(alpha = 0.10f) else VColors.surfaceTint)
+            .border(1.dp, if (selected) VColors.violet.copy(alpha = 0.4f) else VColors.line, RoundedCornerShape(12.dp))
+            .clickable { onClick() }
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Box(
             Modifier.size(20.dp).clip(CircleShape)
-                .background(if (selected) c.accent else androidx.compose.ui.graphics.Color.Transparent)
-                .border(1.dp, if (selected) c.accent else c.hairline, CircleShape),
+                .background(if (selected) VColors.violet else androidx.compose.ui.graphics.Color.Transparent)
+                .border(1.dp, if (selected) VColors.violet else VColors.line, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             if (selected) Icon(VIcons.Check, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(12.dp))
         }
         Text(
             label,
-            style = LpType.body.colored(if (selected) c.accentDeep else c.ink).copy(fontSize = 13.sp),
+            style = VTypography.body.copy(color = if (selected) VColors.violetInk else VColors.ink),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
@@ -939,35 +947,34 @@ private fun QuizSuggestionBanner(
     viewModel: TeacherLessonPlanViewModel,
     completedPlanTitle: String,
 ) {
-    val c = LpColors
-    VtCard(padding = 14.dp) {
+    VtCard {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Box(
-                    Modifier.size(36.dp).clip(CircleShape).background(c.accent.copy(alpha = 0.12f)),
+                    Modifier.size(36.dp).clip(CircleShape).background(VColors.violet.copy(alpha = 0.12f)),
                     contentAlignment = Alignment.Center,
-                ) { Icon(VIcons.GraduationCap, contentDescription = null, tint = c.accentDeep, modifier = Modifier.size(18.dp)) }
+                ) { Icon(VIcons.GraduationCap, contentDescription = null, tint = VColors.violetInk, modifier = Modifier.size(18.dp)) }
                 Column(Modifier.weight(1f)) {
                     Text(
-                        "Lesson completed!",
-                        style = LpType.bodyStrong.colored(c.ink).copy(fontSize = 14.sp, fontWeight = FontWeight.Bold),
+                        appString(StringKeys.TC_LESSON_COMPLETED),
+                        style = VTypography.body.copy(color = VColors.ink),
                     )
                     Text(
-                        "Create a quiz to assess \"$completedPlanTitle\".",
-                        style = LpType.caption.colored(c.ink2).copy(fontSize = 12.sp),
+                        appString(StringKeys.TC_CREATE_QUIZ_TO_ASSESS, "title" to completedPlanTitle),
+                        style = VTypography.caption.copy(color = VColors.ink2),
                     )
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 VButton(
-                    text = "Not Now",
+                    text = appString(StringKeys.TC_NOT_NOW),
                     onClick = { viewModel.dismissQuizSuggestion() },
                     modifier = Modifier.weight(1f),
                     variant = VButtonVariant.Ghost,
                     size = VButtonSize.Sm,
                 )
                 VButton(
-                    text = "Create Quiz",
+                    text = appString(StringKeys.TC_CREATE_QUIZ),
                     onClick = { viewModel.dismissQuizSuggestion() },
                     modifier = Modifier.weight(1f),
                     variant = VButtonVariant.Secondary,

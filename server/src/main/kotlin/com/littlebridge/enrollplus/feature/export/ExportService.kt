@@ -55,6 +55,7 @@ data class ExportResponse(
     @SerialName("file_size") val fileSize: Long = 0,
     val format: String,
     val message: String? = null,
+    @SerialName("data_url") val dataUrl: String? = null,
 )
 
 @Serializable
@@ -73,6 +74,23 @@ data class ExportTypesResponse(
     val exports: List<ExportTypeDto>,
 )
 
+@Serializable
+data class ExportAssessmentDto(
+    val id: String,
+    val name: String,
+    val subject: String,
+    @SerialName("class_name") val className: String,
+    val section: String,
+    @SerialName("max_marks") val maxMarks: Int,
+    @SerialName("exam_date") val examDate: String? = null,
+    val status: String,
+)
+
+@Serializable
+data class ExportAssessmentsResponse(
+    val assessments: List<ExportAssessmentDto>,
+)
+
 class ExportService {
 
     private val log = LoggerFactory.getLogger("ExportService")
@@ -82,7 +100,7 @@ class ExportService {
     private val allExportTypes = listOf(
         ExportTypeDto("student_roster", "Student Roster", "Students", listOf("pdf", "csv"), listOf("classId"), "roster", false),
         ExportTypeDto("attendance_report", "Attendance Report", "Students", listOf("pdf", "csv"), listOf("classId", "dateFrom", "dateTo"), "attendance", false),
-        ExportTypeDto("test_marks", "Test Marks / Gradebook", "Academic", listOf("pdf", "csv"), listOf("assessmentId"), "marks", false),
+        ExportTypeDto("test_marks", "Test Marks / Gradebook", "Academic", listOf("pdf", "csv"), listOf("classId", "assessmentId"), "marks", false),
         ExportTypeDto("homework_report", "Homework Report", "Academic", listOf("csv"), listOf("homeworkId"), "homework", false),
         ExportTypeDto("leave_requests", "Leave Requests", "Academic", listOf("csv"), listOf("dateFrom", "dateTo"), "leave", false),
         ExportTypeDto("fee_report", "Fee Report", "Finance", listOf("pdf", "csv"), listOf("classId", "status", "dateFrom", "dateTo"), "fees", true),
@@ -98,6 +116,47 @@ class ExportService {
         val isAdmin = role in setOf("school_admin", "admin", "super_admin")
         val filtered = if (isAdmin) allExportTypes else allExportTypes.filter { !it.adminOnly }
         return ExportTypesResponse(filtered)
+    }
+
+    suspend fun listAssessmentsForExport(
+        schoolId: UUID,
+        classId: String?,
+        role: String,
+        userId: UUID,
+    ): ExportAssessmentsResponse {
+        val isAdmin = role in setOf("school_admin", "admin", "super_admin")
+        val className = classId?.let { resolveClassName(it) }
+
+        val rows = dbQuery {
+            var q = AssessmentsTable.selectAll()
+                .where {
+                    (AssessmentsTable.schoolId eq schoolId) and
+                        (AssessmentsTable.isActive eq true)
+                }
+
+            if (!isAdmin) {
+                q = q.andWhere { AssessmentsTable.teacherId eq userId }
+            }
+
+            if (className != null) {
+                q = q.andWhere { AssessmentsTable.className eq className }
+            }
+
+            q.orderBy(AssessmentsTable.createdAt, SortOrder.DESC)
+                .map { row ->
+                    ExportAssessmentDto(
+                        id = row[AssessmentsTable.id].value.toString(),
+                        name = row[AssessmentsTable.name],
+                        subject = row[AssessmentsTable.subject],
+                        className = row[AssessmentsTable.className],
+                        section = row[AssessmentsTable.section],
+                        maxMarks = row[AssessmentsTable.maxMarks],
+                        examDate = row[AssessmentsTable.examDate]?.toString(),
+                        status = row[AssessmentsTable.status],
+                    )
+                }
+        }
+        return ExportAssessmentsResponse(rows)
     }
 
     // ── Main orchestrator ──────────────────────────────────────────────
@@ -167,8 +226,15 @@ class ExportService {
         )
 
         if (uploadResult == null) {
-            log.warn("Storage upload failed for export {} — returning raw bytes info only", request.type)
-            throw RuntimeException("File upload failed — storage not configured or error occurred")
+            log.warn("Storage upload failed for export {} — returning base64 data URL fallback", request.type)
+            val b64 = java.util.Base64.getEncoder().encodeToString(fileBytes)
+            return ExportResponse(
+                downloadUrl = null,
+                fileName = fileName,
+                fileSize = fileBytes.size.toLong(),
+                format = request.format,
+                dataUrl = "data:$contentType;base64,$b64",
+            )
         }
 
         return ExportResponse(
@@ -256,7 +322,7 @@ class ExportService {
         )
     }
 
-    private fun fetchAttendanceReport(schoolId: UUID, req: ExportRequest): ExportData {
+    private suspend fun fetchAttendanceReport(schoolId: UUID, req: ExportRequest): ExportData {
         var query = AttendanceRecordsTable.selectAll()
             .where {
                 (AttendanceRecordsTable.schoolId eq schoolId) and
@@ -277,22 +343,55 @@ class ExportService {
             query = query.andWhere { AttendanceRecordsTable.date lessEq dateTo }
         }
 
-        val rows = query.orderBy(AttendanceRecordsTable.date)
-            .map { row ->
-                listOf(
-                    row[AttendanceRecordsTable.date].toString(),
-                    row[AttendanceRecordsTable.personId]?.toString() ?: "",
-                    row[AttendanceRecordsTable.grade] ?: "",
-                    row[AttendanceRecordsTable.status] ?: "",
-                    row[AttendanceRecordsTable.attSource] ?: "",
-                )
-            }
+        // Pre-fetch student names for the typed studentId FK
+        val studentNameMap = mutableMapOf<UUID, String>()
+        val studentCodeMap = mutableMapOf<String, String>()
+        dbQuery {
+            StudentsTable.selectAll()
+                .where { StudentsTable.schoolId eq schoolId }
+                .forEach { s ->
+                    val sid = s[StudentsTable.id].value
+                    studentNameMap[sid] = s[StudentsTable.fullName]
+                    studentCodeMap[s[StudentsTable.studentCode]] = s[StudentsTable.fullName]
+                }
+        }
+
+        val rawRows = query.orderBy(AttendanceRecordsTable.date).toList()
+
+        val rows = rawRows.map { row ->
+            val studentUid = row[AttendanceRecordsTable.studentId]
+            val personId = row[AttendanceRecordsTable.personId]
+            val studentName = studentUid?.let { studentNameMap[it] }
+                ?: personId?.let { studentCodeMap[it] }
+                ?: ""
+            listOf(
+                row[AttendanceRecordsTable.date].toString(),
+                studentName,
+                personId ?: "",
+                row[AttendanceRecordsTable.grade] ?: "",
+                row[AttendanceRecordsTable.status] ?: "",
+                row[AttendanceRecordsTable.attSource] ?: "",
+            )
+        }
+
+        // Summary: counts by status (only marked records — unmarked are NOT counted as present)
+        val presentCount = rawRows.count { it[AttendanceRecordsTable.status] == "present" }
+        val absentCount = rawRows.count { it[AttendanceRecordsTable.status] == "absent" }
+        val lateCount = rawRows.count { it[AttendanceRecordsTable.status] == "late" }
+        val leaveCount = rawRows.count { it[AttendanceRecordsTable.status] == "leave" }
+        val totalMarked = rawRows.size
+
+        val summaryRows = listOf(
+            "Total Marked: $totalMarked | Present: $presentCount | Absent: $absentCount | Late: $lateCount | Leave: $leaveCount",
+            "Note: Unmarked students are not included in this report.",
+        )
 
         return ExportData(
             title = "Attendance Report",
             subtitle = listOfNotNull(className, req.dateFrom, req.dateTo).joinToString(" — "),
-            columns = listOf("Date", "Student ID", "Class", "Status", "Source"),
+            columns = listOf("Date", "Student Name", "Student Code", "Class", "Status", "Source"),
             rows = rows,
+            summaryRows = summaryRows,
         )
     }
 

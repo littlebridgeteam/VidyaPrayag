@@ -14,9 +14,11 @@ import kotlinx.coroutines.launch
 
 data class ExportState(
     val exportTypes: List<ExportTypeDto> = emptyList(),
+    val assessments: List<ExportAssessmentDto> = emptyList(),
     val isLoading: Boolean = false,
     val isGenerating: Boolean = false,
     val downloadUrl: String? = null,
+    val dataUrl: String? = null,
     val fileName: String? = null,
     val errorMessage: String? = null,
     val infoMessage: String? = null,
@@ -51,6 +53,26 @@ class ExportViewModel(
                 }
                 is NetworkResult.ConnectionError -> {
                     _state.value = _state.value.copy(isLoading = false, errorMessage = "Connection error. Check your internet.")
+                }
+            }
+        }
+    }
+
+    fun loadAssessments(classId: String? = null) {
+        viewModelScope.launch {
+            val token = preferenceRepository.getUserToken().first()
+            if (token.isNullOrBlank()) return@launch
+            when (val result = repository.listAssessments(token, classId)) {
+                is NetworkResult.Success -> {
+                    _state.value = _state.value.copy(
+                        assessments = result.data.data?.assessments ?: emptyList(),
+                    )
+                }
+                is NetworkResult.Error -> {
+                    _state.value = _state.value.copy(errorMessage = result.message)
+                }
+                is NetworkResult.ConnectionError -> {
+                    _state.value = _state.value.copy(errorMessage = "Connection error. Check your internet.")
                 }
             }
         }
@@ -93,6 +115,7 @@ class ExportViewModel(
                     _state.value = _state.value.copy(
                         isGenerating = false,
                         downloadUrl = data?.downloadUrl,
+                        dataUrl = data?.dataUrl,
                         fileName = data?.fileName,
                         infoMessage = result.data.message,
                     )
@@ -108,6 +131,6 @@ class ExportViewModel(
     }
 
     fun clearMessages() {
-        _state.value = _state.value.copy(errorMessage = null, infoMessage = null, downloadUrl = null, fileName = null)
+        _state.value = _state.value.copy(errorMessage = null, infoMessage = null, downloadUrl = null, dataUrl = null, fileName = null)
     }
 }

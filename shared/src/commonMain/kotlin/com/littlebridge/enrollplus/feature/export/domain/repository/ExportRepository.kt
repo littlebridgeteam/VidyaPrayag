@@ -6,5 +6,6 @@ import com.littlebridge.enrollplus.feature.export.domain.model.*
 
 interface ExportRepository {
     suspend fun getExportTypes(token: String): NetworkResult<ApiResponse<ExportTypesResponse>>
+    suspend fun listAssessments(token: String, classId: String?): NetworkResult<ApiResponse<ExportAssessmentsResponse>>
     suspend fun generateExport(token: String, request: ExportRequest): NetworkResult<ApiResponse<ExportResponse>>
 }

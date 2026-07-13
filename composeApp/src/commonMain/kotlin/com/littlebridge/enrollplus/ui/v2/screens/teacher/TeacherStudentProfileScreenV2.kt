@@ -38,6 +38,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -70,21 +71,22 @@ fun TeacherStudentProfilePane(
             state.isLoading -> TeacherCenterState { TeacherSpinner() }
             state.forbidden -> TeacherCenterState {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    TIconDisc(VIcons.Lock, c.ink3, c.cream, size = 56.dp, glyph = 26.dp)
+                    VtIconDisc(VIcons.Lock, tint = c.ink3, bg = c.cream, size = 56.dp, glyph = 26.dp)
                     Spacer(Modifier.height(12.dp))
-                    Text(appString(StringKeys.TC_NOT_YOUR_STUDENT), style = VtT.bodyStrong.coloredV(c.navyDeep))
+                    Text(appString(StringKeys.TC_NOT_YOUR_STUDENT), style = VTypography.bodySmall, color = c.navyDeep, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(4.dp))
                     Text(
                         appString(StringKeys.TC_NOT_YOUR_STUDENT_DESC),
-                        style = VtT.caption.coloredV(c.ink3),
+                        style = VTypography.caption,
+                        color = c.ink3,
                     )
                 }
             }
             state.error != null -> TeacherCenterState {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(appString(StringKeys.TC_COULDNT_LOAD_PROFILE), style = VtT.bodyStrong.coloredV(c.navyDeep))
+                    Text(appString(StringKeys.TC_COULDNT_LOAD_PROFILE), style = VTypography.bodySmall, color = c.navyDeep, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(4.dp))
-                    Text(state.error!!, style = VtT.caption.coloredV(c.ink3))
+                    Text(state.error!!, style = VTypography.caption, color = c.ink3)
                     Spacer(Modifier.height(14.dp))
                     VButton(appString(StringKeys.TC_TRY_AGAIN), onClick = { viewModel.retry() }, size = VButtonSize.Sm, tone = VButtonTone.Lavender)
                 }
@@ -119,27 +121,29 @@ private fun StudentProfileBody(p: StudentProfileData) {
 @Composable
 private fun IdentityCard(p: StudentProfileData) {
     val c = VtC
-    TCard {
+    VtCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
-                Modifier.size(60.dp).clip(CircleShape).background(c.lavenderLight),
+                Modifier.size(56.dp).clip(CircleShape).background(c.lavenderLight),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     p.name.take(1).uppercase(),
-                    style = VtT.h2.coloredV(c.accentDeep),
+                    style = VTypography.h2,
+                    color = c.accentDeep,
                 )
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text(p.name, style = VtT.h3.coloredV(c.navyDeep))
+                Text(p.name, style = VTypography.bodySmall, color = c.navyDeep, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(2.dp))
                 Text(
                     buildString {
                         append("${p.className} · ${p.section}")
                         p.roll?.let { append(" · ${appString(StringKeys.TC_ROLL_LABEL)} $it") }
                     },
-                    style = VtT.body.coloredV(c.ink2),
+                    style = VTypography.caption,
+                    color = c.ink2,
                 )
             }
         }
@@ -151,35 +155,44 @@ private fun AttendanceProfileCard(p: StudentProfileData) {
     val c = VtC
     val a = p.attendance
     val pct = a.rate?.let { (it * 100).toInt() }
-    TCard {
+    VtCard {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                TEyebrow(appString(StringKeys.TC_ATTENDANCE))
+                VtEyebrow(appString(StringKeys.TC_ATTENDANCE))
                 TrendPill(a.trend)
             }
             Spacer(Modifier.height(12.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                TRing(
-                    percent = pct ?: 0,
-                    accent = attendanceColor(c, pct),
-                    modifier = Modifier.size(72.dp),
-                    label = pct?.let { "$it%" } ?: "—",
-                    labelSize = 16.sp,
-                )
-                Spacer(Modifier.width(16.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(
-                        if (pct == null) appString(StringKeys.TC_NO_ATTENDANCE_DATA) else appString(StringKeys.TC_PERCENT_PRESENT_OVERALL, "pct" to pct.toString()),
-                        style = VtT.bodyStrong.coloredV(c.navyDeep),
-                    )
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text(
+                            if (pct == null) "—" else "$pct%",
+                            style = VTypography.h3,
+                            color = attendanceColor(c, pct),
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            appString(StringKeys.TC_PERCENT_PRESENT_OVERALL, "pct" to (pct ?: 0).toString()),
+                            style = VTypography.caption,
+                            color = c.ink3,
+                            modifier = Modifier.padding(bottom = 4.dp),
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    androidx.compose.foundation.Canvas(Modifier.fillMaxWidth().height(8.dp)) {
+                        drawRoundRect(color = c.cream, size = size, cornerRadius = androidx.compose.ui.geometry.CornerRadius(4.dp.toPx()))
+                        val w = size.width * (pct ?: 0).coerceIn(0, 100) / 100f
+                        drawRoundRect(color = attendanceColor(c, pct), size = size.copy(width = w), cornerRadius = androidx.compose.ui.geometry.CornerRadius(4.dp.toPx()))
+                    }
                     if (a.recent.isNotEmpty()) {
-                        Spacer(Modifier.height(8.dp))
-                        Text(appString(StringKeys.TC_RECENT), style = VtT.label.coloredV(c.ink3).copy(fontSize = 9.sp, letterSpacing = 0.6.sp, fontWeight = FontWeight.Bold))
+                        Spacer(Modifier.height(10.dp))
+                        Text(appString(StringKeys.TC_RECENT), style = VTypography.label, color = c.ink3)
                         Spacer(Modifier.height(6.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                             a.recent.take(8).forEach { day ->
                                 Box(
-                                    Modifier.size(16.dp).clip(RoundedCornerShape(5.dp)).background(attendanceDayColor(c, day.status)),
+                                    Modifier.size(18.dp).clip(RoundedCornerShape(5.dp)).background(attendanceDayColor(c, day.status)),
                                 )
                             }
                         }
@@ -199,7 +212,7 @@ private fun TrendPill(trend: String) {
         "flat" -> Triple(c.cream, c.ink2, appString(StringKeys.TC_STEADY))
         else -> return
     }
-    TPill(label, bg, fg)
+    VtPill(label, bg = bg, fg = fg)
 }
 
 private fun attendanceColor(c: VtC, pct: Int?): Color = when {
@@ -220,27 +233,28 @@ private fun attendanceDayColor(c: VtC, status: String): Color = when (status.low
 @Composable
 private fun PerformanceCard(perf: List<StudentPerformanceDto>) {
     val c = VtC
-    TCard {
+    VtCard {
         Column {
-            TEyebrow(appString(StringKeys.TC_PERFORMANCE))
+            VtEyebrow(appString(StringKeys.TC_PERFORMANCE))
             Spacer(Modifier.height(10.dp))
             perf.forEachIndexed { i, e ->
                 if (i > 0) Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text(e.assessmentName, style = VtT.bodyStrong.coloredV(c.navyDeep))
+                        Text(e.assessmentName, style = VTypography.bodySmall, color = c.navyDeep, fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
                         Text(
                             buildString {
                                 append(e.subject)
                                 if (!e.date.isNullOrBlank()) append(" · ${prettyDateShort(e.date)}")
                             },
-                            style = VtT.caption.coloredV(c.ink3),
+                            style = VTypography.caption,
+                            color = c.ink3,
                         )
                     }
                     when {
-                        e.isAbsent -> TPill(appString(StringKeys.TC_ABSENT), c.danger.copy(alpha = 0.12f), c.dangerInk)
-                        e.marks == null -> TPill(appString(StringKeys.TC_PENDING), c.cream, c.ink2)
+                        e.isAbsent -> VtPill(appString(StringKeys.TC_ABSENT), bg = c.danger.copy(alpha = 0.12f), fg = c.dangerInk)
+                        e.marks == null -> VtPill(appString(StringKeys.TC_PENDING), bg = c.cream, fg = c.ink2)
                         else -> {
                             val ratio = if (e.max > 0) e.marks!! / e.max else 0.0
                             val tint = when {
@@ -250,7 +264,9 @@ private fun PerformanceCard(perf: List<StudentPerformanceDto>) {
                             }
                             Text(
                                 "${fmt1(e.marks!!.toFloat())}/${e.max}",
-                                style = VtT.bodyStrong.coloredV(tint),
+                                style = VTypography.bodySmall,
+                                color = tint,
+                                fontWeight = FontWeight.Bold,
                             )
                         }
                     }
@@ -263,9 +279,9 @@ private fun PerformanceCard(perf: List<StudentPerformanceDto>) {
 @Composable
 private fun FlagsCard(flags: List<String>) {
     val c = VtC
-    TCard {
+    VtCard {
         Column {
-            TEyebrow(appString(StringKeys.TC_FLAGS), dot = c.warning)
+            VtEyebrow(appString(StringKeys.TC_FLAGS), dot = c.warning)
             Spacer(Modifier.height(10.dp))
             flags.forEachIndexed { i, code ->
                 if (i > 0) Spacer(Modifier.height(8.dp))
@@ -277,7 +293,7 @@ private fun FlagsCard(flags: List<String>) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Icon(VIcons.AlertTriangle, contentDescription = null, tint = tint, modifier = Modifier.size(16.dp))
-                    Text(text, style = VtT.body.coloredV(tint).copy(fontWeight = FontWeight.SemiBold))
+                    Text(text, style = VTypography.bodySmall, color = tint, fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -305,20 +321,20 @@ private fun flagMetaColors(c: VtC, code: String): Pair<Color, Color> = when (cod
 @Composable
 private fun ParentContactCard(name: String?, phone: String?) {
     val c = VtC
-    TCard {
+    VtCard {
         Column {
-            TEyebrow(appString(StringKeys.TC_PARENT_CONTACT))
+            VtEyebrow(appString(StringKeys.TC_PARENT_CONTACT))
             Spacer(Modifier.height(10.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                TIconDisc(VIcons.User, c.tealDeep, c.teal.copy(alpha = 0.14f), size = 40.dp, glyph = 18.dp)
+                VtIconDisc(VIcons.User, tint = c.tealDeep, bg = c.teal.copy(alpha = 0.14f), size = 40.dp, glyph = 18.dp)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(name ?: appString(StringKeys.TC_PARENT_GUARDIAN), style = VtT.bodyStrong.coloredV(c.navyDeep))
+                    Text(name ?: appString(StringKeys.TC_PARENT_GUARDIAN), style = VTypography.bodySmall, color = c.navyDeep, fontWeight = FontWeight.Bold)
                     if (!phone.isNullOrBlank()) {
                         Spacer(Modifier.height(2.dp))
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Icon(VIcons.Phone, contentDescription = null, tint = c.ink3, modifier = Modifier.size(13.dp))
-                            Text(phone, style = VtT.body.coloredV(c.ink2))
+                            Icon(VIcons.Phone, contentDescription = null, tint = c.ink3, modifier = Modifier.size(14.dp))
+                            Text(phone, style = VTypography.caption, color = c.ink2)
                         }
                     }
                 }
