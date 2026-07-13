@@ -396,7 +396,7 @@ private fun ParseSyllabusSheet(viewModel: TeacherSyllabusViewModel) {
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .heightIn(min = 200.dp, max = 520.dp)
-                .padding(bottom = 0.dp),
+                .padding(bottom = TeacherDockClearance),
             padding = 20.dp,
         ) {
             // Block tap propagation to scrim.
@@ -483,7 +483,8 @@ private fun DailyLogPopup(viewModel: TeacherSyllabusViewModel) {
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .heightIn(min = 200.dp, max = 620.dp),
+                .heightIn(min = 200.dp, max = 620.dp)
+                .padding(bottom = TeacherDockClearance),
             padding = 20.dp,
         ) {
             // Block tap propagation from sheet content to the scrim dismiss layer.
@@ -708,7 +709,8 @@ private fun QuizSheet(viewModel: TeacherSyllabusViewModel) {
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .heightIn(min = 200.dp, max = 620.dp),
+                .heightIn(min = 200.dp, max = 620.dp)
+                .padding(bottom = TeacherDockClearance),
             padding = 20.dp,
         ) {
             // Block tap propagation to scrim.
@@ -1018,7 +1020,7 @@ private fun AutoFillPreviewSheet(viewModel: TeacherSyllabusViewModel) {
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .heightIn(min = 200.dp, max = 600.dp)
-                .padding(bottom = 0.dp),
+                .padding(bottom = TeacherDockClearance),
             padding = 20.dp,
         ) {
             // Block tap propagation to scrim.
@@ -1118,7 +1120,8 @@ private fun QuizPreviewSheet(viewModel: TeacherSyllabusViewModel) {
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .heightIn(min = 200.dp, max = 700.dp),
+                .heightIn(min = 200.dp, max = 700.dp)
+                .padding(bottom = TeacherDockClearance),
             padding = 20.dp,
         ) {
             // Block tap propagation to scrim; keep content scrollable.
@@ -1517,7 +1520,8 @@ private fun QuizLeaderboardSheet(viewModel: TeacherSyllabusViewModel) {
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .heightIn(min = 200.dp, max = 650.dp),
+                .heightIn(min = 200.dp, max = 650.dp)
+                .padding(bottom = TeacherDockClearance),
             padding = 20.dp,
         ) {
             // Block tap propagation to scrim; keep content scrollable.

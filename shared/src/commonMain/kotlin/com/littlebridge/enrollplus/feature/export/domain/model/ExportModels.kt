@@ -42,3 +42,20 @@ data class ExportResponse(
     val message: String? = null,
     @SerialName("data_url") val dataUrl: String? = null,
 )
+
+@Serializable
+data class ExportAssessmentDto(
+    val id: String,
+    val name: String,
+    val subject: String,
+    @SerialName("class_name") val className: String,
+    val section: String,
+    @SerialName("max_marks") val maxMarks: Int,
+    @SerialName("exam_date") val examDate: String? = null,
+    val status: String,
+)
+
+@Serializable
+data class ExportAssessmentsResponse(
+    val assessments: List<ExportAssessmentDto>,
+)

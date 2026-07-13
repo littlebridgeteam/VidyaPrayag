@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 
 data class ExportState(
     val exportTypes: List<ExportTypeDto> = emptyList(),
+    val assessments: List<ExportAssessmentDto> = emptyList(),
     val isLoading: Boolean = false,
     val isGenerating: Boolean = false,
     val downloadUrl: String? = null,
@@ -52,6 +53,26 @@ class ExportViewModel(
                 }
                 is NetworkResult.ConnectionError -> {
                     _state.value = _state.value.copy(isLoading = false, errorMessage = "Connection error. Check your internet.")
+                }
+            }
+        }
+    }
+
+    fun loadAssessments(classId: String? = null) {
+        viewModelScope.launch {
+            val token = preferenceRepository.getUserToken().first()
+            if (token.isNullOrBlank()) return@launch
+            when (val result = repository.listAssessments(token, classId)) {
+                is NetworkResult.Success -> {
+                    _state.value = _state.value.copy(
+                        assessments = result.data.data?.assessments ?: emptyList(),
+                    )
+                }
+                is NetworkResult.Error -> {
+                    _state.value = _state.value.copy(errorMessage = result.message)
+                }
+                is NetworkResult.ConnectionError -> {
+                    _state.value = _state.value.copy(errorMessage = "Connection error. Check your internet.")
                 }
             }
         }
