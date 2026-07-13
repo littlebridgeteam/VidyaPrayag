@@ -152,12 +152,12 @@ Multi-agent AI analytics platform that does not just show data. It **reasons** a
 
 <a href="https://github.com/hereugo-ak/financial-rag"><img src="https://img.shields.io/badge/Code-GitHub-181717?style=for-the-badge&logo=github&labelColor=0f0f23&color=181717" alt="github" /></a>
 <img src="https://img.shields.io/badge/25_Years_of_Data-2005_to_Present-FFD700?style=for-the-badge&labelColor=0f0f23&color=FFD700" alt="data" />
-<img src="https://img.shields.io/badge/Precision-80_to_90%25-00C896?style=for-the-badge&labelColor=0f0f23&color=00C896" alt="precision" />
+<img src="https://img.shields.io/badge/Achieved-73.6%25_Accuracy-00C896?style=for-the-badge&labelColor=0f0f23&color=00C896" alt="accuracy" />
 <img src="https://img.shields.io/badge/Compute-₹0_per_day-58A6FF?style=for-the-badge&labelColor=0f0f23" alt="cost" />
 
 </div>
 
-> *Trained on 25 years of financial data. Does not predict every day. It predicts **when it has an edge**. 80 to 90% precision on the 30% of signals it acts on.*
+> *Trained on 25 years of financial data. 73.6% achieved accuracy. Does not predict every day. It predicts **when it has an edge**.*
 
 A defensible financial intelligence system with four compounding moats. Not a trading bot. A **quantitative intelligence layer**.
 
@@ -190,7 +190,7 @@ A defensible financial intelligence system with four compounding moats. Not a tr
   BUY / HOLD / SELL + UNCERTAINTY
      |
      +-- Abstains on 70% of (stock, day) pairs
-     +-- 80 to 90% precision on the 30% where it speaks
+     +-- 73.6% achieved accuracy on acted-on signals
 ```
 
 </div>
