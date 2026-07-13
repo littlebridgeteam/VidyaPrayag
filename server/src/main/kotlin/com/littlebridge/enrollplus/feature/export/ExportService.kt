@@ -55,6 +55,7 @@ data class ExportResponse(
     @SerialName("file_size") val fileSize: Long = 0,
     val format: String,
     val message: String? = null,
+    @SerialName("data_url") val dataUrl: String? = null,
 )
 
 @Serializable
@@ -167,8 +168,15 @@ class ExportService {
         )
 
         if (uploadResult == null) {
-            log.warn("Storage upload failed for export {} — returning raw bytes info only", request.type)
-            throw RuntimeException("File upload failed — storage not configured or error occurred")
+            log.warn("Storage upload failed for export {} — returning base64 data URL fallback", request.type)
+            val b64 = java.util.Base64.getEncoder().encodeToString(fileBytes)
+            return ExportResponse(
+                downloadUrl = null,
+                fileName = fileName,
+                fileSize = fileBytes.size.toLong(),
+                format = request.format,
+                dataUrl = "data:$contentType;base64,$b64",
+            )
         }
 
         return ExportResponse(

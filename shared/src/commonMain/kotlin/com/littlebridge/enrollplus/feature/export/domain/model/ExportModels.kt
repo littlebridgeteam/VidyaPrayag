@@ -40,4 +40,5 @@ data class ExportResponse(
     @SerialName("file_size") val fileSize: Long = 0,
     val format: String,
     val message: String? = null,
+    @SerialName("data_url") val dataUrl: String? = null,
 )

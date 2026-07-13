@@ -17,6 +17,7 @@ data class ExportState(
     val isLoading: Boolean = false,
     val isGenerating: Boolean = false,
     val downloadUrl: String? = null,
+    val dataUrl: String? = null,
     val fileName: String? = null,
     val errorMessage: String? = null,
     val infoMessage: String? = null,
@@ -93,6 +94,7 @@ class ExportViewModel(
                     _state.value = _state.value.copy(
                         isGenerating = false,
                         downloadUrl = data?.downloadUrl,
+                        dataUrl = data?.dataUrl,
                         fileName = data?.fileName,
                         infoMessage = result.data.message,
                     )
@@ -108,6 +110,6 @@ class ExportViewModel(
     }
 
     fun clearMessages() {
-        _state.value = _state.value.copy(errorMessage = null, infoMessage = null, downloadUrl = null, fileName = null)
+        _state.value = _state.value.copy(errorMessage = null, infoMessage = null, downloadUrl = null, dataUrl = null, fileName = null)
     }
 }

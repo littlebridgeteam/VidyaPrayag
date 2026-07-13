@@ -44,10 +44,12 @@ fun Route.exportRouting() {
                         role = ctx.role,
                         request = req,
                     )
-                    if (result.downloadUrl == null) {
-                        call.ok(result, result.message ?: "No data found")
-                    } else {
+                    if (result.downloadUrl != null) {
                         call.ok(result, "Export generated successfully")
+                    } else if (result.dataUrl != null) {
+                        call.ok(result, "Export generated (inline download)")
+                    } else {
+                        call.ok(result, result.message ?: "No data found")
                     }
                 } catch (e: SecurityException) {
                     call.fail(e.message ?: "Access denied", HttpStatusCode.Forbidden, "EXPORT_FORBIDDEN")

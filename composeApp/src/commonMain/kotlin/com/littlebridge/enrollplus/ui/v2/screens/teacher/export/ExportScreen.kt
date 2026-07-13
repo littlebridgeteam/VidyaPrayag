@@ -3,7 +3,6 @@ package com.littlebridge.enrollplus.ui.v2.screens.teacher.export
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,14 +22,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.feature.export.domain.model.ExportTypeDto
 import com.littlebridge.enrollplus.feature.export.presentation.ExportViewModel
+import com.littlebridge.enrollplus.feature.teacher.domain.model.TeacherClassSummaryDto
+import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherClassesViewModel
 import com.littlebridge.enrollplus.platform.rememberShareHelper
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
@@ -58,12 +60,15 @@ fun ExportScreen(
     onBack: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: ExportViewModel = koinViewModel(),
+    classesViewModel: TeacherClassesViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
+    val classesState by classesViewModel.state.collectAsStateV2()
     val shareHelper = rememberShareHelper()
 
     LaunchedEffect(Unit) {
         viewModel.loadExportTypes()
+        classesViewModel.load()
     }
 
     Column(modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
@@ -109,22 +114,33 @@ fun ExportScreen(
                 state.exportTypes.forEach { exportType ->
                     ExportTypeCard(
                         exportType = exportType,
+                        classes = classesState.classes,
                         isGenerating = state.isGenerating,
-                        onGenerate = { format ->
+                        onGenerate = { format, classId ->
                             viewModel.clearMessages()
                             viewModel.generateExport(
                                 type = exportType.type,
                                 format = format,
+                                classId = classId,
                             )
                         },
                     )
                 }
 
-                state.downloadUrl?.let { url ->
+                val dlUrl = state.downloadUrl
+                val dUrl = state.dataUrl
+                if (dlUrl != null) {
                     DownloadResultCard(
                         fileName = state.fileName,
-                        url = url,
-                        onShare = { shareHelper.shareText(url, "Export download link") },
+                        url = dlUrl,
+                        onShare = { shareHelper.shareText(dlUrl, "Export download link") },
+                    )
+                } else if (dUrl != null) {
+                    DownloadResultCard(
+                        fileName = state.fileName,
+                        url = dUrl,
+                        isInline = true,
+                        onShare = { shareHelper.shareText(dUrl, "Export file") },
                     )
                 }
             }
@@ -135,9 +151,18 @@ fun ExportScreen(
 @Composable
 private fun ExportTypeCard(
     exportType: ExportTypeDto,
+    classes: List<TeacherClassSummaryDto>,
     isGenerating: Boolean,
-    onGenerate: (String) -> Unit,
+    onGenerate: (String, String?) -> Unit,
 ) {
+    var selectedClassId by remember { mutableStateOf<String?>(null) }
+    var classDropdownOpen by remember { mutableStateOf(false) }
+
+    val needsClass = exportType.filters.contains("classId")
+    val dedupedClasses = classes.distinctBy { "${it.className}-${it.section}" }
+    val selectedClass = dedupedClasses.find { it.classId == selectedClassId }
+    val classLabel = selectedClass?.let { "Class ${it.className}-${it.section}" } ?: "All Classes"
+
     VCard(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(
@@ -148,7 +173,7 @@ private fun ExportTypeCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = exportType.label,
-                        style = VTypography.h2.copy(fontWeight = FontWeight.Bold),
+                        style = VTypography.h2,
                         color = VColors.ink,
                     )
                     Text(
@@ -171,15 +196,53 @@ private fun ExportTypeCard(
                 }
             }
 
+            if (needsClass && dedupedClasses.isNotEmpty()) {
+                Box {
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
+                            .clip(VShapes.md)
+                            .background(VColors.cream)
+                            .border(1.dp, VColors.line, VShapes.md)
+                            .clickable { classDropdownOpen = true }
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(classLabel, style = VTypography.body, color = VColors.ink)
+                        Icon(VIcons.ChevronDown, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(16.dp))
+                    }
+                    androidx.compose.material3.DropdownMenu(
+                        expanded = classDropdownOpen,
+                        onDismissRequest = { classDropdownOpen = false },
+                    ) {
+                        androidx.compose.material3.DropdownMenuItem(
+                            text = { Text("All Classes", style = VTypography.body) },
+                            onClick = {
+                                selectedClassId = null
+                                classDropdownOpen = false
+                            },
+                        )
+                        dedupedClasses.forEach { cls ->
+                            androidx.compose.material3.DropdownMenuItem(
+                                text = { Text("Class ${cls.className}-${cls.section}", style = VTypography.body) },
+                                onClick = {
+                                    selectedClassId = cls.classId
+                                    classDropdownOpen = false
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 exportType.formats.forEach { format ->
-                    val isThisGenerating = isGenerating
                     VButton(
                         text = format.uppercase(),
-                        onClick = { onGenerate(format) },
+                        onClick = { onGenerate(format, selectedClassId) },
                         variant = if (format == "pdf") VButtonVariant.Primary else VButtonVariant.Secondary,
                         size = VButtonSize.Sm,
-                        enabled = !isThisGenerating,
+                        enabled = !isGenerating,
                     )
                 }
             }
@@ -191,6 +254,7 @@ private fun ExportTypeCard(
 private fun DownloadResultCard(
     fileName: String?,
     url: String,
+    isInline: Boolean = false,
     onShare: () -> Unit,
 ) {
     VCard(modifier = Modifier.fillMaxWidth()) {
@@ -211,7 +275,7 @@ private fun DownloadResultCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "Export Ready",
-                        style = VTypography.h2.copy(fontWeight = FontWeight.Bold),
+                        style = VTypography.h2,
                         color = VColors.ink,
                     )
                     Text(
@@ -223,7 +287,7 @@ private fun DownloadResultCard(
             }
 
             VButton(
-                text = "Share Download Link",
+                text = if (isInline) "Share File" else "Share Download Link",
                 onClick = onShare,
                 variant = VButtonVariant.Primary,
                 size = VButtonSize.Md,
@@ -312,13 +376,12 @@ private fun ErrorBanner(text: String, onDismiss: () -> Unit) {
                 color = VColors.error,
                 modifier = Modifier.weight(1f),
             )
-            val ix = remember { MutableInteractionSource() }
             Text(
                 text = "Dismiss",
-                style = VTypography.label.copy(fontWeight = FontWeight.Bold),
+                style = VTypography.label,
                 color = VColors.error,
                 modifier = Modifier.clip(VShapes.sm)
-                    .clickable(interactionSource = ix, indication = null) { onDismiss() }
+                    .clickable { onDismiss() }
                     .padding(horizontal = 8.dp, vertical = 4.dp),
             )
         }
