@@ -6,6 +6,7 @@ import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.feature.parent.domain.model.LinkChildRequest
 import com.littlebridge.enrollplus.feature.parent.domain.repository.ParentRepository
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -156,6 +157,7 @@ class LinkChildViewModel(
                     val schools = result.data.data.schools.map {
                         SchoolMatch(it.id, it.name, it.board, it.city, it.logoUrl)
                     }
+                    AnalyticsTracker.event("vp_school_search", mapOf("query_length" to query.length, "results" to schools.size))
                     _state.update {
                         it.copy(
                             isSearching = false,
@@ -242,6 +244,10 @@ class LinkChildViewModel(
                     // confirmation screen awaiting an admin decision.
                     val isPending = d.status == "pending"
                     val needsReview = d.status == "needs_review"
+                    AnalyticsTracker.event("vp_link_child_submitted", mapOf(
+                        "school_id" to school.id,
+                        "status" to d.status,
+                    ))
                     _state.update {
                         it.copy(
                             isLinking = false,
@@ -263,7 +269,10 @@ class LinkChildViewModel(
                     // screen until a school admin acts.
                     if (!isPending && !needsReview) onSuccess()
                 }
-                is NetworkResult.Error -> _state.update { it.copy(isLinking = false, linkError = result.message) }
+                is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_link_child_failed", mapOf("error_reason" to (result.message ?: "unknown")))
+                    _state.update { it.copy(isLinking = false, linkError = result.message) }
+                }
                 is NetworkResult.ConnectionError -> _state.update { it.copy(isLinking = false, linkError = "Connection error") }
             }
         }

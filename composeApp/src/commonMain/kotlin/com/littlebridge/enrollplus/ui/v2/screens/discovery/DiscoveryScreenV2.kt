@@ -27,6 +27,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -72,6 +73,7 @@ import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.core.locale.AppStrings
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.locale.LocalLocale
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 import org.koin.compose.viewmodel.koinViewModel
 
 /** Internal view state for the discovery flow (mirrors React `DiscoveryApp` view union). */
@@ -120,6 +122,14 @@ fun DiscoveryScreenV2(
 
     // If the profile view was requested but `active` is null (defensive), fall back to List.
     val effectiveView = if (view == DiscoveryView.Profile && active == null) DiscoveryView.List else view
+
+    // Track discovery screen views
+    LaunchedEffect(effectiveView) {
+        val screenName = "discovery_${effectiveView.name.lowercase()}"
+        AnalyticsTracker.setCurrentScreenName(screenName)
+        AnalyticsTracker.event("vp_screen_viewed", mapOf("screen" to screenName))
+    }
+
     when (effectiveView) {
         DiscoveryView.List -> DiscoveryList(
             // Embedded: the host (unlinked-parent landing) already consumed the status-bar inset,

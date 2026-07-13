@@ -9,6 +9,7 @@ import com.littlebridge.enrollplus.feature.parent.domain.model.ParentMessageThre
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentRecipientDto
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentSendMessageRequest
 import com.littlebridge.enrollplus.feature.parent.domain.repository.ParentRepository
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -239,11 +240,16 @@ class ParentMessageViewModel(
             )
             when (val r = repository.sendMessage(token, req)) {
                 is NetworkResult.Success -> {
+                    AnalyticsTracker.event("vp_parent_message_sent", mapOf(
+                        "thread_id" to threadId,
+                        "is_new_thread" to false,
+                    ))
                     _state.update { it.copy(sending = false, replyError = null) }
                     // Reload without clearing — no flicker.
                     reloadConversation()
                 }
-                is NetworkResult.Error ->
+                is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_parent_message_send_failed", mapOf("error_reason" to (r.message ?: "unknown")))
                     _state.update {
                         it.copy(
                             messages = it.messages.filterNot { msg -> msg.id == tempId },
@@ -251,6 +257,7 @@ class ParentMessageViewModel(
                             replyError = r.message,
                         )
                     }
+                }
                 is NetworkResult.ConnectionError ->
                     _state.update {
                         it.copy(
@@ -397,6 +404,10 @@ class ParentMessageViewModel(
                 is NetworkResult.Success -> {
                     val newThreadId = r.data.data?.threadId
                     val recipientName = _state.value.composeRecipients.firstOrNull { it.id == recipientUserId }?.name ?: ""
+                    AnalyticsTracker.event("vp_parent_message_sent", mapOf(
+                        "thread_id" to (newThreadId ?: ""),
+                        "is_new_thread" to true,
+                    ))
                     _state.update {
                         it.copy(
                             sending = false,
@@ -413,8 +424,10 @@ class ParentMessageViewModel(
                         loadThreads()
                     }
                 }
-                is NetworkResult.Error ->
+                is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_parent_message_send_failed", mapOf("error_reason" to (r.message ?: "unknown")))
                     _state.update { it.copy(sending = false, composeError = r.message) }
+                }
                 is NetworkResult.ConnectionError ->
                     _state.update { it.copy(sending = false, composeError = "Connection error") }
             }

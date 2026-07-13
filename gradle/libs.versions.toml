@@ -40,11 +40,16 @@ filekit = "0.8.4"
 firebase-admin = "9.4.3"
 firebase-bom = "33.7.0"
 firebase-messaging = "25.0.1"
+firebase-crashlytics = "19.4.3"
+firebase-crashlytics-gradle = "3.0.3"
+firebase-analytics = "22.5.0"
 google-services = "4.4.3"
 # Transport Tracking — Google Maps Compose for Android bus tracking map
 play-services-maps = "19.2.0"
 play-services-location = "21.3.0"
 maps-compose = "6.4.1"
+# Microsoft Clarity — session recordings & heatmaps (Android-only)
+clarity = "3.8.2"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -105,13 +110,18 @@ dotenv = { module = "io.github.cdimascio:dotenv-kotlin", version.ref = "dotenv" 
 firebase-admin = { module = "com.google.firebase:firebase-admin", version.ref = "firebase-admin" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
 firebase-messaging = { module = "com.google.firebase:firebase-messaging", version.ref = "firebase-messaging" }
+firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics", version.ref = "firebase-crashlytics" }
+firebase-analytics = { module = "com.google.firebase:firebase-analytics", version.ref = "firebase-analytics" }
 # Transport Tracking — Google Maps Compose for Android bus tracking map
 play-services-maps = { module = "com.google.android.gms:play-services-maps", version.ref = "play-services-maps" }
 play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "play-services-location" }
 maps-compose = { module = "com.google.maps.android:maps-compose", version.ref = "maps-compose" }
+# Microsoft Clarity — session recordings & heatmaps (Android-only)
+clarity-compose = { module = "com.microsoft.clarity:clarity-compose", version.ref = "clarity" }
 
 [plugins]
 google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }
+crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebase-crashlytics-gradle" }
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
 composeHotReload = { id = "org.jetbrains.compose.hot-reload", version.ref = "composeHotReload" }

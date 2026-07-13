@@ -42,6 +42,7 @@ import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -169,7 +170,12 @@ fun TeacherFirstLoginScreenV2(
                         submitting = true
                         scope.launch {
                             when (val r = authRepository.changePassword(current.ifBlank { null }, newPassword)) {
-                                is NetworkResult.Success -> { submitting = false; onDone() }
+                                is NetworkResult.Success -> {
+                                    submitting = false
+                                    AnalyticsTracker.event("vp_teacher_firstlogin_complete")
+                                    AnalyticsTracker.event("vp_auth_change_password", mapOf("role" to "teacher"))
+                                    onDone()
+                                }
                                 is NetworkResult.Error -> { submitting = false; error = r.message }
                                 is NetworkResult.ConnectionError -> { submitting = false; error = connErrorMsg }
                             }

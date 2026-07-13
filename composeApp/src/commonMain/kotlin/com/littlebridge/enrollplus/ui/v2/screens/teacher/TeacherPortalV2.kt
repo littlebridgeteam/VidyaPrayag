@@ -44,6 +44,7 @@ import com.littlebridge.enrollplus.ui.v2.screens.discovery.AcademicCalendarScree
 import com.littlebridge.enrollplus.ui.v2.screens.notifications.NotificationsScreenV2
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 
 /** Full-screen overlays the teacher portal can push above its tab content. */
 private enum class TeacherOverlay { None, Notifications, HealthAlerts, TransportAttendance, Pews, ReportReview, ReportDraftEditor, Heatmap, DigitalIdCard, ScheduledMessages, EventRegistration, Messages, Calendar, AnnouncementDetail, LeaveRequests, ExamTimetableList, ExamTimetableUpload, ExamTimetableDetail, ExamSyllabusMapping, ExamMarksImport, Export }
@@ -175,6 +176,28 @@ fun TeacherPortalV2(
             else -> Unit
         }
         localDeepLink = null
+    }
+
+    // Track teacher tab screen views
+    LaunchedEffect(tab) {
+        val screenName = "teacher_$tab"
+        AnalyticsTracker.setCurrentScreenName(screenName)
+        AnalyticsTracker.event("vp_screen_viewed", mapOf(
+            "screen" to screenName,
+            "portal" to "teacher",
+        ))
+    }
+
+    // Track teacher overlay screen views
+    LaunchedEffect(overlay) {
+        if (overlay != TeacherOverlay.None) {
+            val screenName = "teacher_${overlay.name.lowercase()}"
+            AnalyticsTracker.setCurrentScreenName(screenName)
+            AnalyticsTracker.event("vp_screen_viewed", mapOf(
+                "screen" to screenName,
+                "portal" to "teacher",
+            ))
+        }
     }
 
     // The UPDATE tab can be entered pre-scoped from a HOME CTA. These hold the
@@ -381,7 +404,10 @@ fun TeacherPortalV2(
         // portal shares one premium chrome and there is no separate top bar chrome.
         topBar = null,
         bottomBar = {
-            TeacherDock(items = items, selected = tab, onSelect = { tab = it })
+            TeacherDock(items = items, selected = tab, onSelect = {
+                tab = it
+                AnalyticsTracker.event("vp_teacher_tab_switch", mapOf("tab" to it))
+            })
         },
     ) { _ ->
         // Paint the warm cream page canvas across the WHOLE tab area so the

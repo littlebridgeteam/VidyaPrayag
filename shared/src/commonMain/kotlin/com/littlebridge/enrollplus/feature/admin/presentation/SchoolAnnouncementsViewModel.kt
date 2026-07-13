@@ -9,6 +9,7 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.CreateAnnouncement
 import com.littlebridge.enrollplus.feature.admin.domain.repository.AnnouncementsRepository
 import com.littlebridge.enrollplus.feature.scheduling.domain.repository.ScheduledMessageRepository
 import com.littlebridge.enrollplus.feature.scheduling.domain.model.CreateScheduledMessageRequest
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 import com.littlebridge.enrollplus.util.AppLogger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -215,6 +216,7 @@ class SchoolAnnouncementsViewModel(
             )
             when (val r = announcementsRepository.createAnnouncement(token, body)) {
                 is NetworkResult.Success -> {
+                    AnalyticsTracker.event("vp_announcement_created", mapOf("type" to type, "audience" to normalizedAudience))
                     _state.value = _state.value.copy(
                         isCreating = false,
                         infoMessage = "Announcement created"
@@ -223,6 +225,7 @@ class SchoolAnnouncementsViewModel(
                     loadAnnouncements()
                 }
                 is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_announcement_create_failed", mapOf("error_reason" to (r.message ?: "unknown")))
                     AppLogger.e("SchoolAnnouncementsVM", "createAnnouncement error: ${r.message}")
                     _state.value = _state.value.copy(isCreating = false, errorMessage = r.message)
                 }

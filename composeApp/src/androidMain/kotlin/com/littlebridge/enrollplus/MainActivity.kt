@@ -16,6 +16,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.animation.doOnEnd
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.littlebridge.enrollplus.notification.NotificationManagerHelper
+import com.microsoft.clarity.Clarity
+import com.microsoft.clarity.ClarityConfig
+import com.microsoft.clarity.models.LogLevel
 
 class MainActivity : ComponentActivity() {
     private val contentReady = mutableStateOf(false)
@@ -51,6 +54,15 @@ class MainActivity : ComponentActivity() {
             }
         )
         splashScreen.setKeepOnScreenCondition { !contentReady.value }
+
+        // Microsoft Clarity — session recordings & heatmaps (Android-only)
+        if (BuildConfig.CLARITY_ENABLED) {
+            val clarityConfig = ClarityConfig(
+                projectId = "xly829jv3t",
+                logLevel = LogLevel.None
+            )
+            Clarity.initialize(applicationContext, clarityConfig)
+        }
 
         splashScreen.setOnExitAnimationListener { splashScreenViewProvider ->
             val iconView = try {

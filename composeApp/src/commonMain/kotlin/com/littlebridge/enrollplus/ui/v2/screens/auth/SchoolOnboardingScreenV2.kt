@@ -83,6 +83,7 @@ import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -863,7 +864,10 @@ private fun CompletionScreen(
             Spacer(Modifier.height(4.dp))
             VButton(
                 text = appString(StringKeys.OB_CM_OPEN_DASH),
-                onClick = onComplete,
+                onClick = {
+                    AnalyticsTracker.event("vp_onboarding_complete")
+                    onComplete()
+                },
                 icon = Icons.AutoMirrored.Filled.ArrowForward,
             )
             Text(

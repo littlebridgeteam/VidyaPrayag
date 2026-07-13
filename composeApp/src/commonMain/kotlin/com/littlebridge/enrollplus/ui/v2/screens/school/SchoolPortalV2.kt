@@ -36,6 +36,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 
 /** Full-screen overlays the admin portal can push above its tab content. */
 private enum class SchoolOverlay {
@@ -205,6 +206,29 @@ fun SchoolPortalV2(
         }
         localDeepLink = null
     }
+
+    // Track admin tab screen views
+    LaunchedEffect(tab) {
+        val screenName = "admin_$tab"
+        AnalyticsTracker.setCurrentScreenName(screenName)
+        AnalyticsTracker.event("vp_screen_viewed", mapOf(
+            "screen" to screenName,
+            "portal" to "admin",
+        ))
+    }
+
+    // Track admin overlay screen views
+    LaunchedEffect(overlay) {
+        if (overlay != SchoolOverlay.None) {
+            val screenName = "admin_${overlay.name.lowercase()}"
+            AnalyticsTracker.setCurrentScreenName(screenName)
+            AnalyticsTracker.event("vp_screen_viewed", mapOf(
+                "screen" to screenName,
+                "portal" to "admin",
+            ))
+        }
+    }
+
     // RA-45 — id carried into the student/teacher profile overlays.
     var selectedStudentId by remember { mutableStateOf<String?>(null) }
     var selectedTeacherId by remember { mutableStateOf<String?>(null) }
@@ -644,7 +668,10 @@ fun SchoolPortalV2(
         VScreenScaffold(
             modifier = modifier,
             bottomBar = {
-                VCreamBottomNav(items = items, selected = tab, onSelect = { tab = it })
+                VCreamBottomNav(items = items, selected = tab, onSelect = {
+                    tab = it
+                    AnalyticsTracker.event("vp_admin_tab_switch", mapOf("tab" to it))
+                })
             },
         ) { padding ->
             Box(Modifier.fillMaxSize()) {

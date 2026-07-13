@@ -56,6 +56,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VThemePicker
 import com.littlebridge.enrollplus.ui.v2.components.VLanguagePicker
 import com.littlebridge.enrollplus.core.locale.LocaleManager
 import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -211,6 +212,7 @@ fun TeacherProfileScreenV2(
                             currentMode = themeMode,
                             currentCustomId = customThemeId,
                             onSelect = { mode, customId ->
+                                AnalyticsTracker.event("vp_teacher_theme_change", mapOf("theme" to mode))
                                 actionsViewModel.setThemeMode(mode)
                                 actionsViewModel.setCustomThemeId(customId)
                             },

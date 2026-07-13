@@ -6,6 +6,7 @@ import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.feature.admin.domain.model.LinkRequestDto
 import com.littlebridge.enrollplus.feature.admin.domain.repository.LinkRequestsRepository
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 import com.littlebridge.enrollplus.util.AppLogger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -120,6 +121,8 @@ class LinkRequestsViewModel(
             _state.value = _state.value.copy(actingIds = _state.value.actingIds - id)
             when (result) {
                 is NetworkResult.Success -> {
+                    val action = if (approve) "approved" else "rejected"
+                    AnalyticsTracker.event("vp_link_request_$action", mapOf("link_id" to id))
                     // Optimistically drop the decided row; it leaves the current queue.
                     val onNeedsReview = _state.value.tab == LinkRequestTab.NEEDS_REVIEW
                     _state.value = _state.value.copy(
@@ -129,8 +132,11 @@ class LinkRequestsViewModel(
                         else _state.value.needsReviewCount,
                     )
                 }
-                is NetworkResult.Error ->
+                is NetworkResult.Error -> {
+                    val action = if (approve) "approve" else "reject"
+                    AnalyticsTracker.event("vp_link_request_${action}_failed", mapOf("error_reason" to (result.message ?: "unknown")))
                     _state.value = _state.value.copy(error = result.message)
+                }
                 is NetworkResult.ConnectionError ->
                     _state.value = _state.value.copy(error = "Connection error. Check your internet.")
             }

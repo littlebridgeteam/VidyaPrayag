@@ -65,6 +65,7 @@ import com.littlebridge.enrollplus.ui.v2.theme.VThemeRegistry
 import com.littlebridge.enrollplus.core.locale.LocaleManager
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
@@ -128,6 +129,7 @@ fun SchoolSettingsScreenV2(
         currentLocale = currentLocale,
         onLanguageSelect = { lang -> localeManager.setLocale(lang) },
         onThemeSelect = { mode, customId ->
+            AnalyticsTracker.event("vp_admin_theme_change", mapOf("theme" to mode))
             scope.launch {
                 preferenceRepository.setThemeMode(mode)
                 preferenceRepository.setCustomThemeId(customId)

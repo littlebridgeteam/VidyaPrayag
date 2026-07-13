@@ -67,6 +67,7 @@ import com.littlebridge.enrollplus.ui.v2.screens.notifications.NotificationsScre
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 import org.koin.core.qualifier.named
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
@@ -251,6 +252,28 @@ fun ParentPortalV2(
             else -> Unit
         }
         localDeepLink = null
+    }
+
+    // Track parent tab screen views
+    LaunchedEffect(tab) {
+        val screenName = "parent_$tab"
+        AnalyticsTracker.setCurrentScreenName(screenName)
+        AnalyticsTracker.event("vp_screen_viewed", mapOf(
+            "screen" to screenName,
+            "portal" to "parent",
+        ))
+    }
+
+    // Track parent overlay screen views
+    LaunchedEffect(overlay) {
+        if (overlay != ParentOverlay.None) {
+            val screenName = "parent_${overlay.name.lowercase()}"
+            AnalyticsTracker.setCurrentScreenName(screenName)
+            AnalyticsTracker.event("vp_screen_viewed", mapOf(
+                "screen" to screenName,
+                "portal" to "parent",
+            ))
+        }
     }
 
     // ── Unlinked-parent gate ────────────────────────────────────────────────────
@@ -570,7 +593,10 @@ fun ParentPortalV2(
                 ParentDock(
                     items = items,
                     selected = tab,
-                    onSelect = { tab = it },
+                    onSelect = {
+                        tab = it
+                        AnalyticsTracker.event("vp_parent_tab_switch", mapOf("tab" to it))
+                    },
                 )
             }
         } else {

@@ -8,6 +8,7 @@ import com.littlebridge.enrollplus.feature.auth.domain.model.LoginRequest
 import com.littlebridge.enrollplus.feature.auth.domain.model.SchoolRegisterRequest
 import com.littlebridge.enrollplus.feature.auth.domain.model.SignupRequest
 import com.littlebridge.enrollplus.feature.auth.domain.repository.AuthRepository
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,8 +42,16 @@ class AuthViewModel(
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
             val normalized = normalizePhone(phone)
+            AnalyticsTracker.event("vp_auth_login_started", mapOf(
+                "auth_method" to "otp",
+                "role" to "parent",
+            ))
             when (val result = authRepository.sendOtp(normalized, "login")) {
                 is NetworkResult.Success -> {
+                    AnalyticsTracker.event("vp_auth_otp_requested", mapOf(
+                        "phone_masked" to normalized.takeLast(4),
+                        "purpose" to "login",
+                    ))
                     _state.value = _state.value.copy(
                         isLoading = false,
                         otpSent = true,
@@ -53,14 +62,24 @@ class AuthViewModel(
                     )
                     startResendCountdown()
                 }
-                is NetworkResult.Error -> _state.value = _state.value.copy(
+                is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_auth_otp_request_failed", mapOf(
+                        "purpose" to "login",
+                        "error_reason" to (result.message ?: "unknown"),
+                    ))
+                    _state.value = _state.value.copy(
                     isLoading = false,
                     error = result.message,
-                )
-                is NetworkResult.ConnectionError -> _state.value = _state.value.copy(
+                )}
+                is NetworkResult.ConnectionError -> {
+                    AnalyticsTracker.event("vp_auth_otp_request_failed", mapOf(
+                        "purpose" to "login",
+                        "error_reason" to "no_connection",
+                    ))
+                    _state.value = _state.value.copy(
                     isLoading = false,
                     error = "No internet connection. Please check your network.",
-                )
+                )}
             }
         }
     }
@@ -81,18 +100,50 @@ class AuthViewModel(
                     role = "parent",
                 )
             )) {
-                is NetworkResult.Success -> _state.value = _state.value.copy(
-                    isLoading = false,
-                    authResponse = result.data,
-                )
-                is NetworkResult.Error -> _state.value = _state.value.copy(
-                    isLoading = false,
-                    error = result.message,
-                )
-                is NetworkResult.ConnectionError -> _state.value = _state.value.copy(
+                is NetworkResult.Success -> {
+                    val resp = result.data
+                    AnalyticsTracker.setUserId(resp.userId)
+                    AnalyticsTracker.setUserProperty("role", resp.role)
+                    AnalyticsTracker.setCustomKey("role", resp.role)
+                    AnalyticsTracker.setCustomKey("user_id", resp.userId)
+                    AnalyticsTracker.setCustomTag("role", resp.role)
+                    AnalyticsTracker.setCustomTag("user_id", resp.userId)
+                    AnalyticsTracker.setCustomTag("auth_status", "authenticated")
+                    AnalyticsTracker.event("vp_auth_otp_verified", mapOf(
+                        "phone_masked" to phone.takeLast(4),
+                    ))
+                    AnalyticsTracker.event("vp_auth_login_success", mapOf(
+                        "role" to resp.role,
+                        "auth_method" to "otp",
+                    ))
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        authResponse = resp,
+                    )
+                }
+                is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_auth_otp_failed", mapOf(
+                        "phone_masked" to phone.takeLast(4),
+                        "error_reason" to (result.message ?: "unknown"),
+                    ))
+                    AnalyticsTracker.event("vp_auth_login_failed", mapOf(
+                        "error_reason" to (result.message ?: "unknown"),
+                        "auth_method" to "otp",
+                    ))
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = result.message,
+                    )
+                }
+                is NetworkResult.ConnectionError -> {
+                    AnalyticsTracker.event("vp_auth_login_failed", mapOf(
+                        "error_reason" to "no_connection",
+                        "auth_method" to "otp",
+                    ))
+                    _state.value = _state.value.copy(
                     isLoading = false,
                     error = "No internet connection. Please check your network.",
-                )
+                )}
             }
         }
     }
@@ -103,8 +154,16 @@ class AuthViewModel(
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
             val normalized = normalizePhone(phone)
+            AnalyticsTracker.event("vp_auth_signup_started", mapOf(
+                "auth_method" to "otp",
+                "role" to "parent",
+            ))
             when (val result = authRepository.sendOtp(normalized, "signup")) {
                 is NetworkResult.Success -> {
+                    AnalyticsTracker.event("vp_auth_otp_requested", mapOf(
+                        "phone_masked" to normalized.takeLast(4),
+                        "purpose" to "signup",
+                    ))
                     _state.value = _state.value.copy(
                         isLoading = false,
                         otpSent = true,
@@ -115,14 +174,26 @@ class AuthViewModel(
                     )
                     startResendCountdown()
                 }
-                is NetworkResult.Error -> _state.value = _state.value.copy(
-                    isLoading = false,
-                    error = result.message,
-                )
-                is NetworkResult.ConnectionError -> _state.value = _state.value.copy(
-                    isLoading = false,
-                    error = "No internet connection. Please check your network.",
-                )
+                is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_auth_otp_request_failed", mapOf(
+                        "purpose" to "signup",
+                        "error_reason" to (result.message ?: "unknown"),
+                    ))
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = result.message,
+                    )
+                }
+                is NetworkResult.ConnectionError -> {
+                    AnalyticsTracker.event("vp_auth_otp_request_failed", mapOf(
+                        "purpose" to "signup",
+                        "error_reason" to "no_connection",
+                    ))
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = "No internet connection. Please check your network.",
+                    )
+                }
             }
         }
     }
@@ -144,18 +215,48 @@ class AuthViewModel(
                     role = "parent",
                 )
             )) {
-                is NetworkResult.Success -> _state.value = _state.value.copy(
-                    isLoading = false,
-                    authResponse = result.data,
-                )
-                is NetworkResult.Error -> _state.value = _state.value.copy(
-                    isLoading = false,
-                    error = result.message,
-                )
-                is NetworkResult.ConnectionError -> _state.value = _state.value.copy(
-                    isLoading = false,
-                    error = "No internet connection. Please check your network.",
-                )
+                is NetworkResult.Success -> {
+                    val resp = result.data
+                    AnalyticsTracker.setUserId(resp.userId)
+                    AnalyticsTracker.setUserProperty("role", resp.role)
+                    AnalyticsTracker.setCustomKey("role", resp.role)
+                    AnalyticsTracker.setCustomKey("user_id", resp.userId)
+                    AnalyticsTracker.setCustomTag("role", resp.role)
+                    AnalyticsTracker.setCustomTag("user_id", resp.userId)
+                    AnalyticsTracker.setCustomTag("auth_status", "authenticated")
+                    AnalyticsTracker.event("vp_auth_otp_verified", mapOf(
+                        "phone_masked" to phone.takeLast(4),
+                    ))
+                    AnalyticsTracker.event("vp_auth_signup_success", mapOf(
+                        "role" to resp.role,
+                    ))
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        authResponse = resp,
+                    )
+                }
+                is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_auth_otp_failed", mapOf(
+                        "phone_masked" to phone.takeLast(4),
+                        "error_reason" to (result.message ?: "unknown"),
+                    ))
+                    AnalyticsTracker.event("vp_auth_signup_failed", mapOf(
+                        "error_reason" to (result.message ?: "unknown"),
+                    ))
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = result.message,
+                    )
+                }
+                is NetworkResult.ConnectionError -> {
+                    AnalyticsTracker.event("vp_auth_signup_failed", mapOf(
+                        "error_reason" to "no_connection",
+                    ))
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = "No internet connection. Please check your network.",
+                    )
+                }
             }
         }
     }
@@ -166,6 +267,10 @@ class AuthViewModel(
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
             val normalized = email.trim().lowercase()
+            AnalyticsTracker.event("vp_auth_login_started", mapOf(
+                "auth_method" to "password",
+                "role" to "admin",
+            ))
             when (val result = authRepository.login(
                 LoginRequest(
                     identifier = normalized,
@@ -173,18 +278,43 @@ class AuthViewModel(
                     role = "admin",
                 )
             )) {
-                is NetworkResult.Success -> _state.value = _state.value.copy(
-                    isLoading = false,
-                    authResponse = result.data,
-                )
-                is NetworkResult.Error -> _state.value = _state.value.copy(
-                    isLoading = false,
-                    error = result.message,
-                )
-                is NetworkResult.ConnectionError -> _state.value = _state.value.copy(
+                is NetworkResult.Success -> {
+                    val resp = result.data
+                    AnalyticsTracker.setUserId(resp.userId)
+                    AnalyticsTracker.setUserProperty("role", resp.role)
+                    AnalyticsTracker.setCustomKey("role", resp.role)
+                    AnalyticsTracker.setCustomKey("user_id", resp.userId)
+                    AnalyticsTracker.setCustomTag("role", resp.role)
+                    AnalyticsTracker.setCustomTag("user_id", resp.userId)
+                    AnalyticsTracker.setCustomTag("auth_status", "authenticated")
+                    AnalyticsTracker.event("vp_auth_login_success", mapOf(
+                        "role" to resp.role,
+                        "auth_method" to "password",
+                    ))
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        authResponse = resp,
+                    )
+                }
+                is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_auth_login_failed", mapOf(
+                        "error_reason" to (result.message ?: "unknown"),
+                        "auth_method" to "password",
+                    ))
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = result.message,
+                    )
+                }
+                is NetworkResult.ConnectionError -> {
+                    AnalyticsTracker.event("vp_auth_login_failed", mapOf(
+                        "error_reason" to "no_connection",
+                        "auth_method" to "password",
+                    ))
+                    _state.value = _state.value.copy(
                     isLoading = false,
                     error = "No internet connection. Please check your network.",
-                )
+                )}
             }
         }
     }
@@ -204,6 +334,10 @@ class AuthViewModel(
     ) {
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
+            AnalyticsTracker.event("vp_auth_signup_started", mapOf(
+                "auth_method" to "password",
+                "role" to "admin",
+            ))
             when (val result = authRepository.registerSchool(
                 SchoolRegisterRequest(
                     name = adminName.trim(),
@@ -217,18 +351,41 @@ class AuthViewModel(
                     contactPhone = contactPhone?.takeIf { it.isNotBlank() },
                 )
             )) {
-                is NetworkResult.Success -> _state.value = _state.value.copy(
-                    isLoading = false,
-                    authResponse = result.data,
-                )
-                is NetworkResult.Error -> _state.value = _state.value.copy(
-                    isLoading = false,
-                    error = result.message,
-                )
-                is NetworkResult.ConnectionError -> _state.value = _state.value.copy(
-                    isLoading = false,
-                    error = "No internet connection. Please check your network.",
-                )
+                is NetworkResult.Success -> {
+                    val resp = result.data
+                    AnalyticsTracker.setUserId(resp.userId)
+                    AnalyticsTracker.setUserProperty("role", resp.role)
+                    AnalyticsTracker.setCustomKey("role", resp.role)
+                    AnalyticsTracker.setCustomKey("user_id", resp.userId)
+                    AnalyticsTracker.setCustomTag("role", resp.role)
+                    AnalyticsTracker.setCustomTag("user_id", resp.userId)
+                    AnalyticsTracker.setCustomTag("auth_status", "authenticated")
+                    AnalyticsTracker.event("vp_auth_signup_success", mapOf(
+                        "role" to resp.role,
+                    ))
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        authResponse = resp,
+                    )
+                }
+                is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_auth_signup_failed", mapOf(
+                        "error_reason" to (result.message ?: "unknown"),
+                    ))
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = result.message,
+                    )
+                }
+                is NetworkResult.ConnectionError -> {
+                    AnalyticsTracker.event("vp_auth_signup_failed", mapOf(
+                        "error_reason" to "no_connection",
+                    ))
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = "No internet connection. Please check your network.",
+                    )
+                }
             }
         }
     }
@@ -245,6 +402,9 @@ class AuthViewModel(
                 currentState.otpPurpose.ifBlank { "login" }
             )) {
                 is NetworkResult.Success -> {
+                    AnalyticsTracker.event("vp_auth_otp_resent", mapOf(
+                        "phone_masked" to currentState.otpIdentifier.takeLast(4),
+                    ))
                     _state.value = _state.value.copy(
                         isLoading = false,
                         canResend = false,
