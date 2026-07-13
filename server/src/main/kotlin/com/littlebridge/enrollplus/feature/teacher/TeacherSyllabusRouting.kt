@@ -1650,6 +1650,7 @@ private suspend fun fetchImageAsBase64(url: String): String? = try {
     val bytes = resp.readRawBytes()
     java.util.Base64.getEncoder().encodeToString(bytes)
 } catch (e: Exception) {
+    log.warn("Failed to fetch image as base64 from $url; returning null", e)
     null
 }
 
@@ -1668,6 +1669,7 @@ private fun parseTopicIdsJson(jsonStr: String): List<String> {
         val arr = kotlinx.serialization.json.Json.parseToJsonElement(jsonStr).jsonArray
         arr.map { it.jsonPrimitive.content }
     } catch (e: Exception) {
+        log.warn("Failed to parse topic ids JSON; returning empty list", e)
         emptyList()
     }
 }

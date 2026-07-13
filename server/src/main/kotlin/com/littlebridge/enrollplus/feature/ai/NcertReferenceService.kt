@@ -48,7 +48,10 @@ object NcertReferenceService {
         } ?: return null
         val chapters = try {
             json.decodeFromString<List<NcertChapter>>(row[NcertSyllabusReferenceTable.chaptersJson])
-        } catch (e: Exception) { emptyList() }
+        } catch (e: Exception) {
+            log.warn("Failed to parse NCERT chapters JSON for classLevel=$nc subject=$ns; returning empty list", e)
+            emptyList()
+        }
         return NcertSyllabus(nc, ns, chapters)
     }
 

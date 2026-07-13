@@ -15,6 +15,7 @@ import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
+import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
@@ -22,6 +23,7 @@ import java.util.UUID
 class SnapshotRepositoryImpl : SnapshotRepository {
     private val json = Json { encodeDefaults = true; ignoreUnknownKeys = true }
     private val signalSerializer = ListSerializer(SignalDto.serializer())
+    private val log = LoggerFactory.getLogger("SnapshotRepositoryImpl")
 
     override suspend fun upsert(snapshot: SnapshotEntity): UUID = dbQuery {
         val signalsJson = json.encodeToString(signalSerializer, snapshot.signals)
@@ -128,7 +130,10 @@ class SnapshotRepositoryImpl : SnapshotRepository {
     private fun org.jetbrains.exposed.sql.ResultRow.toEntity(): SnapshotEntity {
         val signals: List<SignalDto> = try {
             json.decodeFromString(signalSerializer, this[PewsRiskSnapshotsTable.signalsJson])
-        } catch (_: Exception) { emptyList() }
+        } catch (e: Exception) {
+            log.warn("Failed to parse PEWS snapshot signalsJson for id=${this[PewsRiskSnapshotsTable.id].value}; returning empty list", e)
+            emptyList()
+        }
 
         return SnapshotEntity(
             id = this[PewsRiskSnapshotsTable.id].value,

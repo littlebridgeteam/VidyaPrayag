@@ -513,7 +513,10 @@ object SyllabusPaceService {
                 aiReasoning = try {
                     json.parseToJsonElement(row[SyllabusPaceAlertsTable.aiReconfirmJson])
                         .let { it.jsonObject["reasoning"]?.jsonPrimitive?.content ?: "" }
-                } catch (e: Exception) { "" },
+                } catch (e: Exception) {
+                    log.warn("Failed to parse aiReconfirmJson for syllabus pace alert ${row[SyllabusPaceAlertsTable.id]}; returning empty reasoning", e)
+                    ""
+                },
                 isActive = row[SyllabusPaceAlertsTable.resolvedAt] == null,
                 createdAt = row[SyllabusPaceAlertsTable.createdAt].toString(),
             )

@@ -2,6 +2,7 @@
 package com.littlebridge.enrollplus.feature.tutor.agent
 
 import kotlinx.serialization.Serializable
+import org.slf4j.LoggerFactory
 
 /**
  * The structured TutorTurn — replaces the free-text chat blob.
@@ -78,6 +79,7 @@ data class MisconceptionLog(
 // ──────────────────────────────────────────────────────────────────────────
 
 object TutorTurnCodec {
+    private val log = LoggerFactory.getLogger("TutorTurnCodec")
     private val json = kotlinx.serialization.json.Json {
         ignoreUnknownKeys = true
         isLenient = true
@@ -103,6 +105,7 @@ object TutorTurnCodec {
             // so downstream code doesn't NPE.
             ?.let { if (it.studentFacing == null) it.copy(studentFacing = StudentFacing(text = "I'm here to help. What would you like to work on?")) else it }
     } catch (e: Exception) {
+        log.warn("Failed to parse model output into TutorTurn; returning null", e)
         null
     }
 

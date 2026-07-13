@@ -18,6 +18,7 @@ package com.littlebridge.enrollplus.feature.pews.caseworker
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import org.slf4j.LoggerFactory
 
 // ──────────────────────────────────────────────────────────────────────────
 // Case File schema
@@ -62,6 +63,7 @@ data class ParentDraft(
 // ──────────────────────────────────────────────────────────────────────────
 
 object CaseFileCodec {
+    private val log = LoggerFactory.getLogger("CaseFileCodec")
     private val json = Json {
         ignoreUnknownKeys = true
         isLenient = true
@@ -86,6 +88,7 @@ object CaseFileCodec {
         }
         json.decodeFromString(CaseFile.serializer(), cleaned)
     } catch (e: Exception) {
+        log.warn("Failed to parse model output into CaseFile; returning null", e)
         null
     }
 

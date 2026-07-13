@@ -36,6 +36,7 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.update
+import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
@@ -209,6 +210,7 @@ class ScholarshipService(
 ) {
 
     private val json = Json { ignoreUnknownKeys = true }
+    private val log = LoggerFactory.getLogger("ScholarshipService")
 
     // ── Admin: Scheme Management ─────────────────────────────────────────
 
@@ -803,6 +805,7 @@ class ScholarshipService(
                 json.decodeFromString<List<String>>(docUrlsText)
             } else emptyList()
             } catch (e: Exception) {
+                log.warn("Failed to parse scholarship application documentUrls JSON; returning empty list", e)
                 emptyList()
             }
 
@@ -844,6 +847,7 @@ class ScholarshipService(
                 json.decodeFromString<List<String>>(docUrlsText)
             } else emptyList()
         } catch (e: Exception) {
+            log.warn("Failed to parse scholarship renewal documentUrls JSON; returning empty list", e)
             emptyList()
         }
 

@@ -3,6 +3,7 @@ package com.littlebridge.enrollplus.platform
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -66,6 +67,7 @@ private fun readBytes(context: Context, uri: Uri): ByteArray? {
     return try {
         context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
     } catch (e: Exception) {
+        Log.w("MediaPicker", "Failed to read bytes for uri=$uri", e)
         null
     }
 }
@@ -77,6 +79,7 @@ private fun queryFileName(context: Context, uri: Uri): String? {
             if (nameIndex >= 0 && cursor.moveToFirst()) cursor.getString(nameIndex) else null
         }
     } catch (e: Exception) {
+        Log.w("MediaPicker", "Failed to query file name for uri=$uri", e)
         null
     }
 }
