@@ -22,6 +22,7 @@
 package com.littlebridge.enrollplus.feature.ai
 
 import com.littlebridge.enrollplus.core.fail
+import com.littlebridge.enrollplus.core.limitParam
 import com.littlebridge.enrollplus.core.ok
 import com.littlebridge.enrollplus.core.requirePlatformAdmin
 import com.littlebridge.enrollplus.core.requireSchoolAdmin
@@ -234,7 +235,7 @@ fun Route.aiRouting() {
         // ---- PLATFORM ADMIN: recent AI usage log (live feed) ----
         get("/api/v1/admin/ai/recent-usage") {
             call.requirePlatformAdmin() ?: return@get
-            val limit = (call.request.queryParameters["limit"]?.toIntOrNull() ?: 50).coerceIn(1, 200)
+            val limit = call.limitParam(50, max = 200)
             val windowMin = (call.request.queryParameters["window"]?.toIntOrNull() ?: 60).coerceIn(1, 1440)
             val since = Instant.now().minus(windowMin.toLong(), ChronoUnit.MINUTES)
 

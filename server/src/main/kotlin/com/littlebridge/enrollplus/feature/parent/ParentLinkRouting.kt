@@ -20,6 +20,7 @@ import com.littlebridge.enrollplus.core.ClassNaming
 import com.littlebridge.enrollplus.core.PhoneNormalizer
 import com.littlebridge.enrollplus.core.created
 import com.littlebridge.enrollplus.core.fail
+import com.littlebridge.enrollplus.core.limitParam
 import com.littlebridge.enrollplus.core.ok
 import com.littlebridge.enrollplus.core.principalUserId
 import com.littlebridge.enrollplus.core.requireSchoolAdmin
@@ -138,7 +139,7 @@ fun Route.parentLinkRouting() {
                     call.fail("Invalid token", HttpStatusCode.Unauthorized); return@get
                 }
                 val query = call.request.queryParameters["q"]?.trim().orEmpty()
-                val limit = (call.request.queryParameters["limit"]?.toIntOrNull() ?: 10).coerceIn(1, 50)
+                val limit = call.limitParam(10, max = 50)
 
                 val matches = dbQuery {
                     SchoolsTable.selectAll()

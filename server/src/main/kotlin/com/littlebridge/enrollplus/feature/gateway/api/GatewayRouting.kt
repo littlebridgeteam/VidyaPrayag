@@ -28,6 +28,7 @@
 package com.littlebridge.enrollplus.feature.gateway.api
 
 import com.littlebridge.enrollplus.core.fail
+import com.littlebridge.enrollplus.core.limitParam
 import com.littlebridge.enrollplus.core.ok
 import com.littlebridge.enrollplus.feature.gateway.dto.GatewayHeartbeatRequest
 import com.littlebridge.enrollplus.feature.gateway.dto.GatewayHeartbeatResponse
@@ -173,8 +174,7 @@ fun Route.gatewayRouting() {
         get("/pending") {
             if (!call.authorizeGateway()) return@get
 
-            val limit = (call.request.queryParameters["limit"]?.toIntOrNull() ?: 100)
-                .coerceIn(1, 500)
+            val limit = call.limitParam(100, max = 500)
             val rows = smsRequestRepository.listPending(limit)
             call.ok(
                 PendingRequestsResponse(count = rows.size, requests = rows.map { it.toDto() }),

@@ -34,6 +34,7 @@
 package com.littlebridge.enrollplus.feature.auth
 
 import com.littlebridge.enrollplus.core.fail
+import com.littlebridge.enrollplus.core.limitParam
 import com.littlebridge.enrollplus.core.ok
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.OtpDeliveryAttemptsTable
@@ -167,7 +168,7 @@ fun Route.otpAdminRouting() {
             val raw = call.request.queryParameters["identifier"]
                 ?: run { call.fail("identifier query param is required"); return@get }
             val identifier = normaliseIdentifier(raw)
-            val limit = (call.request.queryParameters["limit"]?.toIntOrNull() ?: 50).coerceIn(1, 500)
+            val limit = call.limitParam(50, max = 500)
 
             val rows = dbQuery {
                 OtpDeliveryAttemptsTable.selectAll()

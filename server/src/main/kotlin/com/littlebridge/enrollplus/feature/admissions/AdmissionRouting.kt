@@ -17,8 +17,10 @@ package com.littlebridge.enrollplus.feature.admissions
 
 import com.littlebridge.enrollplus.core.created
 import com.littlebridge.enrollplus.core.fail
+import com.littlebridge.enrollplus.core.limitParam
 import com.littlebridge.enrollplus.core.ok
 import com.littlebridge.enrollplus.core.okMessage
+import com.littlebridge.enrollplus.core.pageParam
 import com.littlebridge.enrollplus.core.requireSchoolContext
 import com.littlebridge.enrollplus.db.AdmissionEnquiriesTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
@@ -133,8 +135,8 @@ fun Route.admissionRouting() {
             get {
                 val ctx = call.requireSchoolContext() ?: return@get
                 val schoolId = ctx.schoolId
-                val page  = (call.request.queryParameters["page"]?.toIntOrNull() ?: 1).coerceAtLeast(1)
-                val limit = (call.request.queryParameters["limit"]?.toIntOrNull() ?: 20).coerceIn(1, 100)
+                val page  = call.pageParam()
+                val limit = call.limitParam(20, max = 100)
                 val offset = ((page - 1) * limit).toLong()
 
                 val data = dbQuery {

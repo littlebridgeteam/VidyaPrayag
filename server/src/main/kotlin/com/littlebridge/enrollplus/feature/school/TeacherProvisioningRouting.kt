@@ -25,6 +25,7 @@ import com.littlebridge.enrollplus.core.created
 import com.littlebridge.enrollplus.core.fail
 import com.littlebridge.enrollplus.core.ok
 import com.littlebridge.enrollplus.core.okMessage
+import com.littlebridge.enrollplus.core.pageParam
 import com.littlebridge.enrollplus.core.requireSchoolAdmin
 import com.littlebridge.enrollplus.core.requireSchoolContext
 import com.littlebridge.enrollplus.db.AppUsersTable
@@ -311,8 +312,7 @@ fun Route.teacherProvisioningRouting() {
                 val ctx = call.requireSchoolContext() ?: return@get
                 val isAdmin = ctx.role in SCHOOL_ADMIN_ROLES
 
-                val page = (call.request.queryParameters["page"]?.toIntOrNull() ?: 1)
-                    .coerceAtLeast(1)
+                val page = call.pageParam()
                 val pageSize = (call.request.queryParameters["pageSize"]?.toIntOrNull() ?: 20)
                     .coerceIn(1, 100)
                 val offset = (page - 1).toLong() * pageSize

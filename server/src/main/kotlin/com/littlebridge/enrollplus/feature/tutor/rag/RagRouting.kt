@@ -2,6 +2,7 @@
 package com.littlebridge.enrollplus.feature.tutor.rag
 
 import com.littlebridge.enrollplus.core.fail
+import com.littlebridge.enrollplus.core.limitParam
 import com.littlebridge.enrollplus.core.ok
 import com.littlebridge.enrollplus.core.principalUserUuid
 import com.littlebridge.enrollplus.core.requireSchoolContext
@@ -35,7 +36,7 @@ fun Route.ragRouting() {
             ?: return@get call.fail("query required", HttpStatusCode.BadRequest, "BAD_QUERY")
         val topicIdStr = call.request.queryParameters["topicId"]
         val topicId = topicIdStr?.let { runCatching { UUID.fromString(it) }.getOrNull() }
-        val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 5
+        val limit = call.limitParam(5)
 
         // Resolve schoolId from user (parent or school role)
         val schoolId = com.littlebridge.enrollplus.core.resolveSchoolIdForUser(uid)

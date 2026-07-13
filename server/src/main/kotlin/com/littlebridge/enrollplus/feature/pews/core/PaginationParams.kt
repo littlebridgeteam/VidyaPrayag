@@ -1,6 +1,7 @@
 // FILE: src/main/kotlin/com/littlebridge/enrollplus/feature/pews/core/PaginationParams.kt
 package com.littlebridge.enrollplus.feature.pews.core
 
+import com.littlebridge.enrollplus.core.pageParam
 import io.ktor.server.application.ApplicationCall
 
 /**
@@ -41,8 +42,7 @@ data class PaginationParams(
          * Extract pagination params from a Ktor call's query parameters.
          */
         fun from(call: ApplicationCall): PaginationParams {
-            val page = call.request.queryParameters["page"]?.toIntOrNull()
-                ?.coerceAtLeast(1) ?: DEFAULT_PAGE
+            val page = call.pageParam(DEFAULT_PAGE)
             val pageSize = call.request.queryParameters["page_size"]?.toIntOrNull()
                 ?.coerceIn(1, MAX_PAGE_SIZE) ?: DEFAULT_PAGE_SIZE
             return PaginationParams(page = page, pageSize = pageSize)
