@@ -7,8 +7,7 @@ import com.littlebridge.enrollplus.db.AppConfigTable
 import com.littlebridge.enrollplus.db.ChildrenTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.FeeRecordsTable
-import com.littlebridge.enrollplus.db.ScholarshipApplicationsTable
-import com.littlebridge.enrollplus.db.ScholarshipsTable
+import com.littlebridge.enrollplus.feature.scholarship.ScholarshipService
 import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.response.*
@@ -74,36 +73,6 @@ data class TrackProgressResponse(
 // `FeeDataDto`/`FeeAnnouncementDto` that used to live here were never registered by
 // any route in this file, so they were removed to kill the duplicate/dead contract.
 
-// --- Scholarships ---
-@Serializable
-data class ScholarshipDto(
-    val id: String,
-    val title: String,
-    val description: String,
-    val amount: String,
-    @SerialName("time_left") val timeLeft: String,
-    val category: String,
-    @SerialName("is_critical") val isCritical: Boolean = false
-)
-
-@Serializable
-data class ScholarshipApplicationDto(
-    val id: String,
-    val institution: String,
-    val program: String,
-    val status: String,
-    @SerialName("icon_name") val iconName: String
-)
-
-@Serializable
-data class ScholarshipsDataDto(
-    val scholarships: List<ScholarshipDto>,
-    val applications: List<ScholarshipApplicationDto>,
-    @SerialName("profile_strength") val profileStrength: Int,
-    @SerialName("streak_days") val streakDays: Int,
-    @SerialName("current_level") val currentLevel: Int
-)
-
 // --- Announcements ---
 @Serializable
 data class ParentAnnouncementDto(
@@ -150,64 +119,16 @@ fun Route.parentRouting() {
     authenticate("jwt") {
         route("/api/v1/parent") {
             // -------- SCHOLARSHIPS (audit §4.2/§5.2 — now DB-backed) --------
-            // Reads real opportunity rows from ScholarshipsTable and the
-            // parent's own applications from ScholarshipApplicationsTable
-            // (scoped by parent uid). Replaces the hardcoded "$45,000 STEM"
-            // fiction. When operators haven't curated any rows yet the lists
-            // are honestly empty (never fabricated).
+            // Updated per SCHOLARSHIP_WORKFLOW_SPEC.md to delegate to ScholarshipService
+            // which returns the full workflow data (schemes, applications, gamification).
+            // Response matches ParentScholarshipsData on the client (shared models).
             get("/scholarships") {
                 val uid = call.principalUserUuid() ?: run {
                     call.respond(HttpStatusCode.Unauthorized); return@get
                 }
 
-                val data = dbQuery {
-                    val scholarships = ScholarshipsTable.selectAll()
-                        .where { ScholarshipsTable.isActive eq true }
-                        .orderBy(ScholarshipsTable.position, SortOrder.ASC)
-                        .map { row ->
-                            ScholarshipDto(
-                                id = row[ScholarshipsTable.id].value.toString(),
-                                title = row[ScholarshipsTable.title],
-                                description = row[ScholarshipsTable.description],
-                                amount = row[ScholarshipsTable.amount],
-                                timeLeft = row[ScholarshipsTable.timeLeft],
-                                category = row[ScholarshipsTable.category],
-                                isCritical = row[ScholarshipsTable.isCritical]
-                            )
-                        }
-
-                    val applications = ScholarshipApplicationsTable.selectAll()
-                        .where { ScholarshipApplicationsTable.parentId eq uid }
-                        .orderBy(ScholarshipApplicationsTable.position, SortOrder.ASC)
-                        .map { row ->
-                            ScholarshipApplicationDto(
-                                id = row[ScholarshipApplicationsTable.id].value.toString(),
-                                institution = row[ScholarshipApplicationsTable.institution],
-                                program = row[ScholarshipApplicationsTable.program],
-                                status = row[ScholarshipApplicationsTable.status],
-                                iconName = row[ScholarshipApplicationsTable.iconName]
-                            )
-                        }
-
-                    // Gamification fields derived from real signals (no fixed fiction):
-                    //  - profile_strength scales with how complete the parent's
-                    //    application footprint is (0 apps → 40, capped at 100).
-                    //  - current_level = highest child level the parent has.
-                    val childLevels = ChildrenTable.selectAll()
-                        .where { (ChildrenTable.parentId eq uid) and (ChildrenTable.isActive eq true) }
-                        .map { it[ChildrenTable.currentLevel] }
-                    val currentLevel = childLevels.maxOrNull() ?: 1
-                    val profileStrength = (40 + applications.size * 15).coerceAtMost(100)
-
-                    ScholarshipsDataDto(
-                        scholarships = scholarships,
-                        applications = applications,
-                        profileStrength = profileStrength,
-                        streakDays = 0,
-                        currentLevel = currentLevel
-                    )
-                }
-                call.ok(data, message = "Scholarships data fetched")
+                val serviceData = ScholarshipService().getParentScholarships(uid)
+                call.ok(serviceData, message = "Scholarships data fetched")
             }
 
             // -------- ANNOUNCEMENTS (parent-school harmony, report §9.1) --------
@@ -238,7 +159,7 @@ fun Route.parentRouting() {
                             .reduce { acc, op -> acc or op }
 
                         AnnouncementsTable.selectAll()
-                            .where { schoolFilter }
+                            .where { schoolFilter and (AnnouncementsTable.isCalendarOnly eq false) }
                             .orderBy(AnnouncementsTable.createdAt, SortOrder.DESC)
                             .map { row ->
                                 ParentAnnouncementDto(
@@ -301,7 +222,7 @@ fun Route.parentRouting() {
                             .reduce { acc, op -> acc or op }
 
                         AnnouncementsTable.selectAll()
-                            .where { schoolFilter }
+                            .where { schoolFilter and (AnnouncementsTable.isCalendarOnly eq false) }
                             .orderBy(AnnouncementsTable.createdAt, SortOrder.DESC)
                             .forEach { row ->
                                 val createdAt = row[AnnouncementsTable.createdAt]

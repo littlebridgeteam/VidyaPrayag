@@ -7,9 +7,17 @@ import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.core.state.SelectedChildHolder
 import com.littlebridge.enrollplus.feature.parent.domain.model.DashboardChildSummary
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentAttendanceData
+import com.littlebridge.enrollplus.feature.parent.domain.model.ParentDailySummaryData
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentMarksData
+import com.littlebridge.enrollplus.feature.parent.domain.model.ParentQuizDetailData
+import com.littlebridge.enrollplus.feature.parent.domain.model.ParentQuizDto
+import com.littlebridge.enrollplus.feature.parent.domain.model.QuizLeaderboardData
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentSyllabusData
+import com.littlebridge.enrollplus.feature.parent.domain.model.ParentSyllabusV2Data
+import com.littlebridge.enrollplus.feature.parent.domain.model.ParentSyllabusV2Response
 import com.littlebridge.enrollplus.feature.parent.domain.repository.ParentRepository
+import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizSubmitRequest
+import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizSubmitResponse
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -40,6 +48,30 @@ data class ParentAcademicsState(
     val syllabus: ParentSyllabusData? = null,
     val syllabusLoading: Boolean = false,
     val syllabusError: String? = null,
+
+    // ── Agentic: syllabus V2 (typed curriculum_units with AI estimation) ──
+    val syllabusV2: ParentSyllabusV2Data? = null,
+    val syllabusV2Loading: Boolean = false,
+    val syllabusV2Error: String? = null,
+
+    // ── Agentic: daily summary ──
+    val dailySummary: ParentDailySummaryData? = null,
+    val dailySummaryLoading: Boolean = false,
+    val dailySummaryError: String? = null,
+
+    // ── Agentic: quizzes ──
+    val quizzes: List<ParentQuizDto> = emptyList(),
+    val quizzesLoading: Boolean = false,
+    val quizzesError: String? = null,
+    val quizDetail: ParentQuizDetailData? = null,
+    val quizDetailLoading: Boolean = false,
+    val quizDetailError: String? = null,
+    val quizResult: QuizSubmitResponse? = null,
+    val isSubmittingQuiz: Boolean = false,
+    val quizSubmitError: String? = null,
+    val leaderboard: QuizLeaderboardData? = null,
+    val leaderboardLoading: Boolean = false,
+    val leaderboardError: String? = null,
 ) {
     val selectedChild: DashboardChildSummary?
         get() = children.firstOrNull { it.id == selectedChildId } ?: children.firstOrNull()
@@ -176,5 +208,124 @@ class ParentAcademicsViewModel(
         }
     }
 
+    fun loadSyllabusV2(childId: String? = null) {
+        val resolvedChildId = childId ?: currentChildId() ?: return
+        viewModelScope.launch {
+            _state.update { it.copy(syllabusV2Loading = true, syllabusV2Error = null) }
+            val token = token() ?: run {
+                _state.update { it.copy(syllabusV2Loading = false, syllabusV2Error = "Not authenticated") }; return@launch
+            }
+            when (val r = repository.getSyllabusV2(token, resolvedChildId)) {
+                is NetworkResult.Success -> _state.update { it.copy(syllabusV2Loading = false, syllabusV2 = r.data.data) }
+                is NetworkResult.Error -> _state.update { it.copy(syllabusV2Loading = false, syllabusV2Error = r.message) }
+                is NetworkResult.ConnectionError -> _state.update { it.copy(syllabusV2Loading = false, syllabusV2Error = "Connection error") }
+            }
+        }
+    }
+
     private fun currentChildId(): String? = _state.value.selectedChild?.id
+
+    // ── Agentic: Daily summary ─────────────────────────────────────────────
+
+    fun loadDailySummary(childId: String? = null, date: String? = null) {
+        val resolvedChildId = childId ?: currentChildId() ?: return
+        viewModelScope.launch {
+            _state.update { it.copy(dailySummaryLoading = true, dailySummaryError = null) }
+            val token = token() ?: run {
+                _state.update { it.copy(dailySummaryLoading = false, dailySummaryError = "Not authenticated") }; return@launch
+            }
+            when (val r = repository.getDailySummary(token, resolvedChildId, date)) {
+                is NetworkResult.Success -> _state.update { it.copy(dailySummaryLoading = false, dailySummary = r.data.data) }
+                is NetworkResult.Error -> _state.update { it.copy(dailySummaryLoading = false, dailySummaryError = r.message) }
+                is NetworkResult.ConnectionError -> _state.update { it.copy(dailySummaryLoading = false, dailySummaryError = "Connection error") }
+            }
+        }
+    }
+
+    // ── Agentic: Quizzes ───────────────────────────────────────────────────
+
+    fun loadQuizzes(childId: String? = null) {
+        val resolvedChildId = childId ?: currentChildId() ?: return
+        viewModelScope.launch {
+            _state.update { it.copy(quizzesLoading = true, quizzesError = null) }
+            val token = token() ?: run {
+                _state.update { it.copy(quizzesLoading = false, quizzesError = "Not authenticated") }; return@launch
+            }
+            when (val r = repository.getQuizList(token, resolvedChildId)) {
+                is NetworkResult.Success -> _state.update { it.copy(quizzesLoading = false, quizzes = r.data.data.quizzes) }
+                is NetworkResult.Error -> _state.update { it.copy(quizzesLoading = false, quizzesError = r.message) }
+                is NetworkResult.ConnectionError -> _state.update { it.copy(quizzesLoading = false, quizzesError = "Connection error") }
+            }
+        }
+    }
+
+    fun loadQuizDetail(quizId: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(quizDetailLoading = true, quizDetailError = null, quizDetail = null, quizResult = null) }
+            val token = token() ?: run {
+                _state.update { it.copy(quizDetailLoading = false, quizDetailError = "Not authenticated") }; return@launch
+            }
+            when (val r = repository.getQuizDetail(token, quizId)) {
+                is NetworkResult.Success -> _state.update { it.copy(quizDetailLoading = false, quizDetail = r.data.data) }
+                is NetworkResult.Error -> _state.update { it.copy(quizDetailLoading = false, quizDetailError = r.message) }
+                is NetworkResult.ConnectionError -> _state.update { it.copy(quizDetailLoading = false, quizDetailError = "Connection error") }
+            }
+        }
+    }
+
+    fun submitQuiz(quizId: String, answers: List<Pair<String, Int>>, textAnswers: Map<String, String> = emptyMap()) {
+        viewModelScope.launch {
+            _state.update { it.copy(isSubmittingQuiz = true, quizSubmitError = null) }
+            val token = token() ?: run {
+                _state.update { it.copy(isSubmittingQuiz = false, quizSubmitError = "Not authenticated") }; return@launch
+            }
+            val request = QuizSubmitRequest(
+                quizId = quizId,
+                answers = answers.map { (qid, idx) ->
+                    com.littlebridge.enrollplus.feature.teacher.domain.model.QuizAnswerDto(
+                        questionId = qid,
+                        selectedIndex = idx,
+                        answerText = textAnswers[qid],
+                    )
+                },
+            )
+            when (val r = repository.submitQuiz(token, request)) {
+                is NetworkResult.Success -> _state.update { it.copy(isSubmittingQuiz = false, quizResult = r.data) }
+                is NetworkResult.Error -> _state.update { it.copy(isSubmittingQuiz = false, quizSubmitError = r.message) }
+                is NetworkResult.ConnectionError -> _state.update { it.copy(isSubmittingQuiz = false, quizSubmitError = "Connection error") }
+            }
+        }
+    }
+
+    fun loadLeaderboard(quizId: String) {
+        val resolvedChildId = currentChildId() ?: return
+        viewModelScope.launch {
+            _state.update { it.copy(leaderboardLoading = true, leaderboardError = null, leaderboard = null) }
+            val token = token() ?: run {
+                _state.update { it.copy(leaderboardLoading = false, leaderboardError = "Not authenticated") }; return@launch
+            }
+            when (val r = repository.getQuizLeaderboard(token, resolvedChildId, quizId)) {
+                is NetworkResult.Success -> _state.update { it.copy(leaderboardLoading = false, leaderboard = r.data.data) }
+                is NetworkResult.Error -> _state.update { it.copy(leaderboardLoading = false, leaderboardError = r.message) }
+                is NetworkResult.ConnectionError -> _state.update { it.copy(leaderboardLoading = false, leaderboardError = "Connection error") }
+            }
+        }
+    }
+
+    fun loadQuizResult(quizId: String) {
+        val resolvedChildId = currentChildId() ?: return
+        viewModelScope.launch {
+            _state.update { it.copy(quizDetailLoading = true, quizDetailError = null, quizResult = null, leaderboard = null) }
+            val token = token() ?: run {
+                _state.update { it.copy(quizDetailLoading = false, quizDetailError = "Not authenticated") }; return@launch
+            }
+            when (val r = repository.getQuizResult(token, resolvedChildId, quizId)) {
+                is NetworkResult.Success -> _state.update { it.copy(quizDetailLoading = false, quizResult = r.data) }
+                is NetworkResult.Error -> _state.update { it.copy(quizDetailLoading = false, quizDetailError = r.message) }
+                is NetworkResult.ConnectionError -> _state.update { it.copy(quizDetailLoading = false, quizDetailError = "Connection error") }
+            }
+        }
+    }
+
+    fun clearQuizResult() = _state.update { it.copy(quizResult = null, quizDetail = null, leaderboard = null) }
 }

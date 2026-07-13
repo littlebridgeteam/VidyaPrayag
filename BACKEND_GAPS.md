@@ -5,6 +5,11 @@
 > against the actual source (file:line cited) using the method in §0, then gives a concrete,
 > phased plan (§7–§10) to make the application run **end-to-end** with real backend + API +
 > a connected database, including the new screens required for backend features that have none.
+>
+> **⚠ UPDATED 2026-07-03 (branch `development_v1.0.1`):** A full re-audit was performed.
+> The headline findings from June 7 are now **largely resolved**. See the "July 2026 Update"
+> section at the bottom for the current state. The original June 7 audit is preserved below
+> for historical reference.
 
 Legend: ✅ real & wired · 🟡 exists but not connected to UI · 🔴 missing / stubbed.
 
@@ -258,4 +263,104 @@ system, so they are "build the screen against a working API," not greenfield bac
   **~80** server routes · **36** DB tables · **79** Koin definitions.
 - **2** VMs used by UI (`AuthViewModel`, `MainViewModel`); **40** unbound.
 - **18** screens read `MockV2`; **1** screen (`Login`) binds a real VM.
+- DB modes: Supabase Postgres (`DATABASE_URL` set) | SQLite `data.db` (default). Port `8080`.
+
+---
+
+## 11. July 2026 Re-Audit — Current State (branch `development_v1.0.1`)
+
+> **Audited 2026-07-03** via grep/find against the live codebase. Every number below is
+> from a shell command against the actual source, not from prior docs.
+
+### 11.1 Headline finding: the UI is now backend-driven
+
+The June 7 headline ("UI is mock-driven, not backend-driven") is **resolved**.
+
+| Metric | June 7 | July 3 | Delta |
+|---|---|---|---|
+| Screen files | 31 | **99** | +68 |
+| ViewModels | 42 | **93** | +51 |
+| Files using `koinViewModel()` | 2 | **96** | +94 |
+| Screens reading `MockV2` | 18 | **0** | -18 |
+| `MockV2.kt` file | exists | **DELETED** | gone |
+| API clients | 17 (1 stub) | **43** (0 stubs) | +26, 0 stubs |
+| Server routes (unique) | ~80 | **611** | +531 |
+| Routing files | 30+ | **90** | +60 |
+| DB tables (Exposed) | 36 | **124** | +88 |
+| Koin definitions | 79 | **195** | +116 |
+| Feature verticals (shared) | ~6 | **20** | +14 |
+| Server feature dirs | ~15 | **33** | +18 |
+| SQL migration files | ~15 | **49** | +34 |
+| Website admin pages | 0 | **17** | +17 |
+
+**MockV2 is gone.** The file was deleted. The only remaining `MockV2` references are in
+comments saying "MockV2 is no longer referenced." All 43 API clients make real HTTP calls
+— the `KtorSchoolApi` stub was fixed.
+
+### 11.2 June 7 gap resolution status
+
+| June 7 Gap | Status | Evidence |
+|---|---|---|
+| §1 — UI mock-driven (40/42 VMs unbound) | ✅ **RESOLVED** | 96 files use `koinViewModel()`; MockV2 deleted |
+| §3 — `KtorSchoolApi` stub | ✅ **RESOLVED** | KDoc says "Previously this class was a stub…"; now makes real HTTP calls |
+| §4.1 — 19 screens to wire (Phase C) | ✅ **RESOLVED** | All screens now bind real VMs |
+| §4.2 — 11 missing screens (Phase D) | ✅ **MOSTLY RESOLVED** | AdmissionsCrm, DailyAttendance, ClassPerformance, TeacherPerformance, AnalyticsDashboard, LeaveRequests, Messages, ResultsPublish, SchedulePtm, Scholarships screens all exist |
+| §5 — Notifications backend | ✅ **RESOLVED** | `NotificationsTable`, `NotificationPreferencesTable`, `DeviceTokensTable` + `NotificationsRouting.kt` + `NotificationsViewModel` |
+| §5 — Parent link-child backend | ✅ **RESOLVED** | `ParentChildLinksTable` + `ParentLinkRouting.kt` (953 lines) + `LinkChildViewModel` |
+| §5 — Teacher first-login / change-password | 🟡 **PARTIAL** | `TeacherFirstLoginScreenV2` exists; `must_change_password` flag and `POST /auth/change-password` endpoint need verification |
+
+### 11.3 New features built since June 7 (not in original audit)
+
+| Feature | Tables | Routes | Client | Screens |
+|---|---|---|---|---|
+| Library Management | 13 tables | `LibraryRouting.kt` | `LibraryApi` + Room DAO | School/Parent/Student screens |
+| Transport Tracking | 6 tables | `TransportRouting.kt` | `TransportApi` + `TransportViewModel` | `TransportManagementScreenV2`, `BusTrackingScreenV2`, `TransportAttendanceScreenV2` |
+| ID Card Generation | 2 tables | `IdCardRouting` | `IdCardApi` + `IdCardViewModel` | `IdCardScreen.kt`, `DigitalIdCardScreen.kt` |
+| Health Records | 3 tables | `HealthRouting.kt` | `HealthApi` + 3 VMs | `HealthRecordsScreenV2`, `ParentHealthScreenV2`, `TeacherHealthAlertsScreenV2` |
+| Alumni Management | 7 tables | `AlumniRouting` | `AlumniApi` + `AlumniViewModel` | `AlumniScreen`, `AlumniDetailScreen`, `AlumniCampaignScreen` |
+| Scholarship Workflow | tables + migration_060 | `ScholarshipRouting` | `ScholarshipApi` + VMs | `ScholarshipWorkflowScreenV2`, `ScholarshipsScreenV2`, `ScholarshipManagementScreenV2` |
+| School Branding | tables + migration_101 | `BrandingService` | `BrandingApi` + `BrandingViewModel` | `BrandingSettingsScreen.kt` |
+| Parent Pulse | `ParentPulsesTable` | `PulseRouting` | `ParentPulseViewModel` | `ParentPulseScreen.kt` |
+| PEWS (Early Warning) | 3+ tables | `PewsRouting` | 5 VMs | `PewsCohortScreenV2`, `PewsEffectivenessScreenV2`, `PewsStudentDetailScreenV2`, `ParentPewsScreenV2`, `TeacherPewsScreenV2` |
+| Event Registration | `EventRegistrationsTable` | `EventRegistrationRouting` | 3 VMs (Admin/Parent/Teacher) | 3 event registration screens |
+| Scheduled Messages | `ScheduledMessagesTable` | `SchedulingRouting` | `ScheduledMessagesViewModel` | `ScheduledMessagesScreenV2` |
+| Timetable Management | `TeacherPeriodsTable` + migration_108 | Timetable routes | `TeacherTimetableViewModel` | `TeacherTimetableScreenV2` + web admin page |
+| Report Card 2.0 | 3+ tables + migration_062 | 32 files in `reportcard/` | `reportcard` feature in shared | `AdminReportPublishScreen`, `TeacherReportDraftEditorScreen`, `TeacherReportReviewQueueScreen` |
+| AI Infrastructure | `TutorSessionsTable` + migration_060/062 | `AiRouting.kt` + 55 tutor files | `tutor` feature (9 files) | 5 tutor screens |
+| Lesson Planning | 3 tables + migration_025 | Lesson plan routes | `TeacherLessonPlanViewModel` | `TeacherLessonPlanScreenV2` |
+| School Day Config | tables + migration_107 | Config routes | `SchoolDayConfigViewModel` | `SchoolDayConfigScreenV2` |
+| Classes/Subjects | `SchoolClassesTable` (extended) | Classes routes | `ClassesSubjectsViewModel` | `ClassesSubjectsScreenV2`, `ClassDetailScreenV2` |
+| Academic Year Mgmt | `AcademicYearsTable` | Academic year routes | VM | `AcademicYearManagementScreenV2` |
+| Unified Calendar Events | `CalendarEventsTable` (extended) | Calendar routes | `UnifiedCreateEventViewModel` | `UnifiedCreateEventScreenV2`, `AcademicCalendarPlatformScreenV2` |
+
+### 11.4 Remaining gaps (verified July 2026)
+
+| Gap | Status | Detail |
+|---|---|---|
+| **`NonTeachingStaffTable` SQL DDL** | 🔴 **STILL MISSING** | `Tables.kt:1613` defines it, `DatabaseFactory` registers it, but NO `CREATE TABLE non_teaching_staff` exists in any SQL file. `migration_103` only does `ALTER TABLE`. SQLite dev auto-creates it; **prod (Postgres) will 500**. |
+| **Fee Payment Gateway** | 🔴 **MISSING** | No tables, no routes, no client. `FEE_PAYMENT_SPEC.md` exists but 0% implemented. |
+| **Teacher change-password** | 🟡 **NEEDS VERIFICATION** | Screen exists; backend endpoint may be missing. |
+| **Audit Log** | 🔴 **MISSING** | No `audit_log` table (only `library_audit_log`). No `AuditLogRouting`. |
+| **DPDP Compliance** | 🔴 **MISSING** | No consent tables, no data export/erasure endpoints. |
+| **2FA** | 🔴 **MISSING** | No TOTP/2FA implementation. |
+| **Hostel Management** | 🔴 **MISSING** | No tables, no routes. |
+| **Payroll Management** | 🔴 **MISSING** | No tables, no routes. |
+| **Expense Management** | 🔴 **MISSING** | No tables, no routes. |
+| **Inventory Management** | 🔴 **MISSING** | No tables, no routes. |
+| **Visitor Management** | 🔴 **MISSING** | No tables, no routes. |
+| **Exam Timetable** | 🔴 **MISSING** | No dedicated exam timetable tables. |
+| **Bulk Import/Export** | 🔴 **MISSING** | No CSV import/export endpoints. |
+| **iOS Push (APNs)** | ⏸️ **DEFERRED** | Only FCM (Android) implemented. iOS deprioritized for now. |
+| **Offline Mode** | 🟡 **PARTIAL** | Room DAOs exist for library + events + schools; not a full offline-first architecture. |
+| **Dark Mode** | ✅ **IMPLEMENTED** | `VThemeRegistry`, `VThemeDef` with Light/Dark/Midnight themes. |
+| **Web App** | 🟡 **PARTIAL** | wasmJs/JS targets compile; website has 17 admin pages. Not full feature parity. |
+| **Tablet Layout** | 🟡 **PARTIAL** | Compose Multiplatform adapts; no dedicated tablet layouts. |
+
+### 11.5 Updated inventory (July 3, 2026)
+
+- **99** screen files · **93** ViewModels · **43** API clients (43 real HTTP, 0 stubs) ·
+  **611** server routes · **124** DB tables · **195** Koin definitions.
+- **96** files use `koinViewModel()`; **0** screens read MockV2 (file deleted).
+- **49** SQL migration files · **33** server feature directories · **20** shared feature verticals.
+- **17** website admin pages (Next.js).
 - DB modes: Supabase Postgres (`DATABASE_URL` set) | SQLite `data.db` (default). Port `8080`.

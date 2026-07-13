@@ -59,6 +59,8 @@ import com.littlebridge.enrollplus.feature.announcements.announcementRouting
 import com.littlebridge.enrollplus.feature.auth.authRouting
 import com.littlebridge.enrollplus.feature.alumni.alumniRouting
 import com.littlebridge.enrollplus.feature.transport.transportRouting
+import com.littlebridge.enrollplus.feature.scholarship.scholarshipRouting
+import com.littlebridge.enrollplus.feature.branding.brandingRouting
 import com.littlebridge.enrollplus.feature.calendar.academicCalendarRouting
 import com.littlebridge.enrollplus.feature.calendar.academicYearRouting
 import com.littlebridge.enrollplus.feature.auth.otpAdminRouting
@@ -69,12 +71,17 @@ import com.littlebridge.enrollplus.feature.content.landingRouting
 import com.littlebridge.enrollplus.feature.content.supportRouting
 import com.littlebridge.enrollplus.feature.gateway.api.gatewayRouting
 import com.littlebridge.enrollplus.feature.health.healthRouting
+import com.littlebridge.enrollplus.feature.healthcheck.healthCheckRouting
+import com.littlebridge.enrollplus.feature.idcard.idCardRouting
+import com.littlebridge.enrollplus.feature.idcard.IdCardExpiryCheckJob
+import com.littlebridge.enrollplus.feature.library.libraryRouting
 import com.littlebridge.enrollplus.feature.media.mediaRouting
 import com.littlebridge.enrollplus.feature.notification.api.notificationRouting
 import com.littlebridge.enrollplus.feature.notifications.notificationsRouting
 import com.littlebridge.enrollplus.feature.notifications.NotificationScheduler
 import com.littlebridge.enrollplus.feature.notifications.notificationPreferencesRouting
 import com.littlebridge.enrollplus.feature.onboarding.onboardingRouting
+import com.littlebridge.enrollplus.feature.organization.organizationRouting
 import com.littlebridge.enrollplus.feature.parent.parentDashboardRouting
 import com.littlebridge.enrollplus.feature.parent.parentFeesRouting
 import com.littlebridge.enrollplus.feature.parent.parentLeaveRouting
@@ -86,8 +93,18 @@ import com.littlebridge.enrollplus.feature.pulse.PulseWeeklyJob
 import com.littlebridge.enrollplus.feature.ai.KeyVault
 import com.littlebridge.enrollplus.feature.ai.aiRouting
 import com.littlebridge.enrollplus.feature.pews.PewsDailyJob
+import com.littlebridge.enrollplus.feature.pews.core.KillSwitchConfig
+import com.littlebridge.enrollplus.feature.pews.core.pewsModuleRouting
+import com.littlebridge.enrollplus.feature.pews.core.registerPewsModules
+import com.littlebridge.enrollplus.feature.reportcard.core.registerReportCardModules
+import com.littlebridge.enrollplus.feature.reportcard.core.reportCardRouting
+import com.littlebridge.enrollplus.feature.tutor.core.registerTutorModules
+import com.littlebridge.enrollplus.feature.tutor.core.tutorRouting
 import com.littlebridge.enrollplus.feature.pews.pewsRouting
+import com.littlebridge.enrollplus.feature.scheduling.scheduledMessageRouting
+import com.littlebridge.enrollplus.feature.scheduling.MessageDispatchScheduler
 import com.littlebridge.enrollplus.feature.school.adminDashboardRouting
+import com.littlebridge.enrollplus.feature.event.eventRegistrationRouting
 import com.littlebridge.enrollplus.feature.school.adminDashboardOverviewRouting
 import com.littlebridge.enrollplus.feature.school.leaveRequestsRouting
 import com.littlebridge.enrollplus.feature.school.messagesRouting
@@ -99,7 +116,12 @@ import com.littlebridge.enrollplus.feature.school.schoolIntelligenceRouting
 import com.littlebridge.enrollplus.feature.school.schoolProfileRouting
 import com.littlebridge.enrollplus.feature.school.schoolRecordsRouting
 import com.littlebridge.enrollplus.feature.school.schoolStudentsRouting
+import com.littlebridge.enrollplus.feature.school.schoolClassesRouting
 import com.littlebridge.enrollplus.feature.school.schoolTimetableRouting
+import com.littlebridge.enrollplus.feature.school.periodExceptionRouting
+import com.littlebridge.enrollplus.feature.school.timetableChangeRequestRouting
+import com.littlebridge.enrollplus.feature.school.schoolDayConfigRouting
+import com.littlebridge.enrollplus.feature.school.timetableImportRouting
 import com.littlebridge.enrollplus.feature.school.nonTeachingStaffRouting
 import com.littlebridge.enrollplus.feature.school.schoolLessonPlanRouting
 import com.littlebridge.enrollplus.feature.school.schoolRouting
@@ -117,6 +139,8 @@ import com.littlebridge.enrollplus.feature.teacher.teacherRouting
 import com.littlebridge.enrollplus.feature.teacher.teacherSelfLeaveRouting
 import com.littlebridge.enrollplus.feature.teacher.teacherStudentRouting
 import com.littlebridge.enrollplus.feature.teacher.teacherSyllabusRouting
+import com.littlebridge.enrollplus.feature.teacher.teacherQuizRouting
+import com.littlebridge.enrollplus.feature.school.syllabusPaceRouting
 import com.littlebridge.enrollplus.feature.user.parentRouting
 import com.littlebridge.enrollplus.feature.user.parentMessagesRouting
 import com.littlebridge.enrollplus.feature.user.userDetailsRouting
@@ -170,6 +194,9 @@ fun main() {
     // Start the notification scheduler (fee reminders, calendar reminders).
     NotificationScheduler.start(kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default))
 
+    // Start the Message Scheduling dispatch engine (1-min poll for due scheduled messages).
+    MessageDispatchScheduler.start(kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default))
+
     // Start the Parent Pulse weekly job (Sunday 6 PM IST pulse generation).
     PulseWeeklyJob.start(kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default))
 
@@ -184,6 +211,37 @@ fun main() {
 
     // Start the PEWS daily job (Sense → Reason → Act pipeline; hourly tick).
     PewsDailyJob.start(kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default))
+
+    // AI Report Card 2.0 — start async batch worker + term-close scheduler.
+    com.littlebridge.enrollplus.feature.reportcard.queue.ReportCardJob.startWorker(
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)
+    )
+    com.littlebridge.enrollplus.feature.reportcard.queue.ReportCardJob.startScheduler(
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)
+    )
+
+    // PEWS 2.0 — load kill-switch flags from DB and start hot-reload polling.
+    kotlinx.coroutines.runBlocking { runCatching { KillSwitchConfig.reload() } }
+    KillSwitchConfig.startPolling(kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default))
+
+    // Start the Transport job scheduler (GPS staleness check + daily attendance finalization).
+    com.littlebridge.enrollplus.feature.transport.TransportJobScheduler.start(
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)
+    )
+
+    // Start the Library job scheduler (overdue notifications, due-date reminders,
+    // reservation expiry, announcement expiry, monthly audit log retention).
+    com.littlebridge.enrollplus.feature.library.LibraryJobScheduler.start(
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)
+    )
+
+    // Start the Auto Daily Summary job (end-of-day AI summary for missing teacher logs).
+    com.littlebridge.enrollplus.feature.ai.DailySummaryAutoJob.start(
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)
+    )
+
+    // Register event-driven cache invalidation for library (spec §17).
+    com.littlebridge.enrollplus.feature.library.LibraryCacheInit.register()
 
     embeddedServer(
         Netty,
@@ -265,6 +323,13 @@ fun Application.module() {
             isLenient = true
             encodeDefaults = true
             explicitNulls = false
+            // Fall back to a property's default when the incoming JSON sends an
+            // explicit null (or an out-of-domain enum) for it. Without this, a
+            // client that omits/null-sends an optional field on a DTO that has a
+            // default triggers a MissingFieldException → 400. This was the cause
+            // of the repeated `400 Bad Request: PUT /api/v1/school/pews/config`
+            // (the parent_share toggle never saved → parents saw no nudge).
+            coerceInputValues = true
         })
     }
 
@@ -328,10 +393,13 @@ fun Application.module() {
 
         // AI gateway + PEWS (AI_FEATURES_PLAN.md feature #1)
         aiRouting()                  // /api/v1/school/ai/usage (school-admin) + /api/v1/admin/ai/{providers,health,rotate} (platform-admin)
-        pewsRouting()                // /api/v1/{school,teacher,parent}/pews/… — Predictive Early Warning System (Sense→Reason→Act→Learn)
+        pewsRouting()                // /api/v1/{school,teacher,parent}/pews/… — v1 PEWS endpoints (still in use)
+        registerPewsModules()        // PEWS 2.0: register all modules with ModuleRegistry
+        pewsModuleRouting()          // PEWS 2.0: mount module routes (act, learn, insights, …)
         schoolAnalyticsRouting()     // /api/v1/school/analytics/{overview,class-performance,teacher-performance,student/{id},syllabus-coverage}
         leaveRequestsRouting()       // /api/v1/school/leave-requests[…]
         ptmRouting()                 // /api/v1/school/ptm
+        eventRegistrationRouting()  // /api/v1/{parent,teacher,school}/events/… — Event Registration & RSVP
         messagesRouting()            // /api/v1/school/messages[…]
         resultsRouting()             // /api/v1/school/results
         teacherAssignmentRouting()   // /api/v1/school/teacher-assignments[…] — structured teacher⇄class⇄subject model (report §5.5)
@@ -340,7 +408,10 @@ fun Application.module() {
         schoolStudentsRouting()      // /api/v1/school/students[…] + teachers/{id} — RA-45 student roster + student/teacher profile (school-scoped)
         nonTeachingStaffRouting()    // /api/v1/school/staff[…] — RA-S17 non-teaching-staff vertical (school-scoped CRUD)
         schoolRecordsRouting()       // /api/v1/school/{attendance/summary,marks/summary,fees/ledger} — RA-52 admin Records rollups (school-scoped reads)
-        schoolTimetableRouting()     // /api/v1/school/timetable — school-wide weekly schedule (all classes) from teacher_periods, for the Command Center calendar (read-only, additive)
+        schoolClassesRouting()       // /api/v1/school/classes[…] + /api/v1/school/subjects[…] — class + subject CRUD (admin)
+        schoolTimetableRouting()     // /api/v1/school/timetable[…] — school-wide weekly schedule + admin period CRUD (POST/PUT/DELETE)
+        periodExceptionRouting()     // /api/v1/school/timetable/exceptions[…] + /api/v1/teacher/timetable/exceptions[…] — one-off period overrides
+        timetableChangeRequestRouting() // /api/v1/school/timetable-requests[…] + /api/v1/teacher/timetable-requests[…] — teacher→admin approval workflow
         schoolLessonPlanRouting()    // /api/v1/school/lesson-plans — admin review of teacher lesson plans (read-only, school-scoped, filterable)
         mediaRouting()               // /api/v1/school/media/upload[…] — REAL binary uploads → Supabase Storage (kills URL placeholders)
 
@@ -354,6 +425,7 @@ fun Application.module() {
         teacherAttendanceRouting()   // T-203/T-205 /api/v1/teacher/attendance — typed, assignment-scoped attendance load/save (Doc 06 §3.8); legacy packed-grade handler deleted
         teacherGradebookRouting()    // T-303/T-304/T-305 /api/v1/teacher/assessments — typed assessment lifecycle: list/create, marks load/SAVE (no publish, the B-MK-1 fix), publish/unpublish, history (Doc 07 §2/§5/§6); converged from /gradebook to canonical /assessments in T-305 (legacy /marks + /assessments handlers deleted)
         teacherSyllabusRouting()     // T-402/T-403 /api/v1/teacher/syllabus — typed, assignment-scoped syllabus: hierarchical load, create unit (B-SYL-1 fix), rename/reorder, one-tap covered toggle w/ typed covered_on (Doc 08 §1.2/§3); converged from staged /syllabus-typed to canonical /syllabus in T-403 (legacy /syllabus GET+PATCH handler in teacherTaskRoutes deleted)
+        teacherQuizRouting()         // /api/v1/teacher/syllabus/quiz — AI-generated quizzes with MCQ/FILL_BLANK/TRUE_FALSE/MATCH types, multiple unit selection
         teacherClassesRouting()      // T-501/T-502/T-504 /api/v1/teacher/classes[/{id}] — single-aggregated-query class list (kills B-CLS-1 N+1), real is_class_teacher (B-CLS-3), composite class detail w/ real roster (F-CLS-5); CONVERGED from staged /classes-v2 to canonical /classes[/{id}] in T-504 (legacy looping /classes handler in teacherRouting DELETED)
         teacherStudentRouting()      // T-503/T-504 /api/v1/teacher/students/{id} — scoped student profile (403 if teacher doesn't teach the student; B-PROF-1/2/F-PROF-3); CONVERGED from staged /students-v2 to canonical /students/{id} in T-504
         teacherHomeworkRouting()     // T-405/T-406 /api/v1/teacher/homework — typed homework lifecycle: assign (fixes dead button F-HW-1/B-HW-1), roster-joined submissions board (B-HW-3), extend (whole-class/single-student), review/grade, close (Doc 08 Part B); CONVERGED from staged /homework-v2 to canonical /homework in T-406 (legacy /homework GET+POST handler in teacherTaskRoutes DELETED)
@@ -382,6 +454,18 @@ fun Application.module() {
         //   /api/v1/parent/health/{childId}                            — parent view
         healthRouting()
 
+        // AI Report Card 2.0 (AI_REPORT_CARD_2.0_AGENTIC_REDESIGN.md)
+        //   5-tier agentic report card: Rollup → Triage → Narrator → Assembly → Learn
+        //   Routes: /api/v1/report-card/{generate,review-queue,drafts,approve,publish,published,learn/*}
+        registerReportCardModules()   // Register all 5 modules with ReportCardModuleRegistry
+        reportCardRouting()           // Mount module routes under JWT auth
+
+        // AI Tutor 2.0 (AI_TUTOR_2.0_AGENTIC_REDESIGN.md)
+        //   5-tier agentic learning agent: Sense → Triage → Agent → Act → Learn
+        //   Routes: /api/v1/tutor/{doubt,practice,plan,learner-bundle,teacher-heatmap,…}
+        registerTutorModules()        // Register all Tutor modules with TutorModuleRegistry
+        tutorRouting()                // Mount module routes under JWT auth
+
         // Alumni Management (ALUMNI_MANAGEMENT_SPEC.md)
         //   /api/v1/school/alumni/*  — admin endpoints (school context)
         //   /api/v1/alumni/*         — alumni self-service (alumni context)
@@ -393,5 +477,54 @@ fun Application.module() {
         //   /api/v1/transport/{location,pickup,drop}                                — driver
         //   /api/v1/parent/transport/{live-location,route}/{childId}                — parent
         transportRouting()
+
+        // Scholarship Workflow (SCHOLARSHIP_WORKFLOW_SPEC.md)
+        //   /api/v1/school/scholarships{,/{id}}                    — admin scheme CRUD
+        //   /api/v1/school/scholarship-applications{,/{id}/{approve,reject,disburse}}  — admin review
+        //   /api/v1/school/scholarship-renewals{,/{id}/{approve,reject}}              — admin renewals
+        //   /api/v1/parent/scholarships{,/apply,/applications,/{id}/renew}            — parent
+        scholarshipRouting()
+
+        // Server health check — pinged by GitHub Action every 1 min to keep Render awake
+        healthCheckRouting()           // /api/v1/health
+
+        // ID Card Generation (ID_CARD_GENERATION_SPEC.md)
+        //   /api/v1/school/id-cards/{templates,generate}  — admin
+        //   /api/v1/parent/id-card/{childId}              — parent
+        //   /api/v1/teacher/id-card                       — teacher
+        //   /api/v1/staff/id-card                         — staff
+        idCardRouting()
+
+        // ID Card Expiry Check — daily background job (§14)
+        IdCardExpiryCheckJob().start()
+
+        // School Branding Kit (SCHOOL_BRANDING_KIT_SPEC.md)
+        //   /api/v1/school/branding{,/reset,/subdomain{,/check}}  — admin
+        //   /api/v1/branding/{schoolId,/subdomain/{subdomain}}     — public
+        brandingRouting()
+
+        // Library Management (LIBRARY_MANAGEMENT_SPEC.md)
+        //   /api/v1/school/library/*   — admin (books, issues, categories, settings, dashboard, audit, announcements, acquisitions)
+        //   /api/v1/parent/library/*   — parent (search, reserve, reservations)
+        //   /api/v1/student/library/*  — student (search, wishlist, goals, badges, discussions, acquisitions, reserve)
+        libraryRouting()
+
+        // Message Scheduling (MESSAGE_SCHEDULING_PLAN.md §5)
+        //   /api/v1/school/scheduled-messages          — admin, teacher
+        scheduledMessageRouting()
+
+        // School Day Configuration (TIMETABLE_CLASS_TEACHER_PLAN.md Phase 0)
+        //   /api/v1/school/day-config          — admin, school-scoped CRUD
+        schoolDayConfigRouting()
+        timetableImportRouting()
+
+        // Multi-Branch / School Chain Support (MULTI_BRANCH_SPEC.md)
+        //   /api/admin/organizations[…]              — super admin: org CRUD, branch linking, admin promotion
+        //   /api/v1/organization/{dashboard,branches,compare,transfers[…]}  — org admin: aggregate views + transfers
+        organizationRouting()
+
+        // Agentic Syllabus Management — admin pace monitoring
+        //   /api/v1/school/pace/{snapshots,alerts,alerts/{id}/resolve}
+        syllabusPaceRouting()
     }
 }

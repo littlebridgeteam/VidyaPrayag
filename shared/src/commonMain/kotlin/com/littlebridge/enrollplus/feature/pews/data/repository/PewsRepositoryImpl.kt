@@ -13,12 +13,16 @@ import com.littlebridge.enrollplus.feature.pews.data.remote.PewsApi
 import com.littlebridge.enrollplus.feature.pews.domain.model.PewsCohortDto
 import com.littlebridge.enrollplus.feature.pews.domain.model.PewsConfigDto
 import com.littlebridge.enrollplus.feature.pews.domain.model.PewsEffectivenessDto
+import com.littlebridge.enrollplus.feature.pews.domain.model.PewsEffectivenessTrendDto
 import com.littlebridge.enrollplus.feature.pews.domain.model.PewsInterventionDto
+import com.littlebridge.enrollplus.feature.pews.domain.model.PewsJobStatusDto
 import com.littlebridge.enrollplus.feature.pews.domain.model.PewsParentNudgeDto
 import com.littlebridge.enrollplus.feature.pews.domain.model.PewsRunResultDto
 import com.littlebridge.enrollplus.feature.pews.domain.model.PewsStudentDetailDto
 import com.littlebridge.enrollplus.feature.pews.domain.model.PewsStudentDto
 import com.littlebridge.enrollplus.feature.pews.domain.model.UpdateInterventionRequest
+import com.littlebridge.enrollplus.feature.pews.domain.model.ParentDraftDto
+import com.littlebridge.enrollplus.feature.pews.domain.model.SendParentMessageDto
 import com.littlebridge.enrollplus.feature.pews.domain.repository.PewsRepository
 
 class PewsRepositoryImpl(
@@ -49,6 +53,12 @@ class PewsRepositoryImpl(
     override suspend fun runNow(token: String): NetworkResult<ApiResponse<PewsRunResultDto>> =
         api.runNow(token)
 
+    override suspend fun getJobStatus(token: String, jobId: String): NetworkResult<ApiResponse<PewsJobStatusDto>> =
+        api.getJobStatus(token, jobId)
+
+    override suspend fun getTrend(token: String, days: Int): NetworkResult<ApiResponse<PewsEffectivenessTrendDto>> =
+        api.getTrend(token, days)
+
     override suspend fun getTeacherStudents(token: String): NetworkResult<ApiResponse<List<PewsStudentDto>>> =
         api.getTeacherStudents(token)
 
@@ -58,6 +68,15 @@ class PewsRepositoryImpl(
     override suspend fun updateTeacherIntervention(token: String, interventionId: String, request: UpdateInterventionRequest): NetworkResult<ApiResponse<Map<String, Boolean>>> =
         api.updateTeacherIntervention(token, interventionId, request)
 
+    override suspend fun generateParentDraft(token: String, interventionId: String, lang: String): NetworkResult<ApiResponse<ParentDraftDto>> =
+        api.generateParentDraft(token, interventionId, lang)
+
+    override suspend fun sendParentMessage(token: String, interventionId: String): NetworkResult<ApiResponse<SendParentMessageDto>> =
+        api.sendParentMessage(token, interventionId)
+
     override suspend fun getParentNudge(token: String, childId: String): NetworkResult<ApiResponse<PewsParentNudgeDto>> =
         api.getParentNudge(token, childId)
+
+    override suspend fun acknowledgeNudge(token: String, childId: String): NetworkResult<ApiResponse<Map<String, Boolean>>> =
+        api.ackParentNudge(token, childId)
 }

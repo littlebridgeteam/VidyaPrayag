@@ -198,6 +198,15 @@ class PewsInterventionService {
         val outcome: String?,
         val openedAt: String,
         val resolvedAt: String?,
+        // PEWS 2.0 — managed casework fields
+        val escalationLevel: Int = 0,
+        val slaDays: Int? = null,
+        val followUpDate: String? = null,
+        val urgency: String? = null,
+        val causeFamily: String? = null,
+        val planJson: String? = null,
+        val initiatedByName: String? = null,
+        val initiatedByRole: String? = null,
     )
 
     /** Update status/notes; when status=done/dismissed, stamp resolvedAt + outcome. */
@@ -237,6 +246,49 @@ class PewsInterventionService {
         }
     }
 
+    /** Read a single intervention (with student identity) by id, scoped to school. */
+    suspend fun getIntervention(
+        schoolId: UUID,
+        interventionId: UUID,
+    ): InterventionView? = dbQuery {
+        val r = PewsInterventionsTable.selectAll().where {
+            (PewsInterventionsTable.id eq interventionId) and
+                (PewsInterventionsTable.schoolId eq schoolId)
+        }.singleOrNull() ?: return@dbQuery null
+
+        val code = r[PewsInterventionsTable.studentCode]
+        val s = StudentsTable.selectAll().where {
+            (StudentsTable.schoolId eq schoolId) and (StudentsTable.studentCode eq code)
+        }.singleOrNull()
+
+        val owner = AppUsersTable.selectAll().where {
+            AppUsersTable.id eq r[PewsInterventionsTable.ownerUserId]
+        }.singleOrNull()
+
+        InterventionView(
+            id = r[PewsInterventionsTable.id].value,
+            studentCode = code,
+            studentName = s?.get(StudentsTable.fullName) ?: code,
+            className = s?.get(StudentsTable.className) ?: "",
+            section = s?.get(StudentsTable.section) ?: "",
+            ownerUserId = r[PewsInterventionsTable.ownerUserId],
+            actionType = r[PewsInterventionsTable.actionType],
+            status = r[PewsInterventionsTable.status],
+            notes = r[PewsInterventionsTable.notes],
+            outcome = r[PewsInterventionsTable.outcome],
+            openedAt = r[PewsInterventionsTable.openedAt].toString(),
+            resolvedAt = r[PewsInterventionsTable.resolvedAt]?.toString(),
+            escalationLevel = r[PewsInterventionsTable.escalationLevel],
+            slaDays = r[PewsInterventionsTable.slaDays],
+            followUpDate = r[PewsInterventionsTable.followUpDate]?.toString(),
+            urgency = r[PewsInterventionsTable.urgency],
+            causeFamily = r[PewsInterventionsTable.causeFamily],
+            planJson = r[PewsInterventionsTable.planJson],
+            initiatedByName = owner?.get(AppUsersTable.fullName),
+            initiatedByRole = owner?.get(AppUsersTable.role),
+        )
+    }
+
     /** List interventions for a school, optionally filtered by owner/status. */
     suspend fun listInterventions(
         schoolId: UUID,
@@ -258,9 +310,16 @@ class PewsInterventionService {
             (StudentsTable.schoolId eq schoolId) and (StudentsTable.studentCode inList codes)
         }.associateBy { it[StudentsTable.studentCode] }
 
+        // batch-load owner identity
+        val ownerIds = rows.map { it[PewsInterventionsTable.ownerUserId] }.distinct()
+        val ownerById = AppUsersTable.selectAll().where {
+            AppUsersTable.id inList ownerIds.map { org.jetbrains.exposed.dao.id.EntityID(it, AppUsersTable) }
+        }.associateBy { it[AppUsersTable.id].value }
+
         rows.map { r ->
             val code = r[PewsInterventionsTable.studentCode]
             val s = studentByCode[code]
+            val owner = ownerById[r[PewsInterventionsTable.ownerUserId]]
             InterventionView(
                 id = r[PewsInterventionsTable.id].value,
                 studentCode = code,
@@ -274,6 +333,14 @@ class PewsInterventionService {
                 outcome = r[PewsInterventionsTable.outcome],
                 openedAt = r[PewsInterventionsTable.openedAt].toString(),
                 resolvedAt = r[PewsInterventionsTable.resolvedAt]?.toString(),
+                escalationLevel = r[PewsInterventionsTable.escalationLevel],
+                slaDays = r[PewsInterventionsTable.slaDays],
+                followUpDate = r[PewsInterventionsTable.followUpDate]?.toString(),
+                urgency = r[PewsInterventionsTable.urgency],
+                causeFamily = r[PewsInterventionsTable.causeFamily],
+                planJson = r[PewsInterventionsTable.planJson],
+                initiatedByName = owner?.get(AppUsersTable.fullName),
+                initiatedByRole = owner?.get(AppUsersTable.role),
             )
         }
     }

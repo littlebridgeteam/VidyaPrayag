@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -52,8 +53,19 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
@@ -71,8 +83,13 @@ fun TeacherPewsScreenV2(
         TeacherPewsContent(
             state = state,
             onRetry = viewModel::load,
+            onStart = { id -> viewModel.updateIntervention(id, status = "in_progress") },
             onMarkDone = { id, outcome -> viewModel.updateIntervention(id, status = "done", outcome = outcome) },
             onDismiss = { id -> viewModel.updateIntervention(id, status = "dismissed") },
+            onGenerateDraft = { id, lang -> viewModel.generateParentDraft(id, lang) },
+            onSendParentMessage = viewModel::sendParentMessage,
+            onClearDraft = viewModel::clearDraft,
+            onClearMessage = viewModel::clearMessages,
             modifier = Modifier.fillMaxSize(),
         )
     }
@@ -82,8 +99,13 @@ fun TeacherPewsScreenV2(
 private fun TeacherPewsContent(
     state: TeacherPewsState,
     onRetry: () -> Unit,
+    onStart: (String) -> Unit,
     onMarkDone: (String, String) -> Unit,
     onDismiss: (String) -> Unit,
+    onGenerateDraft: (String, String) -> Unit,
+    onSendParentMessage: (String) -> Unit,
+    onClearDraft: (String) -> Unit,
+    onClearMessage: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val c = VTheme.colors
@@ -109,8 +131,14 @@ private fun TeacherPewsContent(
                     s = s,
                     interventions = byStudent[s.studentCode].orEmpty(),
                     updatingIds = state.updatingIds,
+                    parentDrafts = state.parentDrafts,
+                    draftLoadingIds = state.draftLoadingIds,
+                    onStart = onStart,
                     onMarkDone = onMarkDone,
                     onDismiss = onDismiss,
+                    onGenerateDraft = onGenerateDraft,
+                    onSendParentMessage = onSendParentMessage,
+                    onClearDraft = onClearDraft,
                 )
             }
             item { Spacer(Modifier.height(24.dp)) }
@@ -123,8 +151,14 @@ private fun TeacherStudentCard(
     s: PewsStudentDto,
     interventions: List<PewsInterventionDto>,
     updatingIds: Set<String>,
+    parentDrafts: Map<String, com.littlebridge.enrollplus.feature.pews.domain.model.ParentDraftDto>,
+    draftLoadingIds: Set<String>,
+    onStart: (String) -> Unit,
     onMarkDone: (String, String) -> Unit,
     onDismiss: (String) -> Unit,
+    onGenerateDraft: (String, String) -> Unit,
+    onSendParentMessage: (String) -> Unit,
+    onClearDraft: (String) -> Unit,
 ) {
     val c = VTheme.colors
     val (tone, levelLabel) = when (s.riskLevel) {
@@ -146,6 +180,10 @@ private fun TeacherStudentCard(
                 )
             }
             VBadge(text = levelLabel, tone = tone)
+            if (s.hasOpenIntervention) {
+                Spacer(Modifier.width(4.dp))
+                VBadge(text = "Under intervention", tone = VBadgeTone.Neutral)
+            }
         }
 
         // deterministic metrics
@@ -182,17 +220,157 @@ private fun TeacherStudentCard(
         interventions.filter { it.status == "open" || it.status == "in_progress" }.forEach { iv ->
             Spacer(Modifier.height(10.dp))
             Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(c.cream).padding(10.dp)) {
+                val notes = iv.notes
                 Column {
-                    Text(iv.actionType.replace('_', ' '), style = VTheme.type.label.colored(c.ink).copy(fontWeight = FontWeight.SemiBold, fontSize = 12.sp))
-                    if (!iv.notes.isNullOrBlank()) {
-                        Spacer(Modifier.height(4.dp))
-                        Text(iv.notes, style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp, lineHeight = 17.sp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(iv.actionType.replace('_', ' '), style = VTheme.type.label.colored(c.ink).copy(fontWeight = FontWeight.SemiBold, fontSize = 12.sp), modifier = Modifier.weight(1f))
+                        // Escalation badge
+                        if (iv.escalationLevel > 0) {
+                            val escLabel = if (iv.escalationLevel >= 2) "ESCALATED" else "REMINDED"
+                            val escTone = if (iv.escalationLevel >= 2) VBadgeTone.Danger else VBadgeTone.Warning
+                            VBadge(text = escLabel, tone = escTone)
+                        }
                     }
-                    Spacer(Modifier.height(8.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        VButton("Improved", { onMarkDone(iv.id, "improved") }, variant = VButtonVariant.Primary, size = VButtonSize.Sm, enabled = iv.id !in updatingIds)
-                        VButton("No change", { onMarkDone(iv.id, "unchanged") }, variant = VButtonVariant.Secondary, size = VButtonSize.Sm, enabled = iv.id !in updatingIds)
-                        VButton("Dismiss", { onDismiss(iv.id) }, variant = VButtonVariant.Ghost, size = VButtonSize.Sm, enabled = iv.id !in updatingIds)
+                    // Urgency + SLA
+                    iv.urgency?.let { urg ->
+                        Spacer(Modifier.height(4.dp))
+                        val urgColor = when (urg) { "high" -> c.dangerInk; "medium" -> c.warningInk; else -> c.ink3 }
+                        Text("Urgency: ${urg}", style = VTheme.type.caption.colored(urgColor).copy(fontSize = 11.sp))
+                    }
+                    iv.slaDays?.let { sla ->
+                        Text("SLA: $sla days${iv.followUpDate?.let { " · follow-up $it" } ?: ""}", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp))
+                    }
+                    if (!notes.isNullOrBlank()) {
+                        Spacer(Modifier.height(4.dp))
+                        Text(notes, style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp, lineHeight = 17.sp))
+                    }
+                    // Plan steps
+                    iv.planJson?.let { planJson ->
+                        val steps = parseTeacherPlanSteps(planJson)
+                        if (steps.isNotEmpty()) {
+                            Spacer(Modifier.height(6.dp))
+                            Text("PLAN", style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 10.sp))
+                            Spacer(Modifier.height(4.dp))
+                            steps.forEachIndexed { i, step ->
+                                Text("${i + 1}. $step", style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 11.sp, lineHeight = 15.sp))
+                            }
+                        }
+                    }
+
+                    // Parent draft — prefer pre-generated from CaseFile (DTO), fall back to API-generated
+                    val draftBody = parentDrafts[iv.id]?.body ?: iv.parentDraftBody
+                    val draftLang = parentDrafts[iv.id]?.language ?: iv.parentDraftLang
+                    val isParentAction = iv.actionType.contains("parent") || iv.actionType.contains("message") || iv.actionType.contains("call") || iv.actionType.contains("visit")
+                    val hasDraft = draftBody != null
+
+                    if (hasDraft && draftBody != null) {
+                        Spacer(Modifier.height(8.dp))
+                        Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(c.teal.copy(alpha = 0.1f)).padding(8.dp)) {
+                            Column {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(VIcons.Sparkles, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(12.dp))
+                                    Spacer(Modifier.size(4.dp))
+                                    Text("PARENT MESSAGE (${draftLang?.uppercase() ?: "EN"})", style = VTheme.type.label.colored(c.tealDeep).copy(fontWeight = FontWeight.Bold, fontSize = 10.sp), modifier = Modifier.weight(1f))
+                                    if (parentDrafts[iv.id] != null) {
+                                        VButton("✕", { onClearDraft(iv.id) }, variant = VButtonVariant.Ghost, size = VButtonSize.Sm)
+                                    }
+                                }
+                                Spacer(Modifier.height(4.dp))
+                                Text(draftBody, style = VTheme.type.body.colored(c.ink).copy(fontSize = 12.sp, lineHeight = 17.sp))
+                            }
+                        }
+                    }
+
+                    // Workflow actions — driven by action type and status
+                    Spacer(Modifier.height(10.dp))
+                    val isUpdating = iv.id in updatingIds
+                    val isDraftLoading = iv.id in draftLoadingIds
+
+                    if (iv.status == "open") {
+                        // Open: Start + Dismiss
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            VButton("Start", { onStart(iv.id) }, variant = VButtonVariant.Primary, size = VButtonSize.Sm, enabled = !isUpdating)
+                            VButton("Dismiss", { onDismiss(iv.id) }, variant = VButtonVariant.Ghost, size = VButtonSize.Sm, enabled = !isUpdating)
+                        }
+                    } else if (iv.status == "in_progress") {
+                        // In-progress: show who initiated it
+                        val initiatorLabel = iv.initiatedByName?.let { name ->
+                            val role = iv.initiatedByRole?.let { r ->
+                                if (r in listOf("school_admin", "admin")) "Admin" else "Teacher"
+                            } ?: ""
+                            "✓ Initiated by $name${if (role.isNotBlank()) " ($role)" else ""}"
+                        }
+                        if (initiatorLabel != null) {
+                            Spacer(Modifier.height(6.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Icon(VIcons.Check, contentDescription = null, tint = c.success, modifier = Modifier.size(13.dp))
+                                Text(initiatorLabel, style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 11.sp))
+                            }
+                        }
+                        // action-type-specific workflow
+                        if (isParentAction) {
+                            // Parent-contact action: Send the message
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                if (hasDraft) {
+                                    VButton(
+                                        "Send to parent",
+                                        { onSendParentMessage(iv.id) },
+                                        variant = VButtonVariant.Primary,
+                                        size = VButtonSize.Sm,
+                                        enabled = !isUpdating,
+                                    )
+                                } else {
+                                    var draftLang by remember { mutableStateOf("en") }
+                                    var langDropdownOpen by remember { mutableStateOf(false) }
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    ) {
+                                        VButton(
+                                            "Draft parent message",
+                                            { onGenerateDraft(iv.id, draftLang) },
+                                            variant = VButtonVariant.Secondary,
+                                            size = VButtonSize.Sm,
+                                            enabled = !isDraftLoading,
+                                        )
+                                        Box {
+                                            VButton(
+                                                draftLang.uppercase(),
+                                                { langDropdownOpen = true },
+                                                variant = VButtonVariant.Ghost,
+                                                size = VButtonSize.Sm,
+                                            )
+                                            DropdownMenu(
+                                                expanded = langDropdownOpen,
+                                                onDismissRequest = { langDropdownOpen = false },
+                                                containerColor = c.card,
+                                            ) {
+                                                listOf("en" to "English", "hi" to "हिन्दी", "mr" to "मराठी", "ta" to "தமிழ்", "te" to "తెలుగు", "bn" to "বাংলা").forEach { (code, label) ->
+                                                    DropdownMenuItem(
+                                                        text = { Text(label, style = VTheme.type.body.colored(c.ink)) },
+                                                        onClick = {
+                                                            draftLang = code
+                                                            langDropdownOpen = false
+                                                        },
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                VButton("Dismiss", { onDismiss(iv.id) }, variant = VButtonVariant.Ghost, size = VButtonSize.Sm, enabled = !isUpdating)
+                            }
+                        } else {
+                            // Non-parent action: mark outcome
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                VButton("Mark improved", { onMarkDone(iv.id, "improved") }, variant = VButtonVariant.Primary, size = VButtonSize.Sm, enabled = !isUpdating)
+                                VButton("No change", { onMarkDone(iv.id, "unchanged") }, variant = VButtonVariant.Secondary, size = VButtonSize.Sm, enabled = !isUpdating)
+                            }
+                            Spacer(Modifier.height(6.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                VButton("Dismiss", { onDismiss(iv.id) }, variant = VButtonVariant.Ghost, size = VButtonSize.Sm, enabled = !isUpdating)
+                            }
+                        }
                     }
                 }
             }
@@ -207,4 +385,23 @@ private fun MiniStat(label: String, value: String) {
         Text(value, style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 14.sp))
         Text(label, style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp))
     }
+}
+
+/** Parse plan_json to extract step descriptions. */
+private fun parseTeacherPlanSteps(planJson: String): List<String> {
+    return runCatching {
+        val json = Json { ignoreUnknownKeys = true }
+        val obj = json.parseToJsonElement(planJson)
+        val steps = obj.jsonObject["steps"]?.jsonArray
+            ?: obj.jsonObject["plan"]?.jsonArray
+            ?: return emptyList()
+        steps.mapNotNull { step ->
+            when (step) {
+                is JsonObject -> step["description"]?.jsonPrimitive?.contentOrNull
+                    ?: step["action"]?.jsonPrimitive?.contentOrNull
+                    ?: step["text"]?.jsonPrimitive?.contentOrNull
+                else -> step.jsonPrimitive.contentOrNull
+            }
+        }
+    }.getOrDefault(emptyList())
 }

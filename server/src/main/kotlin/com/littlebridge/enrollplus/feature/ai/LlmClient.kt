@@ -4,8 +4,8 @@
  *
  * ONE OpenAI-compatible chat-completions client, with a swappable
  * (baseUrl, apiKey, model) per call. Every free-tier provider we use
- * (Cerebras, Groq, SambaNova, Mistral, OpenRouter) speaks the same
- * `POST {baseUrl}/chat/completions` shape, so a single client covers all five
+ * (Cerebras, Groq, Groq-Fast, SambaNova, Mistral, OpenRouter, Gemini) speaks the same
+ * `POST {baseUrl}/chat/completions` shape, so a single client covers all seven
  * — the gateway picks the lane and hands this client the right triple.
  *
  * Mirrors the codebase's HTTP-client-per-concern pattern (OtpHttpClient,
@@ -41,16 +41,78 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import org.slf4j.LoggerFactory
 
 // ──────────────────────────────────────────────────────────────────────────
 // Wire DTOs (OpenAI chat-completions shape)
 // ──────────────────────────────────────────────────────────────────────────
 
+/** OpenAI-style function tool definition sent in the request. */
+@Serializable
+data class ToolDefinition(
+    val type: String = "function",
+    val function: ToolFunction,
+)
+
+@Serializable
+data class ToolFunction(
+    val name: String,
+    val description: String,
+    val parameters: kotlinx.serialization.json.JsonElement,
+)
+
+/** A tool call returned by the model in the response. */
+@Serializable
+data class ToolCall(
+    val id: String,
+    val type: String = "function",
+    val function: ToolCallFunction,
+)
+
+@Serializable
+data class ToolCallFunction(
+    val name: String,
+    val arguments: String,  // JSON string of arguments
+)
+
 @Serializable
 data class LlmMessage(
-    val role: String,        // system | user | assistant
-    val content: String,
+    val role: String,        // system | user | assistant | tool
+    val content: String? = null,
+    @SerialName("tool_calls") val toolCalls: List<ToolCall>? = null,
+    @SerialName("tool_call_id") val toolCallId: String? = null,
+)
+
+// ── Vision support (OpenAI-compatible content parts) ──────────────────────────
+
+@Serializable
+data class VisionContentPart(
+    val type: String,  // "text" | "image_url"
+    val text: String? = null,
+    @SerialName("image_url") val imageUrl: VisionImageUrl? = null,
+)
+
+@Serializable
+data class VisionImageUrl(
+    val url: String,
+)
+
+@Serializable
+data class VisionLlmMessage(
+    val role: String,
+    val content: List<VisionContentPart>,
+)
+
+@Serializable
+private data class VisionChatCompletionRequest(
+    val model: String,
+    val messages: List<VisionLlmMessage>,
+    val temperature: Double = 0.4,
+    @SerialName("max_tokens") val maxTokens: Int = 1024,
+    val stream: Boolean = false,
 )
 
 @Serializable
@@ -60,6 +122,8 @@ private data class ChatCompletionRequest(
     val temperature: Double = 0.4,
     @SerialName("max_tokens") val maxTokens: Int = 1024,
     val stream: Boolean = false,
+    val tools: List<ToolDefinition>? = null,
+    @SerialName("tool_choice") val toolChoice: String? = null,
 )
 
 @Serializable
@@ -97,10 +161,17 @@ data class LlmResult(
     val errorKind: LlmErrorKind? = null,
     val httpStatus: Int? = null,
     val errorMessage: String? = null,
+    val toolCalls: List<ToolCall>? = null,
+    val finishReason: String? = null,
 ) {
     companion object {
-        fun success(content: String, inTok: Int, outTok: Int, model: String?) =
-            LlmResult(ok = true, content = content, inputTokens = inTok, outputTokens = outTok, modelUsed = model)
+        fun success(
+            content: String?, inTok: Int, outTok: Int, model: String?,
+            toolCalls: List<ToolCall>? = null, finishReason: String? = null,
+        ) = LlmResult(
+            ok = true, content = content, inputTokens = inTok, outputTokens = outTok,
+            modelUsed = model, toolCalls = toolCalls, finishReason = finishReason,
+        )
 
         fun failure(kind: LlmErrorKind, status: Int? = null, message: String? = null) =
             LlmResult(ok = false, errorKind = kind, httpStatus = status, errorMessage = message)
@@ -141,6 +212,8 @@ class LlmClient(
         temperature: Double = 0.4,
         maxTokens: Int = 1024,
         extraHeaders: Map<String, String> = emptyMap(),
+        tools: List<ToolDefinition>? = null,
+        toolChoice: String? = null,
     ): LlmResult {
         val url = "${baseUrl.trimEnd('/')}/chat/completions"
         val payload = ChatCompletionRequest(
@@ -148,6 +221,8 @@ class LlmClient(
             messages = messages,
             temperature = temperature,
             maxTokens = maxTokens,
+            tools = tools,
+            toolChoice = toolChoice,
         )
 
         val resp: HttpResponse = try {
@@ -178,15 +253,24 @@ class LlmClient(
             return LlmResult.failure(kind, status = status, message = bodyText.take(500))
         }
 
+        return parseResponse(resp, model)
+    }
+
+    private suspend fun parseResponse(resp: HttpResponse, model: String): LlmResult {
         val parsed = runCatching { resp.body<ChatCompletionResponse>() }.getOrElse {
-            log.warn("LLM response parse failed from {}: {}", baseUrl, it.message)
+            log.warn("LLM response parse failed: {}", it.message)
             return LlmResult.failure(LlmErrorKind.EMPTY_RESPONSE, message = "parse failed")
         }
 
-        val content = parsed.choices.firstOrNull()?.message?.content?.trim()
-        if (content.isNullOrBlank()) {
+        val choice = parsed.choices.firstOrNull()
+        val message = choice?.message
+        val content = message?.content?.trim()
+        val toolCalls = message?.toolCalls
+        val finishReason = choice?.finishReason
+
+        if (content.isNullOrBlank() && toolCalls.isNullOrEmpty()) {
             return LlmResult.failure(LlmErrorKind.EMPTY_RESPONSE, status = 200,
-                message = "no content in choices")
+                message = "no content or tool_calls in choices")
         }
 
         val usage = parsed.usage
@@ -195,7 +279,63 @@ class LlmClient(
             inTok = usage?.promptTokens ?: 0,
             outTok = usage?.completionTokens ?: 0,
             model = parsed.model ?: model,
+            toolCalls = toolCalls,
+            finishReason = finishReason,
         )
+    }
+
+    /**
+     * Vision completion: sends messages with mixed text + image content parts.
+     * Uses the same OpenAI-compatible chat-completions endpoint, but with
+     * content as an array of typed parts instead of a plain string.
+     * Response shape is identical to [complete].
+     */
+    suspend fun completeWithVision(
+        baseUrl: String,
+        apiKey: String,
+        model: String,
+        messages: List<VisionLlmMessage>,
+        temperature: Double = 0.4,
+        maxTokens: Int = 1024,
+        extraHeaders: Map<String, String> = emptyMap(),
+    ): LlmResult {
+        val url = "${baseUrl.trimEnd('/')}/chat/completions"
+        val req = VisionChatCompletionRequest(
+            model = model,
+            messages = messages,
+            temperature = temperature,
+            maxTokens = maxTokens,
+        )
+        val body = jsonCodec.encodeToString(VisionChatCompletionRequest.serializer(), req)
+
+        val resp = try {
+            client.post(url) {
+                contentType(ContentType.Application.Json)
+                header(HttpHeaders.Authorization, "Bearer $apiKey")
+                extraHeaders.forEach { (k, v) -> header(k, v) }
+                setBody(body)
+            }
+        } catch (e: Exception) {
+            log.warn("LLM vision transport error to {}: {}", baseUrl, e.message)
+            return LlmResult.failure(LlmErrorKind.NETWORK, message = e.message)
+        }
+
+        if (!resp.status.isSuccess()) {
+            val status = resp.status.value
+            val bodyText = runCatching { resp.bodyAsText() }.getOrDefault("")
+            val kind = when {
+                status == 429 -> LlmErrorKind.RATE_LIMITED
+                status == 401 || status == 403 -> LlmErrorKind.AUTH_ERROR
+                status in 500..599 -> LlmErrorKind.SERVER_ERROR
+                status in 400..499 -> LlmErrorKind.BAD_REQUEST
+                else -> LlmErrorKind.UNKNOWN
+            }
+            log.warn("LLM vision provider {} returned {} ({}): {}", baseUrl, status, kind,
+                bodyText.take(300))
+            return LlmResult.failure(kind, status = status, message = bodyText.take(500))
+        }
+
+        return parseResponse(resp, model)
     }
 
     companion object {
@@ -217,9 +357,9 @@ class LlmClient(
             HttpClient(CIO) {
                 expectSuccess = false   // we classify statuses ourselves
                 install(HttpTimeout) {
-                    connectTimeoutMillis = 8_000
-                    requestTimeoutMillis = 60_000
-                    socketTimeoutMillis = 60_000
+                    connectTimeoutMillis = 10_000
+                    requestTimeoutMillis = 120_000
+                    socketTimeoutMillis = 120_000
                 }
                 install(ContentNegotiation) { json(codec) }
                 install(Logging) { level = LogLevel.NONE }  // never echo prompts/keys

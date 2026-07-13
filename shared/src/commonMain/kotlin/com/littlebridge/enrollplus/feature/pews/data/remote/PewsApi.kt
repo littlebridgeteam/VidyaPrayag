@@ -16,11 +16,15 @@ import com.littlebridge.enrollplus.core.network.safeApiCall
 import com.littlebridge.enrollplus.feature.pews.domain.model.PewsCohortDto
 import com.littlebridge.enrollplus.feature.pews.domain.model.PewsConfigDto
 import com.littlebridge.enrollplus.feature.pews.domain.model.PewsEffectivenessDto
+import com.littlebridge.enrollplus.feature.pews.domain.model.PewsEffectivenessTrendDto
 import com.littlebridge.enrollplus.feature.pews.domain.model.PewsInterventionDto
+import com.littlebridge.enrollplus.feature.pews.domain.model.PewsJobStatusDto
 import com.littlebridge.enrollplus.feature.pews.domain.model.PewsParentNudgeDto
 import com.littlebridge.enrollplus.feature.pews.domain.model.PewsRunResultDto
 import com.littlebridge.enrollplus.feature.pews.domain.model.PewsStudentDetailDto
 import com.littlebridge.enrollplus.feature.pews.domain.model.PewsStudentDto
+import com.littlebridge.enrollplus.feature.pews.domain.model.ParentDraftDto
+import com.littlebridge.enrollplus.feature.pews.domain.model.SendParentMessageDto
 import com.littlebridge.enrollplus.feature.pews.domain.model.UpdateInterventionRequest
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
@@ -108,6 +112,22 @@ class PewsApi(
         client.post(getUrl("api/v1/school/pews/run"))
     }
 
+    suspend fun getJobStatus(
+        token: String,
+        jobId: String,
+    ): NetworkResult<ApiResponse<PewsJobStatusDto>> = safeApiCall {
+        client.get(getUrl("api/v1/school/pews/run/$jobId"))
+    }
+
+    suspend fun getTrend(
+        token: String,
+        days: Int = 30,
+    ): NetworkResult<ApiResponse<PewsEffectivenessTrendDto>> = safeApiCall {
+        client.get(getUrl("api/v1/school/pews/trend")) {
+            parameter("days", days)
+        }
+    }
+
     // ─────────────────────────────── TEACHER ────────────────────────────────
 
     suspend fun getTeacherStudents(
@@ -136,6 +156,23 @@ class PewsApi(
         }
     }
 
+    suspend fun generateParentDraft(
+        token: String,
+        interventionId: String,
+        lang: String = "en",
+    ): NetworkResult<ApiResponse<ParentDraftDto>> = safeApiCall {
+        client.post(getUrl("api/v1/teacher/pews/interventions/$interventionId/draft-message")) {
+            parameter("lang", lang)
+        }
+    }
+
+    suspend fun sendParentMessage(
+        token: String,
+        interventionId: String,
+    ): NetworkResult<ApiResponse<SendParentMessageDto>> = safeApiCall {
+        client.post(getUrl("api/v1/teacher/pews/interventions/$interventionId/send-parent-message"))
+    }
+
     // ─────────────────────────────── PARENT ─────────────────────────────────
 
     suspend fun getParentNudge(
@@ -143,5 +180,12 @@ class PewsApi(
         childId: String,
     ): NetworkResult<ApiResponse<PewsParentNudgeDto>> = safeApiCall {
         client.get(getUrl("api/v1/parent/pews/$childId"))
+    }
+
+    suspend fun ackParentNudge(
+        token: String,
+        childId: String,
+    ): NetworkResult<ApiResponse<Map<String, Boolean>>> = safeApiCall {
+        client.post(getUrl("api/v1/parent/pews/$childId/ack"))
     }
 }

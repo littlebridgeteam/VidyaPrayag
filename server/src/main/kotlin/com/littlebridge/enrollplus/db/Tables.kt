@@ -47,6 +47,7 @@ import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.date
 import org.jetbrains.exposed.sql.javatime.time
+import java.util.UUID
 import org.jetbrains.exposed.sql.javatime.timestamp
 
 // =====================================================================
@@ -74,6 +75,10 @@ object AppUsersTable : UUIDTable("app_users", "id") {
     // "system" | "light" | "dark" | "custom:<themeId>"). Synced from the client
     // via PUT /api/v1/user/theme-pref and read back in GET /api/v1/user/details.
     val themePref         = varchar("theme_pref", 64).nullable()
+    // Multi-Branch (MULTI_BRANCH_SPEC.md): org-level admin claims.
+    // Nullable for backward compatibility — standalone school admins remain unlinked.
+    val organizationId  = uuid("organization_id").nullable()
+    val orgAdminRole    = varchar("org_admin_role", 16).nullable() // org_admin | null
     val isActive         = bool("is_active").default(true)
     val lastLoginAt      = timestamp("last_login_at").nullable()
     val createdAt        = timestamp("created_at")
@@ -207,6 +212,11 @@ object SchoolsTable : UUIDTable("schools", "id") {
     // Nullable because legacy rows / address-only onboarding may not have them.
     val latitude       = double("latitude").nullable()
     val longitude      = double("longitude").nullable()
+    // Multi-Branch (MULTI_BRANCH_SPEC.md): links this school to a parent
+    // organization (school chain). Nullable for backward compatibility —
+    // standalone schools remain unlinked.
+    val organizationId = uuid("organization_id").nullable()
+    val branchName     = text("branch_name").nullable()
     val isActive       = bool("is_active").default(true)
     val onboardedAt    = timestamp("onboarded_at").nullable()
     // Explicit onboarding lifecycle mirror of onboarded_at: 'pending' until the
@@ -347,6 +357,7 @@ object AnnouncementsTable : UUIDTable("announcements", "id") {
     // The teacher/admin user that owns this broadcast. For teacher broadcasts the
     // recipient expansion is constrained to the classes/subjects they teach.
     val authorRole     = varchar("author_role", 16).default("school_admin")
+    val isCalendarOnly = bool("is_calendar_only").default(false)
     val syncedToWa  = bool("synced_to_wa").default(false)
     val createdBy   = uuid("created_by").nullable()
     val createdAt   = timestamp("created_at")
@@ -653,6 +664,16 @@ object FeeRecordsTable : UUIDTable("fee_records", "id") {
     val updatedAt   = timestamp("updated_at")
     // Notification scheduler: throttle fee reminders to at most once per 24h.
     val lastRemindedAt = timestamp("last_reminded_at").nullable()
+
+    // ── Scholarship waiver fields (migration_060) ───────────────────────
+    // When a scholarship is approved, FeeService.applyScholarship() records
+    // the waiver here so the fee record shows the original amount, the
+    // scholarship reduction, and the net payable. This is an additive change
+    // — existing rows have nulls (no scholarship applied).
+    val scholarshipId         = uuid("scholarship_id").nullable()      // FK scholarships.id
+    val scholarshipType       = varchar("scholarship_type", 16).nullable()  // fixed | full_waiver | partial_waiver
+    val scholarshipAmount     = double("scholarship_amount").nullable()     // waiver/discount amount applied
+    val originalAmount        = double("original_amount").nullable()        // fee amount before scholarship
 }
 
 // =====================================================================
@@ -813,6 +834,7 @@ object MessageStatusTable : UUIDTable("message_status", "id") {
     val userId         = uuid("user_id")                               // the recipient whose status this tracks
     val status         = varchar("status", 16)                         // SENT | DELIVERED | READ
     val createdAt      = timestamp("created_at")
+    val readAt         = timestamp("read_at").nullable()
 
     init {
         uniqueIndex("ux_message_status_msg_user", messageId, userId)
@@ -959,6 +981,9 @@ object AssessmentsTable : UUIDTable("assessments", "id") {
     // two in sync (status='published' ⇔ is_published=true).
     val status          = varchar("status", 16).default("draft")
     val createdBy       = uuid("created_by").nullable()         // FK app_users.id (author audit)
+    // AI Tutor 2.0: optional FK to curriculum_units for per-topic score derivation.
+    // Nullable for backward compat — existing assessments have no topic mapping.
+    val topicId         = uuid("topic_id").nullable()           // FK curriculum_units.id
 }
 
 /**
@@ -1048,8 +1073,26 @@ object CurriculumUnitsTable : UUIDTable("curriculum_units", "id") {
     val title     = text("title")
     val position  = integer("position").default(0)
     val isActive  = bool("is_active").default(true)
+    val depth     = integer("depth").default(0)
+    val approvalStatus = varchar("approval_status", 12).default("APPROVED") // DRAFT | APPROVED | REJECTED
     val createdAt = timestamp("created_at")
     val updatedAt = timestamp("updated_at")
+}
+
+/**
+ * Migration 111 — NCERT syllabus reference data for auto-fill.
+ * Keyed by (class_level, subject_name) → chapters_json.
+ */
+object NcertSyllabusReferenceTable : UUIDTable("ncert_syllabus_reference", "id") {
+    val classLevel   = varchar("class_level", 8)
+    val subjectName  = varchar("subject_name", 64)
+    val chaptersJson = text("chapters_json").default("[]")
+    val dataSource   = varchar("source", 32).default("NCERT")
+    val createdAt    = timestamp("created_at")
+    val updatedAt    = timestamp("updated_at")
+    init {
+        uniqueIndex("idx_ncert_ref_class_subject", classLevel, subjectName)
+    }
 }
 
 /**
@@ -1068,6 +1111,7 @@ object SyllabusProgressTable : UUIDTable("syllabus_progress", "id") {
     val coveredOn    = date("covered_on").nullable()     // TYPED (D-SYL-2)
     val coveredBy    = uuid("covered_by").nullable()     // FK app_users.id (teacher who toggled)
     val note         = text("note").nullable()
+    val coveragePercent = integer("coverage_percent").default(0)
     val createdAt    = timestamp("created_at")
     val updatedAt    = timestamp("updated_at")
     init {
@@ -1108,6 +1152,8 @@ object HomeworkTable : UUIDTable("homework", "id") {
     val dueDate     = date("due_date")                  // T-004: typed `date` (was varchar12)
     val dueTime     = time("due_time").nullable()       // T-404: optional cutoff time (D-HW-2)
     val allowLate   = bool("allow_late").default(false) // T-404: teacher policy (D-HW-4)
+    val isQuiz      = bool("is_quiz").default(false)
+    val quizMetaJson = text("quiz_meta_json").default("{}")
     val isActive    = bool("is_active").default(true)
     val createdAt   = timestamp("created_at")
     val updatedAt   = timestamp("updated_at")
@@ -1150,6 +1196,8 @@ object HomeworkSubmissionsTable : UUIDTable("homework_submissions", "id") {
     val grade       = text("grade").nullable()          // T-404: optional grade/feedback
     val reviewedBy  = uuid("reviewed_by").nullable()    // T-404: FK app_users.id
     val reviewedAt  = timestamp("reviewed_at").nullable()
+    val score       = integer("score").nullable()
+    val rank        = integer("rank").nullable()
     init {
         uniqueIndex("ux_homework_submissions_unique", homeworkId, studentId)
     }
@@ -1235,6 +1283,10 @@ object PeriodExceptionsTable : UUIDTable("period_exceptions", "id") {
     // assignment binding + display fallback (same demotion rule as periods).
     val assignmentId        = uuid("assignment_id").nullable()          // FK teacher_subject_assignments.id
     val note                = text("note").default("")
+    // Denormalised display columns (same pattern as TeacherPeriodsTable)
+    val className           = text("class_name").default("")
+    val section             = varchar("section", 8).default("A")
+    val subject             = text("subject").default("")
     val createdAt           = timestamp("created_at")
     val updatedAt           = timestamp("updated_at")
     init {
@@ -1247,15 +1299,26 @@ object PeriodExceptionsTable : UUIDTable("period_exceptions", "id") {
 // =====================================================================
 
 /**
- * Scholarship opportunities surfaced on the parent Scholarships screen.
+ * Scholarship schemes managed by school admins.
  *
- * Replaces the hardcoded `"$45,000 STEM Award"` fiction (audit §4.2/§5.2) the
- * `/scholarships` route used to return. Rows are operator-curated (seeded /
- * managed) opportunities; the endpoint reads real rows from here so adding or
- * retiring a scholarship is a DB write, not a redeploy. `isActive=false` hides
- * a row without deleting it. `position` controls display order.
+ * Originally a display-only parent feed table (title, display amount string,
+ * timeLeft). Extended per SCHOLARSHIP_WORKFLOW_SPEC.md to support the full
+ * workflow: scholarship types (fixed/full_waiver/partial_waiver), eligibility
+ * criteria, start/end dates, renewable flag, and school-scoping.
+ *
+ * Legacy display fields (title, amount as text, timeLeft, category, isCritical,
+ * position) are preserved for backward compatibility with the existing parent
+ * scholarships screen. New workflow fields are nullable/defaulted so existing
+ * rows and seed data continue to work.
+ *
+ * `isActive=false` hides a row without deleting it. `position` controls display
+ * order on the parent screen.
+ *
+ * Created/applied by docs/db/migration_060_scholarship_workflow.sql. Registered
+ * in DatabaseFactory.allTables.
  */
 object ScholarshipsTable : UUIDTable("scholarships", "id") {
+    // ── Legacy display fields (preserved for backward compat) ───────────
     val title       = text("title")
     val description = text("description")
     val amount      = text("amount")                    // display string e.g. "₹45,000"
@@ -1266,22 +1329,103 @@ object ScholarshipsTable : UUIDTable("scholarships", "id") {
     val isActive    = bool("is_active").default(true)
     val createdAt   = timestamp("created_at")
     val updatedAt   = timestamp("updated_at")
+
+    // ── Workflow fields (migration_060) ─────────────────────────────────
+    val schoolId              = uuid("school_id").nullable()          // FK schools.id — tenant scope (nullable for legacy rows)
+    val scholarshipType       = varchar("scholarship_type", 16).default("fixed")  // fixed | full_waiver | partial_waiver
+    val waiverPercentage      = float("waiver_percentage").nullable()  // for partial_waiver (0-100)
+    val numericAmount         = double("numeric_amount").nullable()    // numeric amount for fixed type (display amount stays as text)
+    val eligibilityCriteria   = text("eligibility_criteria").default("")  // human-readable criteria
+    val startDate             = varchar("start_date", 12).nullable()   // YYYY-MM-DD
+    val endDate               = varchar("end_date", 12).nullable()     // YYYY-MM-DD
+    val isRenewable           = bool("is_renewable").default(false)
+    val renewalPeriodMonths   = integer("renewal_period_months").nullable()  // 12 for annual
+
+    init {
+        index("idx_scholarships_school", false, schoolId, isActive)
+    }
 }
 
 /**
- * A parent's scholarship applications (the "applications" list on the same
- * screen). Scoped to the applying parent so each parent sees only their own.
- * `iconName` mirrors the UI's institution glyph.
+ * Scholarship applications from parents on behalf of students.
+ *
+ * Originally a display-only table (parentId, institution, program, status as
+ * display strings). Extended per SCHOLARSHIP_WORKFLOW_SPEC.md to support the
+ * full application workflow: link to scholarship scheme, student, academic
+ * year, document uploads, approval/rejection with remarks, disbursement
+ * tracking, and application text.
+ *
+ * Legacy display fields (parentId, institution, program, status as display
+ * string, iconName, position) are preserved for backward compatibility. The
+ * `status` field now serves dual duty: legacy display values (Received/Under
+ * Review/Shortlisted) for old rows, and workflow values (PENDING/APPROVED/
+ * REJECTED/DISBURSED) for new workflow applications.
+ *
+ * Created/applied by docs/db/migration_060_scholarship_workflow.sql.
  */
 object ScholarshipApplicationsTable : UUIDTable("scholarship_applications", "id") {
+    // ── Legacy display fields (preserved for backward compat) ───────────
     val parentId    = uuid("parent_id")                 // FK app_users.id
     val institution = text("institution")
     val program     = text("program")
-    val status      = varchar("status", 24).default("Received") // Received | Under Review | Shortlisted
+    val status      = varchar("status", 24).default("PENDING") // PENDING | APPROVED | REJECTED | DISBURSED (legacy: Received|Under Review|Shortlisted)
     val iconName    = varchar("icon_name", 32).default("school")
     val position    = integer("position").default(0)
     val createdAt   = timestamp("created_at")
     val updatedAt   = timestamp("updated_at")
+
+    // ── Workflow fields (migration_060) ─────────────────────────────────
+    val scholarshipId           = uuid("scholarship_id").nullable()    // FK scholarships.id
+    val studentId              = uuid("student_id").nullable()         // FK children/students table
+    val academicYearId         = uuid("academic_year_id").nullable()   // FK academic_years.id
+    val documentUrls           = text("document_urls").nullable()      // JSON array of S3 URLs
+    val parentApplicationText  = text("parent_application_text").nullable()
+    val reviewedAt             = timestamp("reviewed_at").nullable()
+    val reviewedBy             = uuid("reviewed_by").nullable()        // FK app_users.id (admin)
+    val remarks                = text("remarks").nullable()
+    val disbursementAmount     = double("disbursement_amount").nullable()
+    val disbursementDate       = timestamp("disbursement_date").nullable()
+    val disbursementReference  = text("disbursement_reference").nullable()
+
+    init {
+        index("idx_scholarship_apps_status", false, status, academicYearId)
+        index("idx_scholarship_apps_parent", false, parentId)
+        index("idx_scholarship_apps_scholarship", false, scholarshipId)
+    }
+}
+
+// =====================================================================
+// Scholarship Renewals (SCHOLARSHIP_WORKFLOW_SPEC.md §6.2)
+// =====================================================================
+
+/**
+ * Renewal applications for renewable scholarships.
+ *
+ * Linked to the original approved application. Follows the same approval
+ * workflow (pending → approved/rejected). On approval, fee waiver is
+ * re-applied for the new academic year.
+ *
+ * Created/applied by docs/db/migration_060_scholarship_workflow.sql.
+ * Registered in DatabaseFactory.allTables.
+ */
+object ScholarshipRenewalsTable : UUIDTable("scholarship_renewals", "id") {
+    val originalApplicationId = uuid("original_application_id")        // FK scholarship_applications.id
+    val studentId             = uuid("student_id")
+    val scholarshipId         = uuid("scholarship_id")                 // FK scholarships.id
+    val schoolId              = uuid("school_id")
+    val academicYearId        = uuid("academic_year_id")               // FK academic_years.id
+    val status                = varchar("status", 16).default("pending")  // pending | approved | rejected
+    val documentUrls          = text("document_urls").nullable()       // JSON array of S3 URLs
+    val appliedAt             = timestamp("applied_at")
+    val reviewedAt            = timestamp("reviewed_at").nullable()
+    val reviewedBy            = uuid("reviewed_by").nullable()         // FK app_users.id (admin)
+    val remarks               = text("remarks").nullable()
+
+    init {
+        index("idx_scholarship_renewals_original", false, originalApplicationId)
+        index("idx_scholarship_renewals_student", false, studentId, academicYearId)
+        index("idx_scholarship_renewals_school", false, schoolId, status)
+    }
 }
 
 // =====================================================================
@@ -1500,6 +1644,7 @@ object ParentChildLinksTable : UUIDTable("parent_child_links", "id") {
  */
 object NonTeachingStaffTable : UUIDTable("non_teaching_staff", "id") {
     val schoolId    = uuid("school_id")                         // FK schools.id — tenant scope
+    val appUserId   = uuid("app_user_id").nullable()            // FK app_users.id — OPT-06
     val fullName    = text("full_name")
     val role        = text("role")                              // e.g. "Accountant", "Librarian"
     val department  = text("department").nullable()             // e.g. "Office", "Transport"
@@ -1618,6 +1763,14 @@ object CalendarEventsTable : UUIDTable("calendar_events", "id") {
     val updatedAt       = timestamp("updated_at")
     // Notification scheduler: marks whether a reminder has been sent for this event.
     val reminderSent    = bool("reminder_sent").default(false)
+    // Event Registration system (EVENT_REGISTRATION_PLAN.md §3.2) — additive columns
+    // so calendar_events can act as the single source of truth for events with
+    // optional registration / RSVP. All nullable or defaulted so existing rows
+    // and non-registration event types are unaffected.
+    val registrationEnabled  = bool("registration_enabled").default(false)
+    val registrationDeadline = varchar("registration_deadline", 12).nullable()   // YYYY-MM-DD
+    val maxAttendees         = integer("max_attendees").nullable()                // overall cap (null = unlimited)
+    val venue                = text("venue").nullable()                          // location text
 }
 
 /**
@@ -1641,6 +1794,53 @@ object AcademicYearsTable : UUIDTable("academic_years", "id") {
     val holidayDays   = integer("holiday_days").nullable()
     val createdAt     = timestamp("created_at")
     val updatedAt     = timestamp("updated_at")
+}
+
+// =====================================================================
+// event_slots  (Event Registration System — EVENT_REGISTRATION_PLAN.md §3.1)
+//   Structured time slots for a calendar event that has registration enabled.
+//   Each slot has a capacity (default 1 for PTM, higher for workshops) and
+//   active flag so admins can deactivate without deleting. FK to calendar_events
+//   via event_id (soft FK — no Exposed FK constraint, enforced in routing).
+//   UNIQUE(event_id, start_time) prevents duplicate slots for the same event.
+// =====================================================================
+object EventSlotsTable : UUIDTable("event_slots", "id") {
+    val eventId     = uuid("event_id")                       // FK calendar_events.id
+    val startTime   = varchar("start_time", 8)               // HH:mm (24h)
+    val endTime     = varchar("end_time", 8)                 // HH:mm (24h)
+    val capacity    = integer("capacity").default(1)         // max registrations per slot
+    val isActive    = bool("is_active").default(true)
+    val createdAt   = timestamp("created_at")
+    val updatedAt   = timestamp("updated_at")
+    init {
+        uniqueIndex("ux_event_slots_event_start", eventId, startTime)
+    }
+}
+
+// =====================================================================
+// event_registrations  (Event Registration System — EVENT_REGISTRATION_PLAN.md §3.1)
+//   Parent registrations for events. slot_id is nullable for open (non-slotted)
+//   events. student_id is nullable for school-wide events. school_id is the
+//   tenant scope. status: REGISTERED | CANCELLED | WAITLISTED | CHECKED_IN.
+//   client_request_id enables idempotent registration (offline sync retries).
+//   UNIQUE(event_id, parent_user_id, student_id) prevents duplicate registrations.
+// =====================================================================
+object EventRegistrationsTable : UUIDTable("event_registrations", "id") {
+    val eventId         = uuid("event_id")                   // FK calendar_events.id
+    val slotId          = uuid("slot_id").nullable()         // FK event_slots.id (null for open events)
+    val parentUserId    = uuid("parent_user_id")            // FK app_users.id
+    val studentId       = uuid("student_id").nullable()     // FK students.id (for class-specific events)
+    val schoolId        = uuid("school_id")                 // FK schools.id — tenant scope
+    val attendeeCount   = integer("attendee_count").default(1)
+    val status          = varchar("status", 16).default("REGISTERED")  // REGISTERED | CANCELLED | WAITLISTED | CHECKED_IN
+    val cancelReason    = text("cancel_reason").nullable()
+    val registeredAt    = timestamp("registered_at")
+    val cancelledAt     = timestamp("cancelled_at").nullable()
+    val updatedAt       = timestamp("updated_at")
+    val clientRequestId = varchar("client_request_id", 64).nullable()  // idempotency key (X-Client-Request-Id)
+    init {
+        uniqueIndex("ux_event_registrations_unique", eventId, parentUserId, studentId)
+    }
 }
 
 // =====================================================================
@@ -1698,6 +1898,12 @@ object NotificationPreferencesTable : UUIDTable("notification_preferences", "id"
     val userId     = uuid("user_id")
     val category   = varchar("category", 32)               // attendance|marks|announcement|leave|fees|...
     val enabled    = bool("enabled").default(true)
+    // Per-channel opt-out (spec §15 Notification Preferences).
+    // When null, falls back to the channel matrix default for the category.
+    val pushEnabled  = bool("push_enabled").nullable()
+    val inAppEnabled = bool("in_app_enabled").nullable()
+    val emailEnabled = bool("email_enabled").nullable()
+    val smsEnabled   = bool("sms_enabled").nullable()
     val sound      = varchar("sound", 64).nullable()       // sound resource name or null for default
     val createdAt  = timestamp("created_at")
     val updatedAt  = timestamp("updated_at")
@@ -2238,8 +2444,8 @@ object TransportAttendanceTable : UUIDTable("transport_attendance", "id") {
 // =====================================================================
 // AI GATEWAY (AI_FEATURES_PLAN.md §4 / AI_INFRASTRUCTURE_SPEC.md §6)
 //   The shared, multi-provider AI choke point every AI feature calls.
-//   Provider strategy: five OpenAI-compatible free-tier providers
-//   (Cerebras / Groq / SambaNova / Mistral / OpenRouter) — see KeyVault.
+//   Provider strategy: seven OpenAI-compatible free-tier providers
+//   (Cerebras / Groq / Groq-Fast / SambaNova / Mistral / OpenRouter / Gemini) — see KeyVault.
 //
 //   Applied by docs/db/migration_060_ai_gateway.sql (must run BEFORE the
 //   matching deploy; AUTO_CREATE_TABLES is OFF in prod and validateSchema()
@@ -2258,7 +2464,7 @@ object TransportAttendanceTable : UUIDTable("transport_attendance", "id") {
  * env vars on boot and decrypts on demand (never logs the plaintext).
  */
 object AiProviderConfigTable : UUIDTable("ai_provider_config", "id") {
-    val provider            = varchar("provider", 32)               // cerebras|groq|sambanova|mistral|openrouter
+    val provider            = varchar("provider", 32)               // cerebras|groq|groq_fast|sambanova|mistral|openrouter|gemini
     val model               = varchar("model", 96)                  // pinned model id (capability, not brand)
     val apiKeyEncrypted     = text("api_key_encrypted")             // AES-256-GCM (empty = unconfigured)
     val baseUrl             = text("base_url")                      // OpenAI-compatible /v1 base
@@ -2398,9 +2604,15 @@ object PewsRiskSnapshotsTable : UUIDTable("pews_risk_snapshots", "id") {
     val aiRecommendation  = text("ai_recommendation").nullable()
     val aiProviderUsed    = varchar("ai_provider_used", 32).nullable()
     val createdAt         = timestamp("created_at")
+    // PEWS 2.0 — expanded feature vector columns
+    val confidence        = double("confidence").nullable()       // 0..1 — data completeness × signal agreement
+    val leadingScore      = integer("leading_score").nullable()   // weight leading indicators (predictive)
+    val causeFamily       = varchar("cause_family", 24).nullable() // attendance|academic|disengagement|wellbeing|financial|external
+    val deltasJson        = text("deltas_json").nullable()         // JSON of deltas vs last run (for auto-outcome)
     init {
         uniqueIndex("ux_pews_snap_unique", schoolId, studentCode, runDate)
         index("idx_pews_snap", false, schoolId, runDate, riskLevel)
+        index("idx_pews_snap_cause", false, schoolId, causeFamily)
     }
 }
 
@@ -2410,13 +2622,21 @@ object PewsInterventionsTable : UUIDTable("pews_interventions", "id") {
     val studentCode   = text("student_code")
     val snapshotId    = uuid("snapshot_id").nullable()      // FK pews_risk_snapshots.id
     val ownerUserId   = uuid("owner_user_id")               // assigned teacher/admin
-    val actionType    = varchar("action_type", 32)          // parent_call|home_visit|counselling|remedial_class|parent_message|observe
+    val actionType    = varchar("action_type", 32)          // parent_call|home_visit|counselling|remedial_class|parent_message|observe|mentor_pairing|fee_counselling
     val status        = varchar("status", 16).default("open") // open|in_progress|done|dismissed
     val notes         = text("notes").nullable()
     val openedAt      = timestamp("opened_at")
     val resolvedAt    = timestamp("resolved_at").nullable()
     val outcome       = varchar("outcome", 16).nullable()   // improved|unchanged|worsened (Learn stage)
     val createdAt     = timestamp("created_at")
+    // PEWS 2.0 — managed casework columns
+    val planJson      = text("plan_json").nullable()         // sequenced plan steps (JSON)
+    val slaDays       = integer("sla_days").nullable()       // SLA for this intervention
+    val escalationLevel = integer("escalation_level").default(0) // 0=normal, 1=reminded, 2=escalated to admin
+    val followUpDate  = date("follow_up_date").nullable()    // when to re-check this child
+    val caseFileId    = uuid("case_file_id").nullable()      // FK pews_case_files.id
+    val urgency       = varchar("urgency", 8).nullable()     // low|medium|high
+    val causeFamily   = varchar("cause_family", 24).nullable() // denormalized from snapshot for effectiveness queries
     init { index("idx_pews_intv", false, schoolId, status, ownerUserId) }
 }
 
@@ -2433,3 +2653,1025 @@ object PewsConfigTable : UUIDTable("pews_config", "id") {
     val parentShareEnabled    = bool("parent_share_enabled").default(false)
     val updatedAt             = timestamp("updated_at")
 }
+
+/** Tracks when a parent has viewed the PEWS nudge for a child on a given run date. */
+object PewsNudgeSeenTable : UUIDTable("pews_nudge_seen", "id") {
+    val childId          = uuid("child_id")
+    val parentId         = uuid("parent_id")
+    val snapshotRunDate  = date("snapshot_run_date")
+    val seenAt           = timestamp("seen_at")
+    init { index("idx_pews_nudge_seen", false, childId, parentId, snapshotRunDate) }
+}
+
+// =====================================================================
+// PEWS 2.0 — Feature flags / kill switch (hot-reloadable via polling).
+// One row per module name. "global" = entire PEWS kill switch.
+// =====================================================================
+
+object PewsFeatureFlagsTable : UUIDTable("pews_feature_flags", "id") {
+    val moduleName    = varchar("module_name", 48)   // "global" | "sense" | "triage" | "caseworker" | "act" | "learn"
+    val isKilled      = bool("is_killed").default(false)
+    val updatedAt     = timestamp("updated_at")
+    val updatedBy     = uuid("updated_by").nullable()
+    init {
+        uniqueIndex("ux_pews_flags_module", moduleName)
+    }
+}
+
+// =====================================================================
+// PEWS 2.0 — Case files (structured output from the Caseworker Agent).
+// One row per caseworker run. Stores the full structured JSON plus
+// extracted fields for querying (urgency, narrative, parent draft).
+// =====================================================================
+
+object PewsCaseFilesTable : UUIDTable("pews_case_files", "id") {
+    val schoolId        = uuid("school_id")
+    val snapshotId      = uuid("snapshot_id").nullable()    // FK pews_risk_snapshots.id
+    val studentCode     = text("student_code")
+    val caseFileJson    = text("case_file_json")            // full structured case file (JSON)
+    val narrative       = text("narrative").nullable()      // extracted for querying
+    val urgency         = varchar("urgency", 8).nullable()   // low|medium|high
+    val skipReason      = text("skip_reason").nullable()     // e.g. "exam week — defer"
+    val parentDraftJson = text("parent_draft_json").nullable() // vernacular draft (JSON)
+    val parentDraftLang = varchar("parent_draft_lang", 8).nullable() // hi|en|...
+    val providerUsed    = varchar("provider_used", 32).nullable()
+    val modelUsed       = varchar("model_used", 64).nullable()
+    val groundingPassed = bool("grounding_passed").default(true)
+    val createdAt       = timestamp("created_at")
+    init {
+        index("idx_pews_case_files", false, schoolId, studentCode)
+    }
+}
+
+// =====================================================================
+// PEWS 2.0 — Effectiveness priors (the flywheel's policy memory).
+// Per-school, per-cause-family, per-action-type: how often does this
+// action improve outcomes for this cause? This is what
+// get_similar_resolved_cases() reads and what the LEARN stage updates.
+// =====================================================================
+
+object PewsEffectivenessPriorsTable : UUIDTable("pews_effectiveness_priors", "id") {
+    val schoolId        = uuid("school_id")
+    val causeFamily     = varchar("cause_family", 24)       // attendance|academic|disengagement|wellbeing|financial|external
+    val actionType      = varchar("action_type", 32)        // parent_call|home_visit|counselling|...
+    val nTried          = integer("n_tried").default(0)
+    val nImproved       = integer("n_improved").default(0)
+    val improveRate     = double("improve_rate").default(0.0)
+    val avgDaysToImprove = double("avg_days_to_improve").default(0.0)
+    val updatedAt       = timestamp("updated_at")
+    init {
+        uniqueIndex("ux_pews_priors", schoolId, causeFamily, actionType)
+    }
+}
+
+// =====================================================================
+// AI Report Card 2.0 (AI_REPORT_CARD_2.0_AGENTIC_REDESIGN.md)
+//   5 new tables for the 5-tier agentic report card system.
+//   Applied by docs/db/migration_062_report_card.sql (must run before deploy;
+//   AUTO_CREATE_TABLES is OFF in prod and validateSchema() gates boot on it).
+// =====================================================================
+
+/**
+ * Per-student AI-generated report card draft. One row per
+ * (school, student, term, academic_year). Status state machine:
+ * draft → flagged_for_review → approved → published → archived.
+ */
+object ReportCardDraftsTable : UUIDTable("report_card_drafts", "id") {
+    val schoolId           = uuid("school_id")
+    val studentId          = uuid("student_id")
+    val classId            = uuid("class_id").nullable()
+    val className          = text("class_name")
+    val section            = varchar("section", 8).default("A")
+    val term               = varchar("term", 16)
+    val academicYearId     = uuid("academic_year_id").nullable()
+    val factBundle         = text("fact_bundle")
+    val factHash           = varchar("fact_hash", 64)
+    val aiDraft            = text("ai_draft").nullable()
+    val classContext       = text("class_context").nullable()
+    val aiProviderUsed     = varchar("ai_provider_used", 32).nullable()
+    val aiModelUsed        = varchar("ai_model_used", 96).nullable()
+    val tokensUsed         = integer("tokens_used").default(0)
+    val templateVersion    = integer("template_version").default(1)
+    val language           = varchar("language", 8).default("hi")
+    val status             = varchar("status", 24).default("draft")
+    val groundingFlags     = text("grounding_flags").nullable()
+    val editedBy           = uuid("edited_by").nullable()
+    val editedAt           = timestamp("edited_at").nullable()
+    val approvedBy         = uuid("approved_by").nullable()
+    val approvedAt         = timestamp("approved_at").nullable()
+    val publishedBy        = uuid("published_by").nullable()
+    val publishedAt        = timestamp("published_at").nullable()
+    val createdAt          = timestamp("created_at")
+    val updatedAt          = timestamp("updated_at")
+    init {
+        index("idx_rcd_school_class_term", false, schoolId, classId, term, academicYearId)
+        index("idx_rcd_status", false, schoolId, status)
+        index("idx_rcd_student", false, studentId, academicYearId)
+        uniqueIndex("ux_rcd_student_term_year", schoolId, studentId, term, academicYearId)
+    }
+}
+
+/**
+ * Tier 4 flywheel: tracks how effective focus-area recommendations were.
+ * One row per (school, focus_area, term, academic_year).
+ */
+object ReportFocusEffectivenessTable : UUIDTable("report_focus_effectiveness", "id") {
+    val schoolId           = uuid("school_id")
+    val focusArea          = varchar("focus_area", 64)
+    val term               = varchar("term", 16)
+    val academicYearId     = uuid("academic_year_id").nullable()
+    val studentsTargeted   = integer("students_targeted").default(0)
+    val studentsImproved   = integer("students_improved").default(0)
+    val avgDelta           = double("avg_delta").default(0.0)
+    val effectivenessScore = double("effectiveness_score").default(0.0)
+    val sampleSize         = integer("sample_size").default(0)
+    val confidence         = varchar("confidence", 16).default("low")
+    val metadata           = text("metadata").nullable()
+    val createdAt          = timestamp("created_at")
+    val updatedAt          = timestamp("updated_at")
+    init {
+        uniqueIndex("ux_rfe_school_focus_term", schoolId, focusArea, term, academicYearId)
+    }
+}
+
+/**
+ * NEP 2020 360-degree holistic assessment. Graceful when empty —
+ * Tier-0 treats absence as "no holistic data" (no crash).
+ */
+object HolisticAssessmentsTable : UUIDTable("holistic_assessments", "id") {
+    val schoolId           = uuid("school_id")
+    val studentId          = uuid("student_id")
+    val classId            = uuid("class_id").nullable()
+    val term               = varchar("term", 16)
+    val academicYearId     = uuid("academic_year_id").nullable()
+    val assessorType       = varchar("assessor_type", 16)  // self|peer|teacher|parent
+    val assessorId         = uuid("assessor_id").nullable()
+    val criticalThinking   = integer("critical_thinking").nullable()
+    val creativity          = integer("creativity").nullable()
+    val communication      = integer("communication").nullable()
+    val collaboration      = integer("collaboration").nullable()
+    val selfAwareness      = integer("self_awareness").nullable()
+    val socialEmotional    = integer("social_emotional").nullable()
+    val remarks            = text("remarks").nullable()
+    val createdAt          = timestamp("created_at")
+    val updatedAt          = timestamp("updated_at")
+    init {
+        index("idx_ha_student_term", false, schoolId, studentId, term, academicYearId)
+    }
+}
+
+/**
+ * NEP co-scholastic records: arts, sports, life skills, values.
+ * Graceful when empty — Tier-0 treats absence as "no co-scholastic data".
+ */
+object CoScholasticRecordsTable : UUIDTable("co_scholastic_records", "id") {
+    val schoolId           = uuid("school_id")
+    val studentId          = uuid("student_id")
+    val classId            = uuid("class_id").nullable()
+    val term               = varchar("term", 16)
+    val academicYearId     = uuid("academic_year_id").nullable()
+    val category           = varchar("category", 32)  // arts|sports|life_skills|values|work_education
+    val activityName       = text("activity_name")
+    val grade              = varchar("grade", 4).nullable()
+    val descriptor         = text("descriptor").nullable()
+    val teacherRemarks     = text("teacher_remarks").nullable()
+    val recordedBy         = uuid("recorded_by").nullable()
+    val createdAt          = timestamp("created_at")
+    val updatedAt          = timestamp("updated_at")
+    init {
+        index("idx_csr_student_term", false, schoolId, studentId, term, academicYearId)
+    }
+}
+
+/**
+ * Board-specific report card layout templates (CBSE, ICSE, IB, State, NEP HPC).
+ * Used by Tier-0 for grading scale and by Tier-3 for layout.
+ */
+object ReportCardTemplatesTable : UUIDTable("report_card_templates", "id") {
+    val schoolId               = uuid("school_id").nullable()  // null = global template
+    val board                  = varchar("board", 32)
+    val gradeRange             = varchar("grade_range", 16)
+    val templateName           = text("template_name")
+    val version                = integer("version").default(1)
+    val gradingScale           = text("grading_scale")
+    val layout                 = text("layout").nullable()
+    val includesHolistic       = bool("includes_holistic").default(true)
+    val includesCoScholastic   = bool("includes_co_scholastic").default(true)
+    val includesAttendance     = bool("includes_attendance").default(true)
+    val includesAiNarrative    = bool("includes_ai_narrative").default(true)
+    val isActive               = bool("is_active").default(true)
+    val createdAt              = timestamp("created_at")
+    val updatedAt              = timestamp("updated_at")
+    init {
+        index("idx_rct_board_grade", false, board, gradeRange, isActive)
+    }
+}
+
+// =====================================================================
+// AI Tutor 2.0 (AI_TUTOR_2.0_AGENTIC_REDESIGN.md §12)
+//   Created/applied by docs/db/migration_064_tutor_2.sql (must run before
+//   deploy; AUTO_CREATE_TABLES is OFF in prod and validateSchema() gates
+//   boot on it). Reuses pews_feature_flags for kill-switch flags.
+// =====================================================================
+
+/**
+ * Per-child per-subject AI Tutor agent session. Stores the full conversation
+ * as an array of grounded [TutorTurn] objects plus an audit trail of every
+ * fact and its source. Supersedes the v1 `ai_tutor_sessions` table.
+ *
+ * Spec: §12.2
+ */
+object TutorSessionsTable : UUIDTable("tutor_sessions", "id") {
+    val schoolId       = uuid("school_id")
+    val childId        = uuid("child_id")
+    val subjectId      = uuid("subject_id").nullable()
+    val academicYearId = uuid("academic_year_id").nullable()
+    val mode           = varchar("mode", 16).default("DOUBT")
+    val intentClass    = varchar("intent_class", 64).nullable()
+    val turns          = text("turns").default("[]")         // JSON array of TutorTurn
+    val groundedRefs   = text("grounded_refs").default("[]") // JSON array — audit: fact + source
+    val providerUsed   = varchar("provider_used", 64).nullable()
+    val tokensUsed     = integer("tokens_used").default(0)
+    val cacheHit       = bool("cache_hit").default(false)
+    val safetyFlag     = varchar("safety_flag", 32).nullable()
+    val createdAt      = timestamp("created_at")
+    val updatedAt      = timestamp("updated_at")
+    init {
+        index("idx_tutor_sessions_child_subject", false, childId, subjectId)
+        index("idx_tutor_sessions_school", false, schoolId)
+        index("idx_tutor_sessions_mode", false, mode)
+    }
+}
+
+/**
+ * FSRS spaced-repetition state per child per topic. The [FsrsScheduler] owns
+ * this table — it reads/writes stability, difficulty, due_at, reps, lapses
+ * using the FSRS v6 algorithm.
+ *
+ * Spec: §12.3
+ */
+object TutorReviewStateTable : UUIDTable("tutor_review_state", "id") {
+    val schoolId       = uuid("school_id")
+    val childId        = uuid("child_id")
+    val topicId        = uuid("topic_id")
+    val stability      = double("stability").default(0.0)
+    val difficulty     = double("difficulty").default(0.0)
+    val dueAt          = timestamp("due_at")
+    val reps           = integer("reps").default(0)
+    val lapses         = integer("lapses").default(0)
+    val lastGrade      = integer("last_grade").default(0)
+    val lastReviewedAt = timestamp("last_reviewed_at").nullable()
+    val createdAt      = timestamp("created_at")
+    val updatedAt      = timestamp("updated_at")
+    init {
+        uniqueIndex("ux_tutor_review_state_unique", childId, topicId)
+        index("idx_tutor_review_due", false, childId, dueAt)
+    }
+}
+
+/**
+ * Grounded mastery per child per topic. Mastery is derived from real marks
+ * (AssessmentMarksTable) and/or practice outcomes — NEVER model-invented
+ * (LAW 6). Source field records whether it came from MARKS, PRACTICE, or
+ * BLENDED.
+ *
+ * Spec: §12.4
+ */
+object TutorMasteryTable : UUIDTable("tutor_mastery", "id") {
+    val schoolId   = uuid("school_id")
+    val childId    = uuid("child_id")
+    val subjectId  = uuid("subject_id")
+    val topicId    = uuid("topic_id")
+    val mastery    = double("mastery").default(0.0)
+    val masterySource = varchar("source", 16).default("MARKS")
+    val attempts   = integer("attempts").default(0)
+    val correct    = integer("correct").default(0)
+    val updatedAt  = timestamp("updated_at")
+    val createdAt  = timestamp("created_at")
+    init {
+        uniqueIndex("ux_tutor_mastery_unique", childId, topicId)
+        index("idx_tutor_mastery_child_subject", false, childId, subjectId)
+    }
+}
+
+/**
+ * Class-wide misconception library. The agent's [logMisconception] tool writes
+ * here; the Teacher Heatmap reads from here. Misconceptions are surfaced to
+ * teachers and tracked to resolution — this is the shared flywheel that makes
+ * every AI feature smarter.
+ *
+ * Spec: §12.5
+ */
+object TutorMisconceptionsTable : UUIDTable("tutor_misconceptions", "id") {
+    val schoolId           = uuid("school_id")
+    val classId            = uuid("class_id")
+    val subjectId          = uuid("subject_id")
+    val topicId            = uuid("topic_id").nullable()
+    val childId            = uuid("child_id")
+    val misconceptionType = varchar("misconception_type", 128)
+    val evidence           = text("evidence").default("")
+    val resolved           = bool("resolved").default(false)
+    val surfacedToTeacher  = bool("surfaced_to_teacher").default(false)
+    val createdAt          = timestamp("created_at")
+    init {
+        index("idx_tutor_misconceptions_class_subject", false, classId, subjectId)
+        index("idx_tutor_misconceptions_child", false, childId)
+        index("idx_tutor_misconceptions_topic", false, topicId)
+    }
+}
+
+/**
+ * RAG knowledge chunks for curriculum-grounded retrieval. INERT until Phase 5.
+ * The [RetrieveKnowledgeTool] reads this table; it will be empty until the
+ * NCERT corpus ingestion pipeline lands. The embedding column uses pgvector;
+ * on SQLite (local dev) it falls back to a text/blob column.
+ *
+ * Spec: §12.6
+ *
+ * Created/applied by docs/db/migration_065_tutor_rag.sql.
+ */
+object TutorKnowledgeChunksTable : UUIDTable("tutor_knowledge_chunks", "id") {
+    val schoolId   = uuid("school_id").nullable()   // null = shared NCERT corpus
+    val chunkSource = varchar("source", 128).default("NCERT")
+    val board      = varchar("board", 32).default("CBSE")
+    val classLabel = varchar("class_label", 16)
+    val subject    = varchar("subject", 64)
+    val topicId    = uuid("topic_id").nullable()
+    val chunkText  = text("chunk_text").default("")
+    // embedding: pgvector vector(768) in Postgres — stored as text on SQLite.
+    // On Postgres with pgvector, the migration creates the column as vector(768).
+    // Exposed reads/writes it as text; the repository layer handles serialization.
+    val embedding  = text("embedding").nullable()
+    val createdAt  = timestamp("created_at")
+    init {
+        index("idx_tutor_kc_school_board_class", false, schoolId, board, classLabel, subject)
+        index("idx_tutor_kc_topic", false, topicId)
+    }
+}
+
+// =====================================================================
+// School Branding (SCHOOL_BRANDING_KIT_SPEC.md)
+// Per-school branding customization: logo, colors, subdomain, assets.
+// Applied by docs/db/migration_101_school_branding.sql (must run before
+// deploy; AUTO_CREATE_TABLES is OFF in prod).
+// =====================================================================
+object SchoolBrandingTable : UUIDTable("school_branding", "id") {
+    val schoolId           = uuid("school_id").uniqueIndex()
+    // Multi-campus branding: when set, this branch inherits org-level branding
+    // unless isCustomized=true (branch-level override takes precedence).
+    val organizationId     = uuid("organization_id").nullable()
+    val logoUrl            = text("logo_url").nullable()
+    val logoDarkUrl        = text("logo_dark_url").nullable()
+    val faviconUrl         = text("favicon_url").nullable()
+    val appIconUrl         = text("app_icon_url").nullable()
+    val splashScreenUrl    = text("splash_screen_url").nullable()
+    val primaryColor       = varchar("primary_color", 8).default("#2563EB")
+    val secondaryColor     = varchar("secondary_color", 8).default("#1E40AF")
+    val accentColor        = varchar("accent_color", 8).default("#3B82F6")
+    val customSubdomain    = text("custom_subdomain").nullable()
+    val loginBackgroundUrl = text("login_background_url").nullable()
+    val isCustomized       = bool("is_customized").default(false)
+    val createdAt          = timestamp("created_at")
+    val updatedAt          = timestamp("updated_at")
+
+    init {
+        index("idx_school_branding_subdomain", false, customSubdomain)
+        index("idx_school_branding_org", false, organizationId)
+    }
+}
+
+// =====================================================================
+// ID Card Generation (ID_CARD_GENERATION_SPEC.md)
+// Per-school ID card templates + generated cards for students/teachers/staff.
+// Applied by docs/db/migration_102_id_card.sql (must run before deploy;
+// AUTO_CREATE_TABLES is OFF in prod).
+// =====================================================================
+object IdCardTemplatesTable : UUIDTable("id_card_templates", "id") {
+    val schoolId    = uuid("school_id")
+    val name        = text("name")
+    val roleType    = varchar("role_type", 16) // student | teacher | staff
+    val frontConfig = text("front_config")     // JSON
+    val backConfig  = text("back_config")      // JSON
+    val isActive    = bool("is_active").default(true)
+    val createdAt   = timestamp("created_at")
+
+    init {
+        index("idx_id_card_templates_school", false, schoolId, roleType, isActive)
+    }
+}
+
+object IdCardsTable : UUIDTable("id_cards", "id") {
+    val schoolId       = uuid("school_id")
+    val personId       = uuid("person_id")
+    val personType     = varchar("person_type", 16) // student | teacher | staff
+    val personName     = text("person_name")
+    val templateId     = uuid("template_id")
+    val pdfUrl         = text("pdf_url").nullable()
+    val digitalCardUrl = text("digital_card_url").nullable()
+    val qrCodeData     = text("qr_code_data")
+    val validTill      = date("valid_till").nullable()
+    val status         = varchar("status", 16).default("ready") // requested|generated|ready|failed
+    val createdAt      = timestamp("created_at")
+
+    init {
+        index("idx_id_cards_person", false, personId, personType)
+        index("idx_id_cards_school", false, schoolId, createdAt)
+    }
+}
+
+// =====================================================================
+// Library Management (LIBRARY_MANAGEMENT_SPEC.md)
+// 13 tables for school library: books, copies, issues, reservations,
+// categories, settings, audit log, announcements, wishlist, reading goals,
+// acquisition requests, reading badges, book discussions.
+// Applied by docs/db/migration_104_library.sql (must run before deploy;
+// AUTO_CREATE_TABLES is OFF in prod).
+// ==============================================================
+object LibraryBooksTable : UUIDTable("library_books", "id") {
+    val schoolId        = uuid("school_id")
+    val isbn            = varchar("isbn", 20).nullable()
+    val title           = text("title")
+    val author          = text("author").nullable()
+    val publisher       = text("publisher").nullable()
+    val category        = varchar("category", 48).nullable()
+    val tags            = text("tags").nullable()           // JSON array string: ["tag1","tag2"]
+    val totalCopies     = integer("total_copies").default(1)
+    val availableCopies = integer("available_copies").default(1)
+    val shelfLocation   = varchar("shelf_location", 32).nullable()
+    val coverUrl        = text("cover_url").nullable()
+    val replacementCost = double("replacement_cost").nullable()
+    val seriesName      = varchar("series_name", 128).nullable()
+    val seriesNumber    = integer("series_number").nullable()
+    val language        = varchar("language", 8).default("en")
+    val isArchived      = bool("is_archived").default(false)
+    val synopsis        = text("synopsis").nullable()
+    val pageCount       = integer("page_count").nullable()
+    val deletedAt       = timestamp("deleted_at").nullable()
+    val createdAt       = timestamp("created_at")
+    val updatedAt       = timestamp("updated_at")
+
+    init {
+        index("idx_library_books_school", false, schoolId, deletedAt)
+        index("idx_library_books_category", false, schoolId, category)
+        index("idx_library_books_isbn", false, schoolId, isbn)
+    }
+}
+
+object LibraryBookCopiesTable : UUIDTable("library_book_copies", "id") {
+    val schoolId   = uuid("school_id")
+    val bookId     = uuid("book_id")
+    val copyNumber = integer("copy_number")
+    val barcode    = varchar("barcode", 64).nullable()
+    val condition  = varchar("condition", 16).default("new")      // new | good | fair | poor | damaged
+    val status     = varchar("status", 16).default("available")   // available | issued | lost | repair
+    val createdAt  = timestamp("created_at")
+    val updatedAt  = timestamp("updated_at")
+
+    init {
+        uniqueIndex("ux_library_copies_book_copynum", bookId, copyNumber)
+        index("idx_library_copies_book", false, bookId, status)
+        index("idx_library_copies_barcode", false, schoolId, barcode)
+    }
+}
+
+object LibraryIssuesTable : UUIDTable("library_issues", "id") {
+    val schoolId        = uuid("school_id")
+    val bookId          = uuid("book_id")
+    val copyId          = uuid("copy_id").nullable()
+    val borrowerId      = uuid("borrower_id")
+    val borrowerType    = varchar("borrower_type", 16)            // student | teacher
+    val borrowerName    = text("borrower_name")
+    val issueDate       = date("issue_date")
+    val dueDate         = date("due_date")
+    val returnDate      = date("return_date").nullable()
+    val returnCondition = varchar("return_condition", 16).nullable() // good | fair | damaged
+    val damageNotes     = text("damage_notes").nullable()
+    val renewalCount    = integer("renewal_count").default(0)
+    val fineAmount      = double("fine_amount").default(0.0)
+    val fineStatus      = varchar("fine_status", 16).default("none") // none | pending | paid | waived
+    val finePaidAt      = timestamp("fine_paid_at").nullable()
+    val fineWaivedBy    = uuid("fine_waived_by").nullable()
+    val fineWaivedReason = text("fine_waived_reason").nullable()
+    val status          = varchar("status", 16).default("issued")   // issued | returned | lost
+    val createdAt       = timestamp("created_at")
+    val updatedAt       = timestamp("updated_at")
+
+    init {
+        index("idx_library_issues_borrower", false, borrowerId, status)
+        index("idx_library_issues_book", false, bookId, status)
+        index("idx_library_issues_school_status", false, schoolId, status)
+        index("idx_library_issues_overdue", false, schoolId, dueDate)
+        index("idx_library_issues_due_date", false, dueDate)
+    }
+}
+
+object LibraryReservationsTable : UUIDTable("library_reservations", "id") {
+    val schoolId       = uuid("school_id")
+    val bookId         = uuid("book_id")
+    val reservedBy     = uuid("reserved_by")
+    val reservedByName = text("reserved_by_name")
+    val reservedByType = varchar("reserved_by_type", 16).default("student") // student | teacher | parent
+    val status         = varchar("status", 16).default("pending") // pending | notified | fulfilled | cancelled
+    val createdAt      = timestamp("created_at")
+    val fulfilledAt    = timestamp("fulfilled_at").nullable()
+
+    init {
+        index("idx_library_reservations_book", false, bookId, status)
+        index("idx_library_reservations_user", false, reservedBy, status)
+    }
+}
+
+object LibraryCategoriesTable : UUIDTable("library_categories", "id") {
+    val schoolId     = uuid("school_id")
+    val name         = varchar("name", 48)
+    val color        = varchar("color", 7).default("#6366f1")
+    val icon         = varchar("icon", 32).default("book")
+    val displayOrder = integer("display_order").default(0)
+    val createdAt    = timestamp("created_at")
+
+    init {
+        uniqueIndex("ux_library_categories_school_name", schoolId, name)
+        index("idx_library_categories_school", false, schoolId, displayOrder)
+    }
+}
+
+object LibrarySettingsTable : UUIDTable("library_settings", "id") {
+    val schoolId               = uuid("school_id")
+    val defaultLoanDays        = integer("default_loan_days").default(14)
+    val finePerDay             = double("fine_per_day").default(1.0)
+    val maxBooksPerStudent     = integer("max_books_per_student").default(3)
+    val maxRenewals            = integer("max_renewals").default(2)
+    val reservationTimeoutDays = integer("reservation_timeout_days").default(7)
+    val dueReminderDays        = integer("due_reminder_days").default(2)
+    val fineCapEnabled         = bool("fine_cap_enabled").default(true)
+    val quickIssueEnabled      = bool("quick_issue_enabled").default(true)
+    val bulkReturnEnabled      = bool("bulk_return_enabled").default(true)
+    val featuredBookId         = uuid("featured_book_id").nullable()
+    val featuredType           = varchar("featured_type", 16).nullable()  // WEEK | MONTH
+    val featuredUpdatedAt      = timestamp("featured_updated_at").nullable()
+    val leaderboardEnabled     = bool("leaderboard_enabled").default(false)
+    val createdAt              = timestamp("created_at")
+    val updatedAt              = timestamp("updated_at")
+
+    init {
+        uniqueIndex("ux_library_settings_school", schoolId)
+    }
+}
+
+object LibraryAuditLogTable : UUIDTable("library_audit_log", "id") {
+    val schoolId      = uuid("school_id")
+    val actorId       = uuid("actor_id").nullable()
+    val actorName     = text("actor_name")
+    val action        = varchar("action", 64)
+    val entityType    = varchar("entity_type", 32)
+    val entityId      = uuid("entity_id").nullable()
+    val metadata      = text("metadata").nullable()        // JSONB as text
+    val previousState = text("previous_state").nullable()  // JSONB as text
+    val newState      = text("new_state").nullable()       // JSONB as text
+    val hash          = varchar("hash", 64)
+    val createdAt     = timestamp("created_at")
+
+    init {
+        index("idx_library_audit_school", false, schoolId, createdAt)
+        index("idx_library_audit_entity", false, entityType, entityId)
+        index("idx_library_audit_actor", false, actorId, createdAt)
+    }
+}
+
+object LibraryAnnouncementsTable : UUIDTable("library_announcements", "id") {
+    val schoolId       = uuid("school_id")
+    val title          = text("title")
+    val message        = text("message")
+    val audience       = varchar("audience", 16).default("all")  // all | students | parents
+    val createdBy      = uuid("created_by").nullable()
+    val createdByName  = text("created_by_name")
+    val expiresAt      = timestamp("expires_at").nullable()
+    val isActive       = bool("is_active").default(true)
+    val createdAt      = timestamp("created_at")
+    val updatedAt      = timestamp("updated_at")
+
+    init {
+        index("idx_library_announcements_school", false, schoolId, isActive, expiresAt)
+    }
+}
+
+object LibraryWishlistTable : UUIDTable("library_wishlist", "id") {
+    val schoolId  = uuid("school_id")
+    val studentId = uuid("student_id")
+    val bookId    = uuid("book_id")
+    val createdAt = timestamp("created_at")
+
+    init {
+        uniqueIndex("ux_library_wishlist_student_book", schoolId, studentId, bookId)
+        index("idx_library_wishlist_student", false, studentId)
+        index("idx_library_wishlist_school", false, schoolId)
+    }
+}
+
+object LibraryReadingGoalsTable : UUIDTable("library_reading_goals", "id") {
+    val schoolId  = uuid("school_id")
+    val studentId = uuid("student_id")
+    val goalCount = integer("goal_count")
+    val period    = varchar("period", 16)    // monthly | quarterly | yearly
+    val targetYear = integer("target_year")
+    val createdAt = timestamp("created_at")
+    val updatedAt = timestamp("updated_at")
+
+    init {
+        uniqueIndex("ux_library_goals_student_period", schoolId, studentId, period, targetYear)
+        index("idx_library_reading_goals_student", false, studentId, targetYear)
+    }
+}
+
+object LibraryAcquisitionRequestsTable : UUIDTable("library_acquisition_requests", "id") {
+    val schoolId         = uuid("school_id")
+    val requestedBy      = uuid("requested_by")
+    val requestedByName  = text("requested_by_name")
+    val requestedByType  = varchar("requested_by_type", 16)   // student | teacher | parent | librarian
+    val title            = text("title")
+    val author           = text("author").nullable()
+    val isbn             = varchar("isbn", 20).nullable()
+    val publisher        = text("publisher").nullable()
+    val reason           = text("reason").nullable()
+    val estimatedCost    = double("estimated_cost").nullable()
+    val status           = varchar("status", 16).default("pending") // pending|approved|rejected|ordered|received
+    val approvedBy       = uuid("approved_by").nullable()
+    val approvedAt       = timestamp("approved_at").nullable()
+    val orderLink        = text("order_link").nullable()
+    val orderedAt        = timestamp("ordered_at").nullable()
+    val receivedAt       = timestamp("received_at").nullable()
+    val convertedBookId  = uuid("converted_book_id").nullable()
+    val createdAt        = timestamp("created_at")
+    val updatedAt        = timestamp("updated_at")
+
+    init {
+        index("idx_library_acquisition_school", false, schoolId, status)
+        index("idx_library_acquisition_requester", false, requestedBy)
+    }
+}
+
+object LibraryReadingBadgesTable : UUIDTable("library_reading_badges", "id") {
+    val schoolId  = uuid("school_id")
+    val studentId = uuid("student_id")
+    val badgeType = varchar("badge_type", 32)   // first_book|5_books|10_books|25_books|50_books|100_books|speed_reader|genre_explorer|streak_7|streak_30
+    val earnedAt  = timestamp("earned_at").default(java.time.Instant.now())
+
+    init {
+        uniqueIndex("ux_library_badges_student_type", schoolId, studentId, badgeType)
+        index("idx_library_badges_student", false, studentId)
+    }
+}
+
+object LibraryBookDiscussionsTable : UUIDTable("library_book_discussions", "id") {
+    val schoolId    = uuid("school_id")
+    val bookId      = uuid("book_id")
+    val studentId   = uuid("student_id")
+    val studentName = text("student_name")
+    val message     = text("message")
+    val createdAt   = timestamp("created_at")
+    val deletedAt   = timestamp("deleted_at").nullable()
+    val deletedBy   = uuid("deleted_by").nullable()
+
+    init {
+        index("idx_library_discussions_book", false, bookId, createdAt)
+        index("idx_library_discussions_school", false, schoolId)
+    }
+}
+
+// Scheduled Messages (MESSAGE_SCHEDULING_PLAN.md §4)
+//   Unified scheduling table for all schedulable message types
+//   (announcements, admin broadcasts, teacher class broadcasts).
+//   The MessageDispatchScheduler polls this table every 1 min for
+//   status='SCHEDULED' AND scheduled_at <= now(), dispatches via the
+//   existing Notify.toUsers / sendInConversation / createCalendarEvent
+//   primitives, and marks rows DISPATCHED or FAILED.
+//
+//   Status state machine: DRAFT → SCHEDULED → DISPATCHED → FAILED | CANCELLED
+//
+//   Applied by docs/db/migration-104-scheduled-messages.sql (must run before
+//   deploy; AUTO_CREATE_TABLES is OFF in prod and validateSchema() gates boot).
+// =====================================================================
+object ScheduledMessagesTable : UUIDTable("scheduled_messages", "id") {
+    val schoolId          = uuid("school_id")
+    val messageType       = varchar("message_type", 24)
+    val status            = varchar("status", 16).default("SCHEDULED")
+    val scheduledAt       = timestamp("scheduled_at")
+    val dispatchedAt      = timestamp("dispatched_at").nullable()
+    val payload           = text("payload")
+    val createdBy         = uuid("created_by")
+    val authorRole        = varchar("author_role", 16)
+    val authorName        = varchar("author_name", 128).nullable()
+    val audienceType      = varchar("audience_type", 16).default("ALL_SCHOOL")
+    val audienceLabel     = varchar("audience_label", 256).nullable()
+    val title             = varchar("title", 256).nullable()
+    val bodyPreview       = varchar("body_preview", 256).nullable()
+    val addToCalendar     = bool("add_to_calendar").default(false)
+    val calendarEventCode = varchar("calendar_event_code", 20).nullable()
+    val retryCount        = integer("retry_count").default(0)
+    val maxRetries        = integer("max_retries").default(3)
+    val lastError         = text("last_error").nullable()
+    val clientMsgId       = uuid("client_msg_id").nullable()
+    val createdAt         = timestamp("created_at")
+    val updatedAt         = timestamp("updated_at")
+
+    init {
+        index("idx_scheduled_messages_school_status", false, schoolId, status)
+        index("idx_scheduled_messages_scheduled_at", false, scheduledAt)
+        index("idx_scheduled_messages_created_by", false, createdBy)
+        index("idx_scheduled_messages_client_msg_id", false, clientMsgId)
+    }
+}
+
+object ScheduledMessageStatus {
+    const val DRAFT       = "DRAFT"
+    const val SCHEDULED   = "SCHEDULED"
+    const val DISPATCHING = "DISPATCHING"
+    const val DISPATCHED  = "DISPATCHED"
+    const val FAILED      = "FAILED"
+    const val CANCELLED   = "CANCELLED"
+    val ALL      = setOf(DRAFT, SCHEDULED, DISPATCHING, DISPATCHED, FAILED, CANCELLED)
+    val PENDING  = setOf(DRAFT, SCHEDULED)
+}
+
+object ScheduledMessageType {
+    const val ANNOUNCEMENT      = "ANNOUNCEMENT"
+    const val ADMIN_BROADCAST   = "ADMIN_BROADCAST"
+    const val TEACHER_BROADCAST = "TEACHER_BROADCAST"
+}
+
+object SchoolDayConfigTable : UUIDTable("school_day_config", "id") {
+    val schoolId       = uuid("school_id")
+    val name           = text("name")
+    val applicableDays = varchar("applicable_days", 20)
+    val classLevel     = varchar("class_level", 20).default("ALL")
+    val isActive       = bool("is_active").default(true)
+    val createdAt      = timestamp("created_at")
+    val updatedAt      = timestamp("updated_at")
+    init {
+        index("idx_sdc_school", false, schoolId)
+    }
+}
+
+object SchoolDaySlotsTable : UUIDTable("school_day_slots", "id") {
+    val configId    = uuid("config_id")
+    val schoolId    = uuid("school_id")
+    val slotIndex   = integer("slot_index")
+    val slotType    = varchar("slot_type", 16)
+    val label       = text("label").default("")
+    val startTime   = time("start_time")
+    val endTime     = time("end_time")
+    val isDouble    = bool("is_double").default(false)
+    val doubleGroup = integer("double_group").default(0)
+    val createdAt   = timestamp("created_at")
+    init {
+        uniqueIndex("idx_sds_config", configId, slotIndex)
+    }
+}
+
+object SchoolDaySlotType {
+    const val TEACHING  = "TEACHING"
+    const val BREAK     = "BREAK"
+    const val ASSEMBLY  = "ASSEMBLY"
+    const val LAB       = "LAB"
+    const val FREE      = "FREE"
+    const val ZERO      = "ZERO"
+}
+
+// =====================================================================
+// timetable_change_requests
+//   Teacher-initiated requests to create/update/delete a recurring period.
+//   Admin reviews and approves/rejects. On approval the period is written
+//   to teacher_periods and the requesting teacher is notified.
+// =====================================================================
+object TimetableChangeRequestsTable : UUIDTable("timetable_change_requests", "id") {
+    val schoolId      = uuid("school_id")
+    val teacherId     = uuid("teacher_id")               // FK app_users.id (requester)
+    val assignmentId  = uuid("assignment_id").nullable() // FK teacher_subject_assignments.id
+    val periodId      = uuid("period_id").nullable()     // FK teacher_periods.id (for UPDATE/DELETE)
+    val kind          = varchar("kind", 16)              // NEW_PERIOD | UPDATE_PERIOD | DELETE_PERIOD
+    val weekday       = integer("weekday")               // 1=Mon … 7=Sun
+    val startTime     = time("start_time").nullable()    // null for DELETE
+    val endTime       = time("end_time").nullable()      // null for DELETE
+    val room          = text("room").default("")
+    val reason        = text("reason").default("")       // teacher's note
+    val status        = varchar("status", 16).default("PENDING") // PENDING | APPROVED | REJECTED
+    val adminNote     = text("admin_note").default("")
+    val reviewedBy    = uuid("reviewed_by").nullable()
+    val createdAt     = timestamp("created_at")
+    val reviewedAt    = timestamp("reviewed_at").nullable()
+    val className     = text("class_name").default("")   // denormalised for display
+    val section       = varchar("section", 8).default("A")
+    val subject       = text("subject").default("")
+}
+
+// =====================================================================
+// school_organizations  (MULTI_BRANCH_SPEC.md §6.2)
+//   Parent entity for school chains/franchises. Each branch is a `schools`
+//   row linked via `schools.organization_id`. Org-level admins manage all
+//   branches under one organization.
+// =====================================================================
+object SchoolOrganizationsTable : UUIDTable("school_organizations", "id") {
+    val name        = text("name")
+    val description = text("description").nullable()
+    val logoUrl     = text("logo_url").nullable()
+    val isActive    = bool("is_active").default(true)
+    val createdAt   = timestamp("created_at")
+    val updatedAt   = timestamp("updated_at")
+}
+
+// =====================================================================
+// student_transfers  (MULTI_BRANCH_SPEC.md §6.2)
+//   Cross-branch student transfer tracking. Status flows:
+//   pending → approved → completed (or rejected).
+//   On completion, student + related records are migrated to the new school.
+// =====================================================================
+object StudentTransfersTable : UUIDTable("student_transfers", "id") {
+    val studentId     = uuid("student_id")
+    val fromSchoolId  = uuid("from_school_id")
+    val toSchoolId    = uuid("to_school_id")
+    val transferDate  = date("transfer_date")
+    val reason        = text("reason").nullable()
+    val status        = varchar("status", 16).default("pending")
+    val approvedBy    = uuid("approved_by").nullable()
+    val createdAt     = timestamp("created_at")
+
+    init {
+        index("idx_student_transfers_student", false, studentId)
+        index("idx_student_transfers_status", false, status, transferDate)
+    }
+}
+
+// =====================================================================
+// syllabus_sources  (Agentic Syllabus Management — migration_110)
+//   Raw syllabus upload (image URL or text) + AI-parsed structured JSON.
+//   Linked to a teacher_subject_assignment for scope.
+// =====================================================================
+object SyllabusSourcesTable : UUIDTable("syllabus_sources", "id") {
+    val schoolId     = uuid("school_id")
+    val assignmentId = uuid("assignment_id")
+    val sourceType   = varchar("source_type", 8)      // IMAGE | TEXT
+    val sourceUrl    = text("source_url").nullable()
+    val rawText      = text("raw_text").nullable()
+    val parsedJson   = text("parsed_json").default("{}")
+    val aiProvider   = varchar("ai_provider", 32).nullable()
+    val createdAt    = timestamp("created_at")
+    val updatedAt    = timestamp("updated_at")
+}
+
+// =====================================================================
+// daily_class_log  (Agentic Syllabus Management — migration_110)
+//   Structured record of what was taught in each class period.
+//   source = TEACHER (from popup) or AI (estimated).
+//   UNIQUE(assignment_id, date) — one log per day per assignment.
+// =====================================================================
+object DailyClassLogTable : UUIDTable("daily_class_log", "id") {
+    val schoolId       = uuid("school_id")
+    val assignmentId   = uuid("assignment_id")
+    val date           = date("date")
+    val topicIds       = text("topic_ids").default("[]")
+    val summaryText    = text("summary_text").default("")
+    val coveragePct    = integer("coverage_pct").default(0)
+    val logSource      = varchar("source", 8)          // TEACHER | AI
+    val isAiEstimated  = bool("is_ai_estimated").default(false)
+    val createdAt      = timestamp("created_at")
+    val updatedAt      = timestamp("updated_at")
+    init {
+        uniqueIndex("idx_dcl_assignment_date", assignmentId, date)
+    }
+}
+
+// =====================================================================
+// syllabus_pace_plan  (Agentic Syllabus Management — migration_110)
+//   AI-estimated pace plan per assignment. Calculated from total topics
+//   + total classes (from academic year + teacher_periods).
+//   UNIQUE(assignment_id) — one plan per assignment.
+// =====================================================================
+object SyllabusPacePlanTable : UUIDTable("syllabus_pace_plan", "id") {
+    val schoolId              = uuid("school_id")
+    val assignmentId          = uuid("assignment_id")
+    val academicYearId        = uuid("academic_year_id").nullable()
+    val totalTopics           = integer("total_topics").default(0)
+    val totalClassesExpected  = integer("total_classes_expected").default(0)
+    val classesElapsed        = integer("classes_elapsed").default(0)
+    val expectedCoveragePct   = integer("expected_coverage_pct").default(0)
+    val actualCoveragePct     = integer("actual_coverage_pct").default(0)
+    val aiEstimateJson        = text("ai_estimate_json").default("{}")
+    val needsRecalc           = bool("needs_recalc").default(false)
+    val lastRecalcAt          = timestamp("last_recalc_at").nullable()
+    val createdAt             = timestamp("created_at")
+    val updatedAt             = timestamp("updated_at")
+    init {
+        uniqueIndex("idx_spp_assignment", assignmentId)
+    }
+}
+
+// =====================================================================
+// syllabus_popup_prefs  (Agentic Syllabus Management — migration_110)
+//   Teacher's suppression preferences for the daily check-in popup.
+//   UNIQUE(teacher_id, assignment_id) — one pref row per teacher+assignment.
+// =====================================================================
+object SyllabusPopupPrefsTable : UUIDTable("syllabus_popup_prefs", "id") {
+    val teacherId      = uuid("teacher_id")
+    val assignmentId   = uuid("assignment_id").nullable()
+    val suppressMode   = varchar("suppress_mode", 12).default("off")  // off | week | permanent
+    val suppressedUntil = date("suppressed_until").nullable()
+    val createdAt      = timestamp("created_at")
+    val updatedAt      = timestamp("updated_at")
+    init {
+        uniqueIndex("idx_spp_teacher_assignment", teacherId, assignmentId)
+    }
+}
+
+// =====================================================================
+// syllabus_pace_alerts  (Agentic Syllabus Management — migration_110)
+//   Pace deviation alerts with AI reconfirmation. Created only after
+//   AI second-pass validates. resolved_at = null means active.
+// =====================================================================
+object SyllabusPaceAlertsTable : UUIDTable("syllabus_pace_alerts", "id") {
+    val schoolId         = uuid("school_id")
+    val assignmentId     = uuid("assignment_id")
+    val alertLevel       = varchar("alert_level", 12)   // BEHIND | CRITICAL | AHEAD
+    val expectedPct      = integer("expected_pct")
+    val actualPct        = integer("actual_pct")
+    val aiConfirmed      = bool("ai_confirmed").default(false)
+    val aiReconfirmJson  = text("ai_reconfirm_json").default("{}")
+    val notifiedRoles    = text("notified_roles").default("[]")
+    val createdAt        = timestamp("created_at")
+    val resolvedAt       = timestamp("resolved_at").nullable()
+}
+
+// =====================================================================
+// quiz_questions  (Agentic Quiz System — migration_111)
+//   Structured question bank for AI-generated quizzes. Linked to homework.
+// =====================================================================
+object QuizQuestionsTable : UUIDTable("quiz_questions", "id") {
+    val homeworkId       = uuid("homework_id")
+    val questionType     = varchar("question_type", 12)  // MCQ | FILL_BLANK | TRUE_FALSE
+    val questionText     = text("question_text")
+    val optionsJson      = text("options_json").default("[]")
+    val correctAnswer    = text("correct_answer")
+    val explanation      = text("explanation").default("")
+    val difficultyOffset = integer("difficulty_offset").default(0)
+    val position         = integer("position").default(0)
+    val createdAt        = timestamp("created_at")
+}
+
+// =====================================================================
+// quiz_answers  (Agentic Quiz System — migration_111)
+//   Per-question student answers linked to homework submissions.
+// =====================================================================
+object QuizAnswersTable : UUIDTable("quiz_answers", "id") {
+    val submissionId = uuid("submission_id")
+    val questionId   = uuid("question_id")
+    val answerText   = text("answer_text")
+    val isCorrect    = bool("is_correct").default(false)
+    val createdAt    = timestamp("created_at")
+}
+
+// =====================================================================
+// syllabus_quizzes  (Agentic Quiz System — migration_112)
+//   AI-generated quizzes linked to syllabus assignments. Supports
+//   MCQ, FILL_BLANK, TRUE_FALSE, and MATCH question types.
+//   Multiple units can be selected per quiz.
+// =====================================================================
+object SyllabusQuizzesTable : UUIDTable("syllabus_quizzes", "id") {
+    val schoolId           = uuid("school_id")
+    val assignmentId       = uuid("assignment_id")
+    val unitIds            = text("unit_ids").default("")    // comma-separated UUIDs
+    val title              = varchar("title", 200).default("")
+    val questionTypes      = text("question_types").default("MCQ")  // comma-separated
+    val status             = varchar("status", 12).default("DRAFT")  // DRAFT | PUBLISHED
+    val difficulty         = varchar("difficulty", 10).default("MEDIUM")
+    val createdAt          = timestamp("created_at")
+    val publishedAt        = timestamp("published_at").nullable()
+}
+
+// =====================================================================
+// syllabus_quiz_questions  (Agentic Quiz System — migration_112)
+//   Individual questions for syllabus quizzes.
+// =====================================================================
+object SyllabusQuizQuestionsTable : UUIDTable("syllabus_quiz_questions", "id") {
+    val quizId             = uuid("quiz_id")
+    val questionType       = varchar("question_type", 12)  // MCQ | FILL_BLANK | TRUE_FALSE | MATCH
+    val questionText       = text("question_text")
+    val optionsJson        = text("options_json").default("[]")
+    val correctAnswer      = text("correct_answer").default("")
+    val explanation        = text("explanation").default("")
+    val matchPairsJson     = text("match_pairs_json").default("[]")
+    val position           = integer("position").default(0)
+    val createdAt          = timestamp("created_at")
+}
+
+// =====================================================================
+// syllabus_quiz_answers  (Agentic Quiz System — migration_112)
+//   Per-question student answers for syllabus quizzes.
+// =====================================================================
+object SyllabusQuizAnswersTable : UUIDTable("syllabus_quiz_answers", "id") {
+    val quizId             = uuid("quiz_id")
+    val studentId          = varchar("student_id", 50)
+    val questionId         = uuid("question_id")
+    val answerText         = text("answer_text")
+    val isCorrect          = bool("is_correct").default(false)
+    val createdAt          = timestamp("created_at")
+}
+val SYSTEM_SCHOOL_ID: UUID = UUID(0, 0)

@@ -134,3 +134,75 @@ These surfaces are **honest placeholders** (clearly labelled, no fabricated data
 - Discovery / nearby-schools deep features, school records detail — partial / preview surfaces.
 
 *Generated for branch `backend-by-abuzar_v1.0.2` — reflects the live code as of 2026-06-09.*
+
+---
+
+## UPDATE — 2026-07-03 (branch `development_v1.0.1`)
+
+> Re-audited against the live codebase. The feature list above was accurate as of June 9, but
+> **19 major feature areas have been added since**. This section supplements, not replaces, the above.
+
+### New features now shipping (since June 9)
+
+**School Admin:**
+- **Library Management** — 13 tables, full book/catalog/copy management, issue/return, reservations, fines, Room offline DAO
+- **Transport Tracking** — 6 tables, route/stop/vehicle/driver management, student assignments, GPS bus tracking, transport attendance
+- **ID Card Generation** — template-based ID card generation with QR codes, expiry checking job
+- **Health Records** — student health profiles, immunization tracking, health incident logging
+- **Alumni Management** — alumni directory, donation campaigns, mentorship programs, career history, verification workflow
+- **Scholarship Workflow** — scholarship application, approval workflow, fee reduction integration
+- **School Branding** — logo, colors, subdomain, asset customization per school
+- **Scheduled Messages** — schedule announcements/messages for future delivery
+- **Timetable Management** — period-based timetable with teacher assignments, conflict detection
+- **Report Card 2.0** — 32-file system: narrative AI drafts, rollup, triage, board templates, holistic assessment (NEP), co-scholastic records, parent conference packs
+- **School Day Config** — school day timing, period structure configuration
+- **Academic Year Management** — academic year creation and term management
+- **Unified Calendar Events** — cross-role event creation with calendar integration
+
+**Teacher:**
+- **Lesson Planning** — lesson plans with templates, attachments, syllabus linkage
+- **Teacher Timetable** — daily period view from timetable management
+- **Report Card Draft Editor** — AI-assisted narrative draft editing, review queue
+- **Transport Attendance** — mark transport attendance for assigned routes
+
+**Parent:**
+- **Parent Pulse** — weekly AI-curated engagement digest
+- **Bus Tracking** — real-time GPS bus tracking for assigned routes
+- **Digital ID Card** — view child's digital ID card with QR code
+- **Health Records** — view child's health profile, immunization records
+- **Scholarship Application** — apply for scholarships, track application status
+- **Library** — view issued books, due dates, reservation status
+- **Event Registration** — RSVP for school events, PTM slot booking
+
+**AI/Platform:**
+- **AI Infrastructure** — multi-provider LLM gateway (Cerebras, Groq, SambaNova, Mistral, OpenRouter) with circuit breaker, rate limiter, guardrail service, key vault, encryption
+- **AI Tutor** — 55+ files: agentic tutor with RAG, ACT/FSRS spaced repetition, heatmap, triage, OCR/voice ingest, parent progress tracking, learner sense module
+- **PEWS Early Warning System** — risk snapshots, interventions, casework, cohort analysis, effectiveness tracking, parent nudges
+
+### Updated honesty notes (what is still "Coming soon")
+
+- **Fee Payment Gateway** — still 0% implemented (no tables, no routes)
+- **Audit Log** — no general audit trail (only library audit log)
+- **DPDP Compliance** — no consent/erasure endpoints
+- **2FA** — no TOTP implementation
+- **iOS Push (APNs)** — deferred (iOS deprioritized); only FCM (Android) implemented
+- **iOS Biometric Auth** — deferred (iOS deprioritized); stub only
+- **Bulk Import/Export** — no CSV import/export
+- **Hostel/Payroll/Expense/Inventory/Visitor Management** — all missing
+- **Exam Timetable** — no dedicated exam schedule tables
+- **Multi-Language Translation** — no translation engine
+- **Student App** — no student-facing app/portal
+
+### Updated metrics
+
+| Metric | June 9 | July 3 |
+|---|---|---|
+| Screens | ~40 | **99** |
+| ViewModels | ~42 | **93** |
+| API clients | ~17 | **43** (0 stubs) |
+| Server routes | ~80 | **611** |
+| DB tables | ~36 | **124** |
+| Feature verticals (shared) | ~6 | **20** |
+| SQL migrations | ~15 | **49** |
+
+*Updated 2026-07-03 for branch `development_v1.0.1`.*
