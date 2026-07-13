@@ -197,7 +197,7 @@ class TutorSmokeTest {
         val restored = TutorTurnCodec.parse(json)
         assertNotNull(restored)
         assertEquals(turn.mode, restored.mode)
-        assertEquals(turn.studentFacing.text, restored.studentFacing.text)
+        assertEquals(turn.studentFacing!!.text, restored.studentFacing!!.text)
         assertEquals(1, restored.groundedRefs.size)
         assertEquals("MARKS", restored.groundedRefs[0].source)
     }
@@ -235,8 +235,8 @@ class TutorSmokeTest {
     fun `deterministic fallback produces valid Socratic step`() {
         val turn = TutorTurnCodec.deterministic("What is 2+2?")
         assertEquals("SOCRATIC_STEP", turn.mode)
-        assertTrue(turn.studentFacing.text.isNotEmpty())
-        assertNotNull(turn.studentFacing.nextPrompt)
+        assertTrue(turn.studentFacing!!.text.isNotEmpty())
+        assertNotNull(turn.studentFacing!!.nextPrompt)
     }
 
     @Test
@@ -311,7 +311,7 @@ class TutorSmokeTest {
         // Either way, it should not pass through unmodified with ungrounded claims.
         if (result != null) {
             // If it passed, it should have been sanitized
-            assertTrue(result.groundedRefs.isNotEmpty() || result.studentFacing.text.isEmpty())
+            assertTrue(result.groundedRefs.isNotEmpty() || result.studentFacing!!.text.isEmpty())
         }
     }
 
