@@ -119,6 +119,18 @@ class InstitutionalBasicOBViewModel(
             }
 
             val current = _state.value
+
+            // Regression guard for "mandatory validation missing" bug: the BASIC step
+            // must have a real school name and contact number before the server is called.
+            // Keeping validation client-side prevents the wizard from advancing and the
+            // admin from reaching an empty / unnamed dashboard.
+            val validationError = validateBasics(current)
+            if (validationError != null) {
+                _errorMessage.value = validationError
+                _isSubmitting.value = false
+                return@launch
+            }
+
             val payload = JsonObject(
                 buildMap {
                     put(ObPayloadKeys.SCHOOL_NAME, JsonPrimitive(current.schoolName.trim()))
@@ -186,4 +198,15 @@ class InstitutionalBasicOBViewModel(
             }
         }
     }
+}
+
+/**
+ * Validates the fields the mobile BASIC step actually collects.
+ * Returns a user-facing error message, or null when the data is complete enough
+ * to send to the server.
+ */
+internal fun validateBasics(basics: OnboardingBasics): String? {
+    if (basics.schoolName.isBlank()) return "School name is required."
+    if (basics.contactNumber.isBlank()) return "Principal's mobile number is required."
+    return null
 }
