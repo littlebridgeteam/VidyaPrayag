@@ -4,7 +4,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -72,6 +72,9 @@ fun TeacherAttendanceScreenV2(
     assignmentId: String,
     scopeLabel: String,
     modifier: Modifier = Modifier,
+    tool: UpdateTool = UpdateTool.Attendance,
+    onToolChange: (UpdateTool) -> Unit = {},
+    onChangeClass: () -> Unit = {},
     viewModel: TeacherAttendanceViewModel = koinViewModel(),
     analyticsViewModel: TeacherAttendanceAnalyticsViewModel = koinViewModel(),
     onOpenMessages: () -> Unit = {},
@@ -99,7 +102,16 @@ fun TeacherAttendanceScreenV2(
                 onRetry = { viewModel.retry() },
             )
             showInsights -> AttendanceInsightsBody(analyticsViewModel, scopeLabel, assignmentId) { showInsights = false }
-            else -> AttendanceBody(state.students, viewModel, scopeLabel, { showInsights = true }, onOpenMessages)
+            else -> AttendanceBody(
+                state.students,
+                viewModel,
+                scopeLabel,
+                tool = tool,
+                onToolChange = onToolChange,
+                onChangeClass = onChangeClass,
+                onShowInsights = { showInsights = true },
+                onOpenMessages = onOpenMessages,
+            )
         }
     }
 }
@@ -109,72 +121,89 @@ private fun AttendanceBody(
     students: List<StudentAttendance>,
     viewModel: TeacherAttendanceViewModel,
     scopeLabel: String,
+    tool: UpdateTool,
+    onToolChange: (UpdateTool) -> Unit,
+    onChangeClass: () -> Unit,
     onShowInsights: () -> Unit,
     onOpenMessages: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateV2()
 
     LazyColumn(
-        Modifier.fillMaxSize().padding(horizontal = 16.dp),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 14.dp, bottom = TeacherDockClearance),
+        Modifier.fillMaxSize().padding(horizontal = 20.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 16.dp, bottom = TeacherDockClearance),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        // ── Scope + date + running counter header ──
+        // ── Scrollable scoped chrome (rail + scope bar) ──
         item {
-            VtCard(padding = 16.dp) {
-                Column {
-                    VtEyebrow(appString(StringKeys.TC_MARKING_ATTENDANCE), dot = VColors.violet)
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        scopeLabel.ifBlank { "${state.className}-${state.section} · ${state.subject}" },
-                        style = VTypography.h3.copy(fontSize = 18.sp, color = VColors.ink, fontWeight = FontWeight.ExtraBold),
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    VDatePicker(
-                        value = state.date,
-                        onValueChange = { viewModel.changeDate(it) },
-                        label = appString(StringKeys.SCH_DATE),
-                    )
+            ScopedToolHeader(
+                tool = tool,
+                scopeLabel = scopeLabel,
+                onToolChange = onToolChange,
+                onChangeClass = onChangeClass,
+            )
+        }
+
+        // ── Compact date + metrics header ──
+        item {
+            VtCard {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Column(Modifier.weight(1f)) {
+                            if (state.alreadyMarked && state.lastMarkedBy != null) {
+                                Text(
+                                    appString(
+                                        StringKeys.TC_LAST_MARKED_BY,
+                                        "name" to (state.lastMarkedBy ?: ""),
+                                        "date" to (state.lastMarkedAt?.let { " · ${prettyDate(it.take(10))}" } ?: ""),
+                                    ),
+                                    style = VTypography.caption,
+                                    color = VColors.ink3,
+                                )
+                            }
+                        }
+                        VDatePicker(
+                            value = state.date,
+                            onValueChange = { viewModel.changeDate(it) },
+                            label = appString(StringKeys.SCH_DATE),
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+
                     if (state.isHoliday || state.isCancelled) {
-                        Spacer(Modifier.height(8.dp))
                         Text(
                             if (state.isHoliday) appString(StringKeys.TC_HOLIDAY_NOTICE, "name" to (state.holidayName?.let { " — $it" } ?: "")) else appString(StringKeys.TC_CLASS_CANCELLED_DATE),
-                            style = VTypography.caption.copy(fontSize = 12.sp, color = VColors.gold),
+                            style = VTypography.caption,
+                            color = VColors.gold,
                         )
                     }
-                    Spacer(Modifier.height(12.dp))
+
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        VtMetricTile(state.presentCount.toString(), appString(StringKeys.ATT_PRESENT), VColors.success, Modifier.weight(1f))
-                        VtMetricTile(state.absentCount.toString(), appString(StringKeys.ATT_ABSENT), VColors.coral, Modifier.weight(1f))
-                        VtMetricTile(state.lateCount.toString(), appString(StringKeys.ATT_LATE), VColors.gold, Modifier.weight(1f))
-                        VtMetricTile(state.leaveCount.toString(), appString(StringKeys.TEACHER_LEAVE), VColors.sky, Modifier.weight(1f))
+                        VtCompactMetric(state.presentCount.toString(), appString(StringKeys.ATT_PRESENT), VColors.success, Modifier.weight(1f))
+                        VtCompactMetric(state.absentCount.toString(), appString(StringKeys.ATT_ABSENT), VColors.coral, Modifier.weight(1f))
+                        VtCompactMetric(state.lateCount.toString(), appString(StringKeys.ATT_LATE), VColors.gold, Modifier.weight(1f))
+                        VtCompactMetric(state.leaveCount.toString(), appString(StringKeys.TEACHER_LEAVE), VColors.sky, Modifier.weight(1f))
                     }
-                    if (state.alreadyMarked && state.lastMarkedBy != null) {
-                        Spacer(Modifier.height(10.dp))
-                        Text(
-                            appString(StringKeys.TC_LAST_MARKED_BY, "name" to (state.lastMarkedBy ?: ""), "date" to (state.lastMarkedAt?.let { " · ${prettyDate(it.take(10))}" } ?: "")),
-                            style = VTypography.caption.copy(fontSize = 11.sp, color = VColors.ink3),
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        VButton(
+                            text = appString(StringKeys.TC_MARK_ALL_PRESENT),
+                            onClick = { viewModel.markAllPresent() },
+                            modifier = Modifier.weight(1f),
+                            variant = VButtonVariant.Secondary,
+                            tone = VButtonTone.Mint,
+                            size = VButtonSize.Md,
+                            leading = { Icon(VIcons.Check, contentDescription = null, modifier = Modifier.size(15.dp)) },
+                        )
+                        VButton(
+                            text = "Insights",
+                            onClick = onShowInsights,
+                            modifier = Modifier.weight(1f),
+                            variant = VButtonVariant.Ghost,
+                            size = VButtonSize.Md,
+                            leading = { Icon(VIcons.Activity, contentDescription = null, modifier = Modifier.size(15.dp)) },
                         )
                     }
-                    Spacer(Modifier.height(12.dp))
-                    VButton(
-                        text = appString(StringKeys.TC_MARK_ALL_PRESENT),
-                        onClick = { viewModel.markAllPresent() },
-                        full = true,
-                        variant = VButtonVariant.Secondary,
-                        tone = VButtonTone.Mint,
-                        size = VButtonSize.Md,
-                        leading = { Icon(VIcons.Check, contentDescription = null, modifier = Modifier.size(15.dp)) },
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    VButton(
-                        text = "Insights",
-                        onClick = onShowInsights,
-                        full = true,
-                        variant = VButtonVariant.Ghost,
-                        size = VButtonSize.Sm,
-                        leading = { Icon(VIcons.Activity, contentDescription = null, modifier = Modifier.size(15.dp)) },
-                    )
                 }
             }
         }
@@ -187,7 +216,7 @@ private fun AttendanceBody(
         item {
             Spacer(Modifier.height(4.dp))
             if (state.saveError != null) {
-                Text(state.saveError ?: "", style = VTypography.caption.copy(fontSize = 12.sp, color = VColors.coral))
+                Text(state.saveError ?: "", style = VTypography.caption, color = VColors.coral)
                 Spacer(Modifier.height(8.dp))
             }
             VButton(
@@ -219,35 +248,29 @@ private fun AttendanceBody(
 @Composable
 private fun AttendanceStudentRow(s: StudentAttendance, onSetStatus: (String) -> Unit) {
     val locked = s.isOnApprovedLeave
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.lg)
-            .padding(12.dp),
-    ) {
-        Row(
-            Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            VAvatar(name = s.name, size = 38.dp)
-            Column(Modifier.weight(1f)) {
-                Text(s.name, style = VTypography.bodySmall.copy(fontSize = 14.sp, fontWeight = FontWeight.Bold, color = VColors.ink), maxLines = 1)
-                Text(
-                    if (locked) appString(StringKeys.TC_ROLL_ON_LEAVE, "no" to s.rollNo) else appString(StringKeys.TC_ROLL_NO, "no" to s.rollNo),
-                    style = VTypography.caption.copy(fontSize = 11.sp, color = if (locked) VColors.sky else VColors.ink3),
-                )
+    VtCard {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                VAvatar(name = s.name, size = 40.dp)
+                Column(Modifier.weight(1f)) {
+                    Text(s.name, style = VTypography.bodySmall, color = VColors.ink, maxLines = 1)
+                    Text(
+                        if (locked) appString(StringKeys.TC_ROLL_ON_LEAVE, "no" to s.rollNo) else appString(StringKeys.TC_ROLL_NO, "no" to s.rollNo),
+                        style = VTypography.caption,
+                        color = if (locked) VColors.sky else VColors.ink3,
+                    )
+                }
             }
-        }
-        // The 4-state segmented control sits on its own line under the identity for tap comfort.
-        Spacer(Modifier.height(8.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            StatusChip(appString(StringKeys.TC_P), AttendanceStatus.PRESENT, s.status, VColors.success, locked, onSetStatus, Modifier.weight(1f))
-            StatusChip(appString(StringKeys.TC_A), AttendanceStatus.ABSENT, s.status, VColors.coral, locked, onSetStatus, Modifier.weight(1f))
-            StatusChip(appString(StringKeys.ATT_LATE), AttendanceStatus.LATE, s.status, VColors.gold, locked, onSetStatus, Modifier.weight(1f))
-            StatusChip(appString(StringKeys.TEACHER_LEAVE), AttendanceStatus.LEAVE, s.status, VColors.sky, locked, onSetStatus, Modifier.weight(1f))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                StatusChip(appString(StringKeys.TC_P), AttendanceStatus.PRESENT, s.status, VColors.success, locked, onSetStatus, Modifier.weight(1f))
+                StatusChip(appString(StringKeys.TC_A), AttendanceStatus.ABSENT, s.status, VColors.coral, locked, onSetStatus, Modifier.weight(1f))
+                StatusChip(appString(StringKeys.ATT_LATE), AttendanceStatus.LATE, s.status, VColors.gold, locked, onSetStatus, Modifier.weight(1f))
+                StatusChip(appString(StringKeys.TEACHER_LEAVE), AttendanceStatus.LEAVE, s.status, VColors.sky, locked, onSetStatus, Modifier.weight(1f))
+            }
         }
     }
 }
@@ -263,23 +286,20 @@ private fun StatusChip(
     modifier: Modifier = Modifier,
 ) {
     val active = current == status
-    val ix = remember { MutableInteractionSource() }
     Box(
         modifier
             .clip(VShapes.md)
             .background(if (active) tint.copy(alpha = 0.16f) else VColors.creamDeep)
             .border(1.dp, if (active) tint.copy(alpha = 0.5f) else VColors.line, VShapes.md)
-            .clickable(interactionSource = ix, indication = null, enabled = !locked) { onSet(status) }
-            .padding(vertical = 9.dp),
+            .clickable(enabled = !locked) { onSet(status) }
+            .heightIn(min = 40.dp)
+            .padding(vertical = 10.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             label,
-            style = VTypography.bodySmall.copy(
-                fontSize = 12.5.sp,
-                color = if (active) tint else VColors.ink2,
-                fontWeight = if (active) FontWeight.ExtraBold else FontWeight.Medium,
-            ),
+            style = VTypography.bodySmall,
+            color = if (active) tint else VColors.ink2,
         )
     }
 }
@@ -293,42 +313,33 @@ private fun AbsentNotifyBanner(
     absentCount: Int,
     onNotify: () -> Unit,
 ) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .clip(VShapes.lg)
-            .background(VColors.coral.copy(alpha = 0.06f))
-            .border(1.dp, VColors.coral.copy(alpha = 0.2f), VShapes.lg)
-            .padding(14.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Box(
-                Modifier.size(36.dp).clip(androidx.compose.foundation.shape.CircleShape).background(VColors.coral.copy(alpha = 0.12f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(VIcons.Mail, contentDescription = null, tint = VColors.coral, modifier = Modifier.size(18.dp))
+    VtCard {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                VtIconDisc(VIcons.Mail, tint = VColors.coral, bg = VColors.coral.copy(alpha = 0.12f), size = 36.dp, glyph = 18.dp)
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        appString(StringKeys.TC_N_STUDENTS_ABSENT, "count" to absentCount.toString()),
+                        style = VTypography.bodySmall,
+                        color = VColors.ink,
+                    )
+                    Text(
+                        appString(StringKeys.TC_NOTIFY_PARENTS_ABOUT_ABSENCE),
+                        style = VTypography.caption,
+                        color = VColors.ink3,
+                    )
+                }
             }
-            Column(Modifier.weight(1f)) {
-                Text(
-                    "$absentCount student${if (absentCount > 1) "s" else ""} absent today",
-                    style = VTypography.bodySmall.copy(fontSize = 14.sp, fontWeight = FontWeight.Bold, color = VColors.ink),
-                )
-                Text(
-                    "Notify parents about the absence via Messages.",
-                    style = VTypography.caption.copy(fontSize = 12.sp, color = VColors.ink3),
-                )
-            }
+            VButton(
+                text = appString(StringKeys.TC_NOTIFY_PARENTS),
+                onClick = onNotify,
+                full = true,
+                variant = VButtonVariant.Secondary,
+                tone = VButtonTone.Rose,
+                size = VButtonSize.Sm,
+                leading = { Icon(VIcons.Send, contentDescription = null, modifier = Modifier.size(14.dp)) },
+            )
         }
-        Spacer(Modifier.height(10.dp))
-        VButton(
-            text = "Notify Parents",
-            onClick = onNotify,
-            full = true,
-            variant = VButtonVariant.Secondary,
-            tone = VButtonTone.Rose,
-            size = VButtonSize.Sm,
-            leading = { Icon(VIcons.Send, contentDescription = null, modifier = Modifier.size(14.dp)) },
-        )
     }
 }
 
@@ -353,12 +364,11 @@ private fun AttendanceInsightsBody(
     ) {
         // Header with back button
         item {
-            VtCard(padding = 16.dp) {
+            VtCard {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    val ix = remember { MutableInteractionSource() }
                     Box(
                         Modifier.size(34.dp).clip(androidx.compose.foundation.shape.CircleShape).background(VColors.creamDeep)
-                            .clickable(interactionSource = ix, indication = null) { onBack() },
+                            .clickable { onBack() },
                         contentAlignment = Alignment.Center,
                     ) { Icon(VIcons.ArrowLeft, contentDescription = "Back", tint = VColors.ink2, modifier = Modifier.size(18.dp)) }
                     Spacer(Modifier.width(12.dp))
@@ -367,7 +377,8 @@ private fun AttendanceInsightsBody(
                         Spacer(Modifier.height(2.dp))
                         Text(
                             scopeLabel.ifBlank { "${a?.className}-${a?.section} · ${a?.subject}" },
-                            style = VTypography.h3.copy(fontSize = 16.sp, color = VColors.ink, fontWeight = FontWeight.ExtraBold),
+                            style = VTypography.h3,
+                            color = VColors.ink,
                             maxLines = 1,
                         )
                     }
@@ -395,7 +406,7 @@ private fun AttendanceInsightsBody(
                         Spacer(Modifier.height(10.dp))
                         Text("No attendance data yet", style = VTypography.h3.copy(color = VColors.ink))
                         Spacer(Modifier.height(4.dp))
-                        Text("Start marking attendance to see insights", style = VTypography.caption.copy(fontSize = 12.sp, color = VColors.ink3))
+                        Text("Start marking attendance to see insights", style = VTypography.caption, color = VColors.ink3)
                         Spacer(Modifier.height(12.dp))
                         VButton("Mark Attendance", onClick = onBack, tone = VButtonTone.Lavender, size = VButtonSize.Sm)
                     }
@@ -436,14 +447,14 @@ private fun AttendanceInsightsBody(
 
 @Composable
 private fun AnalyticsHeroCard(a: AttendanceAnalyticsDto) {
-    VtCard(padding = 16.dp) {
+    VtCard {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             // Ring
             AnalyticsRing(a.overallPercentage, Modifier.size(100.dp))
             // Stats
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("${a.totalMarkedDays} days marked", style = VTypography.body.copy(fontSize = 14.sp, color = VColors.ink, fontWeight = FontWeight.Bold))
-                Text("${a.totalStudents} students in class", style = VTypography.caption.copy(fontSize = 12.sp, color = VColors.ink3))
+                Text("${a.totalMarkedDays} days marked", style = VTypography.body, color = VColors.ink)
+                Text("${a.totalStudents} students in class", style = VTypography.caption, color = VColors.ink3)
                 val trendIcon = when (a.trendDirection) {
                     "up" -> VIcons.TrendingUp to VColors.success
                     "down" -> VIcons.TrendingDown to VColors.coral
@@ -453,7 +464,7 @@ private fun AnalyticsHeroCard(a: AttendanceAnalyticsDto) {
                     Icon(trendIcon.first, contentDescription = null, tint = trendIcon.second, modifier = Modifier.size(14.dp))
                     Text(
                         when (a.trendDirection) { "up" -> "Trending up"; "down" -> "Trending down"; else -> "Stable" },
-                        style = VTypography.caption.copy(fontSize = 12.sp, color = trendIcon.second, fontWeight = FontWeight.Bold),
+                        style = VTypography.caption, color = trendIcon.second,
                     )
                 }
             }
@@ -483,15 +494,15 @@ private fun AnalyticsRing(percent: Int, modifier: Modifier = Modifier) {
                 topLeft = Offset(inset, inset), size = arcSize, style = Stroke(width = stroke, cap = StrokeCap.Round),
             )
         }
-        Text("$percent%", style = VTypography.h3.copy(fontSize = 22.sp, color = VColors.ink, fontWeight = FontWeight.ExtraBold))
+        Text("$percent%", style = VTypography.h3, color = VColors.ink)
     }
 }
 
 @Composable
 private fun AnalyticsStatusBreakdown(a: AttendanceAnalyticsDto) {
-    VtCard(padding = 16.dp) {
+    VtCard {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Status Breakdown", style = VTypography.body.copy(fontSize = 14.sp, color = VColors.ink, fontWeight = FontWeight.Bold))
+            Text("Status Breakdown", style = VTypography.body, color = VColors.ink)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 VtMetricTile(a.presentCount.toString(), "Present", VColors.success, Modifier.weight(1f))
                 VtMetricTile(a.absentCount.toString(), "Absent", VColors.coral, Modifier.weight(1f))
@@ -504,10 +515,10 @@ private fun AnalyticsStatusBreakdown(a: AttendanceAnalyticsDto) {
 
 @Composable
 private fun AnalyticsWeeklyTrendCard(trend: List<WeeklyTrendDto>, direction: String) {
-    VtCard(padding = 16.dp) {
+    VtCard {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Weekly Trend", style = VTypography.body.copy(fontSize = 14.sp, color = VColors.ink, fontWeight = FontWeight.Bold), modifier = Modifier.weight(1f))
+                Text("Weekly Trend", style = VTypography.body, color = VColors.ink, modifier = Modifier.weight(1f))
                 val dirColor = when (direction) { "up" -> VColors.success; "down" -> VColors.coral; else -> VColors.ink3 }
                 val dirIcon = when (direction) { "up" -> VIcons.TrendingUp; "down" -> VIcons.TrendingDown; else -> VIcons.Activity }
                 Icon(dirIcon, contentDescription = null, tint = dirColor, modifier = Modifier.size(16.dp))
@@ -546,7 +557,7 @@ private fun AnalyticsWeeklyTrendCard(trend: List<WeeklyTrendDto>, direction: Str
                         }
                         Text(
                             w.week.takeLast(2),
-                            style = VTypography.caption.copy(fontSize = 9.sp, color = VColors.ink3),
+                            style = VTypography.caption, color = VColors.ink3,
                         )
                     }
                 }
@@ -559,20 +570,19 @@ private fun AnalyticsWeeklyTrendCard(trend: List<WeeklyTrendDto>, direction: Str
 private fun AnalyticsAtRiskHeader(count: Int) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         VtIconDisc(VIcons.TrendingDown, tint = VColors.coral, bg = VColors.coral.copy(alpha = 0.12f), size = 32.dp, glyph = 16.dp)
-        Text("At-Risk Students", style = VTypography.body.copy(fontSize = 15.sp, color = VColors.ink, fontWeight = FontWeight.ExtraBold))
+        Text("At-Risk Students", style = VTypography.body, color = VColors.ink)
         VtPill("$count", bg = VColors.coral.copy(alpha = 0.12f), fg = VColors.coral)
     }
 }
 
 @Composable
 private fun AtRiskStudentRow(student: AtRiskStudentDto, onTap: () -> Unit) {
-    val ix = remember { MutableInteractionSource() }
-    VtCard(padding = 12.dp, onClick = onTap) {
+    VtCard(onClick = onTap) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             VAvatar(name = student.name, size = 38.dp)
             Column(Modifier.weight(1f)) {
-                Text(student.name, style = VTypography.bodySmall.copy(fontSize = 14.sp, fontWeight = FontWeight.Bold, color = VColors.ink), maxLines = 1)
-                Text("Roll ${student.rollNo} · ${student.absentDays} abs · ${student.lateDays} late", style = VTypography.caption.copy(fontSize = 11.sp, color = VColors.ink3))
+                Text(student.name, style = VTypography.bodySmall, color = VColors.ink, maxLines = 1)
+                Text("Roll ${student.rollNo} · ${student.absentDays} abs · ${student.lateDays} late", style = VTypography.caption, color = VColors.ink3)
             }
             // Mini percentage ring
             Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) {
@@ -585,7 +595,7 @@ private fun AtRiskStudentRow(student: AtRiskStudentDto, onTap: () -> Unit) {
                     drawArc(color.copy(alpha = 0.15f), 0f, 360f, false, Offset(inset, inset), arcSize, style = Stroke(width = stroke))
                     drawArc(color, -90f, 360f * (pct / 100f), false, Offset(inset, inset), arcSize, style = Stroke(width = stroke, cap = StrokeCap.Round))
                 }
-                Text("$pct%", style = VTypography.caption.copy(fontSize = 10.sp, color = color, fontWeight = FontWeight.ExtraBold))
+                Text("$pct%", style = VTypography.caption, color = color)
             }
         }
     }
@@ -593,9 +603,9 @@ private fun AtRiskStudentRow(student: AtRiskStudentDto, onTap: () -> Unit) {
 
 @Composable
 private fun AnalyticsHeatmapCard(daily: List<DailyAttendanceDto>) {
-    VtCard(padding = 16.dp) {
+    VtCard {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Last 30 Days", style = VTypography.body.copy(fontSize = 14.sp, color = VColors.ink, fontWeight = FontWeight.Bold))
+            Text("Last 30 Days", style = VTypography.body, color = VColors.ink)
             // Grid: 6 columns x 5 rows
             val rows = daily.chunked(6)
             rows.forEach { week ->
@@ -614,7 +624,7 @@ private fun AnalyticsHeatmapCard(daily: List<DailyAttendanceDto>) {
                         ) {
                             Text(
                                 day.date.takeLast(2),
-                                style = VTypography.caption.copy(fontSize = 8.sp, color = VColors.ink3),
+                                style = VTypography.caption, color = VColors.ink3,
                             )
                         }
                     }
@@ -639,7 +649,7 @@ private fun AnalyticsHeatmapCard(daily: List<DailyAttendanceDto>) {
 private fun HeatmapLegend(color: Color, label: String) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         Box(Modifier.size(10.dp).clip(VShapes.sm).background(color))
-        Text(label, style = VTypography.caption.copy(fontSize = 10.sp, color = VColors.ink3))
+        Text(label, style = VTypography.caption, color = VColors.ink3)
     }
 }
 
@@ -648,19 +658,18 @@ private fun StudentDetailCard(
     student: com.littlebridge.enrollplus.feature.teacher.domain.model.StudentAnalyticsDto,
     onClose: () -> Unit,
 ) {
-    VtCard(padding = 16.dp) {
+    VtCard {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 VAvatar(name = student.name, size = 36.dp)
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(student.name, style = VTypography.body.copy(fontSize = 15.sp, color = VColors.ink, fontWeight = FontWeight.Bold))
-                    Text("Roll ${student.rollNo}", style = VTypography.caption.copy(fontSize = 11.sp, color = VColors.ink3))
+                    Text(student.name, style = VTypography.body, color = VColors.ink)
+                    Text("Roll ${student.rollNo}", style = VTypography.caption, color = VColors.ink3)
                 }
-                val ix = remember { MutableInteractionSource() }
                 Box(
                     Modifier.size(28.dp).clip(androidx.compose.foundation.shape.CircleShape).background(VColors.creamDeep)
-                        .clickable(interactionSource = ix, indication = null) { onClose() },
+                        .clickable { onClose() },
                     contentAlignment = Alignment.Center,
                 ) { Icon(VIcons.Close, contentDescription = "Close", tint = VColors.ink3, modifier = Modifier.size(14.dp)) }
             }
@@ -673,7 +682,7 @@ private fun StudentDetailCard(
             }
             // History list
             if (student.history.isNotEmpty()) {
-                Text("Recent History", style = VTypography.body.copy(fontSize = 13.sp, color = VColors.ink, fontWeight = FontWeight.Bold))
+                Text("Recent History", style = VTypography.body, color = VColors.ink)
                 student.history.takeLast(10).forEach { day ->
                     val statusColor = when {
                         day.presentCount > 0 -> VColors.success
@@ -693,8 +702,8 @@ private fun StudentDetailCard(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Box(Modifier.size(6.dp).clip(androidx.compose.foundation.shape.CircleShape).background(statusColor))
-                        Text(prettyDate(day.date), style = VTypography.caption.copy(fontSize = 12.sp, color = VColors.ink2), modifier = Modifier.weight(1f))
-                        Text(statusLabel, style = VTypography.caption.copy(fontSize = 11.sp, color = statusColor, fontWeight = FontWeight.Bold))
+                        Text(prettyDate(day.date), style = VTypography.caption, color = VColors.ink2, modifier = Modifier.weight(1f))
+                        Text(statusLabel, style = VTypography.caption, color = statusColor)
                     }
                 }
             }

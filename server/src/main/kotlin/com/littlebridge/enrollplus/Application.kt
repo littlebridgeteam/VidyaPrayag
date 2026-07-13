@@ -223,8 +223,8 @@ fun main() {
     val props = loadRootLocalProperties()
 
     val host = props.getProperty("SERVER_HOST") ?: "0.0.0.0"
-    val port = props.getProperty("SERVER_PORT")
-        ?.toIntOrNull()
+    val port = System.getenv("PORT")?.toIntOrNull()
+        ?: props.getProperty("SERVER_PORT")?.toIntOrNull()
         ?: SERVER_PORT
 
     // Start the notification scheduler (fee reminders, calendar reminders).

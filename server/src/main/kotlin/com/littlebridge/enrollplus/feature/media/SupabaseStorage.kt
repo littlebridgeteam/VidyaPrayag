@@ -156,6 +156,7 @@ object SupabaseStorage {
         return try {
             val resp: HttpResponse = client.post(endpoint) {
                 header("apikey", key)
+                header("Authorization", "Bearer $key")
                 // x-upsert=false: never silently overwrite (paths are uuid-unique anyway)
                 header("x-upsert", "false")
                 contentType(ContentType.parse(contentType.substringBefore(';').trim()))
@@ -189,6 +190,7 @@ object SupabaseStorage {
         return try {
             val resp = client.delete("$root/storage/v1/object/$bucket/$objectPath") {
                 header("apikey", key)
+                header("Authorization", "Bearer $key")
             }
             resp.status.isSuccess()
         } catch (e: Exception) {

@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VidyaPrayag / Enroll+ — End-to-End Testing Guide</title>
+<style>
+  @page { margin: 2cm; }
+  body { font-family: 'Segoe UI', Calibri, Arial, sans-serif; line-height: 1.6; color: #1a1a2e; max-width: 900px; margin: 0 auto; padding: 20px; }
+  h1 { color: #0f3460; border-bottom: 3px solid #0f3460; padding-bottom: 10px; font-size: 28px; }
+  h2 { color: #16213e; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-top: 30px; font-size: 22px; }
+  h3 { color: #0f3460; margin-top: 20px; font-size: 18px; }
+  h4 { color: #1a1a2e; margin-top: 15px; font-size: 16px; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+  th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+  th { background: #0f3460; color: white; }
+  tr:nth-child(even) { background: #f8f9fa; }
+  code { background: #e8e8e8; padding: 2px 6px; border-radius: 3px; font-family: Consolas, monospace; font-size: 13px; }
+  pre { background: #1e1e2e; color: #cdd6f4; padding: 15px; border-radius: 8px; overflow-x: auto; font-family: Consolas, monospace; font-size: 13px; }
+  .callout { background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px 16px; margin: 15px 0; border-radius: 4px; }
+  .danger { background: #f8d7da; border-left: 4px solid #dc3545; padding: 12px 16px; margin: 15px 0; border-radius: 4px; }
+  .success { background: #d4edda; border-left: 4px solid #28a745; padding: 12px 16px; margin: 15px 0; border-radius: 4px; }
+  .info { background: #d1ecf1; border-left: 4px solid #17a2b8; padding: 12px 16px; margin: 15px 0; border-radius: 4px; }
+  .step { background: #f0f4ff; border-left: 4px solid #0f3460; padding: 12px 16px; margin: 10px 0; border-radius: 4px; }
+  .step-num { font-weight: bold; color: #0f3460; font-size: 18px; }
+  .portal-badge { display: inline-block; padding: 3px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; color: white; }
+  .badge-school { background: #0f3460; }
+  .badge-teacher { background: #e94560; }
+  .badge-parent { background: #16c79a; }
+  .toc { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin: 20px 0; }
+  .toc ul { list-style: none; padding-left: 15px; }
+  .toc a { text-decoration: none; color: #0f3460; }
+  .toc a:hover { text-decoration: underline; }
+  .feature-table th { background: #16213e; }
+  .whatsapp { background: #e5ffe5; border: 2px solid #25d366; border-radius: 8px; padding: 15px; margin: 20px 0; }
+  .claude-prompt { background: #f0e6ff; border: 2px solid #7b2cbf; border-radius: 8px; padding: 15px; margin: 20px 0; }
+  .claude-prompt h4 { color: #7b2cbf; margin-top: 0; }
+  hr { border: none; border-top: 1px solid #ddd; margin: 30px 0; }
+  @media print { .toc { page-break-after: always; } }
+</style>
+</head>
+<body>
+
+<h1>VidyaPrayag / Enroll+ — End-to-End Testing Guide</h1>
+<p><strong>Version:</strong> 1.0 &nbsp;|&nbsp; <strong>Date:</strong> July 2026 &nbsp;|&nbsp; <strong>Server:</strong> https://vidyaprayag-api.onrender.com</p>
+
+<div class="callout">
+  <strong>OTP for Testing:</strong> Three phone numbers are whitelisted with a fixed OTP of <code>123456</code>.
+  Use these numbers for all parent account creation and login during testing. The OTP <code>123456</code> works
+  for both signup and login — no need to check logs or wait for SMS.
+</div>
+
+<div class="danger">
+  <strong>WhatsApp Bug Reporting Group:</strong> A WhatsApp group named <strong>"Testing"</strong> has been created.
+  Post any bug or issue as: (1) a screenshot of the problem, (2) a one-line description of what happened,
+  and (3) what the expected behavior should be. <strong>This chat is NOT for discussion — only for logging issues.</strong>
+  Do not reply to others' messages. Each issue = one message.
+</div>
+
+<h2>Table of Contents</h2>
+<div class="toc">
+<ul>
+  <li><a href="#prerequisites">0. Prerequisites & Test Numbers</a></li>
+  <li><a href="#phase1">Phase 1: School Admin — Create School & Onboarding</a></li>
+  <li><a href="#phase2">Phase 2: School Admin — Add Teachers & Allocate Subjects</a></li>
+  <li><a href="#phase3">Phase 3: School Admin — Bulk Import Students via CSV</a></li>
+  <li><a href="#phase4">Phase 4: Parent — Create Account & Link Child</a></li>
+  <li><a href="#phase5">Phase 5: School Admin — Approve Child Link Requests</a></li>
+  <li><a href="#phase6">Phase 6: School Admin Portal — All Features</a></li>
+  <li><a href="#phase7">Phase 7: Teacher Portal — All Features</a></li>
+  <li><a href="#phase8">Phase 8: Parent Portal — All Features</a></li>
+  <li><a href="#csv-prompt">Appendix: Claude Prompt for CSV Generation</a></li>
+  <li><a href="#feature-matrix">Appendix: Complete Feature Matrix</a></li>
+</ul>
+</div>
+
+<hr>
+
+<!-- ================================================================ -->
+<h2 id="prerequisites">Phase 0: Prerequisites & Test Numbers</h2>
+
+<h3>Test Phone Numbers (Fixed OTP: 123456)</h3>
+<table>
+  <tr><th>Phone Number</th><th>Role</th><th>Purpose</th></tr>
+  <tr><td>+919535248581</td><td>Parent</td><td>Primary tester — account creation, login, child linking</td></tr>
+  <tr><td>+91XXXXXXXXX</td><td>Parent</td><td>Second parent tester</td></tr>
+  <tr><td>+91YYYYYYYYY</td><td>Parent</td><td>Third parent tester</td></tr>
+</table>
+
+<div class="callout">
+  Replace the X / Y numbers with the actual test numbers configured in the Render env vars
+  (<code>OTP_TEST_NUMBERS</code>). All three numbers use OTP <code>123456</code> for both signup and login.
+</div>
+
+<h3>School Admin Account</h3>
+<p>The school admin account should already exist. If not, create one via the app:</p>
+<ol>
+  <li>Open the Enroll+ app</li>
+  <li>Sign up with an email address (email signup uses password, not OTP)</li>
+  <li>Select role <code>school_admin</code></li>
+  <li>Complete the onboarding wizard (see Phase 1)</li>
+</ol>
+
+<h3>API Base URL</h3>
+<p>All API calls go to: <code>https://vidyaprayag-api.onrender.com/api/v1</code></p>
+
+<hr>
+
+<!-- ================================================================ -->
+<h2 id="phase1">Phase 1: School Admin — Create School & Onboarding</h2>
+<p><span class="portal-badge badge-school">SCHOOL ADMIN PORTAL</span></p>
+
+<h3>1.1 Sign Up as School Admin</h3>
+<div class="step">
+  <span class="step-num">1.</span> Open the Enroll+ app → tap <strong>Sign Up</strong>.
+</div>
+<div class="step">
+  <span class="step-num">2.</span> Enter an email address (e.g. <code>admin@vidyaprayag.edu.in</code>) and password.
+</div>
+<div class="step">
+  <span class="step-num">3.</span> Select role: <strong>School Admin</strong>.
+</div>
+<div class="step">
+  <span class="step-num">4.</span> Complete signup — you'll be logged in and redirected to onboarding.
+</div>
+
+<h3>1.2 Onboarding Wizard (4 Steps)</h3>
+<p>The onboarding wizard has 4 steps: <strong>BASIC → BRANDING → ACADEMIC → REVIEW</strong>.</p>
+
+<table>
+  <tr><th>Step</th><th>Fields</th><th>What to Enter</th></tr>
+  <tr>
+    <td><strong>BASIC</strong></td>
+    <td>School name, board, medium, gender type, contact phone, contact email, principal name, address, city, district, state, pincode</td>
+    <td>Enter realistic values, e.g. "Vidya Prayag School", CBSE, English, Co-Ed, etc.</td>
+  </tr>
+  <tr>
+    <td><strong>BRANDING</strong></td>
+    <td>Logo URL, brand color, cover image URL</td>
+    <td>Upload a logo or use a placeholder URL. Pick a brand color (e.g. navy blue).</td>
+  </tr>
+  <tr>
+    <td><strong>ACADEMIC</strong></td>
+    <td>Classes & sections</td>
+    <td>Add classes: Nursery, LKG, UKG, 1-10. Add sections A, B, C for each class.</td>
+  </tr>
+  <tr>
+    <td><strong>REVIEW</strong></td>
+    <td>Review all entered data</td>
+    <td>Verify all details. Submit to complete onboarding. School is now active.</td>
+  </tr>
+</table>
+
+<h3>1.3 Verify School Created</h3>
+<div class="step">
+  After onboarding, go to <strong>Settings → School Profile</strong>. Verify:
+  <ul>
+    <li>School name, address, board appear correctly</li>
+    <li>Logo and brand color are applied</li>
+    <li>Classes & sections listed match what was entered</li>
+  </ul>
+</div>
+
+<h3>What to Test</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>Onboarding BASIC</td><td>Fill basic fields and save draft</td><td>Draft persists; can navigate back and forth</td></tr>
+  <tr><td>Onboarding BRANDING</td><td>Upload logo + pick color</td><td>Logo preview shows; color applied to UI</td></tr>
+  <tr><td>Onboarding ACADEMIC</td><td>Add classes (1-10) with sections (A, B, C)</td><td>All classes appear in list; sections saved</td></tr>
+  <tr><td>Onboarding REVIEW</td><td>Submit onboarding</td><td>School created; redirected to dashboard</td></tr>
+  <tr><td>School Profile</td><td>View profile after onboarding</td><td>All entered data visible and correct</td></tr>
+  <tr><td>School Settings</td><td>Edit school profile fields</td><td>Changes save and reflect immediately</td></tr>
+</table>
+
+<hr>
+
+<!-- ================================================================ -->
+<h2 id="phase2">Phase 2: School Admin — Add Teachers & Allocate Subjects</h2>
+<p><span class="portal-badge badge-school">SCHOOL ADMIN PORTAL</span></p>
+
+<h3>2.1 Create Teacher Accounts</h3>
+<div class="step">
+  <span class="step-num">1.</span> Go to <strong>People → Teachers</strong> tab.
+</div>
+<div class="step">
+  <span class="step-num">2.</span> Tap <strong>Add Teacher</strong>.
+</div>
+<div class="step">
+  <span class="step-num">3.</span> Enter teacher details:
+  <ul>
+    <li><strong>Name:</strong> e.g. "Priya Sharma"</li>
+    <li><strong>Phone:</strong> Use a unique phone number (can be any number — teacher login is OTP-based)</li>
+    <li><strong>Email:</strong> Optional</li>
+    <li><strong>Subject:</strong> e.g. Mathematics</li>
+  </ul>
+</div>
+<div class="step">
+  <span class="step-num">4.</span> Save. Repeat for 3-4 teachers:
+  <ul>
+    <li>Priya Sharma — Mathematics</li>
+    <li>Rahul Verma — Science</li>
+    <li>Anita Gupta — English</li>
+    <li>Suresh Patel — Social Studies</li>
+  </ul>
+</div>
+
+<h3>2.2 Allocate Subjects & Class Teacher Assignments</h3>
+<div class="step">
+  <span class="step-num">1.</span> Go to <strong>People → Teacher Assignments</strong>.
+</div>
+<div class="step">
+  <span class="step-num">2.</span> Assign each teacher to classes & sections:
+  <ul>
+    <li>Priya Sharma → Mathematics → Class 6-A, 6-B, 7-A (make her class teacher for 6-A)</li>
+    <li>Rahul Verma → Science → Class 6-A, 7-B, 8-A</li>
+    <li>Anita Gupta → English → Class 6-A, 6-B, 7-A, 7-B</li>
+    <li>Suresh Patel → Social Studies → Class 7-A, 7-B, 8-A</li>
+  </ul>
+</div>
+<div class="step">
+  <span class="step-num">3.</span> Mark <strong>Class Teacher</strong> checkbox for Priya Sharma → 6-A.
+</div>
+
+<h3>What to Test</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>Add Teacher</td><td>Create 4 teacher accounts</td><td>All teachers appear in People → Teachers list</td></tr>
+  <tr><td>Teacher Assignment</td><td>Assign subjects to classes</td><td>Assignments appear in teacher profiles</td></tr>
+  <tr><td>Class Teacher</td><td>Mark Priya as class teacher for 6-A</td><td>Class teacher flag shows in teacher profile and class list</td></tr>
+  <tr><td>Teacher Login</td><td>Log in as a teacher using OTP</td><td>Teacher sees their classes, subjects, today's schedule</td></tr>
+</table>
+
+<hr>
+
+<!-- ================================================================ -->
+<h2 id="phase3">Phase 3: School Admin — Bulk Import Students via CSV</h2>
+<p><span class="portal-badge badge-school">SCHOOL ADMIN PORTAL</span></p>
+
+<h3>3.1 Generate CSV File</h3>
+<p>Use the Claude prompt in the <a href="#csv-prompt">Appendix</a> to generate a CSV with 100+ students across different classes and sections.</p>
+
+<p>The CSV format requires these columns (header row, case-insensitive):</p>
+<table>
+  <tr><th>Column</th><th>Required</th><th>Example</th></tr>
+  <tr><td>full_name</td><td>Yes</td><td>Aarav Sharma</td></tr>
+  <tr><td>class_name</td><td>Yes</td><td>6</td></tr>
+  <tr><td>roll_number</td><td>Yes</td><td>001</td></tr>
+  <tr><td>section</td><td>Optional</td><td>A</td></tr>
+  <tr><td>student_code</td><td>Optional (auto-generated)</td><td>VP20260001</td></tr>
+  <tr><td>parent_phone</td><td>Optional (recommended)</td><td>+919535248581</td></tr>
+</table>
+
+<div class="callout">
+  <strong>Important:</strong> Include <code>parent_phone</code> for at least 3-5 students using the test phone numbers.
+  This allows the parent→child link to auto-match when the parent signs up.
+</div>
+
+<h3>3.2 Upload CSV</h3>
+<div class="step">
+  <span class="step-num">1.</span> Go to <strong>People → Students</strong> tab.
+</div>
+<div class="step">
+  <span class="step-num">2.</span> Tap <strong>Import / Bulk Add</strong>.
+</div>
+<div class="step">
+  <span class="step-num">3.</span> Upload the CSV file or paste CSV content.
+</div>
+<div class="step">
+  <span class="step-num">4.</span> Review the import results:
+  <ul>
+    <li>Total rows, inserted count, failed count</li>
+    <li>Per-row success/failure with reasons</li>
+  </ul>
+</div>
+
+<h3>3.3 Verify Imported Students</h3>
+<div class="step">
+  After import, verify in <strong>People → Students</strong>:
+  <ul>
+    <li>Student count matches inserted count</li>
+    <li>Students appear in correct class + section</li>
+    <li>Student codes are auto-generated and unique</li>
+    <li>Search by name or roll number works</li>
+    <li>Filter by class works</li>
+  </ul>
+</div>
+
+<h3>What to Test</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>CSV Import</td><td>Upload 100+ student CSV</td><td>Students imported; per-row results shown</td></tr>
+  <tr><td>Student List</td><td>View students after import</td><td>All students visible with correct class/section</td></tr>
+  <tr><td>Student Search</td><td>Search by name</td><td>Matching students appear</td></tr>
+  <tr><td>Student Filter</td><td>Filter by class (e.g. Class 6)</td><td>Only Class 6 students shown</td></tr>
+  <tr><td>Student Profile</td><td>Tap a student to view profile</td><td>Profile shows attendance, marks, fees, parent info</td></tr>
+  <tr><td>Duplicate Import</td><td>Re-upload same CSV</td><td>Duplicate student codes rejected with clear error</td></tr>
+</table>
+
+<hr>
+
+<!-- ================================================================ -->
+<h2 id="phase4">Phase 4: Parent — Create Account & Link Child</h2>
+<p><span class="portal-badge badge-parent">PARENT PORTAL</span></p>
+
+<h3>4.1 Create Parent Account</h3>
+<div class="step">
+  <span class="step-num">1.</span> Open the Enroll+ app → tap <strong>Sign Up</strong>.
+</div>
+<div class="step">
+  <span class="step-num">2.</span> Enter one of the test phone numbers (e.g. <code>+919535248581</code>).
+</div>
+<div class="step">
+  <span class="step-num">3.</span> Tap <strong>Send OTP</strong>. The server will generate OTP <code>123456</code> for this number.
+</div>
+<div class="step">
+  <span class="step-num">4.</span> Enter OTP: <code>123456</code>.
+</div>
+<div class="step">
+  <span class="step-num">5.</span> Enter name (e.g. "Rajesh Sharma") and select role: <strong>Parent</strong>.
+</div>
+<div class="step">
+  <span class="step-num">6.</span> Complete signup. You'll be logged in as a parent.
+</div>
+
+<h3>4.2 Link Child to School</h3>
+<div class="step">
+  <span class="step-num">1.</span> After login, go to <strong>Link Child</strong> (or it may prompt automatically).
+</div>
+<div class="step">
+  <span class="step-num">2.</span> <strong>Step 1 — Select School:</strong> Search for "Vidya Prayag School" and select it.
+</div>
+<div class="step">
+  <span class="step-num">3.</span> <strong>Step 2 — Enter Child Details:</strong>
+  <ul>
+    <li>Child name (must match the student's name in the school records)</li>
+    <li>Class (e.g. 6)</li>
+    <li>Section (e.g. A)</li>
+    <li>Roll number (e.g. 001)</li>
+  </ul>
+</div>
+<div class="step">
+  <span class="step-num">4.</span> <strong>Step 3 — Submit Link Request:</strong> A pending link request is created.
+  The school admin must approve it (see Phase 5).
+</div>
+<div class="step">
+  <span class="step-num">5.</span> Repeat for all three test parent numbers, linking different children.
+</div>
+
+<h3>What to Test</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>Parent Signup</td><td>Sign up with test phone + OTP 123456</td><td>Account created; logged in as parent</td></tr>
+  <tr><td>Link Child — School Search</td><td>Search for school by name</td><td>School appears in search results</td></tr>
+  <tr><td>Link Child — Details</td><td>Enter child name, class, section, roll</td><td>Form accepts input; validates required fields</td></tr>
+  <tr><td>Link Child — Submit</td><td>Submit link request</td><td>"Request sent" confirmation; pending status shown</td></tr>
+  <tr><td>Link Child — Wrong Roll</td><td>Enter non-existent roll number</td><td>Error: no matching student found</td></tr>
+  <tr><td>Parent Login</td><td>Log out and log back in with OTP 123456</td><td>Logged in; sees linked children</td></tr>
+</table>
+
+<hr>
+
+<!-- ================================================================ -->
+<h2 id="phase5">Phase 5: School Admin — Approve Child Link Requests</h2>
+<p><span class="portal-badge badge-school">SCHOOL ADMIN PORTAL</span></p>
+
+<h3>5.1 View Pending Link Requests</h3>
+<div class="step">
+  <span class="step-num">1.</span> Log in as school admin.
+</div>
+<div class="step">
+  <span class="step-num">2.</span> Go to <strong>People → Link Requests</strong> (or People → Students → Link Requests tab).
+</div>
+<div class="step">
+  <span class="step-num">3.</span> You should see pending requests from the parents who submitted in Phase 4.
+</div>
+
+<h3>5.2 Approve / Reject Link Requests</h3>
+<div class="step">
+  <span class="step-num">1.</span> Review each pending request — verify child name, class, roll number match a student in the school.
+</div>
+<div class="step">
+  <span class="step-num">2.</span> Tap <strong>Approve</strong> for correct matches.
+</div>
+<div class="step">
+  <span class="step-num">3.</span> Tap <strong>Reject</strong> for incorrect matches (with a reason).
+</div>
+<div class="step">
+  <span class="step-num">4.</span> The parent receives a notification on approval/rejection.
+</div>
+
+<h3>What to Test</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>Link Request Queue</td><td>View pending requests</td><td>All pending requests from parents visible</td></tr>
+  <tr><td>Approve Link</td><td>Approve a correct parent-child link</td><td>Status changes to approved; parent notified; child appears in parent's app</td></tr>
+  <tr><td>Reject Link</td><td>Reject an incorrect link</td><td>Status changes to rejected; parent notified with reason</td></tr>
+  <tr><td>Parent sees child</td><td>After approval, log in as parent</td><td>Linked child appears in parent's children list</td></tr>
+</table>
+
+<hr>
+
+<!-- ================================================================ -->
+<h2 id="phase6">Phase 6: School Admin Portal — All Features</h2>
+<p><span class="portal-badge badge-school">SCHOOL ADMIN PORTAL</span></p>
+
+<h3>6.1 Dashboard</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>Dashboard Overview</td><td>Open dashboard after setup</td><td>Shows student count, teacher count, class count, fee collection %, attendance rate</td></tr>
+  <tr><td>Dashboard Charts</td><td>View charts (attendance trend, fee collection)</td><td>Charts render with real data from DB; no empty/broken charts</td></tr>
+  <tr><td>Quick Stats</td><td>Check today's attendance %, pending fees</td><td>Numbers match actual data</td></tr>
+</table>
+
+<h3>6.2 People Management</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>Students List</td><td>View all students</td><td>Paginated list with name, class, roll, parent info</td></tr>
+  <tr><td>Student Search</td><td>Search by name or roll number</td><td>Filtered results appear instantly</td></tr>
+  <tr><td>Student Filter</td><td>Filter by class/section</td><td>Only matching students shown</td></tr>
+  <tr><td>Student Profile</td><td>Tap student → view full profile</td><td>Shows attendance, marks, fees, leave history, parent links, activity timeline</td></tr>
+  <tr><td>Add Single Student</td><td>Add one student manually</td><td>Student created with auto-generated code</td></tr>
+  <tr><td>Edit Student</td><td>Edit a student's details</td><td>Changes save and reflect</td></tr>
+  <tr><td>Delete Student</td><td>Remove a student (soft delete)</td><td>Student deactivated; disappears from active list</td></tr>
+  <tr><td>Teachers List</td><td>View all teachers</td><td>All teachers with their subjects and classes</td></tr>
+  <tr><td>Teacher Profile</td><td>Tap teacher → view profile</td><td>Shows assignments, classes, subjects, class teacher status</td></tr>
+  <tr><td>Non-Teaching Staff</td><td>Add/view non-teaching staff</td><td>Staff list shows with role, department</td></tr>
+  <tr><td>Link Requests</td><td>View/approve/reject parent link requests</td><td>Pending requests visible; approve/reject works</td></tr>
+</table>
+
+<h3>6.3 Classes & Subjects</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>Classes List</td><td>View all classes</td><td>All classes with sections, student count, class teacher</td></tr>
+  <tr><td>Add Class</td><td>Add a new class (e.g. Class 11)</td><td>Class created with sections</td></tr>
+  <tr><td>Subjects</td><td>View/edit subjects</td><td>Subject list per class; can rename/reorder</td></tr>
+  <tr><td>Teacher Assignments</td><td>Assign/reassign teachers to classes</td><td>Assignment changes reflect in teacher profiles</td></tr>
+</table>
+
+<h3>6.4 Announcements</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>Create Announcement</td><td>Create a new announcement (title, description, type)</td><td>Announcement created; visible to parents in their portal</td></tr>
+  <tr><td>View Announcements</td><td>List all school announcements</td><td>All announcements shown newest first</td></tr>
+  <tr><td>Edit Announcement</td><td>Edit an existing announcement</td><td>Changes save and reflect for parents</td></tr>
+  <tr><td>Delete Announcement</td><td>Delete an announcement</td><td>Announcement removed; no longer visible to parents</td></tr>
+  <tr><td>Calendar-Only Event</td><td>Create a calendar-only announcement (no parent notification)</td><td>Event appears in calendar but not in announcements feed</td></tr>
+</table>
+
+<h3>6.5 Calendar</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>Calendar View</td><td>Open calendar (month/week view)</td><td>Events shown on correct dates; holidays highlighted</td></tr>
+  <tr><td>Add Event</td><td>Create a holiday, exam, PTM, or custom event</td><td>Event appears on calendar; parents see published events</td></tr>
+  <tr><td>Edit Event</td><td>Edit an existing event</td><td>Changes reflect on calendar</td></tr>
+  <tr><td>Delete Event</td><td>Delete an event</td><td>Event removed from calendar</td></tr>
+  <tr><td>Event Status</td><td>Publish a draft event</td><td>Published events visible to parents; drafts only visible to school</td></tr>
+</table>
+
+<h3>6.6 Fees</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>Fee Ledger</td><td>View fee ledger</td><td>Shows all fee records with status (PAID/DUE/OVERDUE), amounts, dates</td></tr>
+  <tr><td>Fee Summary</td><td>Check total collected vs outstanding</td><td>Totals match sum of individual records</td></tr>
+  <tr><td>Add Fee Record</td><td>Create a fee record for a student</td><td>Fee record created; appears in parent's fees tab</td></tr>
+  <tr><td>Mark Paid</td><td>Mark a DUE fee as PAID</td><td>Status changes; parent sees updated status</td></tr>
+</table>
+
+<h3>6.7 PTM (Parent-Teacher Meetings)</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>Create PTM Event</td><td>Schedule a PTM with date, time slots</td><td>PTM event created; appears in calendar; parents can register</td></tr>
+  <tr><td>View PTM List</td><td>View all PTMs (upcoming/past)</td><td>PTMs listed with status</td></tr>
+  <tr><td>PTM Progress</td><td>View which classes have completed PTM</td><td>Progress per class shown</td></tr>
+</table>
+
+<h3>6.8 Leave Requests</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>View Leave Requests</td><td>View teacher leave requests</td><td>All pending/approved/rejected requests visible</td></tr>
+  <tr><td>Approve/Reject Leave</td><td>Approve or reject a teacher's leave</td><td>Status changes; teacher notified</td></tr>
+</table>
+
+<h3>6.9 Analytics</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>Analytics Overview</td><td>View analytics dashboard</td><td>Shows attendance %, performance trends, class averages</td></tr>
+  <tr><td>Class Performance</td><td>View per-class performance</td><td>Each class shows avg attendance, avg marks, top/bottom students</td></tr>
+  <tr><td>Teacher Performance</td><td>View per-teacher metrics</td><td>Shows classes taught, syllabus coverage, attendance marking rate</td></tr>
+  <tr><td>Syllabus Coverage</td><td>View syllabus completion across classes</td><td>% complete per subject per class</td></tr>
+  <tr><td>Early Warning</td><td>View at-risk students</td><td>Students with low attendance or marks flagged</td></tr>
+</table>
+
+<h3>6.10 Messages</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>View Threads</td><td>Open messages inbox</td><td>All conversation threads listed</td></tr>
+  <tr><td>Compose Message</td><td>Start new conversation with a teacher or parent</td><td>Recipient picker shows teachers + parents; message sends</td></tr>
+  <tr><td>Reply to Thread</td><td>Reply to an existing conversation</td><td>Message delivered; appears in recipient's inbox</td></tr>
+  <tr><td>Attachments</td><td>Send a message with an image attachment</td><td>Image uploads and displays in conversation</td></tr>
+</table>
+
+<h3>6.11 Results</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>Results Overview</td><td>View exam results across classes</td><td>Results listed per assessment with averages</td></tr>
+  <tr><td>Results Detail</td><td>View results for a specific assessment</td><td>Per-student marks shown with pass/fail status</td></tr>
+</table>
+
+<h3>6.12 Transport (if enabled)</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>Transport Routes</td><td>Create/view transport routes</td><td>Routes listed with stops, timings</td></tr>
+  <tr><td>Transport Vehicles</td><td>Add vehicles</td><td>Vehicle list with driver info</td></tr>
+  <tr><td>Transport Assignments</td><td>Assign students to routes</td><td>Students mapped to routes</td></tr>
+</table>
+
+<h3>6.13 Library (if enabled)</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>Library Dashboard</td><td>View library overview</td><td>Shows total books, issued, available, overdue</td></tr>
+  <tr><td>Add Book</td><td>Add a new book to catalog</td><td>Book appears in catalog</td></tr>
+  <tr><td>Issue Book</td><td>Issue a book to a student</td><td>Book marked as issued; due date calculated</td></tr>
+  <tr><td>Return Book</td><td>Return an issued book</td><td>Book marked as available</td></tr>
+</table>
+
+<h3>6.14 Settings</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>School Profile</td><td>View/edit school profile</td><td>All fields editable; changes persist</td></tr>
+  <tr><td>Day Configuration</td><td>Set school timing, working days</td><td>Config saved; reflects in teacher timetable</td></tr>
+  <tr><td>Feature Flags</td><td>Enable/disable modules (library, transport)</td><td>Disabled modules hidden from all portals</td></tr>
+</table>
+
+<hr>
+
+<!-- ================================================================ -->
+<h2 id="phase7">Phase 7: Teacher Portal — All Features</h2>
+<p><span class="portal-badge badge-teacher">TEACHER PORTAL</span></p>
+
+<h3>7.1 Login as Teacher</h3>
+<div class="step">
+  <span class="step-num">1.</span> Open the Enroll+ app → <strong>Login</strong>.
+</div>
+<div class="step">
+  <span class="step-num">2.</span> Enter the teacher's phone number.
+</div>
+<div class="step">
+  <span class="step-num">3.</span> OTP will be sent (check server logs or use test number if whitelisted).
+</div>
+<div class="step">
+  <span class="step-num">4.</span> Enter OTP → logged in as teacher.
+</div>
+
+<h3>7.2 Today / Day View</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>Today's Schedule</td><td>Open Today tab</td><td>Shows today's periods with class, subject, time</td></tr>
+  <tr><td>Day View</td><td>Tap a specific date</td><td>Shows periods for that day; holidays show "Holiday"</td></tr>
+  <tr><td>Week View</td><td>Switch to week view</td><td>Shows full week with periods per day</td></tr>
+</table>
+
+<h3>7.3 Classes</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>My Classes</td><td>View assigned classes</td><td>Only classes assigned to this teacher shown</td></tr>
+  <tr><td>Class Detail</td><td>Tap a class → view roster</td><td>Student list with roll numbers; student count correct</td></tr>
+  <tr><td>Class Teacher Badge</td><td>Check class teacher indicator</td><td>Class teacher sees a badge/indicator on their class</td></tr>
+</table>
+
+<h3>7.4 Attendance</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>Mark Attendance</td><td>Open a class → tap Mark Attendance</td><td>Roster appears with all students; default "present"</td></tr>
+  <tr><td>Save Attendance</td><td>Mark some absent/late and save</td><td>Attendance saved; success confirmation</td></tr>
+  <tr><td>Edit Attendance</td><td>Re-open attendance for same date</td><td>Previously saved marks load; can edit and re-save</td></tr>
+  <tr><td>Holiday Detection</td><td>Try marking attendance on a holiday</td><td>Shows "Holiday" banner; attendance disabled</td></tr>
+  <tr><td>Leave Auto-Default</td><td>Student with approved leave</td><td>Auto-marked as "leave" with source indicator</td></tr>
+</table>
+
+<h3>7.5 Assessments / Gradebook</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>Create Assessment</td><td>Create a new test/exam for a class</td><td>Assessment created with name, date, max marks, subject</td></tr>
+  <tr><td>Enter Marks</td><td>Enter marks for each student</td><td>Marks save per student; absent flag works</td></tr>
+  <tr><td>Edit Marks</td><td>Re-open and edit marks</td><td>Existing marks load; can update and save</td></tr>
+  <tr><td>Publish Assessment</td><td>Publish an assessment</td><td>Status changes to published; results visible to school admin</td></tr>
+  <tr><td>Assessment History</td><td>View history for a class</td><td>Timeline of published assessments with class average</td></tr>
+  <tr><td>Score Distribution</td><td>View histogram for latest assessment</td><td>Histogram shows score ranges with student counts</td></tr>
+</table>
+
+<h3>7.6 Homework</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>Assign Homework</td><td>Create homework for a class+subject</td><td>Homework created with title, description, due date</td></tr>
+  <tr><td>Homework List</td><td>View all assigned homework</td><td>List shows pending, due, past homework</td></tr>
+  <tr><td>Homework Board</td><td>View submissions for a homework</td><td>Shows which students submitted; view their answers + attachments</td></tr>
+  <tr><td>Review Submission</td><td>Grade and review a student's submission</td><td>Can add grade, remarks; student sees feedback</td></tr>
+  <tr><td>Extend Due Date</td><td>Extend deadline for homework</td><td>Due date updates; late submissions allowed</td></tr>
+</table>
+
+<h3>7.7 Syllabus</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>View Syllabus</td><td>Open syllabus for a class+subject</td><td>Units and topics listed with coverage status</td></tr>
+  <tr><td>Mark Unit Covered</td><td>Toggle a unit/chapter as covered</td><td>Status updates; child topics auto-marked covered</td></tr>
+  <tr><td>Add Unit</td><td>Create a new syllabus unit</td><td>Unit appears in list</td></tr>
+  <tr><td>Syllabus Progress</td><td>View overall % complete</td><td>Progress bar shows accurate percentage</td></tr>
+</table>
+
+<h3>7.8 Lesson Plans</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>Create Lesson Plan</td><td>Create a lesson plan for a class</td><td>Plan created with topic, date, objectives</td></tr>
+  <tr><td>View Lesson Plans</td><td>List all lesson plans</td><td>Plans listed by date</td></tr>
+  <tr><td>Mark Complete</td><td>Mark a lesson plan as completed</td><td>Status changes to completed</td></tr>
+  <tr><td>Templates</td><td>Save/load lesson plan templates</td><td>Template saves; can create new plan from template</td></tr>
+</table>
+
+<h3>7.9 Quiz (AI-Generated)</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>Generate Quiz</td><td>Select syllabus units → generate quiz</td><td>AI generates quiz questions based on selected units</td></tr>
+</table>
+
+<h3>7.10 Messages</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>View Threads</td><td>Open messages</td><td>Conversation threads with parents and school admin</td></tr>
+  <tr><td>Compose</td><td>Start new conversation with a parent</td><td>Recipient picker shows parents of students in teacher's classes</td></tr>
+  <tr><td>Reply</td><td>Reply to a message</td><td>Reply sends and appears in conversation</td></tr>
+</table>
+
+<h3>7.11 Leave Requests</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>Apply for Leave</td><td>Submit a leave request (dates, reason)</td><td>Request created; appears in school admin's queue</td></tr>
+  <tr><td>View My Leaves</td><td>View own leave history</td><td>All leave requests with status (pending/approved/rejected)</td></tr>
+</table>
+
+<h3>7.12 Student Profile</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>View Student</td><td>Tap a student in class roster</td><td>Shows profile with attendance %, marks, leave history</td></tr>
+  <tr><td>Student Activity</td><td>View student's recent activity</td><td>Timeline of attendance, marks, homework submissions</td></tr>
+</table>
+
+<h3>7.13 Timetable Change Requests</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>Request Timetable Change</td><td>Submit a request to swap/modify a period</td><td>Request created; school admin sees it</td></tr>
+  <tr><td>View Request Status</td><td>Check status of submitted requests</td><td>Status shown (pending/approved/rejected)</td></tr>
+</table>
+
+<hr>
+
+<!-- ================================================================ -->
+<h2 id="phase8">Phase 8: Parent Portal — All Features</h2>
+<p><span class="portal-badge badge-parent">PARENT PORTAL</span></p>
+
+<h3>8.1 Login as Parent</h3>
+<div class="step">
+  <span class="step-num">1.</span> Open the Enroll+ app → <strong>Login</strong>.
+</div>
+<div class="step">
+  <span class="step-num">2.</span> Enter test phone number (e.g. <code>+919535248581</code>).
+</div>
+<div class="step">
+  <span class="step-num">3.</span> Enter OTP: <code>123456</code>.
+</div>
+<div class="step">
+  <span class="step-num">4.</span> Logged in as parent. Should see linked child/children.
+</div>
+
+<h3>8.2 Home / Dashboard</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>Home Screen</td><td>Open parent home</td><td>Shows child name, class, school; quick links to features</td></tr>
+  <tr><td>Child Switcher</td><td>If multiple children linked, switch between them</td><td>Each child's data loads correctly</td></tr>
+</table>
+
+<h3>8.3 Announcements</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>View Announcements</td><td>Open announcements tab</td><td>Shows announcements from child's school, newest first</td></tr>
+  <tr><td>Featured Announcement</td><td>Check for "Special" type announcements</td><td>Featured badge/highlight shown for special announcements</td></tr>
+  <tr><td>Announcement Detail</td><td>Tap an announcement</td><td>Full description, date, image (if any) visible</td></tr>
+</table>
+
+<h3>8.4 Notifications</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>Notifications Inbox</td><td>Open notifications</td><td>Unified inbox: announcements + fee reminders, newest first</td></tr>
+  <tr><td>Unread Count</td><td>Check unread badge</td><td>Count matches unread items in list</td></tr>
+  <tr><td>Notification Tap</td><td>Tap a notification</td><td>Navigates to relevant screen (announcement/fees)</td></tr>
+</table>
+
+<h3>8.5 Calendar</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>Calendar View</td><td>Open calendar</td><td>Shows published events for child's school</td></tr>
+  <tr><td>Event Detail</td><td>Tap an event</td><td>Shows event title, description, date</td></tr>
+  <tr><td>Month Navigation</td><td>Switch months</td><td>Events load for selected month</td></tr>
+</table>
+
+<h3>8.6 Homework</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>View Homework</td><td>Open homework tab for child</td><td>Lists active homework with subject, due date</td></tr>
+  <tr><td>Submit Homework</td><td>Write answer + attach photo</td><td>Submission uploads; teacher sees it in board</td></tr>
+  <tr><td>View Feedback</td><td>Check submitted homework for teacher remarks</td><td>Grade and remarks visible if teacher has reviewed</td></tr>
+</table>
+
+<h3>8.7 Fees</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>View Fees</td><td>Open fees tab</td><td>Lists all fee records with status (PAID/DUE/OVERDUE)</td></tr>
+  <tr><td>Fee Detail</td><td>Tap a fee record</td><td>Shows amount, due date, status, description</td></tr>
+  <tr><td>Outstanding Fees</td><td>Check for DUE/OVERDUE items</td><td>Overdue items highlighted; due date shown</td></tr>
+</table>
+
+<h3>8.8 Scholarships</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>View Scholarships</td><td>Open scholarships tab</td><td>Lists available scholarships from child's school</td></tr>
+  <tr><td>Apply for Scholarship</td><td>Submit an application</td><td>Application created; status "pending" shown</td></tr>
+  <tr><td>View Application Status</td><td>Check submitted applications</td><td>Status shown (pending/approved/rejected)</td></tr>
+</table>
+
+<h3>8.9 Messages</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>View Threads</td><td>Open messages</td><td>Conversation threads with teachers and school admin</td></tr>
+  <tr><td>Compose</td><td>Start new conversation</td><td>Recipient picker shows teachers (class teacher flagged first) + school admin</td></tr>
+  <tr><td>Send Message</td><td>Send a text message</td><td>Message sends; appears in thread</td></tr>
+  <tr><td>Send Attachment</td><td>Send a message with image</td><td>Image uploads and displays in conversation</td></tr>
+</table>
+
+<h3>8.10 AI Tutor (if enabled)</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>Ask a Doubt</td><td>Open tutor → ask a question</td><td>AI responds with subject-relevant answer</td></tr>
+  <tr><td>Practice Questions</td><td>Answer a practice question</td><td>Question loads; can submit answer; auto-grade works</td></tr>
+  <tr><td>Review Plan</td><td>View due-review plan</td><td>Shows items due for spaced repetition review</td></tr>
+</table>
+
+<h3>8.11 Transport (if enabled)</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>Live Location</td><td>View child's bus live location</td><td>Map shows bus location (if driver app active)</td></tr>
+  <tr><td>Route Info</td><td>View assigned route</td><td>Shows route name, stops, pickup/drop times</td></tr>
+</table>
+
+<h3>8.12 Profile & Settings</h3>
+<table class="feature-table">
+  <tr><th>Feature</th><th>Action</th><th>Expected Result</th></tr>
+  <tr><td>View Profile</td><td>Open profile</td><td>Shows name, phone, linked children</td></tr>
+  <tr><td>Edit Profile</td><td>Update name or photo</td><td>Changes save and reflect</td></tr>
+  <tr><td>Link Another Child</td><td>Add another child to a different school</td><td>Link request flow works for additional children</td></tr>
+</table>
+
+<hr>
+
+<!-- ================================================================ -->
+<h2 id="csv-prompt">Appendix A: Claude Prompt for CSV Generation</h2>
+
+<div class="claude-prompt">
+<h4>Copy and paste this prompt into Claude/ChatGPT:</h4>
+
+<pre>
+Generate a CSV file for bulk student import into a school management system.
+The CSV must have these columns (exact header):
+full_name,class_name,roll_number,section,student_code,parent_phone
+
+Requirements:
+- Generate exactly 120 students
+- Classes: 6, 7, 8 (40 students each)
+- Sections: A, B, C for each class (distribute roughly equally, ~13-14 per section)
+- Roll numbers: Start from 001 in each class+section (e.g. 6-A has 001-014, 6-B has 001-013, etc.)
+- Student codes: Auto-generate as VP2026XXXX (sequential, starting VP20260001)
+- Names: Use realistic Indian student names (mix of North and South Indian names, both male and female)
+- Parent phones: 
+  - For 5 students in Class 6-A, use these exact parent phone numbers:
+    +919535248581
+    +91XXXXXXXXX (replace with test number 2)
+    +91YYYYYYYYY (replace with test number 3)
+    +919535248581 (reuse for a second child)
+    +91XXXXXXXXX (reuse for a second child)
+  - For all other students, leave parent_phone blank
+- Output ONLY the CSV content, no explanation
+
+Example format:
+full_name,class_name,roll_number,section,student_code,parent_phone
+Aarav Sharma,6,001,A,VP20260001,+919535248581
+Diya Patel,6,002,A,VP20260002,
+Vivaan Reddy,6,001,B,VP20260015,
+...
+</pre>
+</div>
+
+<div class="callout">
+  After generating the CSV, save it as <code>students_import.csv</code> and upload it via
+  the School Admin portal → People → Students → Import.
+</div>
+
+<hr>
+
+<!-- ================================================================ -->
+<h2 id="feature-matrix">Appendix B: Complete Feature Matrix</h2>
+
+<h3>School Admin Portal</h3>
+<table class="feature-table">
+  <tr><th>#</th><th>Feature</th><th>Key API Endpoints</th></tr>
+  <tr><td>1</td><td>Dashboard & Analytics</td><td>GET /school/dashboard, GET /school/analytics/overview</td></tr>
+  <tr><td>2</td><td>People — Students</td><td>GET/POST /school/students, POST /school/students/import, GET/DELETE /school/students/{id}</td></tr>
+  <tr><td>3</td><td>People — Teachers</td><td>GET/POST /school/teachers</td></tr>
+  <tr><td>4</td><td>People — Non-Teaching Staff</td><td>GET/POST /school/staff</td></tr>
+  <tr><td>5</td><td>Teacher Assignments</td><td>GET/POST /school/teacher-assignments</td></tr>
+  <tr><td>6</td><td>Classes & Sections</td><td>GET/POST /school/classes</td></tr>
+  <tr><td>7</td><td>Subjects</td><td>GET/PUT /school/subjects</td></tr>
+  <tr><td>8</td><td>Announcements</td><td>GET/POST/PUT/DELETE /school/announcements</td></tr>
+  <tr><td>9</td><td>Calendar</td><td>GET /school/calendar</td></tr>
+  <tr><td>10</td><td>Fees Ledger</td><td>GET /school/fees/ledger</td></tr>
+  <tr><td>11</td><td>PTM Management</td><td>GET/POST /school/ptm</td></tr>
+  <tr><td>12</td><td>Leave Requests</td><td>GET/POST /school/leave-requests</td></tr>
+  <tr><td>13</td><td>Messages</td><td>GET/POST /school/messages/threads, /messages</td></tr>
+  <tr><td>14</td><td>Results</td><td>GET /school/results</td></tr>
+  <tr><td>15</td><td>Attendance Records</td><td>GET /school/attendance/summary</td></tr>
+  <tr><td>16</td><td>Marks Summary</td><td>GET /school/marks/summary</td></tr>
+  <tr><td>17</td><td>Syllabus Pace</td><td>GET /school/syllabus-pace</td></tr>
+  <tr><td>18</td><td>School Profile</td><td>GET/PUT /school/profile</td></tr>
+  <tr><td>19</td><td>Day Configuration</td><td>GET/PUT /school/day-config</td></tr>
+  <tr><td>20</td><td>Link Request Queue</td><td>GET /parent/links, POST /parent/links/{id}/approve|reject</td></tr>
+  <tr><td>21</td><td>Transport (optional)</td><td>GET/POST /school/transport/routes, /vehicles, /assignments</td></tr>
+  <tr><td>22</td><td>Library (optional)</td><td>GET/POST /school/library</td></tr>
+</table>
+
+<h3>Teacher Portal</h3>
+<table class="feature-table">
+  <tr><th>#</th><th>Feature</th><th>Key API Endpoints</th></tr>
+  <tr><td>1</td><td>Today / Day View</td><td>GET /teacher/day, GET /teacher/week</td></tr>
+  <tr><td>2</td><td>My Classes</td><td>GET /teacher/classes, GET /teacher/classes/{id}</td></tr>
+  <tr><td>3</td><td>Attendance</td><td>GET/POST /teacher/attendance</td></tr>
+  <tr><td>4</td><td>Assessments / Gradebook</td><td>GET/POST /teacher/assessments, /teacher/assessments/{id}/marks</td></tr>
+  <tr><td>5</td><td>Homework</td><td>GET/POST /teacher/homework, /teacher/homework/board</td></tr>
+  <tr><td>6</td><td>Syllabus</td><td>GET/PATCH /teacher/syllabus</td></tr>
+  <tr><td>7</td><td>Lesson Plans</td><td>GET/POST /teacher/lesson-plans</td></tr>
+  <tr><td>8</td><td>Quiz (AI)</td><td>POST /teacher/syllabus/quiz/generate</td></tr>
+  <tr><td>9</td><td>Messages</td><td>GET/POST /teacher/messages/threads, /messages</td></tr>
+  <tr><td>10</td><td>Leave Requests</td><td>GET/POST /teacher/leave</td></tr>
+  <tr><td>11</td><td>Student Profile</td><td>GET /teacher/students/{id}</td></tr>
+  <tr><td>12</td><td>Timetable Change Requests</td><td>POST /teacher/timetable-change-requests</td></tr>
+  <tr><td>13</td><td>Teacher Profile</td><td>GET /teacher/profile</td></tr>
+</table>
+
+<h3>Parent Portal</h3>
+<table class="feature-table">
+  <tr><th>#</th><th>Feature</th><th>Key API Endpoints</th></tr>
+  <tr><td>1</td><td>Announcements</td><td>GET /parent/announcements</td></tr>
+  <tr><td>2</td><td>Notifications</td><td>GET /parent/notifications</td></tr>
+  <tr><td>3</td><td>Calendar</td><td>GET /parent/calendar</td></tr>
+  <tr><td>4</td><td>Homework</td><td>GET/POST /parent/child/{childId}/homework</td></tr>
+  <tr><td>5</td><td>Fees</td><td>GET /parent/fees</td></tr>
+  <tr><td>6</td><td>Scholarships</td><td>GET /parent/scholarships</td></tr>
+  <tr><td>7</td><td>Messages</td><td>GET/POST /parent/messages/threads, /messages</td></tr>
+  <tr><td>8</td><td>Link Child</td><td>POST /parent/link-child</td></tr>
+  <tr><td>9</td><td>AI Tutor (optional)</td><td>POST /tutor/doubt, GET /tutor/plan/{childId}</td></tr>
+  <tr><td>10</td><td>Transport (optional)</td><td>GET /parent/transport/live-location/{childId}</td></tr>
+  <tr><td>11</td><td>Library (optional)</td><td>GET /parent/library/search</td></tr>
+  <tr><td>12</td><td>Profile</td><td>GET/PUT /user/profile</td></tr>
+</table>
+
+<hr>
+
+<div class="whatsapp">
+  <h3 style="margin-top:0;">WhatsApp Bug Reporting — Reminder</h3>
+  <p><strong>Group name:</strong> "Testing"</p>
+  <p><strong>Format for each issue:</strong></p>
+  <ol>
+    <li><strong>Screenshot</strong> of the problem</li>
+    <li><strong>One-line description</strong> of what happened</li>
+    <li><strong>Expected behavior</strong> — what should have happened instead</li>
+  </ol>
+  <p><strong>Rules:</strong></p>
+  <ul>
+    <li>This chat is <strong>NOT for discussion</strong> — only for logging issues</li>
+    <li>Do not reply to others' messages</li>
+    <li>One issue = one message</li>
+    <li>If you find a workaround, add it as a separate message with "WORKAROUND:" prefix</li>
+  </ul>
+</div>
+
+<div class="success">
+  <h3 style="margin-top:0;">Testing Flow Summary</h3>
+  <ol>
+    <li><strong>School Admin</strong> signs up → completes onboarding → school is live</li>
+    <li><strong>School Admin</strong> creates 4 teachers → assigns subjects + class teacher</li>
+    <li><strong>School Admin</strong> bulk imports 100+ students via CSV</li>
+    <li><strong>Parent</strong> signs up with test phone + OTP 123456 → links child</li>
+    <li><strong>School Admin</strong> approves parent-child link requests</li>
+    <li>Test all <strong>School Admin</strong> features (Phase 6)</li>
+    <li>Log in as <strong>Teacher</strong> → test all teacher features (Phase 7)</li>
+    <li>Log in as <strong>Parent</strong> → test all parent features (Phase 8)</li>
+    <li>Report bugs to <strong>WhatsApp "Testing" group</strong></li>
+  </ol>
+</div>
+
+<hr>
+<p style="text-align:center; color:#666; font-size:12px;">
+  VidyaPrayag / Enroll+ Testing Guide v1.0 — Generated July 2026
+</p>
+
+</body>
+</html>

@@ -3,7 +3,6 @@ package com.littlebridge.enrollplus.ui.v2.screens.teacher
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,13 +16,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -118,8 +115,7 @@ fun VtCard(
         .background(VColors.surfaceCard)
         .border(1.dp, VColors.line, VShapes.lg)
     if (onClick != null) {
-        val ix = remember { MutableInteractionSource() }
-        base = base.clickable(interactionSource = ix, indication = null, onClick = onClick)
+        base = base.clickable(onClick = onClick)
     }
     Box(base.padding(padding)) { content() }
 }
@@ -131,12 +127,7 @@ fun VtEyebrow(text: String, dot: Color? = null, modifier: Modifier = Modifier) {
         if (dot != null) Box(Modifier.size(6.dp).clip(CircleShape).background(dot))
         Text(
             text.uppercase(),
-            style = VTypography.label.copy(
-                fontWeight = FontWeight.Bold,
-                fontSize = 11.sp,
-                letterSpacing = 0.6.sp,
-                color = VColors.ink3,
-            ),
+            style = VTypography.label.copy(letterSpacing = 0.6.sp, color = VColors.ink3),
         )
     }
 }
@@ -154,13 +145,12 @@ fun VtSectionHeader(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(title, style = VTypography.h3.copy(fontSize = 18.sp, color = VColors.ink))
+        Text(title, style = VTypography.h3.copy(color = VColors.ink))
         if (actionLabel != null && onAction != null) {
-            val ix = remember { MutableInteractionSource() }
             Text(
                 actionLabel,
                 style = VTypography.label.copy(color = VColors.violet),
-                modifier = Modifier.clickable(interactionSource = ix, indication = null) { onAction() },
+                modifier = Modifier.clickable { onAction() },
             )
         }
     }
@@ -183,7 +173,7 @@ fun VtPill(
         if (leading != null) leading()
         Text(
             label,
-            style = VTypography.caption.copy(fontWeight = FontWeight.Bold, color = fg),
+            style = VTypography.caption.copy(color = fg),
         )
     }
 }
@@ -206,9 +196,24 @@ fun VtMetricTile(value: String, label: String, tint: Color, modifier: Modifier =
             .padding(horizontal = 12.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(value, style = VTypography.h3.copy(fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = VColors.ink))
+        Text(value, style = VTypography.h3.copy(color = VColors.ink))
         Spacer(Modifier.height(2.dp))
-        Text(label, style = VTypography.caption.copy(fontSize = 10.sp, color = VColors.ink3), textAlign = TextAlign.Center)
+        Text(label, style = VTypography.caption.copy(color = VColors.ink3), textAlign = TextAlign.Center)
+    }
+}
+
+/** Compact metric pill: smaller, horizontally-friendly variant for cramped tool headers. */
+@Composable
+fun VtCompactMetric(value: String, label: String, tint: Color, modifier: Modifier = Modifier) {
+    Column(
+        modifier
+            .clip(VShapes.md)
+            .background(tint.copy(alpha = 0.10f))
+            .padding(horizontal = 8.dp, vertical = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(value, style = VTypography.bodySmall.copy(color = VColors.ink))
+        Text(label, style = VTypography.caption, color = VColors.ink3)
     }
 }
 
@@ -242,7 +247,7 @@ fun VtEmptyCard(
             }
             Text(
                 title,
-                style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold, color = VColors.ink),
+                style = VTypography.bodySmall.copy(color = VColors.ink),
                 textAlign = TextAlign.Center,
             )
             if (subtext != null) {
@@ -271,22 +276,21 @@ fun VtErrorState(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         VtIconDisc(VIcons.AlertTriangle, tint = VColors.coral, bg = VColors.coralSoft, size = 48.dp, glyph = 24.dp)
-        Text(title, style = VTypography.h3.copy(fontSize = 18.sp, color = VColors.ink), textAlign = TextAlign.Center)
+        Text(title, style = VTypography.h3.copy(color = VColors.ink), textAlign = TextAlign.Center)
         if (!detail.isNullOrBlank()) {
             Text(detail, style = VTypography.caption.copy(color = VColors.ink2), textAlign = TextAlign.Center, maxLines = 3)
         }
         Spacer(Modifier.height(4.dp))
-        val ix = remember { MutableInteractionSource() }
         Row(
             Modifier
                 .clip(VShapes.full)
                 .background(VColors.violetSoft)
-                .clickable(interactionSource = ix, indication = null) { onRetry() }
+                .clickable { onRetry() }
                 .padding(horizontal = 18.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Text(retryLabel, style = VTypography.label.copy(color = VColors.violet, fontWeight = FontWeight.Bold))
+            Text(retryLabel, style = VTypography.label.copy(color = VColors.violet))
         }
     }
 }
