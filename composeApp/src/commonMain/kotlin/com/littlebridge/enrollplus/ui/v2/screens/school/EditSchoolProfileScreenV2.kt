@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.KeyboardType
@@ -73,7 +74,7 @@ fun EditSchoolProfileScreenV2(
 
     LaunchedEffect(state.infoMessage) {
         if (state.infoMessage != null) {
-            kotlinx.coroutines.delay(2500)
+            delay(2500)
             viewModel.clearMessages()
         }
     }

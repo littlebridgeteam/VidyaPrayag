@@ -15,7 +15,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -670,8 +669,8 @@ private fun HueSliderBar(
     var sliderValue by remember { mutableStateOf(0.9f) }
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        // Hue slider
-        Box(
+        // Hue slider with indicator
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(28.dp)
@@ -693,8 +692,7 @@ private fun HueSliderBar(
                     detectDragGestures(
                         onDragStart = { offset ->
                             val w = size.width.toFloat()
-                            val h = (offset.x / w).coerceIn(0f, 1f) * 360f
-                            sliderHue = h
+                            sliderHue = (offset.x / w).coerceIn(0f, 1f) * 360f
                             onColorSelected(hsvToHex(sliderHue, sliderSat, sliderValue))
                         },
                         onDrag = { change, _ ->
@@ -705,14 +703,11 @@ private fun HueSliderBar(
                     )
                 },
         ) {
+            val indicatorOffset = maxWidth * (sliderHue / 360f) - 14.dp
             Box(
                 modifier = Modifier
+                    .offset(x = indicatorOffset)
                     .align(Alignment.CenterStart)
-                    .offset {
-                        val w = this.size.width.toFloat()
-                        val x = (sliderHue / 360f) * w - 14f
-                        IntOffset(x.toInt().coerceAtLeast(0), 0)
-                    }
                     .size(28.dp)
                     .clip(CircleShape)
                     .background(Color.White)

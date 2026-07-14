@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -47,8 +48,12 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
+import com.littlebridge.enrollplus.feature.admin.presentation.BrandingPhotosState
+import com.littlebridge.enrollplus.feature.admin.presentation.BrandingPhotosViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.InstitutionalProfileState
 import com.littlebridge.enrollplus.feature.admin.presentation.InstitutionalProfileViewModel
+import coil3.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VBottomSheet
@@ -114,9 +119,11 @@ fun SchoolSettingsScreenV2(
     onOpenGamification: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: InstitutionalProfileViewModel = koinViewModel(),
+    brandingViewModel: BrandingPhotosViewModel = koinViewModel(),
     preferenceRepository: PreferenceRepository = koinInject(),
 ) {
     val state by viewModel.state.collectAsStateV2()
+    val brandingState by brandingViewModel.state.collectAsStateV2()
     val themeMode by preferenceRepository.getThemeMode().collectAsState(initial = "system")
     val customThemeId by preferenceRepository.getCustomThemeId().collectAsState(initial = null)
     val localeManager = koinInject<LocaleManager>()
@@ -149,12 +156,14 @@ fun SchoolSettingsScreenV2(
         onRetry = viewModel::load,
         modifier = modifier.statusBarsPadding()
             .imePadding(),
+        brandingState = brandingState,
     )
 }
 
 @Composable
 private fun SchoolSettingsContent(
     state: InstitutionalProfileState,
+    brandingState: BrandingPhotosState,
     themeMode: String,
     customThemeId: String?,
     currentLocale: String,
@@ -259,7 +268,8 @@ private fun SchoolSettingsContent(
             skeleton = { SkeletonList(rows = 6) },
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            InstitutionalProfileHealthCard(state = state, onClick = onOpenProfile)
+            BrandingSummaryCard(state = brandingState, onClick = onOpenBranding)
+            InstitutionalProfileHealthCard(state = state, brandingState = brandingState, onClick = onOpenProfile)
 
             val rows = listOf(
                 SettingRow(VIcons.Calendar, "Academic year", "Manage term dates & holidays", false, onClick = onOpenAcademicYear),
@@ -387,6 +397,7 @@ private fun SchoolSettingsContent(
 @Composable
 private fun InstitutionalProfileHealthCard(
     state: InstitutionalProfileState,
+    brandingState: BrandingPhotosState,
     onClick: () -> Unit,
 ) {
     val completionTone = if (state.profileCompletion < 60) VBadgeTone.Warning else VBadgeTone.Success
@@ -427,7 +438,16 @@ private fun InstitutionalProfileHealthCard(
                     Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(VColors.violetSoft),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(VIcons.School, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(22.dp))
+                    if (brandingState.schoolLogoUrl.isNotBlank()) {
+                        AsyncImage(
+                            model = brandingState.schoolLogoUrl,
+                            contentDescription = state.schoolName,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    } else {
+                        Icon(VIcons.School, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(22.dp))
+                    }
                 }
                 Column(Modifier.weight(1f)) {
                     Text(profileTitle, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
@@ -504,6 +524,71 @@ private fun InstitutionalProfileHealthCard(
                         VBadge(text = state.primaryLanguage, tone = VBadgeTone.Neutral, leadingIcon = VIcons.Chat)
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BrandingSummaryCard(
+    state: BrandingPhotosState,
+    onClick: () -> Unit,
+) {
+    val configuredItems = listOfNotNull(
+        "Logo".takeIf { state.schoolLogoUrl.isNotBlank() },
+        "Cover".takeIf { state.coverImageUrl.isNotBlank() },
+        "Admin photo".takeIf { state.adminProfilePicUrl.isNotBlank() },
+        "Gallery (${state.galleryPhotos.size})".takeIf { state.galleryPhotos.isNotEmpty() },
+    )
+
+    SettingsCreamCard(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Box(
+                    Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(VColors.cream)
+                        .border(1.dp, VColors.line, RoundedCornerShape(14.dp)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (state.schoolLogoUrl.isNotBlank()) {
+                        AsyncImage(
+                            model = state.schoolLogoUrl,
+                            contentDescription = "School logo",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    } else {
+                        Icon(VIcons.School, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(24.dp))
+                    }
+                }
+                Column(Modifier.weight(1f)) {
+                    Text("Branding & Photos", style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                    Text(
+                        text = configuredItems.joinToString(" · ").ifBlank { "Logo, cover, gallery & profile picture" },
+                        style = VTypography.caption,
+                        color = VColors.ink3,
+                    )
+                }
+                Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.ink3.copy(alpha = 0.4f), modifier = Modifier.size(16.dp))
+            }
+            if (state.coverImageUrl.isNotBlank()) {
+                AsyncImage(
+                    model = state.coverImageUrl,
+                    contentDescription = "Campus cover",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(16f / 9f)
+                        .clip(RoundedCornerShape(12.dp)),
+                )
             }
         }
     }
