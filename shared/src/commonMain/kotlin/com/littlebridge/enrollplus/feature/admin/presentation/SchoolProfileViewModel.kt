@@ -50,6 +50,7 @@ data class SchoolProfileState(
     val brandColor: String = "#2563EB",
     val isStale: Boolean = false,
     val isOffline: Boolean = false,
+    val fieldErrors: Map<String, String> = emptyMap(),
 )
 
 class SchoolProfileViewModel(
@@ -111,30 +112,50 @@ class SchoolProfileViewModel(
         }
     }
 
-    // -------- field editors --------
-    fun onName(v: String) { _state.value = _state.value.copy(name = v) }
-    fun onBoard(v: String) { _state.value = _state.value.copy(board = v) }
-    fun onMedium(v: String) { _state.value = _state.value.copy(medium = v) }
-    fun onSchoolGender(v: String) { _state.value = _state.value.copy(schoolGender = v) }
-    fun onContactPhone(v: String) { _state.value = _state.value.copy(contactPhone = v) }
-    fun onContactEmail(v: String) { _state.value = _state.value.copy(contactEmail = v) }
-    fun onPrincipalName(v: String) { _state.value = _state.value.copy(principalName = v) }
-    fun onPrincipalPhone(v: String) { _state.value = _state.value.copy(principalPhone = v) }
-    fun onPrincipalEmail(v: String) { _state.value = _state.value.copy(principalEmail = v) }
-    fun onFullAddress(v: String) { _state.value = _state.value.copy(fullAddress = v) }
-    fun onCity(v: String) { _state.value = _state.value.copy(city = v) }
-    fun onDistrict(v: String) { _state.value = _state.value.copy(district = v) }
-    fun onState(v: String) { _state.value = _state.value.copy(state = v) }
-    fun onPincode(v: String) { _state.value = _state.value.copy(pincode = v) }
+    // -------- field editors (clear field-specific errors on edit) --------
+    fun onName(v: String) { _state.value = _state.value.copy(name = v, fieldErrors = _state.value.fieldErrors - "name") }
+    fun onBoard(v: String) { _state.value = _state.value.copy(board = v, fieldErrors = _state.value.fieldErrors - "board") }
+    fun onMedium(v: String) { _state.value = _state.value.copy(medium = v, fieldErrors = _state.value.fieldErrors - "medium") }
+    fun onSchoolGender(v: String) { _state.value = _state.value.copy(schoolGender = v, fieldErrors = _state.value.fieldErrors - "schoolGender") }
+    fun onContactPhone(v: String) { _state.value = _state.value.copy(contactPhone = v, fieldErrors = _state.value.fieldErrors - "contactPhone") }
+    fun onContactEmail(v: String) { _state.value = _state.value.copy(contactEmail = v, fieldErrors = _state.value.fieldErrors - "contactEmail") }
+    fun onPrincipalName(v: String) { _state.value = _state.value.copy(principalName = v, fieldErrors = _state.value.fieldErrors - "principalName") }
+    fun onPrincipalPhone(v: String) { _state.value = _state.value.copy(principalPhone = v, fieldErrors = _state.value.fieldErrors - "principalPhone") }
+    fun onPrincipalEmail(v: String) { _state.value = _state.value.copy(principalEmail = v, fieldErrors = _state.value.fieldErrors - "principalEmail") }
+    fun onFullAddress(v: String) { _state.value = _state.value.copy(fullAddress = v, fieldErrors = _state.value.fieldErrors - "fullAddress") }
+    fun onCity(v: String) { _state.value = _state.value.copy(city = v, fieldErrors = _state.value.fieldErrors - "city") }
+    fun onDistrict(v: String) { _state.value = _state.value.copy(district = v, fieldErrors = _state.value.fieldErrors - "district") }
+    fun onState(v: String) { _state.value = _state.value.copy(state = v, fieldErrors = _state.value.fieldErrors - "state") }
+    fun onPincode(v: String) { _state.value = _state.value.copy(pincode = v, fieldErrors = _state.value.fieldErrors - "pincode") }
 
     fun clearMessages() {
-        _state.value = _state.value.copy(errorMessage = null, infoMessage = null, saved = false)
+        _state.value = _state.value.copy(errorMessage = null, infoMessage = null, saved = false, fieldErrors = emptyMap())
     }
 
     fun save() {
         val s = _state.value
-        if (s.name.isBlank() || s.city.isBlank() || s.district.isBlank()) {
-            _state.value = s.copy(errorMessage = "Name, city and district are required.")
+        val errors = mutableMapOf<String, String>()
+
+        if (s.name.isBlank()) errors["name"] = "School name is required"
+        if (s.city.isBlank()) errors["city"] = "City is required"
+        if (s.district.isBlank()) errors["district"] = "District is required"
+
+        val phoneRegex = Regex("^\\d{10}$")
+        val emailRegex = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
+
+        if (s.contactPhone.isNotBlank() && !s.contactPhone.matches(phoneRegex))
+            errors["contactPhone"] = "Phone must be exactly 10 digits"
+        if (s.principalPhone.isNotBlank() && !s.principalPhone.matches(phoneRegex))
+            errors["principalPhone"] = "Phone must be exactly 10 digits"
+        if (s.pincode.isNotBlank() && !s.pincode.matches(Regex("^\\d{6}$")))
+            errors["pincode"] = "PIN must be exactly 6 digits"
+        if (s.contactEmail.isNotBlank() && !s.contactEmail.matches(emailRegex))
+            errors["contactEmail"] = "Invalid email format"
+        if (s.principalEmail.isNotBlank() && !s.principalEmail.matches(emailRegex))
+            errors["principalEmail"] = "Invalid email format"
+
+        if (errors.isNotEmpty()) {
+            _state.value = s.copy(fieldErrors = errors, errorMessage = "Please fix the highlighted fields.")
             return
         }
         viewModelScope.launch {

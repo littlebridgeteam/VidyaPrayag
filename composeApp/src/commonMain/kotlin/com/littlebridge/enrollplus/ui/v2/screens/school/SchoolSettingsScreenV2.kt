@@ -264,7 +264,6 @@ private fun SchoolSettingsContent(
             val rows = listOf(
                 SettingRow(VIcons.Calendar, "Academic year", "Manage term dates & holidays", false, onClick = onOpenAcademicYear),
                 SettingRow(VIcons.BookOpen, "Classes & subjects", "Classes, subjects, bell schedule & timetable", false, onClick = onOpenClassesSubjects),
-                SettingRow(VIcons.UsersGroup, "Teacher management", "Add, view & remove teachers", false, onClick = onOpenTeachers),
                 SettingRow(VIcons.MapPin, "Transport Management", "Routes, vehicles & student assignments", false, onClick = onOpenTransport),
                 SettingRow(VIcons.Sparkles, "Scholarship Management", "Schemes, applications & renewals", false, onClick = onOpenScholarships),
                 SettingRow(VIcons.School, "Branding & Photos", "Logo, cover, gallery & your profile picture", false, onClick = onOpenBranding),

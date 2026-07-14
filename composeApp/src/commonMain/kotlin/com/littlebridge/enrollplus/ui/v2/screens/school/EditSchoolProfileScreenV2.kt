@@ -18,7 +18,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.LocationOn
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material.icons.outlined.School
 import androidx.compose.material3.HorizontalDivider
@@ -26,6 +25,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,23 +71,25 @@ fun EditSchoolProfileScreenV2(
     val state by viewModel.state.collectAsStateV2()
 
 
+    LaunchedEffect(state.infoMessage) {
+        if (state.infoMessage != null) {
+            kotlinx.coroutines.delay(2500)
+            viewModel.clearMessages()
+        }
+    }
+
     Box(
         modifier
             .fillMaxSize()
             .statusBarsPadding()
     ) {
-
-
         Column(
             Modifier.fillMaxSize()
         ) {
-
-
             VBackHeader(
                 title = "Institutional Profile",
                 onBack = onBack
             )
-
 
             EditSchoolProfileContent(
                 state = state,
@@ -115,33 +117,28 @@ fun EditSchoolProfileScreenV2(
 
                 modifier = Modifier
                     .weight(1f)
-                    .padding(bottom = 80.dp)
+                    .padding(bottom = 96.dp)
             )
         }
 
-
-
-        // Floating Save Button
+        // Floating Save Button — fixed above system nav bar
         Surface(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .navigationBarsPadding(),
 
             color = VColors.surfaceCard,
 
             shadowElevation = 12.dp
         ) {
-
             Box(
                 modifier = Modifier
                     .padding(
                         horizontal = 20.dp,
                         vertical = 12.dp
                     )
-                    .navigationBarsPadding()
             ) {
-
-
                 VButton(
                     text = "Save changes",
 
@@ -197,7 +194,6 @@ private fun EditSchoolProfileContent(
                 rememberScrollState()
             )
             .imePadding()
-            .navigationBarsPadding()
             .padding(
                 horizontal = 20.dp,
                 vertical = 16.dp
@@ -245,10 +241,10 @@ private fun EditSchoolProfileContent(
 
 
 
-            // IDENTITY ------------------------------------------------
+            // SCHOOL PROFILE ------------------------------------------------
 
             EditSection(
-                title = "School identity",
+                title = "School profile",
                 subtitle = "Basic information",
                 icon = Icons.Outlined.School
             ) {
@@ -259,7 +255,9 @@ private fun EditSchoolProfileContent(
                     onValueChange = onName,
                     label = "School name",
                     placeholder =
-                        "Little Bridge Public School"
+                        "Little Bridge Public School",
+                    isError = state.fieldErrors.containsKey("name"),
+                    errorText = state.fieldErrors["name"]
                 )
 
 
@@ -292,11 +290,11 @@ private fun EditSchoolProfileContent(
 
 
 
-            // CONTACT ------------------------------------------------
+            // CONTACT DETAILS ------------------------------------------------
 
             EditSection(
                 title = "Contact details",
-                subtitle = "Public communication",
+                subtitle = "Public communication & leadership",
                 icon = Icons.Outlined.Phone
             ) {
 
@@ -304,41 +302,33 @@ private fun EditSchoolProfileContent(
                 VInput(
                     value = state.contactPhone,
                     onValueChange = onContactPhone,
-                    label = "Phone",
+                    label = "School phone",
                     placeholder =
                         "10-digit number",
                     keyboardType =
-                        KeyboardType.Phone
+                        KeyboardType.Phone,
+                    isError = state.fieldErrors.containsKey("contactPhone"),
+                    errorText = state.fieldErrors["contactPhone"]
                 )
 
 
                 VInput(
                     value = state.contactEmail,
                     onValueChange = onContactEmail,
-                    label = "Email",
+                    label = "School email",
                     placeholder =
                         "office@school.edu",
                     keyboardType =
-                        KeyboardType.Email
+                        KeyboardType.Email,
+                    isError = state.fieldErrors.containsKey("contactEmail"),
+                    errorText = state.fieldErrors["contactEmail"]
                 )
-            }
-
-
-
-
-            // PRINCIPAL ------------------------------------------------
-
-            EditSection(
-                title = "Principal",
-                subtitle = "Leadership contact",
-                icon = Icons.Outlined.Person
-            ) {
 
 
                 VInput(
                     value = state.principalName,
                     onValueChange = onPrincipalName,
-                    label = "Name",
+                    label = "Principal name",
                     placeholder =
                         "Full name"
                 )
@@ -347,22 +337,26 @@ private fun EditSchoolProfileContent(
                 VInput(
                     value = state.principalPhone,
                     onValueChange = onPrincipalPhone,
-                    label = "Phone",
+                    label = "Principal phone",
                     placeholder =
                         "10-digit number",
                     keyboardType =
-                        KeyboardType.Phone
+                        KeyboardType.Phone,
+                    isError = state.fieldErrors.containsKey("principalPhone"),
+                    errorText = state.fieldErrors["principalPhone"]
                 )
 
 
                 VInput(
                     value = state.principalEmail,
                     onValueChange = onPrincipalEmail,
-                    label = "Email",
+                    label = "Principal email",
                     placeholder =
                         "principal@school.edu",
                     keyboardType =
-                        KeyboardType.Email
+                        KeyboardType.Email,
+                    isError = state.fieldErrors.containsKey("principalEmail"),
+                    errorText = state.fieldErrors["principalEmail"]
                 )
             }
 
@@ -399,7 +393,9 @@ private fun EditSchoolProfileContent(
                         VInput(
                             value = state.city,
                             onValueChange = onCity,
-                            label = "City"
+                            label = "City",
+                            isError = state.fieldErrors.containsKey("city"),
+                            errorText = state.fieldErrors["city"]
                         )
                     }
 
@@ -412,7 +408,9 @@ private fun EditSchoolProfileContent(
                             onValueChange = onPincode,
                             label = "PIN",
                             keyboardType =
-                                KeyboardType.Number
+                                KeyboardType.Number,
+                            isError = state.fieldErrors.containsKey("pincode"),
+                            errorText = state.fieldErrors["pincode"]
                         )
                     }
                 }
@@ -421,7 +419,9 @@ private fun EditSchoolProfileContent(
                 VInput(
                     value = state.district,
                     onValueChange = onDistrict,
-                    label = "District"
+                    label = "District",
+                    isError = state.fieldErrors.containsKey("district"),
+                    errorText = state.fieldErrors["district"]
                 )
 
 
@@ -461,7 +461,7 @@ private fun EditSchoolProfileContent(
 
 
             Spacer(
-                Modifier.height(70.dp)
+                Modifier.height(20.dp)
             )
         }
     }
