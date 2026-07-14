@@ -1121,6 +1121,7 @@ private fun TodaySummaryCard(
             .border(1.dp, VColors.line, VShapes.xl)
             .padding(20.dp),
     ) {
+        val teacherEntries = summary?.entries?.filter { !it.isAiEstimated } ?: emptyList()
         when {
             isLoading -> Box(
                 modifier = Modifier.fillMaxWidth().height(80.dp),
@@ -1128,7 +1129,6 @@ private fun TodaySummaryCard(
             ) {
                 CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(24.dp))
             }
-            val teacherEntries = summary?.entries?.filter { !it.isAiEstimated } ?: emptyList()
             teacherEntries.isEmpty() -> Text(
                 text = "No log updated by the teacher",
                 style = VTypography.caption,
