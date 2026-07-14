@@ -73,6 +73,7 @@ class SchoolTeachersViewModel(
                         _state.value = _state.value.copy(
                             teachers = body?.teachers.orEmpty(),
                             isLoading = false,
+                            errorMessage = null,
                             page = body?.pagination?.page ?: 1,
                             hasNext = body?.pagination?.hasNext ?: false,
                             totalRecords = body?.pagination?.totalRecords ?: 0,

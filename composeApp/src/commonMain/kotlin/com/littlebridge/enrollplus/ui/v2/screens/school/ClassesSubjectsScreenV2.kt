@@ -312,8 +312,9 @@ private fun ClassCard(
                 VButton(
                     text = appString(StringKeys.CS_EDIT),
                     onClick = onEdit,
-                    variant = VButtonVariant.Secondary,
+                    variant = VButtonVariant.Primary,
                     tone = VButtonTone.Teal,
+                    size = VButtonSize.Sm,
                 )
                 Box(
                     Modifier.size(32.dp).clip(CircleShape)

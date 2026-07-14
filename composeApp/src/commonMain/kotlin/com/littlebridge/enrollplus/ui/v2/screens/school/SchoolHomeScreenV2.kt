@@ -1024,7 +1024,7 @@ private fun PremiumCard(
         interactionSource = remember { MutableInteractionSource() },
         indication = null,
     ) { onClick() } else base
-    Column(modifier = clickable.padding(16.dp)) { content() }
+    Column(modifier = clickable.fillMaxWidth().padding(16.dp)) { content() }
 }
 
 @Composable
@@ -1293,7 +1293,7 @@ private fun ParentEngagementCard(pe: OverviewParentEngagement, onClick: () -> Un
 private fun TeacherSpotlightCard(ts: OverviewTeacherSpotlight, onClick: () -> Unit) {
     PremiumCard(
         onClick = onClick,
-        modifier = Modifier.padding(horizontal = 20.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
     ) {
         CardHeader("Teacher Spotlight", VIcons.GraduationCap)
         Spacer(Modifier.height(12.dp))
