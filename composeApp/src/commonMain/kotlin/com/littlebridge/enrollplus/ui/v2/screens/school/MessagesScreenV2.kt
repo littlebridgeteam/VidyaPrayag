@@ -138,7 +138,7 @@ fun MessagesScreenV2(
         "Messages"
     }
 
-    Column(modifier.fillMaxSize().statusBarsPadding()) {
+    Column(modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
         VBackHeader(title = title, onBack = backHandler, pinRouteId = "overlay_messages")
 
         if (conversation.threadId != null) {
@@ -394,7 +394,7 @@ private fun ConversationContent(
             imagePreviewBytes = pickedImage?.first,
             imagePreviewName = pickedImage?.third ?: "",
             onRemoveImage = { pickedImage = null },
-            modifier = Modifier.imePadding().navigationBarsPadding(),
+            modifier = Modifier.imePadding(),
         )
     }
 }

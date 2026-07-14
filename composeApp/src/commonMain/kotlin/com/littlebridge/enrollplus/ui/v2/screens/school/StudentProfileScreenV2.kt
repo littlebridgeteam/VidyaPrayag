@@ -170,25 +170,26 @@ private fun StudentProfileContent(
             skeleton = { SkeletonProfile() },
         ) {
             val p = state.profile ?: return@VStateHost
-            StudentProfileBody(p)
+            Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                StudentProfileBody(p)
 
-            if (onOpenHealth != null) {
+                if (onOpenHealth != null) {
+                    VSectionHeader(title = appString(StringKeys.SCH_HEALTH_RECORDS))
+                    VActionCard(
+                        title = appString(StringKeys.SCH_HEALTH_RECORDS),
+                        subtitle = appString(StringKeys.SCH_HEALTH_RECORDS_DESC),
+                        icon = VIcons.Heart,
+                        onClick = { onOpenHealth(p.student.id, p.student.fullName) },
+                    )
+                }
+
                 Spacer(Modifier.height(8.dp))
-                VSectionHeader(title = appString(StringKeys.SCH_HEALTH_RECORDS))
-                VActionCard(
-                    title = appString(StringKeys.SCH_HEALTH_RECORDS),
-                    subtitle = appString(StringKeys.SCH_HEALTH_RECORDS_DESC),
-                    icon = VIcons.Heart,
-                    onClick = { onOpenHealth(p.student.id, p.student.fullName) },
+                DangerZone(
+                    isRemoving = state.isRemoving,
+                    removeError = state.removeError,
+                    onRequestRemove = { confirmRemove = true },
                 )
             }
-
-            Spacer(Modifier.height(24.dp))
-            DangerZone(
-                isRemoving = state.isRemoving,
-                removeError = state.removeError,
-                onRequestRemove = { confirmRemove = true },
-            )
         }
     }
 

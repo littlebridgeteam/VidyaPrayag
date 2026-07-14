@@ -189,6 +189,8 @@ val commonModule = module {
 
                     // null token and navigates back to landing.
 
+                    AppLogger.i("TokenAuth", "onRefreshFailed: clearing session + bearer cache (user will be logged out)")
+
                     prefs.clearSession()
 
                     authedClient.clearBearerCache()

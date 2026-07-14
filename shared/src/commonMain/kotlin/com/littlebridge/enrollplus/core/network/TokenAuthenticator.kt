@@ -2,6 +2,7 @@ package com.littlebridge.enrollplus.core.network
 
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.util.AppConfig
+import com.littlebridge.enrollplus.util.AppLogger
 import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
 import io.ktor.client.plugins.auth.Auth
@@ -91,15 +92,18 @@ internal fun HttpClientConfig<*>.installTokenAuth(
                     // the server's reuse-detection and kill the session family.
                     val currentAccess = prefs.getUserToken().first()
                     if (currentAccess != null && currentAccess != expiredAccess) {
+                        AppLogger.i("TokenAuth", "Concurrent refresh already completed; reusing new tokens")
                         val currentRefresh = prefs.getRefreshToken().first() ?: ""
                         return@refreshTokens BearerTokens(currentAccess, currentRefresh)
                     }
 
                     val refresh = prefs.getRefreshToken().first()
                         ?: run {
+                            AppLogger.w("TokenAuth", "No refresh token stored — clearing session")
                             onRefreshFailed()
                             return@refreshTokens null
                         }
+                    AppLogger.i("TokenAuth", "Access token expired (401); attempting refresh (attempt 1/3)")
                     // Retry the refresh call up to 3 times with backoff.
                     // Render free-tier spin-down can take 30+ seconds to wake;
                     // a single transient failure must NOT kill the session.
@@ -116,10 +120,19 @@ internal fun HttpClientConfig<*>.installTokenAuth(
                         }.getOrNull()
                         if (resp != null) {
                             lastStatus = resp.status
-                            if (resp.status.isSuccess()) break
+                            if (resp.status.isSuccess()) {
+                                AppLogger.i("TokenAuth", "Refresh succeeded on attempt $attempt")
+                                break
+                            }
                             // 401/403 from refresh endpoint = token truly invalid, don't retry
                             if (resp.status == HttpStatusCode.Unauthorized ||
-                                resp.status == HttpStatusCode.Forbidden) break
+                                resp.status == HttpStatusCode.Forbidden) {
+                                AppLogger.w("TokenAuth", "Refresh endpoint returned ${resp.status} — token invalid/revoked")
+                                break
+                            }
+                            AppLogger.w("TokenAuth", "Refresh attempt $attempt got HTTP ${resp.status}; will retry")
+                        } else {
+                            AppLogger.w("TokenAuth", "Refresh attempt $attempt failed (network error); will retry")
                         }
                         // Network error or 5xx → wait and retry (Render spin-up)
                         if (attempt < 3) kotlinx.coroutines.delay(2000L * attempt)
@@ -131,6 +144,7 @@ internal fun HttpClientConfig<*>.installTokenAuth(
                         // their tokens and the next API call will retry refresh.
                         if (lastStatus == HttpStatusCode.Unauthorized ||
                             lastStatus == HttpStatusCode.Forbidden) {
+                            AppLogger.i("TokenAuth", "Refresh token rejected (${lastStatus}) — logging out user")
                             onRefreshFailed()
                         } else {
                             // Transient failure — return null to abort this refresh
@@ -139,6 +153,7 @@ internal fun HttpClientConfig<*>.installTokenAuth(
                             // access token, get another 401, and retry refresh.
                             // If the server comes back, refresh succeeds. If the
                             // user backgrounds the app, they stay logged in.
+                            AppLogger.w("TokenAuth", "Refresh failed (transient: lastStatus=$lastStatus) — keeping session, will retry on next request")
                         }
                         return@refreshTokens null
                     }
@@ -153,6 +168,7 @@ internal fun HttpClientConfig<*>.installTokenAuth(
                     }
                     val newAccess = data?.get("token")?.jsonPrimitive?.contentOrNull
                     if (newAccess == null) {
+                        AppLogger.w("TokenAuth", "Refresh response missing 'token' field — logging out")
                         onRefreshFailed()
                         return@refreshTokens null
                     }

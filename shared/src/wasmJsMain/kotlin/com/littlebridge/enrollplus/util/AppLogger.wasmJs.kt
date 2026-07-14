@@ -5,6 +5,14 @@ actual object AppLogger {
         println("DEBUG: [$tag] $message")
     }
 
+    actual fun i(tag: String, message: String) {
+        println("INFO: [$tag] $message")
+    }
+
+    actual fun w(tag: String, message: String, throwable: Throwable?) {
+        println("WARN: [$tag] $message")
+    }
+
     actual fun e(tag: String, message: String, throwable: Throwable?) {
         println("ERROR: [$tag] $message")
     }

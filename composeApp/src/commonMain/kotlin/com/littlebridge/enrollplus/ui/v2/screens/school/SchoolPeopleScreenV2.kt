@@ -792,6 +792,7 @@ private fun StaffSubTab(
     var selectedDepartments by remember { mutableStateOf(setOf<String>()) }
     var selectedRoles by remember { mutableStateOf(setOf<String>()) }
     var selectedStatuses by remember { mutableStateOf(setOf<String>()) }
+    var snackMessage by remember { mutableStateOf<String?>(null) }
 
     val departments = remember(state.staff) { state.staff.mapNotNull { it.department }.filter { it.isNotBlank() }.distinct().sorted() }
     val roles = remember(state.staff) { state.staff.map { it.role }.distinct().sorted() }
@@ -905,15 +906,39 @@ private fun StaffSubTab(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 filtered.forEachIndexed { index, s ->
+                    val phone = s.phone?.takeIf { it.isNotBlank() }
                     StaffCard(
                         staff = s,
                         onOpen = { onOpenStaff(s.id) },
-                        onCall = { phoneHelper.dialPhone(s.phone ?: "") },
-                        onMessage = { phoneHelper.sendSms(s.phone ?: "") },
+                        onCall = {
+                            if (phone != null) phoneHelper.dialPhone(phone)
+                            else snackMessage = "No phone available for ${s.fullName}"
+                        },
+                        onMessage = {
+                            if (phone != null) phoneHelper.sendSms(phone)
+                            else snackMessage = "No phone available for ${s.fullName}"
+                        },
                         modifier = Modifier.staggeredItemEntrance(index, ready),
                     )
                 }
             }
+        }
+    }
+
+    // ── Snackbar for no-phone warning ────────────────────────────────────
+    snackMessage?.let { msg ->
+        LaunchedEffect(msg) {
+            kotlinx.coroutines.delay(3000)
+            snackMessage = null
+        }
+        Box(Modifier.fillMaxSize()) {
+            VSnackbar(
+                message = msg,
+                visible = true,
+                onDismiss = { snackMessage = null },
+                tone = VSnackbarTone.Warning,
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
         }
     }
 }
