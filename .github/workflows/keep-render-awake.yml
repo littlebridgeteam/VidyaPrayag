@@ -2,18 +2,35 @@ name: Keep Render Awake
 
 on:
   schedule:
-    # Every 1 minute, 24/7
-    - cron: '* * * * *'
+    # Every 5 minutes — GitHub Actions minimum supported interval.
+    # (1-minute cron is silently throttled to 5+ minutes anyway.)
+    - cron: '*/5 * * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Health check ping
+      - name: Wake Render (fire-and-forget, 60s timeout for cold start)
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 ${{ secrets.RENDER_HEALTH_URL || 'https://vidyaprayag-api.onrender.com/api/v1/health' }})
-          echo "Health check returned: $STATUS"
+          URL="${{ secrets.RENDER_HEALTH_URL || 'https://vidyaprayag-api.onrender.com/api/v1/health/ping' }}"
+          echo "Pinging $URL ..."
+          # 60s timeout: Render free-tier cold start takes 30-60s.
+          # Even if this times out, the request itself wakes the server.
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 "$URL" || true)
+          echo "First attempt: $STATUS"
+
+          # If first attempt failed (cold start timeout), retry once —
+          # server should be warm now.
           if [ "$STATUS" != "200" ]; then
-            echo "::warning::Server returned $STATUS"
+            echo "First attempt did not return 200 — retrying in 5s..."
+            sleep 5
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "$URL" || true)
+            echo "Retry: $STATUS"
+          fi
+
+          if [ "$STATUS" = "200" ]; then
+            echo "::notice::Render is awake and healthy"
+          else
+            echo "::warning::Render returned $STATUS after retry (may still be waking up)"
           fi

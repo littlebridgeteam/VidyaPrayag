@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, master, develop]
+    branches: [main, master, develop, slack_fix*]
   pull_request:
     branches: [main, master, develop]
 

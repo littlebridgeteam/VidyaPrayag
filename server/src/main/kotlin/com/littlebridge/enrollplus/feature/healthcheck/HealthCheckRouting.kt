@@ -35,5 +35,11 @@ fun Route.healthCheckRouting() {
                 )
             )
         }
+
+        // Lightweight ping — no DB query, returns 200 immediately.
+        // Used by keep-alive pings so cold starts respond fast.
+        get("/ping") {
+            call.respondText("pong")
+        }
     }
 }
