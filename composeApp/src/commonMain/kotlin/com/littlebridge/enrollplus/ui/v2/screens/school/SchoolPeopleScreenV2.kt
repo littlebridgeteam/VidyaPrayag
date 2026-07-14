@@ -71,6 +71,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
+import com.littlebridge.enrollplus.ui.v2.components.VSnackbar
+import com.littlebridge.enrollplus.ui.v2.components.VSnackbarTone
 import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
@@ -556,6 +558,7 @@ private fun StudentsSubTab(
     val phoneHelper = rememberPhoneHelper()
     var query by remember { mutableStateOf("") }
     var showGraduate by remember { mutableStateOf(false) }
+    var snackMessage by remember { mutableStateOf<String?>(null) }
     var selectedClasses by remember { mutableStateOf(setOf<String>()) }
     var selectedSections by remember { mutableStateOf(setOf<String>()) }
     var selectedStatus by remember { mutableStateOf(setOf<String>()) }
@@ -687,11 +690,18 @@ private fun StudentsSubTab(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 filtered.forEachIndexed { index, s ->
+                    val phone = s.parentPhone?.takeIf { it.isNotBlank() }
                     StudentCard(
                         student = s,
                         onOpen = { onOpenStudent(s.id) },
-                        onCall = { phoneHelper.dialPhone(s.parentPhone ?: "") },
-                        onMessage = { phoneHelper.sendSms(s.parentPhone ?: "") },
+                        onCall = {
+                            if (phone != null) phoneHelper.dialPhone(phone)
+                            else snackMessage = "No parent phone available for ${s.fullName}"
+                        },
+                        onMessage = {
+                            if (phone != null) phoneHelper.sendSms(phone)
+                            else snackMessage = "No parent phone available for ${s.fullName}"
+                        },
                         modifier = Modifier.staggeredItemEntrance(index, ready),
                     )
                 }
@@ -746,6 +756,23 @@ private fun StudentsSubTab(
                     )
                 }
             }
+        }
+    }
+
+    // ── Snackbar for no-phone warning ────────────────────────────────────
+    snackMessage?.let { msg ->
+        LaunchedEffect(msg) {
+            kotlinx.coroutines.delay(3000)
+            snackMessage = null
+        }
+        Box(Modifier.fillMaxSize()) {
+            VSnackbar(
+                message = msg,
+                visible = true,
+                onDismiss = { snackMessage = null },
+                tone = VSnackbarTone.Warning,
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
         }
     }
 }

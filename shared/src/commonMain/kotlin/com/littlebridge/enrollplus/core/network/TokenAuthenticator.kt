@@ -10,12 +10,14 @@ import io.ktor.client.plugins.auth.providers.BearerAuthProvider
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
@@ -98,18 +100,46 @@ internal fun HttpClientConfig<*>.installTokenAuth(
                             onRefreshFailed()
                             return@refreshTokens null
                         }
-                    val resp = runCatching {
-                        refreshClient.post(
-                            AppConfig.authBaseUrl.trimEnd('/') + "/api/v1/auth/refresh"
-                        ) {
-                            contentType(ContentType.Application.Json)
-                            setBody(mapOf("refresh_token" to refresh))
+                    // Retry the refresh call up to 3 times with backoff.
+                    // Render free-tier spin-down can take 30+ seconds to wake;
+                    // a single transient failure must NOT kill the session.
+                    var resp: io.ktor.client.statement.HttpResponse? = null
+                    var lastStatus: HttpStatusCode? = null
+                    for (attempt in 1..3) {
+                        resp = runCatching {
+                            refreshClient.post(
+                                AppConfig.authBaseUrl.trimEnd('/') + "/api/v1/auth/refresh"
+                            ) {
+                                contentType(ContentType.Application.Json)
+                                setBody(mapOf("refresh_token" to refresh))
+                            }
+                        }.getOrNull()
+                        if (resp != null) {
+                            lastStatus = resp.status
+                            if (resp.status.isSuccess()) break
+                            // 401/403 from refresh endpoint = token truly invalid, don't retry
+                            if (resp.status == HttpStatusCode.Unauthorized ||
+                                resp.status == HttpStatusCode.Forbidden) break
                         }
-                    }.getOrNull()
+                        // Network error or 5xx → wait and retry (Render spin-up)
+                        if (attempt < 3) kotlinx.coroutines.delay(2000L * attempt)
+                    }
                     if (resp == null || !resp.status.isSuccess()) {
-                        // Refresh token invalid / expired / revoked (or network failure):
-                        // log the user out cleanly rather than looping on 401s.
-                        onRefreshFailed()
+                        // Only log out if the refresh endpoint explicitly rejected
+                        // the token (401/403). Transient network errors (null resp
+                        // or 5xx) should NOT clear the session — the user keeps
+                        // their tokens and the next API call will retry refresh.
+                        if (lastStatus == HttpStatusCode.Unauthorized ||
+                            lastStatus == HttpStatusCode.Forbidden) {
+                            onRefreshFailed()
+                        } else {
+                            // Transient failure — return null to abort this refresh
+                            // cycle WITHOUT clearing session. The next request will
+                            // re-trigger loadTokens() with the existing (expired)
+                            // access token, get another 401, and retry refresh.
+                            // If the server comes back, refresh succeeds. If the
+                            // user backgrounds the app, they stay logged in.
+                        }
                         return@refreshTokens null
                     }
                     // Parse { success, message, data: { token, refresh_token, ... } }
@@ -145,6 +175,11 @@ internal fun HttpClientConfig<*>.installTokenAuth(
 internal fun buildRefreshClient(engine: io.ktor.client.engine.HttpClientEngine): HttpClient =
     HttpClient(engine) {
         install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+        install(HttpTimeout) {
+            requestTimeoutMillis = 30_000
+            connectTimeoutMillis = 15_000
+            socketTimeoutMillis = 30_000
+        }
     }
 
 /**
