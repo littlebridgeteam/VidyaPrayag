@@ -16,6 +16,7 @@ import kotlinx.coroutines.launch
 data class IdCardState(
     val isLoading: Boolean = false,
     val isGenerating: Boolean = false,
+    val isPdfLoading: Boolean = false,
     val templates: List<IdCardTemplateDto> = emptyList(),
     val cards: List<IdCardDto> = emptyList(),
     val currentCard: IdCardDto? = null,
@@ -214,17 +215,22 @@ class IdCardViewModel(
     }
 
     fun loadPdfUrl(cardId: String) {
+        _state.update { it.copy(isPdfLoading = true, error = null) }
         viewModelScope.launch {
-            val t = token() ?: run { notSignedIn(); return@launch }
+            val t = token() ?: run { notSignedIn(); _state.update { it.copy(isPdfLoading = false) }; return@launch }
             when (val result = repository.getPdfUrl(t, cardId)) {
                 is NetworkResult.Success -> {
                     val url = result.data.data?.get("pdfUrl")
-                    _state.update { it.copy(pdfUrl = url, error = if (url == null) "PDF not available" else null) }
+                    _state.update { it.copy(isPdfLoading = false, pdfUrl = url, error = if (url == null) "PDF not available" else null, infoMessage = if (url != null) "Opening PDF…" else null) }
                 }
-                is NetworkResult.Error -> _state.update { it.copy(error = result.message) }
-                is NetworkResult.ConnectionError -> _state.update { it.copy(error = "Connection error") }
+                is NetworkResult.Error -> _state.update { it.copy(isPdfLoading = false, error = result.message) }
+                is NetworkResult.ConnectionError -> _state.update { it.copy(isPdfLoading = false, error = "Connection error") }
             }
         }
+    }
+
+    fun clearPdfUrl() {
+        _state.update { it.copy(pdfUrl = null) }
     }
 
     fun clearMessages() {

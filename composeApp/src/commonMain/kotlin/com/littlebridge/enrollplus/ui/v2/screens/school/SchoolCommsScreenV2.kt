@@ -41,10 +41,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.littlebridge.enrollplus.feature.admin.domain.model.DeliveryLogItem
 import com.littlebridge.enrollplus.feature.admin.domain.model.MessageThread
 import com.littlebridge.enrollplus.feature.admin.presentation.Announcement
-import com.littlebridge.enrollplus.feature.admin.presentation.CommsDeliveryLogViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.MessagesViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.PTMHistoryItem
 import com.littlebridge.enrollplus.feature.admin.presentation.SchedulePTMViewModel
@@ -108,14 +106,13 @@ fun SchoolCommsScreenV2(
 }
 
 private enum class CommsSubTab {
-    Announcements, Messages, Ptm, Notifications;
+    Announcements, Messages, Ptm;
 
     @Composable
     fun label(): String = when (this) {
         Announcements -> appString(StringKeys.SCH_ANNOUNCEMENTS)
         Messages -> appString(StringKeys.SCH_MESSAGES)
         Ptm -> appString(StringKeys.SCH_PTM)
-        Notifications -> appString(StringKeys.SCH_NOTIFICATIONS)
     }
 }
 
@@ -246,7 +243,6 @@ private fun SchoolCommsContent(
                     )
                     CommsSubTab.Messages -> MessagesTab(onOpenMessages = onOpenMessages)
                     CommsSubTab.Ptm -> PtmTab(onOpenPtm = onOpenPtm)
-                    CommsSubTab.Notifications -> NotificationsTab(onOpenDeliveryLog = onOpenDeliveryLog)
                 }
             }
         }
@@ -420,49 +416,6 @@ private fun PtmTab(
         }
     }
 }
-
-@Composable
-private fun NotificationsTab(
-    onOpenDeliveryLog: () -> Unit,
-    viewModel: CommsDeliveryLogViewModel = koinViewModel(),
-) {
-    val state by viewModel.state.collectAsStateV2()
-
-    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(appString(StringKeys.SCH_DELIVERY_LOG), style = VTypography.label, color = VColors.ink3)
-        VStateHost(
-            modifier = Modifier.fillMaxWidth().weight(1f),
-            loading = state.isLoading,
-            error = state.errorMessage,
-            isEmpty = state.items.isEmpty(),
-            emptyTitle = appString(StringKeys.SCH_NO_DELIVERY_LOG),
-            emptyBody = appString(StringKeys.SCH_NO_DELIVERY_LOG_DESC),
-            emptyIcon = VIcons.Bell,
-            skeleton = { com.littlebridge.enrollplus.ui.v2.screens.SkeletonList(rows = 5) },
-        ) {
-            val scrollState = rememberScrollState()
-            Column(
-                modifier = Modifier.fillMaxWidth().verticalScroll(scrollState),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                state.items.take(5).forEachIndexed { index, item ->
-                    DeliveryLogRowCard(
-                        item = item,
-                        onClick = onOpenDeliveryLog,
-                        index = index,
-                    )
-                }
-                CommsEntryCard(
-                    icon = VIcons.Bell,
-                    title = appString(StringKeys.SCH_SEE_ALL_DELIVERY_LOG),
-                    description = appString(StringKeys.SCH_SEE_ALL_DELIVERY_LOG_DESC),
-                    onClick = onOpenDeliveryLog,
-                )
-            }
-        }
-    }
-}
-
 
 @Composable
 private fun FilterChip(label: String, active: Boolean, onClick: () -> Unit) {

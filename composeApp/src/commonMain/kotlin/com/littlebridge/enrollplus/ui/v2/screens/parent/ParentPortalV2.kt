@@ -64,6 +64,7 @@ import com.littlebridge.enrollplus.ui.v2.screens.auth.ParentLinkChildScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.discovery.AcademicCalendarScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.discovery.DiscoveryScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.notifications.NotificationsScreenV2
+import com.littlebridge.enrollplus.ui.v2.screens.notifications.NotificationPreferencesScreenV2
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
@@ -74,7 +75,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import com.littlebridge.enrollplus.ui.v2.screens.parent.ParentHomeScreenV2
 
 /** Full-screen overlays a portal can push above its tab content (back returns to the tabs). */
-private enum class ParentOverlay { None, Notifications, Calendar, Scholarships, Profile, Leave, Messages, LinkChild, Discovery, Health, Pulse, Transport, TutorChat, TutorProgress, DigitalIdCard, Library, EventRegistration, FeePayment, FeeHistory, Pews, Report, AnnouncementDetail, FeeDetail, LeaveDetail, ExamDetail, Homework }
+private enum class ParentOverlay { None, Notifications, NotificationPreferences, Calendar, Scholarships, Profile, Leave, Messages, LinkChild, Discovery, Health, Pulse, Transport, TutorChat, TutorProgress, DigitalIdCard, Library, EventRegistration, FeePayment, FeeHistory, Pews, Report, AnnouncementDetail, FeeDetail, LeaveDetail, ExamDetail, Homework }
 
 /**
  * ParentPortalV2 — the 5-tab parent shell, a faithful copy of `Parent.tsx → ParentApp`.
@@ -339,6 +340,14 @@ fun ParentPortalV2(
                     localDeepLink = parseDeepLink(deepLinkString, EntryRole.Parent)
                     overlay = ParentOverlay.None
                 },
+                onOpenPreferences = { overlay = ParentOverlay.NotificationPreferences },
+                modifier = modifier,
+            )
+            return
+        }
+        ParentOverlay.NotificationPreferences -> {
+            NotificationPreferencesScreenV2(
+                onBack = { overlay = ParentOverlay.None },
                 modifier = modifier,
             )
             return

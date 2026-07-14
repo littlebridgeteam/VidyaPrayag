@@ -356,9 +356,9 @@ class ManagedCaseworkService {
         val firstName = snap.studentName.trim().split(" ").firstOrNull() ?: "A student"
         val topSignal = snap.signals.maxByOrNull { it.severity }?.label ?: "needs attention"
         val title = if (urgency == "high") {
-            "URGENT: $firstName (Class ${snap.className}${snap.section})"
+            "URGENT: $firstName (Class ${snap.className.removePrefix("Class ").removePrefix("class ")}${snap.section})"
         } else {
-            "Early-warning: $firstName (Class ${snap.className}${snap.section})"
+            "Early-warning: $firstName (Class ${snap.className.removePrefix("Class ").removePrefix("class ")}${snap.section})"
         }
         val body = caseFile?.narrative ?: topSignal
 

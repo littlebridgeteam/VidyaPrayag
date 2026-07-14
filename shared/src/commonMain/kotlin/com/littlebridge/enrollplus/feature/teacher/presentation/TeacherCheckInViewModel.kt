@@ -43,6 +43,7 @@ data class TeacherCheckInState(
     val error: String? = null,             // inline check-in error
     val isStale: Boolean = false,
     val isOffline: Boolean = false,
+    val dismissedDate: String? = null,     // date the user dismissed the popup ("Later")
 )
 
 class TeacherCheckInViewModel(
@@ -94,6 +95,11 @@ class TeacherCheckInViewModel(
      * ("biometric" | "pin" | "manual"). Optimistically flips the pill to pending,
      * then reconciles to the server's authoritative response (idempotent).
      */
+    /** Persist the date the user dismissed the popup so it doesn't reappear during navigation. */
+    fun dismissForDate(date: String) {
+        _state.update { it.copy(dismissedDate = date) }
+    }
+
     fun checkIn(method: String, deviceId: String? = null) {
         if (_state.value.checkedIn || _state.value.isCheckingIn) return
         viewModelScope.launch {

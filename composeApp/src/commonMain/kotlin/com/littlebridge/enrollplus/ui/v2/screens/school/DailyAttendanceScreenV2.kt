@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 // Explicit imports to avoid collision with feature.teacher.presentation.AttendanceStatus/Attendee
 import com.littlebridge.enrollplus.feature.admin.presentation.Attendee
 import com.littlebridge.enrollplus.feature.admin.presentation.AttendanceStatus
+import com.littlebridge.enrollplus.feature.admin.presentation.ClassChip
 import com.littlebridge.enrollplus.feature.admin.presentation.DailyAttendanceState
 import com.littlebridge.enrollplus.feature.admin.presentation.DailyAttendanceViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VAvatar
@@ -85,7 +86,7 @@ fun DailyAttendanceScreenV2(
         .imePadding()
         .navigationBarsPadding()) {
         VBackHeader(title = appString(StringKeys.SCH_DAILY_ATTENDANCE), onBack = onBack, pinRouteId = "overlay_daily_attendance")
-        VPullRefresh(isRefreshing = state.isLoading && state.attendees.isNotEmpty(), onRefresh = { viewModel.setAttendanceType(state.attendanceType) }) {
+        VPullRefresh(isRefreshing = state.isLoading && state.attendees.isNotEmpty(), onRefresh = { viewModel.refresh() }) {
             DailyAttendanceContent(
                 state = state,
                 onTypeChange = viewModel::setAttendanceType,
@@ -103,7 +104,7 @@ fun DailyAttendanceScreenV2(
 private fun DailyAttendanceContent(
     state: DailyAttendanceState,
     onTypeChange: (String) -> Unit,
-    onClassChange: (String) -> Unit,
+    onClassChange: (ClassChip) -> Unit,
     onUpdateStatus: (String, AttendanceStatus) -> Unit,
     onSave: () -> Unit,
     onRetry: () -> Unit,
@@ -130,11 +131,11 @@ private fun DailyAttendanceContent(
                 Modifier.horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                state.availableClasses.forEach { name ->
+                state.availableClasses.forEach { chip ->
                     VTag(
-                        text = name,
-                        active = name == state.selectedClass,
-                        onClick = { onClassChange(name) },
+                        text = chip.displayName,
+                        active = chip == state.selectedClass,
+                        onClick = { onClassChange(chip) },
                     )
                 }
             }
@@ -146,7 +147,7 @@ private fun DailyAttendanceContent(
             isEmpty = state.attendees.isEmpty(),
             emptyTitle = appString(StringKeys.SCH_NO_ROSTER),
             emptyBody = if (isStudents)
-                appString(StringKeys.SCH_NO_STUDENTS_IN_CLASS, "className" to state.selectedClass)
+                appString(StringKeys.SCH_NO_STUDENTS_IN_CLASS, "className" to (state.selectedClass?.displayName ?: ""))
             else
                 appString(StringKeys.SCH_NO_FACULTY_ROSTER),
             emptyIcon = VIcons.Users,

@@ -55,6 +55,7 @@ import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -129,117 +130,119 @@ private fun SchedulePtmContent(
             onRetry = onRetry,
             skeleton = { SkeletonDashboard() },
         ) {
-            // Schedule new PTM CTA / composer
-            if (composerOpen) {
-                VCard {
-                    Text(appString(StringKeys.SCH_NEW_PTM), style = VTypography.h3.copy(color = VColors.ink))
-                    Spacer(Modifier.height(12.dp))
-                    VInput(value = title, onValueChange = { title = it }, label = appString(StringKeys.SCH_TITLE), placeholder = appString(StringKeys.SCH_TITLE_PH))
-                    Spacer(Modifier.height(8.dp))
-                    VDatePicker(value = date, onValueChange = { date = it }, label = appString(StringKeys.SCH_DATE), placeholder = appString(StringKeys.SCH_PTM_DATE_PH))
-                    Spacer(Modifier.height(8.dp))
-                    VInput(value = slot, onValueChange = { slot = it }, label = appString(StringKeys.SCH_SLOT), placeholder = appString(StringKeys.SCH_SLOT_PH))
-                    val info = state.infoMessage
-                    if (info != null) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // Schedule new PTM CTA / composer
+                if (composerOpen) {
+                    VCard {
+                        Text(appString(StringKeys.SCH_NEW_PTM), style = VTypography.h3.copy(color = VColors.ink))
+                        Spacer(Modifier.height(12.dp))
+                        VInput(value = title, onValueChange = { title = it }, label = appString(StringKeys.SCH_TITLE), placeholder = appString(StringKeys.SCH_TITLE_PH))
                         Spacer(Modifier.height(8.dp))
-                        Text(info, style = VTypography.caption.copy(color = VColors.success))
-                    }
-                    val err = state.errorMessage
-                    if (err != null) {
+                        VDatePicker(value = date, onValueChange = { date = it }, label = appString(StringKeys.SCH_DATE), placeholder = appString(StringKeys.SCH_PTM_DATE_PH))
                         Spacer(Modifier.height(8.dp))
-                        Text(err, style = VTypography.caption.copy(color = VColors.coral))
-                    }
-                    Spacer(Modifier.height(12.dp))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Box(Modifier.weight(1f)) {
-                            VButton(
-                                text = appString(StringKeys.SCH_CLOSE),
-                                onClick = {
-                                    composerOpen = false
-                                    title = ""; date = ""; slot = ""
-                                    onClearMessages()
-                                },
-                                full = true,
-                                variant = VButtonVariant.Secondary,
-                                tone = VButtonTone.Navy,
-                            )
+                        VInput(value = slot, onValueChange = { slot = it }, label = appString(StringKeys.SCH_SLOT), placeholder = appString(StringKeys.SCH_SLOT_PH))
+                        val info = state.infoMessage
+                        if (info != null) {
+                            Spacer(Modifier.height(8.dp))
+                            Text(info, style = VTypography.caption.copy(color = VColors.success))
                         }
-                        Box(Modifier.weight(1f)) {
-                            VButton(
-                                text = appString(StringKeys.SCH_CREATE),
-                                onClick = {
-                                    onCreate(title, date, slot) {
+                        val err = state.errorMessage
+                        if (err != null) {
+                            Spacer(Modifier.height(8.dp))
+                            Text(err, style = VTypography.caption.copy(color = VColors.coral))
+                        }
+                        Spacer(Modifier.height(12.dp))
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Box(Modifier.weight(1f)) {
+                                VButton(
+                                    text = appString(StringKeys.SCH_CLOSE),
+                                    onClick = {
                                         composerOpen = false
                                         title = ""; date = ""; slot = ""
-                                    }
-                                },
-                                full = true,
-                                variant = VButtonVariant.Primary,
-                                tone = VButtonTone.Teal,
-                                loading = state.isCreating,
-                                enabled = title.isNotBlank() && date.isNotBlank() && slot.isNotBlank() && !state.isCreating,
-                            )
+                                        onClearMessages()
+                                    },
+                                    full = true,
+                                    variant = VButtonVariant.Secondary,
+                                    tone = VButtonTone.Navy,
+                                )
+                            }
+                            Box(Modifier.weight(1f)) {
+                                VButton(
+                                    text = appString(StringKeys.SCH_CREATE),
+                                    onClick = {
+                                        onCreate(title, date, slot) {
+                                            composerOpen = false
+                                            title = ""; date = ""; slot = ""
+                                        }
+                                    },
+                                    full = true,
+                                    variant = VButtonVariant.Primary,
+                                    tone = VButtonTone.Teal,
+                                    loading = state.isCreating,
+                                    enabled = title.isNotBlank() && date.isNotBlank() && slot.isNotBlank() && !state.isCreating,
+                                )
+                            }
                         }
                     }
-                }
-            } else {
-                VButton(
-                    text = appString(StringKeys.SCH_SCHEDULE_NEW_PTM),
-                    onClick = { composerOpen = true },
-                    full = true,
-                    variant = VButtonVariant.Primary,
-                    tone = VButtonTone.Teal,
-                )
-            }
-
-            // Active event banner
-            if (state.activeEventTitle.isNotBlank()) {
-                VCard {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        VBadge(text = appString(StringKeys.SCH_ACTIVE), tone = VBadgeTone.Success)
-                        Text(state.activeEventTitle, style = VTypography.h3.copy(color = VColors.ink))
-                    }
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        "${state.activeEventDate} · ${state.activeEventSlot}",
-                        style = VTypography.caption.copy(color = VColors.ink2),
+                } else {
+                    VButton(
+                        text = appString(StringKeys.SCH_SCHEDULE_NEW_PTM),
+                        onClick = { composerOpen = true },
+                        full = true,
+                        variant = VButtonVariant.Primary,
+                        tone = VButtonTone.Teal,
                     )
-                    Spacer(Modifier.height(12.dp))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Box(Modifier.weight(1f)) {
-                            KpiTile(label = appString(StringKeys.SCH_EXPECTED), value = state.expectedParents.toString())
+                }
+
+                // Active event banner
+                if (state.activeEventTitle.isNotBlank()) {
+                    VCard {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            VBadge(text = appString(StringKeys.SCH_ACTIVE), tone = VBadgeTone.Success)
+                            Text(state.activeEventTitle, style = VTypography.h3.copy(color = VColors.ink))
                         }
-                        Box(Modifier.weight(1f)) {
-                            KpiTile(label = appString(StringKeys.SCH_CHECKED_IN), value = state.checkedInParents.toString())
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "${state.activeEventDate} · ${state.activeEventSlot}",
+                            style = VTypography.caption.copy(color = VColors.ink2),
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Box(Modifier.weight(1f)) {
+                                KpiTile(label = appString(StringKeys.SCH_EXPECTED), value = state.expectedParents.toString())
+                            }
+                            Box(Modifier.weight(1f)) {
+                                KpiTile(label = appString(StringKeys.SCH_CHECKED_IN), value = state.checkedInParents.toString())
+                            }
                         }
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Box(Modifier.weight(1f)) {
-                            KpiTile(label = appString(StringKeys.SCH_INVITES_SENT), value = state.invitesDelivered.toString())
-                        }
-                        Box(Modifier.weight(1f)) {
-                            KpiTile(label = appString(StringKeys.SCH_READ), value = state.readReceipts.toString())
+                        Spacer(Modifier.height(8.dp))
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Box(Modifier.weight(1f)) {
+                                KpiTile(label = appString(StringKeys.SCH_INVITES_SENT), value = state.invitesDelivered.toString())
+                            }
+                            Box(Modifier.weight(1f)) {
+                                KpiTile(label = appString(StringKeys.SCH_READ), value = state.readReceipts.toString())
+                            }
                         }
                     }
                 }
-            }
 
-            // History
-            if (state.history.isNotEmpty()) {
-                VSectionHeader(title = appString(StringKeys.SCH_HISTORY))
-                VCard {
-                    state.history.forEachIndexed { i, h ->
-                        if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
-                        HistoryRow(h, modifier = Modifier.staggeredItemEntrance(i, state.history.isNotEmpty()))
+                // History
+                if (state.history.isNotEmpty()) {
+                    VSectionHeader(title = appString(StringKeys.SCH_HISTORY))
+                    VCard {
+                        state.history.forEachIndexed { i, h ->
+                            if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
+                            HistoryRow(h, modifier = Modifier.staggeredItemEntrance(i, state.history.isNotEmpty()))
+                        }
                     }
                 }
-            }
 
-            // Per-class progress
-            if (state.classProgress.isNotEmpty()) {
-                VSectionHeader(title = appString(StringKeys.SCH_CLASS_PROGRESS))
-                state.classProgress.forEachIndexed { i, cp -> ClassProgressCard(cp, modifier = Modifier.staggeredItemEntrance(i, state.classProgress.isNotEmpty())) }
+                // Per-class progress
+                if (state.classProgress.isNotEmpty()) {
+                    VSectionHeader(title = appString(StringKeys.SCH_CLASS_PROGRESS))
+                    state.classProgress.forEachIndexed { i, cp -> ClassProgressCard(cp, modifier = Modifier.staggeredItemEntrance(i, state.classProgress.isNotEmpty())) }
+                }
             }
         }
     }
@@ -267,7 +270,7 @@ private fun HistoryRow(h: PTMHistoryItem, modifier: Modifier = Modifier) {
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Column(Modifier.weight(1f)) {
-            Text(h.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+            Text(h.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink), maxLines = 1, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.height(2.dp))
             Text(h.date, style = VTypography.caption.copy(color = VColors.ink3))
         }

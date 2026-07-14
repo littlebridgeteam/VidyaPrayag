@@ -10,12 +10,14 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -28,7 +30,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -139,12 +140,11 @@ fun TeacherHomeScreenV2(
     }
 
     // First-login-of-day check-in popup gate (kept from the previous rebuild).
-    var popupDismissedForDate by rememberSaveable { mutableStateOf<String?>(null) }
     val popupVisible = !checkIn.isLoading &&
         !checkIn.statusUnavailable &&
         !checkIn.checkedIn &&
         checkIn.date.isNotBlank() &&
-        popupDismissedForDate != checkIn.date
+        checkIn.dismissedDate != checkIn.date
 
     // Pull-to-refresh: isRefreshing resets when both today + obligations refreshEpochs bump.
     var isRefreshing by remember { mutableStateOf(false) }
@@ -210,6 +210,7 @@ fun TeacherHomeScreenV2(
             PendingActionsList(
                 obligations = obligations,
                 onOpenUpdate = onOpenUpdateTab,
+                onOpenUpdateTool = onOpenUpdateTool,
                 onOpenClasses = onOpenClasses,
                 onOpenLeaveRequests = onOpenLeaveRequests,
             )
@@ -265,7 +266,7 @@ fun TeacherHomeScreenV2(
         TeacherCheckInPopup(
             state = checkIn,
             visible = popupVisible,
-            onDismiss = { popupDismissedForDate = checkIn.date.ifBlank { com.littlebridge.enrollplus.util.todayIso() } },
+            onDismiss = { checkInViewModel.dismissForDate(checkIn.date.ifBlank { com.littlebridge.enrollplus.util.todayIso() }) },
             onCheckIn = { method -> checkInViewModel.checkIn(method) },
         )
     }
@@ -546,6 +547,7 @@ private fun SkeletonScheduleCard() {
 private fun PendingActionsList(
     obligations: TeacherObligationsState,
     onOpenUpdate: () -> Unit,
+    onOpenUpdateTool: (UpdateTool) -> Unit,
     onOpenClasses: () -> Unit,
     onOpenLeaveRequests: () -> Unit = {},
 ) {
@@ -572,7 +574,7 @@ private fun PendingActionsList(
                 suffix = appString(StringKeys.TC_SUBMISSIONS),
                 icon = VIcons.FileText,
                 tint = VColors.sky,
-                onClick = onOpenUpdate,
+                onClick = { onOpenUpdateTool(UpdateTool.Homework) },
             ))
         }
         if (obligations.unpublishedResults > 0) {
@@ -582,7 +584,7 @@ private fun PendingActionsList(
                 suffix = appString(StringKeys.TC_TO_PUBLISH),
                 icon = VIcons.GraduationCap,
                 tint = VColors.violet,
-                onClick = onOpenUpdate,
+                onClick = { onOpenUpdateTool(UpdateTool.Marks) },
             ))
         }
         if (obligations.pendingLeaveDecisions > 0) {
@@ -648,10 +650,14 @@ private fun PendingRow(item: PendingItem) {
             Text(
                 text = item.label,
                 style = VTypography.body.copy(color = VColors.ink),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text = "${item.count} ${item.suffix}",
                 style = VTypography.caption.copy(color = VColors.ink3),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
         Text(
@@ -796,7 +802,7 @@ private fun ClassRow(cls: TeacherClassSummaryDto, onClick: () -> Unit) {
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "Class ${cls.className}-${cls.section}",
+                    text = "Class ${cls.className.removePrefix("Class ").removePrefix("class ")}-${cls.section}",
                     style = VTypography.body.copy(color = VColors.ink),
                 )
                 if (cls.isClassTeacher) {
@@ -935,10 +941,10 @@ private fun NeedsAttentionSection(
     onOpenPews: () -> Unit,
     onOpenAttendanceForAssignment: (assignmentId: String, scope: String) -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         SectionHeader(title = "Needs Attention")
         SurfaceCard {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 insights.take(4).forEachIndexed { idx, insight ->
                     if (idx > 0) {
                         Box(
@@ -972,6 +978,7 @@ private fun InsightRow(insight: InsightCard, onTap: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .defaultMinSize(minHeight = 48.dp)
             .clip(VShapes.md)
             .clickable { onTap() }
             .padding(vertical = 6.dp),
@@ -985,15 +992,19 @@ private fun InsightRow(insight: InsightCard, onTap: () -> Unit) {
                 .clip(CircleShape)
                 .background(dotColor),
         )
-        Column(Modifier.weight(1f)) {
+        Column(Modifier.weight(1f).fillMaxWidth().wrapContentHeight()) {
             Text(
                 text = insight.title,
                 style = VTypography.body.copy(color = VColors.ink),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
             if (insight.description.isNotBlank()) {
                 Text(
                     text = insight.description,
                     style = VTypography.caption.copy(color = VColors.ink3),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
             Row(
@@ -1004,6 +1015,8 @@ private fun InsightRow(insight: InsightCard, onTap: () -> Unit) {
                 Text(
                     text = insight.actionLabel,
                     style = VTypography.caption.copy(color = VColors.violet),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(12.dp))
             }
@@ -1048,6 +1061,7 @@ private fun SurfaceCard(
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .wrapContentHeight()
             .clip(VShapes.xl)
             .background(VColors.surfaceCard)
             .border(1.dp, VColors.line, VShapes.xl)

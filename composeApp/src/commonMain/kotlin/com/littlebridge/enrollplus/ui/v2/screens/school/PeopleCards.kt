@@ -422,10 +422,12 @@ internal fun StudentCard(
                                 .background(VColors.violetSoft)
                                 .padding(horizontal = 10.dp, vertical = 3.dp),
                         ) {
+                            val cleanClass = student.className.removePrefix("Class ").removePrefix("class ")
                             Text(
-                                "Class ${student.className}-${student.section}",
+                                "Class $cleanClass-${student.section}",
                                 style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
                                 color = VColors.violet,
+                                maxLines = 1,
                             )
                         }
                     }

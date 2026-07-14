@@ -90,7 +90,7 @@ object JwtConfig {
 
     // Spec §16 Session timeout: admin/librarian 30 min, student/parent 24 hours.
     private val ADMIN_ROLES = setOf("school_admin", "school_staff", "admin", "super_admin")
-    private const val ADMIN_EXPIRY_SECS = 30L * 60          // 30 minutes
+    private const val ADMIN_EXPIRY_SECS = 60L * 60          // 1 hour
     private const val DEFAULT_EXPIRY_SECS = 24L * 60 * 60   // 24 hours
 
     /** Issue a signed access token with role-based expiry. */

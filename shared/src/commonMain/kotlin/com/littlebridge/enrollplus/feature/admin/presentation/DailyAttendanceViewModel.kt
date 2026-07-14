@@ -8,6 +8,8 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.AttendanceEntryDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.AttendanceMarkDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.AttendanceSaveRequest
 import com.littlebridge.enrollplus.feature.admin.domain.repository.AttendanceRepository
+import com.littlebridge.enrollplus.feature.admin.domain.repository.SchoolClassesRepository
+import com.littlebridge.enrollplus.feature.admin.domain.model.SchoolClassDto
 import com.littlebridge.enrollplus.util.AppLogger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,10 +29,16 @@ data class Attendee(
     val imageUrl: String? = null
 )
 
+data class ClassChip(
+    val displayName: String,
+    val className: String,
+    val section: String?,
+)
+
 data class DailyAttendanceState(
     val attendanceType: String = "Students", // "Faculty" or "Students"
-    val selectedClass: String = "Grade 10-A",
-    val availableClasses: List<String> = listOf("Grade 10-A", "Grade 10-B", "Grade 11-A", "Grade 12-C"),
+    val selectedClass: ClassChip? = null,
+    val availableClasses: List<ClassChip> = emptyList(),
     val attendees: List<Attendee> = emptyList(),
     val totalCount: Int = 0,
     val presentCount: Int = 0,
@@ -46,6 +54,7 @@ data class DailyAttendanceState(
 
 class DailyAttendanceViewModel(
     private val attendanceRepository: AttendanceRepository,
+    private val schoolClassesRepository: SchoolClassesRepository,
     private val preferenceRepository: PreferenceRepository
 ) : ViewModel() {
 
@@ -53,66 +62,131 @@ class DailyAttendanceViewModel(
     val state: StateFlow<DailyAttendanceState> = _state.asStateFlow()
 
     init {
-        loadAttendance()
+        loadClassesThenAttendance()
     }
 
     fun setAttendanceType(type: String) {
         val serverType = if (type.lowercase().contains("faculty")) "faculty" else "student"
         _state.value = _state.value.copy(attendanceType = type)
+        val chip = _state.value.selectedClass
         loadAttendance(
             type = serverType,
-            grade = if (serverType == "student") _state.value.selectedClass else null
+            grade = if (serverType == "student") chip?.className else null,
+            section = if (serverType == "student") chip?.section else null
         )
     }
 
-    fun selectClass(className: String) {
-        _state.value = _state.value.copy(selectedClass = className)
-        loadAttendance(type = "student", grade = className)
+    fun selectClass(chip: ClassChip) {
+        _state.value = _state.value.copy(selectedClass = chip)
+        loadAttendance(type = "student", grade = chip.className, section = chip.section)
+    }
+
+    private fun loadClassesThenAttendance() {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true, errorMessage = null)
+            try {
+                val token = preferenceRepository.getUserToken().first()
+                if (token.isNullOrBlank()) {
+                    AppLogger.d("DailyAttendanceVM", "No auth token; skipping load")
+                    return@launch
+                }
+
+                when (val result = schoolClassesRepository.listClasses(token)) {
+                    is NetworkResult.Success -> {
+                        val classes = result.data.data?.classes ?: emptyList()
+                        val chips = buildClassChips(classes)
+                        val firstChip = chips.firstOrNull()
+                        _state.value = _state.value.copy(
+                            availableClasses = chips,
+                            selectedClass = firstChip,
+                        )
+                        if (firstChip != null) {
+                            loadAttendance(type = "student", grade = firstChip.className, section = firstChip.section)
+                        } else {
+                            loadAttendance(type = "student", grade = null, section = null)
+                        }
+                    }
+                    is NetworkResult.Error -> {
+                        AppLogger.e("DailyAttendanceVM", "listClasses error: ${result.message}")
+                        _state.value = _state.value.copy(isLoading = false, errorMessage = result.message)
+                    }
+                    is NetworkResult.ConnectionError -> {
+                        AppLogger.e("DailyAttendanceVM", "listClasses connection error")
+                        _state.value = _state.value.copy(isLoading = false, errorMessage = "Connection error. Check your internet.")
+                    }
+                }
+            } catch (e: Exception) {
+                AppLogger.e("DailyAttendanceVM", "loadClassesThenAttendance exception", e)
+                _state.value = _state.value.copy(isLoading = false, errorMessage = e.message ?: "Failed to load classes")
+            }
+        }
+    }
+
+    private fun buildClassChips(classes: List<SchoolClassDto>): List<ClassChip> {
+        return classes.flatMap { cls ->
+            if (cls.sections.isEmpty()) {
+                listOf(ClassChip(displayName = cls.name, className = cls.name, section = null))
+            } else {
+                cls.sections.map { sec ->
+                    ClassChip(displayName = "${cls.name}-$sec", className = cls.name, section = sec)
+                }
+            }
+        }
     }
 
     private fun loadAttendance(
         type: String = "student",
-        grade: String? = _state.value.selectedClass
+        grade: String? = null,
+        section: String? = null
     ) {
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, errorMessage = null)
+            try {
+                val token = preferenceRepository.getUserToken().first()
+                if (token.isNullOrBlank()) {
+                    AppLogger.d("DailyAttendanceVM", "No auth token; skipping load")
+                    _state.value = _state.value.copy(isLoading = false)
+                    return@launch
+                }
 
-            val token = preferenceRepository.getUserToken().first()
-            if (token.isNullOrBlank()) {
-                AppLogger.d("DailyAttendanceVM", "No auth token; skipping load")
-                _state.value = _state.value.copy(isLoading = false)
-                return@launch
-            }
-
-            when (val result = attendanceRepository.getDailyAttendance(token, type, grade)) {
-                is NetworkResult.Success -> {
-                    val data = result.data.data
-                    _state.value = _state.value.copy(
-                        attendees = data?.attendanceList?.map { it.toUiModel() } ?: emptyList(),
-                        totalCount = data?.totalCount ?: 0,
-                        presentCount = data?.presentCount ?: 0,
-                        attendancePercentage = data?.attendancePercentage ?: "0%",
-                        isLoading = false,
-                        isStale = result.isStale,
-                        isOffline = result.isOffline,
-                    )
+                when (val result = attendanceRepository.getDailyAttendance(token, type, grade, section)) {
+                    is NetworkResult.Success -> {
+                        val data = result.data.data
+                        _state.value = _state.value.copy(
+                            attendees = data?.attendanceList?.map { it.toUiModel() } ?: emptyList(),
+                            totalCount = data?.totalCount ?: 0,
+                            presentCount = data?.presentCount ?: 0,
+                            attendancePercentage = data?.attendancePercentage ?: "0%",
+                            isLoading = false,
+                            errorMessage = null,
+                            isStale = result.isStale,
+                            isOffline = result.isOffline,
+                        )
+                    }
+                    is NetworkResult.Error -> {
+                        AppLogger.e("DailyAttendanceVM", "getDailyAttendance error: ${result.message}")
+                        _state.value = _state.value.copy(
+                            isLoading = false,
+                            errorMessage = result.message
+                        )
+                    }
+                    is NetworkResult.ConnectionError -> {
+                        AppLogger.e("DailyAttendanceVM", "getDailyAttendance connection error")
+                        _state.value = _state.value.copy(
+                            isLoading = false,
+                            errorMessage = "Connection error. Check your internet."
+                        )
+                    }
                 }
-                is NetworkResult.Error -> {
-                    AppLogger.e("DailyAttendanceVM", "getDailyAttendance error: ${result.message}")
-                    _state.value = _state.value.copy(
-                        isLoading = false,
-                        errorMessage = result.message
-                    )
-                }
-                is NetworkResult.ConnectionError -> {
-                    AppLogger.e("DailyAttendanceVM", "getDailyAttendance connection error")
-                    _state.value = _state.value.copy(
-                        isLoading = false,
-                        errorMessage = "Connection error. Check your internet."
-                    )
-                }
+            } catch (e: Exception) {
+                AppLogger.e("DailyAttendanceVM", "loadAttendance exception", e)
+                _state.value = _state.value.copy(isLoading = false, errorMessage = e.message ?: "Failed to load attendance")
             }
         }
+    }
+
+    fun refresh() {
+        loadClassesThenAttendance()
     }
 
     fun updateStatus(attendeeId: String, newStatus: AttendanceStatus) {
@@ -152,9 +226,11 @@ class DailyAttendanceViewModel(
             when (val result = attendanceRepository.saveDailyAttendance(token, request)) {
                 is NetworkResult.Success -> {
                     _state.value = _state.value.copy(isSaving = false, saveSuccess = true, saveError = null)
+                    val chip = current.selectedClass
                     loadAttendance(
                         type = serverType,
-                        grade = if (serverType == "student") current.selectedClass else null
+                        grade = if (serverType == "student") chip?.className else null,
+                        section = if (serverType == "student") chip?.section else null
                     )
                 }
                 is NetworkResult.Error -> {

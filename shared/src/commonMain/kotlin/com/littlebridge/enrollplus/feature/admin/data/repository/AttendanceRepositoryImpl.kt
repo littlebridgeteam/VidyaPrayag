@@ -18,9 +18,10 @@ class AttendanceRepositoryImpl(
         token: String,
         type: String,
         grade: String?,
+        section: String?,
         date: String?
     ): NetworkResult<ApiResponse<AttendanceResponse>> =
-        cacheFirstNetworkResult(cache, "admin_daily_attendance_${type}_${grade ?: "all"}_${date ?: "today"}", ApiResponse.serializer(AttendanceResponse.serializer())) { api.getDailyAttendance(token, type, grade, date) }
+        cacheFirstNetworkResult(cache, "admin_daily_attendance_${type}_${grade ?: "all"}_${section ?: "all"}_${date ?: "today"}", ApiResponse.serializer(AttendanceResponse.serializer())) { api.getDailyAttendance(token, type, grade, section, date) }
 
     override suspend fun saveDailyAttendance(
         token: String,

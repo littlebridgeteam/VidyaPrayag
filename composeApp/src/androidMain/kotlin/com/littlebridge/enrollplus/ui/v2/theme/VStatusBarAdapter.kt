@@ -18,12 +18,16 @@ actual fun VStatusBarAdapter(isDark: Boolean) {
     val activity = context as? ComponentActivity ?: return
 
     DisposableEffect(isDark) {
+        // BUG-021: Use the app's cream background (0xFFFBF8F4) as the status bar scrim
+        // instead of TRANSPARENT — the window background is white by default, so a
+        // transparent scrim made system icons invisible against the white area.
+        val creamScrim = 0xFFFBF8F4.toInt()
         activity.enableEdgeToEdge(
             statusBarStyle = if (isDark) {
                 SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
             } else {
                 SystemBarStyle.light(
-                    android.graphics.Color.TRANSPARENT,
+                    creamScrim,
                     android.graphics.Color.TRANSPARENT,
                 )
             },
@@ -31,7 +35,7 @@ actual fun VStatusBarAdapter(isDark: Boolean) {
                 SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
             } else {
                 SystemBarStyle.light(
-                    android.graphics.Color.TRANSPARENT,
+                    creamScrim,
                     android.graphics.Color.TRANSPARENT,
                 )
             },

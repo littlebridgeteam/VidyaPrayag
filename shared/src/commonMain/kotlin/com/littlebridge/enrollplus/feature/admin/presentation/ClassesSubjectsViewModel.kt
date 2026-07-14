@@ -70,16 +70,20 @@ class ClassesSubjectsViewModel(
 
     fun loadTeachers() {
         viewModelScope.launch {
-            val token = preferenceRepository.getUserToken().first()
-            if (token.isNullOrBlank()) return@launch
-            when (val r = teachersRepository.getTeachers(token, page = 1, pageSize = 100)) {
-                is NetworkResult.Success -> {
-                    _state.value = _state.value.copy(teachers = r.data.data?.teachers ?: emptyList(), isStale = r.isStale, isOffline = r.isOffline)
+            try {
+                val token = preferenceRepository.getUserToken().first()
+                if (token.isNullOrBlank()) return@launch
+                when (val r = teachersRepository.getTeachers(token, page = 1, pageSize = 100)) {
+                    is NetworkResult.Success -> {
+                        _state.value = _state.value.copy(teachers = r.data.data?.teachers ?: emptyList(), isStale = r.isStale, isOffline = r.isOffline)
+                    }
+                    is NetworkResult.Error -> {
+                        AppLogger.e("ClassesVM", "teachers error: ${r.message}")
+                    }
+                    is NetworkResult.ConnectionError -> {}
                 }
-                is NetworkResult.Error -> {
-                    AppLogger.e("ClassesVM", "teachers error: ${r.message}")
-                }
-                is NetworkResult.ConnectionError -> {}
+            } catch (e: Exception) {
+                AppLogger.e("ClassesVM", "loadTeachers exception", e)
             }
         }
     }
@@ -117,23 +121,28 @@ class ClassesSubjectsViewModel(
     fun loadClasses() {
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, errorMessage = null)
-            val token = preferenceRepository.getUserToken().first()
-            if (token.isNullOrBlank()) {
-                _state.value = _state.value.copy(isLoading = false)
-                return@launch
-            }
-            when (val result = repository.listClasses(token)) {
-                is NetworkResult.Success -> {
-                    val classes = result.data.data?.classes ?: emptyList()
-                    _state.value = _state.value.copy(classes = classes, isLoading = false, isStale = result.isStale, isOffline = result.isOffline)
+            try {
+                val token = preferenceRepository.getUserToken().first()
+                if (token.isNullOrBlank()) {
+                    _state.value = _state.value.copy(isLoading = false)
+                    return@launch
                 }
-                is NetworkResult.Error -> {
-                    AppLogger.e("ClassesVM", "list error: ${result.message}")
-                    _state.value = _state.value.copy(isLoading = false, errorMessage = result.message)
+                when (val result = repository.listClasses(token)) {
+                    is NetworkResult.Success -> {
+                        val classes = result.data.data?.classes ?: emptyList()
+                        _state.value = _state.value.copy(classes = classes, isLoading = false, isStale = result.isStale, isOffline = result.isOffline)
+                    }
+                    is NetworkResult.Error -> {
+                        AppLogger.e("ClassesVM", "list error: ${result.message}")
+                        _state.value = _state.value.copy(isLoading = false, errorMessage = result.message)
+                    }
+                    is NetworkResult.ConnectionError -> {
+                        _state.value = _state.value.copy(isLoading = false, errorMessage = "Connection error. Check your internet.")
+                    }
                 }
-                is NetworkResult.ConnectionError -> {
-                    _state.value = _state.value.copy(isLoading = false, errorMessage = "Connection error. Check your internet.")
-                }
+            } catch (e: Exception) {
+                AppLogger.e("ClassesVM", "loadClasses exception", e)
+                _state.value = _state.value.copy(isLoading = false, errorMessage = e.message ?: "Failed to load classes")
             }
         }
     }
@@ -221,25 +230,31 @@ class ClassesSubjectsViewModel(
 
     fun loadSubjects(classId: String) {
         viewModelScope.launch {
-            val token = preferenceRepository.getUserToken().first()
-            if (token.isNullOrBlank()) return@launch
-            when (val result = repository.listSubjects(token, classId)) {
-                is NetworkResult.Success -> {
-                    val subjects = result.data.data?.subjects ?: emptyList()
-                    _state.value = _state.value.copy(
-                        subjectsByClass = _state.value.subjectsByClass + (classId to subjects),
-                        selectedClassId = classId,
-                        isStale = result.isStale,
-                        isOffline = result.isOffline,
-                    )
+            try {
+                val token = preferenceRepository.getUserToken().first()
+                if (token.isNullOrBlank()) return@launch
+                when (val result = repository.listSubjects(token, classId)) {
+                    is NetworkResult.Success -> {
+                        val subjects = result.data.data?.subjects ?: emptyList()
+                        _state.value = _state.value.copy(
+                            subjectsByClass = _state.value.subjectsByClass + (classId to subjects),
+                            selectedClassId = classId,
+                            errorMessage = null,
+                            isStale = result.isStale,
+                            isOffline = result.isOffline,
+                        )
+                    }
+                    is NetworkResult.Error -> {
+                        AppLogger.e("ClassesVM", "subjects error: ${result.message}")
+                        _state.value = _state.value.copy(errorMessage = result.message)
+                    }
+                    is NetworkResult.ConnectionError -> {
+                        _state.value = _state.value.copy(errorMessage = "Connection error. Check your internet.")
+                    }
                 }
-                is NetworkResult.Error -> {
-                    AppLogger.e("ClassesVM", "subjects error: ${result.message}")
-                    _state.value = _state.value.copy(errorMessage = result.message)
-                }
-                is NetworkResult.ConnectionError -> {
-                    _state.value = _state.value.copy(errorMessage = "Connection error. Check your internet.")
-                }
+            } catch (e: Exception) {
+                AppLogger.e("ClassesVM", "loadSubjects exception", e)
+                _state.value = _state.value.copy(errorMessage = e.message ?: "Failed to load subjects")
             }
         }
     }
@@ -351,7 +366,7 @@ class ClassesSubjectsViewModel(
     }
 
     fun selectClass(classId: String?) {
-        _state.value = _state.value.copy(selectedClassId = classId)
+        _state.value = _state.value.copy(selectedClassId = classId, errorMessage = null)
         if (classId != null) loadSubjects(classId)
     }
 

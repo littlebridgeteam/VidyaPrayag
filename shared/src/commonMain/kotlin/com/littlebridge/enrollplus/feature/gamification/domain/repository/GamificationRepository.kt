@@ -53,6 +53,7 @@ interface GamificationRepository {
     // Admin
     suspend fun getFlags(token: String): NetworkResult<ApiResponse<GamificationFlags>>
     suspend fun setEnabled(token: String, enabled: Boolean): NetworkResult<ApiResponse<Map<String, *>>>
+    suspend fun setGranularFlag(token: String, flagKey: String, enabled: Boolean): NetworkResult<ApiResponse<Map<String, *>>>
     suspend fun getBadgeDefinitions(token: String): NetworkResult<ApiResponse<List<BadgeDefinition>>>
     suspend fun getLevelDefinitions(token: String): NetworkResult<ApiResponse<List<LevelDefinition>>>
     suspend fun getHouses(token: String): NetworkResult<ApiResponse<List<House>>>

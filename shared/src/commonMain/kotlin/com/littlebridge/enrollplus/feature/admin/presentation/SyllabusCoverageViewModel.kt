@@ -72,25 +72,30 @@ class SyllabusCoverageViewModel(
     fun load() {
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, errorMessage = null)
-            val token = preferenceRepository.getUserToken().first()
-            if (token.isNullOrBlank()) {
-                _state.value = _state.value.copy(isLoading = false); return@launch
-            }
-            when (val result = analyticsRepository.getSyllabusCoverage(token)) {
-                is NetworkResult.Success -> {
-                    _state.value = parseSyllabus(result.data.data).copy(isLoading = false, isStale = result.isStale, isOffline = result.isOffline)
+            try {
+                val token = preferenceRepository.getUserToken().first()
+                if (token.isNullOrBlank()) {
+                    _state.value = _state.value.copy(isLoading = false); return@launch
                 }
-                is NetworkResult.Error -> {
-                    AppLogger.e("SyllabusCoverageVM", "getSyllabusCoverage error: ${result.message}")
-                    _state.value = _state.value.copy(isLoading = false, errorMessage = result.message)
+                when (val result = analyticsRepository.getSyllabusCoverage(token)) {
+                    is NetworkResult.Success -> {
+                        _state.value = parseSyllabus(result.data.data).copy(isLoading = false, errorMessage = null, isStale = result.isStale, isOffline = result.isOffline)
+                    }
+                    is NetworkResult.Error -> {
+                        AppLogger.e("SyllabusCoverageVM", "getSyllabusCoverage error: ${result.message}")
+                        _state.value = _state.value.copy(isLoading = false, errorMessage = result.message)
+                    }
+                    is NetworkResult.ConnectionError -> {
+                        AppLogger.e("SyllabusCoverageVM", "getSyllabusCoverage connection error")
+                        _state.value = _state.value.copy(
+                            isLoading = false,
+                            errorMessage = "Connection error. Check your internet."
+                        )
+                    }
                 }
-                is NetworkResult.ConnectionError -> {
-                    AppLogger.e("SyllabusCoverageVM", "getSyllabusCoverage connection error")
-                    _state.value = _state.value.copy(
-                        isLoading = false,
-                        errorMessage = "Connection error. Check your internet."
-                    )
-                }
+            } catch (e: Exception) {
+                AppLogger.e("SyllabusCoverageVM", "load() exception", e)
+                _state.value = _state.value.copy(isLoading = false, errorMessage = e.message ?: "Failed to load syllabus coverage")
             }
         }
     }

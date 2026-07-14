@@ -100,7 +100,7 @@ fun LazyListScope.scopeSelectorItems(
     horizontalPadding: androidx.compose.ui.unit.Dp = 0.dp,
 ) {
     items(classes, key = { it.assignmentId }) { cls ->
-        Box(Modifier.padding(horizontal = horizontalPadding)) {
+        Box(Modifier.fillMaxWidth().padding(horizontal = horizontalPadding)) {
             ScopeRow(cls, onPick)
         }
     }

@@ -2,6 +2,7 @@ package com.littlebridge.enrollplus.core.network
 
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.util.AppConfig
+import com.littlebridge.enrollplus.util.AppLogger
 import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
 import io.ktor.client.plugins.auth.Auth
@@ -10,20 +11,35 @@ import io.ktor.client.plugins.auth.providers.BearerAuthProvider
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 private val lenientJson = Json { ignoreUnknownKeys = true }
+
+/**
+ * Serializes concurrent refresh-token calls. Without this, when multiple API
+ * requests get 401 at the same time, each one independently calls
+ * `refreshTokens()`. The first call rotates the refresh token on the server
+ * (revoking the old one). The second call still uses the old refresh token →
+ * the server's reuse-detection revokes the ENTIRE session family → random
+ * logout. The mutex ensures only one refresh happens at a time; concurrent
+ * 401s wait, then reuse the freshly-persisted tokens without a second call.
+ */
+private val refreshMutex = Mutex()
 
 /**
  * Ktor [Auth] / `bearer` configuration — automatic token refresh on 401 with a
@@ -64,45 +80,105 @@ internal fun HttpClientConfig<*>.installTokenAuth(
                 if (access != null) BearerTokens(access, refresh ?: "") else null
             }
             refreshTokens {
-                val refresh = prefs.getRefreshToken().first()
-                    ?: run {
+                // Capture the access token that triggered the 401 so we can
+                // detect if a concurrent refresh already replaced it.
+                val expiredAccess = prefs.getUserToken().first()
+
+                refreshMutex.withLock {
+                    // After acquiring the lock, check if another concurrent
+                    // refresh already replaced the access token. If so, return
+                    // the new tokens WITHOUT making another refresh call —
+                    // replaying the old (now-rotated) refresh token would trip
+                    // the server's reuse-detection and kill the session family.
+                    val currentAccess = prefs.getUserToken().first()
+                    if (currentAccess != null && currentAccess != expiredAccess) {
+                        AppLogger.i("TokenAuth", "Concurrent refresh already completed; reusing new tokens")
+                        val currentRefresh = prefs.getRefreshToken().first() ?: ""
+                        return@refreshTokens BearerTokens(currentAccess, currentRefresh)
+                    }
+
+                    val refresh = prefs.getRefreshToken().first()
+                        ?: run {
+                            AppLogger.w("TokenAuth", "No refresh token stored — clearing session")
+                            onRefreshFailed()
+                            return@refreshTokens null
+                        }
+                    AppLogger.i("TokenAuth", "Access token expired (401); attempting refresh (attempt 1/3)")
+                    // Retry the refresh call up to 3 times with backoff.
+                    // Render free-tier spin-down can take 30+ seconds to wake;
+                    // a single transient failure must NOT kill the session.
+                    var resp: io.ktor.client.statement.HttpResponse? = null
+                    var lastStatus: HttpStatusCode? = null
+                    for (attempt in 1..3) {
+                        resp = runCatching {
+                            refreshClient.post(
+                                AppConfig.authBaseUrl.trimEnd('/') + "/api/v1/auth/refresh"
+                            ) {
+                                contentType(ContentType.Application.Json)
+                                setBody(mapOf("refresh_token" to refresh))
+                            }
+                        }.getOrNull()
+                        if (resp != null) {
+                            lastStatus = resp.status
+                            if (resp.status.isSuccess()) {
+                                AppLogger.i("TokenAuth", "Refresh succeeded on attempt $attempt")
+                                break
+                            }
+                            // 401/403 from refresh endpoint = token truly invalid, don't retry
+                            if (resp.status == HttpStatusCode.Unauthorized ||
+                                resp.status == HttpStatusCode.Forbidden) {
+                                AppLogger.w("TokenAuth", "Refresh endpoint returned ${resp.status} — token invalid/revoked")
+                                break
+                            }
+                            AppLogger.w("TokenAuth", "Refresh attempt $attempt got HTTP ${resp.status}; will retry")
+                        } else {
+                            AppLogger.w("TokenAuth", "Refresh attempt $attempt failed (network error); will retry")
+                        }
+                        // Network error or 5xx → wait and retry (Render spin-up)
+                        if (attempt < 3) kotlinx.coroutines.delay(2000L * attempt)
+                    }
+                    if (resp == null || !resp.status.isSuccess()) {
+                        // Only log out if the refresh endpoint explicitly rejected
+                        // the token (401/403). Transient network errors (null resp
+                        // or 5xx) should NOT clear the session — the user keeps
+                        // their tokens and the next API call will retry refresh.
+                        if (lastStatus == HttpStatusCode.Unauthorized ||
+                            lastStatus == HttpStatusCode.Forbidden) {
+                            AppLogger.i("TokenAuth", "Refresh token rejected (${lastStatus}) — logging out user")
+                            onRefreshFailed()
+                        } else {
+                            // Transient failure — return null to abort this refresh
+                            // cycle WITHOUT clearing session. The next request will
+                            // re-trigger loadTokens() with the existing (expired)
+                            // access token, get another 401, and retry refresh.
+                            // If the server comes back, refresh succeeds. If the
+                            // user backgrounds the app, they stay logged in.
+                            AppLogger.w("TokenAuth", "Refresh failed (transient: lastStatus=$lastStatus) — keeping session, will retry on next request")
+                        }
+                        return@refreshTokens null
+                    }
+                    // Parse { success, message, data: { token, refresh_token, ... } }
+                    val bodyText = runCatching { resp.bodyAsText() }.getOrNull()
+                    val data = bodyText?.let {
+                        runCatching {
+                            lenientJson
+                                .parseToJsonElement(it)
+                                .jsonObject["data"]?.jsonObject
+                        }.getOrNull()
+                    }
+                    val newAccess = data?.get("token")?.jsonPrimitive?.contentOrNull
+                    if (newAccess == null) {
+                        AppLogger.w("TokenAuth", "Refresh response missing 'token' field — logging out")
                         onRefreshFailed()
                         return@refreshTokens null
                     }
-                val resp = runCatching {
-                    refreshClient.post(
-                        AppConfig.authBaseUrl.trimEnd('/') + "/api/v1/auth/refresh"
-                    ) {
-                        contentType(ContentType.Application.Json)
-                        setBody(mapOf("refresh_token" to refresh))
-                    }
-                }.getOrNull()
-                if (resp == null || !resp.status.isSuccess()) {
-                    // Refresh token invalid / expired / revoked (or network failure):
-                    // log the user out cleanly rather than looping on 401s.
-                    onRefreshFailed()
-                    return@refreshTokens null
+                    // RA-35: persist the ROTATED refresh token, falling back to the
+                    // current one only if the server omitted it.
+                    val newRefresh = data["refresh_token"]?.jsonPrimitive?.contentOrNull ?: refresh
+                    prefs.setUserToken(newAccess)
+                    prefs.setRefreshToken(newRefresh)
+                    BearerTokens(newAccess, newRefresh)
                 }
-                // Parse { success, message, data: { token, refresh_token, ... } }
-                val bodyText = runCatching { resp.bodyAsText() }.getOrNull()
-                val data = bodyText?.let {
-                    runCatching {
-                        lenientJson
-                            .parseToJsonElement(it)
-                            .jsonObject["data"]?.jsonObject
-                    }.getOrNull()
-                }
-                val newAccess = data?.get("token")?.jsonPrimitive?.contentOrNull
-                if (newAccess == null) {
-                    onRefreshFailed()
-                    return@refreshTokens null
-                }
-                // RA-35: persist the ROTATED refresh token, falling back to the
-                // current one only if the server omitted it.
-                val newRefresh = data["refresh_token"]?.jsonPrimitive?.contentOrNull ?: refresh
-                prefs.setUserToken(newAccess)
-                prefs.setRefreshToken(newRefresh)
-                BearerTokens(newAccess, newRefresh)
             }
         }
     }
@@ -115,6 +191,11 @@ internal fun HttpClientConfig<*>.installTokenAuth(
 internal fun buildRefreshClient(engine: io.ktor.client.engine.HttpClientEngine): HttpClient =
     HttpClient(engine) {
         install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+        install(HttpTimeout) {
+            requestTimeoutMillis = 30_000
+            connectTimeoutMillis = 15_000
+            socketTimeoutMillis = 30_000
+        }
     }
 
 /**

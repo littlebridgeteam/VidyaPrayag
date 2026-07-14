@@ -108,7 +108,7 @@ class PewsReasoningService {
         val firstName = snap.studentName.trim().split(" ").firstOrNull() ?: "This student"
         val signalLines = snap.signals.joinToString("\n") { "- ${it.label}" }
         val userPrompt = buildString {
-            appendLine("Student: $firstName (Class ${snap.className}${snap.section})")
+            appendLine("Student: $firstName (Class ${snap.className.removePrefix("Class ").removePrefix("class ")}${snap.section})")
             appendLine("Composite risk score: ${snap.riskScore}/100 (${snap.riskLevel})")
             snap.attendancePct?.let { appendLine("Attendance: $it%") }
             snap.marksPct?.let { appendLine("Average marks: $it%") }

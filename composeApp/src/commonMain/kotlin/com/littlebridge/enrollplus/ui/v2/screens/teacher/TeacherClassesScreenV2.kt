@@ -430,7 +430,7 @@ private fun ClassCard(cls: TeacherClassSummaryDto, onClick: () -> Unit) {
         Box(Modifier.width(5.dp).height(112.dp).background(subjectColor))
 
         Column(Modifier.weight(1f).padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 // Initial disc.
                 Box(
                     Modifier.size(46.dp).clip(CircleShape).background(subjectColor.copy(alpha = 0.14f)),

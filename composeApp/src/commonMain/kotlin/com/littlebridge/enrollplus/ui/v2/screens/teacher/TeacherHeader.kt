@@ -22,7 +22,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.ui.tokens.VColors
@@ -207,19 +210,16 @@ fun TeacherPremiumHeader(
 
         Spacer(Modifier.height(3.dp))
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(7.dp),
-        ) {
-            Text(
-                text = lead,
-                style = VTypography.h2.copy(color = VColors.ink, fontSize = greetingSize),
-            )
-            Text(
-                text = accent,
-                style = VTypography.h2.copy(color = VColors.violet, fontSize = greetingSize),
-            )
-        }
+        Text(
+            text = buildAnnotatedString {
+                append(lead)
+                append(' ')
+                withStyle(VTypography.h2.copy(color = VColors.violet, fontSize = greetingSize).toSpanStyle()) {
+                    append(accent)
+                }
+            },
+            style = VTypography.h2.copy(color = VColors.ink, fontSize = greetingSize),
+        )
     }
 }
 

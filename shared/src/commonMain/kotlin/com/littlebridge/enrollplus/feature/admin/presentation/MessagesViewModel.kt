@@ -76,8 +76,18 @@ data class ComposeState(
     val isOpen: Boolean = false,
     val isLoadingRecipients: Boolean = false,
     val candidates: List<MessageRecipient> = emptyList(),
+    val searchQuery: String = "",
     val error: String? = null,
-)
+) {
+    /** Candidates filtered by the current search query (case-insensitive name/subtitle match). */
+    val filteredCandidates: List<MessageRecipient>
+        get() = if (searchQuery.isBlank()) candidates else {
+            val q = searchQuery.trim().lowercase()
+            candidates.filter {
+                it.name.lowercase().contains(q) || it.subtitle.lowercase().contains(q)
+            }
+        }
+}
 
 /** A pickable recipient for compose-new (id = app_users id used as recipient_user_id). */
 data class MessageRecipient(
@@ -581,6 +591,11 @@ class MessagesViewModel(
     /** RA-S07 — dismiss the compose sheet. */
     fun closeCompose() {
         _compose.value = ComposeState()
+    }
+
+    /** BUG-021 — update the recipient search query to filter candidates locally. */
+    fun setSearchQuery(query: String) {
+        _compose.value = _compose.value.copy(searchQuery = query)
     }
 
     /**

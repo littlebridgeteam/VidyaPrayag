@@ -26,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -69,7 +70,15 @@ internal fun CardsTab(
         var searchQuery by remember { mutableStateOf("") }
     var filterType by remember { mutableStateOf<String?>(null) }
     var cardToDelete by remember { mutableStateOf<IdCardDto?>(null) }
+    var cardToVerify by remember { mutableStateOf<IdCardDto?>(null) }
     val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
+
+    LaunchedEffect(state.pdfUrl) {
+        state.pdfUrl?.let { url ->
+            uriHandler.openUri(url)
+            viewModel.clearPdfUrl()
+        }
+    }
 
     val filteredCards = state.cards.filter { card ->
         (filterType == null || card.personType == filterType) &&
@@ -81,6 +90,66 @@ internal fun CardsTab(
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
+        state.error?.let { errMsg ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(VColors.coral.copy(alpha = 0.1f))
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = errMsg,
+                    style = VTypography.caption.copy(color = VColors.coral, fontWeight = FontWeight.SemiBold),
+                    modifier = Modifier.weight(1f),
+                    maxLines = 2,
+                )
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(VColors.coral.copy(alpha = 0.15f))
+                        .clickable {
+                            viewModel.clearMessages()
+                            viewModel.loadCards()
+                        }
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                ) {
+                    Text("Retry", style = VTypography.caption.copy(color = VColors.coral, fontWeight = FontWeight.Bold, fontSize = 11.sp))
+                }
+            }
+        }
+
+        state.infoMessage?.let { msg ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(VColors.mint.copy(alpha = 0.1f))
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = msg,
+                    style = VTypography.caption.copy(color = VColors.mint, fontWeight = FontWeight.SemiBold),
+                    modifier = Modifier.weight(1f),
+                    maxLines = 2,
+                )
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .clickable { viewModel.clearMessages() }
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                ) {
+                    Icon(Icons.Filled.Close, contentDescription = "Dismiss", tint = VColors.mint, modifier = Modifier.size(14.dp))
+                }
+            }
+        }
+
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
@@ -118,6 +187,13 @@ internal fun CardsTab(
                     shape = RoundedCornerShape(12.dp),
                 )
             }
+        } else if (state.cards.isEmpty() && state.error != null) {
+            VEmptyState(
+                title = "Failed to load cards",
+                body = state.error ?: "Unknown error",
+                icon = Icons.Filled.School,
+                modifier = Modifier.padding(top = 48.dp),
+            )
         } else if (filteredCards.isEmpty()) {
             VEmptyState(
                 title = if (searchQuery.isNotBlank()) appString(StringKeys.SCH_NO_CARDS_MATCH, "query" to searchQuery) else appString(StringKeys.SCH_NO_CARDS_YET),
@@ -136,7 +212,8 @@ internal fun CardsTab(
                             card = card,
                             onDownloadPdf = { viewModel.loadPdfUrl(card.id) },
                             onDelete = { cardToDelete = card },
-                            onVerify = { uriHandler.openUri(card.qrCodeData) },
+                            onVerify = { cardToVerify = card },
+                            isPdfLoading = state.isPdfLoading,
                             modifier = Modifier.weight(1f),
                         )
                     }
@@ -164,6 +241,13 @@ internal fun CardsTab(
             icon = Icons.Filled.Close,
         )
     }
+
+    cardToVerify?.let { card ->
+        IdCardVerifyDialog(
+            card = card,
+            onDismiss = { cardToVerify = null },
+        )
+    }
 }
 
 @Composable
@@ -172,6 +256,7 @@ private fun CardGridItem(
     onDownloadPdf: () -> Unit,
     onDelete: () -> Unit,
     onVerify: () -> Unit,
+    isPdfLoading: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
         val status = remember(card.validTill) { cardStatus(card.validTill) }
@@ -333,6 +418,8 @@ private fun CardGridItem(
                             onClick = onDownloadPdf,
                             variant = VButtonVariant.Secondary,
                             size = VButtonSize.Sm,
+                            enabled = !isPdfLoading,
+                            loading = isPdfLoading,
                         )
                     }
                     VButton(
@@ -345,6 +432,85 @@ private fun CardGridItem(
             }
         }
     }
+}
+
+@Composable
+private fun IdCardVerifyDialog(
+    card: IdCardDto,
+    onDismiss: () -> Unit,
+) {
+    val base = AppConfig.schoolBaseUrl.trimEnd('/')
+    val qrImgUrl = "$base/api/v1/id-card/${card.id}/qr.png"
+
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = appString(StringKeys.SCH_ID_CARD),
+                style = VTypography.h2.copy(fontSize = 18.sp),
+                color = VColors.ink,
+            )
+        },
+        text = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                card.digitalCardUrl?.let { url ->
+                    AsyncImage(
+                        model = url,
+                        contentDescription = card.personName,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(54f / 86f)
+                            .clip(RoundedCornerShape(12.dp)),
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+                AsyncImage(
+                    model = qrImgUrl,
+                    contentDescription = appString(StringKeys.SCH_QR_CODE),
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .size(120.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color.White),
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = card.personName,
+                    style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
+                    color = VColors.ink,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = card.personType.replaceFirstChar { it.uppercase() },
+                    style = VTypography.caption,
+                    color = VColors.ink2,
+                )
+                card.validTill?.let { vt ->
+                    Text(
+                        text = "Valid till: $vt",
+                        style = VTypography.caption,
+                        color = VColors.ink3,
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Scan QR to verify profile",
+                    style = VTypography.caption.copy(fontSize = 11.sp),
+                    color = VColors.ink3,
+                )
+            }
+        },
+        confirmButton = {
+            androidx.compose.material3.TextButton(onClick = onDismiss) {
+                Text("Close", color = VColors.violet)
+            }
+        },
+    )
 }
 
 private data class CardStatus(val labelKey: String, val tone: VBadgeTone)

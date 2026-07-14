@@ -174,7 +174,7 @@ private fun ExportTypeCard(
 
     val dedupedClasses = classes.distinctBy { "${it.className}-${it.section}" }
     val selectedClass = dedupedClasses.find { it.classId == selectedClassId }
-    val classLabel = selectedClass?.let { "Class ${it.className}-${it.section}" } ?: "All Classes"
+    val classLabel = selectedClass?.let { "Class ${it.className.removePrefix("Class ").removePrefix("class ")}-${it.section}" } ?: "All Classes"
 
     val selectedAssessment = assessments.find { it.id == selectedAssessmentId }
     val assessmentLabel = selectedAssessment?.let { "${it.name} — ${it.subject} (${it.className}-${it.section})" }
@@ -238,7 +238,7 @@ private fun ExportTypeCard(
                     )
                     dedupedClasses.forEach { cls ->
                         DropdownMenuItem(
-                            text = { Text("Class ${cls.className}-${cls.section}", style = VTypography.body) },
+                            text = { Text("Class ${cls.className.removePrefix("Class ").removePrefix("class ")}-${cls.section}", style = VTypography.body) },
                             onClick = {
                                 selectedClassId = cls.classId
                                 classDropdownOpen = false
@@ -267,7 +267,7 @@ private fun ExportTypeCard(
                             text = {
                                 Column {
                                     Text("${a.name} — ${a.subject}", style = VTypography.body)
-                                    Text("Class ${a.className}-${a.section} | Max: ${a.maxMarks}", style = VTypography.caption, color = VColors.ink3)
+                                    Text("Class ${a.className.removePrefix("Class ").removePrefix("class ")}-${a.section} | Max: ${a.maxMarks}", style = VTypography.caption, color = VColors.ink3)
                                 }
                             },
                             onClick = {

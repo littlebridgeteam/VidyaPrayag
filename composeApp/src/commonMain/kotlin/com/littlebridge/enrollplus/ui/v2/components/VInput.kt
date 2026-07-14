@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicTextField
@@ -29,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -61,6 +63,8 @@ fun VInput(
     passwordVisible: Boolean = false,
     singleLine: Boolean = true,
     enabled: Boolean = true,
+    isError: Boolean = false,
+    errorText: String? = null,
     // Optional trailing affordance (e.g. the password Eye toggle), rendered after the field.
     trailing: (@Composable () -> Unit)? = null,
 ) {
@@ -68,7 +72,13 @@ fun VInput(
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
 
-    val borderColor by animateColorAsState(if (focused) c.tealDeep else c.hairline, tween(180), label = "border")
+    val borderColor by animateColorAsState(
+        when {
+            isError -> c.dangerInk
+            focused -> c.tealDeep
+            else -> c.hairline
+        }, tween(180), label = "border"
+    )
     val bg by animateColorAsState(if (focused) c.card else c.cream, tween(180), label = "bg")
     val glow by animateDpAsState(if (focused) 4.dp else 0.dp, tween(180), label = "glow")
     val iconTint by animateColorAsState(if (focused) c.tealDeep else c.ink3, tween(180), label = "iconTint")
@@ -82,7 +92,11 @@ fun VInput(
                 text = label,
                 // §0.4: VInput label is 12/600/none/ink-2 (inputLabel), not caption (12/500).
                 style = VTheme.type.inputLabel.colored(c.ink2),
-                modifier = Modifier.padding(bottom = 8.dp),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .padding(bottom = 8.dp)
+                    .heightIn(min = 16.dp),
             )
         }
         Box(
@@ -122,7 +136,13 @@ fun VInput(
                 }
             }
         }
-        if (hint != null) {
+        if (isError && errorText != null) {
+            Text(
+                text = errorText,
+                style = VTheme.type.caption.colored(c.dangerInk),
+                modifier = Modifier.padding(top = 6.dp),
+            )
+        } else if (hint != null) {
             Text(
                 text = hint,
                 style = VTheme.type.caption.colored(c.ink3),
