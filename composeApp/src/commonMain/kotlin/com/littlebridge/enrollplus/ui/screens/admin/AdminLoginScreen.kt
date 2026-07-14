@@ -27,7 +27,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,17 +36,11 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.feature.auth.presentation.AuthViewModel
-import com.littlebridge.enrollplus.getPlatform
 import com.littlebridge.enrollplus.ui.components.VBackHeader
 import com.littlebridge.enrollplus.ui.components.VButton
-import com.littlebridge.enrollplus.ui.components.VDividerWithText
 import com.littlebridge.enrollplus.ui.components.VInput
-import com.littlebridge.enrollplus.ui.components.VSSOButton
-import com.littlebridge.enrollplus.ui.components.AppleIcon
-import com.littlebridge.enrollplus.ui.components.GoogleIcon
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
-import kotlinx.coroutines.launch
 
 @Composable
 fun AdminLoginScreen(
@@ -61,7 +54,6 @@ fun AdminLoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
 
     // Reset stale state when this screen enters composition
     LaunchedEffect(Unit) {
@@ -113,25 +105,6 @@ fun AdminLoginScreen(
                     textAlign = TextAlign.Center,
                 )
             }
-
-            // SSO — Google on Android, Apple on iOS
-            val isAndroid = getPlatform().name.startsWith("Android")
-            if (isAndroid) {
-                VSSOButton(
-                    text = "Google",
-                    icon = GoogleIcon,
-                    iconTint = null,
-                    onClick = { scope.launch { snackbarHostState.showSnackbar("Coming Soon") } },
-                )
-            } else {
-                VSSOButton(
-                    text = "Apple",
-                    icon = AppleIcon,
-                    onClick = { scope.launch { snackbarHostState.showSnackbar("Coming Soon") } },
-                )
-            }
-
-            VDividerWithText("or sign in with credentials")
 
             // Form
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {

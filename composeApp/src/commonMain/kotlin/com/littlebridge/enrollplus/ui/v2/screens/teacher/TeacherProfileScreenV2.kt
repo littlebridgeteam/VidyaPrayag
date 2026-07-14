@@ -290,9 +290,9 @@ private fun SettingsGroup(
     content: @Composable () -> Unit,
 ) {
     val c = VtC
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(
-            Modifier.padding(start = 2.dp),
+            Modifier.fillMaxWidth().padding(start = 2.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -603,9 +603,9 @@ private fun PasswordCard(
             ) {
                 TIconDisc(VIcons.Lock, c.navy, c.navy.copy(alpha = 0.10f))
                 Spacer(Modifier.width(12.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(appString(StringKeys.TC_PASSWORD), style = VtT.bodyStrong.coloredV(c.navyDeep))
-                    Text(appString(StringKeys.TC_CHANGE_PASSWORD), style = VtT.caption.coloredV(c.ink3))
+                Column(Modifier.weight(1f).fillMaxWidth()) {
+                    Text(appString(StringKeys.TC_PASSWORD), style = VtT.bodyStrong.coloredV(c.navyDeep), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                    Text(appString(StringKeys.TC_CHANGE_PASSWORD), style = VtT.caption.coloredV(c.ink3), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                 }
                 Icon(
                     if (expanded) VIcons.ChevronUp else VIcons.ChevronRight,

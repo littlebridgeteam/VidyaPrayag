@@ -37,7 +37,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,20 +46,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.feature.auth.presentation.AuthViewModel
-import com.littlebridge.enrollplus.getPlatform
 import com.littlebridge.enrollplus.ui.components.VBackHeader
 import com.littlebridge.enrollplus.ui.components.VButton
-import com.littlebridge.enrollplus.ui.components.VDividerWithText
 import com.littlebridge.enrollplus.ui.components.VInput
 import com.littlebridge.enrollplus.ui.components.VOTPInput
 import com.littlebridge.enrollplus.ui.components.VProgressBar
-import com.littlebridge.enrollplus.ui.components.VSSOButton
-import com.littlebridge.enrollplus.ui.components.AppleIcon
-import com.littlebridge.enrollplus.ui.components.GoogleIcon
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.tokens.VMotion
-import kotlinx.coroutines.launch
 
 private enum class ParentSignupStep { Form, Otp, Success }
 
@@ -77,7 +70,6 @@ fun ParentSignupScreen(
     var phone by remember { mutableStateOf("") }
     var otp by remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
 
     // Reset stale state when this screen enters composition
     LaunchedEffect(Unit) {
@@ -151,27 +143,6 @@ fun ParentSignupScreen(
                     color = VColors.ink2,
                     textAlign = TextAlign.Center,
                 )
-            }
-
-            // SSO — Google on Android, Apple on iOS (only on form step)
-            if (step == ParentSignupStep.Form) {
-                val isAndroid = getPlatform().name.startsWith("Android")
-                if (isAndroid) {
-                    VSSOButton(
-                        text = "Google",
-                        icon = GoogleIcon,
-                        iconTint = null,
-                        onClick = { scope.launch { snackbarHostState.showSnackbar("Coming Soon") } },
-                    )
-                } else {
-                    VSSOButton(
-                        text = "Apple",
-                        icon = AppleIcon,
-                        onClick = { scope.launch { snackbarHostState.showSnackbar("Coming Soon") } },
-                    )
-                }
-
-                VDividerWithText("or use your phone number")
             }
 
             // Progress bar

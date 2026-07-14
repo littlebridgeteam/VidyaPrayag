@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -248,6 +250,8 @@ private fun AttendanceBody(
 @Composable
 private fun AttendanceStudentRow(s: StudentAttendance, onSetStatus: (String) -> Unit) {
     val locked = s.isOnApprovedLeave
+    val displayName = s.name.takeIf { it.isNotBlank() && it.length > 1 } ?: s.studentId.take(8)
+    val displayRoll = s.rollNo.takeIf { it.isNotBlank() } ?: "—"
     VtCard {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(
@@ -255,11 +259,11 @@ private fun AttendanceStudentRow(s: StudentAttendance, onSetStatus: (String) -> 
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                VAvatar(name = s.name, size = 40.dp)
+                VAvatar(name = displayName, size = 40.dp)
                 Column(Modifier.weight(1f)) {
-                    Text(s.name, style = VTypography.bodySmall, color = VColors.ink, maxLines = 1)
+                    Text(displayName, style = VTypography.bodySmall, color = VColors.ink, maxLines = 1)
                     Text(
-                        if (locked) appString(StringKeys.TC_ROLL_ON_LEAVE, "no" to s.rollNo) else appString(StringKeys.TC_ROLL_NO, "no" to s.rollNo),
+                        if (locked) appString(StringKeys.TC_ROLL_ON_LEAVE, "no" to displayRoll) else appString(StringKeys.TC_ROLL_NO, "no" to displayRoll),
                         style = VTypography.caption,
                         color = if (locked) VColors.sky else VColors.ink3,
                     )
@@ -286,14 +290,17 @@ private fun StatusChip(
     modifier: Modifier = Modifier,
 ) {
     val active = current == status
+    val interaction = remember { MutableInteractionSource() }
     Box(
         modifier
+            .fillMaxWidth()
             .clip(VShapes.md)
             .background(if (active) tint.copy(alpha = 0.16f) else VColors.creamDeep)
             .border(1.dp, if (active) tint.copy(alpha = 0.5f) else VColors.line, VShapes.md)
-            .clickable(enabled = !locked) { onSet(status) }
+            .clickable(interactionSource = interaction, indication = null, enabled = !locked) { onSet(status) }
             .heightIn(min = 40.dp)
-            .padding(vertical = 10.dp),
+            .padding(vertical = 10.dp)
+            .alpha(if (locked) 0.45f else 1f),
         contentAlignment = Alignment.Center,
     ) {
         Text(
