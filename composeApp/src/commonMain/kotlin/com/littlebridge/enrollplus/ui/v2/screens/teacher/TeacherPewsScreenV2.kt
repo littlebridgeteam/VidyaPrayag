@@ -203,7 +203,7 @@ private fun TeacherStudentCard(
                 Text(s.name, style = PewsType.bodyStrong.colored(c.ink), maxLines = 1)
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    "Class ${s.className}${if (s.section.isNotBlank()) "-${s.section}" else ""}",
+                    "Class ${s.className.removePrefix("Class ").removePrefix("class ")}${if (s.section.isNotBlank()) "-${s.section}" else ""}",
                     style = PewsType.caption.colored(c.ink3).copy(fontSize = 12.sp),
                 )
             }

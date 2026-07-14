@@ -228,7 +228,7 @@ private fun StudentCard(
                     }
                 }
                 VBadge(
-                    text = "Class ${student.className}-${student.section}",
+                    text = "Class ${student.className.removePrefix("Class ").removePrefix("class ")}-${student.section}",
                     tone = VBadgeTone.Arctic,
                 )
                 // Overflow menu (quick actions).

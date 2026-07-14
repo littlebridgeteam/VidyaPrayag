@@ -135,7 +135,7 @@ class PewsInterventionService {
             Notify.toUsers(
                 userIds = owners,
                 category = "pews",
-                title = "Early-warning: $firstName (Class ${snap.className}${snap.section})",
+                title = "Early-warning: $firstName (Class ${snap.className.removePrefix("Class ").removePrefix("class ")}${snap.section})",
                 body = topSignal,
                 schoolId = snap.schoolId,
                 deepLink = "/school/pews/student/${snap.studentCode}",

@@ -796,7 +796,7 @@ private fun ClassRow(cls: TeacherClassSummaryDto, onClick: () -> Unit) {
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "Class ${cls.className}-${cls.section}",
+                    text = "Class ${cls.className.removePrefix("Class ").removePrefix("class ")}-${cls.section}",
                     style = VTypography.body.copy(color = VColors.ink),
                 )
                 if (cls.isClassTeacher) {

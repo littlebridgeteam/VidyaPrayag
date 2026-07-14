@@ -438,6 +438,177 @@ object StudentAggregationService {
         return affected
     }
 
+    // ───────────────────── Batch Enrichment (People Tab) ──────────────────
+
+    /**
+     * Batch-enrich a list of roster [StudentDto]s with all the People Tab
+     * metrics in a FIXED number of queries (~11) regardless of student count,
+     * eliminating the N+1 pattern that caused 39-69s response times.
+     *
+     * Runs inside the caller's Exposed transaction.
+     */
+    fun batchEnrichForList(schoolId: UUID, dtos: List<StudentDto>): List<StudentDto> {
+        if (dtos.isEmpty()) return dtos
+        val studentCodes = dtos.map { it.studentCode }.toSet()
+        val studentIds = dtos.mapNotNull { runCatching { UUID.fromString(it.id) }.getOrNull() }
+        val today = LocalDate.now()
+
+        // 1. All attendance records for these students (type=student).
+        val attendanceByCode: Map<String, List<String>> =
+            AttendanceRecordsTable.selectAll().where {
+                (AttendanceRecordsTable.schoolId eq schoolId) and
+                    (AttendanceRecordsTable.type eq "student") and
+                    (AttendanceRecordsTable.personId inList studentCodes)
+            }.toList()
+                .groupBy({ it[AttendanceRecordsTable.personId] }, { it[AttendanceRecordsTable.status].lowercase() })
+
+        // 2. All active teacher assignments for the school (fetched once, matched in memory).
+        val allAssignments = TeacherSubjectAssignmentsTable.selectAll().where {
+            (TeacherSubjectAssignmentsTable.schoolId eq schoolId) and
+                (TeacherSubjectAssignmentsTable.isActive eq true)
+        }.toList()
+
+        // 3. All approved parent links for these students.
+        val parentLinks = ParentChildLinksTable.selectAll().where {
+            (ParentChildLinksTable.schoolId eq schoolId) and
+                (ParentChildLinksTable.studentCode inList studentCodes) and
+                (ParentChildLinksTable.status eq "approved")
+        }.toList()
+
+        // 4. App users for parent names.
+        val parentIds = parentLinks.map { it[ParentChildLinksTable.parentId] }.distinct()
+        val parentUsers: Map<UUID, String> = if (parentIds.isEmpty()) emptyMap() else
+            AppUsersTable.selectAll().where { AppUsersTable.id inList parentIds }
+                .associate { it[AppUsersTable.id].value to (it[AppUsersTable.fullName] ?: "Parent") }
+
+        // 5. All active homework for the school.
+        val allHomework = HomeworkTable.selectAll().where {
+            (HomeworkTable.schoolId eq schoolId) and (HomeworkTable.isActive eq true)
+        }.toList()
+        val homeworkIds = allHomework.map { it[HomeworkTable.id].value }
+
+        // 6. Homework submissions for these students.
+        val submissionsByCode: Map<String, Set<UUID>> = if (homeworkIds.isEmpty()) emptyMap() else
+            HomeworkSubmissionsTable.selectAll().where {
+                (HomeworkSubmissionsTable.homeworkId inList homeworkIds) and
+                    (HomeworkSubmissionsTable.studentId inList studentCodes) and
+                    (HomeworkSubmissionsTable.status neq "not_submitted")
+            }.toList()
+                .groupBy({ it[HomeworkSubmissionsTable.studentId] }, { it[HomeworkSubmissionsTable.homeworkId] })
+                .mapValues { (_, v) -> v.toSet() }
+
+        // 7. Fee records (unpaid) for the school.
+        val unpaidFeeChildIds: Set<UUID> = FeeRecordsTable.selectAll().where {
+            (FeeRecordsTable.schoolId eq schoolId) and
+                (FeeRecordsTable.status neq "PAID")
+        }.mapNotNull { it[FeeRecordsTable.childId] }.toSet()
+
+        // 8. PTM events for the school (upcoming).
+        val hasUpcomingPtm = PtmEventsTable.selectAll().where {
+            (PtmEventsTable.schoolId eq schoolId)
+        }.any { row ->
+            val eventDate = runCatching { LocalDate.parse(row[PtmEventsTable.date]) }.getOrNull()
+            eventDate != null && !eventDate.isBefore(today)
+        }
+
+        // 9. Library issues for these student IDs.
+        val overdueLibraryByStudentId: Map<UUID, Int> = if (studentIds.isEmpty()) emptyMap() else
+            LibraryIssuesTable.selectAll().where {
+                (LibraryIssuesTable.schoolId eq schoolId) and
+                    (LibraryIssuesTable.borrowerId inList studentIds) and
+                    (LibraryIssuesTable.status eq "issued")
+            }.toList()
+                .filter { it[LibraryIssuesTable.dueDate].isBefore(today) }
+                .groupBy { it[LibraryIssuesTable.borrowerId] }
+                .mapValues { (_, v) -> v.size }
+
+        // 10. Transport assignments for these student IDs.
+        val transportStudentIds: Set<UUID> = if (studentIds.isEmpty()) emptySet() else
+            TransportAssignmentsTable.selectAll().where {
+                (TransportAssignmentsTable.schoolId eq schoolId) and
+                    (TransportAssignmentsTable.studentId inList studentIds) and
+                    (TransportAssignmentsTable.isActive eq true)
+            }.map { it[TransportAssignmentsTable.studentId] }.toSet()
+
+        // 11. Today's attendance for these students.
+        val todayAttendanceRaw = AttendanceRecordsTable.selectAll().where {
+            (AttendanceRecordsTable.schoolId eq schoolId) and
+                (AttendanceRecordsTable.type eq "student") and
+                (AttendanceRecordsTable.personId inList studentCodes) and
+                (AttendanceRecordsTable.date eq today)
+        }.associate { it[AttendanceRecordsTable.personId] to it[AttendanceRecordsTable.status].lowercase() }
+
+        // Homework due today (filtered from query 5 data).
+        val homeworkDueToday = allHomework.filter { it[HomeworkTable.dueDate] == today }
+
+        // Now map everything in memory.
+        return dtos.map { dto ->
+            val statuses = attendanceByCode[dto.studentCode].orEmpty()
+            val present = statuses.count { it == "present" }
+            val late = statuses.count { it == "late" }
+            val total = statuses.size
+            val attendancePercent = if (total > 0) ((present + late) * 100f) / total else 0f
+
+            val teacherCount = allAssignments
+                .filter { ClassNaming.sameClassSection(it[TeacherSubjectAssignmentsTable.className], it[TeacherSubjectAssignmentsTable.section], dto.className, dto.section) }
+                .map { teacherKey(it) }
+                .distinct()
+                .size
+
+            val links = parentLinks.filter { it[ParentChildLinksTable.studentCode] == dto.studentCode }
+            val parentCount = links.size
+            val parentName = links
+                .sortedByDescending { it[ParentChildLinksTable.isPrimaryGuardian] }
+                .firstOrNull()
+                ?.let { link -> parentUsers[link[ParentChildLinksTable.parentId]] }
+
+            val homeworkPercent = if (allHomework.isEmpty()) 0f else {
+                val submitted = submissionsByCode[dto.studentCode]?.size ?: 0
+                (submitted * 100f) / allHomework.size
+            }
+
+            val feesPending = runCatching { UUID.fromString(dto.id) }.getOrNull() in unpaidFeeChildIds
+
+            // Today items
+            val todayItems = mutableListOf<TodayItemDto>()
+            todayAttendanceRaw[dto.studentCode]?.let { status ->
+                when (status) {
+                    "present" -> todayItems += TodayItemDto("green", "Present today")
+                    "absent" -> todayItems += TodayItemDto("red", "Absent today")
+                    "late" -> todayItems += TodayItemDto("yellow", "Late today")
+                    "leave" -> todayItems += TodayItemDto("sky", "On leave today")
+                }
+            }
+            if (homeworkDueToday.isNotEmpty()) {
+                val dueIds = homeworkDueToday.filter {
+                    ClassNaming.sameClassSection(it[HomeworkTable.className], it[HomeworkTable.section], dto.className, dto.section)
+                }.map { it[HomeworkTable.id].value }.toSet()
+                if (dueIds.isNotEmpty()) {
+                    val submittedIds = submissionsByCode[dto.studentCode].orEmpty()
+                    val pending = dueIds.count { it !in submittedIds }
+                    if (pending > 0) todayItems += TodayItemDto("yellow", "$pending homework due today")
+                }
+            }
+            val studentUuid = runCatching { UUID.fromString(dto.id) }.getOrNull()
+            if (studentUuid != null) {
+                val overdue = overdueLibraryByStudentId[studentUuid] ?: 0
+                if (overdue > 0) todayItems += TodayItemDto("yellow", "$overdue book${if (overdue > 1) "s" else ""} overdue")
+                if (studentUuid in transportStudentIds) todayItems += TodayItemDto("sky", "Bus assigned")
+            }
+
+            dto.copy(
+                attendancePercent = attendancePercent,
+                teacherCount = teacherCount,
+                parentCount = parentCount,
+                parentName = parentName,
+                homeworkPercent = homeworkPercent,
+                feesPending = feesPending,
+                parentMeetingScheduled = hasUpcomingPtm,
+                todayItems = todayItems
+            )
+        }
+    }
+
     // ─────────────────────────── Insights ─────────────────────────────────
 
     /**

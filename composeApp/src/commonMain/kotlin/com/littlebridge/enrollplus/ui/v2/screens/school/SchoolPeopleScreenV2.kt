@@ -302,6 +302,7 @@ private fun SchoolPeopleContent(
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxWidth().weight(1f),
+                beyondViewportPageCount = 1,
             ) { page ->
                 when (PeopleSubTab.entries[page]) {
                     PeopleSubTab.Teachers -> TeachersSubTab(

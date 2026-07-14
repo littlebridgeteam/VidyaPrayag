@@ -62,6 +62,7 @@ import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.util.AnalyticsTracker
+import com.littlebridge.enrollplus.util.formatDateTime
 import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -468,7 +469,7 @@ private fun NotificationRow(n: VNotification, onClick: () -> Unit) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     VBadge(text = n.category, tone = categoryBadgeTone(n.category))
                     Spacer(Modifier.width(8.dp))
-                    Text(n.time, style = VTypography.label.copy(fontSize = 11.sp, letterSpacing = 0.sp), color = VColors.ink3)
+                    Text(formatDateTime(n.time), style = VTypography.label.copy(fontSize = 11.sp, letterSpacing = 0.sp), color = VColors.ink3, maxLines = 1)
                 }
                 Spacer(Modifier.height(6.dp))
                 Text(n.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
