@@ -460,7 +460,7 @@ object StudentAggregationService {
                     (AttendanceRecordsTable.type eq "student") and
                     (AttendanceRecordsTable.personId inList studentCodes)
             }.toList()
-                .groupBy({ it[AttendanceRecordsTable.personId] }, { it[AttendanceRecordsTable.status].lowercase() })
+                .groupBy({ it[AttendanceRecordsTable.personId] ?: "" }, { it[AttendanceRecordsTable.status].lowercase() })
 
         // 2. All active teacher assignments for the school (fetched once, matched in memory).
         val allAssignments = TeacherSubjectAssignmentsTable.selectAll().where {
@@ -476,7 +476,7 @@ object StudentAggregationService {
         }.toList()
 
         // 4. App users for parent names.
-        val parentIds = parentLinks.map { it[ParentChildLinksTable.parentId] }.distinct()
+        val parentIds = parentLinks.map { org.jetbrains.exposed.dao.id.EntityID(it[ParentChildLinksTable.parentId], AppUsersTable) }.distinct()
         val parentUsers: Map<UUID, String> = if (parentIds.isEmpty()) emptyMap() else
             AppUsersTable.selectAll().where { AppUsersTable.id inList parentIds }
                 .associate { it[AppUsersTable.id].value to (it[AppUsersTable.fullName] ?: "Parent") }

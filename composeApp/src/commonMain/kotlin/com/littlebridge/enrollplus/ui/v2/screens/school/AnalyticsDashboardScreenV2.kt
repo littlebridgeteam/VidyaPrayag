@@ -113,45 +113,54 @@ private fun AnalyticsContent(
             onRetry = onRetry,
             skeleton = { SkeletonDashboard() },
         ) {
-            // Performance trend
-            if (state.performanceTrend.isNotEmpty()) {
-                VCard {
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                        Column(Modifier.weight(1f)) {
-                            Text(appString(StringKeys.SCH_PERFORMANCE_TREND), style = VTypography.label.copy(color = VColors.ink3))
-                            Spacer(Modifier.height(4.dp))
-                            Text(state.currentGrowth, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink))
+            // IMPORTANT: AnimatedContent's content scope is a Box. All children
+            // emitted here must be wrapped in a single layout container, otherwise
+            // they stack at (0,0) and overlap. The outer Column handles scroll/padding;
+            // this inner Column handles the vertical arrangement of the loaded content.
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                // Performance trend
+                if (state.performanceTrend.isNotEmpty()) {
+                    VCard {
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                            Column(Modifier.weight(1f)) {
+                                Text(appString(StringKeys.SCH_PERFORMANCE_TREND), style = VTypography.label.copy(color = VColors.ink3))
+                                Spacer(Modifier.height(4.dp))
+                                Text(state.currentGrowth, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink))
+                            }
+                            VBadge(text = appString(StringKeys.SCH_OVERVIEW), tone = VBadgeTone.Arctic)
                         }
-                        VBadge(text = appString(StringKeys.SCH_OVERVIEW), tone = VBadgeTone.Arctic)
-                    }
-                    Spacer(Modifier.height(12.dp))
-                    TrendChart(
-                        values = state.performanceTrend,
-                        labels = state.trendLabels,
-                    )
-                }
-            }
-
-            // Cards grid (2 per row)
-            if (state.cards.isNotEmpty()) {
-                VSectionHeader(title = appString(StringKeys.SCH_OVERVIEW))
-                val pairs = state.cards.chunked(2)
-                pairs.forEachIndexed { i, pair ->
-                    Row(Modifier.fillMaxWidth().staggeredItemEntrance(i, pairs.isNotEmpty()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Box(Modifier.weight(1f)) { AnalyticsCard(pair[0]) }
-                        if (pair.size > 1) {
-                            Box(Modifier.weight(1f)) { AnalyticsCard(pair[1]) }
-                        } else {
-                            Box(Modifier.weight(1f))
-                        }
+                        Spacer(Modifier.height(12.dp))
+                        TrendChart(
+                            values = state.performanceTrend,
+                            labels = state.trendLabels,
+                        )
                     }
                 }
-            }
 
-            // Insights
-            if (state.insights.isNotEmpty()) {
-                VSectionHeader(title = appString(StringKeys.SCH_INSIGHTS))
-                state.insights.forEachIndexed { i, item -> InsightCard(item, modifier = Modifier.staggeredItemEntrance(i, state.insights.isNotEmpty())) }
+                // Cards grid (2 per row)
+                if (state.cards.isNotEmpty()) {
+                    VSectionHeader(title = appString(StringKeys.SCH_OVERVIEW))
+                    val pairs = state.cards.chunked(2)
+                    pairs.forEachIndexed { i, pair ->
+                        Row(Modifier.fillMaxWidth().staggeredItemEntrance(i, pairs.isNotEmpty()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Box(Modifier.weight(1f)) { AnalyticsCard(pair[0]) }
+                            if (pair.size > 1) {
+                                Box(Modifier.weight(1f)) { AnalyticsCard(pair[1]) }
+                            } else {
+                                Box(Modifier.weight(1f))
+                            }
+                        }
+                    }
+                }
+
+                // Insights
+                if (state.insights.isNotEmpty()) {
+                    VSectionHeader(title = appString(StringKeys.SCH_INSIGHTS))
+                    state.insights.forEachIndexed { i, item -> InsightCard(item, modifier = Modifier.staggeredItemEntrance(i, state.insights.isNotEmpty())) }
+                }
             }
         }
     }
@@ -242,7 +251,7 @@ private fun InsightCard(item: InsightItem, modifier: Modifier = Modifier) {
                 )
             }
             Column(Modifier.weight(1f)) {
-                Text(item.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink), maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(item.title, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink), maxLines = 2, overflow = TextOverflow.Ellipsis)
                 if (item.description.isNotBlank()) {
                     Spacer(Modifier.height(2.dp))
                     Text(item.description, style = VTypography.caption.copy(color = VColors.ink2), maxLines = 3, overflow = TextOverflow.Ellipsis)

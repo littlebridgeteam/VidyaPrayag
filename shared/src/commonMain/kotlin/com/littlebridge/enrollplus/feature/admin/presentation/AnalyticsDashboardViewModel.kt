@@ -144,11 +144,28 @@ class AnalyticsDashboardViewModel(
                 title       = title,
                 description = obj["description"]?.jsonPrimitive?.contentOrNull ?: "",
                 iconName    = obj["icon_name"]?.jsonPrimitive?.contentOrNull   ?: "insights",
-                iconColor   = obj["icon_color"]?.jsonPrimitive?.longOrNull     ?: 0xFF6200EE
+                iconColor   = obj["icon_color"]?.jsonPrimitive?.contentOrNull?.let(::parseIconColor) ?: 0xFF6200EE
             )
         } catch (e: Exception) {
             AppLogger.e("AnalyticsDashboardVM", "parseInsight failed: ${e.message}")
             null
         }
+    }
+
+    /**
+     * Backend/CMS may send icon colors as either an ARGB hex string ("#10B981")
+     * or a raw Long. Convert either to a Compose Color-compatible Long.
+     */
+    private fun parseIconColor(raw: String): Long {
+        val s = raw.trim()
+        return runCatching {
+            if (s.startsWith("#")) {
+                // RGB hex without alpha -> prepend opaque alpha.
+                val rgb = s.substring(1).toLong(16)
+                if (s.length == 7) rgb or 0xFF000000L else rgb
+            } else {
+                s.toLong()
+            }
+        }.getOrDefault(0xFF6200EE)
     }
 }
