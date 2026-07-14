@@ -1392,29 +1392,13 @@ private fun HomeworkTab(
         )
 
         val data = academics.dailySummary
-        if (data == null || data.entries.isEmpty()) {
-            EmptyState("No Homework Logs", "Daily homework summaries will appear here once available.")
+        val teacherEntries = data?.entries?.filter { !it.isAiEstimated } ?: emptyList()
+        if (teacherEntries.isEmpty()) {
+            EmptyState("No log updated by the teacher", "Daily homework summaries will appear here once the teacher updates them.")
             return@Column
         }
 
-        if (!data.aiSummary.isNullOrBlank()) {
-        CreamCard {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Box(
-                    Modifier.size(36.dp).clip(CircleShape).background(VColors.violetSoft),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(Icons.Filled.Insights, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
-                }
-                Column(Modifier.weight(1f)) {
-                    Text("AI Summary", style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
-                    Text(data.aiSummary ?: "", style = VTypography.caption, color = VColors.ink2)
-                }
-            }
-        }
-    }
-
-    data.entries.forEach { entry ->
+    teacherEntries.forEach { entry ->
         CreamCard {
             Row(
                 Modifier.fillMaxWidth(),
@@ -1429,9 +1413,6 @@ private fun HomeworkTab(
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text("${entry.coveragePct}%", style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = VColors.violet)
-                    if (entry.isAiEstimated) {
-                        MiniBadge(text = "AI Est.", color = VColors.violet, bg = VColors.violetSoft)
-                    }
                 }
             }
             Spacer(Modifier.height(8.dp))
