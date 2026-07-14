@@ -10,12 +10,14 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -935,10 +937,10 @@ private fun NeedsAttentionSection(
     onOpenPews: () -> Unit,
     onOpenAttendanceForAssignment: (assignmentId: String, scope: String) -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         SectionHeader(title = "Needs Attention")
         SurfaceCard {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 insights.take(4).forEachIndexed { idx, insight ->
                     if (idx > 0) {
                         Box(
@@ -972,6 +974,7 @@ private fun InsightRow(insight: InsightCard, onTap: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .defaultMinSize(minHeight = 48.dp)
             .clip(VShapes.md)
             .clickable { onTap() }
             .padding(vertical = 6.dp),
@@ -985,15 +988,19 @@ private fun InsightRow(insight: InsightCard, onTap: () -> Unit) {
                 .clip(CircleShape)
                 .background(dotColor),
         )
-        Column(Modifier.weight(1f)) {
+        Column(Modifier.weight(1f).fillMaxWidth().wrapContentHeight()) {
             Text(
                 text = insight.title,
                 style = VTypography.body.copy(color = VColors.ink),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
             if (insight.description.isNotBlank()) {
                 Text(
                     text = insight.description,
                     style = VTypography.caption.copy(color = VColors.ink3),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
             Row(
@@ -1004,6 +1011,8 @@ private fun InsightRow(insight: InsightCard, onTap: () -> Unit) {
                 Text(
                     text = insight.actionLabel,
                     style = VTypography.caption.copy(color = VColors.violet),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(12.dp))
             }
@@ -1048,6 +1057,7 @@ private fun SurfaceCard(
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .wrapContentHeight()
             .clip(VShapes.xl)
             .background(VColors.surfaceCard)
             .border(1.dp, VColors.line, VShapes.xl)

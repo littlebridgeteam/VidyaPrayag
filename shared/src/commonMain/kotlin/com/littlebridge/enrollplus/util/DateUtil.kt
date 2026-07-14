@@ -134,13 +134,16 @@ fun formatDateShort(iso: String?): String {
     return "$d $mon"
 }
 
-/** "2026-06-25T14:30:00" → "25 Jun 2026, 2:30 PM"; blank-safe. */
+/** "2026-06-25T14:30:00" → "25 Jun 2026, 2:30 PM"; blank-safe.
+ *  Handles ISO 8601 variants with fractional seconds and trailing Z (e.g. "2026-07-14T18:50:24.964017Z"). */
 fun formatDateTime(iso: String?): String {
     if (iso.isNullOrBlank()) return ""
-    val datePart = iso.substringBefore("T").take(10)
-    val timePart = iso.substringAfter("T", "")
+    val cleaned = iso.substringBefore(".").removeSuffix("Z")
+    val datePart = cleaned.substringBefore("T").take(10)
+    val timePart = cleaned.substringAfter("T", "")
     val dateStr = formatDate(datePart)
     if (timePart.isBlank()) return dateStr
+    if (timePart.length < 5) return dateStr
     val h = timePart.substring(0, 2).toIntOrNull() ?: return dateStr
     val mi = timePart.substring(3, 5).toIntOrNull() ?: return dateStr
     val period = if (h < 12) "AM" else "PM"
@@ -148,10 +151,12 @@ fun formatDateTime(iso: String?): String {
     return "$dateStr, $h12:${mi.toString().padStart(2, '0')} $period"
 }
 
-/** "2026-06-25T14:30:00" → "2:30 PM"; blank-safe. */
+/** "2026-06-25T14:30:00" → "2:30 PM"; blank-safe.
+ *  Handles ISO 8601 variants with fractional seconds and trailing Z. */
 fun formatTime(iso: String?): String {
     if (iso.isNullOrBlank()) return ""
-    val timePart = iso.substringAfter("T", "")
+    val cleaned = iso.substringBefore(".").removeSuffix("Z")
+    val timePart = cleaned.substringAfter("T", "")
     if (timePart.length < 5) return ""
     val h = timePart.substring(0, 2).toIntOrNull() ?: return ""
     val mi = timePart.substring(3, 5).toIntOrNull() ?: return ""

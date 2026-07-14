@@ -1,6 +1,5 @@
 package com.littlebridge.enrollplus.ui.v2.screens.teacher
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -17,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -485,7 +485,7 @@ private fun LeaveCard(
                 )
             }
 
-            AnimatedVisibility(visible = showComposer) {
+            if (showComposer) {
                 LeaveComposer(applyResult = applyResult, onApply = onApply)
             }
 
@@ -516,7 +516,7 @@ private fun LeaveComposer(
     var reason by remember { mutableStateOf("") }
     val inFlight = applyResult is ActionResult.InFlight
 
-    Column(Modifier.padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(Modifier.fillMaxWidth().wrapContentHeight().padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         VDatePicker(value = from, onValueChange = { from = it }, label = appString(StringKeys.TC_FROM), enabled = !inFlight)
         VDatePicker(value = to, onValueChange = { to = it }, label = appString(StringKeys.TC_TO), enabled = !inFlight)
         VInput(
@@ -612,7 +612,7 @@ private fun PasswordCard(
                     contentDescription = null, tint = c.ink3, modifier = Modifier.size(20.dp),
                 )
             }
-            AnimatedVisibility(visible = expanded) {
+            if (expanded) {
                 PasswordForm(result = result, onSubmit = onSubmit)
             }
         }
