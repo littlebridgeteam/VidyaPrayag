@@ -1121,6 +1121,7 @@ private fun TodaySummaryCard(
             .border(1.dp, VColors.line, VShapes.xl)
             .padding(20.dp),
     ) {
+        val teacherEntries = summary?.entries?.filter { !it.isAiEstimated } ?: emptyList()
         when {
             isLoading -> Box(
                 modifier = Modifier.fillMaxWidth().height(80.dp),
@@ -1128,25 +1129,14 @@ private fun TodaySummaryCard(
             ) {
                 CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(24.dp))
             }
-            summary?.entries.isNullOrEmpty() -> Text(
-                text = "No daily summary available yet.",
+            teacherEntries.isEmpty() -> Text(
+                text = "No log updated by the teacher",
                 style = VTypography.caption,
                 color = VColors.ink3,
             )
             else -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                summary?.entries?.forEach { entry ->
+                teacherEntries.forEach { entry ->
                     SummaryEntryRow(entry = entry)
-                }
-                summary?.aiSummary?.let { ai ->
-                    if (ai.isNotBlank()) {
-                        Text(
-                            text = "AI summary: $ai",
-                            style = VTypography.caption.copy(fontSize = 12.sp),
-                            color = VColors.ink3,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
                 }
             }
         }
@@ -1168,13 +1158,13 @@ private fun SummaryEntryRow(entry: ParentDailyLogEntryDto) {
             modifier = Modifier
                 .size(40.dp)
                 .clip(VShapes.md)
-                .background(if (entry.isAiEstimated) VColors.skySoft else VColors.violetSoft),
+                .background(VColors.violetSoft),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = VIcons.Bookmark,
                 contentDescription = null,
-                tint = if (entry.isAiEstimated) VColors.sky else VColors.violet,
+                tint = VColors.violet,
                 modifier = Modifier.size(20.dp),
             )
         }
@@ -1189,13 +1179,6 @@ private fun SummaryEntryRow(entry: ParentDailyLogEntryDto) {
                     style = VTypography.body.copy(fontWeight = FontWeight.ExtraBold, fontSize = 15.sp),
                     color = VColors.ink,
                 )
-                if (entry.isAiEstimated) {
-                    Text(
-                        text = "AI generated",
-                        style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
-                        color = VColors.sky,
-                    )
-                }
             }
             if (entry.summaryText.isNotBlank()) {
                 Text(
