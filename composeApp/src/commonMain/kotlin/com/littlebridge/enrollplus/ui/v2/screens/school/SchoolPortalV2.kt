@@ -704,6 +704,7 @@ fun SchoolPortalV2(
                             createEventOrigin = SchoolOverlay.None
                             overlay = SchoolOverlay.CreateEvent
                         },
+                        onOpenApprovals = { overlay = SchoolOverlay.LinkRequests },
                         // §7 finding K — tapping the avatar opens the Settings tab (where logout
                         // lives), instead of logging the admin out outright.
                         onExit = { tab = "settings" },

@@ -164,6 +164,7 @@ fun SchoolHomeScreenV2(
     onOpenReportEffectiveness: () -> Unit = {},
     onOpenEvents: () -> Unit = {},
     onCreateEvent: () -> Unit = {},
+    onOpenApprovals: () -> Unit = {},
     onOpenPinnedScreen: (String) -> Unit = {},
     onExit: () -> Unit = {},
     viewModel: SchoolDashboardViewModel = koinViewModel(),
@@ -263,6 +264,7 @@ fun SchoolHomeScreenV2(
                     onOpenReportPublish = onOpenReportPublish,
                     onOpenEvents = onOpenEvents,
                     onCreateEvent = onCreateEvent,
+                    onOpenApprovals = onOpenApprovals,
                     onOpenPinnedScreen = onOpenPinnedScreen,
                     onOpenCommandPalette = { commandPaletteVisible = true },
                     onUnpin = pinnedVm::unpin,
@@ -351,6 +353,7 @@ private fun CommandDesk(
     onOpenReportPublish: () -> Unit,
     onOpenEvents: () -> Unit,
     onCreateEvent: () -> Unit,
+    onOpenApprovals: () -> Unit,
     onOpenPinnedScreen: (String) -> Unit,
     onOpenCommandPalette: () -> Unit,
     onUnpin: (String) -> Unit,
@@ -392,7 +395,7 @@ private fun CommandDesk(
 
         val kpis = overview.kpis.filter { it.available }
         if (kpis.isNotEmpty()) {
-            KpiMiniCardGrid(kpis = kpis, onClick = onOpenAnalytics)
+            KpiMiniCardGrid(kpis = kpis, onClick = onOpenAnalytics, onOpenApprovals = onOpenApprovals)
         }
 
         val insights = overview.insights
@@ -893,7 +896,7 @@ private fun ShortcutChip(
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun KpiMiniCardGrid(kpis: List<OverviewKpi>, onClick: () -> Unit) {
+private fun KpiMiniCardGrid(kpis: List<OverviewKpi>, onClick: () -> Unit, onOpenApprovals: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -907,7 +910,8 @@ private fun KpiMiniCardGrid(kpis: List<OverviewKpi>, onClick: () -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 row.forEach { kpi ->
-                    KpiMiniCard(kpi = kpi, onClick = onClick, modifier = Modifier.weight(1f))
+                    val onKpiClick = if (kpi.key == "approvals") onOpenApprovals else onClick
+                    KpiMiniCard(kpi = kpi, onClick = onKpiClick, modifier = Modifier.weight(1f))
                 }
                 if (row.size == 1) Spacer(Modifier.weight(1f))
             }

@@ -235,7 +235,7 @@ private fun AnalyticsCard(card: AnalyticsCardData) {
 @Composable
 private fun InsightCard(item: InsightItem, modifier: Modifier = Modifier) {
     VCard(modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Box(
                 Modifier
                     .size(36.dp)
