@@ -64,6 +64,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VBottomSheet
 import com.littlebridge.enrollplus.ui.v2.components.VBottomSheetHeader
 import com.littlebridge.enrollplus.ui.v2.components.VButton
+import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard

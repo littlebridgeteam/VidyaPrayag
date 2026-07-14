@@ -30,7 +30,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -141,12 +140,11 @@ fun TeacherHomeScreenV2(
     }
 
     // First-login-of-day check-in popup gate (kept from the previous rebuild).
-    var popupDismissedForDate by rememberSaveable { mutableStateOf<String?>(null) }
     val popupVisible = !checkIn.isLoading &&
         !checkIn.statusUnavailable &&
         !checkIn.checkedIn &&
         checkIn.date.isNotBlank() &&
-        popupDismissedForDate != checkIn.date
+        checkIn.dismissedDate != checkIn.date
 
     // Pull-to-refresh: isRefreshing resets when both today + obligations refreshEpochs bump.
     var isRefreshing by remember { mutableStateOf(false) }
@@ -268,7 +266,7 @@ fun TeacherHomeScreenV2(
         TeacherCheckInPopup(
             state = checkIn,
             visible = popupVisible,
-            onDismiss = { popupDismissedForDate = checkIn.date.ifBlank { com.littlebridge.enrollplus.util.todayIso() } },
+            onDismiss = { checkInViewModel.dismissForDate(checkIn.date.ifBlank { com.littlebridge.enrollplus.util.todayIso() }) },
             onCheckIn = { method -> checkInViewModel.checkIn(method) },
         )
     }
@@ -652,10 +650,14 @@ private fun PendingRow(item: PendingItem) {
             Text(
                 text = item.label,
                 style = VTypography.body.copy(color = VColors.ink),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text = "${item.count} ${item.suffix}",
                 style = VTypography.caption.copy(color = VColors.ink3),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
         Text(
