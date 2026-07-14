@@ -138,22 +138,12 @@ fun SchoolOnboardingScreenV2(
     var ayPeriods by remember { mutableStateOf("") }
 
     val classesBuilt = remember {
-        mutableStateListOf(
-            OBClass("Class 9", mutableStateListOf("A", "B")),
-            OBClass("Class 10", mutableStateListOf("A", "B")),
-        )
+        mutableStateListOf<OBClass>()
     }
     val classCodes: List<String> = classesBuilt.flatMap { cl -> cl.sections.map { "${cl.name.removePrefix("Class ")}-$it" } }
 
     val subjects = remember {
-        mutableStateListOf(
-            OBSubject("s1", "Mathematics", "MAT001", "Core", mutableStateListOf()),
-            OBSubject("s2", "Science", "SCI001", "Core", mutableStateListOf()),
-            OBSubject("s3", "English", "ENG001", "Core", mutableStateListOf()),
-            OBSubject("s4", "Hindi", "HIN001", "Language", mutableStateListOf()),
-            OBSubject("s5", "Social Studies", "SOC001", "Core", mutableStateListOf()),
-            OBSubject("s6", "Computer Apps", "COMP01", "Core", mutableStateListOf()),
-        )
+        mutableStateListOf<OBSubject>()
     }
 
     val teachers = remember { mutableStateListOf<OBTeacher>() }
@@ -310,7 +300,7 @@ fun SchoolOnboardingScreenV2(
                     when (current) {
                         1 -> IdentityStep(
                             legalName = legalName, onLegalNameChange = { value ->
-                                if (value.matches(Regex("^[a-zA-Z\\s']*$")) legalName = value
+                                if (value.matches(Regex("^[a-zA-Z\\s']*$"))) legalName = value
                             },
                             shortName = shortName, onShortNameChange = { value ->
                                 if (value.matches(Regex("^[a-zA-Z\\s']*$"))) shortName = value

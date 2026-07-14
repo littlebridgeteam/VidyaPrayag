@@ -6,6 +6,7 @@ import com.littlebridge.enrollplus.core.model.ApiResponse
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.feature.admin.data.remote.AttendanceApi
 import com.littlebridge.enrollplus.feature.admin.domain.model.AttendanceResponse
+import com.littlebridge.enrollplus.feature.admin.domain.model.AttendanceSaveRequest
 import com.littlebridge.enrollplus.feature.admin.domain.repository.AttendanceRepository
 
 class AttendanceRepositoryImpl(
@@ -20,4 +21,10 @@ class AttendanceRepositoryImpl(
         date: String?
     ): NetworkResult<ApiResponse<AttendanceResponse>> =
         cacheFirstNetworkResult(cache, "admin_daily_attendance_${type}_${grade ?: "all"}_${date ?: "today"}", ApiResponse.serializer(AttendanceResponse.serializer())) { api.getDailyAttendance(token, type, grade, date) }
+
+    override suspend fun saveDailyAttendance(
+        token: String,
+        request: AttendanceSaveRequest
+    ): NetworkResult<ApiResponse<Map<String, Int>>> =
+        api.saveDailyAttendance(token, request)
 }

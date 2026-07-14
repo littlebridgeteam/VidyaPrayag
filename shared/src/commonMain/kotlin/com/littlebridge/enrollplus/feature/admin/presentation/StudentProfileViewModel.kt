@@ -14,6 +14,7 @@ import androidx.lifecycle.viewModelScope
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.feature.admin.domain.model.StudentProfileDto
+import com.littlebridge.enrollplus.feature.admin.domain.model.UpdateStudentRequest
 import com.littlebridge.enrollplus.feature.admin.domain.repository.StudentsRepository
 import com.littlebridge.enrollplus.util.AppLogger
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +31,10 @@ data class StudentProfileUiState(
     val isRemoving: Boolean = false,
     val removed: Boolean = false,
     val removeError: String? = null,
+    // Bug 18: edit student details
+    val isEditing: Boolean = false,
+    val editError: String? = null,
+    val editSuccess: Boolean = false,
     val isStale: Boolean = false,
     val isOffline: Boolean = false,
 )
@@ -97,4 +102,48 @@ class StudentProfileViewModel(
     }
 
     fun clearRemoveError() { _state.value = _state.value.copy(removeError = null) }
+
+    /**
+     * Bug 18: update student details (name, class, section, roll number).
+     * On success, reloads the profile so the UI reflects the change.
+     */
+    fun updateStudent(
+        studentId: String,
+        fullName: String?,
+        className: String?,
+        section: String?,
+        rollNumber: String?,
+        admissionDate: String? = null,
+    ) {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isEditing = true, editError = null, editSuccess = false)
+            val token = preferenceRepository.getUserToken().first()
+            if (token.isNullOrBlank()) {
+                _state.value = _state.value.copy(isEditing = false, editError = "Not signed in")
+                return@launch
+            }
+            val request = UpdateStudentRequest(
+                fullName = fullName?.takeIf { it.isNotBlank() },
+                className = className?.takeIf { it.isNotBlank() },
+                section = section?.takeIf { it.isNotBlank() },
+                rollNumber = rollNumber?.takeIf { it.isNotBlank() },
+                admissionDate = admissionDate?.takeIf { it.isNotBlank() },
+            )
+            when (val r = repository.updateStudent(token, studentId, request)) {
+                is NetworkResult.Success -> {
+                    _state.value = _state.value.copy(isEditing = false, editSuccess = true, editError = null)
+                    load(studentId)
+                }
+                is NetworkResult.Error -> {
+                    AppLogger.e("StudentProfileVM", "updateStudent error: ${r.message}")
+                    _state.value = _state.value.copy(isEditing = false, editError = r.message)
+                }
+                is NetworkResult.ConnectionError -> {
+                    _state.value = _state.value.copy(isEditing = false, editError = "Connection error")
+                }
+            }
+        }
+    }
+
+    fun clearEditError() { _state.value = _state.value.copy(editError = null, editSuccess = false) }
 }

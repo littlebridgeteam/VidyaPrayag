@@ -345,22 +345,10 @@ private fun syncSchoolBasics(schoolId: UUID, uid: UUID) {
 }
 
 /**
- * Default academic structure used when the client submits ACADEMIC without an
- * explicit `classes` payload (the legacy frontend sends an empty body). This
- * guarantees step 3 produces REAL school_classes/school_subjects rows so
- * completion logic and the dashboard reflect reality.
+ * Default academic structure is intentionally empty — the admin must
+ * explicitly configure classes and subjects during onboarding. Seeding
+ * defaults caused Bug 23 (unwanted classes/subjects appearing on dashboard).
  */
-private val DEFAULT_ACADEMIC_CLASSES: List<Triple<String, String, List<String>>> = listOf(
-    Triple("c1", "Class 1", listOf("A")),
-    Triple("c2", "Class 2", listOf("A")),
-    Triple("c3", "Class 3", listOf("A"))
-)
-private val DEFAULT_ACADEMIC_SUBJECTS: List<Pair<String, String>> = listOf(
-    "Mathematics" to "MATH",
-    "Science" to "SCI",
-    "English" to "ENG",
-    "Social Studies" to "SST"
-)
 
 /**
  * Persists the academic structure for [schoolId] from the submit payload.
@@ -402,13 +390,9 @@ private fun persistAcademicStructure(schoolId: UUID, payload: JsonObject) {
             ParsedClass(code, name, sections, subjects)
         }
     } else {
-        // Legacy/empty payload -> seed sensible defaults so step 3 is real.
-        DEFAULT_ACADEMIC_CLASSES.map { (code, name, sections) ->
-            ParsedClass(
-                code, name, sections,
-                DEFAULT_ACADEMIC_SUBJECTS.map { (sn, sc) -> ParsedSubject(sn, sc, null) }
-            )
-        }
+        // Empty payload -> no classes to persist. The admin must configure
+        // classes/subjects explicitly; we no longer seed defaults (Bug 23).
+        emptyList()
     }
 
     parsedClasses.forEach { pc ->
@@ -1032,12 +1016,9 @@ fun Route.onboardingRouting() {
                         "REVIEW" -> {
                             val sid = ensureSchoolForUser(uid)
                             syncSchoolBasics(sid, uid)
-                            // Safety net: if the client skipped persisting classes,
-                            // seed defaults so a "completed" school is never empty.
-                            val hasClasses = SchoolClassesTable.selectAll()
-                                .where { SchoolClassesTable.schoolId eq sid }
-                                .count() > 0L
-                            if (!hasClasses) persistAcademicStructure(sid, JsonObject(emptyMap()))
+                            // No safety-net seeding: if the admin skipped classes,
+                            // the school stays empty and the gate will resume them
+                            // at ACADEMIC on next login (Bug 23 fix).
 
                             if (complete) {
                                 markStepCompleted(sid, "REVIEW")
@@ -1092,10 +1073,9 @@ fun Route.onboardingRouting() {
                 val sid = dbQuery {
                     val schoolId = ensureSchoolForUser(uid)
                     syncSchoolBasics(schoolId, uid)
-                    val hasClasses = SchoolClassesTable.selectAll()
-                        .where { SchoolClassesTable.schoolId eq schoolId }
-                        .count() > 0L
-                    if (!hasClasses) persistAcademicStructure(schoolId, JsonObject(emptyMap()))
+                    // No safety-net seeding (Bug 23 fix). If the admin has no
+                    // classes, they should be sent back to the academic step, not
+                    // given fake defaults.
                     // Mark every step done — /complete is the explicit "finish
                     // onboarding now" entry point, so the ledger reflects a fully
                     // completed flow (and the gate resolves to the dashboard).

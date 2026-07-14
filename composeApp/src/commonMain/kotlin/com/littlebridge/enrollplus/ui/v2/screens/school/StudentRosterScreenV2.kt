@@ -130,7 +130,7 @@ fun StudentRosterScreenV2(
             isSubmitting = state.isSaving,
             error = state.addError,
             onDismiss = { showAdd = false; viewModel.clearMessages() },
-            onSubmit = { name, cls, sec, roll, phone -> viewModel.addStudent(name, cls, sec, roll, phone) },
+            onSubmit = { name, cls, sec, roll, phone, admission -> viewModel.addStudent(name, cls, sec, roll, phone, admission) },
             availableClassNames = classesState.classes.map { it.name },
         )
     }
@@ -387,7 +387,7 @@ private fun AddStudentSheet(
     isSubmitting: Boolean,
     error: String?,
     onDismiss: () -> Unit,
-    onSubmit: (name: String, className: String, section: String, rollNumber: String, parentPhone: String) -> Unit,
+    onSubmit: (name: String, className: String, section: String, rollNumber: String, parentPhone: String, admissionDate: String) -> Unit,
     availableClassNames: List<String> = emptyList(),
 ) {
     var name by remember { mutableStateOf("") }
@@ -395,6 +395,7 @@ private fun AddStudentSheet(
     var section by remember { mutableStateOf("") }
     var roll by remember { mutableStateOf("") }
     var parentPhone by remember { mutableStateOf("") }
+    var admissionDate by remember { mutableStateOf("") }
     var classDropdownExpanded by remember { mutableStateOf(false) }
     val phoneDigits = parentPhone.filter { it.isDigit() }
     val phoneOk = parentPhone.isBlank() || phoneDigits.length >= 10
@@ -440,6 +441,12 @@ private fun AddStudentSheet(
             VInput(section, { section = it }, label = appString(StringKeys.SCH_SECTION), placeholder = "A")
             VInput(roll, { roll = it }, label = appString(StringKeys.SCH_ROLL_NUMBER), placeholder = appString(StringKeys.SCH_ROLL_NUMBER_PH), keyboardType = KeyboardType.Number)
             VInput(
+                admissionDate,
+                { admissionDate = it },
+                label = "Admission Date",
+                placeholder = "YYYY-MM-DD (optional)",
+            )
+            VInput(
                 parentPhone,
                 { input -> parentPhone = input.filter { it.isDigit() || it == '+' || it == ' ' || it == '-' } },
                 label = appString(StringKeys.SCH_PARENT_PHONE_OPTIONAL),
@@ -455,7 +462,7 @@ private fun AddStudentSheet(
             Spacer(Modifier.height(2.dp))
             VButton(
                 text = appString(StringKeys.SCH_ADD_STUDENT),
-                onClick = { onSubmit(name, className, section, roll, parentPhone) },
+                onClick = { onSubmit(name, className, section, roll, parentPhone, admissionDate) },
                 variant = VButtonVariant.Primary,
                 full = true,
                 enabled = canSubmit,

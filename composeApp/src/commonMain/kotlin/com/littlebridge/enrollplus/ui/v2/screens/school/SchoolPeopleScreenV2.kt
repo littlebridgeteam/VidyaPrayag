@@ -77,6 +77,7 @@ import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VMotion
 import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.platform.rememberPhoneHelper
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -146,7 +147,7 @@ fun SchoolPeopleScreenV2(
         studentsState = studentsState,
         onStudentsRetry = studentsViewModel::load,
         onStudentSearch = { studentsViewModel.load() }, // students VM reloads full list; client-side filter below
-        onAddStudent = studentsViewModel::addStudent,
+        onAddStudent = { name, cls, sec, roll, phone, admission -> studentsViewModel.addStudent(name, cls, sec, roll, phone, admission) },
         onImportStudentsCsv = studentsViewModel::importStudentsCsv,
         onClearStudentMessages = studentsViewModel::clearMessages,
         availableClassNames = classesState.classes.map { it.name },
@@ -174,7 +175,7 @@ private fun SchoolPeopleContent(
     studentsState: StudentRosterState,
     onStudentsRetry: () -> Unit,
     onStudentSearch: (String) -> Unit,
-    onAddStudent: (name: String, className: String, section: String, rollNumber: String, parentPhone: String) -> Unit,
+    onAddStudent: (name: String, className: String, section: String, rollNumber: String, parentPhone: String, admissionDate: String) -> Unit,
     onImportStudentsCsv: (String) -> Unit,
     onClearStudentMessages: () -> Unit,
     availableClassNames: List<String> = emptyList(),
@@ -360,7 +361,7 @@ private fun SchoolPeopleContent(
             isSubmitting = studentsState.isSaving,
             error = studentsState.addError,
             onDismiss = { showAddStudent = false; onClearStudentMessages() },
-            onSubmit = { name, cls, sec, roll, phone -> onAddStudent(name, cls, sec, roll, phone) },
+            onSubmit = { name, cls, sec, roll, phone, admission -> onAddStudent(name, cls, sec, roll, phone, admission) },
             availableClassNames = availableClassNames,
         )
     }
@@ -548,6 +549,7 @@ private fun StudentsSubTab(
     onImportClick: () -> Unit,
     onGraduateClick: (List<String>, Int) -> Unit,
 ) {
+    val phoneHelper = rememberPhoneHelper()
     var query by remember { mutableStateOf("") }
     var showGraduate by remember { mutableStateOf(false) }
     var selectedClasses by remember { mutableStateOf(setOf<String>()) }
@@ -684,8 +686,8 @@ private fun StudentsSubTab(
                     StudentCard(
                         student = s,
                         onOpen = { onOpenStudent(s.id) },
-                        onCall = { /* TODO: dial parent phone */ },
-                        onMessage = { /* TODO: message parent */ },
+                        onCall = { phoneHelper.dialPhone(s.parentPhone ?: "") },
+                        onMessage = { phoneHelper.sendSms(s.parentPhone ?: "") },
                         modifier = Modifier.staggeredItemEntrance(index, ready),
                     )
                 }
@@ -755,6 +757,7 @@ private fun StaffSubTab(
     onAddClick: () -> Unit,
     onOpenStaff: (String) -> Unit,
 ) {
+    val phoneHelper = rememberPhoneHelper()
     var selectedDepartments by remember { mutableStateOf(setOf<String>()) }
     var selectedRoles by remember { mutableStateOf(setOf<String>()) }
     var selectedStatuses by remember { mutableStateOf(setOf<String>()) }
@@ -874,8 +877,8 @@ private fun StaffSubTab(
                     StaffCard(
                         staff = s,
                         onOpen = { onOpenStaff(s.id) },
-                        onCall = { /* TODO: dial staff phone */ },
-                        onMessage = { /* TODO: message staff */ },
+                        onCall = { phoneHelper.dialPhone(s.phone ?: "") },
+                        onMessage = { phoneHelper.sendSms(s.phone ?: "") },
                         modifier = Modifier.staggeredItemEntrance(index, ready),
                     )
                 }
@@ -1054,7 +1057,7 @@ private fun AddStudentPeopleSheet(
     isSubmitting: Boolean,
     error: String?,
     onDismiss: () -> Unit,
-    onSubmit: (name: String, className: String, section: String, rollNumber: String, parentPhone: String) -> Unit,
+    onSubmit: (name: String, className: String, section: String, rollNumber: String, parentPhone: String, admissionDate: String) -> Unit,
     availableClassNames: List<String> = emptyList(),
 ) {
     var name by remember { mutableStateOf("") }
@@ -1062,6 +1065,7 @@ private fun AddStudentPeopleSheet(
     var section by remember { mutableStateOf("") }
     var roll by remember { mutableStateOf("") }
     var parentPhone by remember { mutableStateOf("") }
+    var admissionDate by remember { mutableStateOf("") }
     var classDropdownExpanded by remember { mutableStateOf(false) }
 
     val phoneDigits = parentPhone.count { it.isDigit() }
@@ -1104,6 +1108,12 @@ private fun AddStudentPeopleSheet(
             VInput(section, { section = it }, label = appString(StringKeys.PPL_SECTION), placeholder = appString(StringKeys.PPL_SECTION_PH))
             VInput(roll, { roll = it }, label = appString(StringKeys.PPL_ROLL_NUMBER), placeholder = appString(StringKeys.PPL_ROLL_PH), keyboardType = KeyboardType.Number)
             VInput(
+                admissionDate,
+                { admissionDate = it },
+                label = "Admission Date",
+                placeholder = "YYYY-MM-DD (optional)",
+            )
+            VInput(
                 parentPhone,
                 { parentPhone = it },
                 label = appString(StringKeys.PPL_PARENT_PHONE),
@@ -1116,7 +1126,7 @@ private fun AddStudentPeopleSheet(
             Spacer(Modifier.height(2.dp))
             VButton(
                 text = appString(StringKeys.PPL_ADD_STUDENT),
-                onClick = { onSubmit(name, className, section, roll, parentPhone) },
+                onClick = { onSubmit(name, className, section, roll, parentPhone, admissionDate) },
                 variant = VButtonVariant.Primary,
                 full = true,
                 enabled = canSubmit,
@@ -1155,7 +1165,7 @@ private fun ImportStudentsSheet(
     val csvTemplate = "full_name,class_name,section,roll_number,parent_phone\n"
     val fileSaver = rememberFileSaverLauncher() { _ -> }
     val csvPicker = rememberFilePickerLauncher(
-        type = PickerType.File,
+        type = PickerType.File(),
         mode = PickerMode.Single,
         title = "Choose a CSV file",
     ) { platformFile ->

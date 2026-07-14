@@ -97,6 +97,7 @@ class StudentRosterViewModel(
         section: String,
         rollNumber: String,
         parentPhone: String,
+        admissionDate: String? = null,
     ) {
         if (fullName.isBlank() || className.isBlank() || rollNumber.isBlank()) {
             _state.value = _state.value.copy(addError = "Name, class and roll number are required.")
@@ -124,7 +125,8 @@ class StudentRosterViewModel(
                 className = className.trim(),
                 section = section.trim().ifBlank { null },
                 rollNumber = rollNumber.trim(),
-                parentPhone = parentPhone.trim().ifBlank { null }
+                parentPhone = parentPhone.trim().ifBlank { null },
+                admissionDate = admissionDate?.takeIf { it.isNotBlank() }
             )
             when (val r = repository.createStudent(token, req)) {
                 is NetworkResult.Success -> {

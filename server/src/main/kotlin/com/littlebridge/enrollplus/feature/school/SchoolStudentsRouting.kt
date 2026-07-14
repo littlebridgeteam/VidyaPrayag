@@ -63,6 +63,7 @@ import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
 import java.time.Instant
+import java.time.LocalDate
 import java.util.UUID
 
 // ───────────────────────────── DTOs ─────────────────────────────
@@ -154,7 +155,8 @@ data class CreateStudentRequest(
     // ISSUE 2b: parent/guardian phone captured at creation, validated + persisted,
     // and consumed by the parent→child link matcher.
     @SerialName("parent_phone") val parentPhone: String? = null,
-    @SerialName("student_code") val studentCode: String? = null  // optional; auto-generated when blank
+    @SerialName("student_code") val studentCode: String? = null,  // optional; auto-generated when blank
+    @SerialName("admission_date") val admissionDate: String? = null  // YYYY-MM-DD; falls back to today if null
 )
 
 /**
@@ -169,7 +171,8 @@ data class UpdateStudentRequest(
     @SerialName("full_name") val fullName: String? = null,
     @SerialName("class_name") val className: String? = null,
     val section: String? = null,
-    @SerialName("roll_number") val rollNumber: String? = null
+    @SerialName("roll_number") val rollNumber: String? = null,
+    @SerialName("admission_date") val admissionDate: String? = null
 )
 
 @Serializable
@@ -877,6 +880,9 @@ fun Route.schoolStudentsRouting() {
                         it[rollNumber] = req.rollNumber.trim()
                         it[parentPhone] = canonPhone
                         it[isActive] = true
+                        it[admissionDate] = req.admissionDate?.let { d ->
+                            runCatching { LocalDate.parse(d) }.getOrNull()
+                        } ?: LocalDate.now()
                         it[createdAt] = Instant.now()
                     } get StudentsTable.id
 
@@ -931,6 +937,8 @@ fun Route.schoolStudentsRouting() {
                     val newSection = req.section?.takeIf { it.isNotBlank() }
                         ?.let { ClassNaming.canonicalSection(it) } ?: oldSection
                     val newRoll = req.rollNumber?.takeIf { it.isNotBlank() }?.trim()
+                    val newAdmissionDate = req.admissionDate?.takeIf { it.isNotBlank() }
+                        ?.let { d -> runCatching { LocalDate.parse(d) }.getOrNull() }
 
                     StudentsTable.update({
                         (StudentsTable.id eq id) and (StudentsTable.schoolId eq ctx.schoolId)
@@ -939,6 +947,7 @@ fun Route.schoolStudentsRouting() {
                         it[className] = newClass
                         it[section] = newSection
                         if (newRoll != null) it[rollNumber] = newRoll
+                        if (newAdmissionDate != null) it[admissionDate] = newAdmissionDate
                     }
 
                     // RA-LINK: only re-sync when the class+section actually changed —
@@ -1211,7 +1220,8 @@ fun Route.schoolStudentsRouting() {
                     // ── RA-SP: relationship-aware aggregation via the single source
                     // of truth, so teachers/parents/insights/activities and the KPI
                     // carousel metrics are always derived from live facts. ──
-                    val admittedAt = row[StudentsTable.createdAt]
+                    val admittedAt = row[StudentsTable.admissionDate]?.let { java.time.LocalDateTime.of(it, java.time.LocalTime.MIDNIGHT).toInstant(java.time.ZoneOffset.UTC) }
+                        ?: row[StudentsTable.createdAt]
                     val teachers = StudentAggregationService.teachersForStudent(
                         ctx.schoolId, student.className, student.section
                     )
