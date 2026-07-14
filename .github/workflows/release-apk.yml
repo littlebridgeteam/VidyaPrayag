@@ -1,15 +1,15 @@
-name: Release APK
+name: Debug APK
 
 on:
   push:
-    branches: [main]
+    branches: [main,development_v1.0.0]
   workflow_dispatch:
     inputs:
       flavor:
         description: 'Build flavor'
         required: true
         type: choice
-        default: 'prod'
+        default: 'staging'
         options:
           - dev
           - staging
@@ -18,7 +18,7 @@ on:
         description: 'Build type'
         required: true
         type: choice
-        default: 'release'
+        default: 'debug'
         options:
           - debug
           - release
@@ -33,18 +33,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Cache Gradle
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.gradle/caches
@@ -67,9 +67,25 @@ jobs:
             echo "flavor=${{ inputs.flavor }}" >> $GITHUB_OUTPUT
             echo "build_type=${{ inputs.build_type }}" >> $GITHUB_OUTPUT
           else
-            echo "flavor=prod" >> $GITHUB_OUTPUT
-            echo "build_type=release" >> $GITHUB_OUTPUT
+            echo "flavor=staging" >> $GITHUB_OUTPUT
+            echo "build_type=debug" >> $GITHUB_OUTPUT
           fi
+
+          # Extract versionName from build.gradle.kts
+          VERSION_NAME=$(grep 'versionName' composeApp/build.gradle.kts | head -1 | sed 's/.*versionName = "//;s/".*//')
+          echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
+          echo "build_num=${{ github.run_number }}" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION_NAME (build ${{ github.run_number }})"
+
+          # Map flavor to display name: dev→Dev, staging→Stag, prod→Prod
+          FLAVOR=${{ github.event_name == 'workflow_dispatch' && inputs.flavor || 'staging' }}
+          case "$FLAVOR" in
+            dev) FLAVOR_DISPLAY="Dev" ;;
+            staging) FLAVOR_DISPLAY="Stag" ;;
+            prod) FLAVOR_DISPLAY="Prod" ;;
+            *) FLAVOR_DISPLAY="$FLAVOR" ;;
+          esac
+          echo "flavor_display=$FLAVOR_DISPLAY" >> $GITHUB_OUTPUT
 
       - name: Assemble APK
         run: |
@@ -102,19 +118,21 @@ jobs:
           echo "apk_name=$APK_NAME" >> $GITHUB_OUTPUT
           echo "Found APK: $APK_NAME"
 
-      - name: Rename APK with tag
+      - name: Rename APK with formatted name
         run: |
-          TAG=${{ steps.tag.outputs.tag }}
-          FLAVOR=${{ steps.params.outputs.flavor }}
+          FLAVOR_DISPLAY=${{ steps.params.outputs.flavor_display }}
           BUILD_TYPE=${{ steps.params.outputs.build_type }}
+          BUILD_TYPE_DISPLAY=$(echo "$BUILD_TYPE" | sed 's/./\U&/')
+          VERSION=${{ steps.params.outputs.version_name }}
           SRC="${{ steps.apk.outputs.apk_path }}"
-          DEST="composeApp/build/outputs/apk/enrollplus-${FLAVOR}-${BUILD_TYPE}-${TAG}.apk"
+          BUILD_NUM=${{ github.run_number }}
+          DEST="composeApp/build/outputs/apk/EnRollPlus_${FLAVOR_DISPLAY}_${BUILD_TYPE_DISPLAY}_v${VERSION}_build${BUILD_NUM}.apk"
           cp "$SRC" "$DEST"
           echo "Renamed APK: $DEST"
           ls -lh "$DEST"
 
       - name: Upload APK to artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: enrollplus-apk-${{ steps.tag.outputs.tag }}
           path: composeApp/build/outputs/apk/*.apk
@@ -122,6 +140,7 @@ jobs:
           if-no-files-found: error
 
       - name: Create Git tag
+        if: steps.params.outputs.build_type == 'release'
         run: |
           TAG=${{ steps.tag.outputs.tag }}
           git config user.name "github-actions[bot]"
@@ -135,7 +154,8 @@ jobs:
           git push origin "$TAG"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        if: steps.params.outputs.build_type == 'release'
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
           name: "APK Release ${{ steps.tag.outputs.tag }}"
@@ -166,26 +186,70 @@ jobs:
           fi
 
           TAG="${{ steps.tag.outputs.tag }}"
-          FLAVOR="${{ steps.params.outputs.flavor }}"
+          FLAVOR="${{ steps.params.outputs.flavor_display }}"
           BUILD_TYPE="${{ steps.params.outputs.build_type }}"
-          APK_FILE=$(ls composeApp/build/outputs/apk/enrollplus-*.apk | head -1)
+          VERSION="${{ steps.params.outputs.version_name }}"
+          BUILD_NUM="${{ steps.params.outputs.build_num }}"
+          APK_FILE=$(ls composeApp/build/outputs/apk/EnRollPlus_*.apk | head -1)
+          APK_NAME=$(basename "$APK_FILE")
+          APK_SIZE=$(stat -c%s "$APK_FILE")
 
-          echo "Uploading $APK_FILE to Slack channel $SLACK_CHANNEL_ID..."
+          echo "Uploading $APK_NAME ($APK_SIZE bytes) to Slack..."
 
-          RESPONSE=$(curl -s -w "\n%{http_code}" \
-            -F "token=$SLACK_BOT_TOKEN" \
-            -F "channels=$SLACK_CHANNEL_ID" \
-            -F "file=@$APK_FILE" \
-            -F "filename=$(basename "$APK_FILE")" \
-            -F "title=Enroll+ APK — $TAG" \
-            -F "initial_comment=📱 *New APK Build*\n• *Tag:* $TAG\n• *Flavor:* $FLAVOR\n• *Build:* $BUILD_TYPE\n• *Commit:* ${{ github.sha }}\n• *Triggered by:* ${{ github.actor }}\n\nDownload from GitHub Release: https://github.com/${{ github.repository }}/releases/tag/$TAG" \
-            https://slack.com/api/files.upload)
+          # Step 1: Get upload URL from Slack (new files.getUploadURLExternal API)
+          UPLOAD_RESP=$(curl -s --max-time 30 -X POST https://slack.com/api/files.getUploadURLExternal \
+            -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+            -F "filename=$APK_NAME" \
+            -F "length=$APK_SIZE")
 
-          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-          BODY=$(echo "$RESPONSE" | sed '$d')
+          echo "getUploadURLExternal response: $UPLOAD_RESP"
 
-          if [ "$HTTP_CODE" != "200" ] || echo "$BODY" | grep -q '"ok":false'; then
-            echo "::error::Slack upload failed: $BODY"
+          if echo "$UPLOAD_RESP" | grep -q '"ok":false'; then
+            echo "::error::Failed to get upload URL: $UPLOAD_RESP"
+            exit 1
+          fi
+
+          # Use python3 to parse JSON (handles escaped slashes correctly)
+          UPLOAD_URL=$(echo "$UPLOAD_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin)['upload_url'])")
+          FILE_ID=$(echo "$UPLOAD_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin)['file_id'])")
+
+          if [ -z "$UPLOAD_URL" ] || [ -z "$FILE_ID" ]; then
+            echo "::error::Could not parse upload URL or file ID from response"
+            exit 1
+          fi
+
+          echo "Got upload URL and file_id: $FILE_ID"
+
+          # Step 2: Upload the file to the provided URL (raw binary body, not multipart)
+          UPLOAD_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 120 \
+            -X POST "$UPLOAD_URL" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary "@$APK_FILE")
+
+          if [ "$UPLOAD_STATUS" != "200" ]; then
+            echo "::error::File upload to Slack URL failed with HTTP $UPLOAD_STATUS"
+            exit 1
+          fi
+
+          echo "File uploaded to Slack storage"
+
+          # Step 3: Complete the upload and share to channel
+          # Build download link only for release builds (debug has no GitHub Release)
+          if [ "$BUILD_TYPE" = "release" ]; then
+            DOWNLOAD_LINE="Download: https://github.com/${{ github.repository }}/releases/tag/$TAG"
+          else
+            DOWNLOAD_LINE="Download from Actions artifacts: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          fi
+
+          COMPLETE_RESP=$(curl -s --max-time 30 -X POST https://slack.com/api/files.completeUploadExternal \
+            -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+            -H "Content-Type: application/json; charset=utf-8" \
+            -d "{\"files\":[{\"id\":\"$FILE_ID\",\"title\":\"EnRollPlus ${FLAVOR} ${BUILD_TYPE} v${VERSION} build${BUILD_NUM}\"}],\"channel_id\":\"$SLACK_CHANNEL_ID\",\"initial_comment\":\"📱 *New APK Build*\\n• *Name:* $APK_NAME\\n• *Flavor:* $FLAVOR\\n• *Build:* $BUILD_TYPE\\n• *Version:* v${VERSION} (build ${BUILD_NUM})\\n• *Commit:* ${{ github.sha }}\\n• *Triggered by:* ${{ github.actor }}\\n\\n$DOWNLOAD_LINE\"}")
+
+          echo "completeUploadExternal response: $COMPLETE_RESP"
+
+          if echo "$COMPLETE_RESP" | grep -q '"ok":false'; then
+            echo "::error::Slack complete upload failed: $COMPLETE_RESP"
             exit 1
           fi
 

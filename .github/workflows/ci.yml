@@ -1,10 +1,12 @@
 name: CI
 
 on:
-  push:
-    branches: [main, master, develop, slack_fix*]
-  pull_request:
-    branches: [main, master, develop]
+  # Paused — re-enable by uncommenting the triggers below
+  # push:
+  #   branches: [main, master, develop]
+  # pull_request:
+  #   branches: [main, master, develop]
+  workflow_dispatch:
 
 jobs:
   server-build-test:
