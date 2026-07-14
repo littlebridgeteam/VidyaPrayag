@@ -172,6 +172,10 @@ import com.littlebridge.enrollplus.core.openApiRouting
 import com.littlebridge.enrollplus.core.FeatureFlagService
 import com.littlebridge.enrollplus.core.featureFlagRouting
 import com.littlebridge.enrollplus.feature.logging.ServerLogWriter
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
@@ -227,14 +231,19 @@ fun main() {
         ?: props.getProperty("SERVER_PORT")?.toIntOrNull()
         ?: SERVER_PORT
 
+    // Shared coroutine scope for all background job schedulers.
+    // Cancelled in the shutdown hook BEFORE HikariCP closes to prevent
+    // "HikariDataSource has been closed" errors from in-flight job polls.
+    val backgroundJobScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
     // Start the notification scheduler (fee reminders, calendar reminders).
-    NotificationScheduler.start(kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default))
+    NotificationScheduler.start(backgroundJobScope)
 
     // Start the Message Scheduling dispatch engine (1-min poll for due scheduled messages).
-    MessageDispatchScheduler.start(kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default))
+    MessageDispatchScheduler.start(backgroundJobScope)
 
     // Start the Parent Pulse weekly job (Sunday 6 PM IST pulse generation).
-    PulseWeeklyJob.start(kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default))
+    PulseWeeklyJob.start(backgroundJobScope)
 
     // AI gateway: seed/refresh encrypted provider keys from env (idempotent).
     // Blocking is fine here — this runs once at boot before the server accepts
@@ -252,48 +261,48 @@ fun main() {
     }
 
     // Start the PEWS daily job (Sense → Reason → Act pipeline; hourly tick).
-    PewsDailyJob.start(kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default))
+    PewsDailyJob.start(backgroundJobScope)
 
     // AI Report Card 2.0 — start async batch worker + term-close scheduler.
     com.littlebridge.enrollplus.feature.reportcard.queue.ReportCardJob.startWorker(
-        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)
+        backgroundJobScope
     )
     com.littlebridge.enrollplus.feature.reportcard.queue.ReportCardJob.startScheduler(
-        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)
+        backgroundJobScope
     )
 
     // PEWS 2.0 — load kill-switch flags from DB and start hot-reload polling.
     kotlinx.coroutines.runBlocking { runCatching { KillSwitchConfig.reload() } }
-    KillSwitchConfig.startPolling(kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default))
+    KillSwitchConfig.startPolling(backgroundJobScope)
 
     // GAP-019 — general-purpose feature flags (hot-reloadable).
     kotlinx.coroutines.runBlocking { runCatching { FeatureFlagService.reload() } }
-    FeatureFlagService.startPolling(kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default))
+    FeatureFlagService.startPolling(backgroundJobScope)
 
     // Start the Transport job scheduler (GPS staleness check + daily attendance finalization).
     com.littlebridge.enrollplus.feature.transport.TransportJobScheduler.start(
-        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)
+        backgroundJobScope
     )
 
     // Start the Library job scheduler (overdue notifications, due-date reminders,
     // reservation expiry, announcement expiry, monthly audit log retention).
     com.littlebridge.enrollplus.feature.library.LibraryJobScheduler.start(
-        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)
+        backgroundJobScope
     )
 
     // Start the Auto Daily Summary job (end-of-day AI summary for missing teacher logs).
     com.littlebridge.enrollplus.feature.ai.DailySummaryAutoJob.start(
-        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)
+        backgroundJobScope
     )
 
     // Start the Skill Test job scheduler (weekly AI question generation + daily old question purge).
     com.littlebridge.enrollplus.feature.skilltest.SkillTestJobScheduler.start(
-        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)
+        backgroundJobScope
     )
 
     // Start the Exam Reminder job (evening-before exam reminders, 6 PM IST).
     ExamReminderJob.start(
-        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)
+        backgroundJobScope
     )
 
     // Register event-driven cache invalidation for library (spec §17).
@@ -313,6 +322,13 @@ fun main() {
         appLog.info("Shutdown hook triggered — gracefully stopping server...")
         runBlocking {
             runCatching { server.stop(gracePeriodMillis = 5_000, timeoutMillis = 10_000) }
+        }
+        // Cancel background job coroutines BEFORE closing the DB pool so
+        // in-flight job polls don't hit a closed HikariDataSource.
+        runCatching {
+            backgroundJobScope.cancel()
+            // Brief wait for coroutines to observe cancellation
+            Thread.sleep(500)
         }
         runCatching { HttpClientRegistry.closeAll() }
         runCatching { DatabaseFactory.readReplicaDataSource?.close() }

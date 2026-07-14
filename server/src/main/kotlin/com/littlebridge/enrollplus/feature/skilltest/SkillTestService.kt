@@ -91,6 +91,10 @@ object SkillTestService {
     /** Per-grade mutex so concurrent eligibility checks don't all fire AI generation. */
     private val generationLocks = ConcurrentHashMap<String, Mutex>()
 
+    /** Per-grade cooldown: after a failed generation, don't retry for 1 hour. */
+    private val generationCooldowns = ConcurrentHashMap<String, Instant>()
+    private val GENERATION_COOLDOWN_MINUTES = 60L
+
     /**
      * Background scope for fire-and-forget immediate generation. Tied to the
      * JVM lifecycle because this is an object singleton; use SupervisorJob so a
@@ -145,11 +149,21 @@ object SkillTestService {
             }
             if (stillHasQuestions) return@withLock true
 
+            // Cooldown: if generation for this grade failed recently, don't retry.
+            val cooldownUntil = generationCooldowns[gradeLevel]
+            if (cooldownUntil != null && Instant.now().isBefore(cooldownUntil)) {
+                log.info("Skipping immediate generation for grade {} — in cooldown until {}", gradeLevel, cooldownUntil)
+                return@withLock false
+            }
+
             log.info("No active questions for grade {} — triggering immediate generation", gradeLevel)
             val generatedCount = generateWeeklyBatch(gradeLevel)
             val success = generatedCount > 0
             if (!success) {
-                log.warn("Immediate generation produced no questions for grade {}", gradeLevel)
+                log.warn("Immediate generation produced no questions for grade {} — entering 1h cooldown", gradeLevel)
+                generationCooldowns[gradeLevel] = Instant.now().plus(GENERATION_COOLDOWN_MINUTES, ChronoUnit.MINUTES)
+            } else {
+                generationCooldowns.remove(gradeLevel)
             }
             success
         }
@@ -388,26 +402,56 @@ object SkillTestService {
         val arr = try {
             json.parseToJsonElement(cleaned).jsonArray
         } catch (e: Exception) {
-            // Fallback: extract the first JSON array from the response.
-            // LLMs sometimes wrap the array in markdown or add trailing text.
+            // Fallback 1: extract the first JSON array from the response.
             val firstOpen = cleaned.indexOf('[')
             val lastClose = cleaned.lastIndexOf(']')
             if (firstOpen == -1 || lastClose == -1 || lastClose < firstOpen) {
-                log.warn("Failed to parse MCQ JSON and could not locate JSON array: {}", e.message)
-                log.debug("Raw MCQ response: {}", cleaned)
-                return null
-            }
-            val extracted = cleaned.substring(firstOpen, lastClose + 1)
-            try {
-                json.parseToJsonElement(extracted).jsonArray
-            } catch (e2: Exception) {
-                log.warn("Failed to parse extracted MCQ JSON array: {}", e2.message)
-                log.debug("Raw MCQ response: {}", cleaned)
-                return null
+                // Fallback 2: LLM output was truncated mid-array (no closing ]).
+                // Try to salvage complete objects from the truncated text.
+                if (firstOpen != -1) {
+                    val truncated = cleaned.substring(firstOpen)
+                    // Find the last complete object (ends with }) followed by a comma or whitespace
+                    val lastCompleteObj = truncated.lastIndexOf("}")
+                    if (lastCompleteObj > 0) {
+                        val salvaged = truncated.substring(0, lastCompleteObj + 1) + "]"
+                        try {
+                            json.parseToJsonElement(salvaged).jsonArray
+                        } catch (e3: Exception) {
+                            log.warn("Failed to parse MCQ JSON (truncated salvage): {}", e3.message)
+                            return null
+                        }
+                    } else {
+                        log.warn("Failed to parse MCQ JSON: no complete objects in truncated response")
+                        return null
+                    }
+                } else {
+                    log.warn("Failed to parse MCQ JSON and could not locate JSON array: {}", e.message)
+                    return null
+                }
+            } else {
+                val extracted = cleaned.substring(firstOpen, lastClose + 1)
+                try {
+                    json.parseToJsonElement(extracted).jsonArray
+                } catch (e2: Exception) {
+                    // Fallback 2: try truncation salvage on the extracted substring
+                    val lastObj = extracted.lastIndexOf("}")
+                    if (lastObj > 0) {
+                        val salvaged = extracted.substring(0, lastObj + 1) + "]"
+                        try {
+                            json.parseToJsonElement(salvaged).jsonArray
+                        } catch (e3: Exception) {
+                            log.warn("Failed to parse extracted MCQ JSON array: {}", e2.message)
+                            return null
+                        }
+                    } else {
+                        log.warn("Failed to parse extracted MCQ JSON array: {}", e2.message)
+                        return null
+                    }
+                }
             }
         }
 
-        return arr.mapNotNull { el ->
+        val parsed = arr.mapNotNull { el ->
             val obj = try { el.jsonObject } catch (e: Exception) { return@mapNotNull null }
             GeneratedMcq(
                 questionText = obj["question_text"]?.jsonPrimitive?.contentOrNull ?: "",
@@ -417,6 +461,11 @@ object SkillTestService {
                 difficulty = obj["difficulty"]?.jsonPrimitive?.contentOrNull ?: "medium",
             )
         }.filter { it.questionText.isNotBlank() && it.options.size == 4 }
+
+        if (parsed.isEmpty()) {
+            log.warn("MCQ JSON parsed but 0 valid questions extracted (raw length={})", cleaned.length)
+        }
+        return parsed
     }
 
     private suspend fun persistQuestions(
