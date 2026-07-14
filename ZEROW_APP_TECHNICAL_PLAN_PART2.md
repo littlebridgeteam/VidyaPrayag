@@ -1096,33 +1096,33 @@ For sweepers without smartphones or in zero-connectivity areas:
 
 | Measure | Implementation |
 |---------|---------------|
-| HTTPS only | Nginx SSL + HSTS header, redirect HTTP→HTTPS |
-| JWT validation | Verify signature + expiry on every request |
-| Rate limiting | 100 req/min per user (Redis token bucket) |
-| Input validation | Zod schemas on all endpoints |
-| SQL injection | Prisma ORM parameterized queries |
-| XSS | React auto-escapes; Content-Security-Policy header |
-| CSRF | SameSite cookies for web; JWT in header for API |
-| File upload | Max 5MB, image-only (magic byte check), sharp processing |
-| CORS | Whitelist specific origins (app domain, dashboard domain) |
-| Helmet | HTTP security headers via `helmet` middleware |
+| HTTPS only | Render auto-TLS + HSTS header, Vercel auto-TLS |
+| JWT validation | Supabase Auth JWT verification on every Ktor request |
+| Rate limiting | Ktor rate-limiting plugin (100 req/min per user) |
+| Input validation | Kotlinx.serialization + custom validators on all routes |
+| SQL injection | Supabase RLS + parameterized queries via Ktor client |
+| XSS | Next.js auto-escapes; Content-Security-Policy header via middleware |
+| CSRF | SameSite cookies for web; JWT in Authorization header for API |
+| File upload | Max 5MB, image-only (magic byte check), Supabase Storage |
+| CORS | Ktor CORS plugin — whitelist specific origins |
+| Security headers | Ktor DefaultHeaders plugin — HSTS, X-Content-Type-Options, X-Frame-Options |
 
 ### 20.2 Data Security
 
 | Measure | Implementation |
 |---------|---------------|
-| Password hashing | bcrypt (cost factor 12) |
+| Auth | Supabase Auth (phone OTP, JWT, refresh tokens) |
 | OTP security | 6-digit, 10-min expiry, max 3 attempts, rate-limited per phone |
-| PII encryption | Phone numbers encrypted at rest (AES-256-GCM) |
+| PII encryption | Phone numbers encrypted at rest (AES-256-GCM via Supabase) |
 | Geo data anonymization | GPS coordinates rounded to 5 decimal places (~1m) for analytics |
-| Photo access | R2 presigned URLs with 24h expiry |
-| DB backups | Daily pg_dump to R2, 7-day retention |
-| Redis | Require AUTH password, bind to localhost only |
-| Secrets | Environment variables, never in code, `.env` in `.gitignore` |
+| Photo access | Supabase Storage signed URLs with 24h expiry |
+| DB backups | Supabase automated daily backups (Pro plan), 7-day retention |
+| RLS | Row-Level Security policies on all tables (per-role access) |
+| Secrets | Environment variables on Render/Vercel, never in code |
 
 ### 20.3 Privacy-by-Design
 
-1. **Consent**: Cleaners must explicitly consent to location tracking during work hours. Can opt out (manual SMS fallback).
+1. **Consent**: Sweepers must explicitly consent to location tracking during work hours. Can opt out (manual SMS fallback).
 2. **Transparency**: App shows "Your location is being recorded for scan verification" during active sessions.
 3. **Retention**: Attendance data deleted after 1 year. Photos after 6 months. OTP codes after 10 minutes.
 4. **Access control**: Only admin can view full attendance records. Committee sees zone-level only.
@@ -1131,253 +1131,258 @@ For sweepers without smartphones or in zero-connectivity areas:
 
 ---
 
-## 21. Deployment & DevOps
+## 21. Deployment & DevOps (Render + Vercel + Supabase)
 
-### 21.1 Docker Compose (Pilot)
+### 21.1 Architecture
+
+```
+┌──────────────────────────────────────────────────────┐
+│                    USER                               │
+│                                                       │
+│  Mobile App (KMP)     Web Dashboard (Next.js)        │
+│  Android / iOS / Wasm  Vercel (auto-deploy)          │
+└───────────┬──────────────────┬───────────────────────┘
+            │                  │
+            ▼                  ▼
+┌───────────────────┐  ┌──────────────────┐
+│   Render (Ktor)   │  │   Vercel         │
+│   API Server      │  │   Next.js SSR    │
+│   - REST API      │  │   - Dashboard    │
+│   - AI Gateway    │  │   - Auth pages   │
+│   - Job Scheduler │  │   - Reports      │
+│   - WebSocket     │  │                  │
+└────────┬──────────┘  └────────┬─────────┘
+         │                      │
+         ▼                      ▼
+┌──────────────────────────────────────────┐
+│           Supabase (PostgreSQL)           │
+│           - PostGIS extension             │
+│           - Auth (OTP, JWT)               │
+│           - Storage (bin photos)          │
+│           - Realtime (WebSocket events)   │
+│           - RLS (Row-Level Security)      │
+└──────────────────────────────────────────┘
+         │
+         ▼
+┌──────────────────────────────────────────┐
+│         External LLM Providers            │
+│  Cerebras → Groq → SambaNova → Mistral   │
+│  → OpenRouter → NVIDIA NIM               │
+└──────────────────────────────────────────┘
+```
+
+### 21.2 Render Configuration
 
 ```yaml
-# docker-compose.yml
-version: '3.8'
-
+# render.yaml
 services:
-  nginx:
-    image: nginx:alpine
-    ports: ['80:80', '443:443']
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./certbot/conf:/etc/letsencrypt
-      - ./web-build:/usr/share/nginx/html    # React dashboard
-    depends_on: [api, ai-service]
-    restart: always
-
-  api:
-    build: ./server
-    environment:
-      - DATABASE_URL=postgresql://zerow:password@db:5432/zerow
-      - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=${JWT_SECRET}
-      - R2_ACCOUNT_ID=${R2_ACCOUNT_ID}
-      - R2_ACCESS_KEY=${R2_ACCESS_KEY}
-      - R2_SECRET_KEY=${R2_SECRET_KEY}
-      - MAPBOX_TOKEN=${MAPBOX_TOKEN}
-      - FCM_SERVER_KEY=${FCM_SERVER_KEY}
-      - SMS_API_KEY=${SMS_API_KEY}
-    depends_on: [db, redis]
-    restart: always
-
-  ai-service:
-    build: ./ai-service
-    environment:
-      - REDIS_URL=redis://redis:6379
-      - MODEL_PATH=/models
-    volumes:
-      - ./models:/models:ro
-    depends_on: [redis]
-    restart: always
-
-  db:
-    image: postgis/postgis:16-3.4
-    environment:
-      - POSTGRES_DB=zerow
-      - POSTGRES_USER=zerow
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql
-    restart: always
-
-  redis:
-    image: redis:7-alpine
-    command: redis-server --requirepass ${REDIS_PASSWORD}
-    restart: always
-
-volumes:
-  pgdata:
+  - type: web
+    name: zerow-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: FCM_SERVER_KEY
+        sync: false
+      - key: SMS_API_KEY
+        sync: false
+      - key: CEREBRAS_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: SAMBANOVA_API_KEY
+        sync: false
+      - key: MISTRAL_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: NVIDIA_NIM_API_KEY
+        sync: false
+    plan: starter  # $7/mo — upgrade to pro ($85/mo) for production
 ```
 
-### 21.2 Nginx Configuration
+### 21.3 Vercel Configuration
 
-```nginx
-upstream api_server { server api:3000; }
-upstream ai_server { server ai-service:8000; }
-
-server {
-    listen 80;
-    server_name api.zerow.in;
-    return 301 https://$host$request_uri;
-}
-
-server {
-    listen 443 ssl http2;
-    server_name api.zerow.in;
-    
-    ssl_certificate /etc/letsencrypt/live/api.zerow.in/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/api.zerow.in/privkey.pem;
-    
-    # Security headers
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header X-Frame-Options "DENY" always;
-    
-    # API proxy
-    location /api/ {
-        proxy_pass http://api_server;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-    
-    # WebSocket proxy
-    location /ws {
-        proxy_pass http://api_server;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-    }
-    
-    # AI service proxy (internal only — not exposed publicly)
-    location /ai/ {
-        proxy_pass http://ai_server/;
-        allow 172.16.0.0/12;  # Docker network only
-        deny all;
-    }
-}
-
-server {
-    listen 443 ssl http2;
-    server_name dashboard.zerow.in;
-    
-    ssl_certificate /etc/letsencrypt/live/dashboard.zerow.in/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/dashboard.zerow.in/privkey.pem;
-    
-    root /usr/share/nginx/html;
-    index index.html;
-    
-    location / {
-        try_files $uri $uri/ /index.html;  # SPA routing
-    }
+```json
+// vercel.json
+{
+  "framework": "nextjs",
+  "buildCommand": "next build",
+  "outputDirectory": ".next",
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "@supabase_url",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase_anon_key",
+    "NEXT_PUBLIC_API_URL": "@api_url"
+  }
 }
 ```
 
-### 21.3 CI/CD Pipeline (GitHub Actions)
+### 21.4 CI/CD Pipeline (GitHub Actions)
 
 ```yaml
-# .github/workflows/deploy.yml
-name: Deploy
+# .github/workflows/ci.yml
+name: CI
 
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
-  test:
+  backend-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: cd server && npm ci && npm test
-      - run: cd web && npm ci && npm run build
-      - run: cd ai-service && pip install -r requirements.txt && pytest
-
-  deploy:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build and deploy
-        uses: appleboy/ssh-action@v1
+      - uses: actions/setup-java@v4
         with:
-          host: ${{ secrets.DROPLET_IP }}
-          username: root
-          key: ${{ secrets.SSH_KEY }}
-          script: |
-            cd /opt/zerow
-            git pull origin main
-            docker compose build
-            docker compose up -d
-            docker compose exec api npx prisma migrate deploy
+          distribution: temurin
+          java-version: 17
+      - run: ./gradlew :server:test
+      - run: ./gradlew :shared:test
+
+  frontend-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: cd website && npm ci && npm run lint && npm run build
+
+  # Render auto-deploys on push to main
+  # Vercel auto-deploys on push to main
+  # Supabase migrations run manually via CLI
 ```
 
-### 21.4 Database Migrations
+### 21.5 Database Migrations (Supabase)
 
 ```bash
 # Create migration
-npx prisma migrate dev --name add_marketplace_tables
+supabase migration new add_marketplace_tables
 
-# Apply in production
-npx prisma migrate deploy
+# Apply locally
+supabase db push
+
+# Apply to production
+supabase db push --db-url $PROD_DB_URL
 
 # Seed data (zones, departments, initial admin)
-npx prisma db seed
+supabase db seed
 ```
 
-### 21.5 Backup Strategy
+### 21.6 Backup Strategy
 
 | Data | Method | Frequency | Retention |
 |------|--------|-----------|-----------|
-| PostgreSQL | `pg_dump` → R2 | Daily 2AM | 7 days |
-| Redis | RDB snapshot | Daily | 3 days |
-| R2 files | Versioning enabled | Continuous | 30 days |
+| PostgreSQL | Supabase automated backups (Pro) | Daily | 7 days |
+| Supabase Storage | Supabase redundancy | Continuous | Permanent |
 | Code | Git (GitHub) | Every push | Permanent |
+| LLM prompts | Versioned in code | Every release | Permanent |
+
+### 21.7 Keep-Alive (Free Tier)
+
+```yaml
+# .github/workflows/keep-render-awake.yml
+name: Keep Render Awake
+on:
+  schedule:
+    - cron: '*/5 * * * *'  # Every 5 minutes
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -s https://zerow-api.onrender.com/health
+```
+
+**Alternative:** UptimeRobot (free, 5-min intervals) — saves GitHub Actions minutes.
 
 ---
 
 ## 22. Testing Strategy
 
-### 22.1 Backend Tests (Jest)
+### 22.1 Backend Tests (JUnit 5 + Kotest)
 
 ```
 server/src/test/
-├── unit/
-│   ├── auth.test.ts           # OTP generation, JWT, password hashing
-│   ├── qr.test.ts             # QR generation, parsing
-│   ├── sla.test.ts            # SLA deadline calculation
-│   └── geo.test.ts            # Distance calculations
-├── integration/
-│   ├── bins.test.ts           # Bin CRUD + QR lookup
-│   ├── tickets.test.ts        # Ticket lifecycle (create→assign→resolve)
-│   ├── scans.test.ts          # Scan submission + AI queue
-│   ├── attendance.test.ts     # Check-in/out
-│   ├── sync.test.ts           # Offline batch sync
-│   └── websocket.test.ts      # WebSocket events
-└── e2e/
-    └── full_flow.test.ts      # Student raises ticket → AI triage → cleaner assigned → resolved
+├── kotlin/
+│   └── com/zerow/server/
+│       ├── unit/
+│       │   ├── AuthTest.kt           # OTP generation, JWT, password hashing
+│       │   ├── QrTest.kt             # QR generation, parsing
+│       │   ├── SlaTest.kt            # SLA deadline calculation
+│       │   └── GeoTest.kt            # Distance calculations
+│       ├── integration/
+│       │   ├── BinsTest.kt           # Bin CRUD + QR lookup
+│       │   ├── TicketsTest.kt        # Ticket lifecycle (create→assign→resolve)
+│       │   ├── ScansTest.kt          # Scan submission + AI queue
+│       │   ├── AttendanceTest.kt     # Check-in/out
+│       │   ├── SyncTest.kt           # Offline batch sync
+│       │   └── RealtimeTest.kt       # Supabase Realtime events
+│       └── e2e/
+│           └── FullFlowTest.kt       # Citizen raises ticket → AI triage → sweeper assigned → resolved
 ```
 
-### 22.2 AI Service Tests (Pytest)
+### 22.2 AI Gateway Tests (JUnit 5)
 
-```python
-# test_segregation.py
-def test_waste_classification():
-    result = predict_segregation("test_images/wet_bin.jpg")
-    assert result['class'] == 'wet'
-    assert result['confidence'] > 0.70
+```kotlin
+class SegregationTest {
+    @Test
+    fun `classify wet bin`() = runTest {
+        val result = aiGateway.segregate("test_images/wet_bin.jpg", "wet")
+        assertEquals("wet", result.classification)
+        assertTrue(result.confidence > 0.70)
+    }
 
-def test_mixed_detection():
-    result = predict_segregation("test_images/mixed_bin.jpg")
-    assert result['class'] == 'mixed'
+    @Test
+    fun `detect mixed waste`() = runTest {
+        val result = aiGateway.segregate("test_images/mixed_bin.jpg", "dry")
+        assertEquals("mixed", result.classification)
+    }
 
-def test_low_confidence():
-    result = predict_segregation("test_images/blurry.jpg")
-    assert result['confidence'] < 0.60
-    assert result['verified'] == False
+    @Test
+    fun `low confidence on blurry photo`() = runTest {
+        val result = aiGateway.segregate("test_images/blurry.jpg", "wet")
+        assertTrue(result.confidence < 0.60)
+        assertFalse(result.verified)
+    }
+}
 
-# test_triage.py
-def test_overflow_classification():
-    result = predict_triage("Bin near hostel is overflowing with food waste")
-    assert result['category'] == 'overflow'
-    assert result['priority'] in ['high', 'critical']
+class TriageTest {
+    @Test
+    fun `classify overflow ticket`() = runTest {
+        val result = aiGateway.triage("Bin near hostel is overflowing with food waste")
+        assertEquals("overflow", result.category)
+        assertTrue(result.priority in listOf("high", "critical"))
+    }
+}
+
+class CircuitBreakerTest {
+    @Test
+    fun `fallback to next provider on failure`() = runTest {
+        // Mock Cerebras failure
+        // Verify Groq is called
+    }
+}
 ```
 
 ### 22.3 Frontend Tests
 
-**React (Vitest + Testing Library):**
+**Next.js (Vitest + Testing Library):**
 - Component rendering tests
-- React Query hook tests (mock API)
-- WebSocket event handler tests
+- TanStack Query hook tests (mock API)
+- Supabase Realtime event handler tests
 - Role-based access tests (sidebar visibility)
 
-**Flutter (flutter_test):**
-- Widget tests for each screen
-- Riverpod provider tests
+**KMP Compose (kotlin.test + Compose UI Test):**
+- Composable rendering tests for each screen
+- ViewModel StateFlow tests
 - Offline sync flow tests
 - QR parsing tests
 
@@ -1385,10 +1390,10 @@ def test_overflow_classification():
 
 | Scenario | Steps |
 |----------|-------|
-| Student raises ticket | Login → Map → Raise Ticket → Submit → Verify in DB → Verify on dashboard |
-| Cleaner scans bin | Login → Scan → Photo → Submit → AI result → Verify scan in DB |
-| Offline scan | Disable network → Scan → Photo → Submit → Verify in local SQLite → Enable network → Verify sync |
-| Ticket lifecycle | Student raises → AI triages → Auto-assign → Cleaner resolves → Student notified |
+| Citizen raises ticket | Login → Map → Raise Ticket → Submit → Verify in DB → Verify on dashboard |
+| Sweeper scans bin | Login → Scan → Photo → Submit → AI result → Verify scan in DB |
+| Offline scan | Disable network → Scan → Photo → Submit → Verify in Room → Enable network → Verify sync |
+| Ticket lifecycle | Citizen raises → AI triages → Auto-assign → Sweeper resolves → Citizen notified |
 | SLA escalation | Create ticket → Wait past SLA → Verify escalation → Verify notification sent |
 
 ### 22.5 Performance Tests
@@ -1397,44 +1402,37 @@ def test_overflow_classification():
 |------|--------|
 | API response time (p95) | <200ms for standard endpoints |
 | QR scan → result | <3s end-to-end (including upload) |
-| AI inference | <200ms per image |
-| Dashboard load | <2s initial render |
-| Map render with 200 bins | <1s |
-| WebSocket event latency | <500ms server→client |
+| LLM AI inference | <500ms per image (via provider API) |
+| Dashboard load | <2s initial render (Next.js SSR) |
+| Leaflet map render with 200 bins | <1s |
+| Supabase Realtime event latency | <500ms DB→client |
 | Offline sync (100 items) | <10s |
 
 ---
 
 ## 23. Monitoring & Observability
 
-### 23.1 Logging
+### 23.1 Logging (Ktor)
 
-```typescript
-// Winston logger configuration
-const logger = winston.createLogger({
-  format: winston.format.json(),
-  transports: [
-    new winston.transports.Console(),
-    new winston.transports.File({ filename: 'error.log', level: 'error' }),
-    new winston.transports.File({ filename: 'combined.log' })
-  ]
-});
+```kotlin
+// Ktor structured logging via ktor-server-call-logging
+install(CallLogging) {
+    level = Level.INFO
+    filter { call -> call.request.path().startsWith("/api") }
+    format { call ->
+        val status = call.response.status()?.value ?: "?"
+        val method = call.request.httpMethod.value
+        val path = call.request.path()
+        val duration = call.processingTimeMillis()
+        "$method $path → $status (${duration}ms)"
+    }
+}
 
-// Structured logging for every API request
-app.use((req, res, next) => {
-  const start = Date.now();
-  res.on('finish', () => {
-    logger.info('request', {
-      method: req.method,
-      path: req.path,
-      status: res.statusCode,
-      duration_ms: Date.now() - start,
-      user_id: req.user?.id,
-      ip: req.ip
-    });
-  });
-  next();
-});
+// Custom MDC context for structured JSON logging
+install(MDCProvider) {
+    putMDC("request_id") { UUID.randomUUID().toString() }
+    putMDC("user_id") { /* extract from JWT */ }
+}
 ```
 
 ### 23.2 Health Checks
@@ -1442,20 +1440,19 @@ app.use((req, res, next) => {
 ```
 GET /health           → { status: 'ok', uptime, version }
 GET /health/db        → { status: 'ok', latency_ms, connections }
-GET /health/redis     → { status: 'ok', latency_ms }
-GET /health/ai        → { status: 'ok', models_loaded, queue_depth }
+GET /health/ai        → { status: 'ok', providers_active, queue_depth, circuit_breakers }
 ```
 
 ### 23.3 Alerting
 
 | Alert | Condition | Channel |
 |-------|-----------|---------|
-| API down | Health check fails 3x | Email + SMS |
-| DB connection exhausted | Pool usage >80% | Email |
+| API down | Render health check fails 3x | Email + SMS |
+| DB connection exhausted | Supabase pool >80% | Email |
 | AI queue backlog | Queue depth >100 | Email |
 | High error rate | >5% of requests in 5 min | Email |
-| Disk space | >80% used | Email |
-| SSL expiring | <14 days to expiry | Email |
+| LLM provider down | Circuit breaker open | Email (auto-failover) |
+| SSL expiring | <14 days to expiry | Email (Render/Vercel auto-renew) |
 
 ### 23.4 Metrics (for future Prometheus/Grafana)
 
@@ -1465,9 +1462,10 @@ http_request_duration_seconds{method, path}
 bin_scans_total{zone_id, waste_type}
 tickets_created_total{type, priority}
 tickets_resolved_total
-ai_inference_duration_seconds{model}
+ai_inference_duration_seconds{provider}
+ai_provider_circuit_breaker_state{provider}
 ai_queue_depth
-websocket_connections_active
+supabase_realtime_connections_active
 db_pool_connections{state}
 ```
 
@@ -1478,47 +1476,47 @@ db_pool_connections{state}
 ### Sprint 1 (Week 1–2): Foundation
 
 **Backend:**
-- [ ] Initialize Node.js + Express + TypeScript project
-- [ ] Set up Prisma + PostgreSQL + PostGIS
-- [ ] Create all database tables + migrations
-- [ ] Implement auth: send-otp, verify-otp, JWT generation
-- [ ] Implement role-based middleware
-- [ ] Set up Redis connection
+- [ ] Initialize Ktor + Kotlin project (Gradle KMP)
+- [ ] Set up Supabase project (PostgreSQL + PostGIS)
+- [ ] Create all database tables + Supabase migrations
+- [ ] Implement auth: Supabase Auth OTP, JWT verification
+- [ ] Implement role-based middleware (Ktor)
+- [ ] Set up Ktor routing structure
 
 **Mobile:**
-- [ ] Initialize Flutter project
-- [ ] Set up Riverpod providers
-- [ ] Create API client (Dio) with auth interceptor
-- [ ] Build login screen (phone → OTP)
+- [ ] Initialize KMP Compose project (composeApp module)
+- [ ] Set up Koin DI + ViewModel infrastructure
+- [ ] Create Ktor HTTP client with auth interceptor
+- [ ] Build login screen (phone → OTP) in Compose
 - [ ] Build registration screen
 
 **Web:**
-- [ ] Initialize React + Vite + TypeScript project
+- [ ] Initialize Next.js 14 + TypeScript project
 - [ ] Set up Tailwind + shadcn/ui
-- [ ] Build login page
-- [ ] Set up React Query + API client
+- [ ] Build login page (Supabase Auth)
+- [ ] Set up TanStack Query + Supabase client
 
 ### Sprint 2 (Week 3–4): QR + Bins + Maps
 
 **Backend:**
-- [ ] Bin CRUD endpoints
+- [ ] Bin CRUD endpoints (Ktor routes)
 - [ ] QR code generation endpoint
 - [ ] QR lookup endpoint
 - [ ] Zone CRUD endpoints
-- [ ] PostGIS nearby query endpoint
-- [ ] File upload to R2 (presigned URLs)
+- [ ] PostGIS nearby query endpoint (Supabase)
+- [ ] File upload to Supabase Storage (signed URLs)
 
 **Mobile:**
-- [ ] QR scanner integration (mobile_scanner)
-- [ ] GPS capture (geolocator)
+- [ ] QR scanner integration (BarcodeScanner.kt — CameraX)
+- [ ] GPS capture (GeoUtils.kt)
 - [ ] Bin scan submission flow
-- [ ] Photo capture (image_picker)
-- [ ] Campus map with flutter_map
+- [ ] Photo capture (MediaPicker.kt)
+- [ ] Campus map with Leaflet (KMP)
 - [ ] Bin markers on map
 - [ ] Zone polygons on map
 
 **Web:**
-- [ ] Mapbox GL JS integration
+- [ ] Leaflet.js integration (dynamic import)
 - [ ] Campus map with zones + bins
 - [ ] Bin management table
 - [ ] Zone management page
@@ -1529,24 +1527,24 @@ db_pool_connections{state}
 - [ ] Ticket CRUD + assignment + resolution
 - [ ] Attendance check-in/out
 - [ ] Dashboard overview endpoint
-- [ ] WebSocket server (Socket.io)
+- [ ] Supabase Realtime setup (postgres_changes)
 - [ ] Notification service (FCM + SMS)
-- [ ] SLA cron job
+- [ ] SLA scheduled coroutine
 
 **Mobile:**
-- [ ] Student: raise ticket screen
-- [ ] Student: ticket list
-- [ ] Cleaner: task list (assigned tickets)
-- [ ] Cleaner: attendance check-in/out
-- [ ] Cleaner: scan result screen
-- [ ] Push notification handling
-- [ ] Deep linking setup
+- [ ] Citizen: raise ticket screen
+- [ ] Citizen: ticket list
+- [ ] Sweeper: task list (assigned tickets)
+- [ ] Sweeper: attendance check-in/out
+- [ ] Sweeper: scan result screen
+- [ ] FCM push notification handling
+- [ ] Deep linking setup (Compose Navigation)
 
 **Web:**
 - [ ] Dashboard overview page (KPI cards)
 - [ ] Ticket management page
 - [ ] Attendance reports page
-- [ ] Real-time WebSocket updates
+- [ ] Real-time Supabase Realtime updates
 - [ ] Notification bell
 
 ### Sprint 4 (Week 7–8): Offline + Gamification + Committee
@@ -1558,13 +1556,13 @@ db_pool_connections{state}
 - [ ] Report generation (CSV/PDF)
 
 **Mobile:**
-- [ ] Drift (SQLite) local database setup
+- [ ] Room (SQLite) local database setup via KMP
 - [ ] Offline scan storage + sync
 - [ ] Offline ticket storage + sync
 - [ ] Offline attendance + sync
-- [ ] Connectivity detection + banner
+- [ ] Connectivity detection + Compose banner
 - [ ] Leaderboard screen
-- [ ] Student profile + points
+- [ ] Citizen profile + points
 
 **Web:**
 - [ ] Committee dashboard views
@@ -1574,23 +1572,22 @@ db_pool_connections{state}
 
 ### Sprint 5 (Week 9–10): AI Segregation + Photo Pipeline
 
-**AI Service:**
-- [ ] FastAPI service setup
-- [ ] Redis Stream consumer
-- [ ] Image download from R2
-- [ ] MobileNetV3 model loading (ONNX runtime)
-- [ ] Segregation inference endpoint
-- [ ] Model registry + hot-swap
+**AI Gateway (Ktor):**
+- [ ] Multi-provider LLM gateway setup
+- [ ] Circuit breaker implementation
+- [ ] Provider fallback chain
+- [ ] Segregation vision prompt + image URL flow
+- [ ] Internal job queue (PewsJobQueue pattern)
 
 **Backend:**
-- [ ] AI job queue (BullMQ → Redis Streams)
+- [ ] AI job queue integration
 - [ ] AI result callback handler
-- [ ] Update bin.ai_result + ai_verified
-- [ ] WebSocket emit on AI result
+- [ ] Update bin.ai_result + ai_verified in Supabase
+- [ ] Supabase Realtime emit on AI result
 
 **Mobile:**
 - [ ] Display AI result on scan completion
-- [ ] "Mixed waste" warning UI
+- [ ] "Mixed waste" warning UI (Compose)
 - [ ] Photo retake prompt for low quality
 
 **Web:**
@@ -1604,81 +1601,76 @@ db_pool_connections{state}
 - [ ] Performance testing
 - [ ] Security audit (OWASP top 10)
 - [ ] Bug fixes
-- [ ] UI polish
+- [ ] UI polish (Compose + Next.js)
 
 **DevOps:**
-- [ ] Docker Compose finalization
-- [ ] Nginx configuration
-- [ ] SSL certificates (Let's Encrypt)
-- [ ] GitHub Actions CI/CD
-- [ ] Database backup automation
+- [ ] Render deployment configuration
+- [ ] Vercel deployment configuration
+- [ ] Supabase production project setup
+- [ ] GitHub Actions CI pipeline
+- [ ] Keep-alive cron (UptimeRobot or GitHub Actions)
 - [ ] Health check endpoints
 - [ ] Alerting setup
 
 **Mobile:**
-- [ ] App store listing preparation
-- [ ] APK + IPA builds
+- [ ] Play Store listing preparation
+- [ ] APK + AAB builds (Android)
 - [ ] Beta testing with team
 
 **Launch:**
-- [ ] Deploy to DigitalOcean
+- [ ] Deploy Ktor API to Render
+- [ ] Deploy Next.js to Vercel
 - [ ] DNS configuration (api.zerow.in, dashboard.zerow.in)
-- [ ] Seed database with AMU campus data (zones, departments, hostels)
+- [ ] Seed Supabase with campus data (zones, departments, hostels)
 - [ ] Install QR-coded bins in 2–3 pilot zones
-- [ ] Onboard cleaning staff
+- [ ] Onboard sweeping staff
 - [ ] Go live!
 
 ---
 
 ## 25. Third-Party Service Integration Details
 
-### 25.1 Mapbox
+### 25.1 Leaflet (Maps)
 
 ```
 Setup:
-1. Create Mapbox account → get access token
-2. Create custom map style (streets-v12 base + custom colors for zones)
-3. Web: mapbox-gl npm package
-4. Mobile: flutter_map with Mapbox tile URL template
-5. Offline: pre-download tiles for campus area
+1. No API key required (OpenStreetMap tiles are free)
+2. Web: leaflet npm package + react-leaflet wrapper
+3. Mobile: Leaflet via KMP expect/actual (WebView or native wrapper)
+4. Offline: pre-download OSM tiles for campus area
 
-API Usage:
-- Static tiles: https://api.mapbox.com/styles/v1/{style}/tiles/256/{z}/{x}/{y}@2x?access_token={token}
-- Geocoding: https://api.mapbox.com/geocoding/v5/mapbox.places/{query}.json?access_token={token}
-- Directions (for route optimization): https://api.mapbox.com/directions/v5/mapbox/walking/{coordinates}?access_token={token}
+Usage:
+- Tiles: https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png
+- Custom markers: DivIcon for bin/ticket markers
+- Heatmap: leaflet.heat plugin
+- GeoJSON: zone polygons + sweeper routes
 
-Cost:
-- Free tier: 50,000 map loads/month, 100,000 tile requests/month
-- Pilot usage: ~5,000 loads/month (well within free tier)
-- Phase 2: may need $5/mo plan for higher usage
+Cost: Free (OSM tiles). Optional: Mapbox tiles for custom styles ($0.50/1K loads after free tier)
 ```
 
-### 25.2 Cloudflare R2
+### 25.2 Supabase Storage
 
 ```
 Setup:
-1. Create Cloudflare account → R2 bucket
-2. Generate API tokens (access key + secret key)
-3. S3-compatible endpoint: https://{account_id}.r2.cloudflarestorage.com
+1. Create Supabase project → Storage buckets
+2. Auto-generated API keys (anon + service_role)
 
 Buckets:
-- zerow-bin-photos/     → bin scan photos (6-month retention)
-- zerow-ticket-photos/  → ticket evidence photos (1-year retention)
-- zerow-qr-codes/       → generated QR code images
-- zerow-reports/        → generated PDF/CSV reports
-- zerow-backups/        → database backups
+- bin-photos/        → bin scan photos (6-month retention policy)
+- ticket-photos/     → ticket evidence photos (1-year retention)
+- qr-codes/          → generated QR code images
+- reports/           → generated PDF/CSV reports
 
 Upload flow:
-1. Client requests presigned URL from API
-2. API generates presigned URL (24h expiry) using AWS SDK (R2-compatible)
-3. Client uploads directly to R2 (bypasses API server — saves bandwidth)
-4. Client sends R2 object key to API
+1. Client requests signed URL from Ktor API
+2. API generates signed URL (24h expiry) via Supabase client
+3. Client uploads directly to Supabase Storage
+4. Client sends storage key to API
 5. API stores URL in database
 
 Cost:
-- 10GB free, $0.015/GB after
-- Zero egress (free downloads)
-- Pilot: well within 10GB free tier
+- Free tier: 1GB storage, 2GB bandwidth
+- Pro: 8GB storage, 250GB bandwidth ($25/mo)
 ```
 
 ### 25.3 Firebase Cloud Messaging (Push)
@@ -1686,52 +1678,135 @@ Cost:
 ```
 Setup:
 1. Create Firebase project
-2. Add Android + iOS apps → get google-services.json + GoogleService-Info.plist
-3. Get server key for API-side sending
+2. Add Android app → google-services.json
+3. Add iOS app → GoogleService-Info.plist
+4. Get server key for API-side sending
 
 Flow:
-1. Mobile app registers FCM token on login → POST /auth/fcm-token
-2. Server stores token in users.fcm_token
+1. KMP app registers FCM token on login → POST /api/v1/auth/fcm-token
+2. Ktor stores token in users.fcm_token (Supabase)
 3. When notification needed:
-   - Server calls FCM API with token + payload
-   - Payload includes: title, body, data (for deep linking)
-   - Example: { title: "New Ticket", body: "Overflow at Hostel 3", data: { type: "ticket", id: "uuid" } }
-4. Mobile app receives push → navigates to deep link
+   - Ktor calls FCM API with token + payload
+   - Payload: { title: "New Ticket", body: "Overflow at Hostel 3", data: { type: "ticket", id: "uuid" } }
+4. KMP app receives push → navigates to deep link
 
 Cost: Free, unlimited messages
 ```
 
-### 25.4 Fast2SMS (SMS Gateway)
+### 25.4 SMS Gateways (Multi-Provider Chain)
+
+```
+Primary: Fast2SMS
+  Setup: Create account → get API key → prepaid wallet
+  OTP: POST https://www.fast2sms.com/dev/bulkV2
+  Cost: ₹0.11-0.20/SMS
+
+Fallback 1: MSG91
+  Cost: ₹0.15/SMS
+  Used when Fast2SMS fails or rate-limited
+
+Fallback 2: Twilio (international)
+  Cost: $0.05/SMS (international numbers)
+  Used for non-Indian phone numbers
+
+Fallback 3: Firebase OTP Sender (SMS gateway)
+  Cost: Free (via Firebase Auth)
+  Used as zero-cost OTP fallback
+```
+
+### 25.5 LLM Providers (6-Provider Gateway)
+
+```
+1. Cerebras
+   - Free tier: 1,000 req/day
+   - Fastest inference (~200ms)
+   - Vision + text support
+
+2. Groq
+   - Free tier: 30 req/min, 14,400 req/day
+   - Fast (~300ms)
+   - Text + some vision models
+
+3. SambaNova
+   - Free tier: limited
+   - Fast (~400ms)
+   - Vision + text
+
+4. Mistral
+   - Free tier: 500K req/month
+   - ~500ms
+   - Vision + text
+
+5. OpenRouter
+   - Pay-per-use (routes to best available)
+   - Fallback router — always available
+   - All model types
+
+6. NVIDIA NIM
+   - Free tier: 1,000 req/day
+   - ~400ms
+   - Vision + text
+
+Total free capacity: ~30,000+ req/day across all providers
+Pilot needs: ~200-500 AI calls/day (well within free tiers)
+```
+
+### 25.6 Render (Backend Hosting)
 
 ```
 Setup:
-1. Create Fast2SMS account → get API key
-2. Wallet-based: prepaid credits
+1. Connect GitHub repo to Render
+2. Auto-deploy on push to main
+3. Dockerfile-based deployment
+4. Environment variables set in Render dashboard
 
-Usage:
-- OTP delivery: POST https://www.fast2sms.com/dev/bulkV2
-  Body: { sender_id: "ZEROW", message: "Your ZeroW OTP is 123456", numbers: "91XXXXXXXXXX" }
-- Cleaner alerts: same API, different message templates
-- Cost: ₹0.11-0.20/SMS
+Plans:
+- Free: 512MB RAM, spin-down after 15min idle → $0/mo
+- Starter: 512MB RAM, no spin-down → $7/mo
+- Pro: 4GB RAM, 1 CPU → $85/mo (production)
+- Pro+: 8GB RAM, 2 CPU → $170/mo (scale)
 
-Fallback: MSG91 (₹0.15/SMS) if Fast2SMS fails
+Scaling:
+- Pilot: Starter ($7/mo) — sufficient for <500 WAU
+- Phase 2: Pro ($85/mo) — handles ~5,000 WAU
+- Phase 3: Pro+ or 2× Pro — handles ~20,000 WAU
 ```
 
-### 25.5 DigitalOcean
+### 25.7 Vercel (Web Hosting)
 
 ```
-Droplet setup:
-1. Create droplet: 4GB RAM, 2 vCPU, Ubuntu 22.04, $24/month
-2. SSH access: key-based only, password disabled
-3. Firewall: ufw — allow 22 (SSH), 80 (HTTP), 443 (HTTPS) only
-4. Docker + Docker Compose installed
-5. Fail2ban for SSH brute-force protection
-6. Automatic security updates: unattended-upgrades
+Setup:
+1. Connect GitHub repo to Vercel
+2. Auto-deploy on push to main
+3. Next.js framework auto-detected
+4. Environment variables in Vercel dashboard
 
-Scaling plan:
-- Pilot (1 institution): 4GB/2vCPU = $24/mo
-- Phase 2 (full campus): 8GB/4vCPU = $48/mo
-- Phase 3 (multi-tenant): 16GB/8vCPU = $96/mo or split into 2 droplets
+Plans:
+- Hobby: Free — sufficient for pilot
+- Pro: $20/mo — team features, higher limits
+- Enterprise: Custom — for large scale
+
+Cost: $0/mo (Hobby tier is sufficient)
+```
+
+### 25.8 Supabase (Database + Auth + Storage + Realtime)
+
+```
+Setup:
+1. Create Supabase project
+2. Enable PostGIS extension
+3. Configure Auth (phone OTP provider)
+4. Set up RLS policies
+5. Create Storage buckets
+6. Enable Realtime on tables
+
+Plans:
+- Free: 500MB DB, 1GB Storage, 50 concurrent connections
+- Pro: 8GB DB, 100GB Storage, 200 pooler connections → $25/mo
+- Team: 8GB DB, 100GB Storage → $80/mo
+- Enterprise: Custom
+
+Cost: $0/mo (free tier for pilot) → $25/mo (Pro for production)
 ```
 
 ---
@@ -1742,42 +1817,51 @@ Scaling plan:
 ┌─────────────────────────────────────────────────────────────┐
 │                     ZERO WASTE APP                          │
 │                                                             │
-│  STUDENTS          CLEANERS         ADMIN/COMMITTEE         │
-│  (Flutter)         (Flutter)        (React Web)             │
+│  CITIZENS          SWEEPERS         ADMIN/COMMITTEE         │
+│  (KMP Compose)     (KMP Compose)    (Next.js Web)           │
 │  - Raise tickets   - Scan QR        - Live dashboard        │
 │  - View map        - Take photo     - Manage zones          │
 │  - Leaderboard     - AI feedback    - Assign staff          │
 │  - Track tickets   - Offline sync   - View reports          │
-│                   - Attendance      - Compliance            │
+│                    - Attendance     - Compliance            │
 │                                                             │
 │         ┌─────────────────────────────────┐                │
-│         │      API Gateway (Nginx)        │                │
+│         │     Ktor API (Render)           │                │
+│         │     - REST API                  │                │
+│         │     - AI Gateway                │                │
+│         │     - Job Scheduler             │                │
 │         └──────────┬──────────────────────┘                │
 │                    │                                        │
 │    ┌───────────────┼───────────────────┐                   │
 │    │               │                   │                    │
-│  Core API      AI Service          Redis Cache             │
-│  (Node.js)     (FastAPI)          (Sessions,              │
-│  - Auth        - Segregation        Pub/Sub,               │
-│  - Bins          CV classifier      Queue)                 │
-│  - Tickets     - Ticket triage                           │
-│  - Attendance    NLP                                 │
+│  Core API      AI Gateway         Supabase Realtime        │
+│  (Ktor)        (Multi-LLM)        (postgres_changes)       │
+│  - Auth        - Segregation        - Bin updates           │
+│  - Bins          Vision (LLM)       - Ticket events         │
+│  - Tickets     - Ticket triage      - SLA alerts            │
+│  - Attendance    (LLM NLP)                                  │
 │  - Dashboard   - Overflow pred.                           │
 │  - Marketplace  - Anomaly detect.                        │
-│  - Gamification                                          │
+│  - Gamification  (Circuit Breakers)                       │
 │    │               │                   │                    │
 │    └───────────────┼───────────────────┘                   │
 │                    │                                        │
-│         PostgreSQL 16 + PostGIS + TimescaleDB              │
-│         (Spatial queries, time-series, ACID)               │
+│         Supabase (PostgreSQL + PostGIS)                    │
+│         - Auth (OTP, JWT)                                  │
+│         - Storage (bin photos, QR codes)                   │
+│         - Realtime (live updates)                          │
+│         - RLS (Row-Level Security)                         │
 │                    │                                        │
-│         Cloudflare R2 (Photos, QR codes, Reports)          │
+│         LLM Providers: Cerebras → Groq → SambaNova         │
+│         → Mistral → OpenRouter → NVIDIA NIM                │
 │                                                             │
-│  EXTERNAL: Mapbox (maps), FCM (push), Fast2SMS (SMS)       │
+│  EXTERNAL: Leaflet/OSM (maps), FCM (push),                 │
+│  Fast2SMS/MSG91/Twilio (SMS chain)                         │
 │                                                             │
-│  DEPLOY: DigitalOcean Docker Compose, $24-48/mo           │
-│  CI/CD: GitHub Actions → SSH → docker compose up          │
-│  BACKUP: Daily pg_dump → R2, 7-day retention              │
+│  DEPLOY: Render (API, $7-85/mo) + Vercel (Web, $0/mo)     │
+│  + Supabase (DB, $0-25/mo) = $7-110/mo total              │
+│  CI/CD: GitHub Actions + Render/Vercel auto-deploy         │
+│  BACKUP: Supabase automated daily (Pro plan)               │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -1785,6 +1869,6 @@ Scaling plan:
 
 *End of Part 2. Both parts together form the complete ZeroW App Technical Implementation Plan.*
 
-**Files created:**
+**Files:**
 - `ZEROW_APP_TECHNICAL_PLAN_PART1.md` — Architecture, Tech Stack, Phases, DB Schema, API Design, Maps, QR, Auth, Real-Time, Budget, EPR/Legal
-- `ZEROW_APP_TECHNICAL_PLAN_PART2.md` — AI Layer (4 models), Flutter App Architecture, React Dashboard, Offline-First, Security, DevOps, Testing, Monitoring, Sprint Roadmap, Third-Party Integrations
+- `ZEROW_APP_TECHNICAL_PLAN_PART2.md` — AI Layer (LLM-based, 4 features), KMP Compose App, Next.js Dashboard, Offline-First (Room), Security, DevOps (Render+Vercel+Supabase), Testing (JUnit5), Monitoring, Sprint Roadmap, Third-Party Integrations

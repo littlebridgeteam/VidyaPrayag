@@ -52,6 +52,8 @@ data class SkillTestState(
     val lastAnswerResult: SkillTestAnswerResultData? = null,
     val lastSelectedAnswer: String? = null,
     val answeredQuestions: Set<String> = emptySet(),
+    val answerResults: Map<String, SkillTestAnswerResultData> = emptyMap(),
+    val selectedAnswers: Map<String, String> = emptyMap(),
     val isSubmittingAnswer: Boolean = false,
     val answerError: String? = null,
 
@@ -135,10 +137,13 @@ class SkillTestViewModel(
                     correctCount = 0,
                     answeredCount = 0,
                     answeredQuestions = emptySet(),
+                    answerResults = emptyMap(),
+                    selectedAnswers = emptyMap(),
                     isCompleted = false,
                     finalScore = null,
                     badgeEarned = null,
                     lastAnswerResult = null,
+                    lastSelectedAnswer = null,
                 )
             }
             val token = token() ?: run {
@@ -174,8 +179,9 @@ class SkillTestViewModel(
     }
 
     /**
-     * Submit a single answer. Instantly evaluates and advances to the next question.
-     * On the last question, auto-completes the attempt with final score + badge.
+     * Submit a single answer. Instantly evaluates and shows feedback.
+     * The user manually navigates to the next question via [nextQuestion].
+     * On the last question, the server sets attemptCompleted=true → [isCompleted].
      */
     fun submitAnswer(questionId: String, selectedAnswer: String) {
         val attemptId = _state.value.attemptId ?: return
@@ -195,7 +201,6 @@ class SkillTestViewModel(
                 is NetworkResult.Success -> {
                     val data = r.data.data
                     val newAnswered = _state.value.answeredQuestions + questionId
-                    val nextIndex = _state.value.currentQuestionIndex + 1
                     val isLast = data.attemptCompleted
 
                     _state.update {
@@ -204,9 +209,13 @@ class SkillTestViewModel(
                             lastAnswerResult = data,
                             lastSelectedAnswer = selectedAnswer,
                             answeredQuestions = newAnswered,
+                            answerResults = it.answerResults + (questionId to data),
+                            selectedAnswers = it.selectedAnswers + (questionId to selectedAnswer),
                             answeredCount = data.questionsAnswered,
                             correctCount = data.currentCorrectCount,
-                            currentQuestionIndex = if (isLast) it.currentQuestionIndex else nextIndex.coerceAtMost(it.questions.size - 1),
+                            // Don't auto-advance — let user review feedback and
+                            // click "Next" manually. On the last question, the
+                            // server sets attemptCompleted=true → isCompleted.
                             isCompleted = isLast,
                             finalScore = data.finalScore,
                             badgeEarned = data.badgeEarned,
@@ -235,8 +244,16 @@ class SkillTestViewModel(
         val current = _state.value.currentQuestionIndex
         val max = _state.value.questions.size - 1
         if (current < max) {
+            val nextIdx = current + 1
+            val nextQ = _state.value.questions.getOrNull(nextIdx)
+            val prevResult = nextQ?.let { _state.value.answerResults[it.id] }
+            val prevSelected = nextQ?.let { _state.value.selectedAnswers[it.id] }
             _state.update {
-                it.copy(currentQuestionIndex = current + 1, lastAnswerResult = null, lastSelectedAnswer = null)
+                it.copy(
+                    currentQuestionIndex = nextIdx,
+                    lastAnswerResult = prevResult,
+                    lastSelectedAnswer = prevSelected,
+                )
             }
         }
     }
@@ -247,8 +264,16 @@ class SkillTestViewModel(
     fun previousQuestion() {
         val current = _state.value.currentQuestionIndex
         if (current > 0) {
+            val prevIdx = current - 1
+            val prevQ = _state.value.questions.getOrNull(prevIdx)
+            val prevResult = prevQ?.let { _state.value.answerResults[it.id] }
+            val prevSelected = prevQ?.let { _state.value.selectedAnswers[it.id] }
             _state.update {
-                it.copy(currentQuestionIndex = current - 1, lastAnswerResult = null)
+                it.copy(
+                    currentQuestionIndex = prevIdx,
+                    lastAnswerResult = prevResult,
+                    lastSelectedAnswer = prevSelected,
+                )
             }
         }
     }
@@ -265,10 +290,13 @@ class SkillTestViewModel(
                 correctCount = 0,
                 answeredCount = 0,
                 answeredQuestions = emptySet(),
+                answerResults = emptyMap(),
+                selectedAnswers = emptyMap(),
                 isCompleted = false,
                 finalScore = null,
                 badgeEarned = null,
                 lastAnswerResult = null,
+                lastSelectedAnswer = null,
                 startError = null,
                 answerError = null,
             )

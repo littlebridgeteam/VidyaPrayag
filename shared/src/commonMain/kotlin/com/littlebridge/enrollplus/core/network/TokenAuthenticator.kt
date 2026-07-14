@@ -18,12 +18,25 @@ import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 private val lenientJson = Json { ignoreUnknownKeys = true }
+
+/**
+ * Serializes concurrent refresh-token calls. Without this, when multiple API
+ * requests get 401 at the same time, each one independently calls
+ * `refreshTokens()`. The first call rotates the refresh token on the server
+ * (revoking the old one). The second call still uses the old refresh token →
+ * the server's reuse-detection revokes the ENTIRE session family → random
+ * logout. The mutex ensures only one refresh happens at a time; concurrent
+ * 401s wait, then reuse the freshly-persisted tokens without a second call.
+ */
+private val refreshMutex = Mutex()
 
 /**
  * Ktor [Auth] / `bearer` configuration — automatic token refresh on 401 with a
@@ -64,45 +77,62 @@ internal fun HttpClientConfig<*>.installTokenAuth(
                 if (access != null) BearerTokens(access, refresh ?: "") else null
             }
             refreshTokens {
-                val refresh = prefs.getRefreshToken().first()
-                    ?: run {
+                // Capture the access token that triggered the 401 so we can
+                // detect if a concurrent refresh already replaced it.
+                val expiredAccess = prefs.getUserToken().first()
+
+                refreshMutex.withLock {
+                    // After acquiring the lock, check if another concurrent
+                    // refresh already replaced the access token. If so, return
+                    // the new tokens WITHOUT making another refresh call —
+                    // replaying the old (now-rotated) refresh token would trip
+                    // the server's reuse-detection and kill the session family.
+                    val currentAccess = prefs.getUserToken().first()
+                    if (currentAccess != null && currentAccess != expiredAccess) {
+                        val currentRefresh = prefs.getRefreshToken().first() ?: ""
+                        return@refreshTokens BearerTokens(currentAccess, currentRefresh)
+                    }
+
+                    val refresh = prefs.getRefreshToken().first()
+                        ?: run {
+                            onRefreshFailed()
+                            return@refreshTokens null
+                        }
+                    val resp = runCatching {
+                        refreshClient.post(
+                            AppConfig.authBaseUrl.trimEnd('/') + "/api/v1/auth/refresh"
+                        ) {
+                            contentType(ContentType.Application.Json)
+                            setBody(mapOf("refresh_token" to refresh))
+                        }
+                    }.getOrNull()
+                    if (resp == null || !resp.status.isSuccess()) {
+                        // Refresh token invalid / expired / revoked (or network failure):
+                        // log the user out cleanly rather than looping on 401s.
                         onRefreshFailed()
                         return@refreshTokens null
                     }
-                val resp = runCatching {
-                    refreshClient.post(
-                        AppConfig.authBaseUrl.trimEnd('/') + "/api/v1/auth/refresh"
-                    ) {
-                        contentType(ContentType.Application.Json)
-                        setBody(mapOf("refresh_token" to refresh))
+                    // Parse { success, message, data: { token, refresh_token, ... } }
+                    val bodyText = runCatching { resp.bodyAsText() }.getOrNull()
+                    val data = bodyText?.let {
+                        runCatching {
+                            lenientJson
+                                .parseToJsonElement(it)
+                                .jsonObject["data"]?.jsonObject
+                        }.getOrNull()
                     }
-                }.getOrNull()
-                if (resp == null || !resp.status.isSuccess()) {
-                    // Refresh token invalid / expired / revoked (or network failure):
-                    // log the user out cleanly rather than looping on 401s.
-                    onRefreshFailed()
-                    return@refreshTokens null
+                    val newAccess = data?.get("token")?.jsonPrimitive?.contentOrNull
+                    if (newAccess == null) {
+                        onRefreshFailed()
+                        return@refreshTokens null
+                    }
+                    // RA-35: persist the ROTATED refresh token, falling back to the
+                    // current one only if the server omitted it.
+                    val newRefresh = data["refresh_token"]?.jsonPrimitive?.contentOrNull ?: refresh
+                    prefs.setUserToken(newAccess)
+                    prefs.setRefreshToken(newRefresh)
+                    BearerTokens(newAccess, newRefresh)
                 }
-                // Parse { success, message, data: { token, refresh_token, ... } }
-                val bodyText = runCatching { resp.bodyAsText() }.getOrNull()
-                val data = bodyText?.let {
-                    runCatching {
-                        lenientJson
-                            .parseToJsonElement(it)
-                            .jsonObject["data"]?.jsonObject
-                    }.getOrNull()
-                }
-                val newAccess = data?.get("token")?.jsonPrimitive?.contentOrNull
-                if (newAccess == null) {
-                    onRefreshFailed()
-                    return@refreshTokens null
-                }
-                // RA-35: persist the ROTATED refresh token, falling back to the
-                // current one only if the server omitted it.
-                val newRefresh = data["refresh_token"]?.jsonPrimitive?.contentOrNull ?: refresh
-                prefs.setUserToken(newAccess)
-                prefs.setRefreshToken(newRefresh)
-                BearerTokens(newAccess, newRefresh)
             }
         }
     }
