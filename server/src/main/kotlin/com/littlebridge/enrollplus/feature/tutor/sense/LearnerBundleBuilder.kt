@@ -172,6 +172,8 @@ class LearnerBundleBuilder(
 
         val coveredIds = mutableListOf<String>()
         val notCoveredIds = mutableListOf<String>()
+        val coveredTitles = mutableListOf<String>()
+        val notCoveredTitles = mutableListOf<String>()
         var currentChapter: String? = null
         var currentTopic: String? = null
 
@@ -190,10 +192,12 @@ class LearnerBundleBuilder(
 
             if (isCovered) {
                 coveredIds.add(unitId.toString())
+                coveredTitles.add(title)
                 if (isChapter) currentChapter = title
                 if (!isChapter && currentTopic == null) currentTopic = title
             } else {
                 notCoveredIds.add(unitId.toString())
+                notCoveredTitles.add(title)
             }
         }
 
@@ -202,6 +206,8 @@ class LearnerBundleBuilder(
             currentTopic = currentTopic,
             coveredTopicIds = coveredIds,
             notYetCoveredIds = notCoveredIds,
+            coveredTopicTitles = coveredTitles,
+            notYetCoveredTitles = notCoveredTitles,
         )
     }
 

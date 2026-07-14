@@ -10,6 +10,7 @@
 package com.littlebridge.enrollplus.feature.admin.domain.repository
 
 import com.littlebridge.enrollplus.core.network.NetworkResult
+import com.littlebridge.enrollplus.feature.admin.domain.model.AttachmentUploadResponse
 import com.littlebridge.enrollplus.feature.admin.domain.model.MessageThread
 import com.littlebridge.enrollplus.feature.admin.domain.model.SendMessageRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.SendMessageResponse
@@ -77,4 +78,13 @@ interface MessagesRepository {
 
     /** Phase 1 (§9.4): DELETE /api/v1/school/messages/messages/{id} — soft-delete a message. */
     suspend fun deleteMessage(token: String, messageId: String, scope: String = "everyone"): NetworkResult<Map<String, String>>
+
+    /** Phase 1 (§12): POST /api/v1/school/messages/attachments — multipart image upload. */
+    suspend fun uploadAttachment(
+        token: String,
+        bytes: ByteArray,
+        fileName: String,
+        mimeType: String,
+        attachmentType: String = "IMAGE",
+    ): NetworkResult<AttachmentUploadResponse>
 }

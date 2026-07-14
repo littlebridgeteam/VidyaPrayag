@@ -48,12 +48,20 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.admin.domain.model.Message
+import com.littlebridge.enrollplus.feature.admin.domain.model.MessageAttachment
 import com.littlebridge.enrollplus.feature.admin.domain.model.MessageThread
 import com.littlebridge.enrollplus.feature.admin.presentation.ComposeState
 import com.littlebridge.enrollplus.feature.admin.presentation.ConversationState
 import com.littlebridge.enrollplus.feature.admin.presentation.MessageRecipient
 import com.littlebridge.enrollplus.feature.admin.presentation.MessagesState
 import com.littlebridge.enrollplus.feature.admin.presentation.MessagesViewModel
+import com.littlebridge.enrollplus.platform.MediaPicker
+import com.littlebridge.enrollplus.platform.rememberMediaPicker
+import com.littlebridge.enrollplus.ui.v2.components.PremiumComposeBar
+import com.littlebridge.enrollplus.ui.v2.components.PremiumDateHeader
+import com.littlebridge.enrollplus.ui.v2.components.PremiumMessageBubble
+import com.littlebridge.enrollplus.ui.v2.components.PremiumMessageData
+import com.littlebridge.enrollplus.ui.v2.components.PremiumAttachmentData
 import com.littlebridge.enrollplus.ui.v2.components.VAvatar
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
@@ -129,18 +137,17 @@ fun MessagesScreenV2(
         "Messages"
     }
 
-    Column(modifier.fillMaxSize().statusBarsPadding()
-        .imePadding()
-        .navigationBarsPadding()) {
+    Column(modifier.fillMaxSize().statusBarsPadding()) {
         VBackHeader(title = title, onBack = backHandler, pinRouteId = "overlay_messages")
 
         if (conversation.threadId != null) {
             ConversationContent(
                 conversation = conversation,
                 onSend = viewModel::sendReply,
+                onSendWithAttachment = viewModel::sendReplyWithAttachment,
                 onClearError = viewModel::clearConversationError,
                 onMarkRead = viewModel::markAsRead,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.weight(1f).fillMaxWidth(),
             )
         } else {
             VPullRefresh(isRefreshing = isLoading && state.threads.isNotEmpty(), onRefresh = { viewModel.refresh() }) {
@@ -291,13 +298,23 @@ private fun ThreadRow(thread: MessageThread, onClick: () -> Unit, modifier: Modi
 private fun ConversationContent(
     conversation: ConversationState,
     onSend: (String) -> Unit,
+    onSendWithAttachment: (String, ByteArray?, String?, String?) -> Unit,
     onClearError: () -> Unit,
     onMarkRead: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var reply by remember { mutableStateOf("") }
-    val keyboard = LocalSoftwareKeyboardController.current
     val listState = rememberLazyListState()
+    var pickedImage: Triple<ByteArray, String, String>? by remember { mutableStateOf(null) }
+    var conversationError by remember { mutableStateOf<String?>(null) }
+    val mediaPicker = rememberMediaPicker(
+        onPicked = { bytes, mimeType, fileName ->
+            pickedImage = Triple(bytes, mimeType, fileName)
+        },
+        onUnsupported = { msg ->
+            conversationError = msg
+        },
+    )
 
     // P1-13: Mark thread as read on open
     LaunchedEffect(conversation.threadId) {
@@ -321,7 +338,7 @@ private fun ConversationContent(
         ) {
             VStateHost(
                 loading = conversation.isLoading,
-                error = conversation.error,
+                error = conversation.error ?: conversationError,
                 isEmpty = conversation.messages.isEmpty(),
                 emptyTitle = "No messages yet",
                 emptyBody = "Start the conversation by sending a message below.",
@@ -338,18 +355,16 @@ private fun ConversationContent(
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     itemsIndexed(conversation.messages, key = { _, msg -> msg.id }) { index, msg ->
-                        // P1-7: Date header when date changes from previous message
                         val showDateHeader = index == 0 ||
                             !msg.time.contentEquals(conversation.messages[index - 1].time, true)
-                        // P1-8: Message grouping — tighter spacing for consecutive same-sender
                         val isGroupStart = index == 0 ||
                             conversation.messages[index - 1].senderId != msg.senderId
 
                         if (showDateHeader && msg.time.isNotBlank()) {
-                            DateHeader(date = msg.time)
+                            PremiumDateHeader(date = msg.time)
                         }
-                        MessageBubble(
-                            msg = msg,
+                        PremiumMessageBubble(
+                            msg = msg.toPremiumMessageData(),
                             isGroupStart = isGroupStart,
                         )
                     }
@@ -357,22 +372,51 @@ private fun ConversationContent(
             }
         }
 
-        // WhatsApp-style compose bar (P1-10: unified with parent)
-        SharedComposeBar(
+        // Premium compose bar with image attachment support
+        PremiumComposeBar(
             text = reply,
             onTextChange = { reply = it },
             placeholder = "Type a message…",
             enabled = !conversation.isSending,
             sending = conversation.isSending,
             onSend = {
-                if (reply.isNotBlank()) {
+                val img = pickedImage
+                if (img != null) {
+                    onSendWithAttachment(reply.trim(), img.first, img.third, img.second)
+                    pickedImage = null
+                } else if (reply.isNotBlank()) {
                     onSend(reply.trim())
-                    reply = ""
-                    keyboard?.hide()
                 }
+                reply = ""
             },
+            onAttach = { mediaPicker.launchImage() },
+            imagePreviewBytes = pickedImage?.first,
+            imagePreviewName = pickedImage?.third ?: "",
+            onRemoveImage = { pickedImage = null },
+            modifier = Modifier.imePadding().navigationBarsPadding(),
         )
     }
+}
+
+/** Adapter: Map admin Message to PremiumMessageData for shared bubble rendering. */
+private fun Message.toPremiumMessageData(): PremiumMessageData = object : PremiumMessageData {
+    override val id: String get() = this@toPremiumMessageData.id
+    override val body: String get() = this@toPremiumMessageData.body
+    override val isMine: Boolean get() = this@toPremiumMessageData.isMine
+    override val time: String get() = this@toPremiumMessageData.time
+    override val status: String? get() = this@toPremiumMessageData.status
+    override val editedAt: String? get() = this@toPremiumMessageData.editedAt
+    override val deletedAt: String? get() = this@toPremiumMessageData.deletedAt
+    override val attachments: List<PremiumAttachmentData>
+        get() = this@toPremiumMessageData.attachments.map { it.toPremiumAttachmentData() }
+}
+
+/** Adapter: Map admin MessageAttachment to PremiumAttachmentData. */
+private fun MessageAttachment.toPremiumAttachmentData(): PremiumAttachmentData = object : PremiumAttachmentData {
+    override val storageUrl: String get() = this@toPremiumAttachmentData.storageUrl
+    override val thumbnailUrl: String? get() = this@toPremiumAttachmentData.thumbnailUrl
+    override val attachmentType: String get() = this@toPremiumAttachmentData.attachmentType
+    override val fileName: String get() = this@toPremiumAttachmentData.fileName
 }
 
 /**
@@ -427,8 +471,8 @@ private fun ComposeNewContent(
             }
         }
 
-        // WhatsApp-style compose bar (P1-10: unified)
-        SharedComposeBar(
+        // Premium compose bar (unified)
+        PremiumComposeBar(
             text = body,
             onTextChange = { body = it },
             placeholder = if (selected == null) "Pick a recipient above…" else "Message ${selected?.name ?: ""}…",
@@ -442,6 +486,7 @@ private fun ComposeNewContent(
                     keyboard?.hide()
                 }
             },
+            onAttach = {},
         )
     }
 }
@@ -491,244 +536,6 @@ private fun RecipientRow(recipient: MessageRecipient, isSelected: Boolean, onCli
                     tint = Color.White,
                     modifier = Modifier.size(16.dp),
                 )
-            }
-        }
-    }
-}
-
-@Composable
-private fun MessageBubble(msg: Message, isGroupStart: Boolean = true) {
-    val isMine = msg.isMine
-    val isDeleted = msg.deletedAt != null
-
-    val bubbleColor = if (isMine) VColors.violet else VColors.surfaceCard
-    val textColor = if (isMine) Color.White else VColors.ink
-    val timeColor = if (isMine) Color.White.copy(alpha = 0.7f) else VColors.ink3
-
-    Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = if (isMine) Arrangement.End else Arrangement.Start,
-    ) {
-        val bubbleShape = if (isMine) {
-            RoundedCornerShape(
-                topStart = 18.dp,
-                topEnd = 18.dp,
-                bottomStart = if (isGroupStart) 18.dp else 4.dp,
-                bottomEnd = 4.dp,
-            )
-        } else {
-            RoundedCornerShape(
-                topStart = 18.dp,
-                topEnd = 18.dp,
-                bottomStart = 4.dp,
-                bottomEnd = if (isGroupStart) 18.dp else 4.dp,
-            )
-        }
-
-        Column(
-            Modifier
-                .widthIn(max = 280.dp)
-                .clip(bubbleShape)
-                .background(bubbleColor)
-                .padding(horizontal = 14.dp, vertical = 10.dp),
-        ) {
-            if (isDeleted) {
-                // P2-10: Tombstone display
-                Text(
-                    "This message was deleted",
-                    style = VTypography.body.copy(
-                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
-                    ),
-                    color = textColor,
-                )
-            } else {
-                Text(
-                    msg.body,
-                    style = VTypography.body,
-                    color = textColor,
-                )
-            }
-            Spacer(Modifier.height(4.dp))
-            Row(
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                // P2-5: Status ticks for own messages
-                if (isMine && !isDeleted) {
-                    when (msg.status?.uppercase()) {
-                        "READ" -> {
-                            Icon(
-                                VIcons.Check,
-                                contentDescription = null,
-                                tint = Color.White.copy(alpha = 0.9f),
-                                modifier = Modifier.size(14.dp),
-                            )
-                            Spacer(Modifier.size(2.dp))
-                            Icon(
-                                VIcons.Check,
-                                contentDescription = "Read",
-                                tint = Color.White.copy(alpha = 0.9f),
-                                modifier = Modifier.size(14.dp),
-                            )
-                        }
-                        "DELIVERED" -> {
-                            Icon(
-                                VIcons.Check,
-                                contentDescription = "Delivered",
-                                tint = Color.White.copy(alpha = 0.7f),
-                                modifier = Modifier.size(14.dp),
-                            )
-                            Spacer(Modifier.size(2.dp))
-                            Icon(
-                                VIcons.Check,
-                                contentDescription = null,
-                                tint = Color.White.copy(alpha = 0.7f),
-                                modifier = Modifier.size(14.dp),
-                            )
-                        }
-                        "SENT" -> {
-                            Icon(
-                                VIcons.Check,
-                                contentDescription = "Sent",
-                                tint = Color.White.copy(alpha = 0.5f),
-                                modifier = Modifier.size(14.dp),
-                            )
-                        }
-                    }
-                    Spacer(Modifier.size(4.dp))
-                }
-                Text(
-                    msg.time,
-                    style = VTypography.caption.copy(fontSize = 10.sp),
-                    color = timeColor,
-                )
-                // P2-10: Edited label
-                if (msg.editedAt != null && !isDeleted) {
-                    Spacer(Modifier.size(4.dp))
-                    Text(
-                        "edited",
-                        style = VTypography.caption.copy(fontSize = 9.sp),
-                        color = timeColor,
-                    )
-                }
-            }
-        }
-    }
-}
-
-/** P1-7: Date header for message grouping by date. */
-@Composable
-private fun DateHeader(date: String) {
-    Box(
-        Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Box(
-            Modifier
-                .clip(RoundedCornerShape(8.dp))
-                .background(VColors.line)
-                .padding(horizontal = 10.dp, vertical = 4.dp),
-        ) {
-            Text(
-                date,
-                style = VTypography.caption.copy(fontSize = 11.sp),
-                color = VColors.ink3,
-            )
-        }
-    }
-}
-
-/**
- * P1-10: Shared WhatsApp-style compose bar — unified between admin and parent screens.
- * Rounded pill input with an embedded circular send button.
- */
-@Composable
-private fun SharedComposeBar(
-    text: String,
-    onTextChange: (String) -> Unit,
-    placeholder: String,
-    enabled: Boolean,
-    sending: Boolean,
-    onSend: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val canSend = text.isNotBlank() && enabled
-
-    Column(
-        modifier
-            .fillMaxWidth()
-            .background(VColors.surfaceCard),
-    ) {
-        Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
-
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Box(
-                Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(22.dp))
-                    .background(VColors.cream)
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
-            ) {
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = onTextChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = {
-                        Text(
-                            placeholder,
-                            style = VTypography.body,
-                            color = VColors.ink3,
-                        )
-                    },
-                    enabled = enabled,
-                    singleLine = false,
-                    maxLines = 4,
-                    shape = RoundedCornerShape(22.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color.Transparent,
-                        unfocusedBorderColor = Color.Transparent,
-                        disabledBorderColor = Color.Transparent,
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        disabledContainerColor = Color.Transparent,
-                        cursorColor = VColors.violet,
-                    ),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
-                    keyboardActions = KeyboardActions(onSend = { if (canSend) onSend() }),
-                    textStyle = VTypography.body.copy(color = VColors.ink),
-                )
-            }
-
-            val sendInteraction = remember { MutableInteractionSource() }
-            Box(
-                Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(if (canSend) VColors.violet else VColors.line)
-                    .clickable(interactionSource = sendInteraction, indication = null, enabled = canSend, onClick = onSend),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (sending) {
-                    CircularProgressIndicator(
-                        color = Color.White,
-                        strokeWidth = 2.dp,
-                        modifier = Modifier.size(20.dp),
-                    )
-                } else {
-                    Icon(
-                        VIcons.Send,
-                        contentDescription = "Send",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
             }
         }
     }

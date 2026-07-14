@@ -178,6 +178,9 @@ interface TeacherRepository {
 
     suspend fun sendMessage(token: String, request: TeacherSendMessageRequest): NetworkResult<TeacherSendMessageResponse>
 
+    /** Phase 1 (§12): POST /api/v1/teacher/messages/attachments — multipart image upload. */
+    suspend fun uploadMessageAttachment(token: String, bytes: ByteArray, fileName: String, mimeType: String, attachmentType: String = "IMAGE"): NetworkResult<TeacherAttachmentUploadResponse>
+
 
 
     // Lesson Planning (LESSON_PLANNING_SPEC.md — P1-20)

@@ -58,14 +58,21 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.feature.parent.domain.model.ParentMessageAttachment
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentMessageDto
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentMessageThreadDto
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentRecipientDto
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentMessageState
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentMessageViewModel
+import com.littlebridge.enrollplus.platform.rememberMediaPicker
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.ui.v2.components.PremiumAttachmentData
+import com.littlebridge.enrollplus.ui.v2.components.PremiumComposeBar
+import com.littlebridge.enrollplus.ui.v2.components.PremiumDateHeader
+import com.littlebridge.enrollplus.ui.v2.components.PremiumMessageBubble
+import com.littlebridge.enrollplus.ui.v2.components.PremiumMessageData
 import com.littlebridge.enrollplus.ui.v2.components.VAvatar
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
@@ -115,9 +122,7 @@ fun ParentMessagesScreenV2(
         modifier
             .fillMaxSize()
             .background(VColors.cream)
-            .statusBarsPadding()
-            .imePadding()
-            .navigationBarsPadding(),
+            .statusBarsPadding(),
     ) {
         PremiumMessageHeader(
             state = state,
@@ -266,6 +271,7 @@ fun ParentMessagesBody(
                         sending = state.sending,
                         replyError = state.replyError,
                         onSend = viewModel::reply,
+                        onSendWithAttachment = viewModel::replyWithAttachment,
                         onDismissReplyError = viewModel::clearReplyError,
                         onRetry = { state.openThreadId?.let { viewModel.openThread(it, state.openThreadName) } },
                         modifier = Modifier.weight(1f).fillMaxWidth(),
@@ -552,7 +558,7 @@ private fun ParentComposeNewContent(
             }
         }
 
-        ParentComposeBar(
+        PremiumComposeBar(
             text = body,
             onTextChange = { body = it },
             placeholder = if (selected == null) "Pick a recipient…" else "Message ${selected?.name ?: ""}",
@@ -566,6 +572,8 @@ private fun ParentComposeNewContent(
                     keyboard?.hide()
                 }
             },
+            onAttach = {},
+            modifier = Modifier.imePadding().navigationBarsPadding(),
         )
     }
 }
@@ -633,13 +641,21 @@ private fun ParentConversationContent(
     sending: Boolean,
     replyError: String? = null,
     onSend: (String) -> Unit,
+    onSendWithAttachment: (String, ByteArray?, String?, String?) -> Unit,
     onDismissReplyError: () -> Unit = {},
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var reply by remember { mutableStateOf("") }
-    val keyboard = LocalSoftwareKeyboardController.current
     val listState = rememberLazyListState()
+    var pickedImage: Triple<ByteArray, String, String>? by remember { mutableStateOf(null) }
+    var pickerError by remember { mutableStateOf<String?>(null) }
+    val mediaPicker = rememberMediaPicker(
+        onPicked = { bytes, mimeType, fileName ->
+            pickedImage = Triple(bytes, mimeType, fileName)
+        },
+        onUnsupported = { msg -> pickerError = msg },
+    )
 
     // Auto-scroll to bottom when new messages arrive
     LaunchedEffect(messages.size) {
@@ -691,7 +707,10 @@ private fun ParentConversationContent(
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         items(messages, key = { it.id }) { msg ->
-                            ParentMessageBubble(msg)
+                            PremiumMessageBubble(
+                                msg = msg.toPremiumMessageData(),
+                                isGroupStart = true,
+                            )
                         }
                     }
             }
@@ -699,11 +718,12 @@ private fun ParentConversationContent(
 
         // Inline reply error banner
         AnimatedVisibility(
-            visible = replyError != null,
+            visible = replyError != null || pickerError != null,
             enter = slideInVertically() + fadeIn(),
             exit = slideOutVertically() + fadeOut(),
         ) {
-            if (replyError != null) {
+            val errMsg = replyError ?: pickerError
+            if (errMsg != null) {
                 Row(
                     Modifier
                         .fillMaxWidth()
@@ -713,7 +733,7 @@ private fun ParentConversationContent(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
-                        replyError,
+                        errMsg,
                         style = VTypography.caption,
                         color = VColors.error,
                         modifier = Modifier.weight(1f),
@@ -723,7 +743,10 @@ private fun ParentConversationContent(
                             .size(28.dp)
                             .clip(CircleShape)
                             .background(VColors.error.copy(alpha = 0.12f))
-                            .clickable(onClick = onDismissReplyError),
+                            .clickable(onClick = {
+                                onDismissReplyError()
+                                pickerError = null
+                            }),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
@@ -737,216 +760,49 @@ private fun ParentConversationContent(
             }
         }
 
-        ParentComposeBar(
+        // Premium compose bar with image attachment support
+        PremiumComposeBar(
             text = reply,
             onTextChange = { reply = it },
             placeholder = "Type a message…",
             enabled = !sending,
             sending = sending,
             onSend = {
-                if (reply.isNotBlank()) {
+                val img = pickedImage
+                if (img != null) {
+                    onSendWithAttachment(reply.trim(), img.first, img.third, img.second)
+                    pickedImage = null
+                } else if (reply.isNotBlank()) {
                     onSend(reply.trim())
-                    reply = ""
-                    keyboard?.hide()
                 }
+                reply = ""
             },
+            onAttach = { mediaPicker.launchImage() },
+            imagePreviewBytes = pickedImage?.first,
+            imagePreviewName = pickedImage?.third ?: "",
+            onRemoveImage = { pickedImage = null },
+            modifier = Modifier.imePadding().navigationBarsPadding(),
         )
     }
 }
 
-@Composable
-private fun ParentMessageBubble(msg: ParentMessageDto) {
-    val isMine = msg.isMine
-    val isDeleted = msg.deletedAt != null
-
-    val bubbleColor = if (isMine) VColors.violet else VColors.surfaceCard
-    val textColor = if (isMine) VColors.white else VColors.ink
-    val timeColor = if (isMine) VColors.white.copy(alpha = 0.7f) else VColors.ink3
-    val bubbleBorder = if (isMine) null else VColors.line
-
-    Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = if (isMine) Arrangement.End else Arrangement.Start,
-    ) {
-        val bubbleShape = if (isMine) {
-            RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp, bottomStart = 18.dp, bottomEnd = 4.dp)
-        } else {
-            RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp, bottomStart = 4.dp, bottomEnd = 18.dp)
-        }
-
-        val bubbleModifier = Modifier
-            .widthIn(max = 280.dp)
-            .clip(bubbleShape)
-            .background(bubbleColor)
-            .then(
-                if (bubbleBorder != null) Modifier.border(1.dp, bubbleBorder, bubbleShape) else Modifier
-            )
-            .padding(horizontal = 14.dp, vertical = 10.dp)
-
-        Column(bubbleModifier) {
-            if (isDeleted) {
-                Text(
-                    "This message was deleted",
-                    style = VTypography.body.copy(
-                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
-                    ),
-                    color = textColor,
-                )
-            } else {
-                Text(
-                    msg.body,
-                    style = VTypography.bodySmall,
-                    color = textColor,
-                )
-            }
-            Spacer(Modifier.height(4.dp))
-            Row(
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                // Premium read receipts: single tick = sent, double tick = delivered, blue double tick = read
-                if (isMine && !isDeleted) {
-                    when (msg.status?.uppercase()) {
-                        "READ" -> {
-                            Icon(
-                                Icons.Filled.DoneAll,
-                                contentDescription = "Read",
-                                tint = VColors.white.copy(alpha = 0.95f),
-                                modifier = Modifier.size(14.dp),
-                            )
-                        }
-                        "DELIVERED" -> {
-                            Icon(
-                                Icons.Filled.DoneAll,
-                                contentDescription = "Delivered",
-                                tint = VColors.white.copy(alpha = 0.6f),
-                                modifier = Modifier.size(14.dp),
-                            )
-                        }
-                        "SENT" -> {
-                            Icon(
-                                Icons.Filled.Done,
-                                contentDescription = "Sent",
-                                tint = VColors.white.copy(alpha = 0.5f),
-                                modifier = Modifier.size(14.dp),
-                            )
-                        }
-                    }
-                    Spacer(Modifier.size(4.dp))
-                }
-                Text(
-                    msg.time,
-                    style = VTypography.caption.copy(fontSize = 10.sp),
-                    color = timeColor,
-                )
-                // P2-10: Edited label
-                if (msg.editedAt != null && !isDeleted) {
-                    Spacer(Modifier.size(4.dp))
-                    Text(
-                        "Edited",
-                        style = VTypography.caption.copy(fontSize = 9.sp),
-                        color = timeColor,
-                    )
-                }
-            }
-        }
-    }
+/** Adapter: Map ParentMessageDto to PremiumMessageData for shared bubble rendering. */
+private fun ParentMessageDto.toPremiumMessageData(): PremiumMessageData = object : PremiumMessageData {
+    override val id: String get() = this@toPremiumMessageData.id
+    override val body: String get() = this@toPremiumMessageData.body
+    override val isMine: Boolean get() = this@toPremiumMessageData.isMine
+    override val time: String get() = this@toPremiumMessageData.time
+    override val status: String? get() = this@toPremiumMessageData.status
+    override val editedAt: String? get() = this@toPremiumMessageData.editedAt
+    override val deletedAt: String? get() = this@toPremiumMessageData.deletedAt
+    override val attachments: List<PremiumAttachmentData>
+        get() = this@toPremiumMessageData.attachments.map { it.toPremiumAttachmentData() }
 }
 
-/**
- * Shared compose bar used by both the conversation and compose-new screens.
- * Premium cream input pill with violet send button.
- */
-@Composable
-private fun ParentComposeBar(
-    text: String,
-    onTextChange: (String) -> Unit,
-    placeholder: String,
-    enabled: Boolean,
-    sending: Boolean,
-    onSend: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val canSend = text.isNotBlank() && enabled
-
-    Column(
-        modifier
-            .fillMaxWidth()
-            .background(VColors.surfaceCard),
-    ) {
-        // Subtle top hairline
-        Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
-
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            // Text input in a rounded pill
-            Box(
-                Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(22.dp))
-                    .background(VColors.creamDeep)
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
-            ) {
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = onTextChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = {
-                        Text(
-                            placeholder,
-                            style = VTypography.body,
-                            color = VColors.ink3,
-                        )
-                    },
-                    enabled = enabled,
-                    singleLine = false,
-                    maxLines = 4,
-                    shape = RoundedCornerShape(22.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color.Transparent,
-                        unfocusedBorderColor = Color.Transparent,
-                        disabledBorderColor = Color.Transparent,
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        disabledContainerColor = Color.Transparent,
-                        cursorColor = VColors.violet,
-                    ),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
-                    keyboardActions = KeyboardActions(onSend = { if (canSend) onSend() }),
-                    textStyle = VTypography.body.copy(color = VColors.ink),
-                )
-            }
-
-            // Circular send button
-            Box(
-                Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(if (canSend) VColors.violet else VColors.lineSoft)
-                    .clickable(enabled = canSend, onClick = onSend),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (sending) {
-                    CircularProgressIndicator(
-                        color = VColors.white,
-                        strokeWidth = 2.dp,
-                        modifier = Modifier.size(20.dp),
-                    )
-                } else {
-                    Icon(
-                        VIcons.Send,
-                        contentDescription = "Send",
-                        tint = VColors.white,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-            }
-        }
-    }
+/** Adapter: Map ParentMessageAttachment to PremiumAttachmentData. */
+private fun ParentMessageAttachment.toPremiumAttachmentData(): PremiumAttachmentData = object : PremiumAttachmentData {
+    override val storageUrl: String get() = this@toPremiumAttachmentData.storageUrl
+    override val thumbnailUrl: String? get() = this@toPremiumAttachmentData.thumbnailUrl
+    override val attachmentType: String get() = this@toPremiumAttachmentData.attachmentType
+    override val fileName: String get() = this@toPremiumAttachmentData.fileName
 }

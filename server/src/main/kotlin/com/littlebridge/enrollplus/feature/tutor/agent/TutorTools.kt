@@ -475,15 +475,9 @@ object TutorTools {
     // Helpers
     // ──────────────────────────────────────────────────────────────────────
 
-    /** All 7 tools as a map keyed by tool name, ready for AiService.runAgent(). */
+    /** Slim toolset — bundle data is inlined into the prompt, so only the write tool remains. */
     fun allTools(): Map<String, AiService.AgentTool> = mapOf(
-        GetLearnerBundle.name to GetLearnerBundle,
-        GetWeakTopics.name to GetWeakTopics,
-        GetSyllabusPosition.name to GetSyllabusPosition,
-        GetDueReviews.name to GetDueReviews,
-        GetHomeworkContext.name to GetHomeworkContext,
         LogMisconception.name to LogMisconception,
-        RetrieveKnowledge.name to RetrieveKnowledge,
     )
 
     private fun parseArgs(raw: String): Map<String, kotlinx.serialization.json.JsonElement> {

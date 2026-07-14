@@ -125,6 +125,9 @@ class ParentRepositoryImpl(
     override suspend fun getMessageRecipients(token: String): NetworkResult<ParentRecipientsResponse> =
         cacheFirstNetworkResult(cache, "parent_message_recipients", ParentRecipientsResponse.serializer()) { api.getMessageRecipients(token) }
 
+    override suspend fun uploadMessageAttachment(token: String, bytes: ByteArray, fileName: String, mimeType: String, attachmentType: String): NetworkResult<ParentAttachmentUploadResponse> =
+        api.uploadAttachment(token, bytes, fileName, mimeType, attachmentType)
+
     override suspend fun getLatestPulse(token: String, childId: String): NetworkResult<PulseResponse> =
         cacheFirstNetworkResult(cache, "parent_pulse_latest_$childId", PulseResponse.serializer()) { api.getLatestPulse(token, childId) }
 

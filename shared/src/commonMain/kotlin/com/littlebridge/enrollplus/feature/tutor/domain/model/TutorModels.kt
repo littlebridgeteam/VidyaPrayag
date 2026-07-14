@@ -52,6 +52,16 @@ data class DoubtResultDto(
     val providerUsed: String? = null,
     val grounded: Boolean,
     val safetyFlag: String? = null,
+    val thinkingTrace: List<ThinkingStepDto> = emptyList(),
+    val intent: String = "doubt",
+    val syllabusStatus: String = "UNKNOWN",
+)
+
+@Serializable
+data class ThinkingStepDto(
+    val label: String,
+    val status: String,  // "done" | "skipped"
+    val detail: String? = null,
 )
 
 @Serializable
@@ -145,6 +155,8 @@ data class SyllabusPositionDto(
     val currentTopic: String? = null,
     val coveredTopicIds: List<String> = emptyList(),
     val notYetCoveredIds: List<String> = emptyList(),
+    val coveredTopicTitles: List<String> = emptyList(),
+    val notYetCoveredTitles: List<String> = emptyList(),
 )
 
 @Serializable
