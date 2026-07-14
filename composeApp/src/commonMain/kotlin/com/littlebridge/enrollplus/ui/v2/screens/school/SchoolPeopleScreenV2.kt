@@ -48,12 +48,18 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.feature.admin.presentation.ClassesSubjectsState
+import com.littlebridge.enrollplus.feature.admin.presentation.ClassesSubjectsViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.SchoolTeachersState
 import com.littlebridge.enrollplus.feature.admin.presentation.SchoolTeachersViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.StaffRosterState
 import com.littlebridge.enrollplus.feature.admin.presentation.StaffViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.StudentRosterState
 import com.littlebridge.enrollplus.feature.admin.presentation.StudentRosterViewModel
+import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
+import io.github.vinceglb.filekit.compose.rememberFileSaverLauncher
+import io.github.vinceglb.filekit.core.PickerMode
+import io.github.vinceglb.filekit.core.PickerType
 import com.littlebridge.enrollplus.ui.v2.components.VBottomSheet
 import com.littlebridge.enrollplus.ui.v2.components.VBottomSheetHeader
 import com.littlebridge.enrollplus.ui.v2.components.VButton
@@ -113,12 +119,14 @@ fun SchoolPeopleScreenV2(
     teachersViewModel: SchoolTeachersViewModel = koinViewModel(),
     studentsViewModel: StudentRosterViewModel = koinViewModel(),
     staffViewModel: StaffViewModel = koinViewModel(),
+    classesViewModel: ClassesSubjectsViewModel = koinViewModel(),
     teacherRefreshKey: Int,
     studentRefreshKey: Int,
 ) {
     val teachersState by teachersViewModel.state.collectAsStateV2()
     val studentsState by studentsViewModel.state.collectAsStateV2()
     val staffState by staffViewModel.state.collectAsStateV2()
+    val classesState by classesViewModel.state.collectAsStateV2()
 
     LaunchedEffect(teacherRefreshKey){
         teachersViewModel.load()
@@ -138,6 +146,7 @@ fun SchoolPeopleScreenV2(
         onAddStudent = studentsViewModel::addStudent,
         onImportStudentsCsv = studentsViewModel::importStudentsCsv,
         onClearStudentMessages = studentsViewModel::clearMessages,
+        availableClassNames = classesState.classes.map { it.name },
         staffState = staffState,
         onStaffRetry = staffViewModel::load,
         onStaffSearch = staffViewModel::onQueryChange,
@@ -165,6 +174,7 @@ private fun SchoolPeopleContent(
     onAddStudent: (name: String, className: String, section: String, rollNumber: String, parentPhone: String) -> Unit,
     onImportStudentsCsv: (String) -> Unit,
     onClearStudentMessages: () -> Unit,
+    availableClassNames: List<String> = emptyList(),
     staffState: StaffRosterState,
     onStaffRetry: () -> Unit,
     onStaffSearch: (String) -> Unit,
@@ -348,6 +358,7 @@ private fun SchoolPeopleContent(
             error = studentsState.addError,
             onDismiss = { showAddStudent = false; onClearStudentMessages() },
             onSubmit = { name, cls, sec, roll, phone -> onAddStudent(name, cls, sec, roll, phone) },
+            availableClassNames = availableClassNames,
         )
     }
 
@@ -1041,17 +1052,19 @@ private fun AddStudentPeopleSheet(
     error: String?,
     onDismiss: () -> Unit,
     onSubmit: (name: String, className: String, section: String, rollNumber: String, parentPhone: String) -> Unit,
+    availableClassNames: List<String> = emptyList(),
 ) {
     var name by remember { mutableStateOf("") }
     var className by remember { mutableStateOf("") }
     var section by remember { mutableStateOf("") }
     var roll by remember { mutableStateOf("") }
     var parentPhone by remember { mutableStateOf("") }
+    var classDropdownExpanded by remember { mutableStateOf(false) }
 
     val phoneDigits = parentPhone.count { it.isDigit() }
-    // Parent phone is optional — only validate when the admin has entered something.
     val phoneOk = parentPhone.isBlank() || phoneDigits >= 10
-    val canSubmit = name.isNotBlank() && className.isNotBlank() && roll.isNotBlank() &&
+    val classValid = className.isNotBlank() && (availableClassNames.isEmpty() || availableClassNames.any { it.equals(className, ignoreCase = true) })
+    val canSubmit = name.isNotBlank() && classValid && roll.isNotBlank() &&
         phoneOk && !isSubmitting
 
     VBottomSheet(
@@ -1061,7 +1074,30 @@ private fun AddStudentPeopleSheet(
         VBottomSheetHeader(title = appString(StringKeys.PPL_ADD_STUDENT))
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             VInput(name, { name = it }, label = appString(StringKeys.PPL_FULL_NAME), placeholder = appString(StringKeys.PPL_NAME_PH_STUDENT), leadingIcon = VIcons.User)
-            VInput(className, { className = it }, label = appString(StringKeys.PPL_CLASS), placeholder = appString(StringKeys.PPL_CLASS_PH))
+            Box {
+                VInput(
+                    className,
+                    { className = it },
+                    label = appString(StringKeys.PPL_CLASS),
+                    placeholder = appString(StringKeys.PPL_CLASS_PH),
+                    modifier = Modifier.fillMaxWidth().clickable { classDropdownExpanded = true },
+                )
+                DropdownMenu(
+                    expanded = classDropdownExpanded,
+                    onDismissRequest = { classDropdownExpanded = false },
+                    modifier = Modifier.background(VColors.surfaceCard, RoundedCornerShape(14.dp)),
+                ) {
+                    availableClassNames.forEach { cn ->
+                        DropdownMenuItem(
+                            text = { Text(cn) },
+                            onClick = { className = cn; classDropdownExpanded = false },
+                        )
+                    }
+                }
+            }
+            if (className.isNotBlank() && !classValid) {
+                Text("Please select a configured class", style = VTypography.caption, color = VColors.coral)
+            }
             VInput(section, { section = it }, label = appString(StringKeys.PPL_SECTION), placeholder = appString(StringKeys.PPL_SECTION_PH))
             VInput(roll, { roll = it }, label = appString(StringKeys.PPL_ROLL_NUMBER), placeholder = appString(StringKeys.PPL_ROLL_PH), keyboardType = KeyboardType.Number)
             VInput(
@@ -1112,6 +1148,21 @@ private fun ImportStudentsSheet(
         mutableStateOf("full_name,class_name,section,roll_number\n")
     }
     val canSubmit = csv.lineSequence().drop(1).any { it.isNotBlank() } && !isSubmitting
+    val scope = rememberCoroutineScope()
+    val csvTemplate = "full_name,class_name,section,roll_number,parent_phone\n"
+    val fileSaver = rememberFileSaverLauncher() { _ -> }
+    val csvPicker = rememberFilePickerLauncher(
+        type = PickerType.File,
+        mode = PickerMode.Single,
+        title = "Choose a CSV file",
+    ) { platformFile ->
+        if (platformFile != null) {
+            scope.launch {
+                val bytes = platformFile.readBytes()
+                csv = bytes.decodeToString()
+            }
+        }
+    }
 
     VBottomSheet(
         visible = true,
@@ -1127,6 +1178,20 @@ private fun ImportStudentsSheet(
                 singleLine = false,
                 modifier = Modifier.fillMaxWidth().height(180.dp),
             )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                VButton(
+                    text = "Upload CSV",
+                    onClick = { csvPicker.launch() },
+                    variant = VButtonVariant.Secondary,
+                    modifier = Modifier.weight(1f),
+                )
+                VButton(
+                    text = "Download Template",
+                    onClick = { fileSaver.launch(baseName = "student_import_template", extension = "csv", bytes = csvTemplate.encodeToByteArray()) },
+                    variant = VButtonVariant.Secondary,
+                    modifier = Modifier.weight(1f),
+                )
+            }
             if (error != null) {
                 Text(error, style = VTypography.caption, color = VColors.coral)
             }
