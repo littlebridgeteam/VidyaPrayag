@@ -7,6 +7,8 @@ import com.littlebridge.enrollplus.core.principalUserUuid
 import com.littlebridge.enrollplus.db.ChildrenTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.feature.notifications.Notify
+import com.littlebridge.enrollplus.feature.tutor.data.TutorSessionRepository
+import com.littlebridge.enrollplus.feature.tutor.triage.TutorTriageService
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.request.receive
@@ -67,13 +69,83 @@ fun Route.agentRouting() {
             "Child has no school link", HttpStatusCode.BadRequest, "NO_SCHOOL"
         )
 
+        // ── Triage (Tier 1) — classify before engaging the agent ──
+        val trace = mutableListOf<ThinkingStep>()
+        trace.add(ThinkingStep("Checking syllabus", "done"))
+
+        val triageService = TutorTriageService()
+        val triage = triageService.classify(schoolId, childId, subjectId, body.question)
+
+        trace.add(ThinkingStep("Classifying intent", if (triage.modelUsed) "done" else "skipped",
+            detail = triage.intent))
+        trace.add(ThinkingStep("Syllabus check", "done", detail = triage.syllabusStatus))
+
+        // If triage says skip (known misconception) → return deterministic response
+        if (triage.skipAgent) {
+            trace.add(ThinkingStep("Agent reasoning", "skipped", detail = triage.skipReason))
+
+            val detTurn = when (triage.skipReason) {
+                "known_misconception" -> TutorTurn(
+                    mode = "HINT",
+                    studentFacing = StudentFacing(
+                        text = "I noticed you might be stuck on this. Let's try a different approach — " +
+                            "can you tell me what you already know about this topic?",
+                        nextPrompt = "What part feels confusing right now?",
+                    ),
+                    misconception = MisconceptionLog(
+                        type = triage.misconceptionType ?: "unknown",
+                        evidence = "Known misconception from triage",
+                    ),
+                )
+                else -> TutorTurnCodec.deterministic(body.question)
+            }
+            val sessionId = runCatching {
+                TutorSessionRepository().insert(
+                    schoolId = schoolId,
+                    childId = childId,
+                    subjectId = subjectId,
+                    mode = "DOUBT",
+                    turns = TutorTurnCodec.encode(detTurn),
+                    groundedRefs = "[]",
+                    providerUsed = null,
+                    tokensUsed = 0,
+                    cacheHit = false,
+                    safetyFlag = null,
+                )
+            }.getOrNull()
+
+            call.ok(
+                DoubtResponse(
+                    sessionId = sessionId?.toString(),
+                    turn = detTurn,
+                    modelUsed = false,
+                    providerUsed = triage.providerUsed,
+                    grounded = true,
+                    safetyFlag = null,
+                    thinkingTrace = trace,
+                    intent = triage.intent,
+                    syllabusStatus = triage.syllabusStatus,
+                ),
+                "Doubt resolved (triage shortcut: ${triage.skipReason})"
+            )
+            return@post
+        }
+
+        // ── Agent (Tier 2) — triage says proceed ──
+        trace.add(ThinkingStep("Building learner context", "done"))
+        trace.add(ThinkingStep("Agent reasoning", "done", detail = triage.intent))
+
         val service = TutorAgentService()
         val result = service.resolveDoubt(
             schoolId = schoolId,
             childId = childId,
             subjectId = subjectId,
             question = body.question,
+            intent = triage.intent,
+            syllabusStatus = triage.syllabusStatus,
         )
+
+        trace.add(ThinkingStep("Verifying grounding", if (result.grounded) "done" else "skipped"))
 
         call.ok(
             DoubtResponse(
@@ -83,6 +155,9 @@ fun Route.agentRouting() {
                 providerUsed = result.providerUsed,
                 grounded = result.grounded,
                 safetyFlag = result.safetyFlag,
+                thinkingTrace = trace,
+                intent = triage.intent,
+                syllabusStatus = triage.syllabusStatus,
             ),
             if (result.modelUsed) "Doubt resolved" else "Doubt resolved (deterministic fallback)"
         )
@@ -116,6 +191,13 @@ data class DoubtRequest(
 )
 
 @Serializable
+data class ThinkingStep(
+    val label: String,
+    val status: String,  // "done" | "skipped"
+    val detail: String? = null,
+)
+
+@Serializable
 data class DoubtResponse(
     val sessionId: String?,
     val turn: TutorTurn,
@@ -123,4 +205,7 @@ data class DoubtResponse(
     val providerUsed: String?,
     val grounded: Boolean,
     val safetyFlag: String?,
+    val thinkingTrace: List<ThinkingStep> = emptyList(),
+    val intent: String = "doubt",
+    val syllabusStatus: String = "UNKNOWN",
 )

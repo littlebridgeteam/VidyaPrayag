@@ -8,7 +8,11 @@ import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizSubmitReques
 import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizSubmitResponse
 import io.ktor.client.*
 import io.ktor.client.request.*
+import io.ktor.client.request.forms.MultiPartFormDataContent
+import io.ktor.client.request.forms.formData
 import io.ktor.http.ContentType
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 
 class ParentApi(
@@ -203,6 +207,33 @@ class ParentApi(
     suspend fun getMessageRecipients(token: String): NetworkResult<ParentRecipientsResponse> {
         return safeApiCall {
             client.get(getUrl("api/v1/parent/messages/recipients"))
+        }
+    }
+
+    /** Phase 1 (§12): POST /api/v1/parent/messages/attachments — multipart image upload. */
+    suspend fun uploadAttachment(
+        token: String,
+        bytes: ByteArray,
+        fileName: String,
+        mimeType: String,
+        attachmentType: String = "IMAGE",
+    ): NetworkResult<ParentAttachmentUploadResponse> = safeApiCall {
+        client.post(getUrl("api/v1/parent/messages/attachments")) {
+            setBody(
+                MultiPartFormDataContent(
+                    formData {
+                        append("attachment_type", attachmentType)
+                        append(
+                            "file",
+                            bytes,
+                            Headers.build {
+                                append(HttpHeaders.ContentType, mimeType)
+                                append(HttpHeaders.ContentDisposition, "filename=\"$fileName\"")
+                            }
+                        )
+                    }
+                )
+            )
         }
     }
 

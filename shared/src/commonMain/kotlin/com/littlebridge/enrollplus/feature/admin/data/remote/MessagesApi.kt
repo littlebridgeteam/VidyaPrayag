@@ -16,6 +16,7 @@ package com.littlebridge.enrollplus.feature.admin.data.remote
 import com.littlebridge.enrollplus.core.model.ApiResponse
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.core.network.safeApiCall
+import com.littlebridge.enrollplus.feature.admin.domain.model.AttachmentUploadResponse
 import com.littlebridge.enrollplus.feature.admin.domain.model.MessageThreadsResponse
 import com.littlebridge.enrollplus.feature.admin.domain.model.SendMessageRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.SendMessageResponse
@@ -24,11 +25,15 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.ThreadMessagesResp
 import com.littlebridge.enrollplus.feature.admin.domain.model.UnreadCountDto
 import io.ktor.client.HttpClient
 import io.ktor.client.request.delete
+import io.ktor.client.request.forms.MultiPartFormDataContent
+import io.ktor.client.request.forms.formData
 import io.ktor.client.request.get
 import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 import io.ktor.http.parameters
 
@@ -124,5 +129,32 @@ class MessagesApi(
         scope: String = "everyone",
     ): NetworkResult<ApiResponse<Map<String, String>>> = safeApiCall {
         client.delete(getUrl("api/v1/school/messages/messages/$messageId?scope=$scope"))
+    }
+
+    /** Phase 1 (§12): POST /api/v1/school/messages/attachments — multipart image upload. */
+    suspend fun uploadAttachment(
+        token: String,
+        bytes: ByteArray,
+        fileName: String,
+        mimeType: String,
+        attachmentType: String = "IMAGE",
+    ): NetworkResult<ApiResponse<AttachmentUploadResponse>> = safeApiCall {
+        client.post(getUrl("api/v1/school/messages/attachments")) {
+            setBody(
+                MultiPartFormDataContent(
+                    formData {
+                        append("attachment_type", attachmentType)
+                        append(
+                            "file",
+                            bytes,
+                            Headers.build {
+                                append(HttpHeaders.ContentType, mimeType)
+                                append(HttpHeaders.ContentDisposition, "filename=\"$fileName\"")
+                            }
+                        )
+                    }
+                )
+            )
+        }
     }
 }

@@ -7,6 +7,7 @@ import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.core.state.SelectedChildHolder
 import com.littlebridge.enrollplus.feature.tutor.domain.model.*
 import com.littlebridge.enrollplus.feature.tutor.domain.repository.TutorRepository
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,6 +24,8 @@ data class TutorChatState(
     val subjectId: String = "",
     val subjects: List<SubjectItemDto> = emptyList(),
     val isLoadingSubjects: Boolean = false,
+    val isStreaming: Boolean = false,
+    val streamingText: String = "",
 )
 
 data class ChatMessage(
@@ -101,20 +104,37 @@ class TutorChatViewModel(
                     val resultDto = result.data.data
                     if (resultDto != null) {
                         val turn = resultDto.turn
+                        val fullText = turn.studentFacing?.text ?: "I'm here to help. What would you like to work on?"
+                        val nextPrompt = turn.studentFacing?.nextPrompt
+                        val isPractice = turn.practice?.isNotEmpty() == true
+                        val practiceQuestions = turn.practice
+
                         _state.update {
                             it.copy(
                                 isLoading = false,
                                 turn = turn,
                                 question = "",
+                                isStreaming = true,
+                                streamingText = "",
                                 conversationHistory = it.conversationHistory + ChatMessage(
                                     role = "tutor",
-                                    text = turn.studentFacing?.text ?: "I'm here to help. What would you like to work on?",
-                                    nextPrompt = turn.studentFacing?.nextPrompt,
-                                    isPractice = turn.practice?.isNotEmpty() == true,
-                                    practiceQuestions = turn.practice,
+                                    text = fullText,
+                                    nextPrompt = nextPrompt,
+                                    isPractice = isPractice,
+                                    practiceQuestions = practiceQuestions,
                                 ),
                             )
                         }
+
+                        val words = fullText.split(" ")
+                        val sb = StringBuilder()
+                        for (word in words) {
+                            if (sb.isNotEmpty()) sb.append(" ")
+                            sb.append(word)
+                            _state.update { it.copy(streamingText = sb.toString()) }
+                            delay(30)
+                        }
+                        _state.update { it.copy(isStreaming = false, streamingText = "") }
                     } else {
                         _state.update { it.copy(isLoading = false, error = result.data.message) }
                     }
@@ -130,6 +150,6 @@ class TutorChatViewModel(
     }
 
     fun clearConversation() {
-        _state.update { it.copy(conversationHistory = emptyList(), turn = null, error = null) }
+        _state.update { it.copy(conversationHistory = emptyList(), turn = null, error = null, isStreaming = false, streamingText = "") }
     }
 }

@@ -47,10 +47,12 @@ class TutorAgentService(
     /**
      * Resolve a doubt: run the agent loop, ground the output, persist the session.
      *
-     * @param schoolId  tenant scope (from JWT, never from the model)
-     * @param childId   the child's UUID
-     * @param subjectId the subject's UUID
-     * @param question  the child's doubt text
+     * @param schoolId       tenant scope (from JWT, never from the model)
+     * @param childId        the child's UUID
+     * @param subjectId      the subject's UUID
+     * @param question       the child's doubt text
+     * @param intent         triage intent (doubt | practice_request | concept_explain | plan_review | check_in)
+     * @param syllabusStatus triage syllabus status (ON_SYLLABUS | AHEAD_OF_SYLLABUS | OFF_CURRICULUM | UNKNOWN)
      * @return a grounded TutorTurn wrapped in a TutorResult
      */
     suspend fun resolveDoubt(
@@ -58,6 +60,8 @@ class TutorAgentService(
         childId: UUID,
         subjectId: UUID?,
         question: String,
+        intent: String = "doubt",
+        syllabusStatus: String = "UNKNOWN",
     ): TutorResult {
         TutorKillSwitch.require(TutorConstants.MODULE_AGENT)
 
@@ -66,7 +70,7 @@ class TutorAgentService(
         val bundle = if (subjectId != null) bundleBuilder.build(childId, subjectId) else null
 
         // Try the agentic path (LLM + tools)
-        val agentResult = runAgent(schoolId, childId, subjectId, question, bundle)
+        val agentResult = runAgent(schoolId, childId, subjectId, question, bundle, intent, syllabusStatus)
 
         if (agentResult != null) {
             val content = agentResult.content ?: ""
@@ -121,54 +125,26 @@ class TutorAgentService(
     // ── Agent prompt + execution ───────────────────────────────────────────
 
     private val systemPrompt = """
-        You are an AI Tutor for school students. You help children understand
-        concepts and solve problems using the SOCRATIC method — you guide,
-        you do NOT solve problems for them.
+        You are an AI Tutor for school students. Use the SOCRATIC method — guide, don't solve.
 
-        CRITICAL: "TutorTurn" is NOT a tool. Do NOT call it. Your available
-        tools are ONLY: get_learner_bundle, get_weak_topics, get_syllabus_position,
-        get_due_reviews, get_homework_context, log_misconception,
-        retrieve_knowledge. Your final response must be plain text containing
-        a JSON object (NOT a tool call).
+        RULES:
+        - Use ONLY numbers from the LEARNER DATA in your output. Never invent figures.
+        - Never teach ahead of covered topics (use EXPLANATION mode if the child asks about not-yet-covered topics).
+        - If you spot a misconception, call log_misconception.
+        - Respond with a JSON object (NOT a tool call) with this schema:
+        {"mode":"SOCRATIC_STEP|HINT|EXPLANATION|PRACTICE_SET|PLAN_UPDATE|ESCALATE",
+         "groundedRefs":[{"topicId":"","source":"MARKS|SYLLABUS|NCERT|RAG","value":""}],
+         "studentFacing":{"text":"","mathBlocks":["LaTeX"],"nextPrompt":""},
+         "practice":[{"questionId":"","stem":"","options":[],"answerKey":"","topicId":"","difficulty":"easy|medium|hard"}],
+         "planDelta":null,"teacherFlag":null,
+         "misconception":{"topicId":"","type":"","evidence":""}}
 
-        STRICT RULES:
-        - Use ONLY data from the provided learner bundle and tool results.
-          NEVER invent numbers, scores, or facts. Every figure in your output
-          must come from the deterministic data (LAW 6).
-        - Call tools to gather context before producing your response. Use
-          get_learner_bundle for the full picture, get_weak_topics to see
-          where the child struggles, get_syllabus_position to check what's
-          been covered (NEVER teach ahead), get_due_reviews for FSRS state,
-          get_homework_context for homework load.
-        - If the child's doubt reveals a misconception, call log_misconception
-          to record it. This is the ONLY write tool.
-        - After gathering context, respond with your FINAL answer as plain text
-          containing a single JSON object (NOT a tool call) with this schema:
-        {
-          "mode": "SOCRATIC_STEP | HINT | EXPLANATION | PRACTICE_SET | PLAN_UPDATE | ESCALATE",
-          "groundedRefs": [{"topicId": "...", "source": "MARKS|SYLLABUS|NCERT|RAG", "value": "..."}],
-          "studentFacing": {"text": "...", "mathBlocks": ["LaTeX..."], "nextPrompt": "..."},
-          "practice": [{"questionId": "...", "stem": "...", "options": ["..."], "answerKey": "...", "topicId": "...", "difficulty": "easy|medium|hard"}],
-          "planDelta": {"addReviews": [{"topicId": "...", "priority": "high|medium|low"}], "adjustDifficulty": "..."},
-          "teacherFlag": {"topicId": "...", "reason": "...", "severity": "low|medium|high"},
-          "misconception": {"topicId": "...", "type": "...", "evidence": "..."}
-        }
-        - Do NOT try to call "TutorTurn" as a tool. It is NOT a tool.
-          Your final response must be plain text containing the JSON object above.
-        - Mode SOCRATIC_STEP: guide the child with a question that helps them
-          think. "What do you get when you find a common denominator first?"
-        - Mode HINT: give a targeted hint, not the answer.
-        - Mode EXPLANATION: explain a concept (only if the child is stuck after
-          hints). Keep it grounded in the NCERT framing.
-        - Mode PRACTICE_SET: generate 2-3 practice questions targeted at the
-          child's weakest covered topic. Include answer keys.
-        - Mode ESCALATE: if the child asks for the answer repeatedly, switch to
-          "let's break it down" and set teacherFlag.
-        - NEVER just hand over the full worked solution. That is a last resort,
-          gated, and logged.
-        - If the doubt is off-syllabus (not in coveredTopicIds), decline and
-          offer to flag it for the teacher.
-        - mathBlocks: use LaTeX notation for any math expressions.
+        MODES:
+        - SOCRATIC_STEP: guide with a question
+        - HINT: targeted hint, not the answer
+        - EXPLANATION: explain a concept (only if stuck after hints)
+        - PRACTICE_SET: 2-3 questions on weakest covered topic
+        - ESCALATE: child keeps asking for the answer → flag teacher
     """.trimIndent()
 
     private suspend fun runAgent(
@@ -177,26 +153,34 @@ class TutorAgentService(
         subjectId: UUID?,
         question: String,
         bundle: com.littlebridge.enrollplus.feature.tutor.sense.LearnerBundle?,
+        intent: String,
+        syllabusStatus: String,
     ): AiService.AgentResult? {
         if (!AiService.anyProviderConfigured()) {
             log.debug("TutorAgent: no AI provider — using deterministic for child {}", childId)
             return null
         }
 
-        val userPrompt = buildUserPrompt(childId, subjectId, question, bundle)
+        val userPrompt = buildUserPrompt(childId, subjectId, question, bundle, syllabusStatus)
         val tools = TutorTools.allTools()
+
+        // Route to cheaper lane for simple intents
+        val lane = when (intent) {
+            "check_in", "practice_request", "plan_review" -> AiLane.FAST_CHAT
+            else -> AiLane.REASON
+        }
 
         val result = AiService.runAgent(
             feature = "ai_tutor",
-            lane = AiLane.REASON,
+            lane = lane,
             systemPrompt = systemPrompt,
             userPrompt = userPrompt,
             tools = tools,
             schoolId = schoolId,
             containsPii = true,
-            maxSteps = 6,
+            maxSteps = 3,
             temperature = 0.3,
-            maxTokens = 2048,
+            maxTokens = 1024,
         )
 
         if (!result.ok) {
@@ -215,29 +199,40 @@ class TutorAgentService(
         subjectId: UUID?,
         question: String,
         bundle: com.littlebridge.enrollplus.feature.tutor.sense.LearnerBundle?,
+        syllabusStatus: String,
     ): String = buildString {
-        appendLine("Child ID: $childId")
-        appendLine("Subject ID: $subjectId")
-        appendLine()
         if (bundle != null) {
-            appendLine("Learner Bundle Summary:")
-            appendLine("  Has marks: ${bundle.dataConfidence.hasMarks}")
-            appendLine("  Has syllabus: ${bundle.dataConfidence.hasSyllabus}")
-            appendLine("  Has homework: ${bundle.dataConfidence.hasHomework}")
-            appendLine("  Weak topics: ${bundle.weakTopics.size}")
-            appendLine("  Covered topics: ${bundle.syllabusPosition.coveredTopicIds.size}")
-            appendLine("  Due reviews: ${bundle.reviewQueue.size}")
-            if (bundle.weakTopics.isNotEmpty()) {
-                appendLine("  Weakest topic: ${bundle.weakTopics.first().topicId} (${bundle.weakTopics.first().pct}%)")
+            appendLine("LEARNER DATA (ground truth — cite ONLY these numbers):")
+            appendLine("  Syllabus status: $syllabusStatus")
+            appendLine("  Covered topics (${bundle.syllabusPosition.coveredTopicIds.size}): ${bundle.syllabusPosition.coveredTopicTitles.joinToString(", ")}")
+            if (bundle.syllabusPosition.notYetCoveredTitles.isNotEmpty()) {
+                appendLine("  Not-yet-covered (${bundle.syllabusPosition.notYetCoveredIds.size}): ${bundle.syllabusPosition.notYetCoveredTitles.joinToString(", ")}")
             }
+            appendLine("  Current chapter: ${bundle.syllabusPosition.currentChapter ?: "unknown"}")
+            if (bundle.weakTopics.isNotEmpty()) {
+                appendLine("  Weak topics (${bundle.weakTopics.size}):")
+                bundle.weakTopics.take(3).forEach { wt ->
+                    appendLine("    - ${wt.topicId}: ${wt.pct}% (${wt.severity})")
+                }
+            }
+            if (bundle.homeworkContext.dueSoon.isNotEmpty()) {
+                appendLine("  Homework due soon: ${bundle.homeworkContext.dueSoon.joinToString { "${it.title} (due ${it.dueDate})" }}")
+            }
+            if (bundle.homeworkContext.missed.isNotEmpty()) {
+                appendLine("  Homework missed: ${bundle.homeworkContext.missed.joinToString { it.title }}")
+            }
+            if (bundle.reviewQueue.isNotEmpty()) {
+                appendLine("  Due reviews: ${bundle.reviewQueue.size}")
+            }
+            appendLine("  Has marks: ${bundle.dataConfidence.hasMarks}")
         } else {
-            appendLine("Learner Bundle: NOT AVAILABLE (child may not be linked to school)")
+            appendLine("LEARNER DATA: NOT AVAILABLE (child may not be linked to school)")
             appendLine("Run in DIAGNOSTIC mode — ask gentle placement questions.")
         }
         appendLine()
         appendLine("Child's doubt: $question")
         appendLine()
-        appendLine("Analyze this doubt and produce a structured JSON response. Call tools to gather context first.")
+        appendLine("Respond with TutorTurn JSON. Call log_misconception if you spot a pattern.")
     }
 
     private suspend fun persistSession(

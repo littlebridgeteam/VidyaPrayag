@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
+import com.littlebridge.enrollplus.feature.parent.domain.model.ParentAttachmentInput
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentMessageDto
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentMessageThreadDto
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentRecipientDto
@@ -273,6 +274,141 @@ class ParentMessageViewModel(
     /** Clears the inline reply error banner. */
     fun clearReplyError() {
         _state.update { it.copy(replyError = null) }
+    }
+
+    /**
+     * Reply with an optional image attachment. If [imageBytes] is non-null,
+     * uploads the image first, then sends the message with attachment metadata.
+     * Falls back to plain [reply] when no image.
+     */
+    fun replyWithAttachment(
+        body: String,
+        imageBytes: ByteArray? = null,
+        fileName: String? = null,
+        mimeType: String? = null,
+    ) {
+        if (imageBytes == null || imageBytes.isEmpty() || fileName == null || mimeType == null) {
+            reply(body)
+            return
+        }
+
+        // 5MB client-side validation
+        if (imageBytes.size > 5 * 1024 * 1024) {
+            _state.update { it.copy(replyError = "Image too large (max 5MB)") }
+            return
+        }
+
+        val threadId = _state.value.openThreadId ?: return
+
+        // Optimistic message
+        val tempId = "optimistic-${kotlin.random.Random.nextLong()}"
+        val optimisticMsg = ParentMessageDto(
+            id = tempId,
+            body = body.ifBlank { "📷 Photo" },
+            isMine = true,
+            createdAt = "",
+            time = "Now",
+            status = "SENT",
+        )
+        _state.update {
+            it.copy(
+                messages = it.messages + optimisticMsg,
+                sending = true,
+                replyError = null,
+            )
+        }
+
+        viewModelScope.launch {
+            val token = token() ?: run {
+                _state.update {
+                    it.copy(
+                        messages = it.messages.filterNot { msg -> msg.id == tempId },
+                        sending = false,
+                        replyError = "Not signed in",
+                    )
+                }
+                return@launch
+            }
+
+            // Step 1: Upload attachment
+            val uploadResult = repository.uploadMessageAttachment(token, imageBytes, fileName, mimeType, "IMAGE")
+            val attachmentInput = when (uploadResult) {
+                is NetworkResult.Success -> {
+                    val data = uploadResult.data.data
+                    if (data == null) {
+                        _state.update {
+                            it.copy(
+                                messages = it.messages.filterNot { msg -> msg.id == tempId },
+                                sending = false,
+                                replyError = "Upload failed: no data",
+                            )
+                        }
+                        return@launch
+                    }
+                    ParentAttachmentInput(
+                        fileName = data.fileName,
+                        mimeType = data.mimeType,
+                        sizeBytes = data.sizeBytes,
+                        storageUrl = data.storageUrl,
+                        attachmentType = data.attachmentType,
+                    )
+                }
+                is NetworkResult.Error -> {
+                    _state.update {
+                        it.copy(
+                            messages = it.messages.filterNot { msg -> msg.id == tempId },
+                            sending = false,
+                            replyError = "Upload failed: ${uploadResult.message}",
+                        )
+                    }
+                    return@launch
+                }
+                is NetworkResult.ConnectionError -> {
+                    _state.update {
+                        it.copy(
+                            messages = it.messages.filterNot { msg -> msg.id == tempId },
+                            sending = false,
+                            replyError = "Connection error during upload",
+                        )
+                    }
+                    return@launch
+                }
+            }
+
+            // Step 2: Send message with attachment
+            val req = ParentSendMessageRequest(
+                threadId = threadId,
+                body = body.trim(),
+                clientMsgId = kotlin.random.Random.nextLong().toString(),
+                attachments = listOf(attachmentInput),
+            )
+            when (val r = repository.sendMessage(token, req)) {
+                is NetworkResult.Success -> {
+                    AnalyticsTracker.event("vp_parent_message_sent_with_attachment", mapOf(
+                        "thread_id" to threadId,
+                    ))
+                    _state.update { it.copy(sending = false, replyError = null) }
+                    reloadConversation()
+                }
+                is NetworkResult.Error -> {
+                    _state.update {
+                        it.copy(
+                            messages = it.messages.filterNot { msg -> msg.id == tempId },
+                            sending = false,
+                            replyError = r.message,
+                        )
+                    }
+                }
+                is NetworkResult.ConnectionError ->
+                    _state.update {
+                        it.copy(
+                            messages = it.messages.filterNot { msg -> msg.id == tempId },
+                            sending = false,
+                            replyError = "Connection error",
+                        )
+                    }
+            }
+        }
     }
 
     /**

@@ -26,7 +26,24 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.server.response.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.selectAll
+import java.time.Instant
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
+
+/**
+ * In-memory cache for JWT validation lookups (is_active + passwordChangedAt).
+ * Survives transient DB failures (e.g. Render free-tier spin-down/restart) so
+ * that an authenticated user is not logged out just because the DB was briefly
+ * unreachable. TTL is 5 minutes — deactivation still takes effect within 5 min.
+ */
+private data class CachedUserState(
+    val isActive: Boolean,
+    val passwordChangedAt: Instant?,
+    val cachedAt: Instant,
+)
+
+private val userStateCache = ConcurrentHashMap<UUID, CachedUserState>()
+private const val USER_STATE_CACHE_TTL_SECONDS = 300L // 5 minutes
 
 /** Apply to `install(Authentication) { configureJwt() }`. */
 fun AuthenticationConfig.configureJwt(name: String = "jwt") {
@@ -42,14 +59,52 @@ fun AuthenticationConfig.configureJwt(name: String = "jwt") {
             // Deactivating a user (is_active=false) instantly invalidates every
             // already-issued access token on its next use.
             val uid = runCatching { UUID.fromString(sub) }.getOrNull() ?: return@validate null
-            val userRow = dbQuery {
-                AppUsersTable.selectAll().where { AppUsersTable.id eq uid }
-                    .singleOrNull()
+
+            // Try DB lookup; on failure, fall back to cached state so transient
+            // DB outages (Render restart, connection pool blip) don't log users out.
+            val cached = userStateCache[uid]
+            val now = Instant.now()
+            val userRow = try {
+                dbQuery {
+                    AppUsersTable.selectAll().where { AppUsersTable.id eq uid }
+                        .singleOrNull()
+                }
+            } catch (e: Exception) {
+                // DB unreachable — use cached state if fresh enough
+                if (cached != null && now.epochSecond - cached.cachedAt.epochSecond < USER_STATE_CACHE_TTL_SECONDS) {
+                    // SEC-022: still check passwordChangedAt from cache
+                    if (cached.passwordChangedAt != null) {
+                        val tokenIssuedAt = credential.payload.issuedAt
+                        if (tokenIssuedAt == null || tokenIssuedAt.toInstant().isBefore(cached.passwordChangedAt)) {
+                            return@validate null
+                        }
+                    }
+                    return@validate if (cached.isActive) JWTPrincipal(credential.payload) else null
+                }
+                // No fresh cache → must reject (can't verify user is active)
+                return@validate null
             }
-            // Unknown user (no row) or deactivated → reject the principal.
-            if (userRow == null || userRow[AppUsersTable.isActive] != true) return@validate null
-            // SEC-022: reject tokens issued before the last password change.
+
+            // Unknown user (no row) → reject and evict cache
+            if (userRow == null) {
+                userStateCache.remove(uid)
+                return@validate null
+            }
+
+            val isActive = userRow[AppUsersTable.isActive] == true
             val passwordChangedAt = userRow[AppUsersTable.passwordChangedAt]
+
+            // Update cache with fresh DB state
+            userStateCache[uid] = CachedUserState(
+                isActive = isActive,
+                passwordChangedAt = passwordChangedAt,
+                cachedAt = now,
+            )
+
+            // Deactivated → reject
+            if (!isActive) return@validate null
+
+            // SEC-022: reject tokens issued before the last password change.
             if (passwordChangedAt != null) {
                 val tokenIssuedAt = credential.payload.issuedAt
                 if (tokenIssuedAt == null || tokenIssuedAt.toInstant().isBefore(passwordChangedAt)) {

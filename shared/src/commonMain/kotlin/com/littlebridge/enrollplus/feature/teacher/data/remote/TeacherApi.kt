@@ -20,6 +20,10 @@ import io.ktor.client.*
 
 import io.ktor.client.request.*
 
+import io.ktor.client.request.forms.MultiPartFormDataContent
+
+import io.ktor.client.request.forms.formData
+
 import io.ktor.http.*
 
 import kotlinx.serialization.SerialName
@@ -953,6 +957,60 @@ class TeacherApi(
             contentType(ContentType.Application.Json)
 
             setBody(request)
+
+        }
+
+    }
+
+
+
+    /** Phase 1 (§12): POST /api/v1/teacher/messages/attachments — multipart image upload. */
+
+    suspend fun uploadAttachment(
+
+        token: String,
+
+        bytes: ByteArray,
+
+        fileName: String,
+
+        mimeType: String,
+
+        attachmentType: String = "IMAGE",
+
+    ): NetworkResult<TeacherAttachmentUploadResponse> = safeApiCall {
+
+        client.post(getUrl("api/v1/teacher/messages/attachments")) {
+
+            setBody(
+
+                MultiPartFormDataContent(
+
+                    formData {
+
+                        append("attachment_type", attachmentType)
+
+                        append(
+
+                            "file",
+
+                            bytes,
+
+                            Headers.build {
+
+                                append(HttpHeaders.ContentType, mimeType)
+
+                                append(HttpHeaders.ContentDisposition, "filename=\"$fileName\"")
+
+                            }
+
+                        )
+
+                    }
+
+                )
+
+            )
 
         }
 

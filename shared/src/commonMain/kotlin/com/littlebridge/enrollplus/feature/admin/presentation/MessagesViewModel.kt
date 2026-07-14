@@ -19,6 +19,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
+import com.littlebridge.enrollplus.feature.admin.domain.model.AttachmentInput
 import com.littlebridge.enrollplus.feature.admin.domain.model.Message
 import com.littlebridge.enrollplus.feature.admin.domain.model.MessageThread
 import com.littlebridge.enrollplus.feature.admin.domain.model.SendMessageRequest
@@ -430,6 +431,120 @@ class MessagesViewModel(
     fun closeConversation() {
         stopPolling()
         _conversation.value = ConversationState()
+    }
+
+    /**
+     * Sends a reply with an optional image attachment. If [imageBytes] is non-null,
+     * uploads the image first via POST /attachments, then sends the message with
+     * the attachment metadata. Falls back to plain [sendReply] when no image.
+     */
+    fun sendReplyWithAttachment(
+        body: String,
+        imageBytes: ByteArray? = null,
+        fileName: String? = null,
+        mimeType: String? = null,
+    ) {
+        if (imageBytes == null || imageBytes.isEmpty() || fileName == null || mimeType == null) {
+            sendReply(body)
+            return
+        }
+
+        // 5MB client-side validation
+        if (imageBytes.size > 5 * 1024 * 1024) {
+            _conversation.value = _conversation.value.copy(error = "Image too large (max 5MB)")
+            return
+        }
+
+        val threadId = _conversation.value.threadId ?: return
+
+        // Optimistic message
+        val tempId = "optimistic-${kotlin.random.Random.nextLong()}"
+        val optimisticMsg = Message(
+            id = tempId,
+            body = body.ifBlank { "📷 Photo" },
+            isMine = true,
+            createdAt = "",
+            time = "Now",
+            status = "SENT",
+        )
+        _conversation.value = _conversation.value.copy(
+            messages = _conversation.value.messages + optimisticMsg,
+            isSending = true,
+            error = null,
+        )
+
+        viewModelScope.launch {
+            val token = preferenceRepository.getUserToken().first()
+            if (token.isNullOrBlank()) {
+                _conversation.value = _conversation.value.copy(
+                    messages = _conversation.value.messages.filterNot { it.id == tempId },
+                    isSending = false,
+                    error = "Not signed in",
+                )
+                return@launch
+            }
+
+            // Step 1: Upload attachment
+            val uploadResult = messagesRepository.uploadAttachment(token, imageBytes, fileName, mimeType, "IMAGE")
+            val attachmentInput = when (uploadResult) {
+                is NetworkResult.Success -> AttachmentInput(
+                    fileName = uploadResult.data.fileName,
+                    mimeType = uploadResult.data.mimeType,
+                    sizeBytes = uploadResult.data.sizeBytes,
+                    storageUrl = uploadResult.data.storageUrl,
+                    attachmentType = uploadResult.data.attachmentType,
+                )
+                is NetworkResult.Error -> {
+                    _conversation.value = _conversation.value.copy(
+                        messages = _conversation.value.messages.filterNot { it.id == tempId },
+                        isSending = false,
+                        error = "Upload failed: ${uploadResult.message}",
+                    )
+                    return@launch
+                }
+                is NetworkResult.ConnectionError -> {
+                    _conversation.value = _conversation.value.copy(
+                        messages = _conversation.value.messages.filterNot { it.id == tempId },
+                        isSending = false,
+                        error = "Connection error during upload",
+                    )
+                    return@launch
+                }
+            }
+
+            // Step 2: Send message with attachment
+            val clientMsgId = kotlin.random.Random.nextLong().toString()
+            val request = SendMessageRequest(
+                threadId = threadId,
+                body = body,
+                clientMsgId = clientMsgId,
+                attachments = listOf(attachmentInput),
+            )
+            when (val result = messagesRepository.sendMessage(token, request)) {
+                is NetworkResult.Success -> {
+                    AnalyticsTracker.event("vp_message_sent_with_attachment", mapOf(
+                        "thread_id" to threadId,
+                    ))
+                    _conversation.value = _conversation.value.copy(isSending = false)
+                    reloadConversation()
+                    refresh()
+                }
+                is NetworkResult.Error -> {
+                    _conversation.value = _conversation.value.copy(
+                        messages = _conversation.value.messages.filterNot { it.id == tempId },
+                        isSending = false,
+                        error = result.message,
+                    )
+                }
+                is NetworkResult.ConnectionError -> {
+                    _conversation.value = _conversation.value.copy(
+                        messages = _conversation.value.messages.filterNot { it.id == tempId },
+                        isSending = false,
+                        error = "Connection error",
+                    )
+                }
+            }
+        }
     }
 
     /**

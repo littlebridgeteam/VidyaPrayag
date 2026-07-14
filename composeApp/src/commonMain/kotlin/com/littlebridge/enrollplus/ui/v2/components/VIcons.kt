@@ -603,6 +603,30 @@ object VIcons {
             moveTo(12f, 11f); curveTo(14.21f, 11f, 16f, 9.21f, 16f, 7f); curveTo(16f, 4.79f, 14.21f, 3f, 12f, 3f); curveTo(9.79f, 3f, 8f, 4.79f, 8f, 7f); curveTo(8f, 9.21f, 9.79f, 11f, 12f, 11f); close()
         }
     }
+
+    /** Camera (lucide) — camera body + lens. Used for image attachment in messaging. */
+    val Camera: ImageVector by lazy {
+        materialStroke("v_camera") {
+            moveTo(23f, 19f); curveTo(23f, 20.1f, 22.1f, 21f, 21f, 21f); lineTo(3f, 21f); curveTo(1.9f, 21f, 1f, 20.1f, 1f, 19f); lineTo(1f, 8f); curveTo(1f, 6.9f, 1.9f, 6f, 3f, 6f); lineTo(7f, 6f); lineTo(9f, 3f); lineTo(15f, 3f); lineTo(17f, 6f); lineTo(21f, 6f); curveTo(22.1f, 6f, 23f, 6.9f, 23f, 8f); close()
+            moveTo(12f, 17f); curveTo(14.21f, 17f, 16f, 15.21f, 16f, 13f); curveTo(16f, 10.79f, 14.21f, 9f, 12f, 9f); curveTo(9.79f, 9f, 8f, 10.79f, 8f, 13f); curveTo(8f, 15.21f, 9.79f, 17f, 12f, 17f); close()
+        }
+    }
+
+    /** Paperclip (lucide) — attachment clip. Used for file/image attachment in messaging. */
+    val Paperclip: ImageVector by lazy {
+        materialStroke("v_paperclip") {
+            moveTo(21.44f, 11.05f); lineTo(12.25f, 20.24f); curveTo(9.9f, 22.59f, 6.11f, 22.59f, 3.76f, 20.24f); curveTo(1.41f, 17.89f, 1.41f, 14.1f, 3.76f, 11.75f); lineTo(12.95f, 2.56f); curveTo(14.5f, 1.01f, 17f, 1.01f, 18.55f, 2.56f); curveTo(20.1f, 4.11f, 20.1f, 6.61f, 18.55f, 8.16f); lineTo(9.35f, 17.35f); curveTo(8.58f, 18.12f, 7.33f, 18.12f, 6.56f, 17.35f); curveTo(5.79f, 16.58f, 5.79f, 15.33f, 6.56f, 14.56f); lineTo(15.05f, 6.08f)
+        }
+    }
+
+    /** XCircle (lucide) — circle with X. Used for clearing image preview in compose bar. */
+    val XCircle: ImageVector by lazy {
+        materialStroke("v_x_circle") {
+            moveTo(12f, 3f); curveTo(7.03f, 3f, 3f, 7.03f, 3f, 12f); curveTo(3f, 16.97f, 7.03f, 21f, 12f, 21f); curveTo(16.97f, 21f, 21f, 16.97f, 21f, 12f); curveTo(21f, 7.03f, 16.97f, 3f, 12f, 3f); close()
+            moveTo(15f, 9f); lineTo(9f, 15f)
+            moveTo(9f, 9f); lineTo(15f, 15f)
+        }
+    }
 }
 
 // ── Builders ───────────────────────────────────────────────────────────────────
