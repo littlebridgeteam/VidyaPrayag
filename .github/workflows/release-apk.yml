@@ -1,15 +1,15 @@
-name: Release APK
+name: Debug APK
 
 on:
   push:
-    branches: [main]
+    branches: [main,development_v1.0.0]
   workflow_dispatch:
     inputs:
       flavor:
         description: 'Build flavor'
         required: true
         type: choice
-        default: 'prod'
+        default: 'staging'
         options:
           - dev
           - staging
@@ -18,7 +18,7 @@ on:
         description: 'Build type'
         required: true
         type: choice
-        default: 'release'
+        default: 'debug'
         options:
           - debug
           - release
@@ -74,7 +74,8 @@ jobs:
           # Extract versionName from build.gradle.kts
           VERSION_NAME=$(grep 'versionName' composeApp/build.gradle.kts | head -1 | sed 's/.*versionName = "//;s/".*//')
           echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
-          echo "Version: $VERSION_NAME"
+          echo "build_num=${{ github.run_number }}" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION_NAME (build ${{ github.run_number }})"
 
           # Map flavor to display name: dev→Dev, staging→Stag, prod→Prod
           FLAVOR=${{ github.event_name == 'workflow_dispatch' && inputs.flavor || 'prod' }}
@@ -124,7 +125,8 @@ jobs:
           BUILD_TYPE_DISPLAY=$(echo "$BUILD_TYPE" | sed 's/./\U&/')
           VERSION=${{ steps.params.outputs.version_name }}
           SRC="${{ steps.apk.outputs.apk_path }}"
-          DEST="composeApp/build/outputs/apk/EnRollPlus_${FLAVOR_DISPLAY}_${BUILD_TYPE_DISPLAY}_v${VERSION}.apk"
+          BUILD_NUM=${{ github.run_number }}
+          DEST="composeApp/build/outputs/apk/EnRollPlus_${FLAVOR_DISPLAY}_${BUILD_TYPE_DISPLAY}_v${VERSION}_build${BUILD_NUM}.apk"
           cp "$SRC" "$DEST"
           echo "Renamed APK: $DEST"
           ls -lh "$DEST"
@@ -187,6 +189,7 @@ jobs:
           FLAVOR="${{ steps.params.outputs.flavor_display }}"
           BUILD_TYPE="${{ steps.params.outputs.build_type }}"
           VERSION="${{ steps.params.outputs.version_name }}"
+          BUILD_NUM="${{ steps.params.outputs.build_num }}"
           APK_FILE=$(ls composeApp/build/outputs/apk/EnRollPlus_*.apk | head -1)
           APK_NAME=$(basename "$APK_FILE")
           APK_SIZE=$(stat -c%s "$APK_FILE")
@@ -241,7 +244,7 @@ jobs:
           COMPLETE_RESP=$(curl -s --max-time 30 -X POST https://slack.com/api/files.completeUploadExternal \
             -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
             -H "Content-Type: application/json; charset=utf-8" \
-            -d "{\"files\":[{\"id\":\"$FILE_ID\",\"title\":\"EnRollPlus ${FLAVOR} ${BUILD_TYPE} v${VERSION}\"}],\"channel_id\":\"$SLACK_CHANNEL_ID\",\"initial_comment\":\"📱 *New APK Build*\\n• *Name:* $APK_NAME\\n• *Flavor:* $FLAVOR\\n• *Build:* $BUILD_TYPE\\n• *Version:* v${VERSION}\\n• *Commit:* ${{ github.sha }}\\n• *Triggered by:* ${{ github.actor }}\\n\\n$DOWNLOAD_LINE\"}")
+            -d "{\"files\":[{\"id\":\"$FILE_ID\",\"title\":\"EnRollPlus ${FLAVOR} ${BUILD_TYPE} v${VERSION} build${BUILD_NUM}\"}],\"channel_id\":\"$SLACK_CHANNEL_ID\",\"initial_comment\":\"📱 *New APK Build*\\n• *Name:* $APK_NAME\\n• *Flavor:* $FLAVOR\\n• *Build:* $BUILD_TYPE\\n• *Version:* v${VERSION} (build ${BUILD_NUM})\\n• *Commit:* ${{ github.sha }}\\n• *Triggered by:* ${{ github.actor }}\\n\\n$DOWNLOAD_LINE\"}")
 
           echo "completeUploadExternal response: $COMPLETE_RESP"
 
