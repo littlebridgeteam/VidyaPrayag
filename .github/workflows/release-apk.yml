@@ -197,10 +197,11 @@ jobs:
 
           echo "Got upload URL and file_id: $FILE_ID"
 
-          # Step 2: Upload the file to the provided URL
+          # Step 2: Upload the file to the provided URL (raw binary body, not multipart)
           UPLOAD_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
             -X POST "$UPLOAD_URL" \
-            -F "file=@$APK_FILE")
+            -H "Content-Type: application/octet-stream" \
+            --data-binary "@$APK_FILE")
 
           if [ "$UPLOAD_STATUS" != "200" ]; then
             echo "::error::File upload to Slack URL failed with HTTP $UPLOAD_STATUS"
@@ -210,12 +211,10 @@ jobs:
           echo "File uploaded to Slack storage"
 
           # Step 3: Complete the upload and share to channel
-          COMMENT="📱 *New APK Build*\n• *Tag:* $TAG\n• *Flavor:* $FLAVOR\n• *Build:* $BUILD_TYPE\n• *Commit:* ${{ github.sha }}\n• *Triggered by:* ${{ github.actor }}\n\nDownload from GitHub Release: https://github.com/${{ github.repository }}/releases/tag/$TAG"
-
           COMPLETE_RESP=$(curl -s -X POST https://slack.com/api/files.completeUploadExternal \
             -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
             -H "Content-Type: application/json; charset=utf-8" \
-            -d "{\"files\":[{\"id\":\"$FILE_ID\",\"title\":\"Enroll+ APK — $TAG\"}],\"channel_id\":\"$SLACK_CHANNEL_ID\",\"initial_comment\":\"$COMMENT\"}")
+            -d "{\"files\":[{\"id\":\"$FILE_ID\",\"title\":\"Enroll+ APK — $TAG\"}],\"channel_id\":\"$SLACK_CHANNEL_ID\",\"initial_comment\":\"📱 *New APK Build*\\n• *Tag:* $TAG\\n• *Flavor:* $FLAVOR\\n• *Build:* $BUILD_TYPE\\n• *Commit:* ${{ github.sha }}\\n• *Triggered by:* ${{ github.actor }}\\n\\nDownload: https://github.com/${{ github.repository }}/releases/tag/$TAG\"}")
 
           echo "completeUploadExternal response: $COMPLETE_RESP"
 
