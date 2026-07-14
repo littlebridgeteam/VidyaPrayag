@@ -1160,6 +1160,7 @@ private fun ImportStudentsSheet(
     var csv by remember {
         mutableStateOf("full_name,class_name,section,roll_number\n")
     }
+    var fileName by remember { mutableStateOf<String?>(null) }
     val canSubmit = csv.lineSequence().drop(1).any { it.isNotBlank() } && !isSubmitting
     val scope = rememberCoroutineScope()
     val csvTemplate = "full_name,class_name,section,roll_number,parent_phone\n"
@@ -1173,6 +1174,7 @@ private fun ImportStudentsSheet(
             scope.launch {
                 val bytes = platformFile.readBytes()
                 csv = bytes.decodeToString()
+                fileName = platformFile.name
             }
         }
     }
@@ -1183,21 +1185,51 @@ private fun ImportStudentsSheet(
     ) {
         VBottomSheetHeader(title = appString(StringKeys.PPL_IMPORT_STUDENTS_CSV), subtitle = appString(StringKeys.PPL_IMPORT_INSTRUCTIONS))
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            // Primary: file upload gateway
+            VCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { csvPicker.launch() },
+                padding = 20.dp,
+                shape = RoundedCornerShape(16.dp),
+            ) {
+                Column(
+                    Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(VColors.violet.copy(alpha = 0.1f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(VIcons.Upload, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(24.dp))
+                    }
+                    Text(
+                        if (fileName != null) "File: $fileName" else "Upload CSV File",
+                        style = VTypography.body.copy(fontWeight = FontWeight.Bold),
+                        color = VColors.ink,
+                    )
+                    Text(
+                        if (fileName != null) "Tap to replace file" else "Tap to choose a .csv file from your device",
+                        style = VTypography.caption,
+                        color = VColors.ink3,
+                    )
+                }
+            }
+            // Secondary: paste area (collapsible-style, still visible)
+            Text("or paste CSV content manually", style = VTypography.caption, color = VColors.ink3)
             VInput(
                 value = csv,
-                onValueChange = { csv = it },
+                onValueChange = { csv = it; fileName = null },
                 label = appString(StringKeys.PPL_CSV_CONTENT),
                 placeholder = appString(StringKeys.PPL_CSV_PH),
                 singleLine = false,
-                modifier = Modifier.fillMaxWidth().height(180.dp),
+                modifier = Modifier.fillMaxWidth().height(120.dp),
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                VButton(
-                    text = "Upload CSV",
-                    onClick = { csvPicker.launch() },
-                    variant = VButtonVariant.Secondary,
-                    modifier = Modifier.weight(1f),
-                )
                 VButton(
                     text = "Download Template",
                     onClick = { fileSaver.launch(baseName = "student_import_template", extension = "csv", bytes = csvTemplate.encodeToByteArray()) },

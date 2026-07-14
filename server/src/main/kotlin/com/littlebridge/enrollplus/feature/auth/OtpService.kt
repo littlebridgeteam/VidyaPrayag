@@ -164,7 +164,17 @@ object OtpService {
             .split(",")
             .map { it.trim() }
             .filter { it.isNotBlank() }
+            .map { normalisePhoneForTest(it) }
             .toSet()
+    }
+    private fun normalisePhoneForTest(raw: String): String {
+        val digits = raw.replace("\\s|-".toRegex(), "")
+        return when {
+            digits.startsWith("+") -> digits
+            digits.length == 10 && digits.all { it.isDigit() } -> "+91$digits"
+            digits.length == 12 && digits.startsWith("91") -> "+$digits"
+            else -> digits
+        }
     }
     private fun isTestNumber(identifier: String): Boolean =
         testFixedCode != null && identifier in testNumbers

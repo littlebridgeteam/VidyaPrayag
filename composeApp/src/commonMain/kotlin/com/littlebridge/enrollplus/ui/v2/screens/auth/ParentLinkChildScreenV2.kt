@@ -230,22 +230,23 @@ private fun ParentLinkChildContent(
                                 modifier = Modifier.fillMaxWidth(),
                             )
                             Spacer(Modifier.height(d.sm))
-                            // §5: search action — runs the real GET /schools/search.
-                            VButton(
-                                text = if (state.isSearching) appString(StringKeys.LINK_SEARCHING) else appString(StringKeys.LINK_SEARCH),
-                                onClick = onSearch,
-                                full = true,
-                                size = VButtonSize.Md,
-                                tone = VButtonTone.Navy,
-                                soft = true,
-                                enabled = !state.isSearching && schoolQuery.isNotBlank(),
-                            )
-                            Spacer(Modifier.height(d.sm))
                             when {
+                                state.isSearching -> {
+                                    Text(
+                                        appString(StringKeys.LINK_SEARCHING),
+                                        style = VTheme.type.caption.colored(c.ink2),
+                                    )
+                                }
                                 state.searchError != null -> {
                                     Text(
                                         state.searchError ?: appString(StringKeys.LINK_SEARCH_ERR),
                                         style = VTheme.type.caption.colored(c.dangerInk),
+                                    )
+                                }
+                                state.matches.isEmpty() && schoolQuery.length >= 2 -> {
+                                    Text(
+                                        "No schools found. Try a different search.",
+                                        style = VTheme.type.caption.colored(c.ink2),
                                     )
                                 }
                                 state.matches.isEmpty() -> {
@@ -255,9 +256,6 @@ private fun ParentLinkChildContent(
                                     )
                                 }
                                 else -> {
-                                    // ROOT FIX: when several schools match, the parent MUST pick
-                                    // their child's school — tapping a card selects it. Auto-select
-                                    // only happens for a single result (see LinkChildViewModel).
                                     if (state.matches.size > 1) {
                                         Text(
                                             appString(StringKeys.LINK_TAP_SELECT),
@@ -272,7 +270,6 @@ private fun ParentLinkChildContent(
                                             onClick = { onSelectSchool(match) },
                                         ) {
                                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                                // §5: React match-icon circle = solid var(--arctic)=teal, dark glyph (Auth.tsx L294).
                                                 Box(
                                                     Modifier
                                                         .size(40.dp)
