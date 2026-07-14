@@ -115,6 +115,12 @@ data class SetGamificationFlagRequest(
 )
 
 @Serializable
+data class SetGranularFlagRequest(
+    val flagKey: String,
+    val enabled: Boolean
+)
+
+@Serializable
 data class ShoutoutRequest(
     val receiverId: String,
     val message: String,
@@ -1023,6 +1029,16 @@ fun Route.gamificationRouting() {
                 val updated = GamificationService.setGamificationEnabled(req.isGamificationEnabled)
                 if (updated) call.okMessage("Gamification ${if (req.isGamificationEnabled) "enabled" else "disabled"}")
                 else call.fail("Failed to update gamification flag", HttpStatusCode.InternalServerError, "UPDATE_FAILED")
+            }
+
+            put("/flags/granular") {
+                val ctx = call.requireSchoolAdmin() ?: return@put
+                val req = runCatching { call.receive<SetGranularFlagRequest>() }.getOrNull()
+                    ?: run { call.fail("Invalid request body"); return@put }
+
+                val updated = GamificationService.setGranularFlag(req.flagKey, req.enabled)
+                if (updated) call.okMessage("Flag ${req.flagKey} ${if (req.enabled) "enabled" else "disabled"}")
+                else call.fail("Failed to update flag", HttpStatusCode.InternalServerError, "UPDATE_FAILED")
             }
 
             get("/badges") {

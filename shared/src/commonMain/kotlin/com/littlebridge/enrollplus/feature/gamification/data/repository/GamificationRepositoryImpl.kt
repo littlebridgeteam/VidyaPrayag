@@ -48,6 +48,7 @@ class GamificationRepositoryImpl(
 
     override suspend fun getFlags(token: String) = api.getFlags(token)
     override suspend fun setEnabled(token: String, enabled: Boolean) = api.setEnabled(token, enabled)
+    override suspend fun setGranularFlag(token: String, flagKey: String, enabled: Boolean) = api.setGranularFlag(token, flagKey, enabled)
     override suspend fun getBadgeDefinitions(token: String) = api.getBadgeDefinitions(token)
     override suspend fun getLevelDefinitions(token: String) = api.getLevelDefinitions(token)
     override suspend fun getHouses(token: String) = api.getHouses(token)
