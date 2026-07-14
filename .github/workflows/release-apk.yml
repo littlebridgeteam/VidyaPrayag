@@ -6,13 +6,22 @@ on:
   workflow_dispatch:
     inputs:
       flavor:
-        description: 'Build flavor (dev, staging, prod)'
-        required: false
+        description: 'Build flavor'
+        required: true
+        type: choice
         default: 'prod'
+        options:
+          - dev
+          - staging
+          - prod
       build_type:
-        description: 'Build type (debug, release)'
-        required: false
+        description: 'Build type'
+        required: true
+        type: choice
         default: 'release'
+        options:
+          - debug
+          - release
 
 permissions:
   contents: write
@@ -145,3 +154,39 @@ jobs:
             composeApp/build/outputs/apk/*.apk
           prerelease: false
           make_latest: true
+
+      - name: Upload APK to Slack
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+        run: |
+          if [ -z "$SLACK_BOT_TOKEN" ] || [ -z "$SLACK_CHANNEL_ID" ]; then
+            echo "::warning::SLACK_BOT_TOKEN or SLACK_CHANNEL_ID secret not set — skipping Slack upload"
+            exit 0
+          fi
+
+          TAG="${{ steps.tag.outputs.tag }}"
+          FLAVOR="${{ steps.params.outputs.flavor }}"
+          BUILD_TYPE="${{ steps.params.outputs.build_type }}"
+          APK_FILE=$(ls composeApp/build/outputs/apk/enrollplus-*.apk | head -1)
+
+          echo "Uploading $APK_FILE to Slack channel $SLACK_CHANNEL_ID..."
+
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -F "token=$SLACK_BOT_TOKEN" \
+            -F "channels=$SLACK_CHANNEL_ID" \
+            -F "file=@$APK_FILE" \
+            -F "filename=$(basename "$APK_FILE")" \
+            -F "title=Enroll+ APK — $TAG" \
+            -F "initial_comment=📱 *New APK Build*\n• *Tag:* $TAG\n• *Flavor:* $FLAVOR\n• *Build:* $BUILD_TYPE\n• *Commit:* ${{ github.sha }}\n• *Triggered by:* ${{ github.actor }}\n\nDownload from GitHub Release: https://github.com/${{ github.repository }}/releases/tag/$TAG" \
+            https://slack.com/api/files.upload)
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          if [ "$HTTP_CODE" != "200" ] || echo "$BODY" | grep -q '"ok":false'; then
+            echo "::error::Slack upload failed: $BODY"
+            exit 1
+          fi
+
+          echo "APK uploaded to Slack successfully"
