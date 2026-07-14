@@ -46,6 +46,7 @@ import com.littlebridge.enrollplus.db.HomeworkSubmissionsTable
 import com.littlebridge.enrollplus.db.HomeworkTable
 import com.littlebridge.enrollplus.db.LeaveRequestsTable
 import com.littlebridge.enrollplus.db.ParentChildLinksTable
+import com.littlebridge.enrollplus.db.SchoolClassesTable
 import com.littlebridge.enrollplus.db.StudentsTable
 import com.littlebridge.enrollplus.db.TeacherSubjectAssignmentsTable
 import io.ktor.http.*
@@ -838,6 +839,15 @@ fun Route.schoolStudentsRouting() {
                     PhoneNormalizer.canonical(req.parentPhone)
                 } else null
 
+                val classOk = dbQuery { ClassResolution.classExists(ctx.schoolId, req.className) }
+                if (!classOk) {
+                    call.fail(
+                        "Class \"${req.className}\" is not configured for your school. Add it in Classes & Subjects first.",
+                        HttpStatusCode.BadRequest, "CLASS_NOT_FOUND"
+                    )
+                    return@post
+                }
+
                 val dto = dbQuery {
                     // ISSUE 1: store the canonical class name + section so the derived
                     // teacher⇄student join holds byte-for-byte.
@@ -979,10 +989,26 @@ fun Route.schoolStudentsRouting() {
                 // recompute the affected teachers' workload once, after the batch.
                 val touchedClasses = LinkedHashSet<Pair<String, String>>()
                 dbQuery {
+                    // Pre-fetch all configured class keys for this school for fast validation.
+                    val configuredClassKeys = SchoolClassesTable.selectAll()
+                        .where { SchoolClassesTable.schoolId eq ctx.schoolId }
+                        .flatMap { row ->
+                            listOf(
+                                ClassNaming.classKey(row[SchoolClassesTable.name]),
+                                ClassNaming.classKey(row[SchoolClassesTable.code])
+                            )
+                        }.toSet()
+
                     rows.forEachIndexed { index, r ->
                         val rowNo = index + 1
                         if (r.fullName.isBlank() || r.className.isBlank() || r.rollNumber.isBlank()) {
                             results += BulkImportRowResult(rowNo, false, null, "Name, class and roll number are required.")
+                            return@forEachIndexed
+                        }
+                        // Bug 17: reject rows whose class is not configured for this school.
+                        val typedClassKey = ClassNaming.classKey(r.className.trim().replace(Regex("\\s+"), " "))
+                        if (typedClassKey !in configuredClassKeys) {
+                            results += BulkImportRowResult(rowNo, false, null, "Class \"${r.className}\" is not configured for your school.")
                             return@forEachIndexed
                         }
                         // ISSUE 1: canonical class + section so the derived join holds.

@@ -134,6 +134,9 @@ fun SchoolPeopleScreenV2(
     LaunchedEffect(studentRefreshKey){
         studentsViewModel.load()
     }
+    LaunchedEffect(Unit) {
+        classesViewModel.loadClasses()
+    }
     SchoolPeopleContent(
         teachersState = teachersState,
         onTeachersRetry = teachersViewModel::load,

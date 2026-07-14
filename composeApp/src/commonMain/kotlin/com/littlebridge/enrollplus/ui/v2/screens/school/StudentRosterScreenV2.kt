@@ -36,6 +36,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.admin.domain.model.StudentDto
+import com.littlebridge.enrollplus.feature.admin.presentation.ClassesSubjectsViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.StudentRosterState
 import com.littlebridge.enrollplus.feature.admin.presentation.StudentRosterViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VAvatar
@@ -78,8 +79,10 @@ fun StudentRosterScreenV2(
     onOpenStudent: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: StudentRosterViewModel = koinViewModel(),
+    classesViewModel: ClassesSubjectsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
+    val classesState by classesViewModel.state.collectAsStateV2()
     var showAdd by remember { mutableStateOf(false) }
     var pendingRemoval by remember { mutableStateOf<StudentDto?>(null) }
 
@@ -118,12 +121,17 @@ fun StudentRosterScreenV2(
         }
     }
 
+    LaunchedEffect(Unit) {
+        classesViewModel.loadClasses()
+    }
+
     if (showAdd) {
         AddStudentSheet(
             isSubmitting = state.isSaving,
             error = state.addError,
             onDismiss = { showAdd = false; viewModel.clearMessages() },
             onSubmit = { name, cls, sec, roll, phone -> viewModel.addStudent(name, cls, sec, roll, phone) },
+            availableClassNames = classesState.classes.map { it.name },
         )
     }
 
@@ -380,18 +388,19 @@ private fun AddStudentSheet(
     error: String?,
     onDismiss: () -> Unit,
     onSubmit: (name: String, className: String, section: String, rollNumber: String, parentPhone: String) -> Unit,
+    availableClassNames: List<String> = emptyList(),
 ) {
     var name by remember { mutableStateOf("") }
     var className by remember { mutableStateOf("") }
     var section by remember { mutableStateOf("") }
     var roll by remember { mutableStateOf("") }
-    // ISSUE 2b: parent phone is OPTIONAL — capture it when available but don't block submission.
     var parentPhone by remember { mutableStateOf("") }
+    var classDropdownExpanded by remember { mutableStateOf(false) }
     val phoneDigits = parentPhone.filter { it.isDigit() }
-    // Only validate when the admin entered something — blank = skip
     val phoneOk = parentPhone.isBlank() || phoneDigits.length >= 10
+    val classValid = className.isNotBlank() && (availableClassNames.isEmpty() || availableClassNames.any { it.equals(className, ignoreCase = true) })
 
-    val canSubmit = name.isNotBlank() && className.isNotBlank() &&
+    val canSubmit = name.isNotBlank() && classValid &&
         roll.isNotBlank() && phoneOk && !isSubmitting
 
     VBottomSheet(
@@ -404,13 +413,34 @@ private fun AddStudentSheet(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             VInput(name, { name = it }, label = appString(StringKeys.SCH_FULL_NAME), placeholder = appString(StringKeys.SCH_FULL_NAME_PH), leadingIcon = VIcons.User)
-            VInput(className, { className = it }, label = appString(StringKeys.SCH_CLASS), placeholder = appString(StringKeys.SCH_CLASS_PH))
+            Box {
+                VInput(
+                    className,
+                    { className = it },
+                    label = appString(StringKeys.SCH_CLASS),
+                    placeholder = appString(StringKeys.SCH_CLASS_PH),
+                    modifier = Modifier.fillMaxWidth().clickable { classDropdownExpanded = true },
+                )
+                DropdownMenu(
+                    expanded = classDropdownExpanded,
+                    onDismissRequest = { classDropdownExpanded = false },
+                    modifier = Modifier.background(VColors.cream, RoundedCornerShape(14.dp)),
+                ) {
+                    availableClassNames.forEach { cn ->
+                        DropdownMenuItem(
+                            text = { Text(cn) },
+                            onClick = { className = cn; classDropdownExpanded = false },
+                        )
+                    }
+                }
+            }
+            if (className.isNotBlank() && !classValid) {
+                Text("Please select a configured class", style = VTypography.caption, color = VColors.coral)
+            }
             VInput(section, { section = it }, label = appString(StringKeys.SCH_SECTION), placeholder = "A")
             VInput(roll, { roll = it }, label = appString(StringKeys.SCH_ROLL_NUMBER), placeholder = appString(StringKeys.SCH_ROLL_NUMBER_PH), keyboardType = KeyboardType.Number)
-            // ISSUE 2b: parent phone is optional but used by parent-link phone-match.
             VInput(
                 parentPhone,
-                // keep digits + a leading + and common separators while typing
                 { input -> parentPhone = input.filter { it.isDigit() || it == '+' || it == ' ' || it == '-' } },
                 label = appString(StringKeys.SCH_PARENT_PHONE_OPTIONAL),
                 placeholder = appString(StringKeys.SCH_PARENT_PHONE_PH),

@@ -78,12 +78,7 @@ import com.littlebridge.enrollplus.ui.components.VButton
 import com.littlebridge.enrollplus.ui.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
-import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.compose.rememberFileSaverLauncher
-import io.github.vinceglb.filekit.core.PickerMode
-import io.github.vinceglb.filekit.core.PickerType
-import kotlinx.coroutines.launch
-import androidx.compose.runtime.rememberCoroutineScope
 import com.littlebridge.enrollplus.ui.components.VProgressBar
 import com.littlebridge.enrollplus.ui.components.VProgressBarSegments
 import com.littlebridge.enrollplus.ui.tokens.VColors
@@ -668,6 +663,9 @@ private fun TeachersStep(
                 modifier = Modifier.weight(0.4f),
             )
         }
+        if (newTeacherEmail.isNotBlank() && !newTeacherEmail.trim().matches(Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"))) {
+            Text("Enter a valid email address", style = VTypography.caption, color = VColors.coral, modifier = Modifier.padding(top = 4.dp))
+        }
     }
 
     if (teachers.isEmpty()) {
@@ -838,21 +836,8 @@ private fun MatrixCell(label: String, inSubject: Boolean, mine: Boolean, takenBy
 
 @Composable
 private fun StudentsStep() {
-    val scope = rememberCoroutineScope()
     val csvTemplate = "full_name,class_name,section,roll_number,parent_phone\n"
     val fileSaver = rememberFileSaverLauncher() { _ -> }
-    val csvPicker = rememberFilePickerLauncher(
-        type = PickerType.File,
-        mode = PickerMode.Single,
-        title = "Choose a CSV file",
-    ) { platformFile ->
-        if (platformFile != null) {
-            scope.launch {
-                val bytes = platformFile.readBytes()
-                val csvContent = bytes.decodeToString()
-            }
-        }
-    }
 
     CreamCard {
         Column(Modifier.fillMaxWidth().padding(vertical = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
