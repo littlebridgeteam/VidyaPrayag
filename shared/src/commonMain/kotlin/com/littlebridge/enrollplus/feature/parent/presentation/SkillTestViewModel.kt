@@ -214,17 +214,12 @@ class SkillTestViewModel(
                             answeredCount = data.questionsAnswered,
                             correctCount = data.currentCorrectCount,
                             // Don't auto-advance — let user review feedback and
-                            // click "Next" manually. On the last question, the
-                            // server sets attemptCompleted=true → isCompleted.
-                            isCompleted = isLast,
+                            // click "Next" manually. On the last question, store
+                            // the final score but DON'T set isCompleted yet —
+                            // the user clicks "See Results" to transition.
                             finalScore = data.finalScore,
                             badgeEarned = data.badgeEarned,
                         )
-                    }
-
-                    // If completed, refresh eligibility + best score
-                    if (isLast) {
-                        loadEligibility()
                     }
                 }
                 is NetworkResult.Error -> _state.update {
@@ -276,6 +271,15 @@ class SkillTestViewModel(
                 )
             }
         }
+    }
+
+    /**
+     * Transition from the last-question feedback view to the results screen.
+     * Called when the user clicks "See Results" after answering the last question.
+     */
+    fun seeResults() {
+        _state.update { it.copy(isCompleted = true) }
+        loadEligibility()
     }
 
     /**
