@@ -15,7 +15,20 @@ data class AttendanceEntryDto(
     @SerialName("profile_pic") val profilePic: String? = null,
     val name: String,
     val id: String,
-    val status: String   // "present" | "absent" | "late" | "half_day"
+    val status: String   // "present" | "absent" | "late" | "leave" | "half_day"
+)
+
+@Serializable
+data class AttendanceMarkDto(
+    val id: String,
+    val status: String
+)
+
+@Serializable
+data class AttendanceSaveRequest(
+    val type: String,
+    val date: String,
+    val marks: List<AttendanceMarkDto>
 )
 
 @Serializable

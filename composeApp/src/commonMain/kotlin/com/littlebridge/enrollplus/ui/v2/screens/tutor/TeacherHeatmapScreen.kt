@@ -71,7 +71,7 @@ fun TeacherHeatmapScreen(
             when {
                 state.isLoading && state.heatmap == null -> VLoadingState()
                 state.error != null -> VErrorState(
-                    message = state.error!!,
+                    message = state.error ?: "",
                     onRetry = { viewModel.loadScope() },
                 )
                 state.scope.isEmpty() -> VEmptyState(
@@ -89,7 +89,7 @@ fun TeacherHeatmapScreen(
                         )
                     }
                     if (state.heatmap != null) {
-                        HeatmapContent(state.heatmap!!)
+                        state.heatmap?.let { HeatmapContent(it) }
                     } else if (!state.isLoading) {
                         VEmptyState(
                             title = appString(StringKeys.TH_NO_DATA),

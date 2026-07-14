@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextOverflow
 import com.littlebridge.enrollplus.feature.admin.presentation.DeptEfficiency
 import com.littlebridge.enrollplus.feature.admin.presentation.FacultyAccountability
 import com.littlebridge.enrollplus.feature.admin.presentation.StarTeacher
@@ -214,9 +215,9 @@ private fun AccountabilityCard(f: FacultyAccountability, modifier: Modifier = Mo
 @Composable
 private fun MiniStat(label: String, value: String) {
         Column {
-        Text(label, style = VTypography.label.copy(color = VColors.ink3))
+        Text(label, style = VTypography.label.copy(color = VColors.ink3), maxLines = 1, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.height(2.dp))
-        Text(value, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+        Text(value, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink), maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 

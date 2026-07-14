@@ -361,7 +361,7 @@ class ParentDashboardViewModel(
                     // server orders DESC so reverse to oldest→newest. Capped to the last 8.
                     val trend = if (latest != null) {
                         scored.filter { m -> m.subject == latest.subject && m.marks != null && m.maxMarks > 0 }
-                            .map { m -> (m.marks!! / m.maxMarks) * 100.0 }
+                            .map { m -> ((m.marks ?: 0.0) / m.maxMarks) * 100.0 }
                             .take(8)
                             .reversed()
                     } else emptyList()

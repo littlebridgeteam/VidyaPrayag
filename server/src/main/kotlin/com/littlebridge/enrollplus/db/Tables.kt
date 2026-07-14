@@ -593,6 +593,7 @@ object StudentsTable : UUIDTable("students", "id") {
     val parentPhone = text("parent_phone").nullable()
     val profilePhotoUrl = text("profile_photo_url").nullable()
     val isActive   = bool("is_active").default(true)
+    val admissionDate = date("admission_date").nullable()
     val createdAt  = timestamp("created_at")
 }
 

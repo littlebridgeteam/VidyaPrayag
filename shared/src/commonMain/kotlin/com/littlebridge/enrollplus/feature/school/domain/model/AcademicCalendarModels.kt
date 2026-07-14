@@ -169,6 +169,7 @@ data class CalendarDashboardDto(
     val hero: CalendarHeroDto = CalendarHeroDto(),
     @SerialName("upcoming_highlights") val upcomingHighlights: List<AcademicCalendarEventDto> = emptyList(),
     @SerialName("upcoming_timeline") val upcomingTimeline: List<AcademicCalendarEventDto> = emptyList(),
+    @SerialName("past_timeline") val pastTimeline: List<AcademicCalendarEventDto> = emptyList(),
     @SerialName("draft_events") val draftEvents: List<AcademicCalendarEventDto> = emptyList(),
     @SerialName("published_events") val publishedEvents: List<AcademicCalendarEventDto> = emptyList(),
     val milestones: List<AcademicCalendarEventDto> = emptyList(),

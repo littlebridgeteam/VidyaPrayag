@@ -53,4 +53,21 @@ object ClassResolution {
         // 3) honest fallback — keep the cleaned typed value
         return cleaned
     }
+
+    /**
+     * Check whether [typedClassName] resolves to a configured class for [schoolId].
+     * Must run inside an Exposed transaction. Returns `true` when the class name
+     * or code matches one of the school's configured classes.
+     */
+    fun classExists(schoolId: UUID, typedClassName: String): Boolean {
+        val cleaned = typedClassName.trim().replace(Regex("\\s+"), " ")
+        if (cleaned.isBlank()) return false
+        val wantKey = ClassNaming.classKey(cleaned)
+        return SchoolClassesTable.selectAll()
+            .where { SchoolClassesTable.schoolId eq schoolId }
+            .any { row ->
+                ClassNaming.classKey(row[SchoolClassesTable.name]) == wantKey ||
+                    ClassNaming.classKey(row[SchoolClassesTable.code]) == wantKey
+            }
+    }
 }
