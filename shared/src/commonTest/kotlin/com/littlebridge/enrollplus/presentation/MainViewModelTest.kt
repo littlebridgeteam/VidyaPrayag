@@ -6,7 +6,10 @@ import com.littlebridge.enrollplus.feature.schools.domain.model.School
 import com.littlebridge.enrollplus.feature.schools.domain.repository.SchoolRepository
 import com.littlebridge.enrollplus.feature.schools.domain.usecase.GetSchoolsUseCase
 import com.littlebridge.enrollplus.feature.auth.domain.repository.AuthRepository
+import com.littlebridge.enrollplus.core.model.ApiResponse
 import com.littlebridge.enrollplus.core.network.NetworkResult
+import com.littlebridge.enrollplus.feature.auth.domain.model.PersonalDetails
+import com.littlebridge.enrollplus.feature.auth.domain.model.PinnedScreensResponse
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.test.*
@@ -121,6 +124,9 @@ class MainViewModelTest {
         override suspend fun changePassword(oldPassword: String?, newPassword: String): NetworkResult<Unit> = TODO()
         override suspend fun logout() {}
         override suspend fun getUserDetails(token: String): NetworkResult<com.littlebridge.enrollplus.feature.auth.domain.model.UserDetailsResponse> = TODO()
+        override suspend fun updateProfilePic(url: String): NetworkResult<ApiResponse<PersonalDetails>> = TODO()
+        override suspend fun getPinnedScreens(): NetworkResult<ApiResponse<PinnedScreensResponse>> = TODO()
+        override suspend fun updatePinnedScreens(screens: List<String>): NetworkResult<ApiResponse<PinnedScreensResponse>> = TODO()
         override suspend fun syncThemePref(themePref: String): NetworkResult<Unit> = TODO()
     }
 }

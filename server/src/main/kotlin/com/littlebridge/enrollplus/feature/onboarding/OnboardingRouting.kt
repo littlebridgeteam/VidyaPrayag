@@ -326,6 +326,7 @@ private fun syncSchoolBasics(schoolId: UUID, uid: UUID) {
     SchoolsTable.update({ SchoolsTable.id eq schoolId }) {
         basics["school_name"]?.takeIf { v -> v.isNotBlank() }?.let { v -> it[name] = v }
         basics["board"]?.let { v -> it[board] = v }
+        basics["affiliation_number"]?.takeIf { v -> v.isNotBlank() }?.let { v -> it[affiliationNumber] = v }
         basics["medium"]?.let { v -> it[medium] = v }
         basics["school_gender"]?.let { v -> it[schoolGender] = v }
         basics["contact_email"]?.let { v -> it[contactEmail] = v }

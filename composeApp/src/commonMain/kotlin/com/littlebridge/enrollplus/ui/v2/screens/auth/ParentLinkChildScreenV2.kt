@@ -35,7 +35,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -56,7 +55,6 @@ import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.components.VLabel
 import com.littlebridge.enrollplus.ui.v2.components.VTag
 import com.littlebridge.enrollplus.core.locale.StringKeys
-import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.components.VBackHeader
@@ -146,7 +144,7 @@ private fun ParentLinkChildContent(
     Column(
         modifier
             .fillMaxSize()
-            .background(VColors.cream)
+            .background(c.background)
             .statusBarsPadding()
             .imePadding()
             .navigationBarsPadding(),
@@ -247,7 +245,7 @@ private fun ParentLinkChildContent(
                                 state.searchError != null -> {
                                     Text(
                                         state.searchError ?: appString(StringKeys.LINK_SEARCH_ERR),
-                                        style = VTheme.type.caption.colored(Color(0xFF7A1C18)),
+                                        style = VTheme.type.caption.colored(c.dangerInk),
                                     )
                                 }
                                 state.matches.isEmpty() -> {
@@ -358,7 +356,7 @@ private fun ParentLinkChildContent(
                                 state.linkError != null -> {
                                     Text(
                                         state.linkError ?: appString(StringKeys.LINK_ERR),
-                                        style = VTheme.type.caption.colored(Color(0xFF7A1C18)),
+                                        style = VTheme.type.caption.colored(c.dangerInk),
                                     )
                                 }
                                 // RA-48: a submitted request that the school admin must approve.
@@ -387,7 +385,7 @@ private fun ParentLinkChildContent(
                                                 }
                                                 Text(msg, style = VTheme.type.caption.colored(c.ink2))
                                             }
-                                            Icon(VIcons.Clock, contentDescription = null, tint = Color(0xFFB7791F), modifier = Modifier.size(18.dp))
+                                            Icon(VIcons.Clock, contentDescription = null, tint = c.warningInk, modifier = Modifier.size(18.dp))
                                         }
                                     }
                                 }
@@ -405,7 +403,7 @@ private fun ParentLinkChildContent(
                                                 )
                                             }
                                             // §5: React resolved-child check = #155e3a (Auth.tsx L319).
-                                            Icon(VIcons.Check, contentDescription = null, tint = Color(0xFF155E3A), modifier = Modifier.size(18.dp))
+                                            Icon(VIcons.Check, contentDescription = null, tint = c.successInk, modifier = Modifier.size(18.dp))
                                         }
                                     }
                                 }
