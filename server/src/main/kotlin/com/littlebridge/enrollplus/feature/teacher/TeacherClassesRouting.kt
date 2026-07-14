@@ -461,11 +461,15 @@ private fun buildClassSummaryInTxn(
  */
 internal fun rosterForInTxn(a: OwnedAssignment): List<EnrolledStudent> {
     val resolvedClassId = a.classId ?: resolveClassIdByName(a) ?: return fallbackRosterByClassNaming(a)
+    val sectionKey = com.littlebridge.enrollplus.core.ClassNaming.sectionKey(a.section)
     val enrollments = com.littlebridge.enrollplus.db.EnrollmentsTable.selectAll().where {
         (com.littlebridge.enrollplus.db.EnrollmentsTable.classId eq resolvedClassId) and
-            (com.littlebridge.enrollplus.db.EnrollmentsTable.section eq a.section) and
             (com.littlebridge.enrollplus.db.EnrollmentsTable.status eq "active")
-    }.toList()
+    }.filter {
+        com.littlebridge.enrollplus.core.ClassNaming.sectionKey(
+            it[com.littlebridge.enrollplus.db.EnrollmentsTable.section]
+        ) == sectionKey
+    }
     if (enrollments.isEmpty()) return fallbackRosterByClassNaming(a)
     val sids = enrollments.map { it[com.littlebridge.enrollplus.db.EnrollmentsTable.studentId] }.distinct()
     val studentsById = com.littlebridge.enrollplus.db.StudentsTable.selectAll().where {
@@ -500,10 +504,8 @@ private fun resolveClassIdByName(a: OwnedAssignment): java.util.UUID? {
 
 /** Fallback: match students by ClassNaming on className + section (no enrollments needed). */
 private fun fallbackRosterByClassNaming(a: OwnedAssignment): List<EnrolledStudent> {
-    val pattern = "%${a.className.trim()}%"
     return StudentsTable.selectAll().where {
-        (StudentsTable.schoolId eq a.schoolId) and (StudentsTable.isActive eq true) and
-        (StudentsTable.className like pattern)
+        (StudentsTable.schoolId eq a.schoolId) and (StudentsTable.isActive eq true)
     }.filter {
         com.littlebridge.enrollplus.core.ClassNaming.sameClassSection(
             it[StudentsTable.className], it[StudentsTable.section], a.className, a.section

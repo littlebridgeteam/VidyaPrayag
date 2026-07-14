@@ -212,6 +212,7 @@ fun TeacherHomeScreenV2(
             PendingActionsList(
                 obligations = obligations,
                 onOpenUpdate = onOpenUpdateTab,
+                onOpenUpdateTool = onOpenUpdateTool,
                 onOpenClasses = onOpenClasses,
                 onOpenLeaveRequests = onOpenLeaveRequests,
             )
@@ -548,6 +549,7 @@ private fun SkeletonScheduleCard() {
 private fun PendingActionsList(
     obligations: TeacherObligationsState,
     onOpenUpdate: () -> Unit,
+    onOpenUpdateTool: (UpdateTool) -> Unit,
     onOpenClasses: () -> Unit,
     onOpenLeaveRequests: () -> Unit = {},
 ) {
@@ -574,7 +576,7 @@ private fun PendingActionsList(
                 suffix = appString(StringKeys.TC_SUBMISSIONS),
                 icon = VIcons.FileText,
                 tint = VColors.sky,
-                onClick = onOpenUpdate,
+                onClick = { onOpenUpdateTool(UpdateTool.Homework) },
             ))
         }
         if (obligations.unpublishedResults > 0) {
@@ -584,7 +586,7 @@ private fun PendingActionsList(
                 suffix = appString(StringKeys.TC_TO_PUBLISH),
                 icon = VIcons.GraduationCap,
                 tint = VColors.violet,
-                onClick = onOpenUpdate,
+                onClick = { onOpenUpdateTool(UpdateTool.Marks) },
             ))
         }
         if (obligations.pendingLeaveDecisions > 0) {

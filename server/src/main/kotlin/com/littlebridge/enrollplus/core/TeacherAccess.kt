@@ -232,17 +232,14 @@ suspend fun ApplicationCall.requireOwnedAssignment(
  */
 suspend fun enrollmentsFor(assignment: OwnedAssignment): List<EnrolledStudent> {
     val resolvedClassId = assignment.classId ?: resolveClassIdByNameInTxn(assignment) ?: return fallbackRosterByClassNamingInTxn(assignment)
+    val sectionKey = ClassNaming.sectionKey(assignment.section)
     return dbQuery {
-        // Two-step lookup (the established single-table pattern in this codebase —
-        // there are no Exposed table-joins elsewhere, and EnrollmentsTable.studentId
-        // is a plain uuid column with no .references(), so an inferred join isn't
-        // available). 1) active enrollments for class+section; 2) batch-load the
-        // students for identity, then stitch in memory.
         val enrollments = EnrollmentsTable.selectAll().where {
             (EnrollmentsTable.classId eq resolvedClassId) and
-                (EnrollmentsTable.section eq assignment.section) and
                 (EnrollmentsTable.status eq "active")
-        }.toList()
+        }.filter {
+            ClassNaming.sectionKey(it[EnrollmentsTable.section]) == sectionKey
+        }
         if (enrollments.isEmpty()) return@dbQuery fallbackRosterByClassNamingInTxn(assignment)
 
         val studentIds = enrollments.map { it[EnrollmentsTable.studentId] }.distinct()
