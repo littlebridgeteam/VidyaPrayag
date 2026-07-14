@@ -33,18 +33,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Cache Gradle
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.gradle/caches
@@ -114,7 +114,7 @@ jobs:
           ls -lh "$DEST"
 
       - name: Upload APK to artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: enrollplus-apk-${{ steps.tag.outputs.tag }}
           path: composeApp/build/outputs/apk/*.apk
@@ -135,7 +135,7 @@ jobs:
           git push origin "$TAG"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
           name: "APK Release ${{ steps.tag.outputs.tag }}"
@@ -169,23 +169,58 @@ jobs:
           FLAVOR="${{ steps.params.outputs.flavor }}"
           BUILD_TYPE="${{ steps.params.outputs.build_type }}"
           APK_FILE=$(ls composeApp/build/outputs/apk/enrollplus-*.apk | head -1)
+          APK_NAME=$(basename "$APK_FILE")
+          APK_SIZE=$(stat -c%s "$APK_FILE")
 
-          echo "Uploading $APK_FILE to Slack channel $SLACK_CHANNEL_ID..."
+          echo "Uploading $APK_NAME ($APK_SIZE bytes) to Slack..."
 
-          RESPONSE=$(curl -s -w "\n%{http_code}" \
-            -F "token=$SLACK_BOT_TOKEN" \
-            -F "channels=$SLACK_CHANNEL_ID" \
-            -F "file=@$APK_FILE" \
-            -F "filename=$(basename "$APK_FILE")" \
-            -F "title=Enroll+ APK — $TAG" \
-            -F "initial_comment=📱 *New APK Build*\n• *Tag:* $TAG\n• *Flavor:* $FLAVOR\n• *Build:* $BUILD_TYPE\n• *Commit:* ${{ github.sha }}\n• *Triggered by:* ${{ github.actor }}\n\nDownload from GitHub Release: https://github.com/${{ github.repository }}/releases/tag/$TAG" \
-            https://slack.com/api/files.upload)
+          # Step 1: Get upload URL from Slack (new files.getUploadURLExternal API)
+          UPLOAD_RESP=$(curl -s -X POST https://slack.com/api/files.getUploadURLExternal \
+            -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+            -F "filename=$APK_NAME" \
+            -F "length=$APK_SIZE")
 
-          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-          BODY=$(echo "$RESPONSE" | sed '$d')
+          echo "getUploadURLExternal response: $UPLOAD_RESP"
 
-          if [ "$HTTP_CODE" != "200" ] || echo "$BODY" | grep -q '"ok":false'; then
-            echo "::error::Slack upload failed: $BODY"
+          if echo "$UPLOAD_RESP" | grep -q '"ok":false'; then
+            echo "::error::Failed to get upload URL: $UPLOAD_RESP"
+            exit 1
+          fi
+
+          UPLOAD_URL=$(echo "$UPLOAD_RESP" | grep -o '"upload_url":"[^"]*"' | sed 's/"upload_url":"//;s/"//')
+          FILE_ID=$(echo "$UPLOAD_RESP" | grep -o '"file_id":"[^"]*"' | sed 's/"file_id":"//;s/"//')
+
+          if [ -z "$UPLOAD_URL" ] || [ -z "$FILE_ID" ]; then
+            echo "::error::Could not parse upload URL or file ID from response"
+            exit 1
+          fi
+
+          echo "Got upload URL and file_id: $FILE_ID"
+
+          # Step 2: Upload the file to the provided URL
+          UPLOAD_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST "$UPLOAD_URL" \
+            -F "file=@$APK_FILE")
+
+          if [ "$UPLOAD_STATUS" != "200" ]; then
+            echo "::error::File upload to Slack URL failed with HTTP $UPLOAD_STATUS"
+            exit 1
+          fi
+
+          echo "File uploaded to Slack storage"
+
+          # Step 3: Complete the upload and share to channel
+          COMMENT="📱 *New APK Build*\n• *Tag:* $TAG\n• *Flavor:* $FLAVOR\n• *Build:* $BUILD_TYPE\n• *Commit:* ${{ github.sha }}\n• *Triggered by:* ${{ github.actor }}\n\nDownload from GitHub Release: https://github.com/${{ github.repository }}/releases/tag/$TAG"
+
+          COMPLETE_RESP=$(curl -s -X POST https://slack.com/api/files.completeUploadExternal \
+            -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+            -H "Content-Type: application/json; charset=utf-8" \
+            -d "{\"files\":[{\"id\":\"$FILE_ID\",\"title\":\"Enroll+ APK — $TAG\"}],\"channel_id\":\"$SLACK_CHANNEL_ID\",\"initial_comment\":\"$COMMENT\"}")
+
+          echo "completeUploadExternal response: $COMPLETE_RESP"
+
+          if echo "$COMPLETE_RESP" | grep -q '"ok":false'; then
+            echo "::error::Slack complete upload failed: $COMPLETE_RESP"
             exit 1
           fi
 
