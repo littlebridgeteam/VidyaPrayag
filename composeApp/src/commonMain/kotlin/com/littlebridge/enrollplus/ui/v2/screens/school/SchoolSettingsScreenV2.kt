@@ -417,10 +417,10 @@ private fun InstitutionalProfileHealthCard(
             .clip(VShapes.lg)
             .background(VColors.surfaceCard)
             .border(1.dp, VColors.line, VShapes.lg)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-            ) { onClick() },
+            .clickable {
+                AnalyticsTracker.event("vp_settings_profile_card_tap")
+                onClick()
+            },
     ) {
         // Header section with violetSoft tint
         Column(
