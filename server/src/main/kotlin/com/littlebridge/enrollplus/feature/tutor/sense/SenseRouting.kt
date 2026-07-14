@@ -7,8 +7,8 @@ import com.littlebridge.enrollplus.core.principalUserUuid
 import com.littlebridge.enrollplus.db.ChildrenTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.SchoolClassesTable
-import com.littlebridge.enrollplus.db.SchoolSubjectsTable
 import com.littlebridge.enrollplus.db.StudentsTable
+import com.littlebridge.enrollplus.db.TeacherSubjectAssignmentsTable
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.routing.Route
@@ -57,18 +57,24 @@ fun Route.senseRouting() {
             "Child has no school link", HttpStatusCode.BadRequest, "NO_SCHOOL"
         )
 
-        val studentCode = dbQuery {
-            ChildrenTable.selectAll().where { ChildrenTable.id eq childId }
-                .singleOrNull()?.get(ChildrenTable.studentCode)
-        }
+        val childRow = dbQuery {
+            ChildrenTable.selectAll().where { ChildrenTable.id eq childId }.singleOrNull()
+        } ?: return@get call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND")
 
-        val className = dbQuery {
-            studentCode?.let { code ->
-                StudentsTable.selectAll().where { StudentsTable.studentCode eq code }
-                    .singleOrNull()?.get(StudentsTable.className)
-            } ?: ChildrenTable.selectAll().where { ChildrenTable.id eq childId }
-                .singleOrNull()?.get(ChildrenTable.currentGrade)
-        } ?: ""
+        val studentCode = childRow[ChildrenTable.studentCode]
+        val childGrade = childRow[ChildrenTable.currentGrade] ?: ""
+
+        // Resolve student's class + section from StudentsTable
+        val studentRow = studentCode?.let { code ->
+            dbQuery {
+                StudentsTable.selectAll().where {
+                    (StudentsTable.schoolId eq schoolId) and
+                    (StudentsTable.studentCode eq code)
+                }.singleOrNull()
+            }
+        }
+        val className = studentRow?.get(StudentsTable.className) ?: childGrade
+        val section = studentRow?.get(StudentsTable.section) ?: "A"
 
         val classId = dbQuery {
             // 1. Try exact code match
@@ -105,17 +111,22 @@ fun Route.senseRouting() {
             row?.get(SchoolClassesTable.id)?.value
         }
 
+        // Query TeacherSubjectAssignmentsTable — only subjects with an assigned teacher
         val subjects = dbQuery {
-            if (classId == null) return@dbQuery emptyList()
-            SchoolSubjectsTable.selectAll().where {
-                SchoolSubjectsTable.classId eq classId
+            TeacherSubjectAssignmentsTable.selectAll().where {
+                (TeacherSubjectAssignmentsTable.schoolId eq schoolId) and
+                (TeacherSubjectAssignmentsTable.className eq className) and
+                (TeacherSubjectAssignmentsTable.isActive eq true)
+            }.let { rows ->
+                // Filter by section if student has one
+                rows.filter { it[TeacherSubjectAssignmentsTable.section] == section }
             }.map { row ->
                 SubjectItem(
-                    subjectId = row[SchoolSubjectsTable.id].value.toString(),
-                    subjectName = row[SchoolSubjectsTable.subName],
-                    subjectCode = row[SchoolSubjectsTable.subCode],
+                    subjectId = row[TeacherSubjectAssignmentsTable.subjectId]?.toString() ?: "",
+                    subjectName = row[TeacherSubjectAssignmentsTable.subject],
+                    subjectCode = row[TeacherSubjectAssignmentsTable.subject],
                 )
-            }
+            }.distinctBy { it.subjectName }
         }
 
         call.ok(subjects, "Subjects (${subjects.size})")

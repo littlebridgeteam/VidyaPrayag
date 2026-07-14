@@ -51,10 +51,20 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.feature.teacher.domain.model.TeacherMessageAttachment
 import com.littlebridge.enrollplus.feature.teacher.domain.model.TeacherMessageDto
 import com.littlebridge.enrollplus.feature.teacher.domain.model.TeacherMessageThreadDto
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherMessageViewModel
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherMessageState
+import com.littlebridge.enrollplus.platform.rememberMediaPicker
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VShapes
+import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.ui.v2.components.PremiumAttachmentData
+import com.littlebridge.enrollplus.ui.v2.components.PremiumComposeBar
+import com.littlebridge.enrollplus.ui.v2.components.PremiumDateHeader
+import com.littlebridge.enrollplus.ui.v2.components.PremiumMessageBubble
+import com.littlebridge.enrollplus.ui.v2.components.PremiumMessageData
 import com.littlebridge.enrollplus.ui.v2.components.VAvatar
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
@@ -95,9 +105,7 @@ fun TeacherMessagesScreenV2(
         else -> "Messages"
     }
 
-    Column(modifier.fillMaxSize().statusBarsPadding()
-        .imePadding()
-        .navigationBarsPadding()) {
+    Column(modifier.fillMaxSize().statusBarsPadding()) {
         VBackHeader(title = title, onBack = backHandler)
         TeacherMessagesContent(
             state = state,
@@ -106,6 +114,7 @@ fun TeacherMessagesScreenV2(
                 viewModel.openThread(t.id, t.senderName)
             },
             onSend = viewModel::reply,
+            onSendWithAttachment = viewModel::replyWithAttachment,
             onDismissReplyError = viewModel::clearReplyError,
             onRetry = { state.openThreadId?.let { viewModel.openThread(it, state.openThreadName) } },
             onRetryThreads = viewModel::loadThreads,
@@ -119,6 +128,7 @@ private fun TeacherMessagesContent(
     state: TeacherMessageState,
     onOpenThread: (TeacherMessageThreadDto) -> Unit,
     onSend: (String) -> Unit,
+    onSendWithAttachment: (String, ByteArray?, String?, String?) -> Unit,
     onDismissReplyError: () -> Unit,
     onRetry: () -> Unit,
     onRetryThreads: () -> Unit,
@@ -134,6 +144,7 @@ private fun TeacherMessagesContent(
                 sending = state.sending,
                 replyError = state.replyError,
                 onSend = onSend,
+                onSendWithAttachment = onSendWithAttachment,
                 onDismissReplyError = onDismissReplyError,
                 onRetry = onRetry,
                 modifier = modifier,
@@ -265,14 +276,22 @@ private fun TeacherConversationContent(
     sending: Boolean,
     replyError: String? = null,
     onSend: (String) -> Unit,
+    onSendWithAttachment: (String, ByteArray?, String?, String?) -> Unit,
     onDismissReplyError: () -> Unit = {},
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val c = VtC
     var reply by remember { mutableStateOf("") }
-    val keyboard = LocalSoftwareKeyboardController.current
     val listState = rememberLazyListState()
+    var pickedImage: Triple<ByteArray, String, String>? by remember { mutableStateOf(null) }
+    var pickerError by remember { mutableStateOf<String?>(null) }
+    val mediaPicker = rememberMediaPicker(
+        onPicked = { bytes, mimeType, fileName ->
+            pickedImage = Triple(bytes, mimeType, fileName)
+        },
+        onUnsupported = { msg -> pickerError = msg },
+    )
 
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
@@ -303,18 +322,22 @@ private fun TeacherConversationContent(
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     items(messages, key = { it.id }) { msg ->
-                        TeacherMessageBubble(msg)
+                        PremiumMessageBubble(
+                            msg = msg.toPremiumMessageData(),
+                            isGroupStart = true,
+                        )
                     }
                 }
             }
         }
 
         AnimatedVisibility(
-            visible = replyError != null,
+            visible = replyError != null || pickerError != null,
             enter = slideInVertically() + fadeIn(),
             exit = slideOutVertically() + fadeOut(),
         ) {
-            if (replyError != null) {
+            val errMsg = replyError ?: pickerError
+            if (errMsg != null) {
                 Row(
                     Modifier
                         .fillMaxWidth()
@@ -324,7 +347,7 @@ private fun TeacherConversationContent(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
-                        replyError,
+                        errMsg,
                         style = VtT.caption.coloredV(c.dangerInk),
                         modifier = Modifier.weight(1f),
                     )
@@ -334,7 +357,10 @@ private fun TeacherConversationContent(
                             .size(28.dp)
                             .clip(CircleShape)
                             .background(c.dangerInk.copy(alpha = 0.12f))
-                            .clickable(interactionSource = dismissInteraction, indication = null, onClick = onDismissReplyError),
+                            .clickable(interactionSource = dismissInteraction, indication = null, onClick = {
+                                onDismissReplyError()
+                                pickerError = null
+                            }),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
@@ -348,215 +374,49 @@ private fun TeacherConversationContent(
             }
         }
 
-        TeacherComposeBar(
+        // Premium compose bar with image attachment support
+        PremiumComposeBar(
             text = reply,
             onTextChange = { reply = it },
             placeholder = "Type a message…",
             enabled = !sending,
             sending = sending,
             onSend = {
-                if (reply.isNotBlank()) {
+                val img = pickedImage
+                if (img != null) {
+                    onSendWithAttachment(reply.trim(), img.first, img.third, img.second)
+                    pickedImage = null
+                } else if (reply.isNotBlank()) {
                     onSend(reply.trim())
-                    reply = ""
-                    keyboard?.hide()
                 }
+                reply = ""
             },
+            onAttach = { mediaPicker.launchImage() },
+            imagePreviewBytes = pickedImage?.first,
+            imagePreviewName = pickedImage?.third ?: "",
+            onRemoveImage = { pickedImage = null },
+            modifier = Modifier.imePadding().navigationBarsPadding(),
         )
     }
 }
 
-@Composable
-private fun TeacherMessageBubble(msg: TeacherMessageDto) {
-    val c = VtC
-    val isMine = msg.isMine
-    val isDeleted = msg.deletedAt != null
-
-    val bubbleColor = if (isMine) c.accent else c.card
-    val textColor = if (isMine) Color.White else c.ink
-    val timeColor = if (isMine) Color.White.copy(alpha = 0.7f) else c.ink3
-
-    Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = if (isMine) Arrangement.End else Arrangement.Start,
-    ) {
-        val bubbleShape = if (isMine) {
-            RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp, bottomStart = 18.dp, bottomEnd = 4.dp)
-        } else {
-            RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp, bottomStart = 4.dp, bottomEnd = 18.dp)
-        }
-
-        Column(
-            Modifier
-                .widthIn(max = 280.dp)
-                .clip(bubbleShape)
-                .background(bubbleColor)
-                .padding(horizontal = 14.dp, vertical = 10.dp),
-        ) {
-            if (isDeleted) {
-                Text(
-                    "This message was deleted",
-                    style = VtT.body.coloredV(textColor).copy(
-                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
-                    ),
-                )
-            } else {
-                Text(
-                    msg.body,
-                    style = VtT.body.coloredV(textColor),
-                )
-            }
-            Spacer(Modifier.height(4.dp))
-            Row(
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                if (isMine && !isDeleted) {
-                    when (msg.status?.uppercase()) {
-                        "READ" -> {
-                            Icon(
-                                VIcons.Check,
-                                contentDescription = null,
-                                tint = Color.White.copy(alpha = 0.9f),
-                                modifier = Modifier.size(14.dp),
-                            )
-                            Spacer(Modifier.size(2.dp))
-                            Icon(
-                                VIcons.Check,
-                                contentDescription = "Read",
-                                tint = Color.White.copy(alpha = 0.9f),
-                                modifier = Modifier.size(14.dp),
-                            )
-                        }
-                        "DELIVERED" -> {
-                            Icon(
-                                VIcons.Check,
-                                contentDescription = "Delivered",
-                                tint = Color.White.copy(alpha = 0.7f),
-                                modifier = Modifier.size(14.dp),
-                            )
-                            Spacer(Modifier.size(2.dp))
-                            Icon(
-                                VIcons.Check,
-                                contentDescription = null,
-                                tint = Color.White.copy(alpha = 0.7f),
-                                modifier = Modifier.size(14.dp),
-                            )
-                        }
-                        "SENT" -> {
-                            Icon(
-                                VIcons.Check,
-                                contentDescription = "Sent",
-                                tint = Color.White.copy(alpha = 0.5f),
-                                modifier = Modifier.size(14.dp),
-                            )
-                        }
-                    }
-                    Spacer(Modifier.size(4.dp))
-                }
-                Text(
-                    msg.time,
-                    style = VtT.caption.coloredV(timeColor).copy(fontSize = 10.sp),
-                )
-                if (msg.editedAt != null && !isDeleted) {
-                    Spacer(Modifier.size(4.dp))
-                    Text(
-                        "edited",
-                        style = VtT.caption.coloredV(timeColor).copy(fontSize = 9.sp),
-                    )
-                }
-            }
-        }
-    }
+/** Adapter: Map TeacherMessageDto to PremiumMessageData for shared bubble rendering. */
+private fun TeacherMessageDto.toPremiumMessageData(): PremiumMessageData = object : PremiumMessageData {
+    override val id: String get() = this@toPremiumMessageData.id
+    override val body: String get() = this@toPremiumMessageData.body
+    override val isMine: Boolean get() = this@toPremiumMessageData.isMine
+    override val time: String get() = this@toPremiumMessageData.time
+    override val status: String? get() = this@toPremiumMessageData.status
+    override val editedAt: String? get() = this@toPremiumMessageData.editedAt
+    override val deletedAt: String? get() = this@toPremiumMessageData.deletedAt
+    override val attachments: List<PremiumAttachmentData>
+        get() = this@toPremiumMessageData.attachments.map { it.toPremiumAttachmentData() }
 }
 
-@Composable
-private fun TeacherComposeBar(
-    text: String,
-    onTextChange: (String) -> Unit,
-    placeholder: String,
-    enabled: Boolean,
-    sending: Boolean,
-    onSend: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val c = VtC
-    val canSend = text.isNotBlank() && enabled
-
-    Column(
-        modifier
-            .fillMaxWidth()
-            .background(c.card),
-    ) {
-        Box(Modifier.fillMaxWidth().height(1.dp).background(c.hairline))
-
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Box(
-                Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(22.dp))
-                    .background(c.cream)
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
-            ) {
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = onTextChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = {
-                        Text(
-                            placeholder,
-                            style = VtT.body.coloredV(c.placeholder),
-                        )
-                    },
-                    enabled = enabled,
-                    singleLine = false,
-                    maxLines = 4,
-                    shape = RoundedCornerShape(22.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color.Transparent,
-                        unfocusedBorderColor = Color.Transparent,
-                        disabledBorderColor = Color.Transparent,
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        disabledContainerColor = Color.Transparent,
-                        cursorColor = c.accent,
-                    ),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
-                    keyboardActions = KeyboardActions(onSend = { if (canSend) onSend() }),
-                    textStyle = VtT.body.coloredV(c.ink),
-                )
-            }
-
-            val sendInteraction = remember { MutableInteractionSource() }
-            Box(
-                Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(if (canSend) c.accent else c.border2)
-                    .clickable(interactionSource = sendInteraction, indication = null, enabled = canSend, onClick = onSend),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (sending) {
-                    CircularProgressIndicator(
-                        color = Color.White,
-                        strokeWidth = 2.dp,
-                        modifier = Modifier.size(20.dp),
-                    )
-                } else {
-                    Icon(
-                        VIcons.Send,
-                        contentDescription = "Send",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-            }
-        }
-    }
+/** Adapter: Map TeacherMessageAttachment to PremiumAttachmentData. */
+private fun TeacherMessageAttachment.toPremiumAttachmentData(): PremiumAttachmentData = object : PremiumAttachmentData {
+    override val storageUrl: String get() = this@toPremiumAttachmentData.storageUrl
+    override val thumbnailUrl: String? get() = this@toPremiumAttachmentData.thumbnailUrl
+    override val attachmentType: String get() = this@toPremiumAttachmentData.attachmentType
+    override val fileName: String get() = this@toPremiumAttachmentData.fileName
 }

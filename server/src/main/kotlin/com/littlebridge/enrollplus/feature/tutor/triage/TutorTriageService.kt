@@ -7,12 +7,20 @@ import com.littlebridge.enrollplus.feature.ai.LlmMessage
 import com.littlebridge.enrollplus.feature.tutor.core.TutorConstants
 import com.littlebridge.enrollplus.feature.tutor.core.TutorKillSwitch
 import com.littlebridge.enrollplus.feature.tutor.data.TutorMisconceptionRepository
-import com.littlebridge.enrollplus.feature.tutor.sense.LearnerBundle
 import com.littlebridge.enrollplus.feature.tutor.sense.LearnerBundleBuilder
+import com.littlebridge.enrollplus.feature.tutor.sense.SyllabusPosition
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import java.util.UUID
+
+/** Result of the deterministic on-syllabus check. */
+enum class SyllabusStatus {
+    ON_SYLLABUS,
+    AHEAD_OF_SYLLABUS,
+    OFF_CURRICULUM,
+    UNKNOWN,
+}
 
 /**
  * TIER 1 — Triage (cheap CLASSIFY, GROQ_FAST, batched).
@@ -44,6 +52,7 @@ class TutorTriageService(
     data class TriageResult(
         val intent: String,           // doubt | practice_request | concept_explain | plan_review | check_in
         val onSyllabus: Boolean,
+        val syllabusStatus: String,   // ON_SYLLABUS | AHEAD_OF_SYLLABUS | OFF_CURRICULUM | UNKNOWN
         val knownMisconception: Boolean,
         val misconceptionType: String? = null,
         val skipAgent: Boolean,       // true → don't invoke Tier 2
@@ -74,8 +83,10 @@ class TutorTriageService(
         val bundle = if (subjectId != null) bundleBuilder.build(childId, subjectId) else null
 
         // 2. Deterministic on-syllabus check (no LLM needed)
-        val coveredTopics = bundle?.syllabusPosition?.coveredTopicIds ?: emptyList()
-        val onSyllabus = checkOnSyllabus(question, coveredTopics, bundle)
+        val syllabusPos = bundle?.syllabusPosition
+        val coveredTopics = syllabusPos?.coveredTopicIds ?: emptyList()
+        val syllabusStatus = checkOnSyllabus(question, syllabusPos)
+        val onSyllabus = syllabusStatus == SyllabusStatus.ON_SYLLABUS || syllabusStatus == SyllabusStatus.UNKNOWN
 
         // 3. Known misconception check (DB lookup, no LLM)
         val knownMisconception = checkKnownMisconception(childId)
@@ -83,25 +94,13 @@ class TutorTriageService(
             knownMisconception.misconceptionType
         } else null
 
-        // 4. If off-syllabus → skip agent, return "haven't covered yet" path
-        if (!onSyllabus && coveredTopics.isNotEmpty()) {
-            log.info("Triage: off-syllabus doubt for child {} — skipping agent", childId)
-            return TriageResult(
-                intent = "doubt",
-                onSyllabus = false,
-                knownMisconception = misconceptionType != null,
-                misconceptionType = misconceptionType,
-                skipAgent = true,
-                skipReason = "off_syllabus",
-            )
-        }
-
-        // 5. If known misconception → skip agent, return proven remediation path
+        // 4. If known misconception → skip agent, return proven remediation path
         if (knownMisconception != null) {
             log.info("Triage: known misconception '{}' for child {} — skipping agent", misconceptionType, childId)
             return TriageResult(
                 intent = "doubt",
-                onSyllabus = true,
+                onSyllabus = onSyllabus,
+                syllabusStatus = syllabusStatus.name,
                 knownMisconception = true,
                 misconceptionType = misconceptionType,
                 skipAgent = true,
@@ -109,12 +108,13 @@ class TutorTriageService(
             )
         }
 
-        // 6. LLM-based intent classification (cheap CLASSIFY lane)
+        // 5. LLM-based intent classification (cheap CLASSIFY lane)
         val intentResult = classifyIntent(schoolId, question)
 
         return TriageResult(
             intent = intentResult?.intent ?: "doubt",
             onSyllabus = onSyllabus,
+            syllabusStatus = syllabusStatus.name,
             knownMisconception = false,
             skipAgent = false,
             modelUsed = intentResult != null,
@@ -125,20 +125,54 @@ class TutorTriageService(
     // ── Deterministic on-syllabus check ──────────────────────────────────
 
     /**
-     * Simple keyword-based on-syllabus check. If the bundle has no covered
-     * topics, we can't determine this → assume on-syllabus (let the agent
-     * handle it in diagnostic mode).
+     * Keyword-based on-syllabus check. Matches the question against covered
+     * and not-yet-covered topic titles from the syllabus.
+     *
+     * Returns:
+     *   - ON_SYLLABUS: question matches a covered topic
+     *   - AHEAD_OF_SYLLABUS: question matches a not-yet-covered topic
+     *   - OFF_CURRICULUM: question doesn't match any syllabus topic
+     *   - UNKNOWN: no syllabus data available (let agent handle)
      */
     private fun checkOnSyllabus(
         question: String,
-        coveredTopicIds: List<String>,
-        bundle: LearnerBundle?,
-    ): Boolean {
-        if (coveredTopicIds.isEmpty()) return true  // can't determine → let agent handle
-        // If the bundle has syllabus data and the question seems to reference
-        // a topic, the agent will verify. This is a permissive check — the
-        // hard "never teach ahead" rule is enforced in Tier 0 (covered topics only).
-        return true
+        syllabusPos: SyllabusPosition?,
+    ): SyllabusStatus {
+        if (syllabusPos == null) return SyllabusStatus.UNKNOWN
+
+        val coveredTitles = syllabusPos.coveredTopicTitles
+        val notCoveredTitles = syllabusPos.notYetCoveredTitles
+
+        if (coveredTitles.isEmpty() && notCoveredTitles.isEmpty()) {
+            return SyllabusStatus.UNKNOWN
+        }
+
+        val questionLower = question.lowercase()
+        val questionWords = questionLower.split(Regex("\\s+"))
+            .filter { it.length >= 3 }
+            .toSet()
+
+        // Check covered topics first
+        for (title in coveredTitles) {
+            val titleLower = title.lowercase()
+            if (questionLower.contains(titleLower) || titleLower.split(Regex("\\s+"))
+                    .filter { it.length >= 3 }
+                    .any { questionWords.contains(it) }) {
+                return SyllabusStatus.ON_SYLLABUS
+            }
+        }
+
+        // Check not-yet-covered topics
+        for (title in notCoveredTitles) {
+            val titleLower = title.lowercase()
+            if (questionLower.contains(titleLower) || titleLower.split(Regex("\\s+"))
+                    .filter { it.length >= 3 }
+                    .any { questionWords.contains(it) }) {
+                return SyllabusStatus.AHEAD_OF_SYLLABUS
+            }
+        }
+
+        return SyllabusStatus.OFF_CURRICULUM
     }
 
     // ── Known misconception check ────────────────────────────────────────

@@ -1822,6 +1822,7 @@ data class TeacherMessageDto(
     @SerialName("edited_at") val editedAt: String? = null,
     @SerialName("deleted_at") val deletedAt: String? = null,
     @SerialName("reply_to_id") val replyToId: String? = null,
+    val attachments: List<TeacherMessageAttachment> = emptyList(),
 )
 
 @Serializable
@@ -1845,6 +1846,7 @@ data class TeacherSendMessageRequest(
     @SerialName("recipient_user_id") val recipientUserId: String? = null,
     @SerialName("client_msg_id") val clientMsgId: String? = null,
     @SerialName("reply_to_id") val replyToId: String? = null,
+    val attachments: List<TeacherAttachmentInput> = emptyList(),
     val body: String,
 )
 
@@ -1872,6 +1874,50 @@ data class TeacherUnreadCountDto(
 @Serializable
 data class TeacherUnreadCountData(
     @SerialName("unread_count") val unreadCount: Int = 0,
+)
+
+@Serializable
+data class TeacherAttachmentInput(
+    @SerialName("file_name") val fileName: String,
+    @SerialName("mime_type") val mimeType: String,
+    @SerialName("size_bytes") val sizeBytes: Long,
+    @SerialName("storage_url") val storageUrl: String,
+    @SerialName("attachment_type") val attachmentType: String = "IMAGE",
+    @SerialName("thumbnail_url") val thumbnailUrl: String? = null,
+    val width: Int? = null,
+    val height: Int? = null,
+    @SerialName("duration_ms") val durationMs: Int? = null,
+)
+
+@Serializable
+data class TeacherMessageAttachment(
+    val id: String,
+    @SerialName("file_name") val fileName: String,
+    @SerialName("mime_type") val mimeType: String,
+    @SerialName("size_bytes") val sizeBytes: Long,
+    @SerialName("storage_url") val storageUrl: String,
+    @SerialName("thumbnail_url") val thumbnailUrl: String? = null,
+    @SerialName("attachment_type") val attachmentType: String,
+    val width: Int? = null,
+    val height: Int? = null,
+    @SerialName("duration_ms") val durationMs: Int? = null,
+)
+
+/** Phase 1 (§12): attachment upload response from POST /api/v1/teacher/messages/attachments */
+@Serializable
+data class TeacherAttachmentUploadResponse(
+    val success: Boolean = false,
+    val message: String? = null,
+    val data: TeacherAttachmentUploadData? = null,
+)
+
+@Serializable
+data class TeacherAttachmentUploadData(
+    @SerialName("storage_url") val storageUrl: String,
+    @SerialName("file_name") val fileName: String,
+    @SerialName("mime_type") val mimeType: String,
+    @SerialName("size_bytes") val sizeBytes: Long,
+    @SerialName("attachment_type") val attachmentType: String,
 )
 
 // ─────────────────────────────────────────────────────────────────────────────

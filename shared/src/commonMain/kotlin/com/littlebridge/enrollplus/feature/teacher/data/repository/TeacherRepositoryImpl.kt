@@ -328,6 +328,12 @@ class TeacherRepositoryImpl(
 
 
 
+    override suspend fun uploadMessageAttachment(token: String, bytes: ByteArray, fileName: String, mimeType: String, attachmentType: String): NetworkResult<TeacherAttachmentUploadResponse> =
+
+        api.uploadAttachment(token, bytes, fileName, mimeType, attachmentType)
+
+
+
     // Lesson Planning (LESSON_PLANNING_SPEC.md — P1-20)
 
     override suspend fun listLessonPlans(
