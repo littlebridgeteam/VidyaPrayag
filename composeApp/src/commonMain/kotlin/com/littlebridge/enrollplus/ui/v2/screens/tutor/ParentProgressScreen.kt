@@ -75,7 +75,7 @@ fun ParentProgressScreen(
             when {
                 state.isLoading -> VLoadingState()
                 state.error != null -> VErrorState(
-                    message = state.error!!,
+                    message = state.error ?: "",
                     onRetry = { viewModel.loadProgress() },
                 )
                 state.progressCard == null -> VEmptyState(
@@ -83,7 +83,11 @@ fun ParentProgressScreen(
                     body = appString(StringKeys.TUT_NO_PROGRESS_DESC),
                     icon = VIcons.BookOpen,
                 )
-                else -> ProgressContent(state.progressCard!!)
+                else -> state.progressCard?.let { ProgressContent(it) } ?: VEmptyState(
+                    title = appString(StringKeys.TUT_NO_PROGRESS),
+                    body = appString(StringKeys.TUT_NO_PROGRESS_DESC),
+                    icon = VIcons.BookOpen,
+                )
             }
         }
     }

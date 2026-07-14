@@ -271,7 +271,8 @@ class TeacherLessonPlanViewModel(
                     plannedDate = e.plannedDate.ifBlank { null },
                 ))
             } else {
-                repository.updateLessonPlan(t, e.planId!!, UpdateLessonPlanRequest(
+                val planId = e.planId ?: return@launch
+                repository.updateLessonPlan(t, planId, UpdateLessonPlanRequest(
                     curriculumUnitId = e.curriculumUnitId,
                     title = e.title.trim(),
                     objectives = e.objectives,

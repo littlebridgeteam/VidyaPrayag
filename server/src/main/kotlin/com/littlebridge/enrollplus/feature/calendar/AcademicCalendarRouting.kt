@@ -136,6 +136,7 @@ data class CalendarDashboardDto(
     val hero: CalendarHeroDto,
     @SerialName("upcoming_highlights") val upcomingHighlights: List<AcademicCalendarEventDto> = emptyList(),
     @SerialName("upcoming_timeline") val upcomingTimeline: List<AcademicCalendarEventDto> = emptyList(),
+    @SerialName("past_timeline") val pastTimeline: List<AcademicCalendarEventDto> = emptyList(),
     @SerialName("draft_events") val draftEvents: List<AcademicCalendarEventDto> = emptyList(),
     @SerialName("published_events") val publishedEvents: List<AcademicCalendarEventDto> = emptyList(),
     val milestones: List<AcademicCalendarEventDto> = emptyList(),
@@ -227,10 +228,16 @@ fun Route.academicCalendarRouting() {
                         CalendarKpiDto("milestones", "Milestones", milestones.size, "ink")
                     )
 
+                    val pastTimeline = notCancelled
+                        .filter { (it.endDate.takeIf { d -> d.isNotBlank() } ?: it.startDate) < todayIso }
+                        .sortedByDescending { it.startDate }
+                        .take(12)
+
                     CalendarDashboardDto(
                         hero = hero,
                         upcomingHighlights = upcoming.filter { it.status == EventStatus.PUBLISHED }.take(8),
                         upcomingTimeline = upcoming.take(12),
+                        pastTimeline = pastTimeline,
                         draftEvents = drafts.sortedBy { it.startDate }.take(20),
                         publishedEvents = published.sortedBy { it.startDate }.take(20),
                         milestones = milestones.take(12),

@@ -71,7 +71,7 @@ fun TutorPlanScreen(
             when {
                 state.isLoading -> VLoadingState()
                 state.error != null -> VErrorState(
-                    message = state.error!!,
+                    message = state.error ?: "",
                     onRetry = { viewModel.loadPlan() },
                 )
                 state.planItems.isEmpty() -> VEmptyState(

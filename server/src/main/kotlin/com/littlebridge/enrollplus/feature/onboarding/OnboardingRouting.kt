@@ -1002,7 +1002,7 @@ fun Route.onboardingRouting() {
                 //    - ACADEMIC: persist school_classes + school_subjects.
                 //    - REVIEW(final): stamp onboarded_at to flip status to COMPLETED.
                 val complete = req.isFinalSubmission && step == "REVIEW"
-                dbQuery {
+                val academicError: String? = dbQuery {
                     when (step) {
                         "BASIC", "BRANDING" -> {
                             val sid = ensureSchoolForUser(uid)
@@ -1013,16 +1013,17 @@ fun Route.onboardingRouting() {
                             // never writes the ledger, so a fresh school always
                             // starts the wizard at BASIC.
                             markStepCompleted(sid, step)
+                            null
                         }
                         "ACADEMIC" -> {
                             val sid = ensureSchoolForUser(uid)
                             syncSchoolBasics(sid, uid)
                             val validationError = persistAcademicStructure(sid, req.dataPayload)
                             if (validationError != null) {
-                                call.fail(validationError, HttpStatusCode.BadRequest)
-                                return@post
+                                return@dbQuery validationError
                             }
                             markStepCompleted(sid, "ACADEMIC")
+                            null
                         }
                         "REVIEW" -> {
                             val sid = ensureSchoolForUser(uid)
@@ -1044,8 +1045,14 @@ fun Route.onboardingRouting() {
                                     it[updatedAt] = now
                                 }
                             }
+                            null
                         }
+                        else -> null
                     }
+                }
+                if (academicError != null) {
+                    call.fail(academicError, HttpStatusCode.BadRequest)
+                    return@post
                 }
 
                 call.ok(

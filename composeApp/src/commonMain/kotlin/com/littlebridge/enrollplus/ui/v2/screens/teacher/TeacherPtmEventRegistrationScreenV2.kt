@@ -72,28 +72,32 @@ fun TeacherPtmEventRegistrationScreenV2(
 
         if (state.infoMessage != null) {
             Text(
-                text = state.infoMessage!!,
+                text = state.infoMessage ?: "",
                 style = VtT.caption.coloredV(c.successInk),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             )
         }
         if (state.errorMessage != null) {
             Text(
-                text = state.errorMessage!!,
+                text = state.errorMessage ?: "",
                 style = VtT.caption.coloredV(c.dangerInk),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             )
         }
 
         if (selectedEventId != null && state.eventDetail != null) {
-            PtmDetailContent(
-                eventDetail = state.eventDetail!!,
-                slots = state.slots,
-                isCheckingIn = state.isCheckingIn,
-                onCheckIn = { registrationId ->
-                    viewModel.checkinParent(selectedEventId!!, registrationId)
-                },
-            )
+            val eventId = selectedEventId
+            val detail = state.eventDetail
+            if (eventId != null && detail != null) {
+                PtmDetailContent(
+                    eventDetail = detail,
+                    slots = state.slots,
+                    isCheckingIn = state.isCheckingIn,
+                    onCheckIn = { registrationId ->
+                        viewModel.checkinParent(eventId, registrationId)
+                    },
+                )
+            }
         } else {
             VStateHost(
                 loading = state.isLoading,

@@ -98,10 +98,12 @@ fun TutorPracticeScreen(
                     )
                 }
                 state.gradeResult != null -> {
-                    GradeResultContent(
-                        result = state.gradeResult!!,
-                        onNext = viewModel::nextQuestion,
-                    )
+                    state.gradeResult?.let {
+                        GradeResultContent(
+                            result = it,
+                            onNext = viewModel::nextQuestion,
+                        )
+                    }
                 }
                 else -> {
                     QuestionContent(
@@ -151,9 +153,10 @@ private fun QuestionContent(
             }
         }
 
-        if (question.options != null) {
+        val options = question.options
+        if (options != null) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                question.options!!.forEach { option ->
+                options.forEach { option ->
                     val isSelected = option == selectedAnswer
                     VCard(
                         modifier = Modifier

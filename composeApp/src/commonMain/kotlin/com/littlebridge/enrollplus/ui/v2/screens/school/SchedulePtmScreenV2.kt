@@ -118,7 +118,7 @@ private fun SchedulePtmContent(
     ) {
         VStateHost(
             loading = state.isLoading,
-            error = state.errorMessage,
+            error = state.errorMessage.takeIf { !composerOpen },
             isEmpty = state.activeEventTitle.isBlank() &&
                 state.history.isEmpty() &&
                 state.classProgress.isEmpty() &&
@@ -143,6 +143,11 @@ private fun SchedulePtmContent(
                     if (info != null) {
                         Spacer(Modifier.height(8.dp))
                         Text(info, style = VTypography.caption.copy(color = VColors.success))
+                    }
+                    val err = state.errorMessage
+                    if (err != null) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(err, style = VTypography.caption.copy(color = VColors.coral))
                     }
                     Spacer(Modifier.height(12.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
